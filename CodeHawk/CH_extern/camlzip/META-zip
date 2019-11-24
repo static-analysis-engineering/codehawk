@@ -1,0 +1,5 @@
+version="1.07"
+requires="unix"
+archive(byte)="zip.cma"
+archive(native)="zip.cmxa"
+archive(native,plugin)="zip.cmxs"
