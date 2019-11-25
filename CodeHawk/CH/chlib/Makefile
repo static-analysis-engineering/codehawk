@@ -156,7 +156,7 @@ make_dirs:
 	@mkdir -p cmi
 
 cmi/%.cmi: %.mli
-	$(CAMLC) -o $@ -c $<
+	$(CAMLC) -o $@ -c -opaque $<
 
 cmx/%.cmx: %.ml
 	$(CAMLC) -o $@ -c $<
