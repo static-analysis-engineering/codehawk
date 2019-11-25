@@ -1,22 +1,29 @@
 (* =============================================================================
- *  {1 Check proof obligations } 
- *
- *  {C Copyright 2005-2019; Kestrel Technology LLC; Palo Alto, CA 94304.}
- *
- *  This program is the unpublished property and trade secret of
- *  Kestrel Technology. It is to be utilized solely under agreement with
- *  Kestrel Technology and it is to be maintained on a confidential basis for
- *  internal company use only. The security and protection of the program is
- *  paramount to maintenance of the trade secret status. It is to be protected
- *  from disclosure to unauthorized parties, both within the company party to
- *  the agreement and outside, in a manner not less stringent than that
- *  utilized for the company's own proprietary internal information. No copies
- *  of the Source or Object Code are to leave the premises of the company's
- *  business except in strict accordance with the agreement signed with Kestrel
- *  Technology.
- *
- *  @author Henny Sipma
- * ============================================================================= *)
+   CodeHawk C Analyzer 
+   Author: Henny Sipma
+   ------------------------------------------------------------------------------
+   The MIT License (MIT)
+ 
+   Copyright (c) 2005-2019 Kestrel Technology LLC
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+ 
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+  
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+   ============================================================================= *)
 
 (* chlib *)
 open CHLanguage
