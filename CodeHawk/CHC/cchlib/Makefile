@@ -52,8 +52,8 @@ MLIS := \
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
 SOURCES := \
-	cCHIndexedCollections \
 	cCHUtilities \
+	cCHIndexedCollections \
 	cCHSettings \
 	cCHMachineSizes \
 	cCHFileEnvironment \

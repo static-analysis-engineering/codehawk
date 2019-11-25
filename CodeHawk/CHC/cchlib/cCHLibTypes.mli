@@ -168,7 +168,7 @@ class type cdictionary_int =
 
   end
 (* =========================================================== xpr dictionary == *)
-
+(*
 class type xprdictionary_int =
   object
 
@@ -215,7 +215,7 @@ class type xprdictionary_int =
     method toPretty : pretty_t
 
   end
-
+ *)
 (* ============================================================ declarations === *)
 
 type enumitem = string * exp * location
