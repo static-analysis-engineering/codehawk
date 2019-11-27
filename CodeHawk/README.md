@@ -29,7 +29,7 @@ for convenience.
 
 #### CodeHawk C Analyzer
 
-- CHC/cil-1.7.3-develop: CIL parser, develope by George Necula at Berkeley,
+- CHC/cil-1.7.3-develop: CIL parser, developed by George Necula at Berkeley,
    modified for use in the CodeHawk C Analyzer.
 - CHC/cchcil: CodeHawk C source code parser, dependent on cil-1.7.3-develop
 - CHC/cchlib: dependent on CH_extern, CH
