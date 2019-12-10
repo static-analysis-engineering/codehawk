@@ -40,4 +40,17 @@ for convenience.
 Building the analyzer can be accomplished by invoking **make** in all of these
 directories in the given sequence.
 
+#### CodeHawk Binary Analyzer
+
+- CHB/bchlib: dependent on CH_extern, CH
+- CHB/bchlibpe: dependent on CH_extern, CH, CHB/bchlib
+- CHB/bchlibelf: dependent on CH_extern, CH, CHB/bchlib
+- CHB/bchlibx86: dependent on CH_extern, CH, CHB/bchlib,bchlibpe,bchlibelf
+- CHB/bchlibmips32: dependent on CH_extern, CH, CHB/bchlib,bchlibelf
+- CHB/bchanalyze: dependent on CH_extern, CH, CHB/bchlib,bchlibpe,bchlibelf,bchlibx86,bchlibmips32
+- CHB/bchcmdline: dependent on CH_extern, CH, CHB/bchlib,bchlibpe,bchlibelf,bchlibx86,bchlibmips32,bchanalyze
+
+Building the analyzer can be accomplished by invoking **make** in all
+of these directories in the given sequence.
+
 

@@ -9,7 +9,6 @@ ZIPLIB = $(CODEHAWK)/CH_extern/camlzip
 CHUTIL = $(CODEHAWK)/CH/chutil
 XPRLIB = $(CODEHAWK)/CH/xprlib
 BCHLIB = $(CHB)/bchlib
-PELIB  = $(CHB)/bchlibpe
 ELFLIB = $(CHB)/bchlibelf
 
 CAMLDOC := ocamldoc
@@ -23,7 +22,6 @@ CAMLC := ocamlopt  -I str -I cmi -I cmx \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
 	-I $(BCHLIB)/cmi \
-	-I $(PELIB)/cmi \
 	-I $(ELFLIB)/cmi \
 
 CAMLLINK := ocamlopt \
@@ -81,7 +79,7 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-bchlibmips32: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(ELFLIB)/bchlibelf.cmxa
+bchlibmips32: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(ELFLIB)/bchlibelf.cmxa
 	$(CAMLLINK) -a -o bchlibmips32.cmxa $(OBJECTS)
 
 cmi/%.cmi: %.mli
