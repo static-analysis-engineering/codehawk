@@ -145,7 +145,7 @@ object (self)
 end
       
     
-
+let mk_logger () = new logger_t
 
 let chlog = new logger_t
 let ch_info_log = new logger_t

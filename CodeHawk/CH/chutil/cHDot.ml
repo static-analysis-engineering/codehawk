@@ -288,6 +288,8 @@ object (self)
       ]
     
 end
+
+let mk_dot_graph = new dot_graph_t
   
 let cfg_to_dot (cfg:cfg_int) =
   let g = new dot_graph_t "cfg" in

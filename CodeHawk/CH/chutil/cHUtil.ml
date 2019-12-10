@@ -82,6 +82,13 @@ let remove_duplicates_f (l:'a list) (f:'a -> 'a -> bool):'a list =
     | h::tl -> if List.exists (fun e -> f e h) r then (aux tl r) else (aux tl (h::r)) in
   List.rev (aux l [])
 
+(* Return the difference of two lists, using f as an equality check *)
+let list_difference (l:'a list) (s:'a list) (f:'a -> 'a -> bool):'a list =
+    let rec aux l r =
+      match l with
+      | [] -> r
+      | h::tl -> if List.exists (fun e -> f h e) s then (aux tl r) else (aux tl (h::r)) in
+    aux l []
 
 (* Return the maximum element from a list, using f as comparison function *)
 let list_maxf (l:'a list) (f:'a -> 'a -> int):'a =  
@@ -124,3 +131,8 @@ let list_sub (l:'a list) (s:int) (n:int):'a list =
       if n = 0 then result else sub (List.tl l) (n-1) ((List.hd l)::result)  in
     List.rev (sub l' n [])
 
+(* Fold left on an array with access to the array index *)
+let array_fold_lefti (f: 'b -> int -> 'a -> 'b) (init: 'b) (a: 'a array) =
+  let (_,r) = Array.fold_left 
+      (fun (i,acc) v -> let r = f acc i v in (i+1,r)) (0,init) a in
+  r

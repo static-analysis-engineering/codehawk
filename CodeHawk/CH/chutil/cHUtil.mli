@@ -33,10 +33,16 @@ val string_replace: char -> string -> string -> string
 val list_split: int -> 'a list -> ('a list * 'a list)
 val list_split_p: ('a -> bool) -> 'a list -> ('a list * 'a list)
 
+val list_sub: 'a list -> int -> int -> 'a list
+
 val list_suffix: int -> 'a list -> 'a list
 
 val list_maxf: 'a list -> ('a -> 'a -> int) -> 'a
 val list_compare: 'a list -> 'a list -> ('a -> 'a -> int) -> int
+
+val list_difference: 'a list -> 'a list -> ('a -> 'a -> bool) -> 'a list
   
 val remove_duplicates: 'a list -> 'a list
 val remove_duplicates_f: 'a list -> ('a ->'a -> bool) -> 'a list
+
+val array_fold_lefti: ('b -> int -> 'a -> 'b) -> 'b ->  'a array -> 'b

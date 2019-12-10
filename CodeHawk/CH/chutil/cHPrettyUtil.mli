@@ -42,6 +42,9 @@ class type string_printer_int =
 val fixed_length_string: ?alignment:string_alignment_t -> string -> int -> string
 val fixed_length_pretty: ?alignment:string_alignment_t -> pretty_t -> int -> pretty_t
 
+val fixed_length_int_string: string -> int -> string
+val string_suffix: string -> int -> string
+
 val string_repeat: string -> int -> string
 val nsplit: char -> string -> string list
 
@@ -50,3 +53,5 @@ val list_to_pretty: ('a -> pretty_t) -> pretty_t -> 'a list -> pretty_t
 val string_printer: string_printer_int
   
 val pretty_to_string: pretty_t -> string
+
+val pp_quantity: int -> ?numwidth:int -> string -> string -> pretty_t

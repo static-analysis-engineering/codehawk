@@ -25,4 +25,22 @@
    SOFTWARE.
    ============================================================================= *)
 
-(** Utilities to output a GraphViz dot file *)
+(* Utilities to output a GraphViz dot file *)
+
+(* chlib *)
+open CHPretty
+
+class type dot_graph_int =
+object ('a)
+  method setPreamble: pretty_t -> unit
+  method setRankdir : string -> unit
+  method addEdge: ?bidirectional:bool -> ?label:string -> string -> string -> unit
+  method addNode: ?label:string -> ?shaded:bool -> string -> unit
+  method hasNode: string -> bool
+  method hasEdge: string -> string -> bool
+  method subgraph: string -> string -> 'a
+  method revsubgraph: string -> string -> 'a
+  method toPretty: pretty_t
+end
+
+val mk_dot_graph: ?enable_bidirectional_edges:bool -> string -> dot_graph_int

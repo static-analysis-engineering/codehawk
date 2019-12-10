@@ -40,6 +40,8 @@ class type logger_int =
     method toPretty: pretty_t
   end
 
+val mk_logger: unit -> logger_int
+
 val chlog: logger_int
 val ch_error_log: logger_int
 val ch_info_log: logger_int

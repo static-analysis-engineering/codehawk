@@ -154,7 +154,30 @@ let string_repeat (s:string) (n:int) =
     !t
   end
   
-  
+(* Return the string of length n that ends with s (padded with leading
+   zeroes) *)
+let fixed_length_int_string (s:string) (len:int):string =
+    let slen = String.length s in
+    if slen < len then
+      let str = Bytes.make len '0' in
+      begin
+        Bytes.blit (Bytes.of_string s) 0 str (len - slen) slen ;
+        Bytes.to_string str
+      end
+    else
+      s
+
+(* Return the suffix of s that starts at the n'th character of s *)
+let string_suffix (s:string) (n:int):string = 
+  try
+    String.sub s n ((String.length s) - n)
+  with
+    Invalid_argument _ ->
+      let len = String.length s in
+      let msg = "String.sub s " ^ (string_of_int n) ^ " on string of length " ^ (string_of_int len) in
+      raise (Invalid_argument msg)
+
+ 
 (* utility function to split a character separated string into
    a list of strings *)
 let nsplit (separator:char) (s:string):string list =
