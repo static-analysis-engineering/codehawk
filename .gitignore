@@ -15,9 +15,32 @@ _build/
 *.byte
 *.native
 
+# MacOSX
+.DS_Store
+
+# executables
+CodeHawk/CHB/bchcmdline/chx86_analyze
+CodeHawk/CHC/cchcmdline/canalyzer
+CodeHawk/CHC/cchgui/chc_gui
+
 # oasis generated files
 setup.data
 setup.log
 
 # Merlin configuring file for Vim and Emacs
 .merlin
+
+# CH_extern artifacts
+CodeHawk/CH_extern/camlzip/dllcamlzip.so
+CodeHawk/CH_extern/extlib/extBytes.mli
+
+# cil build artefacts
+CodeHawk/CHC/cil-1.7.3-develop/META
+CodeHawk/CHC/cil-1.7.3-develop/lib/cil/
+CodeHawk/CHC/cil-1.7.3-develop/lib/perl5/App/Cilly.pm
+CodeHawk/CHC/cil-1.7.3-develop/lib/perl5/MYMETA.json
+CodeHawk/CHC/cil-1.7.3-develop/lib/perl5/MYMETA.yml
+CodeHawk/CHC/cil-1.7.3-develop/lib/perl5/Makefile
+CodeHawk/CHC/cil-1.7.3-develop/lib/perl5/blib/
+CodeHawk/CHC/cil-1.7.3-develop/lib/perl5/pm_to_blib
+CodeHawk/CHC/cil-1.7.3-develop/share/
