@@ -35,6 +35,9 @@ open CHLanguage
 (* bchlib *)
 open BCHLibTypes
 
+val e32: int
+val nume32: numerical_t
+
 val dw_index_to_pretty: dw_index_t -> pretty_t
 val dw_index_to_string: dw_index_t -> string
 val string_to_dw_index: string -> dw_index_t

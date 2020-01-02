@@ -280,12 +280,19 @@ let add_exnhandler
     (faddr:doubleword_int)  =
   let name = "__SEHandler_" ^ exnfinfo#to_hex_string ^ "__" in
   let _ = match sccaddr with
-    | Some a -> (functions_data#add_function a)#add_name "__security_check_cookie__"
+    | Some a ->
+       let _ = chlog#add
+                 "add function"
+                 (LBLOCK [ faddr#toPretty ; STR ": " ; a#toPretty ;
+                           STR ": security check cookie" ]) in
+       (functions_data#add_function a)#add_name "__security_check_cookie__"
     | _ -> () in
   let _ = (functions_data#add_function fhaddr)#add_name "__InternalCxxFrameHandler__" in
   let _ = (functions_data#add_function faddr)#add_name name in
-  let _ = chlog#add "matched exn handler" 
-    (LBLOCK [ faddr#toPretty ; STR ": " ; STR name ]) in
+  let _ = chlog#add
+            "add function:matched exn handler" 
+            (LBLOCK [ faddr#toPretty ; STR ": " ; STR name ; STR "; " ;
+                      fhaddr#toPretty ; STR ": __InternalCxxFrameHandler__" ]) in
   let xfinfo = new exn_function_info_t in
   let pesection = pe_sections#get_containing_section exnfinfo in
   match pesection with
@@ -301,6 +308,10 @@ let add_exnhandler
        let _ = List.iteri (fun i m ->
                    let name = ("__SEHUnwind_" ^ faddr#to_hex_string
                                ^ "_" ^ (string_of_int i) ^ "__") in
+                   let _ = chlog#add
+                             "add function:SEHUnwind"
+                             (LBLOCK [ faddr#toPretty ; STR ": " ; m#get_action#toPretty ;
+                                       STR "; " ;  STR name ]) in
 	           (functions_data#add_function m#get_action)#add_name name) unwindmaps in
        let exnhandler = new exn_handler_t voff1 voff2 voff3 voff4 xfinfo unwindmaps in
        begin
@@ -336,6 +347,10 @@ let add_seh_exnhandler (exnfinfo:doubleword_int) (faddr:doubleword_int) =
        let unwindmaps = get_unwindmaps xfinfo#get_maxstate xfinfo#get_unwindmap in
        let _ = List.iteri (fun i m ->
                    let name = "__SEHUnwind_" ^ faddr#to_hex_string ^ "_" ^ (string_of_int i) ^ "__" in
+                   let _ = chlog#add
+                             "add function:SEHUnwind"
+                             (LBLOCK [ faddr#toPretty ; STR ": " ; m#get_action#toPretty ;
+                                       STR "; " ;  STR name ]) in
 	           (functions_data#add_function m#get_action)#add_name name) unwindmaps in
        let exnhandler = new exn_handler_t None None None None xfinfo unwindmaps in
        begin

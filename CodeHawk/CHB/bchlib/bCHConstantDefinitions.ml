@@ -37,6 +37,7 @@ open CHPrettyUtil
 open CHXmlDocument
 
 (* xprlib *)
+open XprToPretty   
 open XprTypes
 
 (* bchlib *)
@@ -52,6 +53,8 @@ let value_table = H.create 3
 let flag_table = H.create 3
 let address_table = H.create 3
 let name_table = H.create 3
+
+let x2p = xpr_formatter#pr_expr
 
 let has_symbolic_address_name (v:doubleword_int) = H.mem address_table v#index 
 
@@ -154,31 +157,31 @@ let get_symbolic_flags (ty:btype_t) (v:doubleword_int) =
 let get_xpr_symbolic_name ?(typespec=None) (xpr:xpr_t) =
   let (ty,flags) =
     match typespec with Some (n,f) -> (Some n,f) | _ -> (None,false) in
-  try
-    match xpr with
-    | XConst (IntConst num) ->
-      let v = numerical_to_doubleword num in
-      if has_symbolic_name ~ty v then 
-	Some (get_symbolic_name ~ty v) 
-      else if flags then
-	let name = Option.get ty in
-	if has_symbolic_flags name then
-	  let flagNames = get_symbolic_flags name v in
-	  match flagNames with
-	  | [] -> Some "none"
-	  | _ -> Some (String.concat "," flagNames)
-	else
-	  None
-      else None
-    | _ -> None
-  with
-    Invalid_argument s -> 
-      begin
-	ch_error_log#add "invalid argument"
-	  (LBLOCK [ STR "get_symbolic_name: " ; STR s ]) ;
-	None
-      end
-
+  match xpr with
+  | XConst (IntConst num) ->
+     (try
+        let v = numerical_to_doubleword num in
+        if has_symbolic_name ~ty v then 
+	  Some (get_symbolic_name ~ty v) 
+        else if flags then
+	  let name = Option.get ty in
+	  if has_symbolic_flags name then
+	    let flagNames = get_symbolic_flags name v in
+	    match flagNames with
+	    | [] -> Some "none"
+	    | _ -> Some (String.concat "," flagNames)
+	  else
+	    None
+        else None
+      with
+      | BCH_failure p  ->
+         let msg = LBLOCK [ STR "get_xpr_symbolic_name: " ; x2p xpr ;
+                            STR " (" ; p ; STR ")" ] in
+         begin
+           ch_error_log#add "doubleword conversion" msg ;
+           None
+         end)
+  | _ -> None
 
 let read_xml_description (node:xml_element_int) =
   let get = node#getAttribute in

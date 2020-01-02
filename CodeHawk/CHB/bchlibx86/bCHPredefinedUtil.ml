@@ -79,8 +79,11 @@ let tooff s =
 
 let toimm2 s =  (string_to_doubleword ("0x" ^ s))#to_int
 
-let is_code_address (n:numerical_t) = 
-  system_info#is_code_address (numerical_to_doubleword n)
+let is_code_address (n:numerical_t) =
+  try
+    system_info#is_code_address (numerical_to_doubleword n)
+  with
+  | _ -> false
 
 let intvalue_to_string (n:int) =
   try
@@ -93,7 +96,7 @@ let intvalue_to_string (n:int) =
     else
 	string_of_int n
   with
-    _ -> string_of_int n
+  | _ -> string_of_int n
 
 let regindexstring_to_reg (s:string) =
   match s with
@@ -128,11 +131,14 @@ let xpr_to_pretty (floc:floc_int) (x:xpr_t) =
     | XConst XRandom -> STR "?"
     | _ -> default ())
   with
-    _ -> default ()
+  | _ -> default ()
 
 let xpr_to_hexpretty (floc:floc_int) (x:xpr_t) =
-  match x with
-  | XConst (IntConst num) -> (numerical_to_doubleword num)#toPretty
+  try
+    match x with
+    | XConst (IntConst num) -> (numerical_to_doubleword num)#toPretty
+    | _ -> xpr_to_pretty floc x
+  with
   | _ -> xpr_to_pretty floc x
 
 let xpr_to_fppretty (floc:floc_int) (x:xpr_t) = 
@@ -298,8 +304,7 @@ let set_functionpointer (name:string) (floc:floc_int) (xpr:xpr_t) =
   let x = floc#inv#rewrite_expr xpr (floc#env#get_variable_comparator) in
   match x with
   | XConst (IntConst num) ->
-    begin
-      try 
+     (try
 	let dw = numerical_to_doubleword num in
 	if system_info#is_code_address dw then
 	  begin
@@ -308,28 +313,32 @@ let set_functionpointer (name:string) (floc:floc_int) (xpr:xpr_t) =
               "predefined semantics declared function entry point"
 	      (LBLOCK [ floc#l#toPretty ; STR ": " ; dw#toPretty ;
                         STR " set by " ; STR name ])
-	  end
+	   end
       with
-	_ -> ()
-    end
+      | _ -> ())
   | _ -> ()
        
 let set_delphi_exception_handler_table (floc:floc_int) (x:xpr_t) =
   match x with
   | XConst (IntConst num) ->
-    let tptr = (numerical_to_doubleword num)#add_int 4 in
-    begin
-      match FFU.get_read_only_initialized_doubleword tptr with
-      | Some jtaddr when system_info#has_jumptable jtaddr ->
-	begin
-	  system_info#set_virtual_function_table jtaddr ;
-	  chlog#add "exception handler table"
-	    (LBLOCK [ floc#l#toPretty ; STR ": " ; xpr_to_pretty floc x ])
-	end
-      | _ ->
-	chlog#add "exception handler table not found"
-	  (LBLOCK [ floc#l#toPretty ; STR ": " ; xpr_to_pretty floc x ])
-    end
+     (try
+        let tptr = (numerical_to_doubleword num)#add_int 4 in
+        begin
+          match FFU.get_read_only_initialized_doubleword tptr with
+          | Some jtaddr when system_info#has_jumptable jtaddr ->
+	     begin
+	       system_info#set_virtual_function_table jtaddr ;
+	       chlog#add
+                 "exception handler table"
+	         (LBLOCK [ floc#l#toPretty ; STR ": " ; xpr_to_pretty floc x ])
+	     end
+          | _ ->
+	     chlog#add
+               "exception handler table not found"
+	       (LBLOCK [ floc#l#toPretty ; STR ": " ; xpr_to_pretty floc x ])
+        end
+      with
+      | _ -> ())
   | _ -> ()
 	  
 

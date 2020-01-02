@@ -579,7 +579,10 @@ object (self)
     self#mk_variable
       (varmgr#make_memory_variable (self#mk_unknown_memory_reference s) NoOffset)
 
-  method mk_memory_variable ?(save_name=true) (memref:memory_reference_int) (offset:numerical_t) =
+  method mk_memory_variable
+           ?(save_name=true)
+           (memref:memory_reference_int)
+           (offset:numerical_t) =
     if memref#is_unknown_reference then
       self#mk_num_temp
     else

@@ -2040,7 +2040,7 @@ object (self)
     let cfg = code_graph#to_cfg entryLabel exitLabel in
     let body = LF.mkCode [ CFG (procName, cfg) ] in
     let proc = LF.mkProcedure procName [] [] scope body in
-    let _ = pverbose [ proc#toPretty ; NL ] in
+    (* let _ = pverbose [ proc#toPretty ; NL ] in *)
     chif_system#add_procedure proc
 
 end

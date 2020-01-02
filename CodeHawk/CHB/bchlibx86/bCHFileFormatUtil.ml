@@ -29,8 +29,10 @@
 
 (* chlib *)
 open CHNumerical
+open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHXmlDocument
    
 (* bchlib *)
@@ -119,9 +121,18 @@ let is_image_address (n:numerical_t) =
   if is_elf () then
     true    (* TBD *)
   else
-    match PEH.pe_header#get_containing_section_name (numerical_to_doubleword n) with
-    | Some _ -> true
-    | _ -> false
+    try
+      match PEH.pe_header#get_containing_section_name (numerical_to_doubleword n) with
+      | Some _ -> true
+      | _ -> false
+    with
+    | BCH_failure p ->
+       let msg = LBLOCK [ STR "is_image_address: " ; n#toPretty ;
+                          STR " (" ; p ; STR ")" ] in
+       begin
+         ch_error_log#add "doubleword conversion" msg ;
+         false
+       end
 
 let is_exported (vaddr:doubleword_int) =
   if is_elf () then

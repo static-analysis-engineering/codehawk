@@ -89,7 +89,10 @@ let analyze_x86_function faddr f =
        else
          begin
 	   chlog#add "skip relational analysis" faddr#toPretty ;
-           pr_debug [ STR "skip LR analysis of " ; faddr#toPretty ; NL ]
+           pr_debug [ STR "skip LR analysis of " ; faddr#toPretty ;
+                      STR " (loop complexity: " ; INT loopcomplexity ;
+                      STR ", variable complexity: " ;
+                      STR (Printf.sprintf "%.0f" varcomplexity) ; STR ")" ; NL ]
          end) ;
       analyze_procedure_with_valuesets proc chif_system#get_system ;
       extract_ranges finfo bb_invariants#get_invariants ;

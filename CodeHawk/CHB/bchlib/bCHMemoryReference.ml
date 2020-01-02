@@ -124,11 +124,16 @@ let stack_offset_to_name offset =
   | _ -> "var.[" ^ (memory_offset_to_string offset) ^ "]"
 
 let global_offset_to_name offset =
-  match offset with
-  | ConstantOffset (n,s) when n#gt numerical_zero ->
-     "gv_" ^ (numerical_to_doubleword n)#to_hex_string
-     ^ (memory_offset_to_string s)
-  | _ -> "gv_" ^ (memory_offset_to_string offset)
+  try
+    match offset with
+    | ConstantOffset (n,s) when n#gt numerical_zero ->
+       "gv_" ^ (numerical_to_doubleword n)#to_hex_string
+       ^ (memory_offset_to_string s)
+    | _ -> "gv_" ^ (memory_offset_to_string offset)
+  with
+  | BCH_failure p ->
+     raise (BCH_failure
+              (LBLOCK [ STR "global_offset_to_name: " ; p ]))
 
 let realigned_stack_offset_to_name offset =
   match offset with

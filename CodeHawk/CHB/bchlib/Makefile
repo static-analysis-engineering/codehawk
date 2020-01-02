@@ -26,6 +26,7 @@ MLIS := \
 	bCHXmlUtil \
 	bCHUtilities \
 	bCHBasicTypes \
+	bCHSystemSettings \
 	bCHSumTypeSerializer \
 	bCHDictionary \
 	bCHInterfaceDictionary \
@@ -33,7 +34,6 @@ MLIS := \
 	bCHInvDictionary \
 	bCHTypeInvDictionary \
 	bCHJavaBasicTypes \
-	bCHSystemSettings \
 	bCHVariableType \
 	bCHTypeDefinitions \
 	bCHVariableTypeUtil \
@@ -95,6 +95,7 @@ SOURCES := \
 	bCHBasicTypes \
 	bCHDoubleword \
 	bCHXmlUtil \
+	bCHSystemSettings \
 	bCHSumTypeSerializer \
 	bCHDictionary \
 	bCHInterfaceDictionary \
@@ -105,7 +106,6 @@ SOURCES := \
 	bCHVarDictionary \
 	bCHInvDictionary \
 	bCHTypeInvDictionary \
-	bCHSystemSettings \
 	bCHTypeDefinitions \
 	bCHVariableTypeUtil \
 	bCHJavaSignatures \

@@ -151,6 +151,7 @@ object (self)
     let dname = demangle name in
     if dname = "vftable" || dname = "vbtable" then () 
     else if system_info#is_code_address faddr then
+      let _ = chlog#add  "add function:exported item" faddr#toPretty in
       (functions_data#add_function faddr)#add_name name
     else
       system_info#add_exported_item_name faddr name

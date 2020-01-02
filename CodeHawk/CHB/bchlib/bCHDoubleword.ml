@@ -50,6 +50,8 @@ let e32  = e16 * e16
 let ffff = e16 - 1
 let ffff_ffff = e32 - 1
 
+let nume32 = mkNumerical e32
+
 (* utility functions *)
 let get_nibbles v n =
   let rec aux v pos nibbles =
@@ -308,13 +310,9 @@ let create_doubleword (n:int) =
     if n >= 0 && n < e32 then n
     else if abs n <= e31 then n + e32
     else
-      begin
-	ch_error_log#add
-          "invalid argument"
-	  (LBLOCK [ STR "create_doubleword: " ; INT n ;
-                    STR " cannot be represented as a 32 bit value" ]);
-	raise (Invalid_argument "create_doubleword")
-      end in
+      raise (BCH_failure
+               (LBLOCK [ STR "create_doubleword: " ; INT n ;
+                         STR " cannot be represented as a 32 bit value"  ])) in
   new doubleword_t sanitized_n
 
 
@@ -323,84 +321,64 @@ let make_doubleword (l:int) (h:int) =
   try
     create_doubleword ((h * e16) + l)
   with
-      Invalid_argument _ ->
-	begin
-	  ch_error_log#add
-            "invalid argument"
-	    (LBLOCK [ STR "make_doubleword with low: " ;
-                      INT l ; STR "; high: " ; INT h ]) ;
-	  raise (Invalid_argument "make_doubleword")
-	end
+  | BCH_failure p ->
+     raise (BCH_failure
+              (LBLOCK [ STR "make_doubleword with low: " ;  INT l ;
+                        STR " and high: " ; INT h ; STR " (" ; p ;
+                        STR ")" ]))
 
 (* return the doubleword associated with a hash index value *)
 let index_to_doubleword (index:dw_index_t) = 
   try
     create_doubleword index
   with
-      Invalid_argument _ ->
-	begin
-	  ch_error_log#add
-            "invalid argument" (LBLOCK [ STR "index_to_doubleword: " ; 
-					 INT index ; STR ")" ]) ;
-	  raise (Internal_error "index_to_doubleword")
-	end
+  | BCH_failure p ->
+     raise (BCH_failure
+              (LBLOCK [ STR "index_to_doubleword: " ; p ]))
 
 (* create a doubleword from an integer *)
 let int_to_doubleword i = 
   try
     create_doubleword i
   with
-      Invalid_argument _ ->
-	begin
-	  ch_error_log#add
-            "invalid argument" (LBLOCK [ STR "int_to_doubleword: " ; INT i ]) ;
-	  raise (Invalid_argument "int_to_doubleword")
-	end
+  | BCH_failure p ->
+     raise (BCH_failure
+              (LBLOCK [ STR "int_to_doubleword: " ; INT i ;
+                        STR " (" ; p ; STR ")" ]))
 
 let big_int_to_doubleword bi = 
   try
     create_doubleword (B.int_of_big_int bi)
   with
-      Invalid_argument _ ->
-	begin
-	  ch_error_log#add
-            "invalid argument" 
-	    (LBLOCK [ STR "big_int_to_doubleword: " ; INT (B.int_of_big_int bi) ]) ;
-	  raise (Invalid_argument "big_int_to_doubleword")
-	end
-    | Failure _ ->
-      begin
-	ch_error_log#add
-          "invalid argument" 
-	  (LBLOCK [ STR "big_int_to_doubleword: (too large for int)" ;
-                    STR (B.string_of_big_int bi) ]);
-	raise (Invalid_argument "big_int_to_doubleword")
-      end
+  | BCH_failure p ->
+     raise (BCH_failure
+              (LBLOCK [ STR "big_int_to_doubleword: " ;
+                        STR (B.string_of_big_int bi) ;
+                        STR " ("  ; p ; STR ")" ]))
 
 let numerical_to_doubleword (num:numerical_t) =
   try
     big_int_to_doubleword num#getNum
   with
-      Invalid_argument _ ->
-	begin
-	  ch_error_log#add "invalid argument"
-	    (LBLOCK [ STR "numerical_to_doubleword: " ; num#toPretty ]) ;
-	  raise (Invalid_argument "numerical_to_doubleword")
-	end
+  |  BCH_failure p ->
+      raise (BCH_failure
+               (LBLOCK [ STR "numerical_to_doubleword: " ; num#toPretty ;
+                         STR " (" ; p ; STR ")" ]))
 
 let dw_index_to_string (index:dw_index_t) =
-  (index_to_doubleword index)#to_numerical#toString
+  try
+    (index_to_doubleword index)#to_numerical#toString
+  with
+  | BCH_failure p ->
+     raise (BCH_failure (LBLOCK [ STR "dw_index_to_string: " ; p ]))
 
 let string_to_dw_index (s:string) = 
   try
     (numerical_to_doubleword (mkNumericalFromString s))#index
   with
-    Invalid_argument _ ->
-      begin
-	ch_error_log#add "invalid argument" 
-	  (LBLOCK [ STR "string_to_dw_index: " ; STR s ]);
-	raise (Invalid_argument "string_to_dw_index")
-      end	
+  | BCH_failure p ->
+     raise (BCH_failure (LBLOCK [ STR "string_to_dw_index: " ; STR s ;
+                                  STR " (" ; p ; STR ")"  ]))
 
 let dw_index_to_int (index:dw_index_t) = index
 
@@ -412,31 +390,23 @@ let string_to_doubleword s =
     let bi = B.big_int_of_int64 i64 in
     big_int_to_doubleword bi
   with
-      Invalid_argument _ ->
-	begin
-	  ch_error_log#add
-            "invalid argument" (LBLOCK [ STR "string_to_doubleword: " ; STR s ]) ;
-	  raise (Invalid_argument ("string_to_doubleword:" ^ s))
-	end
-    | Failure f ->
-      begin
-	ch_error_log#add "invalid argument" 
-	  (LBLOCK [ STR "string_to_doubleword (" ; STR f ; STR "): " ; STR s ]);
-	raise (Invalid_argument ("string_to_doubleword:" ^ s))
-      end
+  | Failure f ->
+     raise (BCH_failure
+              (LBLOCK [ STR "string_to_doubleword: " ; STR s ; STR ": " ;
+                        STR f ]))
+  | BCH_failure p ->
+     raise (BCH_failure
+              (LBLOCK [ STR "string_to_doubleword: " ; STR s ;
+                        STR " (" ; p ; STR ")" ]))
 
 let numerical_to_hex_string num = 
   try
     (big_int_to_doubleword num#getNum)#to_hex_string
   with
-      Invalid_argument _ ->
-	begin 
-	  ch_error_log#add
-            "invalid argument"
-            (LBLOCK [ STR "numerical_to_hex_string: " ; num#toPretty ]) ;
-	  raise (BCH_failure
-                   (LBLOCK [ STR "numerical_to_hex_string" ; num#toPretty ]))
-	end
+  | BCH_failure p  ->
+     raise (BCH_failure
+              (LBLOCK [ STR "numerical_to_hex_string: " ; num#toPretty ;
+                        STR " (" ; p ; STR ")" ]))
 
 let numerical_to_signed_hex_string num = 
   try
@@ -448,21 +418,31 @@ let numerical_to_signed_hex_string num =
     else
       dw#to_hex_string
   with
-    Invalid_argument _ ->
-      begin
-	ch_error_log#add
-          "invalid argument" 
-	  (LBLOCK [ STR "numerical_to_signed_hex_string: " ; num#toPretty ]);
-	raise (Invalid_argument "numerical_to_signed_hex_string")
-      end
+  | BCH_failure p ->
+     raise (BCH_failure
+              (LBLOCK [ STR "numerical_to_signed_hex_string: " ; num#toPretty ;
+                        STR " (" ; p ; STR ")" ]))
 
 let symbol_to_doubleword (symbol:symbol_t) =
   match symbol#getAttributes with
-    s :: _ -> string_to_doubleword s
+  | s :: _ ->
+     (try
+        string_to_doubleword s
+      with
+      | BCH_failure p ->
+         raise (BCH_failure
+                  (LBLOCK [ STR "symbol_to_doubleword: " ; STR s ;
+                            STR " (" ; p ; STR ")" ])))
   | _ ->
      raise (BCH_failure
               (LBLOCK [ STR "Symbol cannot be converted to doubleword: " ;
                         symbol#toPretty ]))
 
-let doubleword_to_symbol (name:string) ?(atts=[]) (dw:doubleword_int) = 
-  new symbol_t ~atts:(dw#to_hex_string::atts) name
+let doubleword_to_symbol (name:string) ?(atts=[]) (dw:doubleword_int) =
+  try
+    new symbol_t ~atts:(dw#to_hex_string::atts) name
+  with
+  | BCH_failure p ->
+     raise (BCH_failure
+              (LBLOCK [ STR "doubleword_to_symbol: " ; STR name ; STR ", " ;
+                        dw#toPretty ; STR " (" ; p ; STR ")" ]))

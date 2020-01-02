@@ -291,7 +291,17 @@ let identify_data_blocks is_code_address header =
   let sectionVA = section#get_section_VA in
   let codestring = section#get_exe_string in
   let newDataBlocks = ref 0 in
-  let is_code n = is_code_address (numerical_to_doubleword n) in
+  let is_code n =
+    try
+      is_code_address (numerical_to_doubleword n)
+    with
+    | BCH_failure p ->
+       let msg = LBLOCK [ STR "identify_data_blocks.is_code: " ; n#toPretty ;
+                          STR " (" ; p ; STR ")" ] in
+       begin
+         chlog#add "doubleword conversion" msg;
+         false
+       end in
   let get_instr = !assembly_instructions#at_address in
   let has_next_instr = !assembly_instructions#has_next_valid_instruction in
   let get_next_instr iaddr = 
@@ -300,8 +310,14 @@ let identify_data_blocks is_code_address header =
   let add_data_block instr nextInstr offset jtoffset jt =
     let jtlength = jt#get_length - (jtoffset#subtract jt#get_start_address)#to_int in
     let jtlength = jtlength / 4 in
-    let db = create_jumptable_offset_block (numerical_to_doubleword offset) sectionVA
-      codestring jtlength in
+    let db =
+      try
+        create_jumptable_offset_block
+          (numerical_to_doubleword offset) sectionVA codestring jtlength
+      with
+      | BCH_failure p ->
+         raise (BCH_failure
+                  (LBLOCK [ STR "identify_data_blocks.db: " ; p ])) in
     begin
       system_info#set_jump_target nextInstr#get_address jtoffset jt db ;
       system_info#add_data_block db ;
@@ -319,43 +335,46 @@ let identify_data_blocks is_code_address header =
 	match (dst#get_kind,src#get_kind) with
 	| (Reg dreg, IndReg (_,offset))
 	| (Reg dreg, ScaledIndReg (_,_,_,offset)) when is_code offset ->
-	   if system_info#has_data_block (numerical_to_doubleword offset) then () else
+	   if system_info#has_data_block (numerical_to_doubleword offset) then
+             ()
+           else
 	     if has_next_instr iaddr then
 	       begin
 		 let nextInstr = get_next_instr iaddr in
 		 match nextInstr#get_opcode with
 		 | IndirectJmp op ->
-		   begin
-		     match op#get_kind with
-		     | ScaledIndReg (_,Some ireg,_,jtoffset) when is_code jtoffset &&
-			 ireg = dreg ->
-		       let jtoffset = numerical_to_doubleword jtoffset in
-		       (try
-			 begin
-			   match get_jumptable jtoffset with
-			   | Some jt -> add_data_block instr nextInstr offset jtoffset jt
-			   | _ -> 
-			     match create_jumptable jtoffset sectionVA is_code_address codestring with
-			     | Some jt ->
-			       begin
-				 system_info#add_jumptable jt ;
-				 add_data_block instr nextInstr offset jtoffset jt ;
-				 chlog#add "add 2-jump table"
-				   (LBLOCK [ jtoffset#toPretty ; STR ": " ; 
-					     nextInstr#toPretty ])
-			       end
-			     | _ -> ()
-			 end
-		       with
-			 BCH_failure p ->
-			   ch_error_log#add "incorrect data block"
-			   (LBLOCK [ iaddr#toPretty ;
-				      STR "; jtoffset: " ; jtoffset#toPretty ;
-				      STR "; offset: " ; offset#toPretty]))
-		  | _ -> ()
-		end
-	      | _ -> ()
-	    end
+		    begin
+		      match op#get_kind with
+		      | ScaledIndReg (_,Some ireg,_,jtoffset)
+                           when is_code jtoffset && ireg = dreg ->
+		         let jtoffset = numerical_to_doubleword jtoffset in
+		         (try
+			    begin
+			      match get_jumptable jtoffset with
+			      | Some jt -> add_data_block instr nextInstr offset jtoffset jt
+			      | _ ->
+			         match create_jumptable jtoffset sectionVA is_code_address codestring with
+			         | Some jt ->
+			            begin
+				      system_info#add_jumptable jt ;
+				      add_data_block instr nextInstr offset jtoffset jt ;
+				      chlog#add "add 2-jump table"
+				                (LBLOCK [ jtoffset#toPretty ; STR ": " ;
+					                  nextInstr#toPretty ])
+			            end
+			         | _ -> ()
+			    end
+		          with
+			    BCH_failure p ->
+			    ch_error_log#add
+                              "incorrect data block"
+			      (LBLOCK [ iaddr#toPretty ;
+				        STR "; jtoffset: " ; jtoffset#toPretty ;
+				        STR "; offset: " ; offset#toPretty]))
+		      | _ -> ()
+		    end
+	         | _ -> ()
+	       end
 	| _ -> ()
       end
     | _ -> ())
@@ -511,6 +530,10 @@ let get_indirect_jump_targets (op:operand_int) =
 	  (LBLOCK [ STR "not found for offset " ; jumpBase#toPretty ]) ;
 	None
     with
+    | BCH_failure p ->
+       raise (BCH_failure
+                (LBLOCK [ STR "get_indirect_jump_targets: " ; op#toPretty ;
+                          STR " (" ; p ; STR ")" ]))
     | Invalid_argument s ->
       begin
 	ch_error_log#add "invalid argument"
@@ -570,7 +593,7 @@ let set_block_boundaries () =
           with
           | BCH_failure p ->
 	     chlog#add "disassembly" 
-	               (LBLOCK [ STR "jump table target incorrect: " ; p ;
+	               (LBLOCK [ STR "jump table targetb incorrect: " ; p ;
 		                 STR " (start: " ; jt#get_start_address#toPretty ; STR ")" ])
           | Invalid_argument s ->
              raise (BCH_failure (LBLOCK [ STR "record jump-table targets: " ;
@@ -858,13 +881,10 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
     if va#equal wordzero then
       (Some [],prev,[])
     else if instr#is_block_entry then
-      let _ = pverbose [ STR "blockentry" ; NL ] in
       (None,prev,[])
     else if is_nr_call floc instr then
-      let _ = pverbose [ STR "nr call" ; NL ] in
       (Some [],va,[])
     else if instr#is_inlined_call then
-      let _ = pverbose [ STR "inlined call" ; NL ] in
       let a = match instr#get_opcode with
         | DirectCall op -> op#get_absolute_address
         | _ ->
@@ -892,19 +912,11 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
     else if !assembly_instructions#has_next_valid_instruction va then
       find_last_instruction (get_next_instr_address va) va
     else
-      let _ = pverbose [ STR "other" ; NL ] in
       (None,va,[]) in
   let (succ,lastAddress,inlinedblocks) = 
     if !assembly_instructions#has_next_valid_instruction baddr then
       find_last_instruction (get_next_instr_address baddr) baddr
     else (None,baddr,[]) in
-  let _ = match succ with
-    | Some succ ->
-       pverbose [ STR "Last address: " ; lastAddress#toPretty ;
-                  STR " with successors: " ;
-                  pretty_print_list succ (fun s -> STR s)  "[" "," "]" ; 
-                  NL ]
-    | _ -> () in
   let successors = match succ with
     | Some s -> s
     | _ -> get_successors faddr lastAddress in
@@ -1560,6 +1572,7 @@ let set_call_address (floc:floc_int) (op:operand_int) =
 	  else
 	    begin
 	      ignore (functions_data#add_function dw) ;
+              pverbose [ STR "add funcion entry point: " ; dw#toPretty ; NL ] ;
 	      chlog#add "global variable function entry point" dw#toPretty
 	    end
 	else

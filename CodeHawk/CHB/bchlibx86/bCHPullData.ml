@@ -199,8 +199,10 @@ and get_encodepointer_target (floc:floc_int) =
 
 and get_constant_call_targets (floc:floc_int) (c:numerical_t) = 
   let is_code_address n =
-    (try system_info#is_code_address (numerical_to_doubleword n) 
-     with Invalid_argument _ -> false) in
+    (try
+       system_info#is_code_address (numerical_to_doubleword n)
+     with
+     | _ -> false) in
   try
     let dw = numerical_to_doubleword c in
     if assembly_functions#has_function_by_address dw then
@@ -223,12 +225,13 @@ and get_constant_call_targets (floc:floc_int) (c:numerical_t) =
 	  []
 	end
   with
-    _ -> 
-      begin
-	chlog#add "error in resolving indirect call"
-	  (LBLOCK [ floc#l#toPretty ; STR ": Constant value target: " ; c#toPretty ]) ;
-	[]
-      end
+  | _ ->
+     begin
+       chlog#add
+         "error in resolving indirect call"
+	 (LBLOCK [ floc#l#toPretty ; STR ": Constant value target: " ; c#toPretty ]) ;
+       []
+     end
 
 
 and get_global_call_targets 
@@ -237,8 +240,10 @@ and get_global_call_targets
 and extract_call_target 
     (cfloc:floc_int) (finfo:function_info_int) (x:xpr_t) (offsets:numerical_t list) =
   let is_code_address n =
-      (try system_info#is_code_address (numerical_to_doubleword n) 
-       with Invalid_argument _ -> false) in
+    (try
+       system_info#is_code_address (numerical_to_doubleword n)
+     with
+     | _ -> false) in
   let env = finfo#env in
   match x with
   | XVar v when env#is_return_value v ->
@@ -256,7 +261,8 @@ and extract_call_target
     [ AppTarget (numerical_to_doubleword num) ]    
   | _ -> 
     begin
-      chlog#add "call target extraction"
+      chlog#add
+        "call target extraction"
 	(LBLOCK [ finfo#a#toPretty ; STR ": " ; pr_expr x]) ;
       []
     end

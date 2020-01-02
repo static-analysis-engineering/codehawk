@@ -122,11 +122,18 @@ let offset_to_string (offset:numerical_t) =
       else
 	numerical_to_signed_hex_string offset
     with
-      Invalid_argument s ->
-	begin
-	  ch_error_log#add "illegal offset" (LBLOCK [ offset#toPretty ; STR ": " ; STR s ]) ;
-	  "illegal offset(" ^ offset#toString ^ ")"
-	end
+    | BCH_failure p ->
+       let msg = LBLOCK [ STR "offset_to_string: " ; offset#toPretty ;
+                          STR " (" ; p ; STR ")" ] in
+       begin
+         ch_error_log#add "illegal offset"  msg;
+         "illegal offset(" ^ offset#toString ^ ")"
+       end
+    | Invalid_argument s ->
+       begin
+	 ch_error_log#add "illegal offset" (LBLOCK [ offset#toPretty ; STR ": " ; STR s ]) ;
+	 "illegal offset(" ^ offset#toString ^ ")"
+       end
 	  
 let asm_operand_kind_to_string = function
   | Flag f -> eflag_to_string f
@@ -747,11 +754,8 @@ let read_target8_operand (base:doubleword_int) (ch:pushback_stream_int) =
     let offsetdw = numerical_to_doubleword offset in
     absolute_op (base#add offsetdw) 4 RD
   with
-    Invalid_argument s ->
-      begin
-	ch_error_log#add "disassembly" (STR "failure in read_target8_operand") ;
-	raise (Invalid_argument s)
-      end
+  | BCH_failure p ->
+     raise (BCH_failure (LBLOCK [ STR "read_target8_operand: " ; p ]))
 	
 (* read a relative 4-byte jump-target and convert to an
    absolute address using the current position in the code *)
@@ -763,10 +767,6 @@ let read_target32_operand (base:doubleword_int) (ch:pushback_stream_int) =
     let offsetdw = numerical_to_doubleword offset in
     absolute_op (base#add offsetdw) 4 RD
   with
-    Invalid_argument s ->
-      begin
-	ch_error_log#add "disassembly" (STR "failure in read_target32_operand") ;
-	raise (Invalid_argument s)
-      end
-	
+  | BCH_failure p ->
+     raise (BCH_failure (LBLOCK [ STR "read_target32_operand: " ; p ]))
 	

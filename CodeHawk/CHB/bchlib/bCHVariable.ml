@@ -539,7 +539,12 @@ object (self)
       let offset = self#get_memvar_offset v in
       if is_constant_offset offset then
         let noffset = get_total_constant_offset offset in
-        numerical_to_doubleword noffset
+        try
+          numerical_to_doubleword noffset
+        with
+        | BCH_failure p ->
+           raise_memref_type_error
+             memref (LBLOCK [ STR "Global reference: " ; p ])
       else
         raise_memref_type_error memref (STR "Global reference")
     else

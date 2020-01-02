@@ -45,6 +45,7 @@ open BCHLibTypes
 open BCHLocation
 open BCHMetricsHandler
 open BCHSystemInfo
+open BCHSystemSettings
 
 (* bchlibx86 *)
 open BCHAssemblyInstructions
@@ -199,11 +200,13 @@ object (self)
     let pfaddr = ref wordzero in
     let reset () = pfaddr := wordzero in
     let p1 a = pfaddr := a in
-    let p2 () = begin 
-      ignore (functions_data#add_function !pfaddr) ; 
-      fnsAdded := !pfaddr :: !fnsAdded ;
-      reset () 
-    end in
+    let p2 () =
+      begin
+        pverbose [ STR "add function by preamble: " ; !pfaddr#toPretty ; NL ] ;
+        ignore (functions_data#add_function !pfaddr) ;
+        fnsAdded := !pfaddr :: !fnsAdded ;
+        reset ()
+      end in
     let _ = !assembly_instructions#itera (fun a instr ->
       if H.mem table a#index then reset () else
 	let bytes = (instr#get_instruction_bytes) in

@@ -196,29 +196,38 @@ object (self)
       self#f#ftinv#add_const_fact self#cia c t ;
       match t with
       | TPtr (tty,_) when c#gt numerical_zero ->
-	let base = numerical_to_doubleword c in
-	if system_info#get_image_base#le base then
-	  let gv = self#f#env#mk_global_variable c in
-	  begin
-	    self#add_var_type_fact gv tty ;
-	    match tty with
-	    | TNamed (name,_) when type_definitions#has_type name ->
-	      let tinfo = type_definitions#get_type name in
+         (try
+	    let base = numerical_to_doubleword c in
+	    if system_info#get_image_base#le base then
+	      let gv = self#f#env#mk_global_variable c in
 	      begin
-		match tinfo with
-		| TComp (SimpleName cname,[],_) when type_definitions#has_compinfo cname ->
-		  let cinfo = type_definitions#get_compinfo cname in
-		  List.iter (fun fldinfo ->
-                      let goffset = c#add (mkNumerical fldinfo.bfoffset) in
-		      let gvar = self#f#env#mk_global_variable goffset in
-		      self#add_var_type_fact
-                        gvar
-                        ~structinfo:[name ; fldinfo.bfname ]
-                        fldinfo.bftype) cinfo.bcfields
-		| _ -> ()
+	        self#add_var_type_fact gv tty ;
+	        match tty with
+	        | TNamed (name,_) when type_definitions#has_type name ->
+	           let tinfo = type_definitions#get_type name in
+	           begin
+		     match tinfo with
+		     | TComp (SimpleName cname,[],_) when type_definitions#has_compinfo cname ->
+		        let cinfo = type_definitions#get_compinfo cname in
+		        List.iter (fun fldinfo ->
+                            let goffset = c#add (mkNumerical fldinfo.bfoffset) in
+		            let gvar = self#f#env#mk_global_variable goffset in
+		            self#add_var_type_fact
+                              gvar
+                              ~structinfo:[name ; fldinfo.bfname ]
+                              fldinfo.bftype) cinfo.bcfields
+		     | _ -> ()
+	           end
+	        | _ -> ()
 	      end
-	    | _ -> ()
-	  end
+          with
+          | BCH_failure p ->
+             let msg = LBLOCK [ STR "add_const_type_fact: " ; c#toPretty ;
+                                STR "; " ; self#l#toPretty ; STR " (" ; p ; STR ")" ] in
+             begin
+               ch_error_log#add "doubleword conversion" msg ;
+               ()
+             end)
       | _ -> ()
     end
 
@@ -475,7 +484,18 @@ object (self)
           (LBLOCK [ STR "get_memory_variable_1: address: " ; x2p address ]) in
       match address with
       | XConst (IntConst n) ->
-         self#env#mk_global_variable n
+         (try
+            let base = numerical_to_doubleword n in
+            if system_info#get_image_base#le base then
+              self#env#mk_global_variable n
+            else
+              default ()
+          with
+          | BCH_failure p ->
+             raise (BCH_failure
+                      (LBLOCK [ STR "get_memory_variable_1.get_var_from_address: " ;
+                                STR "; " ; self#l#toPretty ;
+                                n#toPretty ; STR " (" ; p ; STR ")" ])))
       | _ ->
          let (memref,memoffset) = self#decompose_address  address in
          if is_constant_offset memoffset then
@@ -550,8 +570,36 @@ object (self)
   method get_memory_variable_4 (index:variable_t) (scale:int) (offset:numerical_t) =
     let indexExpr = self#rewrite_variable_to_external index in
     let offsetXpr = simplify_xpr (XOp (XMult, [ int_constant_expr scale ; indexExpr ])) in
+    let offsetXpr = simplify_xpr (XOp (XPlus, [num_constant_expr offset ; offsetXpr ])) in
+    let default () = self#env#mk_unknown_memory_variable (x2s offsetXpr) in
     match offsetXpr with
-    | XConst (IntConst n) -> self#env#mk_global_variable n
+    | XConst (IntConst n) when n#geq nume32 ->
+       let n = n#modulo nume32 in
+       (try
+          let base = numerical_to_doubleword n in
+          if system_info#get_image_base#le base then
+            self#env#mk_global_variable n
+          else
+            default ()
+        with
+        | BCH_failure p ->
+           raise (BCH_failure
+                    (LBLOCK [ STR "get_memory_variable_4: " ; n#toPretty ;
+                              STR "; " ; self#l#toPretty ;
+                              STR " (" ; p ; STR ")" ])))
+    | XConst (IntConst n) ->
+       (try
+          let base = numerical_to_doubleword n in
+          if system_info#get_image_base#le base then
+            self#env#mk_global_variable n
+          else
+            default ()
+        with
+        | BCH_failure p ->
+           raise (BCH_failure
+                    (LBLOCK [ STR "get_memory_variable_4: " ; n#toPretty ;
+                              STR "; " ; self#l#toPretty ;
+                              STR " (" ; p ; STR ")" ])))
     | _ ->
        begin
          track_function
@@ -882,19 +930,23 @@ object (self)
    method get_lhs_from_address (xpr:xpr_t) =
      let xpr = self#inv#rewrite_expr xpr (self#env#get_variable_comparator) in
      let default () =
-       self#env#mk_memory_variable (self#env#mk_unknown_memory_reference "lhs-from-address")
-                                   numerical_zero in
+       self#env#mk_memory_variable
+         (self#env#mk_unknown_memory_reference "lhs-from-address")
+         numerical_zero in
      match xpr with
      | XConst (IntConst n) when n#gt numerical_zero ->
-       (try
-	  self#env#mk_global_variable n
-	with
-	  _ ->
-	    begin
-	      ch_error_log#add "invalid address expression"
-		(LBLOCK [ self#l#toPretty ; STR ": " ; n#toPretty ]) ;
-	      default ()
-	    end)
+        (try
+           let base = numerical_to_doubleword n in
+           if system_info#get_image_base#le base then
+	     self#env#mk_global_variable n
+           else
+             default ()
+         with
+         | BCH_failure p ->
+            raise (BCH_failure
+                     (LBLOCK [  STR "get_lhs_from_address: " ; n#toPretty ;
+                                STR "; " ; self#l#toPretty ;
+                                STR " (" ;  p ; STR ")"  ])))
      | _ ->
         default ()
 	 
@@ -1137,8 +1189,19 @@ object (self)
      try
        match t with
        | ArgValue p -> self#evaluate_api_address_argument p
-       | NumConstant num -> 
-	 Some (self#env#mk_global_variable num)
+       | NumConstant num ->
+          (try
+             let base = numerical_to_doubleword num in
+             if system_info#get_image_base#le base then
+	       Some (self#env#mk_global_variable num)
+             else
+               None
+           with
+           | BCH_failure p ->
+              raise (BCH_failure
+                       (LBLOCK [ STR "evaluate_summary_address_term: " ;
+                                 num#toPretty ; STR "; " ;
+                                 self#l#toPretty ; STR " (" ; p ; STR ")" ])))
        | ArgAddressedValue (subT,NumConstant offset) ->
 	 let optBase = self#evaluate_summary_address_term subT in
 	 begin
@@ -1189,7 +1252,18 @@ object (self)
        try
 	 let nameAddr = self#evaluate_summary_term fnameTerm returnvar in
 	 let fname = match nameAddr with
-	     XConst (IntConst n) -> string_retriever (numerical_to_doubleword n)
+	   | XConst (IntConst n) ->
+              (try
+                 string_retriever (numerical_to_doubleword n)
+               with
+               | BCH_failure p ->
+                  let msg = LBLOCK [ STR "assert_post: " ; STR  name ;
+                                     STR " with " ; n#toPretty ;
+                                     STR " (" ; p ; STR ")" ] in
+                  begin
+                    ch_error_log#add "doubleword conversion" msg ;
+                    None
+                  end)
 	   | _ -> 
 	     begin
 	       chlog#add "function-pointer: no address" (self#l#toPretty) ;
@@ -1340,8 +1414,18 @@ object (self)
 	   let rhs = 
  	     match dest with
  	     | NumConstant n ->
-	       let argDescr = (numerical_to_doubleword n)#to_hex_string in
-	       self#env#mk_side_effect_value self#cia ~global:true argDescr 
+                (try
+	           let argDescr = (numerical_to_doubleword n)#to_hex_string in
+	           self#env#mk_side_effect_value self#cia ~global:true argDescr
+                 with
+                 | BCH_failure p ->
+                    let msg = LBLOCK [ STR "get_sideeffect_assign: " ;
+                                       sideeffect_to_pretty side_effect ;
+                                       STR " (" ; p ; STR ")" ] in
+                    begin
+                      ch_error_log#add "doubleword conversion" msg ;
+                      self#env#mk_side_effect_value self#cia (bterm_to_string dest)
+                    end)
 	     | _ ->
 	       self#env#mk_side_effect_value self#cia (bterm_to_string dest) in
 	   let seAssign =
