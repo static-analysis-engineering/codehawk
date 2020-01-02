@@ -36,6 +36,13 @@ open BCHBasicTypes
 open BCHLibTypes
 open BCHUtilities
 
+(* -------------------------------------------------------------------------
+ * Command-line switches:
+ * - set_vftables: for all jump tables, if one of the targets is a function entry
+ *       then declare all targets to be function entry points, if enabled
+ *       default setting: disabled
+ *)
+
 class system_settings_t:system_settings_int =
 object (self)
 
@@ -44,6 +51,7 @@ object (self)
   val mutable exportdir = ""
   val mutable verbose = false
   val mutable jni_enabled = false
+  val mutable set_vftables_enabled = false
   val mutable sideeffects_on_globals_disabled = []
   val mutable sideeffects_on_globals_enabled = true
   val mutable abstract_stackvars_disabled = false
@@ -51,6 +59,10 @@ object (self)
   val mutable app_name = None
 
   method set_verbose = verbose <- true
+
+  method set_vftables =  set_vftables_enabled <- true
+
+  method is_set_vftables_enabled = set_vftables_enabled
 
   method set_apps_dir s = 
     begin

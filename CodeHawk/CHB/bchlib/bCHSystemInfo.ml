@@ -197,6 +197,10 @@ object (self)
 	begin 
 	  H.add thread_start_functions index e ; 
 	  ignore (functions_data#add_function start_addr) ;
+          chlog#add
+            "set thread start address"
+            (LBLOCK [ faddr#toPretty ; STR ", " ; STR iaddr ; STR ": " ;
+                      start_addr#toPretty ]) ;
 	  e 
 	end in
     H.replace entry (faddr#index,iaddr) args
@@ -231,7 +235,8 @@ object (self)
     let fd = functions_data#add_function faddr in
     begin
       fd#set_inlined ;
-      inlined_functions <- faddr :: inlined_functions
+      inlined_functions <- faddr :: inlined_functions ;
+      chlog#add "add inlined function" (faddr#toPretty)
     end
 
   method has_esp_adjustment (faddr:doubleword_int) (iaddr:doubleword_int) =
@@ -321,6 +326,10 @@ object (self)
     | "app" -> 
       let a = string_to_doubleword tgt1 in
       let _ = functions_data#add_function a in
+      let _ = chlog#add
+                "add call target as function"
+                (LBLOCK [ faddr#toPretty ; STR ", " ; iaddr#toPretty ; STR ": " ;
+                          a#toPretty ])  in
       H.add function_call_targets (faddr#index,iaddr#index) tgt
     | "jni" ->
       H.add function_call_targets (faddr#index,iaddr#index) tgt
@@ -342,6 +351,9 @@ object (self)
     | "app" -> 
       let a = string_to_doubleword tgt1 in
       let _ = functions_data#add_function a in
+      let _ = chlog#add
+                "add call target as function"
+                (LBLOCK [ iaddr#toPretty ; STR ": " ; a#toPretty ])  in
       H.add function_call_targets_i iaddr#index tgt
     | "jni" ->
       H.add function_call_targets_i iaddr#index tgt
@@ -1037,10 +1049,11 @@ object (self)
     (is_code_address:doubleword_int -> bool) 
     (read_only_section_strings:(doubleword_int * string) list) = 
     let default () =
-      List.iter (fun jt ->
-	if (List.exists functions_data#is_function_entry_point jt#get_all_targets) then
-	  self#set_virtual_function_table jt#get_start_address) self#get_jumptables in      
-    if has_file then default() else
+      if system_settings#is_set_vftables_enabled then
+        List.iter (fun jt ->
+	 if (List.exists functions_data#is_function_entry_point jt#get_all_targets) then
+	   self#set_virtual_function_table jt#get_start_address) self#get_jumptables in
+    if has_file then default () else
       match jumptables with
       | [] -> 
 	let l =  find_jumptables ~is_code_address ~read_only_section_strings in
@@ -1087,6 +1100,7 @@ object (self)
 	(LBLOCK [ STR "add " ; INT (List.length targets) ; 
 		  STR " function entry points for table at " ; jtaddr#toPretty ]) ;
       List.iter (fun vf ->
+          let _ = pverbose [ STR "add virtual function: " ;  vf#toPretty ; NL ] in
           (functions_data#add_function vf)#set_virtual) targets
     end
 

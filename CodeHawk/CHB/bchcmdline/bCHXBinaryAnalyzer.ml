@@ -81,6 +81,14 @@ open BCHSaveExports
 (* bchcmdline *)
 open BCHVersion
 
+(* -------------------------------------------------------------------------
+ * Command-line switches:
+ * - set_vftables: for all jump tables, if one of the targets is a function entry
+ *       then declare all targets to be function entry points, if enabled
+ *       default setting: disabled
+ *)
+
+
 module P = Pervasives
 
 let cmd = ref "version"
@@ -100,6 +108,8 @@ let speclist =
   [ ("-version", Arg.Unit (fun () -> ()), "show version information and exit") ;
     ("-gc", Arg.Unit (fun () -> cmd := "gc"), 
      "show ocaml garbage collector settings and exit") ;
+    ("-set_vftables",Arg.Unit  (fun () -> system_settings#set_vftables),
+     "declare jumptable targets as funcion entry points") ;
     ("-extracthex", Arg.Unit (fun () -> cmd := "extracthex"),
      "extract executable content from lisphex encoded executable") ;
     ("-stream", Arg.Unit (fun () -> cmd := "stream"),
@@ -296,6 +306,7 @@ let main () =
               exit 0
             end          
           else
+            let _ = disassembly_summary#set_disassembly_metrics (get_disassembly_metrics ()) in
 	    let _ = pr_debug [ disassembly_summary#toPretty ; NL ] in
             let _ = pr_debug [ function_stats_to_pretty
                                  assembly_functions#get_function_stats ] in
