@@ -1,0 +1,18 @@
+name: CI
+
+on: [pull_request, push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - uses: avsm/setup-ocaml@v1.0
+    - name: Install dependencies
+      run: |
+        opam install zarith
+        opam install ocamlbuild
+    - name: Compile CodeHawk
+      run: eval $(opam env) && cd CodeHawk && ./full_make.sh
