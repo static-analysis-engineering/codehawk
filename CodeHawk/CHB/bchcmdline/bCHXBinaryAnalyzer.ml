@@ -294,7 +294,7 @@ let main () =
       let (success, msg) = disassemble_pe () in
       if success then
 	let _ = disassembly_summary#record_disassembly_time ((Unix.gettimeofday ()) -. !t) in
-	let _ = pverbose [ msg ] in
+        let _ = pverbose [ msg ] in
 	let t = ref (Unix.gettimeofday ()) in
 	let (success,msg) = construct_functions_pe () in
 	if success then
@@ -343,6 +343,7 @@ let main () =
       let _ = construct_functions_elf () in
       let _ = disassembly_summary#record_construct_functions_time
                 ((Unix.gettimeofday ()) -. !t) in
+      let _ = disassembly_summary#set_disassembly_metrics (get_disassembly_metrics ()) in      
       let _ =  pr_debug [ disassembly_summary#toPretty ; NL ] in
       begin
         file_output#saveFile
@@ -360,14 +361,19 @@ let main () =
     else if !cmd = "disassemble_mips" then
       let _ = system_info#set_elf in
       let _ = system_info#initialize in
+      let t = ref (Unix.gettimeofday ()) in
       let _ = pr_debug [ STR "Load MIPS file ..." ; NL ] in
       let _ = load_elf_files () in
       let _ = pr_debug [ STR "disassemble sections ... " ; NL ] in
       let _ = disassemble_mips_sections ()  in
+      let _ = disassembly_summary#record_disassembly_time
+                ((Unix.gettimeofday ()) -. !t) in
+      let t = ref (Unix.gettimeofday ()) in
       let _ = construct_functions_mips () in
-      let _ = assembly_functions#itera
-                (fun faddr fn ->
-                  pr_debug [ NL ; NL ; faddr#toPretty ; NL ; fn#toPretty ]) in
+      let _ = disassembly_summary#record_construct_functions_time
+                ((Unix.gettimeofday ()) -. !t) in
+      let _ = disassembly_summary#set_disassembly_metrics (get_mips_disassembly_metrics ()) in      
+      let _ =  pr_debug [ disassembly_summary#toPretty ; NL ] in
       begin
         file_output#saveFile
           (get_asm_listing_filename ())
