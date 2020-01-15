@@ -39,11 +39,6 @@ open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
 
-(* bchlibx86 *)
-open BCHAssemblyBlock
-open BCHAssemblyFunction
-open BCHAssemblyFunctions
-
 class cfg_loops_t (cfg:cfg_int) =
 object
 

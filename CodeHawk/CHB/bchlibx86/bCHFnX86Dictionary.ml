@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -206,7 +206,9 @@ object (self)
       | Jcc (_,op) | Jecxz op ->
          if op#is_absolute_address then
            if floc#has_test_expr then
-             ([ "a:x" ],[ xd#index_xpr floc#get_test_expr ])
+             let tcond = floc#get_test_expr in
+             let fcond = rewrite_expr (XOp (XLNot, [ tcond ])) in
+             ([ "a:xx" ],[ xd#index_xpr tcond ; xd#index_xpr fcond ])
            else
              ([],[])
          else
