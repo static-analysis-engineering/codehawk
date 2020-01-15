@@ -609,7 +609,8 @@ object
   method set_jsignature_jar   : string -> unit
   method set_verbose          : unit
   method set_vftables         : unit
-  method set_sideeffects_on_globals_disabled: string list -> unit
+  method enable_sideeffects_on_globals : string list -> unit
+  method disable_sideeffects_on_globals: string list -> unit
   method set_abstract_stackvars_disabled    : unit
   method set_apps_dir         : string -> unit
   method set_app_summary_jars : string -> unit   (* application name *)
@@ -622,8 +623,7 @@ object
 
   (* predicates *)
   method is_verbose                       : bool
-  method is_sideeffects_on_global_disabled: string -> bool
-  method is_sideeffects_on_globals_enabled: bool
+  method is_sideeffects_on_global_enabled: string -> bool
   method is_abstract_stackvars_disabled   : bool
   method is_set_vftables_enabled          : bool
 

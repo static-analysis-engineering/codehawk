@@ -53,7 +53,6 @@ open XprXml
 (* bchlib *)
 open BCHBasicTypes
 open BCHDoubleword
-open BCHFunctionInfo
 open BCHInvDictionary
 open BCHLibTypes
 open BCHSystemSettings

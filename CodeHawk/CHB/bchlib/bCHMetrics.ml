@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -325,7 +325,7 @@ object (self)
   method load_xml =
     match load_resultmetrics_file () with
     | Some node -> self#read_xml node
-    | _ -> pr_debug [ STR "No results file found" ; NL ]
+    | _ -> ()
 
   method read_xml (node:xml_element_int) =
     let data = file_results_handler#read_xml node in

@@ -1038,14 +1038,11 @@ object (self)
 	      
 	    (* recording side effects on global variables has been disabled *)
 	    | NumConstant n
-	         when (not system_settings#is_sideeffects_on_globals_enabled) 
-	              || ((system_settings#is_sideeffects_on_global_disabled 
-		             (numerical_to_hex_string n))) ->
-	       ()   
-	      
-	    | _ ->
+                 when system_settings#is_sideeffects_on_global_enabled
+                    (numerical_to_hex_string n) ->
 	       let sizeTerm = self#get_xpr_bterm size in
 	       self#f#record_sideeffect (BlockWrite (ty, dest, sizeTerm))
+            | _ -> ()
           end
        | _ -> self#f#record_sideeffect UnknownSideeffect
      with BCH_failure p ->
