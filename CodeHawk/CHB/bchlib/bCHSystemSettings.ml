@@ -43,6 +43,27 @@ open BCHUtilities
  *       default setting: disabled
  *)
 
+(* --------------------------------------------------------------------------
+ * System_user_data settings:
+ * - sideeffects-on-globals:
+ *      disable <list>
+ *        disable sideeffects for global variables in list:
+ *          <disable name="sideeffects-on-globals">
+ *              <gv a="hex-address"/>
+ *              ......
+ *          side effects on listed globals are not recorded
+ *      enable <list>
+ *        enable sideeffects for global variables in list:
+ *          <enable name="sideeffects-on-globals">
+ *               <gv a="hex-address"/>
+ *               ......
+ *           side effects only on listed globals are recorded
+ *
+ *   One effect of recording side effects on globals is that, as long
+ *   as there are new side effects, analysis does not stabilize, which
+ *   in some cases may lead to performance problems.
+ *)
+
 class system_settings_t:system_settings_int =
 object (self)
 
@@ -52,8 +73,9 @@ object (self)
   val mutable verbose = false
   val mutable jni_enabled = false
   val mutable set_vftables_enabled = false
-  val mutable sideeffects_on_globals_disabled = []
-  val mutable sideeffects_on_globals_enabled = true
+  val mutable record_sideeffects_on_globals = []
+  val mutable not_record_sideeffects_on_globals = []
+  val mutable sideeffects_on_globals_enabled = false
   val mutable abstract_stackvars_disabled = false
   val mutable apps_dir = None
   val mutable app_name = None
@@ -80,20 +102,39 @@ object (self)
       chlog#add "settings" (STR "disable abstraction of stackvars when esp is unknown")
     end
 
-  method set_sideeffects_on_globals_disabled (l:string list) =
+  method enable_sideeffects_on_globals (l:string list) =
+    match l with
+    | [] ->
+       begin
+         sideeffects_on_globals_enabled <- false ;
+         chlog#add "settings" (STR "disable sideeffects on globals")
+       end
+    | _ ->
+       begin
+         sideeffects_on_globals_enabled <- true ;
+         not_record_sideeffects_on_globals <- [] ;
+         record_sideeffects_on_globals <- l ;
+	 chlog#add "settings"
+	           (LBLOCK [ STR "enable sideeffects on globals on " ;
+		             pretty_print_list l (fun a -> STR a) " [" "; " "]" ])
+       end
+
+  method disable_sideeffects_on_globals (l:string list) =
     match l with
     | [] -> 
       begin
-	sideeffects_on_globals_enabled <- false ;
+	sideeffects_on_globals_enabled <- true ;
 	chlog#add "settings" (STR "disable sideeffects on globals")
       end
     | _ ->
-      begin
-	sideeffects_on_globals_disabled <- l ;
-	chlog#add "settings" 
-	  (LBLOCK [ STR "disable sideeffects on globals on " ;
-		    pretty_print_list l (fun a -> STR a) " [" "; " "]" ])
-      end
+       begin
+         sideeffects_on_globals_enabled <- true ;
+	 not_record_sideeffects_on_globals <- l ;
+         record_sideeffects_on_globals <- [] ;
+	 chlog#add "settings" 
+	           (LBLOCK [ STR "disable sideeffects on globals on " ;
+		             pretty_print_list l (fun a -> STR a) " [" "; " "]" ])
+       end
 
   method set_summary_jar s = 
     match open_path s with Some p -> summary_paths <- summary_paths @ [ p ] | _ -> ()
@@ -127,14 +168,14 @@ object (self)
 
   method is_verbose = verbose
 
-  method is_sideeffects_on_globals_enabled = sideeffects_on_globals_enabled
-
   method is_abstract_stackvars_disabled = abstract_stackvars_disabled
 
-  method is_sideeffects_on_global_disabled (gv:string) =
-    (not sideeffects_on_globals_enabled) ||
-    (List.mem gv sideeffects_on_globals_disabled)
-        
+  method is_sideeffects_on_global_enabled (gv:string) =
+    sideeffects_on_globals_enabled
+    && (match record_sideeffects_on_globals with
+        | [] -> not (List.mem gv not_record_sideeffects_on_globals)
+        | l -> List.mem gv l)
+
 end
   
 let system_settings = new system_settings_t

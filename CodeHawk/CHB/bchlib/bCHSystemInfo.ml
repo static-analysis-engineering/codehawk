@@ -606,8 +606,8 @@ object (self)
 	match name with
 	| "sideeffects-on-globals" -> 
 	  let gvAffected = 
-	    List.map (fun gn -> gn#getAttribute "a") (n#getTaggedChildren "gv") in	    
-	  system_settings#set_sideeffects_on_globals_disabled gvAffected
+	    List.map (fun gn -> gn#getAttribute "a") (n#getTaggedChildren "gv") in
+	  system_settings#disable_sideeffects_on_globals gvAffected
 	| "abstract-stackvars" -> system_settings#set_abstract_stackvars_disabled ;
 	| _ ->
            raise (BCH_failure 
@@ -617,7 +617,10 @@ object (self)
       List.iter (fun n ->
 	let name = n#getAttribute "name" in
 	match name with
-	| "sideeffects-on-globals" -> ()
+	| "sideeffects-on-globals" ->
+           let gvAffected =
+	     List.map (fun gn -> gn#getAttribute "a") (n#getTaggedChildren "gv") in	    
+	   system_settings#enable_sideeffects_on_globals gvAffected
 	| _ ->
            raise (BCH_failure
 		    (LBLOCK [ STR "System setting enable not recognized: " ;
