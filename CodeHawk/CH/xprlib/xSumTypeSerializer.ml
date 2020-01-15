@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ let xop_mfts:xop_t mfts_int  =
   mk_fn_mfts
     "xop_t"
     [ (XNeg, "neg"); (XBNot, "bnot"); (XLNot, "lnot"); (XPlus, "plus");
-      (XMinus, "minus"); (XMult, "mult"); (XDiv, "div"); (XMod, ",mod"); (XPow, "pow");
+      (XMinus, "minus"); (XMult, "mult"); (XDiv, "div"); (XMod, "mod"); (XPow, "pow");
       (XShiftlt, "shiftlt"); (XShiftrt, "shiftrt"); (XLt, "lt"); (XGt, "gt");
       (XLe, "le"); (XGe, "ge"); (XEq, "eq"); (XNe, "ne"); (XSubset, "subset");
       (XDisjoint, "disjoint"); (XBAnd, "band"); (XBXor,"bxor"); (XBOr, "bor");
