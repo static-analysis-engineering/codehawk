@@ -59,7 +59,19 @@ implDeps file alreadySeen = do
         return $ recursiveDeps ++ [fileAsCmx]
 
 main :: IO ()
-main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
+main = do
+    ver <- getHashedShakeVersion ["Shakefile.hs"]
+    let defaultShakeOptions = shakeOptions {
+        shakeFiles="_build",
+        shakeProgress = progressSimple,
+        shakeLint = Just LintBasic,
+        shakeVersion = ver,
+        shakeThreads = 0 -- Use the number of cpus
+    }
+    runBuild defaultShakeOptions
+
+runBuild :: ShakeOptions -> IO ()
+runBuild options = shakeArgs options $ do
 
     originalToMap <- liftIO $ unsafeInterleaveIO $ do
         mlis <- getDirectoryFilesIO "" ["CH_extern//*.mli", "CH//*.mli", "CHC//*.mli", "CHB//*.mli"]
