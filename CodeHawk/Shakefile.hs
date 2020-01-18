@@ -107,11 +107,13 @@ runBuild options = shakeArgs options $ do
         -- ocamlc doesn't respect "-o" here, and needs its CWD in the target directory.
         cmd_ (Cwd "_build") "ocamlfind ocamlc ../CH_extern/camlzip/zlibstubs.c"
 
-    let implDeps file alreadySeen = do
+    let implDeps file alreadySeen stack = do
         let fileAsCmx = "_build" </> takeFileName file -<.> "cmx"
         --putError $ "file: " ++ fileAsCmx
         --putError $ "already seen: " ++ (intercalate " " alreadySeen)
-        if elem fileAsCmx alreadySeen then do
+        if elem file stack then do
+            error $ "Cycle detected: " ++ (intercalate " " stack) ++ " " ++ file
+        else if elem fileAsCmx alreadySeen then do
             --putError "skipping"
             return alreadySeen
         else do
@@ -121,8 +123,9 @@ runBuild options = shakeArgs options $ do
             let unseen = filter (\dep -> not $ elem (dep -<.> "cmx") alreadySeen) modules2
             let depsMl = ["_build" </> dep -<.> "ml" | dep <- unseen]
             --putError $ "Unseen: " ++ intercalate " " depsMl
+            let mystack = stack ++ [file]
             recursiveDeps <- foldM (\seen newfile -> do
-                recDeps <- implDeps newfile seen
+                recDeps <- implDeps newfile seen mystack
                 return recDeps) alreadySeen depsMl
             return $ recursiveDeps ++ [fileAsCmx]
 
@@ -132,7 +135,7 @@ runBuild options = shakeArgs options $ do
             let main_cmx = "_build" </> main_file -<.> "cmx"
             need [main_cmx]
             need ["_build/zlibstubs.o"]
-            deps <- implDeps main_ml []
+            deps <- implDeps main_ml [] []
             need deps
             absolute_out <- liftIO $ makeAbsolute out
             let reldeps = [takeFileName dep | dep <- deps]
