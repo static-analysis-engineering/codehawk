@@ -1,5 +1,9 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
+
 import Control.Monad
 import Development.Shake
+import Development.Shake.Classes
 import Development.Shake.Command
 import Development.Shake.FilePath
 import Development.Shake.Util
@@ -11,10 +15,6 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Maybe
 import System.IO.Unsafe
-
-toMakefileFormat :: String -> [String] -> String
-toMakefileFormat target dependencies =
-    target ++ ": " ++ (intercalate " " dependencies)
 
 ignoredOriginalFiles :: [String] -> [String]
 ignoredOriginalFiles inList =
@@ -37,27 +37,6 @@ dropLibraryModules modules =
     let knownLibraryModules = ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest"] in
     filter (\modul -> not $ elem modul knownLibraryModules) modules
 
-implDeps :: FilePath -> [FilePath] ->  Action [FilePath]
-implDeps file alreadySeen = do
-    let fileAsCmx = "_build" </> takeFileName file -<.> "cmx"
-    -- putError $ "file: " ++ fileAsCmx
-    -- putError $ "already seen: " ++ (intercalate " " alreadySeen)
-    if elem fileAsCmx alreadySeen then do
-        -- putError "skipping"
-        return alreadySeen
-    else do
-        -- putError "continuing"
-        let cmxDepFile = "_build" </> (takeFileName file) <.> "d"
-        cmxDepFileContents <- readFile' cmxDepFile
-        let [(file, modules)] = parseMakefile cmxDepFileContents
-        let unseen = filter (\dep -> not $ elem (dep -<.> "cmx") alreadySeen) modules
-        let depsMl = [dep -<.> "ml" | dep <- unseen]
-        -- putError $ "Unseen: " ++ intercalate " " depsMl
-        recursiveDeps <- foldM (\seen newfile -> do
-            recDeps <- implDeps newfile seen
-            return recDeps) alreadySeen depsMl
-        return $ recursiveDeps ++ [fileAsCmx]
-
 main :: IO ()
 main = do
     ver <- getHashedShakeVersion ["Shakefile.hs"]
@@ -69,6 +48,9 @@ main = do
         shakeThreads = 0 -- Use the number of cpus
     }
     runBuild defaultShakeOptions
+
+newtype ModuleDependencies = ModuleDependencies String deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
+type instance RuleResult ModuleDependencies = [String]
 
 runBuild :: ShakeOptions -> IO ()
 runBuild options = shakeArgs options $ do
@@ -89,41 +71,29 @@ runBuild options = shakeArgs options $ do
         let original = originalToMap ! dropDirectory1 out
         copyFileChanged original out
 
-    "_build/*.mli.d" %> \out -> do
-        let mli = originalToMap ! (takeFileName $ dropExtension out)
-        need [mli]
-        Stdout dependencies_str <- cmd "ocamldep -modules" mli
-        let [(file, modules)] = parseMakefile dependencies_str
-        let deps = ["_build" </> (moduleToFile modul) <.> "cmi" | modul <- dropLibraryModules modules]
-        writeFileChanged out $ toMakefileFormat mli deps
+    getModuleDeps <- addOracleCache $ \(ModuleDependencies file) -> do
+        need [file]
+        Stdout dependencies_str <- cmd "ocamldep -modules" file
+        let [(_, modules)] = parseMakefile dependencies_str
+        return $ dropLibraryModules modules
 
     "_build/*.cmi" %> \out -> do
         let mli = out -<.> "mli"
         need [mli]
-        let mli_dependencies = mli <.> "d"
-        need [mli_dependencies]
-        needMakefileDependencies mli_dependencies
+        mli_dependencies <- getModuleDeps $ ModuleDependencies mli
+        need ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
         cmd_ "ocamlfind ocamlopt -opaque -package zarith -I _build" mli "-o" out
 
     "_build/*.ml" %> \out -> do
         let original = originalToMap ! (dropDirectory1 out)
         copyFileChanged original out
 
-    "_build/*.ml.d" %> \out -> do
-        let ml = dropExtension out
-        need [ml]
-        Stdout dependencies_str <- cmd "ocamldep -modules" ml
-        let [(file, modules)] = parseMakefile dependencies_str
-        let deps = ["_build" </> (moduleToFile modul) <.> "cmi" | modul <- dropLibraryModules modules]
-        writeFileChanged out $ toMakefileFormat ml deps
-
     "_build/*.cmx" %> \out -> do
         let ml = out -<.> "ml"
         need [ml]
         need [out -<.> "cmi"]
-        let ml_dependencies = ml <.> "d"
-        need [ml_dependencies]
-        needMakefileDependencies ml_dependencies
+        mli_dependencies <- getModuleDeps $ ModuleDependencies ml
+        need ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
         cmd_ "ocamlfind ocamlopt -c -package zarith -I _build" ml "-o" out
         produces [out -<.> "o"]
 
@@ -132,18 +102,32 @@ runBuild options = shakeArgs options $ do
         -- ocamlc doesn't respect "-o" here, and needs its CWD in the target directory.
         cmd_ (Cwd "_build") "ocamlfind ocamlc ../CH_extern/camlzip/zlibstubs.c"
 
+    let implDeps file alreadySeen = do
+        let fileAsCmx = "_build" </> takeFileName file -<.> "cmx"
+        --putError $ "file: " ++ fileAsCmx
+        --putError $ "already seen: " ++ (intercalate " " alreadySeen)
+        if elem fileAsCmx alreadySeen then do
+            --putError "skipping"
+            return alreadySeen
+        else do
+            --putError "continuing"
+            modules <- getModuleDeps $ ModuleDependencies ("_build" </> takeFileName file -<.> "ml")
+            let modules2 = ["_build" </> moduleToFile modul -<.> "cmx" | modul <- modules]
+            let unseen = filter (\dep -> not $ elem (dep -<.> "cmx") alreadySeen) modules2
+            let depsMl = ["_build" </> dep -<.> "ml" | dep <- unseen]
+            --putError $ "Unseen: " ++ intercalate " " depsMl
+            recursiveDeps <- foldM (\seen newfile -> do
+                recDeps <- implDeps newfile seen
+                return recDeps) alreadySeen depsMl
+            return $ recursiveDeps ++ [fileAsCmx]
+
     let makeExecutable name main_file = do
-        "_build" </> name <.> "d" %> \out -> do
-            let target = "_build" </> name
-            deps <- implDeps main_file []
-            writeFileChanged out $ toMakefileFormat target deps
-        
         "_bin" </> name %> \out -> do
+            let main_ml = "_build" </> main_file -<.> "ml"
             let main_cmx = "_build" </> main_file -<.> "cmx"
             need [main_cmx]
             need ["_build/zlibstubs.o"]
-            depfileContents <- readFile' $ "_build" </> name <.> "d"
-            let [(target, deps)] = parseMakefile depfileContents
+            deps <- implDeps main_ml []
             need deps
             cmd_ "ocamlfind ocamlopt -linkpkg -package str,unix,zarith _build/zlibstubs.o -cclib -lz -I _build" deps "-o" out
         return ()
