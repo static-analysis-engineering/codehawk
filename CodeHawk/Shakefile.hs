@@ -11,7 +11,7 @@ import Data.Char
 import Data.List
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
-import Data.Map (Map, (!))
+import Data.Map (Map, (!?))
 import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -70,9 +70,10 @@ runBuild options = shakeArgs options $ do
         removeFilesAfter "_bin" ["//*"]
         removeFilesAfter "_build" ["//*"]
 
-    "_build/*.mli" %> \out -> do
-        let original = originalToMap ! dropDirectory1 out
-        copyFileChanged original out
+    "_build/*.mli" %> \out ->
+        case originalToMap !? dropDirectory1 out of
+             Just original -> copyFileChanged original out
+             Nothing -> error $ "No file matching " ++ (dropDirectory1 out)
 
     getModuleDeps <- addOracleCache $ \(ModuleDependencies file) -> do
         need [file]
@@ -87,9 +88,10 @@ runBuild options = shakeArgs options $ do
         need ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
         cmd_ (Cwd "_build") "ocamlfind ocamlopt -opaque -package zarith" (takeFileName mli) "-o" (takeFileName out)
 
-    "_build/*.ml" %> \out -> do
-        let original = originalToMap ! (dropDirectory1 out)
-        copyFileChanged original out
+    "_build/*.ml" %> \out ->
+        case originalToMap !? dropDirectory1 out of
+             Just original -> copyFileChanged original out
+             Nothing -> error $ "No file matching " ++ (dropDirectory1 out)
 
     "_build/*.cmx" %> \out -> do
         let ml = out -<.> "ml"
