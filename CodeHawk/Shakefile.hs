@@ -17,6 +17,7 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Maybe
 import System.IO.Unsafe
+import System.Directory
 
 ignoredOriginalFiles :: [String] -> [String]
 ignoredOriginalFiles inList =
@@ -84,7 +85,7 @@ runBuild options = shakeArgs options $ do
         need [mli]
         mli_dependencies <- getModuleDeps $ ModuleDependencies mli
         need ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
-        cmd_ "ocamlfind ocamlopt -opaque -package zarith -I _build" mli "-o" out
+        cmd_ (Cwd "_build") "ocamlfind ocamlopt -opaque -package zarith" (takeFileName mli) "-o" (takeFileName out)
 
     "_build/*.ml" %> \out -> do
         let original = originalToMap ! (dropDirectory1 out)
@@ -96,7 +97,7 @@ runBuild options = shakeArgs options $ do
         need [out -<.> "cmi"]
         mli_dependencies <- getModuleDeps $ ModuleDependencies ml
         need ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
-        cmd_ "ocamlfind ocamlopt -c -package zarith -I _build" ml "-o" out
+        cmd_ (Cwd "_build") "ocamlfind ocamlopt -c -package zarith" (takeFileName ml) "-o" (takeFileName out)
         produces [out -<.> "o"]
 
     "_build/zlibstubs.o" %> \out -> do
@@ -131,7 +132,9 @@ runBuild options = shakeArgs options $ do
             need ["_build/zlibstubs.o"]
             deps <- implDeps main_ml []
             need deps
-            cmd_ "ocamlfind ocamlopt -linkpkg -package str,unix,zarith _build/zlibstubs.o -cclib -lz -I _build" deps "-o" out
+            absolute_out <- liftIO $ makeAbsolute out
+            let reldeps = [takeFileName dep | dep <- deps]
+            cmd_ (Cwd "_build") "ocamlfind ocamlopt -linkpkg -package str,unix,zarith zlibstubs.o -cclib -lz" reldeps "-o" absolute_out
         return ()
 
     let exes = [("chx86_make_lib_summary", "bCHXMakeLibSummary.ml"),
