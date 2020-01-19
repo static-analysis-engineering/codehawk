@@ -87,6 +87,8 @@ type instance RuleResult ModuleDependencies = [String]
 newtype OcamlEnv = OcamlEnv () deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
 type instance RuleResult OcamlEnv = [(String, String)]
 
+libraries = ["zarith"]
+
 runBuild :: [Flags] -> Rules ()
 runBuild flags = do
     
@@ -101,7 +103,7 @@ runBuild flags = do
         if not (switch `isInfixOf` existingSwitches) then do
             cmd_ "opam switch create" switch ocaml "--no-switch"
         else return ()
-        cmd_ "opam install ocamlfind zarith -y" ("--switch=" ++ switch)
+        cmd_ "opam install ocamlfind " (intercalate " " libraries) " -y" ("--switch=" ++ switch)
         Stdout sExp <- cmd "opam config env" ("--switch=" ++ switch) "--set-switch --sexp"
         return $ parseSExp sExp
 
@@ -136,7 +138,7 @@ runBuild flags = do
         need $ [mli] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
         envMembers <- askOracle $ OcamlEnv ()
         let env = [AddEnv x y | (x, y) <- envMembers]
-        cmd_ (Cwd "_build") env "ocamlfind ocamlopt -opaque -package zarith" (takeFileName mli) "-o" (takeFileName out)
+        cmd_ (Cwd "_build") env "ocamlfind ocamlopt -opaque -package " (intercalate "," libraries) (takeFileName mli) "-o" (takeFileName out)
 
     "_build/*.ml" %> \out ->
         case originalToMap !? dropDirectory1 out of
@@ -149,7 +151,7 @@ runBuild flags = do
         need $ [ml, out -<.> "cmi"] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
         envMembers <- askOracle $ OcamlEnv ()
         let env = [AddEnv x y | (x, y) <- envMembers]
-        cmd_ (Cwd "_build") env "ocamlfind ocamlopt -c -package zarith" (takeFileName ml) "-o" (takeFileName out)
+        cmd_ (Cwd "_build") env "ocamlfind ocamlopt -c -package" (intercalate "," libraries) (takeFileName ml) "-o" (takeFileName out)
 
     "_build/zlibstubs.o" %> \out -> do
         need ["CH_extern/camlzip/zlibstubs.c"]
@@ -191,7 +193,7 @@ runBuild flags = do
             need $ [main_cmx, "_build/zlibstubs.o"] ++ deps ++ objs
             envMembers <- askOracle $ OcamlEnv ()
             let env = [AddEnv x y | (x, y) <- envMembers]
-            cmd_ (Cwd "_build") env "ocamlfind ocamlopt -linkpkg -package str,unix,zarith zlibstubs.o -cclib -lz" reldeps "-o" absolute_out
+            cmd_ (Cwd "_build") env "ocamlfind ocamlopt -linkpkg -package" (intercalate "," $ libraries ++ ["str", "unix"]) "zlibstubs.o -cclib -lz" reldeps "-o" absolute_out
         return ()
 
     let exes = [("chx86_make_lib_summary", "bCHXMakeLibSummary.ml"),
