@@ -29,7 +29,8 @@ ignoredOriginalFiles inList =
     let nonGui2 = filter (\file -> not $ elem "CH_gui" $ splitDirectories file) nonGui in
     let nonparser = filter (\file -> not $ elem "chifparser" $ splitDirectories file) nonGui2 in
     let nonextlib = filter (\file -> not $ elem "extlib" $ splitDirectories file) nonparser in
-    nonextlib
+    let noncamlzip = filter (\file -> not $ elem "camlzip" $ splitDirectories file) nonextlib in
+    noncamlzip
 
 moduleToFile :: String -> String
 moduleToFile modul =
@@ -38,7 +39,7 @@ moduleToFile modul =
 
 dropLibraryModules :: [String] -> [String]
 dropLibraryModules modules =
-    let knownLibraryModules = HashSet.fromList ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest", "IO", "Extlib", "Option", "ExtString"] in
+    let knownLibraryModules = HashSet.fromList ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest", "IO", "Extlib", "Option", "ExtString", "Zip"] in
     filter (\modul -> not $ HashSet.member modul knownLibraryModules) modules
 
 copyFileChangedWithAnnotation :: String -> String -> Action ()
@@ -87,7 +88,7 @@ type instance RuleResult ModuleDependencies = [String]
 newtype OcamlEnv = OcamlEnv () deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
 type instance RuleResult OcamlEnv = [(String, String)]
 
-libraries = ["zarith", "extlib"]
+libraries = ["zarith", "extlib", "camlzip"]
 
 runBuild :: [Flags] -> Rules ()
 runBuild flags = do
@@ -154,13 +155,6 @@ runBuild flags = do
         let env = [AddEnv x y | (x, y) <- envMembers]
         cmd_ (Cwd "_build") env "ocamlfind ocamlopt -c -package" (intercalate "," libraries) (takeFileName ml) "-o" (takeFileName out)
 
-    "_build/zlibstubs.o" %> \out -> do
-        need ["CH_extern/camlzip/zlibstubs.c"]
-        envMembers <- askOracle $ OcamlEnv ()
-        let env = [AddEnv x y | (x, y) <- envMembers]
-        -- ocamlc doesn't respect "-o" here, and needs its CWD in the target directory.
-        cmd_ (Cwd "_build") env "ocamlfind ocamlc ../CH_extern/camlzip/zlibstubs.c"
-
     let implDeps file alreadySeen stack = do
         let fileAsCmx = "_build" </> takeFileName file -<.> "cmx"
         --putError $ "file: " ++ fileAsCmx
@@ -191,10 +185,10 @@ runBuild flags = do
             deps <- implDeps main_ml [] []
             let objs = [dep -<.> "o" | dep <- deps]
             let reldeps = [takeFileName dep | dep <- deps]
-            need $ [main_cmx, "_build/zlibstubs.o"] ++ deps ++ objs
+            need $ [main_cmx] ++ deps ++ objs
             envMembers <- askOracle $ OcamlEnv ()
             let env = [AddEnv x y | (x, y) <- envMembers]
-            cmd_ (Cwd "_build") env "ocamlfind ocamlopt -linkpkg -package" (intercalate "," $ libraries ++ ["str", "unix"]) "zlibstubs.o -cclib -lz" reldeps "-o" absolute_out
+            cmd_ (Cwd "_build") env "ocamlfind ocamlopt -linkpkg -package" (intercalate "," $ libraries ++ ["str", "unix"]) reldeps "-o" absolute_out
         return ()
 
     let exes = [("chx86_make_lib_summary", "bCHXMakeLibSummary.ml"),
