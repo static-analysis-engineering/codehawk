@@ -28,17 +28,17 @@ ignoredOriginalFiles inList =
     let nonGui = filter (\file -> not $ elem "cchgui" $ splitDirectories file) nonCil in
     let nonGui2 = filter (\file -> not $ elem "CH_gui" $ splitDirectories file) nonGui in
     let nonparser = filter (\file -> not $ elem "chifparser" $ splitDirectories file) nonGui2 in
-    nonparser
+    let nonextlib = filter (\file -> not $ elem "extlib" $ splitDirectories file) nonparser in
+    nonextlib
 
 moduleToFile :: String -> String
 moduleToFile modul =
-    if modul == "IO" then "IO" else
-        let firstChar : rest = modul in
-        (toLower firstChar) : rest
+    let firstChar : rest = modul in
+    (toLower firstChar) : rest
 
 dropLibraryModules :: [String] -> [String]
 dropLibraryModules modules =
-    let knownLibraryModules = HashSet.fromList ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest"] in
+    let knownLibraryModules = HashSet.fromList ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest", "IO", "Extlib", "Option", "ExtString"] in
     filter (\modul -> not $ HashSet.member modul knownLibraryModules) modules
 
 copyFileChangedWithAnnotation :: String -> String -> Action ()
@@ -87,7 +87,7 @@ type instance RuleResult ModuleDependencies = [String]
 newtype OcamlEnv = OcamlEnv () deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
 type instance RuleResult OcamlEnv = [(String, String)]
 
-libraries = ["zarith"]
+libraries = ["zarith", "extlib"]
 
 runBuild :: [Flags] -> Rules ()
 runBuild flags = do
@@ -105,6 +105,7 @@ runBuild flags = do
         else return ()
         cmd_ "opam install ocamlfind " (intercalate " " libraries) " -y" ("--switch=" ++ switch)
         Stdout sExp <- cmd "opam config env" ("--switch=" ++ switch) "--set-switch --sexp"
+        putError sExp
         return $ parseSExp sExp
 
     originalToMap <- liftIO $ unsafeInterleaveIO $ do
