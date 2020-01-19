@@ -98,12 +98,11 @@ runBuild options = shakeArgs options $ do
              Just original -> copyFileChangedWithAnnotation original out
              Nothing -> error $ "No file matching " ++ (dropDirectory1 out)
 
-    "_build/*.cmx" %> \out -> do
+    ["_build/*.cmx", "_build/*.o"] &%> \[out, obj] -> do
         let ml = out -<.> "ml"
         mli_dependencies <- getModuleDeps $ ModuleDependencies ml
         need $ [ml, out -<.> "cmi"] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
         cmd_ (Cwd "_build") "ocamlfind ocamlopt -c -package zarith" (takeFileName ml) "-o" (takeFileName out)
-        produces [out -<.> "o"]
 
     "_build/zlibstubs.o" %> \out -> do
         need ["CH_extern/camlzip/zlibstubs.c"]
@@ -138,8 +137,9 @@ runBuild options = shakeArgs options $ do
             let main_cmx = "_build" </> main_file -<.> "cmx"
             absolute_out <- liftIO $ makeAbsolute out
             deps <- implDeps main_ml [] []
+            let objs = [dep -<.> "o" | dep <- deps]
             let reldeps = [takeFileName dep | dep <- deps]
-            need $ [main_cmx, "_build/zlibstubs.o"] ++ deps
+            need $ [main_cmx, "_build/zlibstubs.o"] ++ deps ++ objs
             cmd_ (Cwd "_build") "ocamlfind ocamlopt -linkpkg -package str,unix,zarith zlibstubs.o -cclib -lz" reldeps "-o" absolute_out
         return ()
 
