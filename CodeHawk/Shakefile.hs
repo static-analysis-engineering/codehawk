@@ -83,9 +83,8 @@ runBuild options = shakeArgs options $ do
 
     "_build/*.cmi" %> \out -> do
         let mli = out -<.> "mli"
-        need [mli]
         mli_dependencies <- getModuleDeps $ ModuleDependencies mli
-        need ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
+        need $ [mli] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
         cmd_ (Cwd "_build") "ocamlfind ocamlopt -opaque -package zarith" (takeFileName mli) "-o" (takeFileName out)
 
     "_build/*.ml" %> \out ->
@@ -95,10 +94,8 @@ runBuild options = shakeArgs options $ do
 
     "_build/*.cmx" %> \out -> do
         let ml = out -<.> "ml"
-        need [ml]
-        need [out -<.> "cmi"]
         mli_dependencies <- getModuleDeps $ ModuleDependencies ml
-        need ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
+        need $ [ml, out -<.> "cmi"] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
         cmd_ (Cwd "_build") "ocamlfind ocamlopt -c -package zarith" (takeFileName ml) "-o" (takeFileName out)
         produces [out -<.> "o"]
 
@@ -133,12 +130,10 @@ runBuild options = shakeArgs options $ do
         "_bin" </> name %> \out -> do
             let main_ml = "_build" </> main_file -<.> "ml"
             let main_cmx = "_build" </> main_file -<.> "cmx"
-            need [main_cmx]
-            need ["_build/zlibstubs.o"]
-            deps <- implDeps main_ml [] []
-            need deps
             absolute_out <- liftIO $ makeAbsolute out
+            deps <- implDeps main_ml [] []
             let reldeps = [takeFileName dep | dep <- deps]
+            need $ [main_cmx, "_build/zlibstubs.o"] ++ deps
             cmd_ (Cwd "_build") "ocamlfind ocamlopt -linkpkg -package str,unix,zarith zlibstubs.o -cclib -lz" reldeps "-o" absolute_out
         return ()
 
@@ -156,6 +151,11 @@ runBuild options = shakeArgs options $ do
         makeExecutable name main_file)
 
     phony "binaries" $ do
+        -- warm ModuleDependencies cache
+        let files = [name | (name, original) <- Map.toList originalToMap]
+        let mls = filter (\file -> isInfixOf ".ml" file) files
+        askOracles [ModuleDependencies $ "_build" </> file | file <- mls]
+        -- actual dependencies
         need ["_bin/" </> name | (name, _) <- exes]
     
     want ["binaries"]
