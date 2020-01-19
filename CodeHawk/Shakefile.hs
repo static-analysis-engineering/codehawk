@@ -40,6 +40,12 @@ dropLibraryModules modules =
     let knownLibraryModules = HashSet.fromList ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest"] in
     filter (\modul -> not $ HashSet.member modul knownLibraryModules) modules
 
+copyFileChangedWithAnnotation :: String -> String -> Action ()
+copyFileChangedWithAnnotation oldPath newPath = do
+    contents <- readFile' oldPath
+    let newContents = "# 1 \"" ++ oldPath ++ "\"\n" ++ contents
+    writeFileChanged newPath newContents
+
 main :: IO ()
 main = do
     ver <- getHashedShakeVersion ["Shakefile.hs"]
@@ -72,7 +78,7 @@ runBuild options = shakeArgs options $ do
 
     "_build/*.mli" %> \out ->
         case originalToMap !? dropDirectory1 out of
-             Just original -> copyFileChanged original out
+             Just original -> copyFileChangedWithAnnotation original out
              Nothing -> error $ "No file matching " ++ (dropDirectory1 out)
 
     getModuleDeps <- addOracleCache $ \(ModuleDependencies file) -> do
@@ -89,7 +95,7 @@ runBuild options = shakeArgs options $ do
 
     "_build/*.ml" %> \out ->
         case originalToMap !? dropDirectory1 out of
-             Just original -> copyFileChanged original out
+             Just original -> copyFileChangedWithAnnotation original out
              Nothing -> error $ "No file matching " ++ (dropDirectory1 out)
 
     "_build/*.cmx" %> \out -> do
