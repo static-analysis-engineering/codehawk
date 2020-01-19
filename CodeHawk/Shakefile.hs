@@ -16,6 +16,7 @@ import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Maybe
+import System.Console.GetOpt
 import System.IO.Unsafe
 import System.Directory
 
@@ -46,6 +47,26 @@ copyFileChangedWithAnnotation oldPath newPath = do
     let newContents = "# 1 \"" ++ oldPath ++ "\"\n" ++ contents
     writeFileChanged newPath newContents
 
+-- https://stackoverflow.com/a/7569301
+splitBy delimiter = foldr f [[]] 
+            where f c l@(x:xs) | c == delimiter = []:l
+                               | otherwise = (c:x):xs
+
+parseSExp :: String -> [(String, String)]
+parseSExp sExp =
+    let varLines = [line | line <- lines sExp, isInfixOf "\"" line] in
+    let splitLines = [splitBy '"' line | line <- varLines] in
+    -- should be in the format ... "VAR" ... "VALUE" ...
+    [(varName, varValue) | [_, varName, _, varValue, _] <- splitLines]
+
+defaultOcaml = "4.07.1"
+defaultSwitch = "codehawk-" ++ defaultOcaml
+
+data Flags = Opam String | Ocaml String
+    deriving Eq
+flagDefs = [Option "" ["opam"] (OptArg (\x -> Right $ Opam (fromMaybe defaultSwitch x)) defaultSwitch) "opam switch name",
+            Option "" ["ocaml"] (OptArg (\x -> Right $ Ocaml (fromMaybe defaultOcaml x)) defaultOcaml) "ocaml version"]
+
 main :: IO ()
 main = do
     ver <- getHashedShakeVersion ["Shakefile.hs"]
@@ -56,13 +77,33 @@ main = do
         shakeVersion = ver,
         shakeThreads = 0 -- Use the number of cpus
     }
-    runBuild defaultShakeOptions
+    shakeArgsWith defaultShakeOptions flagDefs $ \flagValues targets -> return $ Just $ do
+        let rules = runBuild flagValues
+        if null targets then rules else want targets >> withoutActions rules
 
 newtype ModuleDependencies = ModuleDependencies String deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
 type instance RuleResult ModuleDependencies = [String]
 
-runBuild :: ShakeOptions -> IO ()
-runBuild options = shakeArgs options $ do
+newtype OcamlEnv = OcamlEnv () deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
+type instance RuleResult OcamlEnv = [(String, String)]
+
+runBuild :: [Flags] -> Rules ()
+runBuild flags = do
+    
+    addOracle $ \(OcamlEnv _) -> do
+        let Opam switchFlag = fromMaybe (Opam "") $ listToMaybe [x | x@(Opam _) <- flags]
+        let Ocaml ocaml = fromMaybe (Ocaml "") $ listToMaybe [x | x@(Ocaml _) <- flags]
+        let ocamlSwitch = if ocaml == "" then "" else ("codehawk-" ++ ocaml)
+        let switch = if switchFlag == "" then ocamlSwitch else switchFlag
+        if switch == "" then return [] else do
+        cmd_ "opam init --bare --disable-shell-hook"
+        Stdout existingSwitches <- cmd "opam switch list -s"
+        if not (switch `isInfixOf` existingSwitches) then do
+            cmd_ "opam switch create" switch ocaml "--no-switch"
+        else return ()
+        cmd_ "opam install ocamlfind zarith -y" ("--switch=" ++ switch)
+        Stdout sExp <- cmd "opam config env" ("--switch=" ++ switch) "--set-switch --sexp"
+        return $ parseSExp sExp
 
     originalToMap <- liftIO $ unsafeInterleaveIO $ do
         mlis <- getDirectoryFilesIO "" ["CH_extern//*.mli", "CH//*.mli", "CHC//*.mli", "CHB//*.mli"]
@@ -83,7 +124,9 @@ runBuild options = shakeArgs options $ do
 
     getModuleDeps <- addOracleCache $ \(ModuleDependencies file) -> do
         need [file]
-        Stdout dependencies_str <- cmd "ocamldep -modules" file
+        envMembers <- askOracle $ OcamlEnv ()
+        let env = [AddEnv x y | (x, y) <- envMembers]
+        Stdout dependencies_str <- cmd env "ocamldep -modules" file
         let [(_, modules)] = parseMakefile dependencies_str
         return $ dropLibraryModules modules
 
@@ -91,7 +134,9 @@ runBuild options = shakeArgs options $ do
         let mli = out -<.> "mli"
         mli_dependencies <- getModuleDeps $ ModuleDependencies mli
         need $ [mli] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
-        cmd_ (Cwd "_build") "ocamlfind ocamlopt -opaque -package zarith" (takeFileName mli) "-o" (takeFileName out)
+        envMembers <- askOracle $ OcamlEnv ()
+        let env = [AddEnv x y | (x, y) <- envMembers]
+        cmd_ (Cwd "_build") env "ocamlfind ocamlopt -opaque -package zarith" (takeFileName mli) "-o" (takeFileName out)
 
     "_build/*.ml" %> \out ->
         case originalToMap !? dropDirectory1 out of
@@ -102,12 +147,16 @@ runBuild options = shakeArgs options $ do
         let ml = out -<.> "ml"
         mli_dependencies <- getModuleDeps $ ModuleDependencies ml
         need $ [ml, out -<.> "cmi"] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
-        cmd_ (Cwd "_build") "ocamlfind ocamlopt -c -package zarith" (takeFileName ml) "-o" (takeFileName out)
+        envMembers <- askOracle $ OcamlEnv ()
+        let env = [AddEnv x y | (x, y) <- envMembers]
+        cmd_ (Cwd "_build") env "ocamlfind ocamlopt -c -package zarith" (takeFileName ml) "-o" (takeFileName out)
 
     "_build/zlibstubs.o" %> \out -> do
         need ["CH_extern/camlzip/zlibstubs.c"]
+        envMembers <- askOracle $ OcamlEnv ()
+        let env = [AddEnv x y | (x, y) <- envMembers]
         -- ocamlc doesn't respect "-o" here, and needs its CWD in the target directory.
-        cmd_ (Cwd "_build") "ocamlfind ocamlc ../CH_extern/camlzip/zlibstubs.c"
+        cmd_ (Cwd "_build") env "ocamlfind ocamlc ../CH_extern/camlzip/zlibstubs.c"
 
     let implDeps file alreadySeen stack = do
         let fileAsCmx = "_build" </> takeFileName file -<.> "cmx"
@@ -140,7 +189,9 @@ runBuild options = shakeArgs options $ do
             let objs = [dep -<.> "o" | dep <- deps]
             let reldeps = [takeFileName dep | dep <- deps]
             need $ [main_cmx, "_build/zlibstubs.o"] ++ deps ++ objs
-            cmd_ (Cwd "_build") "ocamlfind ocamlopt -linkpkg -package str,unix,zarith zlibstubs.o -cclib -lz" reldeps "-o" absolute_out
+            envMembers <- askOracle $ OcamlEnv ()
+            let env = [AddEnv x y | (x, y) <- envMembers]
+            cmd_ (Cwd "_build") env "ocamlfind ocamlopt -linkpkg -package str,unix,zarith zlibstubs.o -cclib -lz" reldeps "-o" absolute_out
         return ()
 
     let exes = [("chx86_make_lib_summary", "bCHXMakeLibSummary.ml"),
