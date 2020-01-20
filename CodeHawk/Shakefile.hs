@@ -118,9 +118,11 @@ runBuild flags = do
         return $ Map.fromList pairs
 
     phony "clean" $ do
-        putNormal "Cleaning files in _bin, _build"
+        putNormal "Cleaning files in _bin, _build, _docs_private, _docs_public"
         removeFilesAfter "_bin" ["//*"]
         removeFilesAfter "_build" ["//*"]
+        removeFilesAfter "_docs_private" ["//*"]
+        removeFilesAfter "_docs_public" ["//*"]
 
     "_build/*.mli" %> \out ->
         case Map.lookup (dropDirectory1 out) originalToMap of
@@ -213,5 +215,35 @@ runBuild flags = do
         askOracles [ModuleDependencies $ "_build" </> file | file <- mls]
         -- actual dependencies
         need ["_bin/" </> name | (name, _) <- exes]
+    
+    let makeDocs dir private = do
+        -- warm ModuleDependencies cache
+        let files = [name | (name, original) <- Map.toList originalToMap]
+        let mls = filter (\file -> isInfixOf ".ml" file) files
+        askOracles [ModuleDependencies $ "_build" </> file | file <- mls]
+        -- actual dependencies
+        let exe_files = ["_build" </> filename | (_, filename) <- exes]
+        let foldCall accum file = do
+            recCall <- implDeps file (Set.toList accum) []
+            return $ Set.union accum $ Set.fromList recCall
+        allFiles <- foldM foldCall Set.empty exe_files 
+        let relFiles = [takeFileName file | file <- Set.toList allFiles]
+        let full_mls = ["_build" </> file -<.> "ml" | file <- relFiles]
+        let full_mlis = ["_build" </> file -<.> "mli" | file <- relFiles]
+        let full_cmis = ["_build" </> file -<.> "cmi" | file <- relFiles]
+        let full_cmxs = ["_build" </> file -<.> "cmx" | file <- relFiles]
+        need (full_mls ++ full_mlis ++ full_cmis ++ full_cmxs)
+        let rel_mls = [file -<.> "ml" | file <- relFiles]
+        let rel_mlis = [file -<.> "mli" | file <- relFiles]
+        envMembers <- askOracle $ OcamlEnv ()
+        let env = [AddEnv x y | (x, y) <- envMembers]
+        liftIO $ removeFiles dir ["//*"]
+        writeFile' (dir </> ".file") "q"
+        let filesToDoc = if private then rel_mls else (rel_mls ++ rel_mlis)
+        let workaround = [file | file <- filesToDoc, file /= "cCHReturnsite.ml", file /= "cCHCallsite.ml"]
+        cmd_ (Cwd "_build") env "ocamlfind ocamldoc -keep-code -html -d " ("../" ++ dir) "-package" (intercalate "," $ ocamlfind_libraries ++ ["str","unix"]) workaround
+    
+    phony "docs_public" $ makeDocs "_docs_public" False
+    phony "docs_private" $ makeDocs "_docs_private" True
     
     want ["binaries"]
