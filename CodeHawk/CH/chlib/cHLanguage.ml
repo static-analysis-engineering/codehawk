@@ -685,7 +685,7 @@ type ('code, 'cfg) command_t =
   (** BRANCH (<branch_1>, ..., <branch_n>) <=> non-deterministic choice among distinct branches *)
   | LOOP of 'code * 'code * 'code
   (** LOOP(<loop test true>, <loop test false>, body) <=>
-      iterate {<loop test true>; body} exit when <loop test false> *)
+      iterate \{<loop test true>; body\} exit when <loop test false> *)
   | OPERATION of operation_t
   (** User-defined operation *)
   | DOMAIN_OPERATION of (string list) * operation_t
@@ -693,9 +693,9 @@ type ('code, 'cfg) command_t =
   | CALL of symbol_t * ((symbol_t * variable_t) list)
   (** CALL (<procedure name>, [<argument name> => <argument>; ...]) <=> procedure call *)
   | CONTEXT of symbol_t * 'code
-  (** CONTEXT (<marker>, <code>) <=> push <marker> into the context stack for the analysis of <code> only *)
+  (** CONTEXT (`marker`, `code`) <=> push `marker` into the context stack for the analysis of `code` only *)
   | DOMAINS of (string list) * 'code
-  (** DOMAINS (<domains>, <code>) <=> activate <domains> for the analysis of <code> only *)
+  (** DOMAINS (`domains`, `code`) <=> activate `domains` for the analysis of `code` only. *)
   | DOMAIN_CMD of string * string * (domain_cmd_arg_t list)
   (** DOMAIN_CMD (<domain>, <cmd>, <args>) <=> 
       send domain-specific command <cmd> to domain <domain> with arguments <args> *)
