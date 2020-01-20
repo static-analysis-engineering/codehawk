@@ -84,7 +84,7 @@ stack runghc Shakefile.hs -- --opam
 ### Arch Linux
 
 ```
-sudo pacman -Syu opam haskell-shake
+sudo pacman -Syu opam haskell-shake lablgtk2
 git clone https://github.com/kestreltechnology/codehawk.git
 cd codehawk/CodeHawk
 shake --opam
@@ -93,7 +93,7 @@ shake --opam
 ### Fedora
 
 ```
-sudo yum install opam shake ghc-compiler ghc-shake-devel diffutils zlib-devel -y
+sudo yum install opam shake ghc-compiler ghc-shake-devel diffutils zlib-devel ocaml-lablgtk-devel -y
 git clone https://github.com/kestreltechnology/codehawk.git
 cd codehawk/CodeHawk
 shake --opam
@@ -104,6 +104,7 @@ shake --opam
 ```
 brew install opam
 brew install cabal-install
+brew install lablgtk
 cabal update
 cabal install shake
 git clone https://github.com/kestreltechnology/codehawk.git
@@ -116,6 +117,7 @@ cd codehawk/CodeHawk
 ```
 sudo port install opam
 sudo port install hs-cabal-install
+sudo port install lablgtk2
 cabal update
 cabal install shake
 git clone https://github.com/kestreltechnology/codehawk.git
@@ -127,7 +129,7 @@ cd codehawk/CodeHawk
 
 ```
 sudo apt update -y
-sudo apt install cabal-install pkg-config m4 zlib1g-dev opam -y
+sudo apt install cabal-install pkg-config m4 zlib1g-dev opam liblablgtk2-ocaml-dev liblablgtksourceview2-ocaml-dev -y
 cabal update
 cabal install shake
 git clone https://github.com/kestreltechnology/codehawk.git
@@ -139,7 +141,7 @@ cd codehawk/CodeHawk
 
 ```
 sudo apt update -y
-sudo apt install software-properties-common cabal-install pkg-config m4 zlib1g-dev -y
+sudo apt install software-properties-common cabal-install pkg-config m4 zlib1g-dev liblablgtk2-ocaml-dev liblablgtksourceview2-ocaml-dev -y
 sudo add-apt-repository ppa:avsm/ppa -y
 sudo apt update -y
 sudo apt install opam
@@ -158,6 +160,6 @@ Before the final "shake" command in one of the above instructions:
 opam init --bare --no-setup --disable-sandboxing --bare
 opam switch codehawk-4.07.1 4.07.1 --no-switch
 eval $(opam env --switch=codehawk-4.07.1 --set-switch)
-opam install ocamlfind zarith camlzip extlib
+opam install ocamlfind zarith camlzip extlib lablgtk lablgtk-extras
 /path/to/shake
 ```
