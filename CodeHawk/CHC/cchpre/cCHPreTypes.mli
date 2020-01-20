@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -741,7 +741,7 @@ class type indirect_callsite_int =
     method get_location  : location
     method get_spos      : proof_obligation_int list
     method get_postassumes: annotated_xpredicate_t list
-    method get_spos_table: (int,proof_obligation_int list) Hashtbl.t
+    method get_spo_lists : (int * proof_obligation_int list) list
 
     method write_xml: xml_element_int -> unit
 
@@ -756,7 +756,7 @@ class type direct_callsite_int =
     method get_location   : location
     method get_spos       : proof_obligation_int list
     method get_postassumes: annotated_xpredicate_t list
-    method get_spos_table: (int,proof_obligation_int list) Hashtbl.t
+    method get_spo_lists  : (int * proof_obligation_int list) list
 
     method write_xml: xml_element_int -> unit
   end

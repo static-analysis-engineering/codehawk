@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -74,7 +74,7 @@ let create_pc_spos
 
 class returnsite_t
         (pod:podictionary_int)
-        ?(pcspos:(int,proof_obligation_int list) H.t=H.create 1)
+        ?(pcspos:(int * proof_obligation_int list) list=[])
         (loc:location)
         (ctxt:program_context_int)
         (exp:exp option) =
@@ -83,7 +83,7 @@ object (self)
   val spos = H.create 3      (* xpredicate id -> spo list *)
 
   initializer
-    H.iter (fun k v ->
+    List.iter (fun (k, v) ->
         match v with
         | [] ->
            (try
@@ -193,6 +193,7 @@ let read_xml_returnsite (node:xml_element_int) (pod:podictionary_int):returnsite
         let pcid = pnode#getIntAttribute "iipc" in
         H.add pcspos pcid spos)
       ((node#getTaggedChild "post-guarantees")#getTaggedChildren "pc") in
+  let pcspos = H.fold (fun k v a -> (k,v)::a) pcspos [] in
   new returnsite_t pod ~pcspos loc ctxt exp
 
 

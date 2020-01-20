@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,7 @@ let id = CCHInterfaceDictionary.interface_dictionary
 
 class callsite_t
     (pod:podictionary_int)
-    ?(apispos:(int,proof_obligation_int list) H.t=H.create 1)
+    ?(apispos:(int * proof_obligation_int list) list = [])
     ?(postassumes:annotated_xpredicate_t list=[])
     (loc:location)
     (ctxt:program_context_int)
@@ -69,7 +69,7 @@ object (self)
   val spos = H.create 3
 
   initializer
-    H.iter (fun k v -> H.add spos k v) apispos ;
+    List.iter (fun (k, v) -> H.add spos k v) apispos ;
 
   method get_arguments = args
 
@@ -83,9 +83,7 @@ object (self)
 
   method get_postassumes = postassumes
 
-  method get_spos_table = spos
-
-  method private get_spo_lists = H.fold (fun k v r -> (k,v)::r) spos []
+  method get_spo_lists = H.fold (fun k v r -> (k,v)::r) spos []
 
   method write_xml (node:xml_element_int) =
     let iargs = List.map cd#index_exp args in
@@ -153,6 +151,7 @@ let read_xml_callsite (node:xml_element_int) (pod:podictionary_int):callsite_t =
             (simplify_xpredicate (id#get_xpredicate i),NoAnnotation)) iipcs   (* TBD: add annotations *)
       else
         [] in
+    let apispos = H.fold (fun k v a -> (k,v)::a) apispos [] in
     new callsite_t pod ~apispos ~postassumes loc ctxt header args
   with
   | Failure s ->
@@ -160,7 +159,7 @@ let read_xml_callsite (node:xml_element_int) (pod:podictionary_int):callsite_t =
   
 class direct_callsite_t
         (pod:podictionary_int)
-        ?(apispos=H.create 1)
+        ?(apispos=[])
         ?(postassumes=[])
         (loc:location)
         (ctxt:program_context_int)
@@ -187,7 +186,7 @@ let read_xml_direct_callsite
     let cs = read_xml_callsite node pod in
     let callee = cdecls#read_xml_varinfo node in
     new direct_callsite_t
-        pod ~apispos:cs#get_spos_table ~postassumes:cs#get_postassumes
+        pod ~apispos:cs#get_spo_lists ~postassumes:cs#get_postassumes
         cs#get_location cs#get_context cs#get_header callee cs#get_arguments
   with
   | Failure s ->
@@ -195,7 +194,7 @@ let read_xml_direct_callsite
 
 class indirect_callsite_t
         (pod:podictionary_int)
-        ?(apispos=H.create 1)
+        ?(apispos=[])
         ?(callees=[])
         ?(postassumes=[])
         (loc:location)
@@ -255,7 +254,7 @@ let read_xml_indirect_callsite
     let callees = List.map cdecls#get_varinfo icallees in
     (try
       new indirect_callsite_t
-          pod ~apispos:cs#get_spos_table ~callees ~postassumes:cs#get_postassumes
+          pod ~apispos:cs#get_spo_lists ~callees ~postassumes:cs#get_postassumes
           cs#get_location cs#get_context cs#get_header callexp cs#get_arguments
      with
      | Failure s ->
