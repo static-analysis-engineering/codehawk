@@ -11,7 +11,7 @@ import Data.Char
 import Data.List
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
-import Data.Map (Map, (!?))
+import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -94,19 +94,21 @@ runBuild :: [Flags] -> Rules ()
 runBuild flags = do
     
     addOracle $ \(OcamlEnv _) -> do
-        let Opam switchFlag = fromMaybe (Opam "") $ listToMaybe [x | x@(Opam _) <- flags]
-        let Ocaml ocaml = fromMaybe (Ocaml "") $ listToMaybe [x | x@(Ocaml _) <- flags]
-        let ocamlSwitch = if ocaml == "" then "" else ("codehawk-" ++ ocaml)
-        let switch = if switchFlag == "" then ocamlSwitch else switchFlag
+        let switchFlag = listToMaybe [x | Opam x <- flags]
+        let ocamlFlag = listToMaybe [x | Ocaml x <- flags]
+        let (switch, ocaml) = case (switchFlag, ocamlFlag) of
+                                (Nothing, Nothing) -> ("", "")
+                                (Nothing, Just ocaml) -> ("codehawk-" ++ ocaml, ocaml)
+                                (Just switch, Nothing) -> (switch, defaultOcaml)
+                                (Just switch, Just ocaml) -> (switch, ocaml)
         if switch == "" then return [] else do
-        cmd_ "opam init --bare --disable-shell-hook"
+        cmd_ "opam init --no-setup --disable-sandboxing --bare"
         Stdout existingSwitches <- cmd "opam switch list -s"
         if not (switch `isInfixOf` existingSwitches) then do
             cmd_ "opam switch create" switch ocaml "--no-switch"
         else return ()
         cmd_ "opam install ocamlfind " (intercalate " " libraries) " -y" ("--switch=" ++ switch)
         Stdout sExp <- cmd "opam config env" ("--switch=" ++ switch) "--set-switch --sexp"
-        putError sExp
         return $ parseSExp sExp
 
     originalToMap <- liftIO $ unsafeInterleaveIO $ do
@@ -122,7 +124,7 @@ runBuild flags = do
         removeFilesAfter "_build" ["//*"]
 
     "_build/*.mli" %> \out ->
-        case originalToMap !? dropDirectory1 out of
+        case Map.lookup (dropDirectory1 out) originalToMap of
              Just original -> copyFileChangedWithAnnotation original out
              Nothing -> error $ "No file matching " ++ (dropDirectory1 out)
 
@@ -143,7 +145,7 @@ runBuild flags = do
         cmd_ (Cwd "_build") env "ocamlfind ocamlopt -opaque -package " (intercalate "," libraries) (takeFileName mli) "-o" (takeFileName out)
 
     "_build/*.ml" %> \out ->
-        case originalToMap !? dropDirectory1 out of
+        case Map.lookup (dropDirectory1 out) originalToMap of
              Just original -> copyFileChangedWithAnnotation original out
              Nothing -> error $ "No file matching " ++ (dropDirectory1 out)
 
