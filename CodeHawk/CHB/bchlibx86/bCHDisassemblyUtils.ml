@@ -480,7 +480,7 @@ let get_modrm_seg_operands ?(opsize_override=false) ch m1 m2:(operand_int * oper
 (* the reg field within the ModR/M byte specifies which of the control registers 
    is loaded or read. The 2 bits in the mod field are ignored. The r/m field specifies
    the general-purpose register loaded or read. Attempts to reference CR1, CR5, CR6,
-   CR7, and CR9–CR15 result in undefined opcode (#UD) exceptions *)
+   CR7, and CR9-CR15 result in undefined opcode (#UD) exceptions *)
 let get_modrm_cr_operands ch m1 m2:(operand_int * operand_int) =
   let modrm = ch#read_byte in
   let (md,reg,rm) = decompose_modrm modrm in

@@ -301,7 +301,7 @@ let px0fc7 (ch:pushback_stream_int) =
 
   (* 0F C7/6 --- Randomize the operand; new instruction added in 2012 
      Documented in 
-     Intel® 64 and IA-32 Architectures  Software Developer’s Manual
+     Intel(R) 64 and IA-32 Architectures  Software Developer's Manual
      Documentation Changes, August 2012                                  *)
 
     | 6 -> let op = get_rm_operand md rm ch WR in RdRandomize op

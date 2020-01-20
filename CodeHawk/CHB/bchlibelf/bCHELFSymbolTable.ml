@@ -67,7 +67,7 @@ object (self)
     try
       begin
         (* 0, 4, Name ----------------------------------------------------------
-           This member holds an index into the object file’s symbol string table, 
+           This member holds an index into the object file's symbol string table, 
            which holds the character representations of the symbol names. If the 
            value is non-zero, it represents a string table index that gives the 
            symbol name. Otherwise, the symbol table entry has no name.
@@ -81,14 +81,14 @@ object (self)
         st_value <- ch#read_doubleword;
 
         (* 8, 4, Size ----------------------------------------------------------
-           Many symbols have associated sizes. For example, a data object’s size 
+           Many symbols have associated sizes. For example, a data object's size 
            is the number of bytes contained in the object. This member holds 0 if 
            the symbol has no size or an unknown size.
            --------------------------------------------------------------------- *)
         st_size <- ch#read_doubleword;
 
         (* 12, 1, Info ---------------------------------------------------------
-           This member specifies the symbol’s type and binding attributes. A list 
+           This member specifies the symbol's type and binding attributes. A list 
            of the values and meanings appears below. The following code shows how 
            to manipulate the values.
            #define ELF32_ST_BIND(i) ((i)>>4)
@@ -103,7 +103,7 @@ object (self)
         st_other <- ch#read_byte;
 
         (* 14, 2, Section index ------------------------------------------------
-           Every symbol table entry is ‘‘defined’’ in relation to some section; 
+           Every symbol table entry is "defined" in relation to some section; 
            this member holds the relevant section header table index. As Figure 
            1-7 and the related text describe, some section indexes indicate 
            special meanings.

@@ -637,15 +637,15 @@ let translate_instruction
     default ( branch :: (dstLhsCmds @ accLhsCmds) )
 
     (* -----------------------------------------------------------------------------------
-     * TEMP64 ← DEST;
+     * TEMP64 <- DEST;
      * IF (EDX:EAX = TEMP64) 
      *   THEN
-     *      ZF ← 1;
-     *      DEST ← ECX:EBX; 
+     *      ZF <- 1;
+     *      DEST <- ECX:EBX; 
      *   ELSE
-     *      ZF ← 0;
-     *      EDX:EAX ← TEMP64; 
-     *      DEST ← TEMP64;
+     *      ZF <- 0;
+     *      EDX:EAX <- TEMP64; 
+     *      DEST <- TEMP64;
      *   FI;
      * FI;
      * ----------------------------------------------------------------------------------- *)
