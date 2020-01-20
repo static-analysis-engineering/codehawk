@@ -273,7 +273,7 @@ let pxd9 opsize_override (ch:pushback_stream_int) =
   | 0xee -> FLoadConstant ("z", "+0.0")
 
   (* D9 F0 ---- F2XM1 --- Replace ST(0) with 2^(st(0))-1  
-     D9 F1 ---- FYL2X --- Replace ST(1) with (ST(1) ∗ log2ST(0)) and pop the register stack.
+     D9 F1 ---- FYL2X --- Replace ST(1) with (ST(1) * log2ST(0)) and pop the register stack.
      D9 F2 ---- FPTAN --- Replace ST(0) with its approximate tangent and push 1 onto 
                           the FPU stack
      D9 F3 ---- FPATAN -- Replace ST(1) with arctan(ST(1)/ST(0)) and pop the register stack
@@ -285,7 +285,7 @@ let pxd9 opsize_override (ch:pushback_stream_int) =
 
      D9 F7 ---- FINCSTP - Increment the TOP field in the FPU status register.
 
-     D9 F9 ---- FYL2XP1 - Replace ST(1) with ST(1) ∗ log2(ST(0) + 1.0) and pop the register 
+     D9 F9 ---- FYL2XP1 - Replace ST(1) with ST(1) * log2(ST(0) + 1.0) and pop the register 
                           stack
      D9 FA ---- FSQRT --- Computes square root of ST(0) and stores the result in ST(0) 
      D9 FB ---- FSINCOS - Compute the sine and cosine of ST(0); replace ST(0) with 
@@ -297,13 +297,13 @@ let pxd9 opsize_override (ch:pushback_stream_int) =
   *)
 
   | 0xf0 -> FStackOp ("f2xm1", "replace ST(0) with 2^(ST(0)-1)")
-  | 0xf1 -> FStackOp ("fyl2x", "replace ST(1) with (ST(1) ∗ log2ST(0)) and pop")
+  | 0xf1 -> FStackOp ("fyl2x", "replace ST(1) with (ST(1) * log2ST(0)) and pop")
   | 0xf2 -> FStackOp ("fptan", "replace ST(0) with its tangent and push 1")
   | 0xf3 -> FStackOp ("fpatan", "replace ST(1) with arctan(ST(1)/ST(0)) and pop")
   | 0xf5 -> FStackOp ("fprem1", "replace ST(1) with IEEE remainder ST(0)/ST(1)")
   | 0xf6 -> FStackOp ("fdecstp", "decrement TOP field in FPU status word")
   | 0xf7 -> FStackOp ("fincstp", "increment the TOP field in the FPU status register")
-  | 0xf9 -> FStackOp ("fyl2xp1", "replace ST(1) with ST(1) ∗ log2(ST(0) + 1.0) and pop")
+  | 0xf9 -> FStackOp ("fyl2xp1", "replace ST(1) with ST(1) * log2(ST(0) + 1.0) and pop")
   | 0xfa -> FStackOp ("fsqrt", "replace ST(0) with its square root")
   | 0xfb -> FStackOp ("fsincos", "replace ST(0) with its sine and push the cosine")
   | 0xfc -> FStackOp ("frndint", "round ST(0) to an integer")

@@ -259,7 +259,7 @@ let get_record (opc:mips_opcode_t) =
    *   temp <- GPR[rs] + sign_extend(immediate)
    *   GPR[rt] <- temp
    * ---------------------------------------------------------------------------
-   * The term “unsigned” in the instruction name is a misnomer; this operation 
+   * The term "unsigned" in the instruction name is a misnomer; this operation 
    * is 32-bit modulo arithmetic that does not trap on overflow. This instruction 
    * is appropriate for unsigned arithmetic, such as address arithmetic, or 
    * integer arith- metic environments that ignore overflow, such as C language
@@ -645,7 +645,7 @@ let get_record (opc:mips_opcode_t) =
    * Description: To branch within the current 256 MB-aligned region.
    * ------------------------------------------------------------------------
    * This is a PC-region branch (not PC-relative); the effective target 
-   * address is in the “current” 256 MB-aligned region. The low 28 bits of 
+   * address is in the "current" 256 MB-aligned region. The low 28 bits of 
    * the target address is the instr_index field shifted left 2bits. The 
    * remaining upper bits are the corre- sponding bits of the address of 
    * the instruction in the delay slot (not the branch itself).

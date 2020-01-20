@@ -1142,7 +1142,7 @@ let get_record (opc:opcode_t) =
      FTST  ---- Compare ST(0) with 0.0                                 ---- D9 E4
      FXAM  ---- Examines the contents of ST(0) register                ---- D9 E5
      F2XM1  --- Replace ST(0) with 2^(st(0))-1                         ---- D9 F0
-     FYL2X  --- Replace ST(1) with (ST(1) ∗ log2ST(0)) and pop the     
+     FYL2X  --- Replace ST(1) with (ST(1) * log2ST(0)) and pop the     
                 register stack                                         ---- D9 F1
      FPTAN  --- Replace ST(0) with its approximate tangent and push 1 
                 onto the FPU stack                                     ---- D9 F2
@@ -1152,7 +1152,7 @@ let get_record (opc:opcode_t) =
                 dividing ST(0) by ST(1).                               ---- D9 F5
      FDECSTP -- Decrement TOP field in FPU status word                 ---- D9 F6
      FINCSTP -- Increment the TOP field of the FPU status register     ---- D9 F7
-     FYL2XP1 -- Replace ST(1) with ST(1) ∗ log2(ST(0) + 1.0) and pop 
+     FYL2XP1 -- Replace ST(1) with ST(1) * log2(ST(0) + 1.0) and pop 
                 the register stack                                     ---- D9 F9
      FSQRT  --- Replace ST(0) with its square root                     ---- D9 FA
      FSINCOS -- Compute the sine and cosine of ST(0); replace ST(0)

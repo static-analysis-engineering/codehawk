@@ -70,12 +70,12 @@ object (self)
            d_val These Elf32_Word objects represent integer values with various 
                   interpretations.
            d_ptr  These Elf32_Addr objects represent program virtual addresses. 
-                  As mentioned previously, a file’s virtual addresses might not 
+                  As mentioned previously, a file's virtual addresses might not 
                   match the memory virtual addresses during execution. When 
                   interpreting addresses contained in the dynamic structure, 
                   the dynamic linker com- putes actual addresses, based on the 
                   original file value and the memory base address. For consistency, 
-                  files do not contain relocation entries to ‘‘correct’’ addresses 
+                  files do not contain relocation entries to "correct" addresses 
                   in the dynamic structure.
             ----------------------------------------------------------------------- *)
         d_un <- ch#read_num_signed_doubleword
