@@ -25,9 +25,7 @@ ignoredOriginalFiles inList =
     let nonBuild = filter (\file -> not $ elem "_build" $ splitDirectories file) inList in
     let nonChCil = filter (\file -> not $ elem "cchcil" $ splitDirectories file) nonBuild in
     let nonCil = filter (\file -> not $ elem "cil-1.7.3-develop" $ splitDirectories file) nonChCil in
-    let nonGui = filter (\file -> not $ elem "cchgui" $ splitDirectories file) nonCil in
-    let nonGui2 = filter (\file -> not $ elem "CH_gui" $ splitDirectories file) nonGui in
-    let nonparser = filter (\file -> not $ elem "chifparser" $ splitDirectories file) nonGui2 in
+    let nonparser = filter (\file -> not $ elem "chifparser" $ splitDirectories file) nonCil in
     let nonextlib = filter (\file -> not $ elem "extlib" $ splitDirectories file) nonparser in
     let noncamlzip = filter (\file -> not $ elem "camlzip" $ splitDirectories file) nonextlib in
     noncamlzip
@@ -39,7 +37,7 @@ moduleToFile modul =
 
 dropLibraryModules :: [String] -> [String]
 dropLibraryModules modules =
-    let knownLibraryModules = HashSet.fromList ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest", "IO", "Extlib", "Option", "ExtString", "Zip"] in
+    let knownLibraryModules = HashSet.fromList ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest", "IO", "Extlib", "Option", "ExtString", "Zip", "GBin", "GButton", "GEdit", "GMain", "GMenu", "GMisc", "GObj", "GPack", "GRange", "GText", "GWindow", "Glib", "Pango", "GdkEvent", "GDraw", "GSourceView2", "GTree", "Gobject", "GFile", "GToolbox", "Gdk"] in
     filter (\modul -> not $ HashSet.member modul knownLibraryModules) modules
 
 copyFileChangedWithAnnotation :: String -> String -> Action ()
@@ -88,7 +86,8 @@ type instance RuleResult ModuleDependencies = [String]
 newtype OcamlEnv = OcamlEnv () deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
 type instance RuleResult OcamlEnv = [(String, String)]
 
-libraries = ["zarith", "extlib", "camlzip"]
+opam_libraries = ["zarith", "extlib", "camlzip", "lablgtk", "lablgtk-extras"]
+ocamlfind_libraries = ["zarith", "extlib", "camlzip", "lablgtk2", "lablgtk2-extras"]
 
 runBuild :: [Flags] -> Rules ()
 runBuild flags = do
@@ -107,7 +106,7 @@ runBuild flags = do
         if not (switch `isInfixOf` existingSwitches) then do
             cmd_ "opam switch create" switch ocaml "--no-switch"
         else return ()
-        cmd_ "opam install ocamlfind " (intercalate " " libraries) " -y" ("--switch=" ++ switch)
+        cmd_ "opam install ocamlfind " (intercalate " " opam_libraries) " -y" ("--switch=" ++ switch)
         Stdout sExp <- cmd "opam config env" ("--switch=" ++ switch) "--set-switch --sexp"
         return $ parseSExp sExp
 
@@ -142,7 +141,7 @@ runBuild flags = do
         need $ [mli] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
         envMembers <- askOracle $ OcamlEnv ()
         let env = [AddEnv x y | (x, y) <- envMembers]
-        cmd_ (Cwd "_build") env "ocamlfind ocamlopt -opaque -package " (intercalate "," libraries) (takeFileName mli) "-o" (takeFileName out)
+        cmd_ (Cwd "_build") env "ocamlfind ocamlopt -opaque -package " (intercalate "," ocamlfind_libraries) (takeFileName mli) "-o" (takeFileName out)
 
     "_build/*.ml" %> \out ->
         case Map.lookup (dropDirectory1 out) originalToMap of
@@ -155,7 +154,7 @@ runBuild flags = do
         need $ [ml, out -<.> "cmi"] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
         envMembers <- askOracle $ OcamlEnv ()
         let env = [AddEnv x y | (x, y) <- envMembers]
-        cmd_ (Cwd "_build") env "ocamlfind ocamlopt -c -package" (intercalate "," libraries) (takeFileName ml) "-o" (takeFileName out)
+        cmd_ (Cwd "_build") env "ocamlfind ocamlopt -c -package" (intercalate "," ocamlfind_libraries) (takeFileName ml) "-o" (takeFileName out)
 
     let implDeps file alreadySeen stack = do
         let fileAsCmx = "_build" </> takeFileName file -<.> "cmx"
@@ -190,7 +189,7 @@ runBuild flags = do
             need $ [main_cmx] ++ deps ++ objs
             envMembers <- askOracle $ OcamlEnv ()
             let env = [AddEnv x y | (x, y) <- envMembers]
-            cmd_ (Cwd "_build") env "ocamlfind ocamlopt -linkpkg -package" (intercalate "," $ libraries ++ ["str", "unix"]) reldeps "-o" absolute_out
+            cmd_ (Cwd "_build") env "ocamlfind ocamlopt -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out
         return ()
 
     let exes = [("chx86_make_lib_summary", "bCHXMakeLibSummary.ml"),
@@ -200,7 +199,8 @@ runBuild flags = do
                 ("chx86_make_structdef", "bCHXMakeStructDefinition.ml"),
                 ("chx86_inspect_summaries", "bCHXInspectSummaries.ml"),
                 ("xanalyzer", "bCHXBinaryAnalyzer.ml"),
-                ("canalyzer", "cCHXCAnalyzer.ml")]
+                ("canalyzer", "cCHXCAnalyzer.ml"),
+                ("chc_gui", "maingui.ml")]
 
     forM_ exes (\pair -> do
         let (name, main_file) = pair
