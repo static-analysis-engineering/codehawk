@@ -52,11 +52,12 @@ splitBy delimiter = foldr f [[]]
                                | otherwise = (c:x):xs
 
 parseSExp :: String -> [(String, String)]
-parseSExp sExp =
-    let varLines = [line | line <- lines sExp, isInfixOf "\"" line] in
-    let splitLines = [splitBy '"' line | line <- varLines] in
+parseSExp sExp = do
+    line <- lines sExp
+    guard $ isInfixOf "\"" line
     -- should be in the format ... "VAR" ... "VALUE" ...
-    [(varName, varValue) | [_, varName, _, varValue, _] <- splitLines]
+    let [_, varName, _, varValue, _] = splitBy '"' line
+    return (varName, varValue)
 
 defaultOcaml = "4.07.1"
 defaultSwitch = "codehawk-" ++ defaultOcaml
