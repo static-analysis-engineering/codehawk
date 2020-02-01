@@ -20,21 +20,21 @@ matching construct with many clauses.
 
 - **width**: indentation is 2 spaces
 - **if-then-else**: Except for very short statements a branch is written as
-<pre>
-if cond then
-&nbsp; statement1
-else
-&nbsp; statement2
-</pre>
+  <pre>
+  if cond then
+  &nbsp; statement1
+  else
+  &nbsp; statement2
+  </pre>
 - **sequence**: A sequence of more than one statement should be enclosed in
-a begin-end, which is to be written as:
-<pre>
-begin
-&nbsp; statement1 ;
-&nbsp; statement2 ;
-&nbsp; ...
-end
-</pre>
+  a begin-end, which is to be written as:
+  <pre>
+  begin
+  &nbsp; statement1 ;
+  &nbsp; statement2 ;
+  &nbsp; ...
+  end
+  </pre>
   A very short sequence may be written on one line as
   <pre>
   begin stmt1 ; stmt2 end
