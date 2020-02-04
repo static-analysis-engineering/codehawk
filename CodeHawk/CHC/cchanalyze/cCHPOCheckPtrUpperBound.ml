@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -136,6 +136,18 @@ object (self)
                  self#var_implies_unsigned_length_conflict inv2#index v
               | _ -> None) None invs2
     | _ -> None
+
+  method private unsigned_length_safe =
+    match e2 with
+    | CastE (t, _) when is_unsigned_integral_type t ->
+       let _ = poq#set_diagnostic_arg
+                 4 ("value is cast to unsigned: " ^ (p2s (typ_to_pretty t))) in
+       List.fold_left (fun acc inv2 ->
+           acc
+           || match inv2#lower_bound_xpr with
+              | Some (XConst (IntConst n)) -> n#geq numerical_zero
+              | _ -> false) false invs2
+    | _ -> true
 
 
   (* ----------------------------- safe ------------------------------------- *)
@@ -381,27 +393,25 @@ object (self)
          true
        end
     | _ ->
-       match self#unsigned_length_conflict with
-       | Some _ -> false
-       | _ ->
-          match op with
-          | PlusPI | IndexPI ->
-             begin
-               match poq#get_buffer_offset_size 3 typ e1 with
-               | Some (vname,xsize,xoffset,deps1) ->
-                  begin
-                    match self#invs2_implies_pluspi_safe vname xsize xoffset deps1 with
-                    | Some (deps,msg) ->
-                       begin
-                         poq#record_safe_result deps msg ;
-                         true
-                       end
-                    | _ -> false
-                  end   
-               | _ ->
-                  self#check_pluspi_safe_invs1 || self#check_pluspi_safe_invs
-             end
-          | _ -> false
+       (self#unsigned_length_safe)
+       && (match op with
+           | PlusPI | IndexPI ->
+              begin
+                match poq#get_buffer_offset_size 3 typ e1 with
+                | Some (vname,xsize,xoffset,deps1) ->
+                   begin
+                     match self#invs2_implies_pluspi_safe vname xsize xoffset deps1 with
+                     | Some (deps,msg) ->
+                        begin
+                          poq#record_safe_result deps msg ;
+                          true
+                        end
+                     | _ -> false
+                   end
+                | _ ->
+                   self#check_pluspi_safe_invs1 || self#check_pluspi_safe_invs
+              end
+           | _ -> false)
             
                     
   (* ----------------------- violation -------------------------------------- *)
