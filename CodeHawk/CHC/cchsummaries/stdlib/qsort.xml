@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-04 23:28:13"/>
+  <function-summary name="qsort">
+    <parameters>
+      <par name="base" nr="1"/>
+      <par name="nel" nr="2"/>
+      <par name="width" nr="3"/>
+      <par name="compar" nr="4">
+	<pre>
+	  <deref-read/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions>
+      <pre name="buffersize">
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <ci>base</ci>
+	    <apply>
+	      <byte-size/>
+	      <apply>
+		<times/>
+		<ci>nel</ci>
+		<ci>width</ci>
+	      </apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>	    
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math><apply>
+	  <preserves-all-memory/>
+	</apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>

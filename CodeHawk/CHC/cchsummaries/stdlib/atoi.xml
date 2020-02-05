@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-04 23:11:26:31"/>
+  <function-summary name="atoi">
+    <parameters>
+      <par name="str" nr="1">
+	<pre>
+	  <deref-read-nt/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions/>
+    <postconditions>
+      <!-- relation between input and output is random from static
+	   analysis point of view -->
+      <post>
+	<math>
+	  <apply>
+	    <tainted lb="-2147483648" ub="2147483647"/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <functional/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>
