@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-06 10:13:33"/>
+  <function-summary name="fopen">
+    <parameters>
+      <par name="filename" nr="1">
+	<pre>
+	  <deref-read-nt/>
+	</pre>
+      </par>
+      <par name="mode" nr="2">
+	<pre>
+	  <deref-read-nt/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions>
+      <pre name="no-overlap">
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>filename</ci>
+	    <ci>mode</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <not-null/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+      <error-post env="a null pointer is returned if the requested
+		       file cannot be opened or if an error occurs">
+	<math>
+	  <apply>
+	    <null/>
+	    <return/>
+	  </apply>
+	</math>
+      </error-post>
+      <post>
+	<math>
+	  <apply>
+	    <policy-value policy="file" transition="open"/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <initialized/>
+	    <apply>
+	      <addressed-value/>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>

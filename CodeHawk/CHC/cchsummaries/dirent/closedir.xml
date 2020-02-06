@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-05 19:40:14"/>
+  <function-summary name="closedir">
+    <parameters>
+      <par name="dirp" nr="1">
+	<pre>
+	  <deref-read/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions/>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <invalidates/>
+	    <ci>dirp</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>  
+</codehawk-summary-file>

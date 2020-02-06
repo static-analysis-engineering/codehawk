@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-06 09:42:37"/>
+  <function-summary name="mprotect">
+    <parameters>
+      <par name="addr" nr="1">
+	<pre>
+	  <deref-write/>
+	</pre>
+      </par>
+      <par name="len" nr="2"/>
+      <par name="protect" nr="3"/>
+    </parameters>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </post>
+      <error-post>
+	<math><apply>
+	  <eq/>
+	  <return/>
+	  <cn>-1</cn>
+	</apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>  
+</codehawk-summary-file>

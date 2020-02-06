@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-06 09:46:54"/>
+  <function-summary name="__ctype_b_loc">
+    <parameters>
+    </parameters>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <not-null/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <initialized/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <not-null/>
+	    <apply>
+	      <addressed-value/>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <initialized/>
+	    <apply>
+	      <addressed-value/>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>  
+</codehawk-summary-file>

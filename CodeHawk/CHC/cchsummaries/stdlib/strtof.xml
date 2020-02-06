@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-06 10:04:57"/>
+  <function-summary name="strtof">
+    <parameters>
+      <par name="nptr" nr="1">
+	<pre>
+	  <deref-read-nt/>
+	</pre>
+      </par>
+      <par name="endptr" nr="2">
+	<pre>
+	  <deref-write-null/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions>
+      <pre name="no-overlap">
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>nptr</ci>
+	    <ci>endptr</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <const/>
+	    <ci>nptr</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>  
+</codehawk-summary-file>

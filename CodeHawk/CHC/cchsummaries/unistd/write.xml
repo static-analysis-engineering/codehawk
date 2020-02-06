@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-05 19:35:34"/>
+  <function-summary name="write">
+    <parameters>
+      <par name="buf" nr="2"/>
+      <par name="nbyte" nr="3"/>
+    </parameters>
+    <preconditions>
+      <pre name="buffersize">
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <ci>buf</ci>
+	    <apply>
+	      <index-size/>
+	      <ci>nbyte</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <geq/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <leq/>
+	    <return/>
+	    <ci>nbyte</ci>
+	  </apply>
+	</math>
+      </post>
+      <error-post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return/>
+	    <cn>-1</cn>
+	  </apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <functional/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>  
+</codehawk-summary-file>

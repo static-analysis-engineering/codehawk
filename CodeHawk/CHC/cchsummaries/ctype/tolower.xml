@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-06 09:51:14"/>
+  <function-summary name="tolower">
+    <parameters>
+      <par name="c" nr="1"/>
+    </parameters>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <geq/>
+	    <ci>c</ci>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <leq/>
+	    <ci>c</ci>
+	    <cn>255</cn>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <geq/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <leq/>
+	    <return/>
+	    <cn>256</cn>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <functional/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>  
+</codehawk-summary-file>
