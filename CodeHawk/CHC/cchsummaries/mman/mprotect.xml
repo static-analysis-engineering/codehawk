@@ -23,11 +23,12 @@
 	</math>
       </post>
       <error-post>
-	<math><apply>
-	  <eq/>
-	  <return/>
-	  <cn>-1</cn>
-	</apply>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return/>
+	    <cn>-1</cn>
+	  </apply>
 	</math>
       </error-post>
     </postconditions>

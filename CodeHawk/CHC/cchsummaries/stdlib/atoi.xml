@@ -16,7 +16,7 @@
       <post>
 	<math>
 	  <apply>
-	    <tainted lb="-2147483648" ub="2147483647"/>
+	    <tainted lb="MININT" ub="MAXINT"/>
 	    <return/>
 	  </apply>
 	</math>

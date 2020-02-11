@@ -11,7 +11,7 @@
 	  <apply>
 	    <gt/>
 	    <ci>i</ci>
-	    <ci>MIN_INT</ci>
+	    <ci>MININT</ci>
 	  </apply>
 	</math>
       </pre>

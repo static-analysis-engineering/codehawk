@@ -41,6 +41,25 @@
       <sideeffect>
 	<math>
 	  <apply>
+	    <const/>
+	    <ci>fmt</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <allocation-base/>
+	    <apply>
+	      <addressed-value/>
+	      <ci>strp</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
 	    <preserves-all-memory/>
 	  </apply>
 	</math>

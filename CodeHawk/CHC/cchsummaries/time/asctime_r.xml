@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-06 16:41:57"/>
+  <function-summary name="asctime_r">
+    <parameters>
+      <par name="tm" nr="1">
+	<pre>
+	  <deref-read/>
+	</pre>
+      </par>
+      <par name="buf" nr="2"/>
+    </parameters>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <ci>buf</ci>
+	    <cn>26</cn>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>tm</ci>
+	    <ci>buf</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return/>
+	    <ci>buf</ci>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <not-null/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+      <error-post env="a null pointer is returned if the conversion is
+		       unsuccessfull">
+	<math>
+	  <apply>
+	    <null/>
+	    <return/>
+	  </apply>
+	</math>
+      </error-post>
+      <post>
+	<math>
+	  <apply>
+	    <null-terminated/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <initializes-range/>
+	    <ci>buf</ci>
+	    <cn>26</cn>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>  
+</codehawk-summary-file>

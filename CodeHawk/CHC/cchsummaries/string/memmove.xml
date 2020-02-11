@@ -8,7 +8,7 @@
       <par name="n" nr="3"/>
     </parameters>
     <preconditions>
-      <pre name="buffersize">
+      <pre>
 	<math>
 	  <apply>
 	    <deref-write/>
@@ -20,7 +20,7 @@
 	  </apply>
 	</math>
       </pre>
-      <pre name="buffersize">
+      <pre>
 	<math>
 	  <apply>
 	    <deref-read/>

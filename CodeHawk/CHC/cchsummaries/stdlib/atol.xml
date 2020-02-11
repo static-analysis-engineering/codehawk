@@ -10,16 +10,19 @@
       </par>
     </parameters>
     <preconditions/>
-    <postconditions/>
-    <sideeffects>
-      <sideeffect>
+    <postconditions>
+      <!-- relation between input and output is random from static
+	   analysis point of view -->
+      <post>
 	<math>
 	  <apply>
-	    <const/>
-	    <ci>str</ci>
+	    <tainted lb="MINLONG" ub="MAXLONG"/>
+	    <return/>
 	  </apply>
 	</math>
-      </sideeffect>
+      </post>
+    </postconditions>
+    <sideeffects>
       <sideeffect>
 	<math>
 	  <apply>

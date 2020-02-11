@@ -10,6 +10,7 @@
       </par>
       <par name="template" nr="2">
 	<pre>
+	  <deref-read-nt/>
 	  <format-string/>
 	</pre>
       </par>
@@ -37,6 +38,25 @@
       </post>
     </postconditions>
     <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <allocation-base/>
+	    <apply>
+	      <addressed-value/>
+	      <ci>ptr</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <const/>
+	    <ci>template</ci>
+	  </apply>
+	</math>
+      </sideeffect>
       <sideeffect>
 	<math>
 	  <apply>

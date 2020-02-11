@@ -3,7 +3,9 @@
   <header date="2020-02-06 11:41:05"/>
   <function-summary name="ctime_r">
     <parameters>
-      <par name="clock" nr="1"><deref-read/></par>
+      <par name="clock" nr="1">
+	<deref-read/>
+      </par>
       <par name="buf" nr="2"/>
     </parameters>
     <preconditions>
@@ -35,6 +37,23 @@
 	  </apply>
 	</math>
       </post>
+      <post>
+	<math>
+	  <apply>
+	    <not-null/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+      <error-post env="a null pointer is returned if the conversion is
+		       unsuccessful">
+	<math>
+	  <apply>
+	    <null/>
+	    <return/>
+	  </apply>
+	</math>
+      </error-post>
     </postconditions>
     <sideeffects>
       <sideeffect>

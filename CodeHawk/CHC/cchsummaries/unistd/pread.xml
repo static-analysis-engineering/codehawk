@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-summary-file>
-  <header data="2020-02-06 11:37:53"/>
+  <header date="2020-02-06 11:37:53"/>
   <function-summary name="pread">
     <parameters>
       <par name="buf" nr="2"/>
       <par name="nbyte" nr="3"/>
     </parameters>
     <preconditions>
-      <pre name="buffersize">
+      <pre>
 	<math>
 	  <apply>
 	    <deref-write/>
@@ -50,6 +50,15 @@
       </error-post>
     </postconditions>
     <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <initializes-range/>
+	    <ci>buf</ci>
+	    <return/>
+	  </apply>
+	</math>
+      </sideeffect>
       <sideeffect>
 	<math>
 	  <apply>

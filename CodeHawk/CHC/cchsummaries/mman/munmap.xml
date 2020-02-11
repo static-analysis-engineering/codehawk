@@ -4,6 +4,7 @@
   <function-summary name="munmap">
     <parameters>
       <par name="addr" nr="1"/>
+      <par name="len" nr="2"/>
     </parameters>
     <preconditions>
       <pre name="buffersize">

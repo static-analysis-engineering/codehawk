@@ -13,7 +13,7 @@
       </par>
     </parameters>
     <preconditions>
-      <pre name="buffersize">
+      <pre>
 	<math>
 	  <apply>
 	    <deref-read/>

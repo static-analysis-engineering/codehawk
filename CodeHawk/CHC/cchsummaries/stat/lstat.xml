@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-06 15:44:00"/>
+  <function-summary name="lstat">
+    <parameters>
+      <par name="path" nr="1">
+	<pre>
+	  <deref-read-nt/>
+	</pre>
+      </par>
+      <par name="buf" nr="2">
+	<pre>
+	  <deref-write/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>path</ci>
+	    <ci>buf</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <initializes/>
+	    <apply>
+	      <addressed-value>
+		<field name="st_mode"/>
+	      </addressed-value>
+	      <ci>buf</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>  
+</codehawk-summary-file>

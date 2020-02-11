@@ -8,7 +8,11 @@
 	  <deref-read-nt/>
 	</pre>
       </par>
-      <par name="endptr" nr="2"/>
+      <par name="endptr" nr="2">
+	<pre>
+	  <deref-write-null/>
+	</pre>
+      </par>
       <par name="base" nr="3"/>
     </parameters>
     <preconditions>
@@ -25,7 +29,16 @@
 	</math>
       </pre>
     </preconditions>
-    <postconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <tainted lb="MINLONG" ub="MAXLONG"/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
     <sideeffects>
       <sideeffect>
 	<math>

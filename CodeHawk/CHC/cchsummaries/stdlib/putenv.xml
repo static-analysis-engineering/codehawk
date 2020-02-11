@@ -20,19 +20,21 @@
 	  </apply>
 	</math>
       </post>
-      <error-post><math>
-	<apply>
-	  <neq/>
-	  <return/>
-	  <cn>0</cn>
-	</apply>
-      </math>
+      <error-post>
+	<math>
+	  <apply>
+	    <neq/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
       </error-post>
     </postconditions>
     <sideeffects>
       <sideeffect>
 	<math>
-	  <apply><preserves-all-memory/>
+	  <apply>
+	    <preserves-all-memory/>
 	  </apply>
 	</math>
       </sideeffect>

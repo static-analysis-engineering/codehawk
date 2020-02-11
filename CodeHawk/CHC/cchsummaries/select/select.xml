@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-06 14:01:58"/>
+  <function-summary name="select">
+    <parameters>
+      <par name="readfds" nr="2">
+	<pre>
+	  <deref-read-null/>
+	</pre>
+      </par>
+      <par name="writefds" nr="3">
+	<pre>
+	  <deref-read-null/>
+	</pre>
+      </par>
+      <par name="errorfds" nr="4">
+	<pre>
+	  <deref-read-null/>
+	</pre>
+      </par>
+      <par name="timeout" nr="5">
+	<pre>
+	  <deref-read/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>readfds</ci>
+	    <ci>writefds</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>readfds</ci>
+	    <ci>errorfds</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>writefds</ci>
+	    <ci>errorfds</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>readfds</ci>
+	    <ci>timeout</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>writefds</ci>
+	    <ci>timeout</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>errorfds</ci>
+	    <ci>timeout</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <geq/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </post>
+      <error-post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return/>
+	    <cn>-1</cn>
+	  </apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>  
+</codehawk-summary-file>

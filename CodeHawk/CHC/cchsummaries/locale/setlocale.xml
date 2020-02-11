@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-06 15:33:25"/>
+  <function-summary name="setlocale">
+    <domainref name="platform" desc="determine if there exist locales
+				     in the environment that are not supported"/>
+    <parameters>
+      <par name="locale" nr="2">
+	<pre>
+	  <deref-read-nt-null/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <not-null/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+      <error-post env="a null pointer is returned if any of the
+		       environment variable searches yields a locale
+		       that is not supported">
+	<math>
+	  <apply>
+	    <null/>
+	    <return/>
+	  </apply>
+	</math>
+      </error-post>
+      <post>
+	<math>
+	  <apply>
+	    <null-terminated/>
+	    <return/>
+	  </apply>
+	</math
+	></post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>  
+</codehawk-summary-file>

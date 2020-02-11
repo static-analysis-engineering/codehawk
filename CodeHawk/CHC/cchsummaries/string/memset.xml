@@ -7,7 +7,7 @@
       <par name="len" nr="3"/>
     </parameters>
     <preconditions>
-      <pre name="buffersize">
+      <pre>
 	<math>
 	  <apply>
 	    <deref-write/>
@@ -20,7 +20,17 @@
 	</math>
       </pre>
     </preconditions>
-    <postconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return/>
+	    <ci>s</ci>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
     <sideeffects>
       <sideeffect>
 	<math>

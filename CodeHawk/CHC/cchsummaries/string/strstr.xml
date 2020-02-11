@@ -17,8 +17,31 @@
       </par>
     </parameters>
     <preconditions/>
-    <error-postconditions/>
     <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <apply>
+	      <region/>
+	      <return/>
+	    </apply>
+	    <apply>
+	      <region/>
+	      <ci>s1</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <geq/>
+	    <return/>
+	    <ci>s1</ci>
+	  </apply>
+	</math>
+      </post>
       <post>
 	<math>
 	  <apply>

@@ -16,9 +16,10 @@
     </postconditions>
     <sideeffects>
       <sideeffect>
-	<math><apply>
-	  <preserves-all-memory/>
-	</apply>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
 	</math>
       </sideeffect>
     </sideeffects>

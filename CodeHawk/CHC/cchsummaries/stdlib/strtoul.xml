@@ -15,7 +15,7 @@
       </par>
     </parameters>
     <preconditions>
-      <pre name="no-overlap">
+      <pre>
 	<math>
 	  <apply>
 	    <no-overlap/>
@@ -29,7 +29,7 @@
       <post>
 	<math>
 	  <apply>
-	    <tainted lb="0" ub="MAXINT64"/>
+	    <tainted lb="0" ub="MAXULONG"/>
 	    <return/>
 	  </apply>
 	</math>

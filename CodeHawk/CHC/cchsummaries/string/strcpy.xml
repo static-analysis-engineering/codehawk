@@ -11,7 +11,7 @@
       </par>
     </parameters>
     <preconditions>
-      <pre name="no-overlap">
+      <pre>
 	<math>
 	  <apply>
 	    <no-overlap/>
@@ -20,7 +20,7 @@
 	  </apply>
 	</math>
       </pre>
-      <pre name="buffersize">
+      <pre>
 	<math>
 	  <apply>
 	    <deref-write/>

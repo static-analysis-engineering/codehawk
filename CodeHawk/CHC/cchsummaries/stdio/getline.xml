@@ -5,17 +5,81 @@
     <parameters>
       <par name="lineptr" nr="1">
 	<pre>
-	  <deref-write/>
+	  <deref-read/>
 	</pre>
       </par>
-      <par name="n" nr="2"/>
+      <par name="n" nr="2">
+	<pre>
+	  <deref-read/>
+	</pre>
+      </par>
       <par name="stream" nr="3">
 	<pre>
 	  <deref-read/>
 	</pre>
       </par>
     </parameters>
-    <preconditions/>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>n</ci>
+	    <ci>stream</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <apply>
+	      <addressed-value/>
+	      <ci>lineptr</ci>
+	    </apply>
+	    <ci>n</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <apply>
+	      <addressed-value/>
+	      <ci>lineptr</ci>
+	    </apply>
+	    <ci>stream</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <apply>
+	      <addressed-value/>
+	      <ci>lineptr</ci>
+	    </apply>
+	    <apply>
+	      <addressed-value/>
+	      <ci>n</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <allocation-base/>
+	    <apply>
+	      <addressed-value/>
+	      <ci>lineptr</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
     <postconditions>
       <error-post>
 	<math>
@@ -36,15 +100,7 @@
 	</math>
       </post>
     </postconditions>
-    <sideeffects>
-      <sideeffect>
-	<math>
-	  <apply>
-	    <preserves-all-memory/>
-	  </apply>
-	</math>
-      </sideeffect>
-    </sideeffects>
+    <sideeffects/>
   </function-summary>
   <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>  
 </codehawk-summary-file>

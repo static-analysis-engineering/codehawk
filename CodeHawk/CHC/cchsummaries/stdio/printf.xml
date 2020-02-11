@@ -16,13 +16,6 @@
       <sideeffect>
 	<math>
 	  <apply>
-	    <preserves-all-memory/>
-	  </apply>
-	</math>
-      </sideeffect>
-      <sideeffect>
-	<math>
-	  <apply>
 	    <functional/>
 	  </apply>
 	</math>

@@ -29,7 +29,7 @@
       <post>
 	<math>
 	  <apply>
-	    <tainted lb="MININT64" ub="MAXINT64"/>
+	    <tainted lb="0" ub="MAXULONGLONG"/>
 	    <return/>
 	  </apply>
 	</math>

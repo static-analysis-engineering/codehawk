@@ -18,6 +18,15 @@
       <post>
 	<math>
 	  <apply>
+	    <leq/>
+	    <return/>
+	    <ci>MAXINT16</ci>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
 	    <tainted lb="0" ub="MAXINT16"/>
 	    <return/>
 	  </apply>

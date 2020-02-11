@@ -59,15 +59,7 @@
       <sideeffect>
 	<math>
 	  <apply>
-	    <const/>
-	    <ci>s</ci>
-	  </apply>
-	</math>
-      </sideeffect>
-      <sideeffect>
-	<math>
-	  <apply>
-	    <preserves-all-memory/>
+	    <functional/>
 	  </apply>
 	</math>
       </sideeffect>

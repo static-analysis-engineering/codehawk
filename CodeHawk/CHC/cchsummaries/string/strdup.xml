@@ -64,6 +64,14 @@
 	  </apply>
 	</math>
       </post>
+      <post>
+	<math>
+	  <apply>
+	    <not-null/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
       <error-post env="a null pointer is returned if the string cannot
 		       be created">
 	<math>

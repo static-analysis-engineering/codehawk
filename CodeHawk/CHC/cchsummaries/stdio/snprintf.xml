@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-summary-file>
-  <header data="2020-02-06 11:34:21"/>
+  <header date="2020-02-06 11:34:21"/>
   <function-summary name="snprintf">
     <parameters>
       <par name="s" nr="1"/>
@@ -13,7 +13,7 @@
       </par>
     </parameters>
     <preconditions>
-      <pre name="buffersize">
+      <pre>
 	<math>
 	  <apply>
 	    <deref-write/>
@@ -22,6 +22,15 @@
 	      <index-size/>
 	      <ci>n</ci>
 	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>s</ci>
+	    <ci>format</ci>
 	  </apply>
 	</math>
       </pre>
