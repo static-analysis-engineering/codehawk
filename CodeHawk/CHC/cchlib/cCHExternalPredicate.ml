@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@ open CHXmlReader
 (* cchlib *)
 open CCHBasicTypes
 open CCHLibTypes
+open CCHSettings
 open CCHSumTypeSerializer
 open CCHTypesToPretty
 open CCHUtilities
@@ -72,11 +73,77 @@ let _ =
 
 let is_macro_constant (name:string) = H.mem macroconstants name
 
-let get_macro_constant (name:string) =
+let get_macro_constant (name:string):s_term_t =
   if H.mem macroconstants name then
     H.find macroconstants name
   else
     raise (CCHFailure (LBLOCK [ STR "Macro constant " ; STR name ; STR " not found" ]))
+
+let macrovalues32 = H.create 11
+let macrovalues64 = H.create 11
+let macrovalues = H.create  3
+
+let _ =
+  List.iter (fun (name,tmacro) ->
+      H.add macrovalues32 name tmacro)
+            [ ("MININT", "MININT32");
+              ("MAXINT", "MAXINT32");
+              ("MAXUINT", "MAXUINT32");
+              ("MINLONG", "MININT32");
+              ("MAXLONG", "MAXINT32");
+              ("MAXULONG", "MAXUINT32");
+              ("MAXULONGLONG", "MAXUINT64") ]
+
+let _ =
+  List.iter (fun (name,tmacro) ->
+      H.add macrovalues64 name tmacro)
+            [ ("MININT", "MININT32");
+              ("MAXINT", "MAXINT32");
+              ("MAXUINT", "MAXUINT32");
+              ("MINLONG", "MININT64");
+              ("MAXLONG", "MAXINT64");
+              ("MAXULONG", "MAXUINT64");
+              ("MAXULONGLONG", "MAXUINT64") ]
+
+let _ = H.add macrovalues 32 macrovalues32
+let _ = H.add macrovalues 64 macrovalues64
+
+let get_macro_value_size name wordsize =
+  let default () =
+    let _ = chlog#add
+              "symbolic name in function summary"
+              (LBLOCK [ STR name ; STR " (wordsize: " ; INT wordsize ]) in
+    NamedConstant name in
+  if  H.mem macrovalues wordsize then
+    let values = H.find macrovalues wordsize in
+    if H.mem values name then
+      get_macro_constant (H.find values name)
+    else
+      default ()
+  else
+    default ()
+
+let is_generic_macro_constant (name:string) =
+  List.mem name [ "MININT"; "MAXINT"; "MAXUINT";
+                  "MINLONG"; "MAXLONG"; "MAXULONG";
+                  "MAXULONGLONG"]
+
+let is_macro_value (name:string) =
+  (is_macro_constant name) || (is_generic_macro_constant name)
+
+let get_macro_value (name:string):s_term_t =
+  let default () =
+    let _ = chlog#add "symbolic name in function summary" (STR name) in
+    NamedConstant name in
+  if is_macro_constant name then
+    get_macro_constant name
+  else if is_generic_macro_constant name then
+    if system_settings#has_wordsize then
+      get_macro_value_size name system_settings#get_wordsize
+    else
+      default ()
+  else
+    default ()
 
 let xpredicate_tag p =
   match p with
@@ -611,8 +678,8 @@ let rec read_xml_term (node:xml_element_int) ?(lvars=[]) ?(gvars=[]) params : s_
   let get_param name = 
     let (_,i) = (List.find (fun (n,_) -> n = name) params) in i in
   let get_constant txt =
-    if is_macro_constant txt then
-      get_macro_constant txt
+    if is_macro_value txt then
+      get_macro_value txt
     else
       try
         NumConstant (mkNumericalFromString txt)
@@ -628,11 +695,10 @@ let rec read_xml_term (node:xml_element_int) ?(lvars=[]) ?(gvars=[]) params : s_
       ArgValue (ParFormal (get_param name),ArgNoOffset)
     else if has_gvar name then
       ArgValue (ParGlobal name,ArgNoOffset)
-    else if is_macro_constant name then
-      get_macro_constant name
     else if has_lvar name then
       LocalVariable name
-    else NamedConstant name
+    else
+      get_macro_value name
   | "cn" -> get_constant node#getText
   | "choice" ->
      let lb = if has "lb" then Some (get_constant (get "lb")) else None in
@@ -715,15 +781,21 @@ let read_xml_xpredicate (node:xml_element_int) ?(gvars=[]) params : xpredicate_t
   let get = n#getAttribute in
   let has = n#hasNamedAttribute in
   let get_constant txt =
-    if is_macro_constant txt then
-      get_macro_constant txt
+    if is_macro_value txt then
+      get_macro_value txt
     else
       try
         NumConstant (mkNumericalFromString txt)
       with
+      | Invalid_argument s ->
+         raise_error
+           node
+           (LBLOCK [ STR "read_xml_term NumConstant with " ; STR txt ;
+                     STR ": " ; STR s ])
       | Failure _ ->
          raise_error
-           node (LBLOCK [ STR "read_xml_term NumConstant with " ; STR txt ]) in
+           node
+           (LBLOCK [ STR "read_xml_term NumConstant with " ; STR txt ]) in
   try
     begin
       match terms with
@@ -826,12 +898,12 @@ let read_xml_xpredicate (node:xml_element_int) ?(gvars=[]) params : xpredicate_t
          | "preserves-all-memory-x" -> [ XPreservesAllMemoryX terms ]
          | _ ->
             raise_error (getc "apply")
-                        (LBLOCK [ STR "read_xml_pre_predicate: incorrect number of arguments " ; 
+                        (LBLOCK [ STR "read_xml_xpredicate: incorrect number of arguments " ; 
 		                  INT (List.length terms) ; STR " (1,2, or 3 expected)" ])
     end
   with
   | Invalid_argument s ->
-     raise_error node (LBLOCK [ STR "read_xml_pre_predicate invalid argument: " ; STR s ])
+     raise_error node (LBLOCK [ STR "read_xml_xpredicate invalid argument: " ; STR s ])
 
 let relational_op_to_xml_string op =
   match op with
