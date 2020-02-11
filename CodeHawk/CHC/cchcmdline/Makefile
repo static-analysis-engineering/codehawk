@@ -40,7 +40,7 @@ CAMLBUILD := ocamlopt str.cmxa unix.cmxa  \
 	$(CCHPRE)/cchpre.cmxa \
 	$(CCHANALYZE)/cchanalyze.cmxa
 
-all: dirs canalyzer 
+all: dirs canalyzer inspect
 
 dirs:
 	@mkdir -p cmx
