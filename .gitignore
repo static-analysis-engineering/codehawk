@@ -21,7 +21,12 @@ _build/
 # executables
 CodeHawk/CHB/bchcmdline/chx86_analyze
 CodeHawk/CHC/cchcmdline/canalyzer
+CodeHawk/CHC/cchcmdline/inspectsummaries
+CodeHawk/CHC/cchcil/parseFile
 CodeHawk/CHC/cchgui/chc_gui
+
+# summaries
+cchsummaries.jar
 
 # oasis generated files
 setup.data
@@ -44,3 +49,13 @@ CodeHawk/CHC/cil-1.7.3-develop/lib/perl5/Makefile
 CodeHawk/CHC/cil-1.7.3-develop/lib/perl5/blib/
 CodeHawk/CHC/cil-1.7.3-develop/lib/perl5/pm_to_blib
 CodeHawk/CHC/cil-1.7.3-develop/share/
+
+# CHB build artefact
+CodeHawk/CHB/bchcmdline/chx86_make_app_summary
+CodeHawk/CHB/bchcmdline/chx86_make_class_summary
+CodeHawk/CHB/bchcmdline/chx86_make_const_summary
+CodeHawk/CHB/bchcmdline/chx86_make_lib_summary
+CodeHawk/CHB/bchcmdline/chx86_make_structdef
+
+# CodeHawk logging
+*.chlog
