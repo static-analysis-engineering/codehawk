@@ -159,6 +159,8 @@ let init_lexicon _ =
       ("for", fun loc -> FOR loc);
       ("if", fun loc -> dbgToken (IF loc));
       ("else", fun _ -> ELSE);
+      (*** KT addition: _Noreturn function specifier ***)
+      ("_Noreturn", fun loc -> NORETURN loc);      
       (*** Implementation specific keywords ***)
       ("__signed__", fun loc -> SIGNED loc);
       ("__inline__", fun loc -> INLINE loc);

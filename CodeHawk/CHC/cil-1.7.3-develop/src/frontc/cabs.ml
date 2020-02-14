@@ -85,7 +85,8 @@ and storage =
     NO_STORAGE | AUTO | STATIC | EXTERN | REGISTER
 
 and funspec = 
-    INLINE | VIRTUAL | EXPLICIT
+  | INLINE | VIRTUAL | EXPLICIT
+  | NORETURN   (* KT addition: _Noreturn function specifier *)
 
 and cvspec =
     CV_CONST | CV_VOLATILE | CV_RESTRICT
