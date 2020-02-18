@@ -8,6 +8,8 @@ jar -cf cchsummaries.jar \
     errno \
     fcntl \
     getopt \
+    in \
+    inet \
     ioctl \
     libio \
     locale \
@@ -15,6 +17,7 @@ jar -cf cchsummaries.jar \
     regex \
     select  \
     signal \
+    socket \
     stat \
     stdio  \
     stdlib \
