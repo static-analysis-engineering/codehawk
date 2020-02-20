@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-19 17:46:55"/>
+  <function-summary name="pcre_exec">
+    <parameters>
+      <par name="code" nr="1">
+	<pre>
+	  <deref-read/>
+	</pre>
+      </par>
+      <par name="extra" nr="2">
+	<pre>
+	  <deref-read-null/>
+	</pre>
+      </par>
+      <par name="subject" nr="3">
+	<pre>
+	  <deref-read-nt/>
+	</pre>
+      </par>
+      <par name="length" nr="4"/>
+      <par name="startoffset" nr="5"/>
+      <par name="options" nr="6"/>
+      <par name="ovector" nr="7"/>
+      <par name="ovecsize" nr="8"/>
+    </parameters>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <ci>ovector</ci>
+	    <apply>
+	      <index-size/>
+	      <ci>ovecsize</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <ci>ovector</ci>
+	    <apply>
+	      <index-size/>
+	      <ci>ovecsize</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <const/>
+	    <ci>code</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <const/>
+	    <ci>extra</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <const/>
+	    <ci>subject</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>    
+</codehawk-summary-file>

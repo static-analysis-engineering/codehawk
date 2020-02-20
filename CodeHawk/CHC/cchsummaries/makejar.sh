@@ -3,19 +3,30 @@
 jar -cf cchsummaries.jar \
     assert \
     builtins \
+    crypt \
     ctype \
     dirent \
+    dlfcn \
+    epoll \
     errno \
     fcntl \
     getopt \
+    grp \
     in \
     inet \
     ioctl \
     libio \
     locale \
     mman \
+    netdb \
+    pcre \
+    poll \
+    prctl \
+    pwd \
     regex \
+    resource \
     select  \
+    sendfile \
     signal \
     socket \
     stat \
