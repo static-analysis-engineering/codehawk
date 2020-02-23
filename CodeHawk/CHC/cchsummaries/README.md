@@ -6,7 +6,7 @@
 - [Format of predicates](#format-of-predicates)
 - [Format of summaries](#format-of-summaries)
 - [Predicate and function symbols](#predicate-and-function-symbols)
-
+- [Symbolic constants](#symbolic-constants)
 
 ### Summary specification
 

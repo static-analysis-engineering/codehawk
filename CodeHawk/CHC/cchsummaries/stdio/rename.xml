@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-22 23:56:24"/>
+  <!--
+      TOG: int rename(const char *old, const char *new);
+      
+      The rename() function shall change the name of a file. The old
+      argument points to the pathname of the file to be renamed. The 
+      new argument points to the new pathname of the file.
+      
+      Upon successful completion, rename() shall return 0; otherwise,
+      -1 shall be returned, [CX] [Option Start] errno shall be set 
+      to indicate the error, [Option End] and neither the file named 
+      by old nor the file named by new shall be changed or created.
+  -->
+  <function-summary name="rename">
+    <parameters>
+      <par name="old" nr="1">
+	<pre>
+	  <deref-read-nt/>
+	</pre>
+      </par>
+      <par name="new" nr="2">
+	<pre>
+	  <deref-read-nt/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions/>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <const/>
+	    <ci>old</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <const/>
+	    <ci>new</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>

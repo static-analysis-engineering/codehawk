@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-21 09:47:11"/>
+  <function-summary name="sigprocmask">
+    <parameters>
+      <par name="set" nr="2">
+	<pre>
+	  <deref-read/>
+	</pre>
+      </par>
+      <par name="oset" nr="3">
+	<pre>
+	  <deref-write-null/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>set</ci>
+	    <ci>oset</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <const/>
+	    <ci>set</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>
