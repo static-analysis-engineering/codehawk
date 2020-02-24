@@ -92,7 +92,10 @@ let _ =
               ("MINLONG", "MININT32");
               ("MAXLONG", "MAXINT32");
               ("MAXULONG", "MAXUINT32");
-              ("MAXULONGLONG", "MAXUINT64") ]
+              ("MAXULONGLONG", "MAXUINT64");
+              ("MAXLONGLONG", "MAXINT64");
+              ("MINLONGLONG", "MININT64")
+            ]
 
 let _ =
   List.iter (fun (name,tmacro) ->
@@ -103,7 +106,10 @@ let _ =
               ("MINLONG", "MININT64");
               ("MAXLONG", "MAXINT64");
               ("MAXULONG", "MAXUINT64");
-              ("MAXULONGLONG", "MAXUINT64") ]
+              ("MAXULONGLONG", "MAXUINT64");
+              ("MAXLONGLONG", "MAXINT64");
+              ("MINLONGLONG", "MININT64")
+            ]
 
 let _ = H.add macrovalues 32 macrovalues32
 let _ = H.add macrovalues 64 macrovalues64
@@ -126,7 +132,7 @@ let get_macro_value_size name wordsize =
 let is_generic_macro_constant (name:string) =
   List.mem name [ "MININT"; "MAXINT"; "MAXUINT";
                   "MINLONG"; "MAXLONG"; "MAXULONG";
-                  "MAXULONGLONG"]
+                  "MAXULONGLONG"; "MINLONGLONG"; "MAXLONGLONG" ]
 
 let is_macro_value (name:string) =
   (is_macro_constant name) || (is_generic_macro_constant name)

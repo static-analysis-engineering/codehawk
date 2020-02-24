@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <a href="http://pubs.opengroup.org/onlinepubs/009695399/functions/getcwd.html"/>
+  <XXX>
+    It is not clear from the documentation what happens if the absolute pathname is
+    larger than the size provided. It is not clear whether the string if buf is
+    guaranteed to be null-terminated.
+  </XXX>
+  <function-summary name="getcwd">
+    <parameters>
+      <par name="buf" nr="1"/>
+      <par name="size" nr="2"/>
+    </parameters>
+    <preconditions>
+      <pre name="buffersize">
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <ci>buf</ci>
+	    <apply>
+	      <index-size/>
+	      <ci>size</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <not-null/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+      <error-post env="a null pointer is returned if search permission
+		       is denied or if another error occurs">
+	<math>
+	  <apply>
+	    <null/>
+	    <return/>
+	  </apply>
+	</math>
+      </error-post>
+      <post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return/>
+	    <ci>buf</ci>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+</codehawk-summary-file>

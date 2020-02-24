@@ -33,8 +33,10 @@ jar -cf cchsummaries.jar \
     stdio  \
     stdlib \
     string \
+    syslog \
     sysmacros \
     time \
+    uio \
     unistd \
     wait \
     wchar \
