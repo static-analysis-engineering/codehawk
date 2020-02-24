@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,23 @@ let rec string_replace (c:char) (r:string) (s:string):string =
     let suffix = string_replace c r (String.sub s (i+1) ((String.length s) - i -1)) in
     prefix ^ r ^ suffix
   with Not_found -> s
+
+let string_nsplit (separator:char) (s:string):string list =
+  let result = ref [] in
+  let len = String.length s in
+  let start = ref 0 in
+  begin
+    while !start < len do
+      let s_index = try String.index_from s !start separator with Not_found -> len in
+      let substring = String.sub s !start (s_index - !start) in
+      begin
+	result := substring :: !result ;
+	start := s_index + 1
+      end 
+    done;
+    !result
+  end
+  
 
 (* Split a list into two lists, the first one with n elements,
    the second list with the remaining (if any) elements
@@ -81,6 +98,10 @@ let remove_duplicates_f (l:'a list) (f:'a -> 'a -> bool):'a list =
     | [] -> r
     | h::tl -> if List.exists (fun e -> f e h) r then (aux tl r) else (aux tl (h::r)) in
   List.rev (aux l [])
+
+(* Return the union of two lists, using f as an equality check *)
+let list_union_f (l1:'a list) (l2:'a list) (f:'a -> 'a -> bool):'a list = 
+    remove_duplicates_f (l1 @ l2) f
 
 (* Return the difference of two lists, using f as an equality check *)
 let list_difference (l:'a list) (s:'a list) (f:'a -> 'a -> bool):'a list =

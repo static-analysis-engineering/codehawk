@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 
 (* string functions *)
 val string_replace: char -> string -> string -> string
+val string_nsplit: char -> string -> string list
 
 (* list functions *)
 val list_split: int -> 'a list -> ('a list * 'a list)
@@ -40,6 +41,7 @@ val list_suffix: int -> 'a list -> 'a list
 val list_maxf: 'a list -> ('a -> 'a -> int) -> 'a
 val list_compare: 'a list -> 'a list -> ('a -> 'a -> int) -> int
 
+val list_union_f: 'a list -> 'a list -> ('a -> 'a -> bool) -> 'a list
 val list_difference: 'a list -> 'a list -> ('a -> 'a -> bool) -> 'a list
   
 val remove_duplicates: 'a list -> 'a list

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -55,3 +55,18 @@ val string_printer: string_printer_int
 val pretty_to_string: pretty_t -> string
 
 val pp_quantity: int -> ?numwidth:int -> string -> string -> pretty_t
+
+val pp_list : < toPretty : pretty_t; .. > list -> pretty_t
+val pp_list_str : string list -> pretty_t
+val pp_list_int : int list -> pretty_t
+val pp_array :
+  < toPretty : pretty_t; .. > array -> pretty_t
+val pp_array_int : int array -> pretty_t
+val pp_array_big_int : Z.t array -> pretty_t
+val pp_matrix_int : int array array -> pretty_t
+val pp_matrix_big_int : Z.t array array -> pretty_t
+val pp_stack :
+  < toPretty : pretty_t; .. > Stack.t -> pretty_t
+val pp_assoc_int_int : (int * int) list -> pretty_t
+val pp_assoc_int_big_int : (int * Z.t) list -> pretty_t
+  
