@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-25 13:34:49"/>
+  <function-summary name="gethostbyname">
+    <domainref name="platform"
+	       desc="existence of a host entry for a given host name"/>
+    <parameters>
+      <par name="name" nr="1"><pre><deref-read-nt/></pre></par>
+    </parameters>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <not-null/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <initialized/>
+	    <apply>
+	      <addressed-value>
+		<field name="h_addrtype"/>
+	      </addressed-value>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <initialized/>
+	    <apply>
+	      <addressed-value>
+		<field name="h_addr_list"/>
+	      </addressed-value>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <initialized/>
+	    <apply>
+	      <addressed-value>
+		<field name="h_length"/>
+	      </addressed-value>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <error-post env="a null pointer is returned if the requested
+		       entry is not found">
+	<math>
+	  <apply>
+	    <null/>
+	    <return/>
+	  </apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <const/>
+	    <ci>name</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>

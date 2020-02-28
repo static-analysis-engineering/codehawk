@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-25 13:53:52"/>
+  <function-summary name="setitimer">
+    <parameters>
+      <par name="which" nr="1"/>
+      <par name="value" nr="2">
+	<pre>
+	  <deref-read/>
+	</pre>
+      </par>
+      <par name="ovalue" nr="3">
+	<pre>
+	  <deref-write-null/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>value</ci>
+	    <ci>ovalue</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <initializes/>
+	    <ci>ovalue</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>

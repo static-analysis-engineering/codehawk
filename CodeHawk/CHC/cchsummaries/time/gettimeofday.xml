@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-25 13:52:57"/>
+  <function-summary name="gettimeofday">
+    <parameters>
+      <par name="tp" nr="1">
+	<pre>
+	  <deref-write/>
+	</pre>
+      </par>
+      <par name="tzp" nr="2">
+	<pre>
+	  <null/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <initializes/>
+	    <apply>
+	      <addressed-value/>
+	      <ci>tp</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>

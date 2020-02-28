@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-25 13:42:13"/>
+  <function-summary name="setsockopt">
+    <parameters>
+      <par name="option_value" nr="4"/>
+      <par name="option_len" nr="5"/>
+    </parameters>
+    <preconditions>
+      <pre name="buffersize">
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <ci>option_value</ci>
+	    <apply>
+	      <byte-size/>
+	      <ci>option_len</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>

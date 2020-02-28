@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-25  13:48:09"/>
+  <function-summary name="vsnprintf">
+    <parameters>
+      <par name="s" nr="1"/>
+      <par name="n" nr="2"/>
+      <par name="format" nr="3">
+	<pre>
+	  <deref-read-nt/>
+	  <format-string/>
+	</pre>
+      </par>
+      <par name="ap" nr="4"/>
+    </parameters>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <ci>s</ci>
+	    <ci>n</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <geq/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </post>
+      <error-post>
+	<math>
+	  <apply>
+	    <lt/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>

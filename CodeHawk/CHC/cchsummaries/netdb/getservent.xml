@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-25 13:37:42"/>
+  <function-summary name="getservent">
+    <domainref name="platform"
+	       desc="check if the end of the database is reached"/>
+    <parameters/>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <not-null/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <initialized/>
+	    <apply>
+	      <addressed-value>
+		<field name="s_port"/>
+	      </addressed-value>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <error-post env="a null pointer is returned if the end of the
+		       database is reached">
+	<math>
+	  <apply>
+	    <null/>
+	    <return/>
+	  </apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>

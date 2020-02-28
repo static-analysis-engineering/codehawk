@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-25 13:40:17"/>
+  <function-summary name="sendto">
+    <parameters>
+      <par name="message" nr="2"/>
+      <par name="length" nr="3"/>
+      <par name="dest_addr" nr="5"/>
+      <par name="dest_len" nr="6"/>
+    </parameters>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <ci>dest_addr</ci>
+	    <apply>
+	      <byte-size/>
+	      <ci>dest_len</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <ci>message</ci>
+	    <apply>
+	      <byte-size/>
+	      <ci>length</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <geq/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </post>
+      <error-post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return/>
+	    <cn>-1</cn>
+	  </apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <functional/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>
