@@ -37,7 +37,7 @@ moduleToFile modul =
 
 dropLibraryModules :: [String] -> [String]
 dropLibraryModules modules =
-    let knownLibraryModules = HashSet.fromList ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest", "IO", "Extlib", "Option", "ExtString", "Zip", "GBin", "GButton", "GEdit", "GMain", "GMenu", "GMisc", "GObj", "GPack", "GRange", "GText", "GWindow", "Glib", "Pango", "GdkEvent", "GDraw", "GSourceView2", "GTree", "Gobject", "GFile", "GToolbox", "Gdk"] in
+    let knownLibraryModules = HashSet.fromList ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest", "IO", "Extlib", "Option", "ExtString", "Zip", "GBin", "GButton", "GEdit", "GMain", "GMenu", "GMisc", "GObj", "GPack", "GRange", "GText", "GWindow", "Glib", "Pango", "GdkEvent", "GDraw", "GSourceView2", "GTree", "Gobject", "GFile", "GToolbox", "Gdk", "Z"] in
     filter (\modul -> not $ HashSet.member modul knownLibraryModules) modules
 
 copyFileChangedWithAnnotation :: String -> String -> Action ()
