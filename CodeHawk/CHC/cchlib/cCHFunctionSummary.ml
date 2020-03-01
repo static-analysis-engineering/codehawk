@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -78,6 +78,7 @@ let preserves_null_termination fs (index:int) =      (* use index starting at 1 
       | XConstTerm (ArgValue (ParFormal i,ArgNoOffset)) -> index = i
       | XFunctional -> true
       | _ -> acc)) false fs.fs_sideeffects
+
 exception XmlReaderError of int * int * pretty_t
 
 let raise_error (node:xml_element_int) (msg:pretty_t) =

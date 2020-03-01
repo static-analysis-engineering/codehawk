@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -142,12 +142,16 @@ object (self)
              nnode
            end) self#get_notes)
 
-  method private read_xml_postconditions (node:xml_element_int) (gvars:string list) =
-    let (post,errorpost) = read_xml_postcondition_list node ~gvars self#get_params in
+  method private read_xml_postconditions
+                   (node:xml_element_int) (gvars:string list) =
+    let (post,errorpost) =
+      read_xml_postcondition_list node ~gvars self#get_params in
     let _ = match errorpost with
       | [] -> ()
       | _ ->
-         raise (CCHFailure (STR "Error postconditions not supported in function contract")) in
+         raise
+           (CCHFailure
+              (STR "Error postconditions not supported in function contract")) in
     List.iter (fun (p,_) -> postconditions#add (id#index_xpredicate p)) post
 
   method private write_xml_postconditions (node:xml_element_int) =
@@ -198,19 +202,47 @@ object (self)
   method read_xml (node:xml_element_int) (gvars:string list) =
     let hasc = node#hasTaggedChild in
     let getc = node#getTaggedChild in
-    begin
-      self#read_xml_parameters (getc "parameters") ;
-      (if hasc "notes" then
-         self#read_xml_notes (getc "notes")) ;
-      (if hasc "localvars" then
-         self#read_xml_localvars (getc "localvars")) ;
-      (if hasc "preconditions" then
-         self#read_xml_preconditions (getc "preconditions") gvars) ;
-      (if hasc "postconditions" then
-         self#read_xml_postconditions (getc "postconditions") gvars) ;
-      (if hasc "instrs" then
-         self#read_xml_instrs (getc "instrs"))
-    end
+    try
+      begin
+        self#read_xml_parameters (getc "parameters") ;
+        (if hasc "notes" then
+           self#read_xml_notes (getc "notes")) ;
+        (if hasc "localvars" then
+           self#read_xml_localvars (getc "localvars")) ;
+        (if hasc "preconditions" then
+           self#read_xml_preconditions (getc "preconditions") gvars) ;
+        (if hasc "postconditions" then
+           self#read_xml_postconditions (getc "postconditions") gvars) ;
+        (if hasc "instrs" then
+           self#read_xml_instrs (getc "instrs"))
+      end
+    with
+    | CCHFailure p ->
+       begin
+         ch_error_log#add
+           "function contract"
+           (LBLOCK [ STR "function: " ; STR name ]) ;
+         raise (CCHFailure
+                  (LBLOCK [ STR "Error in reading function contract for " ;
+                            STR name ]))
+       end
+    | XmlReaderError (line,col,p) ->
+       let msg = LBLOCK [ STR "Xml error in function contract " ; STR name ;
+                          STR ": " ; p ] in
+       begin
+         ch_error_log#add "function contract" msg ;
+         raise (XmlReaderError (line,col,msg))
+       end
+    | _ ->
+       begin
+         ch_error_log#add
+           "function contract"
+           (LBLOCK [ STR "Unknown error in reading function contract for " ;
+                     STR name ]) ;
+         raise (CCHFailure
+                  (LBLOCK [ STR "Unknown error in reading function contract for " ;
+                            STR name ]))
+       end
 
   method write_xmlx (node:xml_element_int) =
     begin
@@ -381,18 +413,32 @@ object (self)
                 ((node#getTaggedChild "global-variables")#getTaggedChildren "gvar")
 
   method read_xml (node:xml_element_int) =
-    begin
-      self#read_xml_global_variables node ;
-      List.iter (fun n ->
-          let name = n#getAttribute "name" in
-          let ignorefn =
-            n#hasNamedAttribute "ignore" && (n#getAttribute "ignore") = "yes" in
-          let c = new function_contract_t ignorefn name in
-          begin
-            c#read_xml n (List.map (fun gv -> gv.cgv_name) globalvars) ;
-            H.add functioncontracts name c
-          end) ((node#getTaggedChild "functions")#getTaggedChildren "function")
-    end
+    try
+      begin
+        self#read_xml_global_variables node ;
+        List.iter (fun n ->
+            let name = n#getAttribute "name" in
+            let ignorefn =
+              n#hasNamedAttribute "ignore" && (n#getAttribute "ignore") = "yes" in
+            let c = new function_contract_t ignorefn name in
+            begin
+              c#read_xml n (List.map (fun gv -> gv.cgv_name) globalvars) ;
+              H.add functioncontracts name c
+            end) ((node#getTaggedChild "functions")#getTaggedChildren "function")
+      end
+    with
+    | CCHFailure p ->
+       begin
+         ch_error_log#add "file contract" p ;
+         raise (CCHFailure p)
+       end
+    | XmlReaderError (line,col,p) ->
+       raise (XmlReaderError (line,col,p))
+    | _ ->
+       begin
+         ch_error_log#add "file contract" (STR "unknown error") ;
+         raise (CCHFailure (STR "File contract: unknown error"))
+       end
 
   method private write_xml_global_variables (node:xml_element_int) =
     let gvars =

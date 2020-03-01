@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -174,10 +174,15 @@ let main () =
 
   with
   | CHXmlReader.XmlParseError (line,col,p)
+  | CCHFunctionSummary.XmlReaderError (line,col,p)
   | XmlDocumentError (line,col,p) ->
+     let msg =
+       LBLOCK [ STR "Xml error: (" ; INT line ; STR ", " ; INT col ; STR "): " ;
+                p ]  in
      begin
-       pr_debug [ STR "Xml error: (" ; INT line ; STR ", " ; INT col ; STR "): " ;
-		  p ; NL ] ;
+       ch_error_log#add "final failure" msg ;
+       pr_debug [ msg ; NL ] ;
+       save_log_files "failure" ;
        exit 3
     end
 
@@ -196,7 +201,14 @@ let main () =
        save_log_files "failure" ;
        pr_debug [ STR "Error: " ; STR s ; NL ] ;
        exit 1
-    end
+     end
+
+  | _ ->
+     begin
+       save_log_files "failure" ;
+       pr_debug [ STR "Unknown error encountered" ; NL ] ;
+       exit 1
+     end
 
 
 let _ = Printexc.print main ()
