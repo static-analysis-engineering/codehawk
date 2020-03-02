@@ -17,17 +17,20 @@ jar -cf cchsummaries.jar \
     ioctl \
     libio \
     locale \
+    mathcalls \
     mman \
     netdb \
     pcre \
     poll \
     prctl \
+    pthread \
     pwd \
     regex \
     resource \
     select  \
     sendfile \
     signal \
+    sigthread \
     socket \
     stat \
     stdio  \

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-02-28 15:53:16"/>
+  <function-summary name="strpbrk">
+    <domainref name="string"
+	       desc="existence of a character in a string"/>
+    <parameters>
+      <par name="s1" nr="1">
+	<pre>
+	  <deref-read-nt/>
+	</pre>
+      </par>
+      <par name="s2" nr="2">
+	<pre>
+	  <deref-read-nt/>
+	</pre>
+      </par>
+    </parameters>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <not-null/>
+	    <return/>
+	  </apply>
+	</math>
+      </post>
+      <error-post uad="a null pointer is returned if no byte from s2
+		       occurs in s1">
+	<math>
+	  <apply>
+	    <null/>
+	    <return/>
+	  </apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <functional/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-summary-file>
