@@ -133,7 +133,7 @@ object (self)
 
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
-    let hasc = node#hasTaggedChild in
+    let hasc = node#hasOneTaggedChild in
     try
       begin
         (if hasc "localspos" then

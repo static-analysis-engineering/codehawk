@@ -555,7 +555,7 @@ let load_export_ordinal_table (name:string) =
   | Some s ->
     let doc = readXmlDocumentString s in
     let root = doc#getRoot in
-    if root#hasTaggedChild "export-ordinal-table" then
+    if root#hasOneTaggedChild "export-ordinal-table" then
 	Some (root#getTaggedChild "export-ordinal-table")
     else
       None
@@ -632,7 +632,7 @@ let extract_function_file (fname:string) (ext:string) (tag:string) =
   | Some s -> 
     let doc = readXmlDocumentString s in
     let root = doc#getRoot in
-    if root#hasTaggedChild tag then
+    if root#hasOneTaggedChild tag then
       Some (root#getTaggedChild tag)
     else
       begin

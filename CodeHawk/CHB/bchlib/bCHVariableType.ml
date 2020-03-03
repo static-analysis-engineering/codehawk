@@ -668,7 +668,7 @@ let read_xml_enuminfo (node:xml_element_int) : benuminfo_t =
 let rec read_xml_fieldinfo (node:xml_element_int) : bfieldinfo_t =
   let getc = node#getTaggedChild in
   let geti = node#getIntAttribute in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let tNode = if hasc "type" then getc "type" else getc "btype" in
   let get_enum n = Some (n#getAttribute "name", 
 			 if n#hasNamedAttribute "flags" then 
@@ -705,7 +705,7 @@ and read_xml_compinfo (node:xml_element_int) : bcompinfo_t =
 and read_xml_arg (node:xml_element_int) : (string * btype_t) =
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let tynode = if hasc "type" then getc "type" else getc "typ" in
   (get "aname", read_xml_type tynode )
     
@@ -723,7 +723,7 @@ and read_xml_btype (node:xml_element_int) : btype_t =
   let getb = node#getBoolAttribute in
   let getc = node#getTaggedChild in
   let has = node#hasNamedAttribute in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let get_vararg () = if has "vararg" then getb "vararg" else false in
   let gettname () =
     if has "name" then SimpleName (get "name") else read_xml_tname (getc "templated-name") in

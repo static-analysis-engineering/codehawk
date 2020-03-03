@@ -718,7 +718,7 @@ let read_xmlx_object_type (node:xml_element_int) =
                                     STR s ; STR " not recognized" ])
      
 let read_xmlx_method_descriptor (node:xml_element_int) =
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let getc = node#getTaggedChild in
   let getcc = node#getTaggedChildren in
   let argtypes = List.map (fun n ->

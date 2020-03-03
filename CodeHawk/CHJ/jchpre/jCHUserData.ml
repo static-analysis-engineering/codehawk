@@ -134,7 +134,7 @@ object (self)
 
   method add_userdata (node:xml_element_int) =
     begin
-      (if node#hasTaggedChild "constants" then
+      (if node#hasOneTaggedChild "constants" then
          List.iter self#add_user_constant
                    ((node#getTaggedChild "constants")#getTaggedChildren "c")) ;
       List.iter self#add_user_class_data (node#getTaggedChildren "class")
@@ -166,7 +166,7 @@ object (self)
 
   method private add_user_method_data (cn:class_name_int) (node:xml_element_int) =
     let getc = node#getTaggedChild in
-    let hasc = node#hasTaggedChild in
+    let hasc = node#hasOneTaggedChild in
     let name = node#getAttribute "name" in
     let ssig = node#getAttribute "sig" in
     let msix = method_signature_implementations#get_ms_index name ssig in
@@ -238,10 +238,10 @@ object (self)
     let cname = if package = "" then cname else package ^ "." ^ cname in
     let cn = make_cn cname in
     begin
-      (if node#hasTaggedChild "methods" then
+      (if node#hasOneTaggedChild "methods" then
          List.iter (self#add_method_data cn) 
 	           ((node#getTaggedChild "methods")#getTaggedChildren "method")) ;
-      (if node#hasTaggedChild "constructors" then
+      (if node#hasOneTaggedChild "constructors" then
          List.iter (self#add_constructor_data cn)
 	           ((node#getTaggedChild "constructors")#getTaggedChildren "constructor"))
     end
@@ -427,7 +427,7 @@ object (self)
     (cms:class_method_signature_int) 
     (node:xml_element_int) =
     let getc = node#getTaggedChild in
-    let hasc = node#hasTaggedChild in
+    let hasc = node#hasOneTaggedChild in
     let cmsix = cms#index in
     begin
       (if hasc "bounds" then 

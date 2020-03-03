@@ -218,7 +218,7 @@ object (self)
 	let xstring = get_summary_file path filename in
 	let doc = readXmlDocumentString xstring in
 	let root = doc#getRoot in
-	if root#hasTaggedChild "jnifun" then
+	if root#hasOneTaggedChild "jnifun" then
 	  let node = root#getTaggedChild "jnifun" in
 	  let summary = read_xml_function_summary node in
 	  begin
@@ -282,7 +282,7 @@ object (self)
   method private read_jni_function_summary_string (index:int) (xstring:string) =
     let doc = readXmlDocumentString xstring in
     let root = doc#getRoot in
-    if root#hasTaggedChild "jnifun" then
+    if root#hasOneTaggedChild "jnifun" then
       let node = root#getTaggedChild "jnifun" in
       if node#hasNamedAttribute "name" then
 	let summary = read_xml_function_summary node in
@@ -291,7 +291,7 @@ object (self)
 	  chlog#add "jni summary" 
 	    (LBLOCK [ STR "Jni index " ; INT index ; STR ": " ; STR summary#get_name ])
 	end
-      else if node#hasTaggedChild "refer-to" then
+      else if node#hasOneTaggedChild "refer-to" then
 	self#read_template_jni_summary node index
       else
 	raise_xml_error node
@@ -327,11 +327,11 @@ object (self)
     try
       let doc = readXmlDocumentString xstring in
       let root = doc#getRoot in
-      if root#hasTaggedChild "libfun" then
+      if root#hasOneTaggedChild "libfun" then
 	let node = root#getTaggedChild "libfun" in
 	let _ = self#check_name node fname in
 	let _ = self#check_dll node dll in
-	if node#hasTaggedChild "refer-to" then
+	if node#hasOneTaggedChild "refer-to" then
 	  let rNode = node#getTaggedChild "refer-to" in
 	  if rNode#hasNamedAttribute "char-type" then
 	    self#read_aw_summary node dll fname
@@ -351,7 +351,7 @@ object (self)
 	      H.add dllnames dll fname ;
 	      self#load_summary_dependencies summary
 	    end
-	else if root#hasTaggedChild "jnifun" then
+	else if root#hasOneTaggedChild "jnifun" then
 	  let node = root#getTaggedChild "jnifun" in
 	  if node#hasNamedAttribute "index" then
 	    let index = node#getIntAttribute "index" in
@@ -368,7 +368,7 @@ object (self)
     try
       let doc = readXmlDocumentString xstring in
       let root = doc#getRoot in
-      if root#hasTaggedChild "libfun" then
+      if root#hasOneTaggedChild "libfun" then
         let node = root#getTaggedChild "libfun" in
         let _ = self#check_name node fname in
         let summary = read_xml_function_summary node in
@@ -526,7 +526,7 @@ object (self)
     (fname:string) (dir:string) (xstring:string) =
     let doc = readXmlDocumentString xstring in
     let root = doc#getRoot in
-    if root#hasTaggedChild "libfun" then
+    if root#hasOneTaggedChild "libfun" then
       let node = root#getTaggedChild "libfun" in
       let pkgs = String.lowercase_ascii (node#getAttribute "package") in
       let summary = read_xml_function_summary node in

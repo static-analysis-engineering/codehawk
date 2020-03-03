@@ -465,7 +465,7 @@ object (self)
     | _ -> ()
 
   method private read_xml_annotation_data (node:xml_element_int) =
-    let hasc = node#hasTaggedChild in
+    let hasc = node#hasOneTaggedChild in
     let getc = node#getTaggedChild in
     begin
       (if hasc "data-blocks" then 
@@ -490,7 +490,7 @@ object (self)
     let get = node#getAttribute in
     let has = node#hasNamedAttribute in
     let getc = node#getTaggedChild in
-    let hasc = node#hasTaggedChild in
+    let hasc = node#hasOneTaggedChild in
     begin
       (if has "app" then system_settings#set_app_summary_jars (get "app")) ;
       (if hasc "settings" then
@@ -873,10 +873,10 @@ object (self)
 	  let cstring = get_summary_file path filename in
 	  let doc = readXmlDocumentString cstring in
 	  let root = doc#getRoot in
-	  if root#hasTaggedChild "symbolic-constants" then
+	  if root#hasOneTaggedChild "symbolic-constants" then
 	    let node = root#getTaggedChild "symbolic-constants" in
 	    read_xml_symbolic_constants node
-	  else if root#hasTaggedChild "symbolic-flags" then
+	  else if root#hasOneTaggedChild "symbolic-flags" then
 	    let node = root#getTaggedChild "symbolic-flags" in
 	    read_xml_symbolic_flags node
 	  else
@@ -1018,7 +1018,7 @@ object (self)
           
   method private read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
-    let hasc = node#hasTaggedChild in
+    let hasc = node#hasOneTaggedChild in
     begin
       functions_data#read_xml (getc "functions-data") ;
       self#read_xml_jumptables (getc "jump-tables") ;

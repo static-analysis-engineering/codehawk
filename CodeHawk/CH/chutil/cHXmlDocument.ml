@@ -188,7 +188,7 @@ object ('a)
   (* predicates *)
   method hasOneChild: bool
   method hasChildren: bool
-  method hasTaggedChild: string -> bool
+  method hasOneTaggedChild: string -> bool
   method hasTaggedChildren: string -> bool
   method hasAttributes: bool
   method hasNamedAttribute: string -> bool
@@ -242,7 +242,7 @@ object (self: 'a)
   method hasOneChild = match children with [c] -> true | _ -> false
   method hasChildren = match children with [] -> false | _ -> true
 
-  method hasTaggedChild (childtag:string) =
+  method hasOneTaggedChild (childtag:string) =
     match (List.filter (fun n -> n#getTag = childtag) children) with
       [c] -> true
     | _ -> false

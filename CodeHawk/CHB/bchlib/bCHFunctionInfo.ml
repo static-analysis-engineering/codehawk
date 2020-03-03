@@ -2348,7 +2348,7 @@ object (self)
     end
       
   method read_xml (node:xml_element_int) =
-    let hasc = node#hasTaggedChild in
+    let hasc = node#hasOneTaggedChild in
     try
       let getc = node#getTaggedChild in
       begin

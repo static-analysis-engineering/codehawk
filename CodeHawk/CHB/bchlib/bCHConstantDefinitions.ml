@@ -187,7 +187,7 @@ let read_xml_description (node:xml_element_int) =
   let get = node#getAttribute in
   let has = node#hasNamedAttribute in
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let getText tag = (getc tag)#getText in
   let hasText tag = (getc tag)#hasText in
   if has "desc" then get "desc" 
@@ -285,7 +285,7 @@ let read_xml_symbolic_addresses (node:xml_element_int) =
   let getc = node#getTaggedChild in
   let getx t = string_to_doubleword (get t) in
   let has = node#hasNamedAttribute in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let symtype =
     if hasc "type" || hasc "btype" then
       let tNode = if hasc "type" then getc "type" else getc "btype" in

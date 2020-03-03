@@ -212,7 +212,7 @@ let read_xml_post (node:xml_element_int) (cms:class_method_signature_int) =
     | _ ->
       raise_xml_error node 
 	(LBLOCK [ STR "Method without return value cannot have a postcondition" ]) in
-  let _ = if node#hasTaggedChild "math" then () else
+  let _ = if node#hasOneTaggedChild "math" then () else
       raise_xml_error node (STR "Expected an element with tag math") in
   let mNode = node#getTaggedChild "math" in
   let pNode = mNode#getChild in
@@ -234,7 +234,7 @@ let read_xml_post (node:xml_element_int) (cms:class_method_signature_int) =
 let read_xml_postcondition (node:xml_element_int) (cms:class_method_signature_int) =
   let has = node#hasNamedAttribute in
   let get = node#getAttribute in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let is_error = node#getTag = "error-post" in
   let name = if has "name" then get "name" else "none" in
   let pred =
@@ -245,11 +245,11 @@ let read_xml_postcondition (node:xml_element_int) (cms:class_method_signature_in
   make_postcondition ~name is_error pred
 
 let read_xml_safety_condition (node:xml_element_int) (cms:class_method_signature_int) =
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let getc = node#getTaggedChild in
   if hasc "math" then
     let mNode = getc "math" in
-    if mNode#hasTaggedChild "apply" then
+    if mNode#hasOneTaggedChild "apply" then
       let aNode = mNode#getTaggedChild "apply" in
       read_xml_precondition_predicate aNode cms
     else
@@ -285,7 +285,7 @@ let read_xml_sideeffect_predicate (node:xml_element_int) (cms:class_method_signa
 
 
 let read_xml_sideeffect (node:xml_element_int) (cms:class_method_signature_int) =
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let getc = node#getTaggedChild in
   if hasc "math" then
     let mNode = getc "math" in
@@ -319,7 +319,7 @@ let read_xml_method_summary
     ~(is_default:bool)
     ~(is_bridge:bool) 
     ~(visibility:access_t) =
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let getc = node#getTaggedChild in
   let post = if hasc "postconditions" then 
       read_xml_postconditions (getc "postconditions") cms
@@ -369,7 +369,7 @@ let read_xml_method_summary
     cms
 
 let read_xml_method_signature (node:xml_element_int) =
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let getc = node#getTaggedChild in
   let getcc = node#getTaggedChildren in
   let argTypes = List.map read_xml_type (getcc "arg") in
@@ -448,7 +448,7 @@ let read_xml_access_modifier (node:xml_element_int) =
 let read_xml_method (node:xml_element_int) (cn:class_name_int) =
   let has = node#hasNamedAttribute in
   let get = node#getAttribute in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let getc = node#getTaggedChild in
   let is_yes tag = has tag && (get tag) = "yes" in
   try
@@ -514,7 +514,7 @@ let read_xml_method (node:xml_element_int) (cn:class_name_int) =
 let read_xml_constructor (node:xml_element_int) (cn:class_name_int) =
   let get = node#getAttribute in
   let has = node#hasNamedAttribute in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let getc = node#getTaggedChild in
   try
     let (arguments,_) = read_xml_method_signature (getc "signature") in
@@ -569,7 +569,7 @@ let read_xml_field (node:xml_element_int) ?(is_interface_field=false) (cn:class_
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
   let has = node#hasNamedAttribute in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let is_yes tag = has tag && (get tag) = "yes" in
   let fieldName = get "name" in
   let is_final = is_yes "final" in
@@ -636,7 +636,7 @@ let read_xml_class (node:xml_element_int) (package:string) =
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
   let has = node#hasNamedAttribute in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let is_yes tag = has tag && ((get tag) = "yes") in
   let name = get "name" in
   try
@@ -698,7 +698,7 @@ let read_xml_interface (node:xml_element_int) (package:string) =
   let get = node#getAttribute in
   let has = node#hasNamedAttribute in
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let is_yes tag = has tag && ((get tag) = "yes") in
   let name = get "name" in
   try
@@ -753,7 +753,7 @@ let read_xml_class_file_from_string (name:string) (s:string) =
   try
     let doc = readXmlDocumentString s in
     let root = doc#getRoot in
-    let hasc = root#hasTaggedChild in
+    let hasc = root#hasOneTaggedChild in
     if hasc "class" then
       let cNode = root#getTaggedChild "class" in
       read_xml_class cNode (cNode#getAttribute "package")

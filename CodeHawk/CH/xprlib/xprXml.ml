@@ -257,7 +257,7 @@ and attr_from_xml (xattr:xml_element_int) =
   XAttr (attr, xpr_from_xml xattr#getChild)
   
 let expr_from_xml (xxpr:xml_element_int) =
-  if xxpr#hasTaggedChild "math" then
+  if xxpr#hasOneTaggedChild "math" then
     xpr_from_xml (xxpr#getTaggedChild  "math")#getChild
   else
     raise (XmlDocumentError

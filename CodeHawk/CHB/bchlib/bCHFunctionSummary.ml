@@ -151,7 +151,7 @@ let read_xml_function_semantics
   let get = node#getAttribute in 
   let has = node#hasNamedAttribute in
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let (post,errorpost) = if hasc "postconditions" then
       let pNode = getc "postconditions" in
       let (sc_post,sc_errorpost) = read_xml_shortcut_postconditions pNode in
@@ -206,7 +206,7 @@ let write_xml_function_documentation (node:xml_element_int) (doc:function_docume
 
 let read_xml_apidoc (node:xml_element_int):pretty_t =
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let getcc = node#getTaggedChildren in
   if node#isEmpty then STR "" else
     let read_xml_pt_par (pNode:xml_element_int) =
@@ -246,7 +246,7 @@ let read_xml_apidoc (node:xml_element_int):pretty_t =
 
 let read_xml_function_documentation (node:xml_element_int):function_documentation_t =
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   { fdoc_desc = if hasc "desc" then (getc "desc")#getText else "" ;
     fdoc_remarks = if hasc "remarks" then (getc "remarks")#getText else "" ;
     fdoc_caution = if hasc "caution" then (getc "caution")#getText else "" ;

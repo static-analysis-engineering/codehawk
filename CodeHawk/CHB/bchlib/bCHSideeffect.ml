@@ -131,7 +131,7 @@ let rec sideeffect_compare s1 s2 =
 
 let read_xml_par_sideeffects (node:xml_element_int):sideeffect_t list =
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let one = IndexSize (NumConstant numerical_one) in
   let getsize n = 
     let has = n#hasNamedAttribute in

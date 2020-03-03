@@ -207,7 +207,7 @@ let read_xml_parameter_list
   let _ = List.iter (fun xpar ->
     let get = xpar#getAttribute in
     let get_int = xpar#getIntAttribute in
-    let hasc = xpar#hasTaggedChild in
+    let hasc = xpar#hasOneTaggedChild in
     let getc = xpar#getTaggedChild in
     let name = get "name" in
     let seqnr = get_int "nr" in
@@ -243,7 +243,7 @@ let read_xml_parameter_list
 let read_xml_function_summary (node:xml_element_int) : function_summary_t =
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let fname = get "name" in
   let domainref =
     if hasc "domainref" then

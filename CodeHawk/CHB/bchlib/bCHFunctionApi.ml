@@ -109,7 +109,7 @@ let read_xml_function_api (node:xml_element_int):function_api_t =
   let has = node#hasNamedAttribute in
   let getc = node#getTaggedChild in
   let getcc = node#getTaggedChildren in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let parameters = List.map read_xml_api_parameter (getcc "par") in
   let cc = get "cc" in
   let stackadj = if cc = "stdcall" || cc = "cdecl" then

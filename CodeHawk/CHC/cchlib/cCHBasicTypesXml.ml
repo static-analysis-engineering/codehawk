@@ -74,7 +74,7 @@ let write_xml_symbol_list ?(tag="sym") (node:xml_element_int) (lst:symbol_t list
 
 let read_xml_symbol (node:xml_element_int):symbol_t =
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let sname = node#getAttribute "sname" in
   let seqnr = node#getIntAttribute "seqnr" in
   let atts =
@@ -202,7 +202,7 @@ let read_xml_asm_input_list (node:xml_element_int) : asm_input_t list =
 
 
 let read_xml_instruction (node:xml_element_int) : instr =
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
   let read_list tag reader = if hasc tag then reader (getc tag) else [] in
@@ -250,7 +250,7 @@ and read_xml_statement_list (node:xml_element_int) : stmt list =
 and read_xml_statement (node:xml_element_int) : stmt =
   let get_int = node#getIntAttribute in
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let labels = if hasc "labels" then 
       read_xml_label_list (getc "labels") 
     else [] in

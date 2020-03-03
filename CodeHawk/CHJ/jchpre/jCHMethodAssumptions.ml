@@ -146,7 +146,7 @@ let save_xml_method_assumptions_file ?(methods=[]) (cn:class_name_int) =
     end
 
 let read_xml_method_signature (node:xml_element_int) =
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let getc = node#getTaggedChild in
   let getcc = node#getTaggedChildren in
   let argTypes = List.map read_xml_type (getcc "arg") in

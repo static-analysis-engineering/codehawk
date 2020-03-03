@@ -200,7 +200,7 @@ object (self)
         
 
   method read_xml (node:xml_element_int) (gvars:string list) =
-    let hasc = node#hasTaggedChild in
+    let hasc = node#hasOneTaggedChild in
     let getc = node#getTaggedChild in
     try
       begin
@@ -394,7 +394,7 @@ object (self)
     globalvars <- gv :: globalvars
 
   method private read_xml_global_variables (node:xml_element_int) =
-    if node#hasTaggedChild "global-variables" then
+    if node#hasOneTaggedChild "global-variables" then
       List.iter (fun n ->
           let get = n#getAttribute in
           let geti = n#getIntAttribute in

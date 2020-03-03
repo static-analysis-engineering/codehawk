@@ -182,7 +182,7 @@ object
     let geti tag = if has tag then node#getIntAttribute tag else 0 in
     let getc = node#getTaggedChild in
     let getf tag = float_of_string (get tag) in
-    let hasc = node#hasTaggedChild in
+    let hasc = node#hasOneTaggedChild in
     { dm_unknown_instrs = geti "unknown-instrs" ;
       dm_instrs = geti "instrs" ;
       dm_functions = geti "functions" ;
@@ -861,7 +861,7 @@ object
     
   method read_xml (node:xml_element_int):result_metrics_t =
     let getc = node#getTaggedChild in
-    let hasc = node#hasTaggedChild in
+    let hasc = node#hasOneTaggedChild in
     let prec_metrics_handler =
       mk_prec_metrics_handler memacc_metrics_handler#init_value in
     { mres_prec = prec_metrics_handler#read_xml (getc "prec") ;

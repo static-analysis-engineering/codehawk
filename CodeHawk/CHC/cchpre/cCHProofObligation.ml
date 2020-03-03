@@ -498,7 +498,7 @@ let read_xml_proof_obligation
   let get = node#getAttribute in
   let has = node#hasNamedAttribute in
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in 
+  let hasc = node#hasOneTaggedChild in 
   begin
     (if has "s" then
        let status = po_status_mfts#fs (get "s") in

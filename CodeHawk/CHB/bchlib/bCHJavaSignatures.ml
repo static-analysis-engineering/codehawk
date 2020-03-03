@@ -612,7 +612,7 @@ let read_xml_method_args (node:xml_element_int) =
   List.map (fun (_,t) -> t) (List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2) args)
 
 let read_xml_method_signature (node:xml_element_int) (name:string): method_signature_t =
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let getc = node#getTaggedChild in
   let argTypes = read_xml_method_args node in
   let returnType = if hasc "return" then
