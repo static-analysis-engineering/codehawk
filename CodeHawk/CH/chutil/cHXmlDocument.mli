@@ -77,10 +77,14 @@ object ('a)
   method getColumnNumber: int
 
   (* predicates *)
-  method hasOneChild: bool                    (* has exactly one child *)
-  method hasChildren: bool                    (* has one or more children *)
-  method hasTaggedChild: string -> bool       (* has exactly one child with the given tag *)
-  method hasTaggedChildren: string -> bool    (* has one or more children with the given tag *)
+  (** has exactly one child *)
+  method hasOneChild: bool
+  (** has one or more children *)
+  method hasChildren: bool
+  (** has exactly one child with the given tag *)
+  method hasTaggedChild: string -> bool
+  (** has one or more children with the given tag *)
+  method hasTaggedChildren: string -> bool
   method hasAttributes: bool
   method hasNamedAttribute: string -> bool
   method hasText: bool
