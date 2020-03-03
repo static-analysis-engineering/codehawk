@@ -330,7 +330,7 @@ object (self)
     end
            
   method read_xml (node:xml_element_int) =
-    let hasc = node#hasTaggedChild in
+    let hasc = node#hasOneTaggedChild in
     let getcc tag = (node#getTaggedChild tag)#getTaggedChildren in
     begin
       List.iter (fun anode ->

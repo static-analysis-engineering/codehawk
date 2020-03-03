@@ -82,7 +82,7 @@ object ('a)
   (** has one or more children *)
   method hasChildren: bool
   (** has exactly one child with the given tag *)
-  method hasTaggedChild: string -> bool
+  method hasOneTaggedChild: string -> bool
   (** has one or more children with the given tag *)
   method hasTaggedChildren: string -> bool
   method hasAttributes: bool

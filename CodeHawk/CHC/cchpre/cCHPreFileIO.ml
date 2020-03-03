@@ -356,10 +356,10 @@ let read_global_contract () =
         let doc = readXmlDocument filename in
         let root = doc#getRoot in
         let node = root#getTaggedChild "global-definitions" in
-        let _ = if node#hasTaggedChild "global-assumptions" then
+        let _ = if node#hasOneTaggedChild "global-assumptions" then
                   let gasnode = node#getTaggedChild "global-assumptions" in
                   global_contract#read_xml gasnode in
-        if node#hasTaggedChild "library-function-summaries" then
+        if node#hasOneTaggedChild "library-function-summaries" then
           let libnode = node#getTaggedChild "library-function-summaries" in
           List.iter (fun n ->
               let name = n#getAttribute "name" in

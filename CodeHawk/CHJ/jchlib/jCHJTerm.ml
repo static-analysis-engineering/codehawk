@@ -1037,7 +1037,7 @@ let read_xmlx_jterm_range
   let geti = node#getIntAttribute in
   let has = node#hasNamedAttribute in
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   if has "iconst" then
     mk_intconstant_jterm_range (mkNumerical (geti "iconst"))
   else if has "fconst" then

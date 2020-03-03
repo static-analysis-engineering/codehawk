@@ -119,7 +119,7 @@ end
 let read_xml_callsite (node:xml_element_int) (pod:podictionary_int):callsite_t =
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
-  let hasc = node#hasTaggedChild in
+  let hasc = node#hasOneTaggedChild in
   let iargs =
     try
       List.map int_of_string (nsplit ',' (get "iargs"))
@@ -345,7 +345,7 @@ object (self)
     end
 
   method read_xml (node:xml_element_int) =
-    let hasc = node#hasTaggedChild in
+    let hasc = node#hasOneTaggedChild in
     let getcc tag = (node#getTaggedChild tag)#getTaggedChildren in
     try
       begin

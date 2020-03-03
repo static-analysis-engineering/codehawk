@@ -80,7 +80,7 @@ let record_jdk_jar_version s =
 	  let versionDoc = Zip.read_entry jar (Zip.find_entry jar "jdk_jar_version.xml") in
 	  let doc = readXmlDocumentString versionDoc in
 	  let root = doc#getRoot in
-	  if root#hasTaggedChild "header" then
+	  if root#hasOneTaggedChild "header" then
 	    let xheader = root#getTaggedChild "header" in
 	    let version = xheader#getAttribute "version" in
 	    let numFiles = xheader#getIntAttribute "files" in
