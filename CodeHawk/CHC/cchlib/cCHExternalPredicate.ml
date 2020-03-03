@@ -655,7 +655,7 @@ let simplify_xpredicate (p:xpredicate_t) =
 
 let rec read_xml_s_offset (node:xml_element_int):s_offset_t =
   let get = node#getAttribute in
-  let hasc () = node#hasChild in
+  let hasc () = node#hasOneChild in
   let getc () = node#getChild in
   match node#getTag with
   | "no-offset" -> ArgNoOffset
@@ -719,7 +719,7 @@ let rec read_xml_term (node:xml_element_int) ?(lvars=[]) ?(gvars=[]) params : s_
 	begin
 	  match op with
           | "addressed-value" ->
-             if opnode#hasChild then
+             if opnode#hasOneChild then
                ArgAddressedValue (t, read_xml_s_offset opnode#getChild)
              else
                ArgAddressedValue (t, ArgNoOffset)
