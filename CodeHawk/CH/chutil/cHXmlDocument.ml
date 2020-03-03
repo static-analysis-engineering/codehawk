@@ -186,7 +186,7 @@ object ('a)
   method getColumnNumber: int
 
   (* predicates *)
-  method hasChild: bool
+  method hasOneChild: bool
   method hasChildren: bool
   method hasTaggedChild: string -> bool
   method hasTaggedChildren: string -> bool
@@ -239,7 +239,7 @@ object (self: 'a)
   method getLineNumber = line_number
   method getColumnNumber = column_number
 
-  method hasChild = match children with [c] -> true | _ -> false
+  method hasOneChild = match children with [c] -> true | _ -> false
   method hasChildren = match children with [] -> false | _ -> true
 
   method hasTaggedChild (childtag:string) =
