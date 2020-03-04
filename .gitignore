@@ -20,10 +20,16 @@ _build/
 
 # executables
 CodeHawk/CHB/bchcmdline/chx86_analyze
+
 CodeHawk/CHC/cchcmdline/canalyzer
 CodeHawk/CHC/cchcmdline/inspectsummaries
 CodeHawk/CHC/cchcil/parseFile
 CodeHawk/CHC/cchgui/chc_gui
+
+CodeHawk/CHJ/jchstac/chj_class_invariants
+CodeHawk/CHJ/jchstac/chj_initialize
+CodeHawk/CHJ/jchstac/chj_translate_class
+CodeHawk/CHJ/jchstac/chj_template
 
 # summaries
 cchsummaries.jar
