@@ -37,7 +37,7 @@ moduleToFile modul =
 
 dropLibraryModules :: [String] -> [String]
 dropLibraryModules modules =
-    let knownLibraryModules = HashSet.fromList ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest", "IO", "Extlib", "Option", "ExtString", "Zip", "GBin", "GButton", "GEdit", "GMain", "GMenu", "GMisc", "GObj", "GPack", "GRange", "GText", "GWindow", "Glib", "Pango", "GdkEvent", "GDraw", "GSourceView2", "GTree", "Gobject", "GFile", "GToolbox", "Gdk", "Z"] in
+    let knownLibraryModules = HashSet.fromList ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest", "IO", "Extlib", "Option", "ExtString", "Zip", "GBin", "GButton", "GEdit", "GMain", "GMenu", "GMisc", "GObj", "GPack", "GRange", "GText", "GWindow", "Glib", "Pango", "GdkEvent", "GDraw", "GSourceView2", "GTree", "Gobject", "GFile", "GToolbox", "Gdk", "Z", "NumericalCollections", "ExtList", "ExtArray", "DynArray", "Queue", "Marshal", "TaintNodeCollections", "CostBoundCollections", "JTermCollections", "JTermTableCollections"] in
     filter (\modul -> not $ HashSet.member modul knownLibraryModules) modules
 
 copyFileChangedWithAnnotation :: String -> String -> Action ()
@@ -112,8 +112,8 @@ runBuild flags = do
         return $ parseSExp sExp
 
     originalToMap <- liftIO $ unsafeInterleaveIO $ do
-        mlis <- getDirectoryFilesIO "" ["CH_extern//*.mli", "CH//*.mli", "CHC//*.mli", "CHB//*.mli"]
-        mls <- getDirectoryFilesIO "" ["CH_extern//*.ml", "CH//*.ml", "CHC//*.ml", "CHB//*.ml"]
+        mlis <- getDirectoryFilesIO "" ["CH_extern//*.mli", "CH//*.mli", "CHC//*.mli", "CHB//*.mli", "CHJ//*.mli"]
+        mls <- getDirectoryFilesIO "" ["CH_extern//*.ml", "CH//*.ml", "CHC//*.ml", "CHB//*.ml", "CHJ//*.ml"]
         let inputs = ignoredOriginalFiles $ mlis ++ mls
         let pairs = [(takeFileName file, file) | file <- inputs]
         return $ Map.fromList pairs
@@ -203,7 +203,11 @@ runBuild flags = do
                 ("chx86_inspect_summaries", "bCHXInspectSummaries.ml"),
                 ("xanalyzer", "bCHXBinaryAnalyzer.ml"),
                 ("canalyzer", "cCHXCAnalyzer.ml"),
-                ("chc_gui", "maingui.ml")]
+                ("chc_gui", "maingui.ml"),
+                ("classinvariants", "jCHXClassInvariants.ml"),
+                ("translateclass", "jCHXTranslateClass.ml"),
+                ("usertemplate", "jCHXTemplate.ml"),
+                ("initialize", "jCHXInitializeAnalysis.ml")]
 
     forM_ exes (\pair -> do
         let (name, main_file) = pair
