@@ -42,7 +42,6 @@ open JCHBytecode
 open JCHDictionary
    
 (* jchpre *)
-open JCHApplication
 open JCHPreAPI
 open JCHPreSumTypeSerializer
 
