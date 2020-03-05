@@ -35,9 +35,9 @@ moduleToFile modul =
     let firstChar : rest = modul in
     (toLower firstChar) : rest
 
-dropLibraryModules :: [String] -> [String]
-dropLibraryModules modules =
-    let knownLibraryModules = HashSet.fromList ["Big_int_Z", "Array", "Str", "Hashtbl", "Q", "Int64", "Int32", "Unix", "Printf", "List", "Seq", "Bytes", "Map", "Scanf", "String", "Stdlib", "Buffer", "Set", "Pervasives", "Arg", "LargeFile", "Char", "SymbolCollections", "Filename", "Obj", "LanguageFactory", "IntCollections", "StringCollections", "Char", "VariableCollections", "Lexing", "Sys", "Printexc", "FactorCollections", "Callback", "ParseError", "Gc", "StringMap", "Stack", "Digest", "IO", "Extlib", "Option", "ExtString", "Zip", "GBin", "GButton", "GEdit", "GMain", "GMenu", "GMisc", "GObj", "GPack", "GRange", "GText", "GWindow", "Glib", "Pango", "GdkEvent", "GDraw", "GSourceView2", "GTree", "Gobject", "GFile", "GToolbox", "Gdk", "Z", "NumericalCollections", "ExtList", "ExtArray", "DynArray", "Queue", "Marshal", "TaintNodeCollections", "CostBoundCollections", "JTermCollections", "JTermTableCollections"] in
+dropLibraryModules :: [String] -> [String] -> [String]
+dropLibraryModules libraryModules modules =
+    let knownLibraryModules = HashSet.fromList libraryModules in
     filter (\modul -> not $ HashSet.member modul knownLibraryModules) modules
 
 copyFileChangedWithAnnotation :: String -> String -> Action ()
@@ -87,6 +87,9 @@ type instance RuleResult ModuleDependencies = [String]
 newtype OcamlEnv = OcamlEnv () deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
 type instance RuleResult OcamlEnv = [(String, String)]
 
+newtype NonFileModules = NonFileModules () deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
+type instance RuleResult NonFileModules = [String]
+
 opam_libraries = ["zarith", "extlib", "camlzip", "lablgtk", "lablgtk-extras"]
 ocamlfind_libraries = ["zarith", "extlib", "camlzip", "lablgtk2", "lablgtk2-extras"]
 
@@ -129,6 +132,10 @@ runBuild flags = do
         case Map.lookup (dropDirectory1 out) originalToMap of
              Just original -> copyFileChangedWithAnnotation original out
              Nothing -> error $ "No file matching " ++ (dropDirectory1 out)
+    
+    getLibraryModules <- addOracle $ \NonFileModules{} -> do
+        file <- readFile' "non_file_modules.txt"
+        return $ lines file
 
     getModuleDeps <- addOracleCache $ \(ModuleDependencies file) -> do
         need [file]
@@ -136,7 +143,8 @@ runBuild flags = do
         let env = [AddEnv x y | (x, y) <- envMembers]
         Stdout dependencies_str <- cmd env "ocamldep -modules" file
         let [(_, modules)] = parseMakefile dependencies_str
-        return $ dropLibraryModules modules
+        libraryModules <- getLibraryModules $ NonFileModules ()
+        return $ dropLibraryModules libraryModules modules
 
     "_build/*.cmi" %> \out -> do
         let mli = out -<.> "mli"
