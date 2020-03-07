@@ -215,7 +215,16 @@ runBuild flags = do
                 ("classinvariants", "jCHXClassInvariants.ml"),
                 ("translateclass", "jCHXTranslateClass.ml"),
                 ("usertemplate", "jCHXTemplate.ml"),
-                ("initialize", "jCHXInitializeAnalysis.ml")]
+                ("initialize", "jCHXInitializeAnalysis.ml"),
+                ("experiment", "jCHXClassExperiment.ml"),
+                ("template", "jCHXTemplate.ml"),
+                ("integrate", "jCHXIntegrateSummaries.ml"),
+                ("inspect", "jCHXInspectSummaries"),
+                ("native", "jCHXNativeMethodSignatures.ml"),
+                ("features", "jCHXExtractFeatures.ml"),
+                ("exprfeatures", "jCHXExtractExprFeatures.ml"),
+                ("poly", "jCHXClassPoly.ml"),
+                ("pattern", "jCHXCollectPatterns.ml")]
 
     forM_ exes (\pair -> do
         let (name, main_file) = pair
