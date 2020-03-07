@@ -17,6 +17,7 @@ jar -cf cchsummaries.jar \
     ioctl \
     libio \
     locale \
+    ltdl \
     mathcalls \
     mman \
     netdb \

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-summary-file>
-  <header date="2020-02-28 15:25:09"/>
-  <function-summary name="fdopen">
+  <header date="2020-03-02 23:55:29"/>
+  <function-summary name="lt_dlsym">
     <parameters>
-      <par name="mode" nr="2">
+      <par name="name" nr="2">
 	<pre>
 	  <deref-read-nt/>
 	</pre>
@@ -30,9 +30,7 @@
 	  </apply>
 	</math>
       </post>
-      <error-post env="a null pointer is returned if the file
-		       descriptor is invalid or if insufficient memory
-		       is available to allocate the buffer">
+      <error-post env="NULL is returned if a symbol with the given name cannot be found">
 	<math>
 	  <apply>
 	    <null/>
@@ -42,6 +40,14 @@
       </error-post>
     </postconditions>
     <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <const/>
+	    <ci>name</ci>
+	  </apply>
+	</math>
+      </sideeffect>
       <sideeffect>
 	<math>
 	  <apply>

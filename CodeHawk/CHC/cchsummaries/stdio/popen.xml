@@ -25,13 +25,23 @@
 	</math>
       </pre>
     </preconditions>
-    <error-postconditions/>
     <postconditions>
       <post>
 	<math>
 	  <apply>
 	    <not-null/>
 	    <return/>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <initialized/>
+	    <apply>
+	      <addressed-value/>
+	      <return/>
+	    </apply>
 	  </apply>
 	</math>
       </post>

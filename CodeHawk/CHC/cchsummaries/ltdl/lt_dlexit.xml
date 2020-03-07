@@ -1,42 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-summary-file>
-  <header date="2020-02-28 15:25:09"/>
-  <function-summary name="fdopen">
-    <parameters>
-      <par name="mode" nr="2">
-	<pre>
-	  <deref-read-nt/>
-	</pre>
-      </par>
-    </parameters>
+  <header date="2020-03-02 23:22:31"/>
+  <function-summary name="lt_dlexit">
+    <parameters/>
     <preconditions/>
     <postconditions>
       <post>
 	<math>
 	  <apply>
-	    <not-null/>
+	    <eq/>
 	    <return/>
+	    <cn>0</cn>
 	  </apply>
 	</math>
       </post>
-      <post>
+      <error-post>
 	<math>
 	  <apply>
-	    <initialized/>
-	    <apply>
-	      <addressed-value/>
-	      <return/>
-	    </apply>
-	  </apply>
-	</math>
-      </post>
-      <error-post env="a null pointer is returned if the file
-		       descriptor is invalid or if insufficient memory
-		       is available to allocate the buffer">
-	<math>
-	  <apply>
-	    <null/>
+	    <gt/>
 	    <return/>
+	    <cn>0</cn>
 	  </apply>
 	</math>
       </error-post>
