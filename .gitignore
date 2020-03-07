@@ -18,18 +18,33 @@ _build/
 # MacOSX
 .DS_Store
 
-# executables
+# binary analyzer executables
 CodeHawk/CHB/bchcmdline/chx86_analyze
 
+# c analyzer executables
 CodeHawk/CHC/cchcmdline/canalyzer
 CodeHawk/CHC/cchcmdline/inspectsummaries
 CodeHawk/CHC/cchcil/parseFile
 CodeHawk/CHC/cchgui/chc_gui
 
+# java analyzer executables
+CodeHawk/CHJ/jchcmdline/chj_experiment
+CodeHawk/CHJ/jchcmdline/chj_inspect
+CodeHawk/CHJ/jchcmdline/chj_integrate
+CodeHawk/CHJ/jchcmdline/chj_native
+CodeHawk/CHJ/jchcmdline/chj_template
+
+CodeHawk/CHJ/jchmuse/chj_efeatures
+CodeHawk/CHJ/jchmuse/chj_features
+CodeHawk/CHJ/jchmuse/chj_invariants
+CodeHawk/CHJ/jchmuse/chj_patterns
+
 CodeHawk/CHJ/jchstac/chj_class_invariants
 CodeHawk/CHJ/jchstac/chj_initialize
 CodeHawk/CHJ/jchstac/chj_translate_class
 CodeHawk/CHJ/jchstac/chj_template
+
+CodeHawk/CHJ/jchstacgui/chj_gui
 
 # summaries
 cchsummaries.jar
