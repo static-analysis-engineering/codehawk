@@ -865,10 +865,10 @@ object (self:_)
                        method_cost#toPretty; NL]);
           
 	  change method_cost []
-	end 
-      else if function_summary_library#has_method_summary callee then
-	begin
-	  let summary = function_summary_library#get_method_summary callee in
+	end
+      else if (app#has_method callee && (app#get_method callee)#is_stubbed) then
+        begin
+          let summary = (app#get_method callee)#get_stub in
           let mInfo = app#get_method caller in
 	  let (is_top, cost, default_map) =
             self#get_library_method_timecost mInfo pc callee summary in

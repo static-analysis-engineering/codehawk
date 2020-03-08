@@ -350,11 +350,21 @@ object (self:'a)
     
   method get_implementation = method_info_type
     
-  method get_method = match method_info_type with 
-  | ConcreteMethod m | NativeMethod m -> m 
-  | _ ->
-    raise (JCH_failure (LBLOCK [ STR "Method " ; self#toPretty ; NL ;
-				 STR " does not have a concrete method " ]))
+  method get_method =
+    match method_info_type with 
+    | ConcreteMethod m | NativeMethod m -> m 
+    | _ ->
+       raise
+         (JCH_failure (LBLOCK [ STR "Method " ; self#toPretty ; NL ;
+				STR " does not have a concrete method " ]))
+
+  method get_stub =
+    match method_info_type with
+    | Stub s -> s
+    | _ ->
+       raise
+         (JCH_failure (LBLOCK [ STR "Method " ; self#toPretty ; NL ;
+                                STR " is not a stubbed method " ]))
       
   method get_bytecode = match method_info_type with
   | ConcreteMethod m | UntranslatedConcreteMethod m ->

@@ -797,6 +797,7 @@ object ('a)
   method get_opcode                : int -> opcode_t (* opcode at given pc (offset) in bytecode *)
   method get_pc_to_instr_index     : int -> int      (* converter from pc to instr index *)
   method get_method                : method_int
+  method get_stub                  : function_summary_int
   method get_callees               : class_method_signature_int list  (* called by this method *)
   method get_callers               : class_method_signature_int list  (* those that call this method *)
   method get_field_writes          : class_field_signature_int list

@@ -166,10 +166,12 @@ object (self)
     else
       false
       
-  method get_method_summary ?(anysummary=false)  cms =
+  method get_method_summary ?(anysummary=false) cms =
     try
       let summary = H.find method_library cms#index in
-      if summary#is_valid || anysummary then summary else 
+      if summary#is_valid || anysummary then
+        summary
+      else 
 	raise (JCH_failure (LBLOCK [ STR "Function summary for " ; cms#toPretty ; 
 				     STR " is not valid " ]))
     with

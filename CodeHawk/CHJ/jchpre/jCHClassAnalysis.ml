@@ -284,9 +284,7 @@ let has_this_as_return_value (cmsix:int) (pc:int) ms =
 	   let mtargets = tgt#get_all_targets in
 	   match mtargets with
 	   | [ m ] when m#is_stubbed ->
-	      let summary =
-                function_summary_library#get_method_summary
-                  m#get_class_method_signature in
+	      let summary = m#get_stub in
 	      let post = summary#get_post in
 	      let errorPost = summary#get_error_post in
 	      begin
@@ -306,7 +304,8 @@ let has_this_as_return_value (cmsix:int) (pc:int) ms =
        false
   | _ -> false
 		
-let class_analysis_semantics (cmsix:int) (pc:int) (args:op_arg_t list) (inv:atlas_t) =
+let class_analysis_semantics
+      (cmsix:int) (pc:int) (args:op_arg_t list) (inv:atlas_t) =
   let cms = retrieve_cms cmsix in
   let mInfo = app#get_method cms in
   let get_known_target_return_type cn ms =
@@ -314,14 +313,15 @@ let class_analysis_semantics (cmsix:int) (pc:int) (args:op_arg_t list) (inv:atla
     if app#has_method calleecms then
       let callee = app#get_method calleecms in
       if callee#is_stubbed then
-        let summary = function_summary_library#get_method_summary calleecms in
+        let summary = callee#get_stub in
         let post = summary#get_post in
         let errorPost = summary#get_error_post  in
         match (post,errorPost) with
         | (h::_, []) ->
            begin
              match h#get_predicate with
-             | PostRelationalExpr (JEquals, JLocalVar (-1), JLocalVar 0) -> Some cn
+             | PostRelationalExpr (JEquals, JLocalVar (-1), JLocalVar 0) ->
+                Some cn
              | PostObjectClass cn -> Some cn
              | _ -> None
            end
@@ -337,7 +337,9 @@ let class_analysis_semantics (cmsix:int) (pc:int) (args:op_arg_t list) (inv:atla
         get_known_target_return_type cn ms
       else
         let tgtObject = get_arg args "arg0" in
-        let tgtInv = ((inv#getDomain class_domain_name)#observer#getNonRelationalVariableObserver) tgtObject in
+        let tgtInv =
+          ((inv#getDomain class_domain_name)#observer#getNonRelationalVariableObserver)
+            tgtObject in
         if tgtInv#isTop then
           None
         else
@@ -628,12 +630,14 @@ let analyze_method_for_classes_and_types (m:method_info_int) =
 	   (* transform_for_instanceof m (system#getProcedure procname) ; *)
 	   analyze_method_for_types system procname  cms#method_signature m#is_static ; 
 	 with
-	   JCH_failure p ->
-	   raise (JCH_failure (LBLOCK [ p ; NL ; (system#getProcedure procname)#toPretty ]))) ;
+	 | JCH_failure p ->
+	    raise
+              (JCH_failure
+                 (LBLOCK [ STR "analyze_methods_for_classes_and_types: " ; p ]))) ;
 	(!missing_classes, class_result, type_result)
       end
     with
-    |  CHCommon.CHFailure p
+    | CHCommon.CHFailure p
     | JCH_failure p ->
        begin
 	 ch_error_log#add "analysis failure" (LBLOCK [ cms#toPretty ; STR ": " ; p ]);
