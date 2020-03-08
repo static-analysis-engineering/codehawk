@@ -90,8 +90,8 @@ type instance RuleResult OcamlEnv = [(String, String)]
 newtype NonFileModules = NonFileModules () deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
 type instance RuleResult NonFileModules = [String]
 
-opam_libraries = ["zarith", "extlib", "camlzip", "lablgtk", "lablgtk-extras"]
-ocamlfind_libraries = ["zarith", "extlib", "camlzip", "lablgtk2", "lablgtk2-extras"]
+opam_libraries = ["zarith", "extlib", "camlzip", "lablgtk", "lablgtk-extras", "conf-gnomecanvas"]
+ocamlfind_libraries = ["zarith", "extlib", "camlzip", "lablgtk2", "lablgtk2-extras", "lablgtk2.gnomecanvas"]
 
 runBuild :: [Flags] -> Rules ()
 runBuild flags = do
@@ -115,8 +115,8 @@ runBuild flags = do
         return $ parseSExp sExp
 
     originalToMap <- liftIO $ unsafeInterleaveIO $ do
-        mlis <- getDirectoryFilesIO "" ["CH_extern//*.mli", "CH//*.mli", "CHC//*.mli", "CHB//*.mli", "CHJ//*.mli"]
-        mls <- getDirectoryFilesIO "" ["CH_extern//*.ml", "CH//*.ml", "CHC//*.ml", "CHB//*.ml", "CHJ//*.ml"]
+        mlis <- getDirectoryFilesIO "" ["CH_extern//*.mli", "CH//*.mli", "CHC//*.mli", "CHB//*.mli", "CHJ//*.mli", "CH_gui//*.mli"]
+        mls <- getDirectoryFilesIO "" ["CH_extern//*.ml", "CH//*.ml", "CHC//*.ml", "CHB//*.ml", "CHJ//*.ml", "CH_gui//*.ml"]
         let inputs = ignoredOriginalFiles $ mlis ++ mls
         let pairs = [(takeFileName file, file) | file <- inputs]
         return $ Map.fromList pairs
@@ -127,6 +127,12 @@ runBuild flags = do
         removeFilesAfter "_build" ["//*"]
         removeFilesAfter "_docs_private" ["//*"]
         removeFilesAfter "_docs_public" ["//*"]
+
+    phony "update" $ do
+        envMembers <- askOracle $ OcamlEnv ()
+        let env = [AddEnv x y | (x, y) <- envMembers]
+        cmd_ env "opam update -y"
+        cmd_ env "opam upgrade -y"
 
     "_build/*.mli" %> \out ->
         case Map.lookup (dropDirectory1 out) originalToMap of
@@ -224,7 +230,8 @@ runBuild flags = do
                 ("features", "jCHXExtractFeatures.ml"),
                 ("exprfeatures", "jCHXExtractExprFeatures.ml"),
                 ("poly", "jCHXClassPoly.ml"),
-                ("pattern", "jCHXCollectPatterns.ml")]
+                ("pattern", "jCHXCollectPatterns.ml"),
+                ("jch_gui", "jCHXStacGui.ml")]
 
     forM_ exes (\pair -> do
         let (name, main_file) = pair

@@ -20,6 +20,7 @@ GButton
 Gc
 Gdk
 GdkEvent
+GData
 GDraw
 GEdit
 GFile
@@ -27,12 +28,15 @@ Glib
 GMain
 GMenu
 GMisc
+GnoCanvas
 GObj
 Gobject
 GPack
 GRange
 GSourceView2
 GText
+GtkMisc
+GtkPack
 GToolbox
 GTree
 GWindow
