@@ -88,13 +88,22 @@ let cn = make_cn "java.lang.Object"
 let dynamically_dispatched_methods = ref 0
 let default_implementations = H.create 3
 
-let check_dependents (filename:string) (cn:class_name_int) (summary:class_summary_int) =
+let check_dependents
+      (filename:string)
+      (cn:class_name_int)
+      (summary:class_summary_int) =
   let dependents = summary#get_interfaces in
-  let dependents = if summary#has_super_class then summary#get_super_class :: dependents else dependents in
+  let dependents =
+    if summary#has_super_class then
+      summary#get_super_class :: dependents
+    else
+      dependents in
   if List.exists (fun d -> d#equal cn) dependents then
-    raise (JCH_failure (LBLOCK [ STR "Class name is equal to one of its dependents. Filename: " ;
-				 STR filename ; STR ". Dependents: " ; 
-				 pretty_print_list dependents (fun cn -> cn#toPretty) "[" "; " "]" ]))
+    raise
+      (JCH_failure
+         (LBLOCK [ STR "Class name is equal to one of its dependents. Filename: " ;
+		   STR filename ; STR ". Dependents: " ; 
+		   pretty_print_list dependents (fun cn -> cn#toPretty) "[" "; " "]" ]))
   else ()
 
 let nPost = ref 0 
@@ -105,7 +114,7 @@ let nSideEffects = ref 0
 let nPatterns = ref 0
 let patterns = ref []
 
-let packages = Hashtbl.create 3
+let packages = H.create 3
 
 let default_implementations_to_pretty () =
   let lst = ref [] in
@@ -116,51 +125,61 @@ let default_implementations_to_pretty () =
 	     pretty_print_list v (fun s -> s#toPretty) "" ", " "" ; NL ]) lst)
 
 let add_package (name:string) (methods:int) =
-  if Hashtbl.mem packages name then
-    let (numClasses,numMethods) = Hashtbl.find packages name in
-    Hashtbl.replace packages name (numClasses + 1, numMethods + methods)
+  if H.mem packages name then
+    let (numClasses,numMethods) = H.find packages name in
+    H.replace packages name (numClasses + 1, numMethods + methods)
   else
-    Hashtbl.add packages name (1,methods)
+    H.add packages name (1,methods)
 
-let exception_guards = Hashtbl.create 3
+let exception_guards = H.create 3
 
 let add_guard name =
-  if Hashtbl.mem exception_guards name then
-    Hashtbl.replace exception_guards name ((Hashtbl.find exception_guards name) + 1)
+  if H.mem exception_guards name then
+    H.replace exception_guards name ((H.find exception_guards name) + 1)
   else
-    Hashtbl.add exception_guards name 1
+    H.add exception_guards name 1
 
 let classify_exception_guards (s:function_summary_int) =
   let infos = s#get_exception_infos in
-  let conditions = List.fold_left (fun acc i -> i#get_safety_condition @ acc) [] infos in
-  List.iter (fun c -> match c with
-    PreRelationalExpr _ -> add_guard "numeric"
-  | PreNull _ -> add_guard "null"
-  | PreNotNull _ -> add_guard "not-null" 
-  | PreValidString _ -> add_guard "valid string") conditions
+  let conditions =
+    List.fold_left (fun acc i -> i#get_safety_condition @ acc) [] infos in
+  List.iter
+    (fun c ->
+      match c with
+      | PreRelationalExpr _ -> add_guard "numeric"
+      | PreNull _ -> add_guard "null"
+      | PreNotNull _ -> add_guard "not-null" 
+      | PreValidString _ -> add_guard "valid string") conditions
 
 let print_exception_guards () =
   let pp = ref [] in
-  let _ = Hashtbl.iter (fun name num -> pp := (LBLOCK [ STR name ; STR ": " ; INT num ; NL ]) :: !pp) exception_guards in
+  let _ =
+    H.iter (fun name num ->
+        pp := (LBLOCK [ STR name ; STR ": " ; INT num ; NL ]) :: !pp) exception_guards in
   LBLOCK [ STR "Exception guards" ; NL ; LBLOCK !pp ]
 
 let print_package_statistics () =
   let results = ref [] in
-  let _ = Hashtbl.iter (fun name (nC,nM) -> results := (name,nC,nM) :: !results) packages in
+  let _ = H.iter (fun name (nC,nM) -> results := (name,nC,nM) :: !results) packages in
   let results = List.sort (fun (_,nC1,_) (_,nC2,_) -> Pervasives.compare nC1 nC2) !results in
   let pp = ref [] in
-  let _ = List.iter (fun (name,nC,nM) ->
-    let p =  LBLOCK [ STR (fixed_length_string name 30) ; STR "  " ; 
-		      fixed_length_pretty ~alignment:StrRight (INT nC) 8 ; STR "  " ;
-		      fixed_length_pretty ~alignment:StrRight (INT nM) 8 ; NL ] in
-    pp := p :: !pp) results in
+  let _ =
+    List.iter (fun (name,nC,nM) ->
+        let p =
+          LBLOCK [ STR (fixed_length_string name 30) ; STR "  " ; 
+		   fixed_length_pretty ~alignment:StrRight (INT nC) 8 ; STR "  " ;
+		   fixed_length_pretty ~alignment:StrRight (INT nM) 8 ; NL ] in
+        pp := p :: !pp) results in
   LBLOCK [ STR "Package statistics: " ; NL ; LBLOCK !pp ; NL ]
 
 let get_statistics summaries =
   List.iter (fun (_,_,summary) ->
     begin
-      (match summary#get_exception_infos with [] -> () | l ->
-	if List.exists (fun eInfo -> eInfo#has_safety_condition) l then nGuards := !nGuards + 1) ;
+      (match summary#get_exception_infos with
+       | [] -> ()
+       | l ->
+	  if List.exists (fun eInfo ->
+                 eInfo#has_safety_condition) l then nGuards := !nGuards + 1) ;
       nSideEffects := !nSideEffects + (List.length summary#get_sideeffects) ;
       nStringSinks := !nStringSinks + (List.length summary#get_string_sinks) ;
       nResourceSinks := !nResourceSinks + (List.length summary#get_resource_sinks) ;
@@ -184,9 +203,11 @@ let inspect_summaries (name:string) =
   let classes_with_length = ref [] in
   let add_array_argument_summaries cn summary =
     let arguments = summary#get_cms#method_signature#descriptor#arguments in
-    if List.exists (fun a -> match a with (TObject (TArray _)) -> true | _ -> false) arguments &&
-      (not summary#is_inherited) && summary#is_valid &&
-      (match summary#get_sideeffects with [] -> true | _ -> false) then
+    if List.exists (fun a ->
+           match a with (TObject (TArray _)) -> true | _ -> false) arguments
+       && (not summary#is_inherited)
+       && summary#is_valid
+       && (match summary#get_sideeffects with [] -> true | _ -> false) then
       let _ = increment_counter () in
       match arrayArgumentSummaries#get cn with
 	Some s -> s#add summary
@@ -198,7 +219,9 @@ let inspect_summaries (name:string) =
   let abstractedArguments = new ClassMethodSignatureCollections.set_t in
   let add_abstract_argument summary =
     if List.exists 
-      (fun se -> match se with NumericAbstract _ -> true | _ -> false) summary#get_sideeffects then
+         (fun se ->
+           match se with
+           | NumericAbstract _ -> true | _ -> false) summary#get_sideeffects then
       abstractedArguments#add summary#get_cms in
   let print_summaries () =
     let p = ref [] in
@@ -208,57 +231,61 @@ let inspect_summaries (name:string) =
       p := (LBLOCK [ cn#toPretty ; NL ; INDENT (3, LBLOCK !pp)  ]) :: !p) in
     LBLOCK !p in
   let has_interesting_feature summary = 
-    (match summary#get_post with [] -> false | _ -> true) ||
-      (match summary#get_exception_infos with [] -> false | l ->
-	List.exists (fun eInfo -> eInfo#has_safety_condition) l) ||
-      (match summary#get_sideeffects with [] -> false | _ -> true) ||
-      (match summary#get_string_sinks with [] -> false | _ -> true) ||
-      (match summary#get_resource_sinks with [] -> false | _ -> true) in
-  begin 
+    (match summary#get_exception_infos with
+     | [] -> false
+     | l -> List.exists (fun eInfo -> eInfo#has_safety_condition) l)
+    || (match summary#get_sideeffects with [] -> false | _ -> true)
+    || (match summary#get_string_sinks with [] -> false | _ -> true)
+    || (match summary#get_resource_sinks with [] -> false | _ -> true) in
+  begin
+    
     apply_to_xml_jar (fun name s ->
-        if name = "jdk_jar_version.xml" || name = "chjlib_jar_version.xml" then () else
-	let summary = read_xml_class_file_from_string name s in
-	let ((cn,classSummary),_,methodSummaries) = summary in
-	let filename = Filename.basename name in
-	let filename = Filename.chop_extension filename in
-	let _ = if cn#simple_name = filename then () else
-	          raise (JCH_failure
-                           (LBLOCK [
-                                STR "Filename is not the same as the classname. Filename: " ; 
-				STR filename ; STR "; classname: " ; cn#toPretty ; NL ])) in
-	let _ = check_dependents filename cn classSummary in
-	let (classesReferenced,unrecognizedNames) =
-          get_classes_referenced_in_summary classpath summary in
-        let _ = match classSummary#get_class_properties with
-          | [] -> ()
-          | (LogicalSize (MethodAccessor ms))::_ ->
-             classes_with_length := (cn,ms) :: !classes_with_length in
-	begin
-	  function_summary_library#add_class_summary summary ;
-	  cnSet#addList classesReferenced ;
-	  nameSet#addList unrecognizedNames ;
-	  (if classSummary#is_dispatch then
-             dynamically_dispatched_methods := !dynamically_dispatched_methods +
-	      (List.length methodSummaries)) ;
-	  (if classSummary#is_interface then
-	      H.add default_implementations cn#name classSummary#get_default_implementations) ;
-	  add_package cn#package_name 
-	              (List.length
-                         (List.filter
-                            (fun (_,_,s) ->
-                              (not s#is_inherited) && s#is_valid) methodSummaries)) ;
-	  List.iter (fun (_,_,s) -> classify_exception_guards s) methodSummaries ;
-	  List.iter (fun (_,_,m) -> add_array_argument_summaries cn m) methodSummaries ;
-	  List.iter (fun (_,_,m) -> add_abstract_argument m) methodSummaries ;
-	  List.iter (fun (_,_,m) -> if has_interesting_feature m then
-	                              iSummaries := m#toPretty :: !iSummaries) methodSummaries ;
-          List.iter (fun (_,_,m) ->
-              let  cost = m#get_time_cost in
-              if not cost#is_top then
-                costexprs := (m#get_cms,cost) :: !costexprs) methodSummaries ;       
-	  get_statistics methodSummaries ;
-	end	) 
-      (fun _ _ -> ()) name ;
+        if name = "jdk_jar_version.xml" || name = "chjlib_jar_version.xml" then
+          ()
+        else
+	  let summary = read_xml_class_file_from_string name s in
+	  let ((cn,classSummary),_,methodSummaries) = summary in
+	  let filename = Filename.basename name in
+	  let filename = Filename.chop_extension filename in
+	  let _ =
+            if cn#simple_name = filename then () else
+	      raise (JCH_failure
+                       (LBLOCK [
+                            STR "Filename is not the same as the classname. Filename: " ; 
+			    STR filename ; STR "; classname: " ; cn#toPretty ; NL ])) in
+	  let _ = check_dependents filename cn classSummary in
+	  let (classesReferenced,unrecognizedNames) =
+            get_classes_referenced_in_summary classpath summary in
+          let _ = match classSummary#get_class_properties with
+            | [] -> ()
+            | (LogicalSize (MethodAccessor ms))::_ ->
+               classes_with_length := (cn,ms) :: !classes_with_length in
+	  begin
+	    function_summary_library#add_class_summary summary ;
+	    cnSet#addList classesReferenced ;
+	    nameSet#addList unrecognizedNames ;
+	    (if classSummary#is_dispatch then
+               dynamically_dispatched_methods :=
+                 !dynamically_dispatched_methods + (List.length methodSummaries)) ;
+	    (if classSummary#is_interface then
+	       H.add default_implementations cn#name classSummary#get_default_implementations) ;
+	    add_package cn#package_name 
+	                (List.length
+                           (List.filter
+                              (fun (_,_,s) ->
+                                (not s#is_inherited) && s#is_valid) methodSummaries)) ;
+	    List.iter (fun (_,_,s) -> classify_exception_guards s) methodSummaries ;
+	    List.iter (fun (_,_,m) -> add_array_argument_summaries cn m) methodSummaries ;
+	    List.iter (fun (_,_,m) -> add_abstract_argument m) methodSummaries ;
+	    List.iter (fun (_,_,m) -> if has_interesting_feature m then
+	                                iSummaries := m#toPretty :: !iSummaries) methodSummaries ;
+            List.iter (fun (_,_,m) ->
+                let  cost = m#get_time_cost in
+                if not cost#is_top then
+                  costexprs := (m#get_cms,cost) :: !costexprs) methodSummaries ;       
+	    get_statistics methodSummaries ;
+	  end) (fun _ _ -> ()) name ;
+    
     file_output#saveFile "jdk_summaries.ch_array_arguments" (print_summaries ()) ;
     file_output#saveFile
       "jdk_summaries.ch_abstracted_arguments"
@@ -279,31 +306,33 @@ let inspect_summaries (name:string) =
 	       STR "Resource sinks: " ; INT !nResourceSinks ; NL ;
                STR "Patterns:     " ; INT !nPatterns ; NL ;
 	       STR "Guards:       " ; INT !nGuards ; NL ] ;
-(*    pr_debug [ STR "Dynamically dispatched methods: " ; INT !dynamically_dispatched_methods ; NL ] ;
-    pr_debug [ NL ; STR "Default implementations of interfaces: ";
-	       NL ; default_implementations_to_pretty () ; NL ] ; *)
     pr_debug [ NL ; STR "Classes with length: " ; NL ] ;
-    List.iter (fun (cn,ms) -> pr_debug [ STR "   " ; cn#toPretty ;
-                                         STR " (" ; ms#toPretty ; STR ")" ; NL ]) !classes_with_length ;
+    List.iter (fun (cn,ms) ->
+        pr_debug [ STR "   " ; cn#toPretty ;
+                   STR " (" ; ms#toPretty ; STR ")" ; NL ]) !classes_with_length ;
                
-    pr_debug [ NL ; STR "Cost expressions (" ; INT (List.length !costexprs) ; STR "):" ; NL ;
+    pr_debug [ NL ; STR "Cost expressions (" ;
+               INT (List.length !costexprs) ; STR "):" ; NL ;
                STR (string_repeat "-" 80) ; NL ];
     List.iter (fun (cms,x) ->
         pr_debug [ cms#toPretty ; NL ; INDENT (3,x#toPretty) ; NL ]) !costexprs ;
     (if !showinvalid then
+       let (priv,pub) = function_summary_library#get_invalid_methods in
+       let publen = List.length pub in
        begin
-         pr_debug [ NL ; STR "Summaries not yet summarized: " ; NL ;
+         pr_debug [ NL ; STR "Public methods not yet summarized (" ;
+                    INT publen ; STR  "): " ;  NL ;
                     STR (string_repeat "-" 80) ; NL ] ;
-         pr_debug (List.map (fun cms -> LBLOCK [ cms#toPretty ; NL ])
-                            function_summary_library#get_invalid_methods)
+         pr_debug (List.map (fun cms -> LBLOCK [ cms#toPretty ; NL ]) pub)
        end) ;
     pr_debug [ NL ; NL ; STR "Patterns" ; NL ] ;
   end
 
-let speclist = [("-classpath",       Arg.String system_settings#add_classpath_unit,
-		 "sets java classpath") ;
-                ("-showinvalid", Arg.Set showinvalid,
-                 "shows methods that have not been summarized yet")]
+let speclist =
+  [("-classpath",Arg.String system_settings#add_classpath_unit,
+    "sets java classpath") ;
+   ("-showinvalid", Arg.Set showinvalid,
+    "shows methods that have not been summarized yet")]
 
 let usage_msg = "inspect_summaries filename"
 let read_args () = Arg.parse speclist   (fun s -> name := s) usage_msg

@@ -73,10 +73,11 @@ let get_summary_classpath () =
     begin summary_classpath := Some cp ; cp end	
   | Some cp -> cp
     
-let rec add_class_dependency (cn:class_name_int) =
+let rec add_class_dependency ?(src="unknown") (cn:class_name_int) =
   if app#has_class cn then () else
     let summaryClasspath = get_summary_classpath () in
     if JCHFile.has_summary_class summaryClasspath cn then
+      let depsrc = cn#name ^ " dependents" in
       let summaryString = JCHFile.get_summary_class summaryClasspath cn in
       let summary = read_xml_class_file_from_string cn#name summaryString in
       let _ = function_summary_library#add_class_summary summary in
@@ -95,12 +96,12 @@ let rec add_class_dependency (cn:class_name_int) =
               deps @ acc
             else
               acc) [] classSummary#get_methods in
-      List.iter add_class_dependency (dependents @ methoddependencies)
+      List.iter (add_class_dependency ~src:depsrc) (dependents @ methoddependencies)
     else
       begin
 	app#add_missing_class cn ;
 	(if system_settings#is_logging_missing_classes_enabled then
-           chlog#add "missing class" cn#toPretty)
+           chlog#add "missing class" (LBLOCK [ STR src ;  STR ": " ; cn#toPretty ]))
       end
 	
 let add_summary cms summary =
@@ -143,12 +144,12 @@ let get_inherited_method (cms:class_method_signature_int) =
   let ms = cms#method_signature in
   try
     let rec aux cn =
-      let _ = add_class_dependency cn in
+      let _ = add_class_dependency ~src:"inherited method" cn in
       if app#has_class cn then
         let cInfo = app#get_class cn in
         if cInfo#has_super_class then
 	  let scn = cInfo#get_super_class in
-          let _ = add_class_dependency scn in
+          let _ = add_class_dependency ~src:"inherited method" scn in
 	  let scms = make_cms scn ms in
 	  if app#has_method scms then
 	    Some (app#get_method scms)#get_class_method_signature
@@ -176,12 +177,12 @@ let get_inherited_field (cfs:class_field_signature_int) =
   let fs = cfs#field_signature in
   try
     let rec aux cn =
-      let _ = add_class_dependency cn in
+      let _ = add_class_dependency ~src:"inherited field" cn in
       if app#has_class cn then
         let cInfo = app#get_class cn in
         if cInfo#has_super_class then
           let scn = cInfo#get_super_class in
-          let _ = add_class_dependency scn in
+          let _ = add_class_dependency ~src:"inherited field" scn in
           let scfs = make_cfs scn fs in
           if app#has_field scfs then
             Some (app#get_field scfs)#get_class_signature
@@ -201,12 +202,13 @@ let get_inherited_field (cfs:class_field_signature_int) =
     begin
       ch_error_log#add
         "get-inherited-field" (LBLOCK [ cfs#toPretty ; STR ": " ; p ]) ;
-      raise (JCH_failure (LBLOCK [ STR "get_inherited_field " ; cfs#toPretty ; STR ": " ; p ]))
+      raise (JCH_failure (LBLOCK [ STR "get_inherited_field " ;
+                                   cfs#toPretty ; STR ": " ; p ]))
     end
 	
 let add_method_dependency (cms:class_method_signature_int) =
   let cn = cms#class_name in 
-  let _ = add_class_dependency cn in
+  let _ = add_class_dependency ~src:"method dependency" cn in
   if app#has_method cms then () else
     if function_summary_library#has_method_summary cms then
       let summary = function_summary_library#get_method_summary cms in
@@ -243,8 +245,8 @@ let scan_method (mInfo:method_info_int) =
   let classesReferenced = get_classes_referenced mInfo in
   let methodsReferenced = get_methods_referenced mInfo in
   let fieldsReferenced = get_fields_referenced mInfo in
-  let _ = List.iter add_class_dependency startupClasses in
-  let _ = List.iter add_class_dependency classesReferenced in
+  let _ = List.iter (add_class_dependency ~src:"startup class") startupClasses in
+  let _ = List.iter (add_class_dependency ~src:"class referenced") classesReferenced in
   let _ = List.iter add_method_dependency methodsReferenced in
   let _ = List.iter add_field_dependency fieldsReferenced in
   let add_field_link i opc cn fs =
@@ -279,7 +281,7 @@ let get_virtual_targets cn ms =
       try
       let result = new ClassNameCollections.set_t in
       let _ = List.iter (fun cntgt ->
-	let _ = add_class_dependency cntgt in
+	let _ = add_class_dependency ~src:"virtual target" cntgt in
 	if (cntgt#equal cn && cInfo#defines_method ms)|| app#is_descendant cntgt cn
            || app#is_descendant cn cntgt
            || app#implements_interface cInfo cntgt then
@@ -354,7 +356,7 @@ let get_interface_targets cn ms =
 	      []
 	  | l ->
 	    let cms = make_cms cn ms in
-	    let _ = List.iter add_class_dependency l in
+	    let _ = List.iter (add_class_dependency ~src:"interface target") l in
 	    let _ = chlog#add "use default implementations"
 	      (LBLOCK [ STR "use " ;
 			pretty_print_list l (fun cn -> cn#toPretty) "[" ", " "]" ;
@@ -468,7 +470,7 @@ let process_classes () =
         end) ;
     app#iter_classes (fun cInfo ->
         begin
-          (if cInfo#has_super_class then add_class_dependency cInfo#get_super_class) ;
+          (if cInfo#has_super_class then add_class_dependency ~src:"superclass" cInfo#get_super_class) ;
           List.iter add_class_dependency cInfo#get_interfaces ;
           (if cInfo#is_stubbed then () else
 	     begin
@@ -477,7 +479,7 @@ let process_classes () =
 	           if app#has_method cms then
 		     let mInfo = app#get_method cms in
 		     begin
-		       List.iter add_class_dependency (get_classes_referenced mInfo) ;
+		       List.iter (add_class_dependency ~src:"classes referenced") (get_classes_referenced mInfo) ;
 		       scan_method mInfo
 		     end) cInfo#get_methods_defined ;
 	     end )

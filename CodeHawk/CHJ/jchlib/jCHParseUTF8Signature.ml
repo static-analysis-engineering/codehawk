@@ -502,6 +502,8 @@ object (self)
   method private parse_ot:object_type_t =
     if char_la = c_leftsqbracket then
       TArray self#parse_array
+    else if char_la = c_L then
+      TClass self#parse_ObjectType
     else
       TClass self#parse_class_name
 

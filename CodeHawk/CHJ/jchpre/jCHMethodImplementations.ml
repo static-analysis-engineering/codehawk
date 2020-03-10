@@ -74,16 +74,16 @@ let get_implementing_classes implementers =
   implementers.mscn_classes @ implementers.mscn_stubs @ implementers.mscn_native
 
 let get_size implementers =
-  (List.length implementers.mscn_classes) +
-    (List.length implementers.mscn_stubs) +
-    (List.length implementers.mscn_native)
+  (List.length implementers.mscn_classes)
+  + (List.length implementers.mscn_stubs)
+  + (List.length implementers.mscn_native)
 
 class method_signature_implementations_t:method_signature_implementations_int =
 object (self)
 
   val table = H.create 3
   val revtable = H.create 3
-  val msregistry = H.create 3
+  val msregistry = H.create 3    (* ms#index -> count *)
 
   method register_signature (ms:method_signature_int) =
     let entry =

@@ -49,6 +49,7 @@ open JCHFunctionSummaryXmlDecoder
 open JCHPreAPI
 open JCHPreFileIO
 open JCHSystemSettings
+open JCHTemplateUtil
 
 module P = Pervasives
 
@@ -102,54 +103,12 @@ let rec load_class_and_dependents (cn:class_name_int) =
       List.iter load_class_and_dependents c#get_interfaces 
     end
 
-module FieldSignatureCollections =
-  CHCollections.Make (
-      struct
-        type t = field_signature_int
-        let compare fs1 fs2 = fs1#compare fs2
-        let toPretty fs = fs#toPretty
-      end)
-
-let get_inherited_fields (cn:class_name_int) =
-  let inheritedFields = new FieldSignatureCollections.table_t in
-  let definedFields = new FieldSignatureCollections.set_t in
-  let cInfo = ref (app#get_class cn) in
-  let _ = List.iter definedFields#add !cInfo#get_fields_defined in
-  begin
-    while !cInfo#has_super_class do
-      let sc = !cInfo#get_super_class in
-      let _ = cInfo := app#get_class sc in
-      let scDefined = !cInfo#get_fields_defined in
-      List.iter (fun fs ->
-          if !cInfo#defines_field fs then
-            if definedFields#has fs || inheritedFields#has fs then () else
-              inheritedFields#set fs sc
-          else
-            ()) scDefined
-    done;
-    inheritedFields#listOfPairs
-  end
-
 module MethodSignatureCollections = CHCollections.Make (
   struct
     type t = method_signature_int
     let compare ms1 ms2 = ms1#compare ms2
     let toPretty ms = ms#toPretty
   end)
-
-let write_xmlx_inherited_field
-      (node:xml_element_int) (fs:field_signature_int) (defining_class:class_name_int) =
-  let append = node#appendChildren in
-  let set = node#setAttribute in
-  let sNode = xmlElement "signature" in
-  begin
-    write_xmlx_value_type sNode fs#descriptor ;
-    append [ sNode ] ;
-    set "name" fs#name ;
-    set "inherited" "yes" ;
-    set "from" defining_class#name ;
-    node#setNameString ("(inherited) field:" ^ fs#name)
-  end
 
 let write_xmlx_field (node:xml_element_int) (cfs:class_field_signature_int) =
   let fInfo = app#get_field cfs in

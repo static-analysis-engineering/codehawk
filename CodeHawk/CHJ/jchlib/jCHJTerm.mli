@@ -72,7 +72,10 @@ val read_xmlx_jterm:
   jterm_t
 
 val write_xmlx_relational_expr: 
-  xml_element_int -> method_signature_int -> relational_expr_t -> unit
+  xml_element_int
+  -> method_signature_int
+  -> ?setxpr:bool            (* include textual representation as xpr attribute *)  
+  -> relational_expr_t -> unit
 
 val read_xmlx_relational_expr:
   xml_element_int -> ?argumentnames:((int * string) list) ->

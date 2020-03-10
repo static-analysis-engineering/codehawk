@@ -161,6 +161,7 @@ type class_property_t =
 class type class_summary_int =
 object
   (* accessors *)
+  method get_date       : string
   method get_class_name : class_name_int
   method get_super_class: class_name_int
   method get_interfaces : class_name_int list
@@ -170,6 +171,7 @@ object
   method get_default_implementations: class_name_int list
 
   (* predicates *)
+  method has_date       : bool
   method is_interface   : bool
   method is_final       : bool
   method is_abstract    : bool
@@ -939,7 +941,8 @@ object
   method get_class_summary  : class_name_int -> class_summary_int
 
   method get_final_summaries: class_name_int -> class_method_signature_int list
-  method get_invalid_methods: class_method_signature_int list
+  method get_invalid_methods:
+           (class_method_signature_int list * class_method_signature_int list)
 
   (* iterators *)
   method iter: (function_summary_int -> unit) -> unit

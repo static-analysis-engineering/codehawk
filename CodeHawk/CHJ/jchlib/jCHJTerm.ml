@@ -772,7 +772,10 @@ let rec read_xmlx_jterm
   jterm
            
 let write_xmlx_relational_expr 
-    (node:xml_element_int) (ms:method_signature_int) (x:relational_expr_t) =
+      (node:xml_element_int)
+      (ms:method_signature_int)
+      ?(setxpr=true)
+      (x:relational_expr_t) =
   let (op,t1,t2) = x in
   let txml t = jterm_to_xmlx t ms in
   let apply_terms tag t1 t2 =
@@ -784,7 +787,7 @@ let write_xmlx_relational_expr
   let aNode = apply_terms (relational_op_to_xml_string op) t1 t2 in
   begin
     node#appendChildren [ aNode ] ;
-    node#setAttribute "xpr" (p2s (relational_expr_to_pretty x)) ;
+    (if setxpr then node#setAttribute "xpr" (p2s (relational_expr_to_pretty x))) ;
     (if is_relational x then node#setAttribute "relational" "yes") ;
   end
 

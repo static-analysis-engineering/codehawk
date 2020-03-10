@@ -632,7 +632,8 @@ let read_xml_interfaces (node:xml_element_int) =
   let getcc = node#getTaggedChildren in
   serializable :: (List.map (fun xNode -> make_cn xNode#getText) (getcc "implements"))
 
-let read_xml_class (node:xml_element_int) (package:string) =
+let read_xml_class
+      (node:xml_element_int) (date:string option) (package:string) =
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
   let has = node#hasNamedAttribute in
@@ -671,6 +672,7 @@ let read_xml_class (node:xml_element_int) (package:string) =
         ~super_class
         ~is_abstract
         ~is_final
+        ~date
         ~interfaces
         ~class_properties
 	~method_summaries:method_signatures
@@ -694,7 +696,8 @@ let read_xml_default_implementations (node:xml_element_int) =
   List.map (fun sNode -> make_cn sNode#getText) (getcc "class")
 
 
-let read_xml_interface (node:xml_element_int) (package:string) =
+let read_xml_interface
+      (node:xml_element_int) (date:string option) (package:string) =
   let get = node#getAttribute in
   let has = node#hasNamedAttribute in
   let getc = node#getTaggedChild in
@@ -730,10 +733,11 @@ let read_xml_interface (node:xml_element_int) (package:string) =
         (fun (cms,_,_) -> cms#method_signature)
         (List.filter (fun (_,_,s) -> not s#is_inherited) interface_methods) in
     let interface_summary = 
-      make_class_summary 
+      make_class_summary
 	~is_interface:true 
 	~is_abstract:true 
 	~is_dispatch
+        ~date
 	~interfaces:super_interfaces 
 	~default_implementations
         ~class_properties
@@ -754,12 +758,17 @@ let read_xml_class_file_from_string (name:string) (s:string) =
     let doc = readXmlDocumentString s in
     let root = doc#getRoot in
     let hasc = root#hasOneTaggedChild in
+    let date =
+      if root#hasNamedAttribute "date" then
+        Some (root#getAttribute "date")
+      else
+        None in
     if hasc "class" then
       let cNode = root#getTaggedChild "class" in
-      read_xml_class cNode (cNode#getAttribute "package")
+      read_xml_class cNode date (cNode#getAttribute "package")
     else if hasc "interface" then
       let iNode = root#getTaggedChild "interface" in
-      read_xml_interface iNode (iNode#getAttribute "package")
+      read_xml_interface iNode date (iNode#getAttribute "package")
     else
       raise (JCH_failure (LBLOCK [ STR "Unexpected type of summary file: " ; STR s ]))
   with

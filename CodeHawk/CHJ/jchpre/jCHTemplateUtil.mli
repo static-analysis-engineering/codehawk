@@ -25,31 +25,19 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
 (* chutil *)
 open CHXmlDocument
 
 (* jchlib *)
 open JCHBasicTypesAPI
 
-(* jchpre *)
-open JCHPreAPI
+val get_inherited_fields:
+  ?allfields:bool
+  -> class_name_int
+  -> (field_signature_int * class_name_int) list
 
-val write_xml_class_property: xml_element_int -> class_property_t -> unit
+val write_xmlx_inherited_field:
+  xml_element_int -> field_signature_int -> class_name_int -> unit
 
-val make_class_summary: 
-  ?is_interface:bool -> 
-  ?is_final:bool -> 
-  ?is_abstract:bool -> 
-  ?is_immutable:bool -> 
-  ?is_dispatch:bool ->
-  ?date:string option ->
-  ?super_class:class_name_int option ->
-  ?interfaces:class_name_int list ->
-  ?class_properties:class_property_t list ->
-  ?default_implementations:class_name_int list ->
-  ?method_summaries:method_signature_int list ->
-  ?fields:field_signature_int list -> 
-  class_name_int -> class_summary_int
+val write_xmlx_inherited_method:
+  xml_element_int -> method_signature_int -> class_name_int -> unit

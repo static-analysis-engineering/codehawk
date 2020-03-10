@@ -56,6 +56,7 @@ class class_summary_t
   ~(is_final:bool)
   ~(is_immutable:bool)
   ~(is_dispatch:bool)
+  ~(date:string option)
   ~(super_class:class_name_int option)
   ~(interfaces:class_name_int list)
   ~(class_properties:class_property_t list)
@@ -63,6 +64,17 @@ class class_summary_t
   ~(method_summaries:method_signature_int list)
   ~(fields:field_signature_int list):class_summary_int =
 object
+
+  method has_date = match date with Some _ -> true | _ -> false
+
+  method get_date =
+    match date with
+    | Some d -> d
+    | _ ->
+       raise
+         (JCH_failure
+            (LBLOCK [ STR "Function summary does not have a date" ]))
+
   method get_class_name = class_name
 
   method is_interface = is_interface
@@ -108,6 +120,7 @@ let make_class_summary
     ?(is_abstract=false)
     ?(is_immutable=false)
     ?(is_dispatch=false)
+    ?(date=None)
     ?(super_class=None)
     ?(interfaces=[])
     ?(class_properties=[])
@@ -121,6 +134,7 @@ let make_class_summary
     ~is_abstract:is_abstract 
     ~is_immutable:is_immutable 
     ~is_dispatch:is_dispatch
+    ~date:date
     ~super_class:super_class 
     ~interfaces:interfaces
     ~class_properties:class_properties

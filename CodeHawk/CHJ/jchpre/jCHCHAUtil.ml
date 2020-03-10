@@ -250,8 +250,11 @@ let get_local_variable_type_table_classes (bc:bytecode_int) =
   cnSet
 
 let get_classes_referenced (mInfo:method_info_int) =
-  let signatureclasses = get_signature_classes mInfo#get_class_method_signature#method_signature in
-  if not mInfo#has_bytecode then signatureclasses else
+  let signatureclasses =
+    get_signature_classes mInfo#get_class_method_signature#method_signature in
+  if not mInfo#has_bytecode then
+    signatureclasses
+  else
     let bc = mInfo#get_bytecode in
     let cnSet = new ClassNameCollections.set_t in
     let add_value_type vt = 
@@ -268,7 +271,8 @@ let get_classes_referenced (mInfo:method_info_int) =
 	  | OpGetStatic (cn,fs)
 	  | OpGetField (cn,fs)
 	  | OpPutStatic (cn,fs)
-	  | OpPutField (cn,fs) -> cnSet#addList (cn :: (get_field_signature_classes fs))
+	  | OpPutField (cn,fs) ->
+             cnSet#addList (cn :: (get_field_signature_classes fs))
 	  | OpCheckCast ot
 	  | OpInstanceOf ot
 	  | OpAMultiNewArray (ot,_)

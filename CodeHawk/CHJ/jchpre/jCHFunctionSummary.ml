@@ -113,7 +113,8 @@ object (self)
     let addchild n = mNode#appendChildren [ n ] in
     let _ =
       match predicate with
-      | PostRelationalExpr r -> write_xmlx_relational_expr mNode ms r
+      | PostRelationalExpr r ->
+         write_xmlx_relational_expr mNode ms ~setxpr:false r
       | PostTrue -> addchild (xmlElement "true")
       | PostFalse -> addchild (xmlElement "false")
       | PostNewObject cn ->

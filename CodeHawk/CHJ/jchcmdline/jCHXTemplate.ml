@@ -60,7 +60,7 @@ let speclist =
   ]
   
 let usage_msg = "mktemplate filename"
-let read_args () = Arg.parse speclist   (fun s -> name := s) usage_msg
+let read_args () = Arg.parse speclist (fun s -> name := s) usage_msg
 
 let main () =
   try

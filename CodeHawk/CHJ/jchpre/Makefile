@@ -43,6 +43,7 @@ MLIS = \
 	jCHCGDictionary \
 	jCHMethodImplementations \
 	jCHCallgraphBase \
+	jCHTemplateUtil \
 	jCHClassSummaryTemplate \
 	jCHAPISummaryTemplate \
 	jCHProfileSummaryTemplate \
@@ -97,6 +98,7 @@ SOURCES = \
 	jCHCHAUtil \
 	jCHIFSystem \
 	jCHLoops \
+	jCHTemplateUtil \
 	jCHClassSummaryTemplate \
 	jCHAPISummaryTemplate \
 	jCHProfileSummaryTemplate \
