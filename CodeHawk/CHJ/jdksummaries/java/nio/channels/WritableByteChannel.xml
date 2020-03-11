@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-10 14:01:15"/>
+  <interface name="WritableByteChannel" package="java.nio.channels">
+    <superinterfaces>
+      <superinterface>java.nio.channels.Channel</superinterface>
+      <superinterface>java.io.Closeable</superinterface>
+    </superinterfaces>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ write -->
+      <method abstract="yes" access="public" name="write">
+        <signature>
+          <arg nr="1">
+            <object>java.nio.ByteBuffer</object>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.nio.channels.NonWritableChannelException</throws>
+          <throws>java.nio.channels.ClosedChannelException</throws>
+          <throws>java.nio.channels.AsynchronousCloseException</throws>
+          <throws>java.nio.channels.ClosedByInterruptException</throws>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.NullPointerException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <geq/>
+                  <return/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

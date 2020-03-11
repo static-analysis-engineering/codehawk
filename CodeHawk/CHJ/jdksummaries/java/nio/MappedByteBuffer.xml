@@ -1,0 +1,864 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-10 13:25:08"/>
+  <class abstract="yes" name="MappedByteBuffer" package="java.nio">
+    <superclass>java.nio.ByteBuffer</superclass>
+    <interfaces>
+      <implements>java.lang.Comparable</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ force -->
+      <method access="public" final="yes" name="force">
+        <signature>
+          <return>
+            <object>java.nio.MappedByteBuffer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.UnsupportedOperationException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isLoaded -->
+      <method access="public" final="yes" name="isLoaded" valid="no">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ load -->
+      <method access="public" final="yes" name="load" valid="no">
+        <signature>
+          <return>
+            <object>java.nio.MappedByteBuffer</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) allocate -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="allocate">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) allocateDirect -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="allocateDirect">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) array -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="array">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) array -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="array">
+        <signature>
+          <return>
+            <array>
+              <byte/>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) arrayOffset -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="arrayOffset">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) asCharBuffer -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="asCharBuffer">
+        <signature>
+          <return>
+            <object>java.nio.CharBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) asDoubleBuffer -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="asDoubleBuffer">
+        <signature>
+          <return>
+            <object>java.nio.DoubleBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) asFloatBuffer -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="asFloatBuffer">
+        <signature>
+          <return>
+            <object>java.nio.FloatBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) asIntBuffer -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="asIntBuffer">
+        <signature>
+          <return>
+            <object>java.nio.IntBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) asLongBuffer -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="asLongBuffer">
+        <signature>
+          <return>
+            <object>java.nio.LongBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) asReadOnlyBuffer -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="asReadOnlyBuffer">
+        <signature>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) asShortBuffer -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="asShortBuffer">
+        <signature>
+          <return>
+            <object>java.nio.ShortBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) capacity -->
+      <method from="java.nio.Buffer" inherited="yes" name="capacity">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clear -->
+      <method from="java.nio.Buffer" inherited="yes" name="clear">
+        <signature>
+          <return>
+            <object>java.nio.Buffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) compact -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="compact">
+        <signature>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) compareTo -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="compareTo">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) compareTo -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="compareTo">
+        <signature>
+          <arg nr="1">
+            <object>java.nio.ByteBuffer</object>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) duplicate -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="duplicate">
+        <signature>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) flip -->
+      <method from="java.nio.Buffer" inherited="yes" name="flip">
+        <signature>
+          <return>
+            <object>java.nio.Buffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) get -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="get">
+        <signature>
+          <arg nr="1">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) get -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="get">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <byte/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) get -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="get">
+        <signature>
+          <arg nr="1">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) get -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="get">
+        <signature>
+          <return>
+            <byte/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getChar -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="getChar">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <char/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getChar -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="getChar">
+        <signature>
+          <return>
+            <char/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDouble -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="getDouble">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDouble -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="getDouble">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFloat -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="getFloat">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <float/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFloat -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="getFloat">
+        <signature>
+          <return>
+            <float/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getInt -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="getInt">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getInt -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="getInt">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getLong -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="getLong">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <long/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getLong -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="getLong">
+        <signature>
+          <return>
+            <long/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getShort -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="getShort">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <short/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getShort -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="getShort">
+        <signature>
+          <return>
+            <short/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hasArray -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="hasArray">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hasRemaining -->
+      <method from="java.nio.Buffer" inherited="yes" name="hasRemaining">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isDirect -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="isDirect">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isReadOnly -->
+      <method from="java.nio.Buffer" inherited="yes" name="isReadOnly">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) limit -->
+      <method from="java.nio.Buffer" inherited="yes" name="limit">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.nio.Buffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) limit -->
+      <method from="java.nio.Buffer" inherited="yes" name="limit">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mark -->
+      <method from="java.nio.Buffer" inherited="yes" name="mark">
+        <signature>
+          <return>
+            <object>java.nio.Buffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) order -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="order">
+        <signature>
+          <arg nr="1">
+            <object>java.nio.ByteOrder</object>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) order -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="order">
+        <signature>
+          <return>
+            <object>java.nio.ByteOrder</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) position -->
+      <method from="java.nio.Buffer" inherited="yes" name="position">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.nio.Buffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) position -->
+      <method from="java.nio.Buffer" inherited="yes" name="position">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) put -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="put">
+        <signature>
+          <arg nr="1">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) put -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="put">
+        <signature>
+          <arg nr="1">
+            <object>java.nio.ByteBuffer</object>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) put -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="put">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <byte/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) put -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="put">
+        <signature>
+          <arg nr="1">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) put -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="put">
+        <signature>
+          <arg nr="1">
+            <byte/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) putChar -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="putChar">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <char/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) putChar -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="putChar">
+        <signature>
+          <arg nr="1">
+            <char/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) putDouble -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="putDouble">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) putDouble -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="putDouble">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) putFloat -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="putFloat">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <float/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) putFloat -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="putFloat">
+        <signature>
+          <arg nr="1">
+            <float/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) putInt -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="putInt">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) putInt -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="putInt">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) putLong -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="putLong">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <long/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) putLong -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="putLong">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) putShort -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="putShort">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <short/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) putShort -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="putShort">
+        <signature>
+          <arg nr="1">
+            <short/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) remaining -->
+      <method from="java.nio.Buffer" inherited="yes" name="remaining">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) reset -->
+      <method from="java.nio.Buffer" inherited="yes" name="reset">
+        <signature>
+          <return>
+            <object>java.nio.Buffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) rewind -->
+      <method from="java.nio.Buffer" inherited="yes" name="rewind">
+        <signature>
+          <return>
+            <object>java.nio.Buffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) slice -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="slice">
+        <signature>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wrap -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="wrap">
+        <signature>
+          <arg nr="1">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wrap -->
+      <method from="java.nio.ByteBuffer" inherited="yes" name="wrap">
+        <signature>
+          <arg nr="1">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <return>
+            <object>java.nio.ByteBuffer</object>
+          </return>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
