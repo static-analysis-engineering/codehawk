@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/26/2015 22:22:25"/>
+  <libfun lib="user32" name="GetRawInputDeviceList">
+   <documentation>
+    <desc>Enumerates the raw input devices attached to the system</desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetRawInputDeviceList(</ll>
+      <ld>_Out_opt_ PRAWINPUTDEVICELIST pRawInputDeviceList</ld>
+      <ld>_Inout_   PUINT               puiNumDevices</ld>
+      <ld>_In_      UINT                cbSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pRawInputDeviceList">
+       An array of RAWINPUTDEVICELIST structures for the devices
+       attached to the system. If NULL, the number of devices are
+       returned in *puiNumDevices.
+     </par>
+     <par name="puiNumDevices">
+       If pRawInputDeviceList is NULL, the function populates this
+       variable with the number of devices attached to the system;
+       otherwise, this variable specifies the number of
+       RAWINPUTDEVICELIST structures that can be contained in the
+       buffer to which pRawInputDeviceList points. If this value is
+       less than the number of devices attached to the system, the
+       function returns the actual number of devices in this variable
+       and fails with ERROR_INSUFFICIENT_BUFFER.
+     </par>
+     <par name="cbSize">The size of a RAWINPUTDEVICELIST structure, in bytes</par>
+     <return>
+      <rc cond="success">
+	the number of devices stored in the buffer pointed to by pRawInputDeviceList.
+      </rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetRawInputDeviceList">
+    <par loc="stack" desc="raw input device list" io="w" name="pRawInputDeviceList" nr="1">
+     <type><ptr>RAWINPUTDEVICELIST</ptr></type>
+     <roles>
+       <role rt="ioc:system" rn="raw input device list"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="number of devices" io="w" name="puiNumDevices" nr="2">
+     <type><ptr>UINT</ptr></type>
+     <pre><deref-read-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:count" rn="number of raw input devices"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="buffersize" io="r" name="cbSize" nr="3">
+     <type>UINT</type>
+     <roles>
+       <role rt="size:buffersize" rn="GetRawInputDeviceList"/>
+     </roles>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" desc="enumerates attached raw input devices"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>RAWINPUTDEVICELIST</type>
+	    <ci>pRawInputDeviceList</ci>
+	    <ci>cbSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>RAWINPUTDEVICELIST</type>
+	    <ci>pRawInputDeviceList</ci>
+	    <ci>cbSize</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

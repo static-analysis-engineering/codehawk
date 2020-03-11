@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetCapture">
+   <documentation>
+    <desc>retrieves a handle to the window (if any) that has captured the mouse</desc>
+    <apidoc>
+     <pt>HWND WINAPI GetCapture (void) </pt>
+     <return>
+      <rc cond="success">handle to the capture window associated with the current thread</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetCapture">
+    <returnbtype tname="HWND" ttag="tnamed"/>
+   </api>
+   <semantics>
+    <external-effects/>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

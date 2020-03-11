@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="01/25/2016 15:43:59"/>
+  <libfun lib="user32" name="keybd_event">
+   <documentation>
+    <desc>
+      Synthesizes a keystroke. The system can use such a synthesized
+      keystroke to generate a WM_KEYUP or WM_KEYDOWN message. The
+      keyboard driver's interrupt handler calls the keybd_event
+      function.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>VOID WINAPI keybd_event(</ll>
+      <ld>_In_ BYTE      bVk</ld>
+      <ld>_In_ BYTE      bScan</ld>
+      <ld>_In_ DWORD     dwFlags</ld>
+      <ld>_In_ ULONG_PTR dwExtraInfo</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="bVk">
+       A virtual-key code. The code must be a value in the range 1 to 254.
+     </par>
+     <par name="bScan">A hardware scan code for the key</par>
+     <par name="dwFlags">
+       Controls various aspects of function operation
+     </par>
+     <par name="dwExtraInfo">An additional value associated with the key stroke</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="keybd_event">
+    <par loc="stack" io="r" name="bVk" roles="none" nr="1">
+     <type>BYTE</type>
+    </par>
+    <par loc="stack" name="bScan" roles="none" nr="2">
+     <type>BYTE</type>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwExtraInfo" roles="none" nr="4">
+     <type>ULONG_PTR</type>
+    </par>
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="process" desc="synthesizes a keystroke"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

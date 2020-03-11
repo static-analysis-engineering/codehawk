@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetTimer">
+   <documentation>
+    <desc>creates a timer with the specified time-out value</desc>
+    <apidoc>
+     <pt>
+      <ll>UINT_PTR WINAPI SetTimer (</ll>
+      <ld>__in_opt HWND hWnd,</ld>
+      <ld>__in     UINT_PTR nIDEvent,</ld>
+      <ld>__in     UINT uElapse,</ld>
+      <ld>__in_opt TIMERPROC lpTimerFunc</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       handle to the window to be associated with the timer; can be NULL
+     </par>
+     <par name="nIDEvent">
+       nonzero timer identifier. If the hWnd parameter is NULL, and the nIDEvent does not 
+       match an existing timer then it is ignored and a new timer ID is generated. If the
+       hWnd parameter is not NULL and the window specified by hWnd already has a timer with
+       the value nIDEvent, then the existing timer is replaced by the new timer
+     </par>
+     <par name="uElapse">time-out value, in milliseconds</par>
+     <par name="lpTimerFunc">
+       pointer to the function to be notified when the time-out value elapses
+     </par>
+     <return>
+      <rc cond="success">integer identifying the new timer</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SetTimer">
+     <returntype>UINT_PTR</returntype>
+     <par loc="stack" name="hWnd" io="r" nr="1">
+       <type>HWND</type>
+       <pre><deref-read-null/></pre>
+       <roles>
+         <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+     <par loc="stack" name="nIDEvent" io="r" nr="2">
+       <type>UINT_PTR</type>
+       <roles>
+         <role rt="ioc:system" rn="id:timer"/>
+       </roles>
+     </par>
+     <par loc="stack" name="uElapse" io="r" nr="3">
+       <type>UINT</type>
+       <roles>
+         <role rt="ioc:process" rn="timeout:timer"/>
+       </roles>
+     </par>
+     <par loc="stack" name="lpTimerFunc" io="r" nr="4" rep="hex">
+       <type>TIMERPROC</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+         <role rt="ioc:process" rn="callbackf:timer"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="creates a timer with a time-out value"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

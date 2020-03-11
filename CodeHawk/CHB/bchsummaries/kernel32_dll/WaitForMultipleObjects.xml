@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="WaitForMultipleObjects">
+   <documentation>
+    <desc>
+      waits until one or all of the specified objects are in the signaled state or the 
+      time-out interval elapses
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI WaitForMultipleObjects (</ll>
+      <ld>_In_ DWORD nCount,</ld>
+      <ld>_In_ const HANDLE *lpHandles,</ld>
+      <ld>_In_ BOOL bWaitAll,</ld>
+      <ld>_in_ DWORD dwMilliseconds</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nCount">
+       number of object handles in the array pointed to by lpHandles. The maximum number
+       of object handles is MAXIMUM_WAIT_OBJECTS. This parameter cannot be zero
+     </par>
+     <par name="lpHandles">
+       array of object handles. The array can contain handles to objects of different types.
+       It may not contain multiple copies of the same handle. If one of the these handles
+       is closed while the wait is still pending, the function&apos;s behavior is undefined.
+     </par>
+     <par name="bWaitAll">
+       if this parameter is TRUE, the function returns when the state of all objects in the
+       lpHandles array is signaled. If FALSE, the function returns when the state of any one
+       of the objects is set to signaled. In the latter case, the return value indicates the
+       object whose state caused the function to return
+     </par>
+     <par name="dwMilliseconds">
+       time-out interval, in milliseconds. If a nonzero  value is specified, the function 
+       waits until the specified objects are signaled or the interval elapses. If 
+       dwMilliseconds is zero, the function does not enter a wait state if the specified
+       objects are not signaled; it always returns immediately. If dwMilliseconds is
+       INFINITE, the function will return only when the specified objects are signaled
+     </par>
+     <return>
+      <rc cond="success">indicates the event that caused the function to return</rc>
+      <rc cond="failure">0xFFFFFFFF</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="WaitForMultipleObjects">
+    <returntype>DWORD</returntype>
+    <par loc="stack" io="r" name="nCount" nr="1">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:count" rn="WaitForMultipleObjects"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpHandles" nr="2">
+      <type><ptr>HANDLE</ptr></type>
+      <roles>
+         <role rt="ioc:synchronization" rn="handle array:synchronization objects"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="bWaitAll" roles="none" nr="3">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" io="r" name="dwMilliseconds" nr="4">
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:synchronization" rn="timeout"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization"
+		  desc="waits until objects are in the signaled stated"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>HANDLE</type>
+	    <ci>lpHandles</ci>
+	    <apply><indexsize/><ci>nCount</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="01/25/2016 15:39:48"/>
+  <libfun lib="advapi32" name="CloseEventLog">
+   <documentation>
+    <desc>Closes the specified event log</desc>
+    <apidoc>
+     <pt>BOOL CloseEventLog (_Inout_ HANDLE hEventLog)</pt>
+     <par name="hEventLog">
+       A handle to the event log to be closed. The OpenEventLog or OpenBackupEventLog
+       function returns this handle.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CloseEventLog">
+    <par loc="stack" io="r" name="hEventLog" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:event log"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" desc="closes an event log"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

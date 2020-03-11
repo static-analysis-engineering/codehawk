@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetSystemDirectory">
+   <documentation>
+    <desc>
+      retrieves the path of the system directory. The system directory contains system files
+      such as dynamic link libraries and drivers
+    </desc>
+    <apidoc>
+      <pt>
+	<ll>UINT WINAPI GetSystemDirectory (</ll>
+	<ld>_Out_ LPTSTR lpBuffer,</ld>
+	<ld>_In_  UINT uSize</ld>
+	<ll>)</ll>
+      </pt>
+      <par name="lpBuffer">
+	pointer to the buffer to receive the path. This path does not end with a backslash
+	unless the system directory is the root directory
+      </par>
+      <par name="uSize">maximum size of the buffer, in TCHARs</par>
+      <return>
+      <rc cond="success">
+	length, in TCHARs, of the string copied to the buffer, not including the 
+	terminating null character. If the length is greater than the size of the buffer,
+	the return value is the size of the buffer required to hold the path, including
+	the terminating null character
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetSystemDirectory">
+    <returnbtype tname="UINT" ttag="tnamed"/>
+    <par loc="stack" name="lpBuffer" io="w" nr="1" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:system" rn="infox:system directory"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uSize" nr="2">
+      <type>UINT</type>
+      <roles>
+	<role rt="size:buffersize" rn="GetSystemDirectory"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"  desc="retrieves system directory"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>TCHAR</type>
+	 <ci>lpBuffer</ci>
+	 <apply><indexsize/><ci>uSize</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	<type>TCHAR</type>
+        <ci>lpBuffer</ci>
+        <apply><indexsize/><ci>uSize</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

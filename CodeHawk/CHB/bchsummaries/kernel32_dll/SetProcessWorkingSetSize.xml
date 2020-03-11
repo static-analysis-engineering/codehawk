@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/01/2015 15:36:33"/>
+  <libfun lib="kernel32" name="SetProcessWorkingSetSize">
+   <documentation>
+    <desc>
+      Sets the minimum and maximum working set sizes for the specified process
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetProcessWorkingSetSize(</ll>
+      <ld>_In_ HANDLE hProcess</ld>
+      <ld>_In_ SIZE_T dwMinimumWorkingSetSize</ld>
+      <ld>_In_ SIZE_T dwMaximumWorkingSetSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hProcess">
+       A handle to the process whose working set sizes is to be set.
+       The handle must have the PROCESS_SET_QUOTA access right
+     </par>
+     <par name="dwMinimumWorkingSetSize">
+       The minimum working set size for the process, in bytes. The virtual memory
+       manager attempts to keep at least this much memory resident in the process
+       whenever the process is active.
+       This parameter must be greater than zero but less than or equal to the maximum
+       working set size. The default size is 50 pages (for example, this is 204,800
+       bytes on systems with a 4K page size). If the value is greater than zero but
+       less than 20 pages, the minimum value is set to 20 pages.
+       If both dwMinimumWorkingSetSize and dwMaximumWorkingSetSize have the value
+       (SIZE_T)-1, the function removes as many pages as possible from the working
+       set of the specified process.
+     </par>
+     <par name="dwMaximumWorkingSetSize">
+       The maximum working set size for the process, in bytes. The virtual memory 
+       manager attempts to keep no more than this much memory resident in the 
+       process whenever the process is active and available memory is low.
+       This parameter must be greater than or equal to 13 pages (for example,
+       53,248 on systems with a 4K page size), and less than the system-wide 
+       maximum (number of available pages minus 512 pages). The default size 
+       is 345 pages (for example, this is 1,413,120 bytes on systems with a 
+       4K page size).
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SetProcessWorkingSetSize">
+    <par loc="stack" io="r" name="hProcess" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:process" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwMinimumWorkingSetSize" nr="2">
+     <type>SIZE_T</type>
+     <roles>
+      <role rt="ioc:memops" rn="size:working set minimum" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwMaximumWorkingSetSize" nr="3">
+     <type>SIZE_T</type>
+     <roles>
+      <role rt="ioc:memops" rn="size:working set maximum" />
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="sets the minimum and maximum working set size"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/05/2015 16:50:04"/>
+  <libfun lib="kernel32" name="WriteProfileSection">
+   <documentation>
+    <desc>
+      Replaces the contents of the specified section in the Win.ini file with 
+      specified keys and values. If Win.ini uses Unicode characters, the function 
+      writes Unicode characters to the file. Otherwise, the function writes ANSI characters.
+      Note  This function is provided only for compatibility with 16-bit versions of
+      Windows. Applications should store initialization information in the registry.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WriteProfileSection(</ll>
+      <ld>_In_  LPCTSTR lpAppName</ld>
+      <ld>_In_  LPCTSTR lpString</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpAppName">
+       The name of the section. This section name is typically the name of the 
+       calling application
+     </par>
+     <par name="lpString">
+       The new key names and associated values that are to be written to the 
+       named section. This string is limited to 65,535 bytes.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="WriteProfileSection">
+    <par loc="stack" io="r" name="lpAppName" nr="1" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:initfile section" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpString" nr="2">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:initfile key" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="replaces the contents of a section in the initfile"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

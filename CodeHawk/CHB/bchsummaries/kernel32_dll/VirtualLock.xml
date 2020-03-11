@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:40:39"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="VirtualLock">
+   <documentation>
+    <desc>
+      Locks the specified region of the process&apos;s virtual address space 
+      into physical memory, ensuring that subsequent access to the region 
+      will not incur a page fault.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI VirtualLock(</ll>
+      <ld>_In_  LPVOID lpAddress</ld>
+      <ld>_In_  SIZE_T dwSize</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpAddress">
+       A pointer to the base address of the region of pages to be locked.
+     </par>
+     <par name="dwSize">
+       The size of the region to be locked, in bytes. The region of affected 
+       pages includes all pages that contain one or more bytes in the range 
+       from the lpAddress parameter to (lpAddress+dwSize).
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="VirtualLock">
+     <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="lpAddress" nr="1">
+      <type><ptr>void</ptr></type>
+      <roles>
+         <role rt="ioc:memops" rn="address:memory"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwSize" nr="2">
+      <type>SIZE_T</type>
+      <roles>
+         <role rt="size:buffersize" rn="VirtualLock"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="synchronization" desc="locks a virtual memory region"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>void</type>
+	    <ci>lpAddress</ci>
+	    <ci>dwSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

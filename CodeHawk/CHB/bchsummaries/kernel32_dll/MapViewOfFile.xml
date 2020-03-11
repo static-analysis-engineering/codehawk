@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="MapViewOfFile">
+   <documentation>
+    <desc>maps a view of a file mapping into the address space of a calling process</desc>
+    <apidoc>
+     <pt>
+      <ll>LPVOID WINAPI MapViewOfFile (</ll>
+      <ld>_In_ HANDLE hFileMappingObject,</ld>
+      <ld>_In_ DWORD dwDesiredAccess,</ld>
+      <ld>_In_ DWORD dwFileOffsetHigh,</ld>
+      <ld>_In_ DWORD dwFileOffsetLow,</ld>
+      <ld>_In_ SIZE_T dwNumberOfBytesToMap</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFileMappingObject">handle to the file mapping object</par>
+     <par name="dwDesiredAccess">
+       type of access to a file mapping object, which determines the protection of the pages
+     </par>
+     <par name="dwFileOffsetHigh">
+       high-order DWORD of the file offset where the view begins
+     </par>
+     <par name="dwFileOffsetLow">
+       low-order DWORD of the file offset where the view is to begin
+     </par>
+     <par name="dwNumberOfBytesToMap">
+       number of bytes of a file mapping to map to the view. If this parameter is zero,
+       the mapping extends from the specified offset to the end of the file mapping
+     </par>
+     <return>
+      <rc cond="success">starting address of the mapped view</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="MapViewOfFile">
+     <returntype><ptr>void</ptr></returntype>
+    <par loc="stack" name="hFileMappingObject" io="r" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:filemapping"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwDesiredAccess" roles="none" io="r" nr="2">
+      <rep type="enum" name="file_map_flags"/>
+      <type>DWORD</type>
+      <pre><enum-value name="file_map_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" name="dwFileOffsetHigh" io="r" nr="3">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:offset" rn="file offset"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwFileOffsetLow" io="r" nr="4">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:offset" rn="file offset"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwNumberOfBytesToMap" io="r" nr="5">
+      <type>SIZE_T</type>
+      <roles>
+	<role rt="size:count" rn="bytes to be mapped"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" 
+		  desc="maps a file into the address space of the process"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

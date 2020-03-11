@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="QueryServiceStatusEx">
+   <documentation>
+    <desc>
+      retrieves the current status of the specified service based on the specified information
+      level
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI QueryServiceStatusEx (</ll>
+      <ld>_In_ SC_HANDLE hService,</ld>
+      <ld>_In_ SC_STATUS_TYPE InfoLevel,</ld>
+      <ld>_Out_opt_ LPBYTE lpBuffer,</ld>
+      <ld>_In_ DWORD cbBufSize,</ld>
+      <ld>_Out_ LPDWORD pcbBytesNeeded</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hService">handle to the service</par>
+     <par name="InfoLevel">service attributes to be returned</par>
+     <par name="lpBuffer">
+       pointer to the buffer that receives the status information. The format of this data
+       depends on the value of the InfoLevel parameter.
+       The maximum size of this array is 8K bytes. To determine the required size, specify
+       NULL for this parameter and 0 for the cbBufSize parameter. The function will fail and
+       GetLastError will return ERROR_INSUFFICIENT_BUFFER. The pcbBytesNeeded parameter will
+       receive the required size
+     </par>
+     <par name="cbBufSize">
+       size of the buffer pointed to by the lpBuffer parameter, in bytes
+     </par>
+     <par name="pcbBytesNeede">
+       pointer to a variable that receives the number of bytes needed to store all status
+       information, if the function fails with ERROR_INSUFFICIENT_BUFFER
+     </par>
+     <return>
+      <rc cond="success">non-zero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="QueryServiceStatusEx">
+      <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hService" nr="1">
+      <type>SC_HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:services" rn="handle:service"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="InfoLevel" roles="none" nr="2">
+      <type>SC_STATUS_TYPE</type>
+    </par>
+    <par loc="stack" io="w" name="lpBuffer" nr="3">
+      <type><ptr>byte</ptr></type>
+      <roles>
+         <role rt="ioc:services" rn="infox:service status"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="cbBufSize" nr="4">
+      <type>DWORD</type>
+      <roles>
+         <role rt="size:buffersize" rn="QueryServiceStatusEx"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="pcbBytesNeeded" nr="5">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="size:needed" rn="QueryServiceStatusEx"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="services" desc="retrieves the status of a service"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>byte</type>
+	    <ci>lpBuffer</ci>
+	    <ci>cbBufSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="service control manager" xdata="status of given service"/>
+	    <type>byte</type>
+	    <ci>lpBuffer</ci>
+	    <ci>cbBufSize</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

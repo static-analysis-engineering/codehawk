@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetCPInfo">
+   <documentation>
+    <desc>retrieves information about any valid installed or available code page</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetCPInfo (</ll>
+      <ld>__in  UINT CodePage,</ld>
+      <ld>__out LPCPINFO lpCPInfo</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="CodePage">identifier for the code page</par>
+     <par name="lpCPInfo">
+       pointer to a CPINFO structure that receives information about the code page
+     </par>
+     <return>
+      <rc cond="success">1</rc>
+      <rc cond="failure">0</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetCPInfo">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="CodePage" nr="1">
+     <type>UINT</type>
+     <roles>
+        <role rt="ioc:system" rn="id:code page"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpCPInfo" nr="2">
+       <type><ptr>CPINFO</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+       <roles>
+          <role rt="ioc:system" rn="infox:code page info"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves information about a code page"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

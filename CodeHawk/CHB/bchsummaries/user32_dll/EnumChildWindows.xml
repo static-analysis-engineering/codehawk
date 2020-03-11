@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:28:17"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="EnumChildWindows">
+   <documentation>
+    <desc>
+      Enumerates the child windows that belong to the specified parent window 
+      by passing the handle to each child window, in turn, to an application-defined 
+      callback function. EnumChildWindows continues until the last child window 
+      is enumerated or the callback function returns FALSE.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI EnumChildWindows(</ll>
+      <ld>_In_opt_  HWND hWndParent</ld>
+      <ld>_In_      WNDENUMPROC lpEnumFunc</ld>
+      <ld>_In_      LPARAM lParam</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       <rc cond="success">nonzero</rc>
+       <rc cond="failure">zero</rc>
+     </return>
+     <par name="hWndParent">
+       A handle to the parent window whose child windows are to be enumerated. 
+       If this parameter is NULL, this function is equivalent to EnumWindows. 
+     </par>
+     <par name="lpEnumFunc">A pointer to an application-defined callback function.</par>
+     <par name="lParam">
+       An application-defined value to be passed to the callback function.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="EnumChildWindows">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hWndParent" io="r" nr="1">
+     <type>HWND</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpEnumFunc" io="r" nr="2" rep="hex">
+     <type>WNDENUMPROC</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="callbackf:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lParam" io="r" nr="3">
+     <type>LPARAM</type>
+     <roles>
+        <role rt="ioc:process" rn="callbackp:window"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" 
+		  desc="enumerates child windows and supplies a callback function"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

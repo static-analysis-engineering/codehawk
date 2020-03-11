@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegDeleteValue">
+   <documentation>
+    <desc>removes a named value from the specified registry key</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegDeleteValue (</ll>
+      <ld>__in     HKEY hKey,</ld>
+      <ld>__in_opt LPCTSTR lpValueName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">handle to an open registry key</par>
+     <par name="lpValueName">registry value to be removed; can be NULL</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="RegDeleteValue">
+     <returntype>int</returntype>
+     <par loc="stack" name="hKey" nr="1" rep="hex">
+       <rep type="enum" name="predefined_registry_key_constants"/>
+       <type>HKEY</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:registry" rn="handle:key"/>
+       </roles>
+     </par>
+    <par loc="stack" name="lpValueName" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:registry" rn="name:value"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry" desc="deletes a registry value"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="system_error_code_constants"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

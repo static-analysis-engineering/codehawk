@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ConvertSidToStringSid.xml" time="2016-05-08 21:29:13.797280"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="ConvertSidToStringSid">
+    <documentation>
+      <desc>
+	converts a security identifier (SID) to a string format
+	suitable for display, storage, or transmission.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL ConvertSidToStringSid(</ll>
+          <ld>_In_  PSID   Sid</ld>
+          <ld>_Out_ LPTSTR *StringSid</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="Sid">A pointer to the SID structure to be converted</par>
+        <par name="StringSid">
+	  A pointer to a variable that receives a pointer to a
+	  null-terminated SID string. To free the returned buffer,
+	  call the LocalFree function.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="ConvertSidToStringSid">
+      <par loc="stack" name="Sid" io="r" rep="hex" nr="1">
+        <type><ptr>SID</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="src-struct:security identifier"/>
+	</roles>
+      </par>
+      <par loc="stack" name="StringSid" io="w" rep="hex" nr="2">
+        <type><ptr>LPTSTR</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:system" rn="dst-string:security identifier"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="converts a security identifier to a string"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

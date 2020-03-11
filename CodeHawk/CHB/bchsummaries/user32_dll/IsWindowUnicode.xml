@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="IsWindowUnicode.xml" time="2016-09-25 00:02:09.505633"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="IsWindowUnicode">
+    <documentation>
+      <desc>
+	Determines whether the specified window is a native Unicode window
+      </desc>
+      <apidoc>
+        <pt>BOOL WINAPI IsWindowUnicode (_In_ HWND hWnd)</pt>
+        <par name="hWnd">A handle to the window to be tested</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="IsWindowUnicode">
+      <par loc="stack" name="hWnd" nr="1" io="r">
+        <type>HWND</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+		   desc="determines whether a window is a native Unicode window"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

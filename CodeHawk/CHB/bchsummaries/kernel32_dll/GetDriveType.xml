@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/22/2014 16:12:00"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetDriveType">
+   <documentation>
+    <desc>Determines whether a disk drive is a removable, fixed, CD-ROM, 
+      RAM disk, or network drive
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetDriveType(</ll>
+      <ld>_In_opt_  LPCTSTR lpRootPathName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpRootPathName">The root directory for the drive.
+	A trailing backslash is required. If this parameter is NULL, 
+	the function uses the root of the current directory.
+      </par>
+     <return>The return value specifies the type of drive, which can be one of 
+	the following values:
+	0: DRIVE_UNKNOWN
+	1: DRIVE_NO_ROOT_DIR
+	2: DRIVE_REMOVABLE
+	3: DRIVE_FIXED
+	4: DRIVE_REMOTE
+	5: DRIVE_CDROM
+	6: DRIVE_RAMDISK
+      </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetDriveType">
+     <returntype>UINT</returntype>
+     <par loc="stack" name="lpRootPathName" io="r" nr="1" rep="hex">
+       <type>LPCTSTR</type>
+       <pre><deref-read-null-nt/></pre>
+       <roles>
+	 <role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves the type of disk"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

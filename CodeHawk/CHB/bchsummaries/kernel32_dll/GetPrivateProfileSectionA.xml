@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="03/05/2015 21:59:25"/>
+  <libfun lib="kernel32" name="GetPrivateProfileSectionA">
+   <refer-to char-type="ansi" name="GetPrivateProfileSection"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

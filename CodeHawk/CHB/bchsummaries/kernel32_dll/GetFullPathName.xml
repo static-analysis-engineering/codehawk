@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetFullPathName">
+   <documentation>
+    <desc>retrieves the full path and file name of the specified file</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetFullPathName (</ll>
+      <ld>__in  LPCTSTR lpFileName,</ld>
+      <ld>__in  DWORD nBufferLength,</ld>
+      <ld>__out LPTSTR lpBuffer,</ld>
+      <ld>__out LPTSTR *lpFilePart</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpFileName">name of the file</par>
+     <par name="nBufferLength">
+       size of the buffer to receive the null-terminated string for the drive and path,
+       in TCHARS
+     </par>
+     <par name="lpBuffer">
+       pointer to a buffer that receives the null-terminated string for the drive and path
+     </par>
+     <par name="lpFilePart">
+       pointer to a buffer that receives the address of the final file name component in
+       the path; can be NULL
+     </par>
+     <return>
+      <rc cond="success">
+	length in TCHARs of the string copied to lpBuffer, not including the terminating
+	null character. If the lpBuffer buffer is too small to contain the path, the return
+	value is the size, in TCHARs, of the buffer that is required to hold the path and
+	the terminating null character.
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetFullPathName">
+      <returntype>DWORD</returntype>
+    <par loc="stack" name="lpFileName" io="r" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nBufferLength" io="r" nr="2">
+      <type>DWORD</type>
+      <roles>
+         <role rt="size:buffersize" rn="GetFullPathName"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpBuffer" io="w" nr="3" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:filesystem" rn="infox:filename"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpFilePart" io="w" nr="4" rep="hex">
+      <type><ptr>LPTSTR</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:filesystem" rn="infox:filename"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="retrieves the path and filename"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>TCHAR</type>
+	 <ci>lpBuffer</ci>
+	 <apply><indexsize/><ci>nBufferLength</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	 <type>TCHAR</type>
+	 <ci>lpBuffer</ci>
+	 <apply><indexsize/><ci>nBufferLength</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

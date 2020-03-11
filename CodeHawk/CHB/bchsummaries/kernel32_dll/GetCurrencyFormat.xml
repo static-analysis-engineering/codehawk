@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/14/2015 11:14:08"/>
+  <libfun lib="kernel32" name="GetCurrencyFormat">
+   <documentation>
+    <desc> 
+      Formats a number string as a currency string for a locale specified by identifier
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int GetCurrencyFormat(</ll>
+      <ld>_In_       LCID Locale</ld>
+      <ld>_In_       DWORD dwFlags</ld>
+      <ld>_In_       LPCTSTR lpValue</ld>
+      <ld>_In_opt_   const CURRENCYFMT *lpFormat</ld>
+      <ld>_Out_opt_  LPTSTR lpCurrencyStr</ld>
+      <ld>_In_       int cchCurrency</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Locale">
+       Locale identifier that specifies the locale for which this function 
+       formats the currency string
+     </par>
+     <par name="dwFlags">
+       Flags controlling currency format. The application must set this 
+       parameter to 0 if lpFormat is not set to NULL. In this case, the 
+       function formats the string using user overrides to the default 
+       currency format for the locale. If lpFormat is set to NULL, the 
+       application can specify LOCALE_NOUSEROVERRIDE to format the string 
+       using the system default currency format for the specified locale
+     </par>
+     <par name="lpValue">
+       Pointer to a null-terminated string containing the number string to 
+       format. This string can contain only the following characters. All
+       other characters are invalid. The function returns an error if the 
+       string deviates from these rules.
+       Characters "0" through "9"
+       One decimal point (dot) if the number is a floating-point value
+       A minus sign in the first character position if the number is a 
+       negative value
+     </par>
+     <par name="lpFormat">
+       Pointer to a CURRENCYFMT structure that contains currency formatting 
+       information. All members of the structure must contain appropriate 
+       values. The application can set this parameter to NULL if function 
+       is to use the currency format of the specified locale. If this 
+       parameter is not set to NULL, the function uses the specified locale 
+       only for formatting information not specified in the CURRENCYFMT 
+       structure, for example, the string value for the negative sign 
+       used by the locale
+     </par>
+     <par name="lpCurrencyStr">
+       Pointer to a buffer in which this function retrieves the formatted 
+       currency string
+     </par>
+     <par name="cchCurrency">
+       Size, in characters, of the lpCurrencyStr buffer. The application sets 
+       this parameter to 0 if the function is to return the size of the buffer 
+       required to hold the formatted currency string. In this case, the 
+       lpCurrencyStr parameter is not used
+     </par>
+     <return>
+      <rc cond="success">
+	the number of characters retrieved in the buffer indicated by lpCurrencyStr
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="GetCurrencyFormat">
+    <par loc="stack" name="Locale" io="r" nr="1">
+     <type>LCID</type>
+     <roles>
+       <role rt="ioc:system" rn="id:locale"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpValue" io="r" rep="hex" nr="3">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-string:convert"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpFormat" io="r" rep="hex" nr="4">
+     <type><ptr>CURRENCYFMT</ptr></type>
+     <pre><deref-read-null/><format-string/></pre>
+     <roles>
+       <role rt="ioc:outputs" rn="format string"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpCurrencyStr" io="w" rep="hex" nr="5">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-string:formatted data"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cchCurrency" io="r" nr="6">
+     <type>int</type>
+     <pre><non-negative/></pre>
+     <roles>
+       <role rt="size:buffersize" rn="GetCurrencyFormat"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="outputs"
+		 desc="formats a number as a currency string"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><gt/><ci>cchCurrency</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-read/>
+	      <type>TCHAR</type>
+	      <ci>lpCurrencyStr</ci>
+	      <apply><indexsize/><ci>cchCurrency</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <implies/>
+	    <pre><apply><gt/><ci>cchCurrency</ci><cn>0</cn></apply></pre>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>lpCurrencyStr</ci>
+	      <apply><indexsize/><ci>cchCurrency</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

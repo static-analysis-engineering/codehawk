@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetDlgItemText">
+   <documentation>
+    <desc>retrieves the title or text associated with a control in a dialog box</desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetDlgItemText (</ll>
+      <ld>__in   HWND hDlg,</ld>
+      <ld>__in   int nIDDlgItem,</ld>
+      <ld>__out  LPTSTR lpString,</ld>
+      <ld>__in   int nMaxCount</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDlg">handle to the dialog box that contains the control</par>
+     <par name="nIDDlgItem">
+       identifier of the control whose title or text is to be retrieved
+     </par>
+     <par name="lpString">buffer to receive the title or text</par>
+     <par name="nMaxCount">
+       maximum length, in characters, of the string to be copied to the buffer pointed to by
+       lpString. If the length of the string, including the null character, exceeds the limit,
+       the string is truncated
+     </par>
+     <return>
+      <rc cond="success">
+	number of characters copied to the buffer, not including the
+	terminating null character
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetDlgItemText">
+     <returntype>UINT</returntype>
+     <par loc="stack" name="hDlg" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="nIDDlgItem" roles="none" nr="2">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="lpString" io="w" nr="3">
+      <type>LPCTSTR</type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-string:input text"/>
+	<role rt="rep:hex" rn="dst-string"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nMaxCount" io="r" nr="4">
+      <type>int</type>
+      <roles>
+	<role rt="size:buffersize" rn="GetDlgItemText"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves the title or text associated with a control in a dialog box"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>TCHAR</type>
+	 <ci>lpString</ci>
+	 <apply><indexsize/><ci>nMaxCount</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	<type>TCHAR</type>
+        <ci>lpString</ci>
+	 <apply><indexsize/><ci>nMaxCount</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetProcessTimes">
+   <documentation>
+    <desc>retrieves timing information for the specified process</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetProcessTimes (</ll>
+      <ld>__in  HANDLE hProcess,</ld>
+      <ld>_Out_ LPFILETIME lpCreationTime,</ld>
+      <ld>_Out_ LPFILETIME lpExitTime,</ld>
+      <ld>_Out_ LPFILETIME lpKernelTime,</ld>
+      <ld>_Out_ LPFILETIME lpUserTime</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hProcess">handle to the process whose timing information is sought</par>
+     <par name="lpCreationTime">
+       pointer to a FILETIME structure that receives the creation time of the process
+     </par>
+     <par name="lpExitTime">
+       pointer to a FILETIME structure that receives the exit time of the process
+     </par>
+     <par name="lpKernelTime">
+       pointer to a FILETIME structure that receives the amount of time that the process
+       has executed in kernel mode
+     </par>
+     <par name="lpUserTime">
+       pointer to a FILETIME structure that receives the amount of time that the process
+       has executed in user mode
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="GetProcessTimes">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="hProcess" nr="1">
+       <type>HANDLE</type>
+       <roles>
+	 <role rt="ioc:process" rn="handle:process" />
+       </roles>
+       <pre><deref-read/></pre>
+     </par>
+    <par loc="stack" io="w" name="lpCreationTime" rep="hex" nr="2">
+     <roles>
+      <role rt="ioc:process" rn="process creation time"/>
+      <role rt="ioc:memops" rn="dst-struct:FILETIME"/>
+     </roles>
+     <type><ptr>FILETIME</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpExitTime" rep="hex" nr="3">
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:FILETIME" />
+      <role rt="ioc:process" rn="infox:process exit time"/>
+     </roles>
+     <type><ptr>FILETIME</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpKernelTime" nr="4" rep="hex">
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:FILETIME" />
+      <role rt="ioc:process" rn="infox:process kernel mode time"/> 
+     </roles>
+     <type><ptr>FILETIME</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpUserTime" nr="5" rep="hex">
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:FILETIME" />
+      <role rt="ioc:process" rn="infox:process user mode time"/>
+     </roles>
+     <type><ptr>FILETIME</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves timing information for a process"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

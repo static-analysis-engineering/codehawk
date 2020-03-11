@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:32:56"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ShowCursor">
+   <documentation>
+    <desc>Displays or hides the cursor.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI ShowCursor(</ll>
+      <ld>_In_  BOOL bShow</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="bShow">
+       If bShow is TRUE, the display count is incremented by one. If
+       bShow is FALSE, the display count is decremented by one.
+     </par>
+     <return>Specifies the new display counter</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ShowCursor">
+    <returntype>INT</returntype>
+    <par loc="stack" name="bShow" io="r" roles="none" nr="1">
+     <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="displays or hides the cursor"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

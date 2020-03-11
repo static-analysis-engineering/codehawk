@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/26/2015 22:10:33"/>
+  <libfun lib="user32" name="GetRawInputDeviceInfo">
+   <documentation>
+    <desc>Retrieves information about the raw input device</desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetRawInputDeviceInfo(</ll>
+      <ld>_In_opt_    HANDLE hDevice</ld>
+      <ld>_In_        UINT   uiCommand</ld>
+      <ld>_Inout_opt_ LPVOID pData</ld>
+      <ld>_Inout_     PUINT  pcbSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDevice">
+       A handle to the raw input device. This comes from the lParam of
+       the WM_INPUT message, from the hDevice member of
+       RAWINPUTHEADER, or from GetRawInputDeviceList. It can also be
+       NULL if an application inserts input data, for example, by
+       using SendInput.
+     </par>
+     <par name="uiCommand">Specifies what data will be returned in pData</par>
+     <par name="pData">
+       A pointer to a buffer that contains the information specified
+       by uiCommand. If uiCommand is RIDI_DEVICEINFO, set the cbSize
+       member of RID_DEVICE_INFO to sizeof(RID_DEVICE_INFO) before
+       calling GetRawInputDeviceInfo.
+     </par>
+     <par name="pcbSize">The size, in bytes, of the data in pData</par>
+     <return>
+       If successful, this function returns a non-negative number
+       indicating the number of bytes copied to pData.  If pData is
+       not large enough for the data, the function returns -1. If
+       pData is NULL, the function returns a value of zero. In both of
+       these cases, pcbSize is set to the minimum size required for
+       the pData buffer
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetRawInputDeviceInfo">
+    <par loc="stack" io="r" name="hDevice" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="handle:raw input device"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="uiCommand" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" io="rw" name="pData" nr="3">
+     <type><ptr>void</ptr></type>
+     <roles>
+       <role rt="ioc:system" rn="infox:device info"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="data size" io="rw" name="pcbSize" nr="4">
+     <type><ptr>UINT</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:buffersize" rn="GetRawInputDeviceInfo"/>
+     </roles>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="retrieves information about a raw input device"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>pData</ci>
+	    <apply><addressed-value/><ci>pcbSize</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>pData</ci>
+	    <apply><addressed-value/><ci>pcbSize</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

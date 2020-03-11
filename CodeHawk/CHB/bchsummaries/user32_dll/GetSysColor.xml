@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetSysColor">
+   <documentation>
+    <desc>retrieves the current color of the specified display element</desc>
+    <apidoc>
+     <pt>DWORD WINAPI GetSysColor (__in int nIndex)</pt>
+     <par name="nIndex">display element whose color is to be retrieved</par>
+     <return>red, green, blue (RGB) color value of the given element</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetSysColor">
+     <returntype>DWORD</returntype>
+     <par loc="stack" name="nIndex" io="r" roles="none" nr="1">
+       <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves the current color of a display element">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

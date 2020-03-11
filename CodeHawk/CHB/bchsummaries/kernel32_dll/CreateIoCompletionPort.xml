@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CreateIoCompletionPort.xml" time="2017-04-27 10:43:09.730067"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="CreateIoCompletionPort">
+    <documentation>
+      <desc>
+	Creates an input/output (I/O) completion port and associates
+	it with a specified file handle, or creates an I/O completion
+	port that is not yet associated with a file handle, allowing
+	association at a later time.  Associating an instance of an
+	opened file handle with an I/O completion port allows a
+	process to receive notification of the completion of
+	asynchronous I/O operations involving that file handle.
+
+	Note
+	The term file handle as used here refers to a system
+	abstraction that represents an overlapped I/O endpoint, not
+	only a file on disk. Any system objects that support
+	overlapped I/O-such as network endpoints, TCP sockets, named
+	pipes, and mail slots-can be used as file handles. For
+	additional information, see the Remarks section.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HANDLE WINAPI CreateIoCompletionPort(</ll>
+          <ld>_In_     HANDLE    FileHandle</ld>
+          <ld>_In_opt_ HANDLE    ExistingCompletionPort</ld>
+          <ld>_In_     ULONG_PTR completionKey</ld>
+          <ld>_In_     DWORD     NumberOfConcurrentThreads</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="FileHandle">
+	  An open file handle or INVALID_HANDLE_VALUE.  The handle
+	  must be to an object that supports overlapped I/O.  If a
+	  handle is provided, it has to have been opened for
+	  overlapped I/O completion. For example, you must specify the
+	  FILE_FLAG_OVERLAPPED flag when using the CreateFile function
+	  to obtain the handle.  If INVALID_HANDLE_VALUE is specified,
+	  the function creates an I/O completion port without
+	  associating it with a file handle. In this case, the
+	  ExistingCompletionPort parameter must be NULL and the
+	  CompletionKey parameter is ignored.
+	</par>
+        <par name="ExistingCompletionPort">
+	  A handle to an existing I/O completion port or NULL.  If
+	  this parameter specifies an existing I/O completion port,
+	  the function associates it with the handle specified by the
+	  FileHandle parameter. The function returns the handle of the
+	  existing I/O completion port if successful; it does not
+	  create a new I/O completion port.  If this parameter is
+	  NULL, the function creates a new I/O completion port and, if
+	  the FileHandle parameter is valid, associates it with the
+	  new I/O completion port. Otherwise no file handle
+	  association occurs. The function returns the handle to the
+	  new I/O completion port if successful.
+	</par>
+        <par name="completionKey">
+	  The per-handle user-defined completion key that is included
+	  in every I/O completion packet for the specified file
+	  handle.
+	</par>
+        <par name="NumberOfConcurrentThreads">
+	  The maximum number of threads that the operating system can
+	  allow to concurrently process I/O completion packets for the
+	  I/O completion port. This parameter is ignored if the
+	  ExistingCompletionPort parameter is not NULL.  If this
+	  parameter is zero, the system allows as many concurrently
+	  running threads as there are processors in the system.
+	</par>
+        <return>
+          <rc cond="success">
+	    the handle to an I/O completion port:
+	    
+	    If the ExistingCompletionPort parameter was NULL, the
+	    return value is a new handle.
+	    
+	    If the ExistingCompletionPort parameter was a valid I/O
+	    completion port handle, the return value is that same
+	    handle.
+	    
+	    If the FileHandle parameter was a valid handle, that file
+	    handle is now associated with the returned I/O completion
+	    port.
+	  </rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="16" cc="stdcall" name="CreateIoCompletionPort">
+      <par loc="stack" name="FileHandle" io="r" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="handle:file"/>
+	</roles>
+      </par>
+      <par loc="stack" name="ExistingCompletionPort" io="r" nr="2">
+        <type>HANDLE</type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="handle:file"/>
+	</roles>
+      </par>
+      <par loc="stack" name="completionKey" io="r" nr="3">
+        <type>ULONG_PTR</type>
+      </par>
+      <par loc="stack" name="NumberOfConcurrentThreads" io="r" nr="4">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:count" rn="thread count"/>
+	</roles>
+      </par>
+      <returntype>HANDLE</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem"
+		   desc="Creates an input/output (I/O) completion port and associates it with a specified file handle"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

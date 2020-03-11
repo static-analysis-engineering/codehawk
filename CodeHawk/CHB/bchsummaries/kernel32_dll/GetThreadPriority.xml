@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/16/2015 09:05:53"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetThreadPriority">
+   <documentation>
+    <desc>
+      Retrieves the priority value for the specified thread. This value, 
+      together with the priority class of the thread&apos;s process, 
+      determines the thread&apos;s base-priority level.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI GetThreadPriority(</ll>
+      <ld>_In_  HANDLE hThread</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">Thread Priority Level</rc>
+      <rc cond="failure">THREAD_PRIORITY_ERROR_RETURN</rc>
+     </return>
+     <par name="hThread">A handle to the thread. </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetThreadPriority">
+    <returntype>int</returntype>
+    <par loc="stack" name="hThread" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:thread"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="ioc:process" desc="retrieves thread priority"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="AttachConsole.xml" time="2016-06-18 17:47:40.670991"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="AttachConsole">
+    <documentation>
+      <desc>
+         Attaches the calling process to the console of the specified process
+      </desc>
+      <apidoc>
+        <pt>BOOL WINAPI AttachConsole (_In_ DWORD dwProcessId)</pt>
+        <par name="dwProcessId">
+           The identifier of the process whose console is to be
+           used. This parameter can be one of the following values.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="AttachConsole">
+      <par loc="stack" name="dwProcessId" nr="1">
+        <type>DWORD</type>
+        <roles>
+           <role rt="ioc:process" rn="id:process"/>
+        </roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+                   desc="attaches this process to the console of another process"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

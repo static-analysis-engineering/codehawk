@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="02/04/2015 16:55:25"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ChildWindowFromPoint">
+   <documentation>
+    <desc>
+      Determines which, if any, of the child windows belonging to a
+      parent window contains the specified point. The search is
+      restricted to immediate child windows.  Grandchildren, and
+      deeper descendant windows are not searched.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HWND WINAPI ChildWindowFromPoint(</ll>
+      <ld>_In_ HWND hWndParent,</ld>
+      <ld>_In_ POINT Point</ld>
+      <ll>)</ll>
+     </pt>
+     <return>The return value is a handle to the child window that contains the point, 
+      even if the child window is hidden or disabled. If the point lies outside 
+      the parent window, the return value is NULL. If the point is within the 
+      parent window but not within any child window, the return value is a 
+      handle to the parent window.
+    </return>
+     <par name="hWndParent">handle to the parent window</par>
+     <par name="Point">
+       structure that defines the client coordinates, relative to hWndParent, of the point
+      to be checked
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ChildWindowFromPoint">
+     <returntype>HWND</returntype>
+     <par loc="stack" name="hWndParent" io="r" rep="hex" nr="1">
+       <type>HWND</type>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+    </par>
+    <par loc="stack" name="Point" io="r" nr="2">
+      <type>POINT</type>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:POINT"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="determines if any of the child windows contain a point"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

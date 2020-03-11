@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/25/2015 14:05:52"/>
+  <libfun lib="advapi32" name="ImpersonateLoggedOnUser">
+   <documentation>
+    <desc>
+      lets the calling thread impersonate the security context of a logged-on user. 
+      The user is represented by a token handle
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI ImpersonateLoggedOnUser (_In_ HANDLE hToken)</pt>
+     <par name="hToken">
+       A handle to a primary or impersonation access token that represents a
+       logged-on user. This can be a token handle returned by a call to LogonUser, 
+       CreateRestrictedToken, DuplicateToken, DuplicateTokenEx, OpenProcessToken, 
+       or OpenThreadToken functions. If hToken is a handle to a primary token, 
+       the token must have TOKEN_QUERY and TOKEN_DUPLICATE access. If hToken 
+       is a handle to an impersonation token, the token must have TOKEN_QUERY
+       and TOKEN_IMPERSONATE access
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ImpersonateLoggedOnUser">
+    <par loc="stack" name="hToken" io="r" rep="hex" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:access token"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="impersonates the security context of a logged-on user"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

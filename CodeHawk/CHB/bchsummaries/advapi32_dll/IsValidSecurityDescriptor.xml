@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="IsValidSecurityDescriptor.xml" time="2016-09-10 13:12:40.220275"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="IsValidSecurityDescriptor">
+    <documentation>
+      <desc>
+         determines whether the components of a security descriptor are valid.
+      </desc>
+      <apidoc>
+        <pt>BOOL WINAPI IsValidSecurityDescriptor (_In_ PSECURITY_DESCRIPTOR pSecurityDescriptor)</pt>
+        <par name="pSecurityDescriptor">
+           A pointer to a SECURITY_DESCRIPTOR structure that the function validates
+        </par>
+        <return>
+          If the components of the security descriptor are valid, the
+          return value is nonzero.  If any of the components of the
+          security descriptor are not valid, the return value is zero
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="IsValidSecurityDescriptor">
+      <par loc="stack" name="pSecurityDescriptor" io="r" rep="hex" nr="1">
+        <type><ptr>SECURITY_DESCRIPTOR</ptr></type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="ioc:memops" rn="src-struct:security descriptor"/>
+        </roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" 
+                   desc="determines if a security descriptor is valid"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

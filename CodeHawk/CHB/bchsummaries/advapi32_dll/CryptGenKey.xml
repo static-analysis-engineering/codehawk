@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/08/2015 19:00:55"/>
+  <libfun lib="advapi32" name="CryptGenKey">
+   <documentation>
+    <desc>
+      generates a random cryptographic session key or a public/private key pair. 
+      A handle to the key or key pair is returned in phKey. This handle can then 
+      be used as needed with any CryptoAPI function that requires a key handle.
+      The calling application must specify the algorithm when calling this function. 
+      Because this algorithm type is kept bundled with the key, the application does
+      not need to specify the algorithm later when the actual cryptographic 
+      operations are performed
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CryptGenKey(</ll>
+      <ld>_In_   HCRYPTPROV hProv</ld>
+      <ld>_In_   ALG_ID Algid</ld>
+      <ld>_In_   DWORD dwFlags</ld>
+      <ld>_Out_  HCRYPTKEY *phKey</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hProv">
+       A handle to a cryptographic service provider (CSP) created by a call 
+       to CryptAcquireContext
+     </par>
+     <par name="Algid">
+       An ALG_ID value that identifies the algorithm for which the key is to 
+       be generated. Values for this parameter vary depending on the CSP used
+     </par>
+     <par name="dwFlags">
+       Specifies the type of key generated. The sizes of a session key, RSA 
+       signature key, and RSA key exchange keys can be set when the key is 
+       generated. The key size, representing the length of the key modulus 
+       in bits, is set with the upper 16 bits of this parameter. Thus, if a 
+       2,048-bit RSA signature key is to be generated, the value 0x08000000 
+       is combined with any other dwFlags predefined value with a bitwise-OR 
+       operation. The upper 16 bits of 0x08000000 is 0x0800, or decimal 2,048.
+       The RSA1024BIT_KEY value can be used to specify a 1024-bit RSA key.
+     </par>
+     <par name="phKey">
+       Address to which the function copies the handle of the newly generated key. 
+       When you have finished using the key, delete the handle to the key by calling 
+       the CryptDestroyKey function
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CryptGenKey">
+    <par loc="stack" io="r" name="hProv" rep="hex" nr="1">
+     <type>HCRYPTPROV</type>
+     <roles>
+       <role rt="ioc:crypto" rn="handle:CSP"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="Algid" nr="2">
+      <roles>
+	<role rt="ioc:crypto" rn="id:algorithm"/>
+      </roles>
+     <type>ALG_ID</type>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="phKey" rep="hex" nr="4">
+     <type><ptr>HCRYPTKEY</ptr></type>
+     <roles>
+       <role rt="ioc:crypto" rn="infox:cryptographic key"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action 
+	   cat="crypto" 
+	   desc="generates a random cryptographi sesssion key or public/private key pair"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

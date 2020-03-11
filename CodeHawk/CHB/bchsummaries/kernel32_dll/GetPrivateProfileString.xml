@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/02/2015 23:29:06"/>
+  <libfun lib="kernel32" name="GetPrivateProfileString">
+   <documentation>
+    <desc>
+      Retrieves a string from the specified section in an initialization file.
+    </desc>
+    <remarks>
+      If lpAppName is NULL, GetPrivateProfileString copies all section names in the 
+      specified file to the supplied buffer. If lpKeyName is NULL, the function 
+      copies all key names in the specified section to the supplied buffer. An 
+      application can use this method to enumerate all of the sections and keys 
+      in a file. In either case, each string is followed by a null character and 
+      the final string is followed by a second null character. If the supplied 
+      destination buffer is too small to hold all the strings, the last string 
+      is truncated and followed by two null characters.
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetPrivateProfileString(</ll>
+      <ld>_In_  LPCTSTR lpAppName</ld>
+      <ld>_In_  LPCTSTR lpKeyName</ld>
+      <ld>_In_  LPCTSTR lpDefault</ld>
+      <ld>_Out_ LPTSTR  lpReturnedString</ld>
+      <ld>_In_  DWORD   nSize</ld>
+      <ld>In_  LPCTSTR lpFileName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpAppName">
+       The name of the section containing the key name. If this parameter is NULL,
+       the GetPrivateProfileString function copies all section names in the file 
+       to the supplied buffer
+     </par>
+     <par name="lpKeyName">
+       The name of the key whose associated string is to be retrieved. If this 
+       parameter is NULL, all key names in the section specified by the lpAppName 
+       parameter are copied to the buffer specified by the lpReturnedString parameter.
+     </par>
+     <par name="lpDefault">
+       A default string. If the lpKeyName key cannot be found in the initialization 
+       file, GetPrivateProfileString copies the default string to the lpReturnedString
+       buffer. If this parameter is NULL, the default is an empty string, "".
+       Avoid specifying a default string with trailing blank characters. The function
+       inserts a null character in the lpReturnedString buffer to strip any trailing 
+       blanks.
+     </par>
+     <par name="lpReturnedString">
+       A pointer to the buffer that receives the retrieved string
+     </par>
+     <par name="nSize">
+       The size of the buffer pointed to by the lpReturnedString parameter, 
+       in characters
+     </par>
+     <par name="lpFileName">
+       The name of the initialization file. If this parameter does not contain a 
+       full path to the file, the system searches for the file in the Windows directory.
+     </par>
+     <return>
+       the number of characters copied to the buffer, not including the terminating 
+       null character.
+       If neither lpAppName nor lpKeyName is NULL and the supplied destination buffer 
+       is too small to hold the requested string, the string is truncated and 
+       followed by a null character, and the return value is equal to nSize minus one.
+       If either lpAppName or lpKeyName is NULL and the supplied destination buffer 
+       is too small to hold all the strings, the last string is truncated and 
+       followed by two null characters. In this case, the return value is equal 
+       to nSize minus two.
+       In the event the initialization file specified by lpFileName is not found,
+       or contains invalid values, this function will set errorno with a value of 
+       '0x2' (File Not Found). To retrieve extended error information, call 
+       GetLastError.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="GetPrivateProfileString">
+    <par loc="stack" name="lpAppName" io="r" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:system" rn="name:initfile section"/>
+       <role rt="rep:hex" rn="name:initfile section"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpKeyName" io="r" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:system" rn="name:initfile key"/>
+       <role rt="rep:hex" rn="name:initfile key"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpDefault" io="r" nr="3">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:system" rn="default initfile value"/>
+	<role rt="rep:hex" rn="default initfile value"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpReturnedString" io="w" nr="4">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:system" rn="infox:initfile keys and values"/>
+	<role rt="rep:hex" rn="infox:initfile keys and values"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nSize" io="r" nr="5">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="GetPrivateProfileString"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpFileName" io="r" nr="6">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves a string from an initialization file"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>TCHAR</type>
+	    <ci>lpReturnedString</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpReturnedString</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

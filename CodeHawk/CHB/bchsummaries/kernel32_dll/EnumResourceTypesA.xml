@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="EnumResourceTypesA.xml" time="2016-06-26 21:36:35.930845"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="EnumResourceTypesA">
+    <refer-to char-type="ansi" name="EnumResourceTypes"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

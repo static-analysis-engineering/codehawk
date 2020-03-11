@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/02/2015 23:24:19"/>
+  <libfun lib="kernel32" name="FreeResource">
+   <documentation>
+    <desc>
+      Decrements (decreases by one) the reference count of a loaded resource.
+      When the reference count reaches zero, the memory occupied by the 
+      resource is freed
+    </desc>
+    <remarks>
+      [This function is obsolete and is only supported for backward compatibility 
+      with 16-bit Windows. For 32-bit Windows applications, it is not necessary to
+      free the resources loaded using LoadResource. If used on 32 or 64-bit Windows 
+      systems, this function will return FALSE.]
+    </remarks>
+    <apidoc>
+     <pt>BOOL WINAPI FreeResource (_In_ HGLOBAL hgblResource)</pt>
+     <par name="hgblResource">
+       A handle of the resource. It is assumed that hglbResource was created by 
+       LoadResource
+     </par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">nonzero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="FreeResource">
+    <par loc="stack" name="hgblResource" nr="1">
+     <type>HGLOBAL</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:resource"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="frees a loaded resource"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

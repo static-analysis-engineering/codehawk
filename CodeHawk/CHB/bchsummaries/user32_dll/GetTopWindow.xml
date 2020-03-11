@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/13/2015 12:58:20"/>
+  <libfun lib="user32" name="GetTopWindow">
+   <documentation>
+    <desc>
+      Examines the Z order of the child windows associated with the specified 
+      parent window and retrieves a handle to the child window at the top of 
+      the Z order
+    </desc>
+    <apidoc>
+     <pt>HWND WINAPI GetTopWindow (_In_opt_ HWND hWnd)</pt>
+     <par name="hWnd">
+       A handle to the parent window whose child windows are to be examined. 
+       If this parameter is NULL, the function returns a handle to the window 
+       at the top of the Z order
+     </par>
+     <return>
+      <rc cond="success">
+	is a handle to the child window at the top of the Z order
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetTopWindow">
+    <par loc="stack" name="hWnd" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <returntype>HWND</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

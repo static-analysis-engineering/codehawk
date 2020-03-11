@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/18/2015 22:01:27"/>
+  <libfun lib="kernel32" name="GetProfileString">
+   <documentation>
+    <desc>
+      Retrieves the string associated with a key in the specified section of 
+      the Win.ini file
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetProfileString(</ll>
+      <ld>_In_   LPCTSTR lpAppName</ld>
+      <ld>_In_   LPCTSTR lpKeyName</ld>
+      <ld>_In_   LPCTSTR lpDefault</ld>
+      <ld>_Out_  LPTSTR lpReturnedString</ld>
+      <ld>_In_   DWORD nSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpAppName">
+       The name of the section containing the key. If this parameter is NULL, 
+       the function copies all section names in the file to the supplied buffer
+     </par>
+     <par name="lpKeyName">
+       The name of the key whose associated string is to be retrieved. If this
+       parameter is NULL, the function copies all keys in the given section to 
+       the supplied buffer. Each string is followed by a null character, and 
+       the final string is followed by a second null character
+     </par>
+     <par name="lpDefault">
+       A default string. If the lpKeyName key cannot be found in the initialization
+       file, GetProfileString copies the default string to the lpReturnedString 
+       buffer. If this parameter is NULL, the default is an empty string, "".
+       Avoid specifying a default string with trailing blank characters. The 
+       function inserts a null character in the lpReturnedString buffer to strip 
+       any trailing blanks
+     </par>
+     <par name="lpReturnedString">
+       A pointer to a buffer that receives the character string 
+     </par>
+     <par name="nSize">
+       The size of the buffer pointed to by the lpReturnedString parameter, 
+       in characters
+     </par>
+     <return>
+       the number of characters copied to the buffer, not including the 
+       null-terminating character.
+       If neither lpAppName nor lpKeyName is NULL and the supplied destination 
+       buffer is too small to hold the requested string, the string is 
+       truncated and followed by a null character, and the return value is 
+       equal to nSize minus one.
+       If either lpAppName or lpKeyName is NULL and the supplied destination
+       buffer is too small to hold all the strings, the last string is 
+       truncated and followed by two null characters. In this case, the 
+       return value is equal to nSize minus two
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="GetProfileString">
+    <par loc="stack" io="r" name="lpAppName" nr="1" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:initfile section" />
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpKeyName" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:initfile key" />
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpDefault" roles="none" nr="3">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpReturnedString" nr="4" rep="hex">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="infox:initfile keys and values" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nSize" nr="5">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:buffersize" rn="GetProfileString"/>
+     </roles>
+     <pre><non-negative/></pre>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves a string from the initialization file"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpReturnedString</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpReturnedString</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

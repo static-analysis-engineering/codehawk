@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/13/2015 13:04:22"/>
+  <libfun lib="user32" name="GetWindowDC">
+   <documentation>
+    <desc>
+      retrieves the device context (DC) for the entire window, including title 
+      bar, menus, and scroll bars. A window device context permits painting 
+      anywhere in a window, because the origin of the device context is the 
+      upper-left corner of the window instead of the client area.
+      GetWindowDC assigns default attributes to the window device context each
+      time it retrieves the device context. Previous attributes are lost.
+    </desc>
+    <apidoc>
+     <pt>HDC GetWindowDC (_In_ HWND hWnd)</pt>
+     <par name="hWnd">
+       A handle to the window with a device context that is to be retrieved. 
+       If this value is NULL, GetWindowDC retrieves the device context for 
+       the entire screen.
+       If this parameter is NULL, GetWindowDC retrieves the device context 
+       for the primary display monitor. To get the device context for other
+       display monitors, use the EnumDisplayMonitors and CreateDC functions
+     </par>
+     <return>
+      <rc cond="success">
+	a handle to a device context for the specified window
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetWindowDC">
+    <par loc="stack" name="hWnd" io="r" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <returntype>HDC</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="retrieves the device context for a window"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

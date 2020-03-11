@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:15:44"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetDiskFreeSpaceEx">
+   <documentation>
+    <desc>
+      Retrieves information about the amount of space that is available 
+      on a disk volume, which is the total amount of space, the total 
+      amount of free space, and the total amount of free space available 
+      to the user that is associated with the calling thread.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetDiskFreeSpaceExW(</ll>
+      <ld>_In_opt_   LPCTSTR lpDirectoryName </ld>
+      <ld>_Out_opt_  PULARGE_INTEGER lpFreeBytesAvailable </ld>
+      <ld>_Out_opt_  PULARGE_INTEGER lpTotalNumberOfBytes </ld>
+      <ld>_Out_opt_  PULARGE_INTEGER lpTotalNumberOfFreeBytes </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpDirectoryName">
+       A directory on the disk.
+       If this parameter is NULL, the function uses the root of the current disk.
+     </par>
+     <par name="lpFreeBytesAvailable">
+       A pointer to a variable that receives the total number of free bytes 
+       on a disk that are available to the user who is associated with the 
+       calling thread.
+       This parameter can be NULL.
+     </par>
+     <par name="lpTotalNumberOfBytes">
+       A pointer to a variable that receives the total number of bytes on 
+       a disk that are available to the user who is associated with the 
+       calling thread.
+       This parameter can be NULL.
+     </par>
+     <par name="lpTotalNumberOfFreeBytes">
+       A pointer to a variable that receives the total number of free 
+       bytes on a disk.
+       This parameter can be NULL.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetDiskFreeSpaceEx">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="lpDirectoryName" io="r" nr="1" rep="hex">
+       <type>LPCTSTR</type>
+       <pre><deref-read-null-nt/></pre>
+       <roles>
+	 <role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpFreeBytesAvailable" io="w" nr="2" rep="hex">
+      <type><ptr>ULARGE_INTEGER</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:volume free space available"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpTotalNumberOfBytes" io="w" nr="3" rep="hex">
+      <type><ptr>ULARGE_INTEGER</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:volume size"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpTotalNumberOfFreeBytes" io="w" nr="4" rep="hex">
+      <type><ptr>ULARGE_INTEGER</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:volume free space"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves information about a disk"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

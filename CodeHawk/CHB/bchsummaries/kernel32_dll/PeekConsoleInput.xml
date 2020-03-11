@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:27:40"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="PeekConsoleInput">
+   <documentation>
+    <desc>
+      Reads data from the specified console input buffer without removing it 
+      from the buffer.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI PeekConsoleInput(</ll>
+      <ld>_In_   HANDLE hConsoleInput</ld>
+      <ld>_Out_  PINPUT_RECORD lpBuffer</ld>
+      <ld>_In_   DWORD nLength</ld>
+      <ld>_Out_  LPDWORD lpNumberOfEventsRead</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hConsoleInput">
+       A handle to the console input buffer. The handle must have the 
+       GENERIC_READ access right.
+     </par>
+     <par name="lpBuffer">
+       A pointer to an array of INPUT_RECORD structures that receives the input buffer data.
+
+       The storage for this buffer is allocated from a shared heap for the process 
+       that is 64 KB in size. The maximum size of the buffer will depend on heap usage.
+     </par>
+     <par name="nLength">
+       The size of the array pointed to by the lpBuffer parameter, in array elements.
+     </par>
+     <par name="lpNumberOfEventsRead">
+       A pointer to a variable that receives the number of input records read.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="PeekConsoleInput">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hConsoleInput" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:console input buffer" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpBuffer" nr="2">
+      <type><ptr>INPUT_RECORD</ptr></type>
+      <pre><deref-read/></pre>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:input-record" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nLength" nr="3">
+      <type>DWORD</type>
+     <roles>
+      <role rt="size:buffersize" rn="PeekConsoleInput" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpNumberOfEventsRead" nr="4">
+      <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="size:count" rn="number of events read" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="inputs" desc="reads data from a console input buffer"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>INPUT_RECORD</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>nLength</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>INPUT_RECORD</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>nLength</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="LoadMenu.xml" time="2016-03-05 17:46:53.232204"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="LoadMenu" lib="user32">
+    <documentation>
+      <desc>
+	Loads the specified menu resource from the executable (.exe)
+	file associated with an application instance
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HMENU WINAPI LoadMenu(</ll>
+          <ld>_In_opt_ HINSTANCE hInstance</ld>
+          <ld>_In_     LPCTSTR   lpMenuName</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hInstance">
+	  A handle to the module containing the menu resource to be loaded
+	</par>
+        <par name="lpMenuName">
+	  The name of the menu resource. Alternatively, this parameter
+	  can consist of the resource identifier in the low-order word
+	  and zero in the high-order word. To create this value, use
+	  the MAKEINTRESOURCE macro.
+	</par>
+        <return>
+          <rc cond="success">handle to the menu resource</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="8" name="LoadMenu">
+      <par loc="stack" io="r" nr="1" name="hInstance">
+        <type>HINSTANCE</type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:module"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" nr="2" name="lpMenuName" rep="hex">
+        <type>LPCSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="name:menu"/>
+	</roles>
+      </par>
+      <returntype>HMENU</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="loads a menu resource from the executable"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="UnhandledExceptionFilter">
+   <documentation>
+    <desc>application-defined function that passes unhandled exceptions to the debugger,
+	if the process is being debugged
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI UnhandledExceptionFilter (</ll>
+      <ld>__in struct _EXCEPTION_POINTERS *ExceptionInfo</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="ExceptionInfo">pointer to and EXCEPTION_POINTERS structure that specifies a
+	  description of the exception and the processor context at the
+	  time of the exception
+	</par>
+     <return>0 or 1</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="UnhandledExceptionFilter">
+    <returntype>LONG</returntype>
+    <par loc="stack" io="r" name="ExceptionInfo" nr="1">
+      <type><ptr>EXCEPTION_POINTERS</ptr></type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="exception info"/>
+         <role rt="rep:hex" rn="UnhandledExceptionFilter"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="passes unhandled exceptions to the debugger"/>
+   </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <geq/>
+        <return-value/>
+        <cn>0</cn>
+       </apply>
+      </math>
+     </post>
+     <post>
+      <math>
+       <apply>
+        <leq/>
+        <return-value/>
+        <cn>1</cn>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

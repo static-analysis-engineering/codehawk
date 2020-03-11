@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:31:02"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetActiveWindow">
+   <documentation>
+    <desc>
+      Retrieves the window handle to the active window attached to the 
+      calling thread&apos;s message queue. 
+   </desc>
+    <apidoc>
+     <pt>HWND WINAPI GetActiveWindow (void)</pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetActiveWindow">
+    <returnbtype tname="HWND" ttag="tnamed"/>
+   </api>
+   <semantics>
+    <external-effects/>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

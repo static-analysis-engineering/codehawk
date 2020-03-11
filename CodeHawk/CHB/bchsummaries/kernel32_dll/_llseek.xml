@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 21:59:30"/>
+  <libfun lib="kernel32" name="_llseek">
+   <documentation>
+    <desc>Repositions the file pointer for the specified file</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG _llseek(</ll>
+      <ld>HFILE hFile</ld>
+      <ld>LONG  lOffset</ld>
+      <ld>int   nOrigin</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       A handle to an open file. This handle is created by _lcreat
+     </par>
+     <par name="lOffset">
+       The number of bytes that the file pointer is to be moved
+     </par>
+     <par name="nOrigin">
+       The starting point and the direction that the pointer will be moved
+     </par>
+     <return>
+      <rc cond="success">the new offset</rc>
+      <rc cond="failure">HFILE_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="_llseek">
+    <par loc="stack" name="hFile" io="r" nr="1">
+     <type>HFILE</type>
+     <roles>
+       <role rt="ioc:filesystem" rn="handle:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lOffset" io="r" nr="2">
+     <type>LONG</type>
+     <roles>
+       <role rt="size:offset" rn="_llseek"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nOrigin" io="r" nr="3">
+     <type>int</type>
+     <pre><enum-value name="file_pointer_move_methods"/></pre>
+     <roles>
+       <role rt="rep:enum" rn="file_pointer_move_methods"/>
+     </roles>
+    </par>
+    <returntype>LONG</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" desc="repositions a file pointer"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

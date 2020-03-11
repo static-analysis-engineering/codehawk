@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="DebugSetProcessKillOnExit.xml" time="2016-08-07 15:54:58.862803"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="DebugSetProcessKillOnExit">
+    <documentation>
+      <desc>Sets the action to be performed when the calling thread exits</desc>
+      <apidoc>
+        <pt>BOOL WINAPI DebugSetProcessKillOnExit (_In_ BOOL KillOnExit)</pt>
+        <par name="KillOnExit">
+	  If this parameter is TRUE, the thread terminates all
+	  attached processes on exit (note that this is the
+	  default). Otherwise, the thread detaches from all processes
+	  being debugged on exit
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="DebugSetProcessKillOnExit">
+      <par loc="stack" name="KillOnExit" io="r" roles="none" nr="1">
+        <type>BOOL</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+		   desc="sets the action performed when the calling thread exits"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

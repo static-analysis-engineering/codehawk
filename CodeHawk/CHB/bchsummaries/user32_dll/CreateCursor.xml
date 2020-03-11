@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/12/2015 22:30:06"/>
+  <libfun lib="user32" name="CreateCursor">
+   <documentation>
+    <desc>
+      Creates a cursor having the specified size, bit patterns, and hot spot
+    </desc>
+    <remarks>
+      The nWidth and nHeight parameters must specify a width and height that are 
+      supported by the current display driver, because the system cannot create 
+      cursors of other sizes. To determine the width and height supported by the
+      display driver, use the GetSystemMetrics function, specifying the 
+      SM_CXCURSOR or SM_CYCURSOR value
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>HCURSOR WINAPI CreateCursor(</ll>
+      <ld>_In_opt_  HINSTANCE hInst</ld>
+      <ld>_In_      int xHostSpot</ld>
+      <ld>_In_      int yHotSpot</ld>
+      <ld>_In_      int nWidth</ld>
+      <ld>_In_      int nHeight</ld>
+      <ld>_In_      const VOID *pvANDPlane</ld>
+      <ld>_In_      const VOID *pvXORPlane</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hInst">
+       A handle to the current instance of the application creating the cursor
+     </par>
+     <par name="xHostSpot">The horizontal position of the cursor's hot spot</par>
+     <par name="yHotSpot">The vertical position of the cursor's hot spot</par>
+     <par name="nWidth">The width of the cursor, in pixels</par>
+     <par name="nHeight">The height of the cursor, in pixels</par>
+     <par name="pvANDPlane">
+       An array of bytes that contains the bit values for the AND mask of the cursor, 
+       as in a device-dependent monochrome bitmap
+     </par>
+     <par name="pvXORPlane">
+       An array of bytes that contains the bit values for the XOR mask of the cursor, 
+       as in a device-dependent monochrome bitmap
+     </par>
+     <return>
+      <rc cond="success">a handle to the cursor</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="CreateCursor">
+    <par loc="stack" name="hInst" io="r" rep="hex" nr="1">
+     <type>HINSTANCE</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:module"/>
+     </roles>
+    </par>
+    <par loc="stack" name="xHostSpot" io="r" nr="2">
+     <type>int</type>
+     <roles>
+       <role rt="size:coordinate" rn="hot spot"/>
+     </roles>
+    </par>
+    <par loc="stack" name="yHotSpot" io="r" nr="3">
+     <type>int</type>
+     <roles>
+       <role rt="size:coordinate" rn="hot spot"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nWidth" io="r" nr="4">
+     <type>int</type>
+     <roles>
+       <role rt="size:dimension" rn="cursor width"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nHeight" io="r" nr="5">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="cursor height"/>
+      </roles>
+    </par>
+    <par loc="stack" name="pvANDPlane" io="r" rep="hex" nr="6">
+     <type><ptr>VOID</ptr></type>
+     <!-- not clear how the size of this array is determined -->
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:misc"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pvXORPlane" io="r" rep="hex" nr="7">
+     <type><ptr>VOID</ptr></type>
+     <!-- not clear how the size of this array is determined -->
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:misc"/>
+     </roles>
+    </par>
+    <returntype>HCURSOR</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="creates a cursor"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/06/2015 22:23:29"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetClassInfoEx">
+   <documentation>
+    <desc>retrieves information about a window class, including a handle to the
+     small icon associated with the window class.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetClassInfoEx(</ll>
+      <ld>_In_opt_ HINSTANCE hinst,</ld>
+      <ld>_In_ LPCTSTR lpszClass,</ld>
+      <ld>_Out_ LPWNDCLASSEX lpwcx</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hinst">handle to the instance of the application that created the class.
+      Can be NULL
+    </par>
+     <par name="lpszClass">
+       class name; must be of a preregistered class or a class registered by a
+       call to RegisterClass. Can also be a class atom.
+     </par>
+     <par name="lpwcx">
+       pointer to a WNDCLASSEX structure that receives the information about
+       the class
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetClassInfoEx">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hinst" io="r" nr="1">
+       <type>HINSTANCE</type>
+       <pre><deref-read-null/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:module"/>
+       </roles>
+     </par>
+     <par loc="stack" name="lpszClass" nr="2" rep="hex">
+       <type>LPCTSTR</type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="name:class"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpwcx" nr="3" rep="hex">
+     <type><ptr>WNDCLASSEX</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:process" rn="ref:windowclass"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves information about a window class"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

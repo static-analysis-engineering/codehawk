@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SendMessage">
+   <documentation>
+    <desc>sends the specified message to a window or windows</desc>
+    <apidoc>
+     <pt>
+      <ll>LRESULT WINAPI SendMessage (</ll>
+      <ld>__in HWND hWnd,</ld>
+      <ld>__in UINT Msg,</ld>
+      <ld>__in WPARAM wParam,</ld>
+      <ld>__in LPARAM lParam</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       handle to the window whose window procedure will receive the
+       message. If this parameter is HWND_BROADCAST (HWND)0xffff, the
+       message is sent to all top-level windows in the system,
+       including disabled or invisible unowned windows, overlapped
+       windows, and pop-up windows; but the message is not sent to
+       child windows
+     </par>
+     <par name="Msg">message to be sent</par>
+     <par name="wParam">additional message-specific information</par>
+     <par name="lParam">additional message-specific information</par>
+     <return>message-specific result</return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SendMessage">
+    <returntype>LRESULT</returntype>
+    <par loc="stack" io="r" name="hWnd" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="Msg" nr="2">
+     <type>UINT</type>
+     <roles>
+        <role rt="ioc:process" rn="id:message"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="wParam" nr="3">
+     <type>WPARAM</type>
+     <roles>
+        <role rt="ioc:process" rn="msg:wparam"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lParam" nr="4">
+     <type>LPARAM</type>
+     <roles>
+        <role rt="ioc:process" rn="msg:lparam"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="sends a message to a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

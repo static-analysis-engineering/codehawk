@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2018-09-12 21:15:46"/>
+  <libfun lib="advapi32" name="SetSecurityDescriptorOwner">
+    <documentation>
+      <desc>
+	sets the owner information of an absolute-format security
+	descriptor. It replaces any owner information already present
+	in the security descriptor
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL SetSecurityDescriptorOwner(</ll>
+          <ld>PSECURITY_DESCRIPTOR pSecurityDescriptor</ld>
+          <ld>PSID                 pOwner</ld>
+          <ld>BOOL                 bOwnerDefaulted</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pSecurityDescriptor">
+	  A pointer to the SECURITY_DESCRIPTOR structure whose owner
+	  is set by this function. The function replaces any existing
+	  owner with the new owner
+	</par>
+        <par name="pOwner">
+	  A pointer to a SID structure for the security descriptor's
+	  new primary owner. The SID structure is referenced by, not
+	  copied into, the security descriptor. If this parameter is
+	  NULL, the function clears the security descriptor's owner
+	  information. This marks the security descriptor as having no
+	  owner.
+	</par>
+        <par name="bOwnerDefaulted">
+	  Indicates whether the owner information is derived from a
+	  default mechanism. If this value is TRUE, it is default
+	  information. The function stores this value as the
+	  SE_OWNER_DEFAULTED flag in the SECURITY_DESCRIPTOR_CONTROL
+	  structure. If this parameter is zero, the SE_OWNER_DEFAULTED
+	  flag is cleared.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="SetSecurityDescriptorOwner">
+      <par loc="stack" name="pSecurityDescriptor" io="r" rep="hex" nr="1">
+        <type><ptr>SECURITY_DESCRIPTOR</ptr></type>
+	<pre><deref-read/></pre>
+        <roles>
+           <role rt="ioc:system" rn="security descriptor"/>
+        </roles>
+      </par>
+      <par loc="stack" name="pOwner" io="w" rep="hex" nr="2">
+        <type><ptr>SID</ptr></type>
+        <pre><deref-write/></pre>
+      </par>
+      <par loc="stack" name="bOwnerDefaulted" nr="3">
+        <type>BOOL</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc=" "/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2018, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

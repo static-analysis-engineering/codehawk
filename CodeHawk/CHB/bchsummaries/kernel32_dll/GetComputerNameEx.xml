@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetComputerNameEx.xml" time="2016-06-26 21:26:42.409642"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="GetComputerNameEx">
+    <documentation>
+      <desc>
+	Retrieves a NetBIOS or DNS name associated with the local
+	computer. The names are established at system startup, when
+	the system reads them from the registry.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI GetComputerNameEx(</ll>
+          <ld>_In_    COMPUTER_NAME_FORMAT NameType</ld>
+          <ld>_Out_   LPTSTR               lpBuffer</ld>
+          <ld>_Inout_ LPDWORD              lpnSize</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="NameType">
+	  The type of name to be retrieved. This parameter is a value
+	  from the COMPUTER_NAME_FORMAT enumeration type
+	</par>
+        <par name="lpBuffer">
+	  A pointer to a buffer that receives the computer name or the
+	  cluster virtual server name.  The length of the name may be
+	  greater than MAX_COMPUTERNAME_LENGTH characters because DNS
+	  allows longer names. To ensure that this buffer is large
+	  enough, set this parameter to NULL and use the required
+	  buffer size returned in the lpnSize parameter.
+	</par>
+        <par name="lpnSize">
+	  On input, specifies the size of the buffer, in TCHARs. On
+	  output, receives the number of TCHARs copied to the
+	  destination buffer, not including the terminating null
+	  character.  If the buffer is too small, the function fails
+	  and GetLastError returns ERROR_MORE_DATA. This parameter
+	  receives the size of the buffer required, including the
+	  terminating null character.  If lpBuffer is NULL, this
+	  parameter must be zero.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="GetComputerNameEx">
+      <par loc="stack" name="NameType" io="r" roles="none" nr="1">
+        <type>COMPUTER_NAME_FORMAT</type>
+	<pre><enum-value name="computer_name_format_constants"/></pre>
+      </par>
+      <par loc="stack" name="lpBuffer" io="w" nr="2" rep="hex">
+        <type>LPTSTR</type>
+	<roles>
+	  <role rt="ioc:system" rn="infox:computer name"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpnSize" io="rw" nr="3">
+        <type><ptr>DWORD</ptr></type>
+	<roles>
+	  <role rt="size:buffersize" rn="GetComputerNameEx"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="retrieves a NetBIOS or DNS name of the local computer"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write-null/>
+	      <type>TCHAR</type>
+	      <ci>lpBuffer</ci>
+	      <apply>
+		<indexsize/>
+		<apply><addressed-value/><ci>lpnSize</ci><cn>0</cn></apply>
+	      </apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>lpBuffer</ci>
+	      <apply>
+		<indexsize/>
+		<apply><addressed-value/><ci>lpnSize</ci><cn>0</cn></apply>
+	      </apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

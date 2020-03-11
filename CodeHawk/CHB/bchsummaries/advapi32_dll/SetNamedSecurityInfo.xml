@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 03:23:29"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="SetNamedSecurityInfo">
+   <documentation>
+    <desc>
+      sets specified security information in the security descriptor of a specified object. 
+      The caller identifies the object by name.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI SetNamedSecurityInfo(</ll>
+      <ld>_In_      LPTSTR pObjectName </ld>
+      <ld>_In_      SE_OBJECT_TYPE ObjectType </ld>
+      <ld>_In_      SECURITY_INFORMATION SecurityInfo </ld>
+      <ld>_In_opt_  PSID psidOwner </ld>
+      <ld>_In_opt_  PSID psidGroup </ld>
+      <ld>_In_opt_  PACL pDacl </ld>
+      <ld>_In_opt_  PACL pSacl </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">Nonzero error code</rc>
+     </return>
+     <par name="pObjectName">
+       A pointer to a null-terminated string that specifies the name of the object
+       for which to set security information. 
+       This can be the name of a local or remote file or directory on an NTFS file
+       system, network share, registry key, semaphore, event, mutex, file mapping,
+       or waitable timer. 
+    </par>
+     <par name="ObjectType">
+       A value of the SE_OBJECT_TYPE enumeration that indicates the type of object 
+       named by the pObjectName parameter. 
+    </par>
+     <par name="SecurityInfo">
+       A set of bit flags that indicate the type of security information to set. 
+       This parameter can be a combination of the SECURITY_INFORMATION bit flags. 
+    </par>
+     <par name="psidOwner">
+       A pointer to a SID structure that identifies the owner of the object. 
+       If the caller does not have the SeRestorePrivilege constant (see 
+       Privilege Constants), this SID must be contained in the caller&apos;s 
+       token, and must have the SE_GROUP_OWNER permission enabled. 
+       The SecurityInfo parameter must include the OWNER_SECURITY_INFORMATION flag. 
+       To set the owner, the caller must have WRITE_OWNER access to the object 
+       or have the SE_TAKE_OWNERSHIP_NAME privilege enabled. 
+       If you are not setting the owner SID, this parameter can be NULL. 
+     </par>
+     <par name="psidGroup">
+       A pointer to a SID that identifies the primary group of the object. 
+       The SecurityInfo parameter must include the GROUP_SECURITY_INFORMATION flag. 
+       If you are not setting the primary group SID, this parameter can be NULL. 
+    </par>
+     <par name="pDacl">
+       A pointer to the new DACL for the object. The SecurityInfo parameter must 
+       include the DACL_SECURITY_INFORMATION flag. 
+       The caller must have WRITE_DAC access to the object or be the owner of the object. 
+       If you are not setting the DACL, this parameter can be NULL. 
+    </par>
+     <par name="pSacl">
+       A pointer to the new SACL for the object. The SecurityInfo parameter must 
+       include any of the following flags: SACL_SECURITY_INFORMATION, 
+       LABEL_SECURITY_INFORMATION, ATTRIBUTE_SECURITY_INFORMATION, 
+       SCOPE_SECURITY_INFORMATION, or BACKUP_SECURITY_INFORMATION. 
+       If setting SACL_SECURITY_INFORMATION or SCOPE_SECURITY_INFORMATION, 
+       the caller must have the SE_SECURITY_NAME privilege enabled. If you 
+       are not setting the SACL, this parameter can be NULL.
+ </par>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="SetNamedSecurityInfo">
+     <returntype>DWORD</returntype>
+    <par loc="stack" name="pObjectName" io="r" rep="hex" nr="1">
+      <type>LPTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:system" rn="name:object"/>
+      </roles>
+    </par>
+    <par loc="stack" name="ObjectType" io="r" nr="2">
+      <type>SE_OBJECT_TYPE</type>
+      <roles>
+	<role rt="ioc:system" rn="type:object"/>
+      </roles>
+    </par>
+    <par loc="stack" name="SecurityInfo" io="r" nr="3">
+      <type>SECURITY_INFORMATION</type>
+      <roles>
+	<role rt="ioc:system" rn="security information"/>
+      </roles>
+    </par>
+    <par loc="stack" name="psidOwner" io="r" rep="hex" nr="4">
+      <type><ptr>SID</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:security identifier"/>
+      </roles>
+    </par>
+    <par loc="stack" name="psidGroup" io="r" rep="hex" nr="5">
+      <type><ptr>SID</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:security identifier"/>
+      </roles>
+    </par>
+    <par loc="stack" name="pDacl" io="r" rep="hex" nr="6">
+      <type><ptr>ACL</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:system" rn="access control list"/>
+      </roles>
+    </par>
+    <par loc="stack" name="pSacl" io="r" rep="hex" nr="7">
+      <type><ptr>ACL</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:system" rn="access control list"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="sets security information in a security descriptor of an object"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

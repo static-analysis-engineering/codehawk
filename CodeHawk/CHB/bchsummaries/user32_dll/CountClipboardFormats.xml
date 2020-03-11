@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CountClipboardFormats.xml" time="2016-08-10 09:58:57.208780"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="CountClipboardFormats">
+    <documentation>
+      <desc>
+	Retrieves the number of different data formats currently on the clipboard
+      </desc>
+      <apidoc>
+        <pt>int CountClipboardFormats (void)</pt>
+        <return>
+          <rc cond="success">
+	    the number of different data formats currently on the clipboard
+	  </rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="stdcall" name="CountClipboardFormats">
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="retrieves the number of different clipboard formats"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

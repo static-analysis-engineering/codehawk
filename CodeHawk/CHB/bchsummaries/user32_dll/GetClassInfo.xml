@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/09/2015 23:25:39"/>
+  <libfun lib="user32" name="GetClassInfo">
+   <documentation>
+    <desc>Retrieves information about a window class</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetClassInfo(</ll>
+      <ld>_In_opt_  HINSTANCE hInstance</ld>
+      <ld>_In_      LPCTSTR lpClassName</ld>
+      <ld>_Out_     LPWNDCLASS lpWndClass</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hInstance">
+       A handle to the instance of the application that created the class. 
+       To retrieve information about classes defined by the system (such as
+       buttons or list boxes), set this parameter to NULL.
+     </par>
+     <par name="lpClassName">
+       The class name. The name must be that of a preregistered class or a class 
+       registered by a previous call to the RegisterClass or RegisterClassEx 
+       function.
+       Alternatively, this parameter can be an atom. If so, it must be a class 
+       atom created by a previous call to RegisterClass or RegisterClassEx. 
+       The atom must be in the low-order word of lpClassName; the high-order
+       word must be zero.
+     </par>
+     <par name="lpWndClass">
+       A pointer to a WNDCLASS structure that receives the information about the class
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetClassInfo">
+    <par loc="stack" name="hInstance" nr="1">
+     <type>HINSTANCE</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:module"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpClassName" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:process" rn="name:class"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpWndClass" nr="3" rep="hex">
+     <type><ptr>WNDCLASS</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:process" rn="ref:windowclass"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves information about a window class"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

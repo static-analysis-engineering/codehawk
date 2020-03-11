@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetProcessShutdownParameters.xml" time="2016-03-06 13:48:25.437811"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="GetProcessShutdownParameters" lib="kernel32">
+    <documentation>
+      <desc>
+	Retrieves the shutdown parameters for the currently calling process
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI GetProcessShutdownParameters(</ll>
+          <ld>_Out_ LPDWORD lpdwLevel</ld>
+          <ld>_Out_ LPDWORD lpdwFlags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpdwLevel">
+	  A pointer to a variable that receives the shutdown priority
+	  level. Higher levels shut down first. System level shutdown
+	  orders are reserved for system components. Higher numbers
+	  shut down first. All processes start at shutdown level 0x280
+	</par>
+        <par name="lpdwFlags">
+	  A pointer to a variable that receives the shutdown flags
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="8" name="GetProcessShutdownParameters">
+      <par loc="stack" io="w" nr="1" name="lpdwLevel">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:process" rn="shutdown level"/>
+	</roles>
+      </par>
+      <par loc="stack" io="w" nr="2" name="lpdwFlags">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:process" rn="shutdown flags"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+		   desc="retrieves the shutdown parameters"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

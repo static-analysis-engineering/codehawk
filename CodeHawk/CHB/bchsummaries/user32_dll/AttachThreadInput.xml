@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="AttachThreadInput.xml" time="2016-06-18 18:04:46.667767"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="AttachThreadInput">
+    <documentation>
+      <desc>
+         Attaches or detaches the input processing mechanism of one
+         thread to that of another thread
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI AttachThreadInput(</ll>
+          <ld>_In_ DWORD idAttach</ld>
+          <ld>_In_ DWORD idAttachTo</ld>
+          <ld>_In_ BOOL  fAttach</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="idAttach">
+           The identifier of the thread to be attached to another
+           thread. The thread to be attached cannot be a system
+           thread.
+	</par>
+        <par name="idAttachTo">
+           The identifier of the thread to which idAttach will be
+           attached. This thread cannot be a system thread.  A thread
+           cannot attach to itself. Therefore, idAttachTo cannot equal
+           idAttach.
+	</par>
+        <par name="fAttach">
+           If this parameter is TRUE, the two threads are attached. If
+           the parameter is FALSE, the threads are detached.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="AttachThreadInput">
+      <par loc="stack" name="idAttach" io="r" nr="1">
+        <type>DWORD</type>
+        <roles>
+           <role rt="ioc:process" rn="id:thread"/>
+        </roles>
+      </par>
+      <par loc="stack" name="idAttachTo" io="r" nr="2">
+        <type>DWORD</type>
+        <roles>
+           <role rt="ioc:process" rn="id:thread"/>
+        </roles>
+      </par>
+      <par loc="stack" name="fAttach" io="r" roles="none" nr="3">
+        <type>BOOL</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+                   desc="attaches input processing from one thread to another thread"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

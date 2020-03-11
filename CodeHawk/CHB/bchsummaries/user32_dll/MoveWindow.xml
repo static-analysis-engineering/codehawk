@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="MoveWindow">
+   <documentation>
+    <desc>changes the position and dimension of the specified window</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI MoveWindow (</ll>
+      <ld>__in HWND hWnd,</ld>
+      <ld>__in int X</ld>
+      <ld>__in int Y,</ld>
+      <ld>__in int nWidth,</ld>
+      <ld>__in int nHeight,</ld>
+      <ld>__in BOOL bRepaint</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window</par>
+     <par name="X">the new position of the left side of the window</par>
+     <par name="Y">the new position of the top of the window</par>
+     <par name="nWidth">the new width of the window</par>
+     <par name="nHeight">the new height of the window</par>
+     <par name="bRepaint">indicates whether the window is to be repainted</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="MoveWindow">
+     <returntype>BOOL</returntype>
+    <par loc="stack" name="hWnd" io="r" nr="1">
+      <type>HWND</type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="X" io="r" roles="none" nr="2">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="Y" io="r" roles="none" nr="3">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="nWidth" io="r" roles="none" nr="4">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="nHeight" io="r" roles="none" nr="5">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="bRepaint" io="r" roles="none" nr="6">
+      <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="process" desc="moves a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:30:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="FlashWindowEx">
+   <documentation>
+    <desc>
+      Flashes the specified window. It does not change the active state of the window.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI FlashWindowEx(</ll>
+      <ld>_In_  PFLASHWINFO pfwi</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       The return value specifies the window's state before the call to the 
+       FlashWindowEx function. If the window caption was drawn as active 
+       before the call, the return value is nonzero. Otherwise, the return
+       value is zero
+     </return>
+     <par name="pfwi">A pointer to a FLASHWINFO structure.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="FlashWindowEx">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="pfwi" nr="1">
+       <type><ptr>FLASHWINFO</ptr></type>
+       <roles>
+	 <role rt="ioc:memops" rn="src-struct:FLASHWINFO" />
+       </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="flashes a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

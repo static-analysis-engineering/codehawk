@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/02/2015 13:04:50"/>
+  <libfun lib="kernel32" name="SetLocalTime">
+   <documentation>
+    <desc>Sets the current local time and date</desc>
+    <apidoc>
+     <pt>BOOL WINAPI SetLocalTime (_In_  const SYSTEMTIME *lpSystemTime)</pt>
+     <par name="lpSystemTime">
+       A pointer to a SYSTEMTIME structure that contains the new local date and time
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api cc="stdcall" adj="4" name="SetLocalTime">
+    <par loc="stack" io="r" name="lpSystemTime" nr="1">
+     <type><ptr>SYSTEMTIME</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:SYSTEMTIME" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="sets the current local time and date"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CryptVerifySignature.xml" time="2016-05-08 23:34:42.020784"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="CryptVerifySignature">
+    <documentation>
+      <desc>
+	The CryptVerifySignature function verifies the signature of a
+	hash object.  Before calling this function, CryptCreateHash
+	must be called to create the handle of a hash
+	object. CryptHashData or CryptHashSessionKey is then used to
+	add data or session keys to the hash object.  After
+	CryptVerifySignature completes, only CryptDestroyHash can be
+	called by using the hHash handle.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI CryptVerifySignature(</ll>
+          <ld>_In_ HCRYPTHASH hHash</ld>
+          <ld>_In_ BYTE       *pbSignature</ld>
+          <ld>_In_ DWORD      dwSigLen</ld>
+          <ld>_In_ HCRYPTKEY  hPubKey</ld>
+          <ld>_In_ LPCTSTR    sDescription</ld>
+          <ld>_In_ DWORD      dwFlags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hHash">A handle to the hash object to verify</par>
+        <par name="pbSignature">
+	  The address of the signature data to be verified
+	</par>
+        <par name="dwSigLen">
+	  The number of bytes in the pbSignature signature data
+	</par>
+        <par name="hPubKey">
+	  A handle to the public key to use to authenticate the
+	  signature. This public key must belong to the key pair that
+	  was originally used to create the digital signature.
+	</par>
+        <par name="sDescription">
+	  This parameter should no longer be used and must be set to
+	  NULL to prevent security vulnerabilities. However, it is
+	  still supported for backward compatibility in the Microsoft
+	  Base Cryptographic Provider.
+	</par>
+        <par name="dwFlags">flags</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="24" cc="stdcall" name="CryptVerifySignature">
+      <par loc="stack" name="hHash" io="r" nr="1">
+        <type>HCRYPTHASH</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:crypto" rn="handle:cryptographic hash"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pbSignature" io="r" nr="2">
+        <type><ptr>BYTE</ptr></type>
+	<roles>
+	  <role rt="ioc:crypto" rn="signature"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwSigLen" io="r" nr="3">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:buffersize" rn="CryptVerifySignature"/>
+	</roles>
+      </par>
+      <par loc="stack" name="hPubKey" io="r" nr="4">
+        <type>HCRYPTKEY</type>
+	<roles>
+	  <role rt="ioc:crypto" rn="handle:cryptographic key"/>
+	</roles>
+      </par>
+      <par loc="stack" name="sDescription" io="r" rep="hex" nr="5">
+        <type>LPCTSTR</type>
+	<roles>
+	  <role rt="ioc:crypto" rn="name:signature"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwFlags" io="r" roles="none" nr="6">
+        <type>DWORD</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="crypto"
+		   desc="verifies signature of a hash object"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>BYTE</type>
+	      <ci>pbSignature</ci>
+	      <ci>dwSigLen</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

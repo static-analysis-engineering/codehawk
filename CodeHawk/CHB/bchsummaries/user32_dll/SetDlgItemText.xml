@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetDlgItemText">
+   <documentation>
+    <desc>sets the title or text of a control in a dialog box</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetDlgItemText (</ll>
+      <ld>__in HWND    hDlg,</ld>
+      <ld>__in int     nIDDlgItem,</ld>
+      <ld>__in LPCTSTR lpString</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDlg">handle to the dialog box that contains the control</par>
+     <par name="nIDDlgItem">control with a title or text to be set</par>
+     <par name="lpString">text to tbe copied to the control</par>
+     <return>
+      <rc cond="success">no&gt;nzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SetDlgItemText">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hDlg" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+    <par loc="stack" name="nIDDlgItem" nr="2">
+      <type>int</type>
+      <roles>
+	<role rt="size:index" rn="SetDlgItemText"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpString" nr="3" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="text:dialog box"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="sets the title or text of a control in a dialog box"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/09/2015 23:15:55"/>
+  <libfun lib="user32" name="DefMDIChildProc">
+   <documentation>
+    <desc>
+      Provides default processing for any window message that the window 
+      procedure of a multiple-document interface (MDI) child window does 
+      not process. A window message not processed by the window procedure 
+      must be passed to the DefMDIChildProc function, not to the DefWindowProc 
+      function
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LRESULT WINAPI DefMDIChildProc(</ll>
+      <ld>_In_  HWND hWnd</ld>
+      <ld>_In_  UINT uMsg</ld>
+      <ld>_In_  WPARAM wParam</ld>
+      <ld>_In_  LPARAM lParam</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">A handle to the MDI child window</par>
+     <par name="uMsg">The message to be processed.</par>
+     <par name="wParam">Additional message-specific information</par>
+     <par name="lParam">Additional message-specific information</par>
+     <return>
+       specifies the result of the message processing and depends on the message
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="DefMDIChildProc">
+    <par loc="stack" io="r" name="hWnd" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="uMsg" nr="2">
+     <type>UINT</type>
+     <roles>
+      <role rt="ioc:process" rn="id:message" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="wParam" nr="3">
+     <type>WPARAM</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackp:wparam" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lParam" nr="4">
+     <type>LPARAM</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackp:lparam" />
+     </roles>
+    </par>
+    <returntype>LRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="provides default processing for window messages"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

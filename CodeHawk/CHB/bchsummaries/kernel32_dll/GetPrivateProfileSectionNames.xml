@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/18/2015 20:30:00"/>
+  <libfun lib="kernel32" name="GetPrivateProfileSectionNames">
+   <documentation>
+    <desc>Retrieves the names of all sections in an initialization file.</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetPrivateProfileSectionNames(</ll>
+      <ld>_Out_  LPTSTR lpszReturnBuffer</ld>
+      <ld>_In_   DWORD nSize</ld>
+      <ld>_In_   LPCTSTR lpFileName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszReturnBuffer">
+       A pointer to a buffer that receives the section names associated with 
+       the named file. The buffer is filled with one or more null-terminated 
+       strings; the last string is followed by a second null character
+     </par>
+     <par name="nSize">
+       The size of the buffer pointed to by the lpszReturnBuffer parameter, 
+       in characters
+     </par>
+     <par name="lpFileName">
+       The name of the initialization file. If this parameter is NULL, the 
+       function searches the Win.ini file. If this parameter does not contain 
+       a full path to the file, the system searches for the file in the 
+       Windows directory
+     </par>
+     <return>
+       the number of characters copied to the specified buffer, not including
+       the terminating null character. If the buffer is not large enough to 
+       contain all the section names associated with the specified 
+       initialization file, the return value is equal to the size specified 
+       by nSize minus two
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetPrivateProfileSectionNames">
+    <par loc="stack" name="lpszReturnBuffer" io="w" rep="hex" nr="1">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:initialization file section names"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nSize" io="r" nr="2">
+     <type>DWORD</type>
+     <pre><non-negative/></pre>
+     <roles>
+       <role rt="size:buffersize" rn="GetPrivateProfileSectionNames"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpFileName" io="r" rep="hex" nr="3">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="filesystem"
+		 desc="retrieves the section names from the initialization file"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszReturnBuffer</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszReturnBuffer</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

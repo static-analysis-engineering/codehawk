@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:24:42"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="CreateAcceleratorTable">
+   <documentation>
+    <desc>Creates an accelerator table.</desc>
+    <apidoc>
+     <pt>
+      <ll>HACCEL WINAPI CreateAcceleratorTable(</ll>
+      <ld>_In_  LPACCEL lpaccl</ld>
+      <ld>_In_  int cEntries</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">handle to the created accelerator table</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="lpaccl">
+       An array of ACCEL structures that describes the accelerator table. 
+     </par>
+     <par name="cEntries">
+       The number of ACCEL structures in the array. This must be
+       within the range 1 to 32767 or the function will fail.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CreateAcceleratorTable">
+     <returntype>HACCEL</returntype>
+     <par loc="stack" name="lpaccl" io="r" rep="hex" nr="1">
+       <type><ptr>ACCEL</ptr></type>
+       <roles>
+	 <role rt="ioc:memops" rn="src-struct:accelerator entry"/>
+       </roles>
+     </par>
+     <par loc="stack" name="cEntries" io="r" nr="2">
+       <type>int</type>
+       <pre><positive/></pre>
+       <roles>
+	 <role rt="size:count" rn="accelerator table entries"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="creates an accelerator table"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>ACCEL</type>
+	    <ci>lpaccl</ci>
+	    <apply><indexsize/><ci>cEntries</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply><leq/><ci>cEntries</ci><cn>32767</cn></apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

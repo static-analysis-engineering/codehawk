@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:27:44"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="WindowFromPoint">
+   <documentation>
+    <desc>Retrieves a handle to the window that contains the specified point. </desc>
+    <apidoc>
+     <pt>
+      <ll>HWND WINAPI WindowFromPoint(</ll>
+      <ld>_In_  POINT Point </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="Contains specified point">notnull</rc>
+      <rc cond="Does not contain specified point">null</rc>
+     </return>
+     <par name="Point">The point to be checked. </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="WindowFromPoint">
+      <returntype>HWND</returntype>
+    <par loc="stack" io="r" name="Point" nr="1">
+      <type>POINT</type>
+      <roles>
+         <role rt="ioc:memops" rn="src-struct:POINT"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" 
+		  desc="retrieves a handle to a window with a specified point"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

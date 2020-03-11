@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 02:58:33"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="DuplicateToken">
+   <documentation>
+    <desc>creates a new access token that duplicates one already in existence.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI DuplicateToken(</ll>
+      <ld>_In_   HANDLE ExistingTokenHandle</ld>
+      <ld>_In_   SECURITY_IMPERSONATION_LEVEL ImpersonationLevel</ld>
+      <ld>_Out_  PHANDLE DuplicateTokenHandle</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="ExistingTokenHandle">
+       A handle to an access token opened with TOKEN_DUPLICATE access.
+     </par>
+     <par name="ImpersonationLevel">
+       Specifies a SECURITY_IMPERSONATION_LEVEL enumerated type that supplies 
+       the impersonation level of the new token.
+    </par>
+     <par name="DuplicateTokenHandle">
+       A pointer to a variable that receives a handle to the duplicate token. 
+       This handle has TOKEN_IMPERSONATE and TOKEN_QUERY access to the new token.
+       When you have finished using the new token, call the CloseHandle function 
+       to close the token handle.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="DuplicateToken">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="ExistingTokenHandle" rep="hex" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:access token"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="ImpersonationLevel" roles="none" nr="2">
+      <type>SECURITY_IMPERSONATION_LEVEL</type>
+    </par>
+    <par loc="stack" io="w" name="DuplicateTokenHandle" nr="3">
+      <type><ptr>HANDLE</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:process" rn="ref:access token handle"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="duplicates an access token"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

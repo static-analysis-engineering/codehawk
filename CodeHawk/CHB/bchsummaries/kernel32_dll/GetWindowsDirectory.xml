@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:01:41"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetWindowsDirectory">
+   <documentation>
+    <desc>Retrieves the path of the Windows directory. </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetWindowsDirectory(</ll>
+      <ld>_Out_  LPTSTR lpBuffer,</ld>
+      <ld>_In_   UINT uSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpBuffer">
+       A pointer to a buffer that receives the path. This path does not end 
+       with a backslash unless the Windows directory is the root directory.
+     </par>
+     <par name="uSize">
+       The maximum size of the buffer specified by the lpBuffer parameter, 
+       in TCHARs. This value should be set to MAX_PATH.
+     </par>
+     <return>
+       <rc cond="success">
+	 the length of the string copied to the buffer, in TCHARs, not including
+	 the terminating null character
+       </rc>
+       <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetWindowsDirectory">
+     <returntype>UINT</returntype>
+     <par loc="stack" name="lpBuffer" io="w" nr="1" rep="hex">
+       <type>LPTSTR</type>
+       <roles>
+	 <role rt="ioc:filesystem" rn="infox:filename"/>
+	 <role rt="ioc:system" rn="infox:windows directory"/>
+       </roles>
+     </par>
+     <par loc="stack" name="uSize" io="r" nr="2">
+       <type>UINT</type>
+       <roles>
+	 <role rt="size:buffersize" rn="GetWindowsDirectory"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves path to Windows directory">
+       </io-action>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>TCHAR</type>
+	 <ci>lpBuffer</ci>
+	 <apply><indexsize/><ci>uSize</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	<type>TCHAR</type>
+        <ci>lpBuffer</ci>
+        <apply><indexsize/><ci>uSize</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

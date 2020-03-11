@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetCommBreak">
+   <documentation>
+    <desc>
+      Suspends character transmission for a specified communications device 
+      and places the transmission
+      line in a break state until the ClearCommBreak function is called.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetCommBreak(</ll>
+      <ld>_In_  HANDLE hFile</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="File">
+       A handle to the communications device. The CreateFile function returns this handle.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetCommBreak">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="hFILE" nr="1">
+       <type>HANDLE</type>
+       <roles>
+	 <role rt="ioc:process" rn="handle:communications device" />
+       </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="suspends transmission for a communications device"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

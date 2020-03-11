@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="PostQuitMessage">
+   <documentation>
+    <desc>indicates to the system that a thread has made a request to terminate</desc>
+    <apidoc>
+     <pt>VOID WINAPI PostQuitMessage (__in int nExitCode )</pt>
+     <par name="nExitCode">application exit code</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="PostQuitMessage">
+    <returntype>VOID</returntype>
+    <par loc="stack" io="r" name="nExitCode" nr="1">
+     <type>int</type>
+     <roles>
+        <role rt="ioc:process" rn="exit code"/>
+     </roles>
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="process" desc="tells the system that a thread wants to terminate"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="InitAtomTable.xml" time="2016-10-29 08:10:19.291809"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="InitAtomTable">
+    <documentation>
+      <desc>
+	Initializes the local atom table and sets the number of hash
+	buckets to the specified size
+      </desc>
+      <apidoc>
+        <pt>BOOL WINAPI InitAtomTable (_In_ DWORD nSize)</pt>
+        <par name="nSize">
+	  The number of hash buckets to use for the atom table. If
+	  this parameter is zero, the default number of hash buckets
+	  are created.  To achieve better performance, specify a prime
+	  number in nSize.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="InitAtomTable">
+      <par loc="stack" io="r" name="nSize" nr="1">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:system" rn="size:atom table"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="initializes the local atom table"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

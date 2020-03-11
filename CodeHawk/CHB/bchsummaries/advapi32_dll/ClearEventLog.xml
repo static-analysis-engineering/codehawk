@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="01/25/2016 15:32:18"/>
+  <libfun lib="advapi32" name="ClearEventLog">
+   <documentation>
+    <desc>
+      Clears the specified event log, and optionally saves the current
+      copy of the log to a backup file.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ClearEventLog(</ll>
+      <ld>_In_ HANDLE  hEventLog</ld>
+      <ld>_In_ LPCTSTR lpBackupFileName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hEventLog">
+       A handle to the event log to be cleared. The OpenEventLog function returns this handle.
+     </par>
+     <par name="lpBackupFileName">
+       The absolute or relative path of the backup file. If this file
+       already exists, the function fails.  If the lpBackupFileName
+       parameter is NULL, the event log is not backed up.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ClearEventLog">
+    <par loc="stack" io="r" name="hEventLog" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:event log"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpBackupFileName" rep="hex" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" desc="clears an event log"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

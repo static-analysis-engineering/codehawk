@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:27:30"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="WaitMessage">
+   <documentation>
+    <desc>
+      Yields control to other threads when a thread has no other messages 
+      in its message queue. The WaitMessage function suspends the thread 
+      and does not return until a new message is placed in the thread&apos;s 
+      message queue.
+   </desc>
+    <apidoc>
+     <pt>BOOL WaitMessage (void)</pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="WaitMessage">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+   </api>
+   <semantics>
+    <external-effects/>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

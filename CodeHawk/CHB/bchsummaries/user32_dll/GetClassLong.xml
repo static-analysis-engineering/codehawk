@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/22/2015 18:16:54"/>
+  <libfun lib="user32" name="GetClassLong">
+   <documentation>
+    <desc>
+      Retrieves the specified 32-bit (DWORD) value from the WNDCLASSEX 
+      structure associated with the specified window
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetClassLong(</ll>
+      <ld>_In_  HWND hWnd</ld>
+      <ld>_In_  int nIndex</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       A handle to the window and, indirectly, the class to which the window belongs
+     </par>
+     <par name="nIndex">
+       The value to be retrieved. To retrieve a value from the extra class memory, 
+       specify the positive, zero-based byte offset of the value to be retrieved. 
+       Valid values are in the range zero through the number of bytes of extra
+       class memory, minus four; for example, if you specified 12 or more bytes 
+       of extra class memory, a value of 8 would be an index to the third integer
+     </par>
+     <return>
+      <rc cond="success">the requested value</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetClassLong">
+    <par loc="stack" io="r" name="hWnd" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="nIndex" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves a value from a wndclass structure"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

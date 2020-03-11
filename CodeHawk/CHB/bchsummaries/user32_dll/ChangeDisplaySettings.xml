@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 17:14:07"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ChangeDisplaySettings">
+   <documentation>
+    <desc>
+      changes the display settings of the default display device to the
+      specified graphics mode
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG ChangeDisplaySettings(</ll>
+      <ld>_In_ DEVMODE *lpDevMode,</ld>
+      <ld>_In_ DWORD dwflags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>status code</return>
+     <par name="lpDevMode">
+       pointer to a DEVMODE structure that describes the new graphics
+       mode.  If NULL, all the values currently in the registry will
+       be used.  The dmSize member of DEVMODE must be initialized to
+       the size, in bytes, of the DEVMODE structure. The dmDriverExtra
+       member of DEVMODE must be initialized to indicate the number of
+       bytes of private driver data following the DEVMODE structure.
+    </par>
+     <par name="dwflags">indicates how the graphics mode is to be changed
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ChangeDisplaySettings">
+     <returntype>LONG</returntype>
+     <par loc="stack" name="lpDevMode" io="r" rep="hex" nr="1">
+       <type><ptr>DEVMODE</ptr></type>
+       <pre><deref-read-null/></pre>
+       <roles>
+	 <role rt="ioc:memops" rn="src-struct:device graphics mode"/>
+       </roles>
+    </par>
+    <par loc="stack" name="dwflags" io="r" roles="none" nr="2">
+      <rep type="enum" name="change_display_settings_constants"/>
+      <type>DWORD</type>
+      <pre><enum-value name="change_display_settings_constants"/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="changes the display settings to a new graphics mode"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="disp_change_constants"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

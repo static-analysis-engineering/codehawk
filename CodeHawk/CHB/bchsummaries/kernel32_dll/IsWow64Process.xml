@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/03/2015 09:33:39"/>
+  <libfun lib="kernel32" name="IsWow64Process">
+   <documentation>
+    <desc>
+      Determines whether the specified process is running under WOW64
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI IsWow64Process(</ll>
+      <ld>_In_  HANDLE hProcess</ld>
+      <ld>_Out_ PBOOL  Wow64Process</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hProcess">
+       A handle to the process. The handle must have the PROCESS_QUERY_INFORMATION 
+       or PROCESS_QUERY_LIMITED_INFORMATION access right
+     </par>
+     <par name="Wow64Process">
+       A pointer to a value that is set to TRUE if the process is running under
+       WOW64. If the process is running under 32-bit Windows, the value is set to 
+       FALSE. If the process is a 64-bit application running under 64-bit Windows, 
+       the value is also set to FALSE.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="IsWow64Process">
+    <par loc="stack" name="hProcess" io="r" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:process"/>
+     </roles>
+    </par>
+    <par loc="stack" name="Wow64Process" nr="2">
+     <type><ptr>BOOL</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:process" rn="infox:iswow64"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="checks if a process is running under wow64"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="lstrlen">
+   <documentation>
+    <desc>determines the length of the specified string, not including the terminating
+	null character
+      </desc>
+    <apidoc>
+     <pt>int WINAPI lstrlen ( __in LPCTSTR lpString )</pt>
+     <par name="lpString">pointer to null-terminated string</par>
+     <return>length of the string in characters, 0 if lpString is NULL</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="lstrlen">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" desc="string" io="r" name="lpString" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <roles>
+        <role rt="ioc:memops" rn="src-string:length"/>
+      </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="outputs" desc="measures string length"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post><math><apply><geq/><return/><cn>0</cn></apply></math></post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

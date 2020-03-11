@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/03/2015 13:16:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="ReportEvent">
+   <documentation>
+    <desc>writes an entry at the end of the specified event log
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ReportEventA(</ll>
+      <ld>_In_ HANDLE hEventLog,</ld>
+      <ld>_In_ WORD wType,</ld>
+      <ld>_In_ WORD wCategory,</ld>
+      <ld>_In_ DWORD dwEventID,</ld>
+      <ld>_In_ PSID lpUserSid,</ld>
+      <ld>_In_ WORD wNumStrings,</ld>
+      <ld>_In_ DWORD dwDataSize,</ld>
+      <ld>_In_ LPCTSTR *lpStrings,</ld>
+      <ld>_In_ LPVOID lpRawData</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hEventLog">handle to the event log</par>
+     <par name="wType">type of event to be logged</par>
+     <par name="wCategory">event category</par>
+     <par name="dwEventID">event identifier</par>
+     <par name="lpUserSid">
+       pointer to the current user&apos;s security identifier. Can be NULL.
+     </par>
+     <par name="wNumStrings">
+       number of insert strings in the array pointed to by lpStrings.
+       Zero indicates that no strings are present.
+    </par>
+    <par name="dwDataSize">
+      number of bytes of event-specific raw (binary) data to write to the log.
+      If zero, no event-specific data is present.
+    </par>
+     <par name="lpStrings">
+       pointer to a buffer containing an array of null-terminated strings that
+       are merged into the message before Event Viewer displays the string to
+       the user. Can be null. Must be a valid pointer even if wNumStrings is zero.
+     </par>
+     <par name="lpRawData">
+       pointer to the buffer containing the binary data. Can be NULL. Must be
+       a valid pointer even if dwDataSize is zero.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="36" cc="stdcall" name="ReportEvent">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hEventLog" io="r" rep="hex" nr="1">
+       <type>HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:process"/>
+       </roles>
+    </par>
+    <par loc="stack" name="wType" io="r" roles="none" nr="2">
+      <rep type="enum" name="eventlog_types"/>
+      <type>WORD</type>
+      <pre><enum-value name="eventlog_types" flags="true"/></pre>
+    </par>
+    <par loc="stack" name="wCategory" io="r" roles="none"  nr="3">
+      <type>WORD</type>
+    </par>
+    <par loc="stack" name="dwEventID" io="r" nr="4">
+      <type>DWORD</type>
+      <roles>
+	<role rt="ioc:synchronization" rn="id:event"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpUserSid" io="r" nr="5">
+      <type><ptr>SID</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:security identifier"/>
+      </roles>
+    </par>
+    <par loc="stack" name="wNumStrings" io="r" nr="6">
+      <type>WORD</type>
+      <roles>
+	<role rt="size:count" rn="number of strings"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwDataSize" io="r" nr="7">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:buffersize" rn="ReportEvent"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpStrings" io="r" rep="hex" nr="8">
+      <type><ptr>LPCTSTR</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="src-string:report"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpRawData" io="r" rep="hex" nr="9">
+      <type><ptr>void</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="src-bytes:misc"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization"
+		  desc="writes an entry to an event log"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>LPCTSTR</type>
+	    <ci>lpStrings</ci>
+	    <apply><indexsize/><ci>wNumStrings</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>BYTE</type>
+	    <ci>lpRawData</ci>
+	    <ci>dwDataSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

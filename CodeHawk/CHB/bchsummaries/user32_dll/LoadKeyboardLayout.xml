@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 15:42:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="LoadKeyboardLayout">
+   <documentation>
+    <desc>loads a new input locale identifier</desc>
+    <apidoc>
+     <pt>
+      <ll>HKL WINAPI LoadKeyboardLayout(</ll>
+      <ld>_In_ LPCTSTR pwszKLID,</ld>
+      <ld>_In_ UINT Flags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>If the function succeeds, the return value is the input locale 
+      identifier corresponding to the name specified in pwszKLID. If 
+      no matching locale is available, the return value is the default 
+      language of the system.
+    </return>
+     <par name="pwszKLID">name of input locale identifier to load</par>
+     <par name="Flags">specifies how the input locale is to be loaded</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="LoadKeyboardLayout">
+    <returntype>HKL</returntype>
+    <par loc="stack" io="r" name="pwszKLID" nr="1">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:input locale identifier" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" name="Flags" io="r" roles="none" nr="2">
+     <type>UINT</type>
+     <pre><enum-value name="keyboard_locale_format_constants"/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="loads a new input locale identifier"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

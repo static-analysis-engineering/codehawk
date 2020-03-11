@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/31/2015 16:12:00"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="Process32First">
+   <documentation>
+    <desc>
+      retrieves information about the first process encountered in a system shapshot
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI Process32First(</ll>
+      <ld>_In_ HANDLE hSnapshot,</ld>
+      <ld>_Inout_ LPPROCESSENTRY32 lppe</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">true; first entry of the process has been copied to the buffer</rc>
+      <rc cond="failure">false</rc>
+     </return>
+     <par name="hSnapshot">
+       handle to the snapshot returned from a previous call to the CreateToolhelp32Snapshot
+       function
+    </par>
+     <par name="lppe">
+       pointer to a PROCESSENTRY32 structure. It contains process information such as the
+       name of the executable file, the process identifier, and the process identifier of
+       the parent process
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="Process32First">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hSnapshot" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:snapshot"/>
+      </roles>
+    </par>
+    <par loc="stack" io="rw" name="lppe" nr="2" rep="hex">
+      <type><ptr>PROCESSENTRY32</ptr></type>
+      <pre><deref-read/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:process" rn="ref:process entry"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves information about a process from a system shapshot"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

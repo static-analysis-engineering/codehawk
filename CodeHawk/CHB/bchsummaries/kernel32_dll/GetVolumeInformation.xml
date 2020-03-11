@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:21:24"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetVolumeInformation">
+   <documentation>
+    <desc>
+      Retrieves information about the file system and volume associated 
+      with the specified root directory.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetVolumeInformationA(</ll>
+      <ld>_In_opt_   LPCTSTR lpRootPathName </ld>
+      <ld>_Out_opt_  LPTSTR lpVolumeNameBuffer </ld>
+      <ld>_In_       DWORD nVolumeNameSize </ld>
+      <ld>_Out_opt_  LPDWORD lpVolumeSerialNumber </ld>
+      <ld>_Out_opt_  LPDWORD lpMaximumComponentLength </ld>
+      <ld>_Out_opt_  LPDWORD lpFileSystemFlags </ld>
+      <ld>_Out_opt_  LPTSTR lpFileSystemNameBuffer </ld>
+      <ld>_In_       DWORD nFileSystemNameSize </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpRootPathName">
+       A pointer to a string that contains the root directory of the volume to be described.
+       
+       If this parameter is NULL, the root of the current directory is used.
+     </par>
+     <par name="lpVolumeNameBuffer">
+       A pointer to a buffer that receives the name of a specified volume. The 
+       buffer size is specified by the nVolumeNameSize parameter.
+     </par>
+     <par name="nVolumeNameSize">
+       The length of a volume name buffer, in TCHARs. The maximum buffer size 
+       is MAX_PATH+1.
+       
+       This parameter is ignored if the volume name buffer is not supplied.
+	</par>
+     <par name="lpVolumeSerialNumber">
+       A pointer to a variable that receives the volume serial number.
+
+	This parameter can be NULL if the serial number is not required.
+     </par>
+     <par name="lpMaximumComponentLength">
+       A pointer to a variable that receives the maximum length, in TCHARs, 
+       of a file name component that a specified file system supports.
+
+	A file name component is the portion of a file name between backslashes.
+	</par>
+     <par name="lpFileSystemFlags">
+       A pointer to a variable that receives flags associated with the 
+       specified file system.
+     </par>
+     <par name="lpFileSystemNameBuffer">
+       A pointer to a buffer that receives the name of the file system, 
+       for example, the FAT file system or the NTFS file system. The buffer 
+       size is specified by the nFileSystemNameSize parameter.
+     </par>
+     <par name="nFileSystemNameSize">
+       The length of the file system name buffer, in TCHARs. The maximum 
+       buffer size is MAX_PATH+1.
+
+       This parameter is ignored if the file system name buffer is not supplied.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="GetVolumeInformation">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="lpRootPathName" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpVolumeNameBuffer" nr="2" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:filesystem" rn="infox:volume name"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nVolumeNameSize" nr="3">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetVolumeInformation"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpVolumeSerialNumber" nr="4" rep="hex">
+       <type><ptr>DWORD</ptr></type>
+       <roles>
+           <role rt="ioc:filesystem" rn="infox:volume serial number"/>
+       </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpMaximumComponentLength" nr="5" rep="hex">
+       <type><ptr>DWORD</ptr></type>
+       <roles>
+          <role rt="ioc:filesystem" rn="infox:maximum filename length"/>
+       </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpFileSystemFlags" nr="6" rep="hex">
+       <type><ptr>DWORD</ptr></type>
+       <roles>
+          <role rt="ioc:filesystem" rn="infox:file system flags"/>
+       </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpFileSystemNameBuffer" nr="7" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:filesystem" rn="infox:file system name"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nFileSystemNameSize" nr="8">
+      <type>DWORD</type>
+      <roles>
+         <role rt="size:buffersize" rn="GetVolumeInformation"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="retrieves information about the filesystem"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>TCHAR</type>
+	    <ci>lpVolumeNameBuffer</ci>
+	    <apply><indexsize/><ci>nVolumeNameSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>TCHAR</type>
+	    <ci>lpFileSystemNameBuffer</ci>
+	    <apply><indexsize/><ci>nFileSystemNameSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpVolumeNameBuffer</ci>
+	    <apply><indexsize/><ci>nVolumeNameSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpFileSystemNameBuffer</ci>
+	    <apply><indexsize/><ci>nFileSystemNameSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

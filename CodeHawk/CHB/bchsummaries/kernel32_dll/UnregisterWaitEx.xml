@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/11/2015 17:42:58"/>
+  <libfun lib="kernel32" name="UnregisterWaitEx">
+   <documentation>
+    <desc>
+      Cancels a registered wait operation issued by the RegisterWaitForSingleObject 
+      function
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI UnregisterWaitEx(</ll>
+      <ld>_In_     HANDLE WaitHandle</ld>
+      <ld>_In_opt_ HANDLE ComplexionEvent</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="WaitHandle">
+       The wait handle. This handle is returned by the RegisterWaitForSingleObject 
+       function
+     </par>
+     <par name="ComplexionEvent">
+       A handle to the event object to be signaled when the wait operation has 
+       been unregistered. This parameter can be NULL.
+       If this parameter is INVALID_HANDLE_VALUE, the function waits for all 
+       callback functions to complete before returning.
+       If this parameter is NULL, the function marks the timer for deletion and 
+       returns immediately. However, most callers should wait for the callback 
+       function to complete so they can perform any needed cleanup.
+       If the caller provides this event and the function succeeds or the function 
+       fails with ERROR_IO_PENDING, do not close the event until it is signaled.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="UnregisterWaitEx">
+    <par loc="stack" io="r" name="WaitHandle" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:synchronization" rn="handle:synchronization object" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="ComplexionEvent" nr="2" rep="hex">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:synchronization" rn="handle:event object" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization"
+		  desc="cancels a wait operation"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

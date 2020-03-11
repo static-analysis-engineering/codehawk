@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/13/2015 10:36:34"/>
+  <libfun lib="user32" name="GetScrollPos">
+   <documentation>
+    <desc>
+      The GetScrollPos function retrieves the current position of the scroll 
+      box (thumb) in the specified scroll bar. The current position is a relative
+      value that depends on the current scrolling range. For example, if the 
+      scrolling range is 0 through 100 and the scroll box is in the middle 
+      of the bar, the current position is 50
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int GetScrollPos(</ll>
+      <ld>_In_ HWND hWnd</ld>
+      <ld>_In_ int  nBar</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       Handle to a scroll bar control or a window with a standard scroll bar, 
+       depending on the value of the nBar parameter
+     </par>
+     <par name="nBar">Specifies the scroll bar to be examined</par>
+     <return>
+      <rc cond="success">the current position of the scroll box</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetScrollPos">
+    <par loc="stack" name="hWnd" io="r" rep="hex" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nBar" io="r" nr="2">
+     <type>int</type>
+     <roles>
+         <role rt="size:index" rn="scroll bar"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves the position of a scroll bar"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/14/2015 14:55:56"/>
+  <libfun lib="kernel32" name="GetUserDefaultLangID">
+   <documentation>
+    <desc>
+      Returns the language identifier of the Region Format setting for the current user
+    </desc>
+    <apidoc>
+     <pt>GetUserDefaultLangID (void)</pt>
+     <return>the language identifier for the current user</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetUserDefaultLangID">
+    <returntype>LANGID</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves thread language id"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

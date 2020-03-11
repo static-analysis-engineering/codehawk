@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/05/2015 16:26:32"/>
+  <libfun lib="kernel32" name="GetProfileInt">
+   <documentation>
+    <desc>
+      Retrieves an integer from a key in the specified section of the Win.ini file
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetProfileInt(</ll>
+      <ld>_In_  LPCTSTR lpAppName</ld>
+      <ld>_In_  LPCTSTR lpKeyName</ld>
+      <ld>_In_  INT nDefault</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpAppName">The name of the section containing the key name</par>
+     <par name="lpKeyName">
+       The name of the key whose value is to be retrieved. This value is in the form 
+       of a string; the GetProfileInt function converts the string into an integer 
+       and returns the integer
+     </par>
+     <par name="nDefault">
+       The default value to return if the key name cannot be found in the initialization 
+       file
+     </par>
+     <return>
+       The return value is the integer equivalent of the string following the key 
+       name in Win.ini. If the function cannot find the key, the return value is the 
+       default value. If the value of the key is less than zero, the return value 
+       is zero.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetProfileInt">
+    <par loc="stack" io="r" name="lpAppName" nr="1" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:initfile section" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpKeyName" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:initfile key" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="nDefault" roles="none" nr="3">
+     <type>INT</type>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves integer from the initialization file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post><math><apply><geq/><return/><cn>0</cn></apply></math></post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

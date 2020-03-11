@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="UnlockServiceDatabase.xml" time="2016-06-20 23:38:57.005906"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="UnlockServiceDatabase">
+    <documentation>
+      <desc> 
+	Unlocks a service control manager database by releasing the specified lock
+      </desc>
+      <apidoc>
+        <pt>UnlockServiceDatabase (ScLock)</pt>
+        <par name="ScLock">
+	  The lock, which is obtained from a previous call to the
+	  LockServiceDatabase function.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="UnlockServiceDatabase">
+      <par loc="stack" name="ScLock" io="r" nr="1">
+        <type>SC_LOCK</type>
+        <roles>
+           <role rt="ioc:memops" rn="src-struct:SC_LOCK"/>
+        </roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="services"
+		   desc="unlocks a service control managers database"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

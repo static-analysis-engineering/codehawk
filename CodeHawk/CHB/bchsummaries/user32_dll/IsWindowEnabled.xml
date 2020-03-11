@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 15:49:32"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="IsWindowEnabled">
+   <documentation>
+    <desc>determines if the specified window is enabled for mouse and keyboard input
+   </desc>
+    <apidoc>
+     <pt>BOOL IsWindowEnabled (_In_ HWND hWnd)</pt>
+     <return>
+      <rc cond="enabled">nonzero</rc>
+      <rc cond="not enabled">zero</rc>
+     </return>
+     <par name="hWnd">handle to the window to be tested</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="IsWindowEnabled">
+      <returntype>BOOL</returntype>
+    <par loc="stack" name="hWnd" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="checks if a window is enabled for mouse and keyboard input"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

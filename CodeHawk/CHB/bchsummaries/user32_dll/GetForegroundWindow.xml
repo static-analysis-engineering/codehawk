@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetForegroundWindow">
+   <documentation>
+    <desc>
+      retrieves a handle to the foreground window (the window with which the
+      user is currently working)
+    </desc>
+    <apidoc>
+     <pt>HWND WINAPI GetForegroundWindow (void) </pt>
+     <return>
+       handle to the foreground window. The foreground window can be NULL in certain
+       circumstances, such as when a window is losing activation
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetForegroundWindow">
+     <returntype>HWND</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="retrieves a handle to the foreground window"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="KillTimer">
+   <documentation>
+    <desc>destroys the specified timer</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI KillTimer (</ll>
+      <ld>__in_opt HWND hWnd,</ld>
+      <ld>__in     UINT_PTR uIDEvent,</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window associated with the specified timer</par>
+     <par name="uIDEvent">timer to be destroyed</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="KillTimer">
+     <returntype>BOOL</returntype>
+    <par loc="stack" name="hWnd" nr="1">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uIDEvent" nr="2">
+      <type>UINT_PTR</type>
+      <roles>
+	<role rt="ioc:system" rn="id:timer"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="destroys a timer"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 02:54:57"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CryptHashData">
+   <documentation>
+    <desc>
+      adds data to a specified hash object. 
+      This function and CryptHashSessionKey can be called multiple times to 
+      compute the hash of long or discontinuous data streams.
+      Before calling this function, CryptCreateHash must be called to create
+      a handle of a hash object.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CryptHashData(</ll>
+      <ld>_In_  HCRYPTHASH hHash</ld>
+      <ld>_In_  BYTE *pbData</ld>
+      <ld>_In_  DWORD dwDataLen</ld>
+      <ld>_In_  DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hHash">Handle of the hash object.</par>
+     <par name="pbData">
+       A pointer to a buffer that contains the data to be added to the hash object.
+     </par>
+     <par name="dwDataLen">
+       Number of bytes of data to be added. This must be zero if the 
+       CRYPT_USERDATA flag is set.
+     </par>
+     <par name="dwFlags">Flags.</par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CryptHashData">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hHash" io="r" rep="hex" nr="1">
+      <type>HCRYPTHASH</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:crypto" rn="handle:cryptographic hash"/>
+      </roles>
+    </par>
+    <par loc="stack" name="pbData" io="r" rep="hex" nr="2">
+      <type><ptr>BYTE</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="src-bytes:misc"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwDataLen" nr="3">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:buffersize" rn="CryptHashData"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="4">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="crypto"
+		  desc="adds data to a specified hash object"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>BYTE</type>
+	    <ci>pbData</ci>
+	    <ci>dwDataLen</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/05/2015 22:44:38"/>
+  <libfun lib="kernel32" name="EnumResourceNames">
+   <documentation>
+    <desc>Enumerates resources of a specified type within a binary module</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI EnumResourceNames(</ll>
+      <ld>_In_opt_ HMODULE         hModule</ld>
+      <ld>_In_     LPCTSTR         lpszType</ld>
+      <ld>_In_     ENUMRESNAMEPROC lpEnumFunc</ld>
+      <ld>_In_     LONG_PTR        lParam</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hModule">
+       A handle to a module to be searched.
+       If this parameter is NULL, that is equivalent to passing in a handle to
+       the module used to create the current process
+     </par>
+     <par name="lpszType">
+       The type of the resource for which the name is being enumerated. 
+       Alternately, rather than a pointer, this parameter can be
+       MAKEINTRESOURCE(ID), where ID is an integer value representing
+       a predefined resource type
+     </par>
+     <par name="lpEnumFunc">
+       A pointer to the callback function to be called for each enumerated 
+       resource name or ID
+     </par>
+     <par name="lParam">
+       An application-defined value passed to the callback function. This
+       parameter can be used in error checking
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="EnumResourceNames">
+    <par loc="stack" name="hModule" io="r" nr="1">
+     <type>HMODULE</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:module"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpszType" io="r" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:process" rn="type:resource"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpEnumFunc" io="r" nr="3" rep="hex">
+     <type>EnumResNameProc</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="callbackf:resource name"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lParam" io="r" nr="4" rep="hex">
+     <type>LONG_PTR</type>
+     <roles>
+       <role rt="ioc:process" rn="callbackp:resource name"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="process" 
+		desc="enumerates resources within a binary module"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

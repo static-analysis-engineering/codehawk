@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="05/03/2015 11:05:13"/>
+  <libfun lib="kernel32" name="IsValidLanguageGroup">
+   <documentation>
+    <desc>
+      Determines if a language group is installed or supported on the operating system
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL IsValidLanguageGroup(</ll>
+      <ld>_In_ LGRPID LanguageGroup</ld>
+      <ld>_In_ DWORD  dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="LanguageGroup">Identifier of language group to validate</par>
+     <par name="dwFlags">
+       Flag specifying the validity test to apply to the language group identifier
+     </par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="IsValidLanguageGroup">
+    <par loc="stack" io="r" name="LanguageGroup" nr="1">
+      <roles>
+	<role rt="ioc:system" rn="id:language group"/>
+      </roles>
+     <type>LGRPID</type>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+   <io-actions>
+     <io-action cat="system" desc="determines if a language group is installed on the OS"/>
+   </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

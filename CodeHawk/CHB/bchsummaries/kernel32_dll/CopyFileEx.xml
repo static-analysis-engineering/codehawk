@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/10/2015 12:24:06"/>
+  <libfun lib="kernel32" name="CopyFileEx">
+   <documentation>
+    <desc>
+      Copies an existing file to a new file, notifying the application of its 
+      progress through a callback function
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CopyFileEx(</ll>
+      <ld>_In_      LPCTSTR lpExistingFileName</ld>
+      <ld>_In_      LPCTSTR lpNewFileName</ld>
+      <ld>_In_opt_  LPPROGRESS_ROUTINE lpProgressRoutine</ld>
+      <ld>_In_opt_  LPVOID lpData</ld>
+      <ld>_In_opt_  LPBOOL pbCancel</ld>
+      <ld>_In_      DWORD dwCopyFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpExistingFileName">
+       The name of an existing file.
+       In the ANSI version of this function, the name is limited to MAX_PATH characters. 
+       To extend this limit to 32,767 wide characters, call the Unicode version of the 
+       function and prepend "\\?\" to the path. For more information, see Naming a File.
+       If lpExistingFileName does not exist, the CopyFileEx function fails, and the 
+       GetLastError function returns ERROR_FILE_NOT_FOUND
+     </par>
+     <par name="lpNewFileName">
+       The name of the new file.
+       In the ANSI version of this function, the name is limited to MAX_PATH characters.
+       To extend this limit to 32,767 wide characters, call the Unicode version of the 
+       function and prepend "\\?\" to the path
+     </par>
+     <par name="lpProgressRoutine">
+       The address of a callback function of type LPPROGRESS_ROUTINE that is called
+       each time another portion of the file has been copied. This parameter can be
+       NULL
+     </par>
+     <par name="lpData">
+       The argument to be passed to the callback function. This parameter can be NULL
+     </par>
+     <par name="pbCancel">
+       If this flag is set to TRUE during the copy operation, the operation is canceled. 
+       Otherwise, the copy operation will continue to completion
+     </par>
+     <par name="dwCopyFlags">Flags that specify how the file is to be copied</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="CopyFileEx">
+    <par loc="stack" name="lpExistingFileName" io="r" rep="hex" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpNewFileName" io="r" rep="hex" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpProgressRoutine" io="r" rep="hex" nr="3">
+     <type><ptr>PROGRESS_ROUTINE</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="callbackf:file copy progress"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpData" io="r" rep="hex" nr="4">
+     <type><ptr>void</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="callbackp:file copy progress data"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pbCancel" io="r" roles="none" nr="5">
+     <type><ptr>BOOL</ptr></type>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" name="dwCopyFlags" io="r" roles="none" nr="6">
+      <rep type="enum" name="copy_file_flags"/>
+      <type>DWORD</type>
+      <pre><enum-value name="copy_file_flags"/></pre>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="copies a file while notifying the caller via a callback function"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="FindNextFile">
+   <documentation>
+    <desc>
+      continues a file search from a previous call to the FindFirstFile or FindFirstFileEx 
+      function
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI FindNextFile (</ll>
+      <ld>__in  HANDLE hFindFile,</ld>
+      <ld>__out LPWIN32_FIND_DATA lpFindFileData</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFindFile">
+       search handle returned by a previous call to the FindFirstFile or 
+       FindFirstFileEx function
+     </par>
+     <par name="lpFindFileData">
+       pointer to a WIN32_FIND_DATA structure that receives information about the found
+       file or subdirectory
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="FindNextFile">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hFindFile" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="handle:file"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpFindFileData" nr="2" rep="hex">
+     <type><ptr>WIN32_FIND_DATA</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:memops" rn="dst-struct:win32-find-data"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="continues a file search"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

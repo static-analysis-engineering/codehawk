@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetStringTypeEx.xml" time="2016-07-02 17:56:48.754564"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="GetStringTypeEx">
+    <documentation>
+      <desc>
+	Retrieves character type information for the characters in the
+	specified source string. For each character in the string, the
+	function sets one or more bits in the corresponding 16-bit
+	element of the output array. Each bit identifies a given
+	character type, for example, letter, digit, or neither.
+      </desc>
+      <caution>
+	Using the GetStringTypeEx function incorrectly can compromise
+	the security of your application. To avoid a buffer overflow,
+	the application must set the output buffer size correctly.
+      </caution>
+      <apidoc>
+        <pt>
+          <ll>BOOL GetStringTypeEx(</ll>
+          <ld>_In_  LCID    Locale</ld>
+          <ld>_In_  DWORD   dwInfoType</ld>
+          <ld>_In_  LPCTSTR lpSrcStr</ld>
+          <ld>_In_  int     cchSrc</ld>
+          <ld>_Out_ LPWORD  lpCharType</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="Locale">
+	  Locale identifier that specifies the locale. This value
+	  uniquely defines the ANSI code page
+	</par>
+        <par name="dwInfoType">
+	  Flags specifying the character type information to retrieve
+	</par>
+        <par name="lpSrcStr">
+	  Pointer to the string for which to retrieve the character
+	  types. The string is assumed to be null-terminated if cchSrc
+	  is set to any negative value.
+	</par>
+        <par name="cchSrc">
+	  Size, in characters, of the string indicated by
+	  lpSrcStr. The size refers to bytes for the ANSI version of
+	  the function or wide characters for the Unicode version. If
+	  the size includes a terminating null character, the function
+	  retrieves character type information for that character. If
+	  the application sets the size to any negative integer, the
+	  source string is assumed to be null-terminated and the
+	  function calculates the size automatically with an
+	  additional character for the null termination.
+	</par>
+        <par name="lpCharType">
+	  Pointer to an array of 16-bit values. The length of this
+	  array must be large enough to receive one 16-bit value for
+	  each character in the source string. If cchSrc is not a
+	  negative number, lpCharType should be an array of words with
+	  cchSrc elements. If cchSrc is set to a negative number,
+	  lpCharType is an array of words with lpSrcStr + 1
+	  elements. When the function returns, this array contains one
+	  word corresponding to each character in the source string.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="GetStringTypeEx">
+      <par loc="stack" name="Locale" io="r" nr="1">
+        <type>LCID</type>
+	<roles>
+	  <role rt="ioc:system" rn="id:locale"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwInfoType" io="r" roles="none" nr="2">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="lpSrcStr" io="r" nr="3" rep="hex">
+        <type>LPCTSTR</type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:examine"/>
+	</roles>
+      </par>
+      <par loc="stack" name="cchSrc" io="r" nr="4">
+        <type>int</type>
+	<roles>
+	  <role rt="size:buffersize" rn="GetStringTypeEx"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpCharType" io="w" nr="5">
+        <type><ptr>WORD</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-bytes:misc"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="retrieves character information on a string"/>
+      </io-actions>
+      <preconditions>
+	<!-- currently assumes the length is given by cchSrc, which may not be true -->
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>TCHAR</type>
+	      <ci>lpSrcStr</ci>
+	      <apply><indexsize/><ci>cchSrc</ci></apply>
+	    </apply>
+	  </math>
+	</pre>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>WORD</type>
+	      <ci>lpCharType</ci>
+	      <apply><indexsize/><ci>cchSrc</ci></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>WORD</type>
+	      <ci>lpCharType</ci>
+	      <apply><indexsize/><ci>cchSrc</ci></apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

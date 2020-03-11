@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="09/10/2015 02:51:57"/>
+  <libfun lib="user32" name="DefFrameProcA">
+   <refer-to char-type="ansi" name="DefFrameProc"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

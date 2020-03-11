@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CompareString">
+   <documentation>
+    <desc>compares two character strings, for a locale specified by identifier</desc>
+    <apidoc>
+     <pt>
+      <ll>int CompareString (</ll>
+      <ld>__in LCID Locale</ld>
+      <ld>__in DWORD dwCmpFlags</ld>
+      <ld>__in LPCTSTR lpString1</ld>
+      <ld>__in int cchCount1</ld>
+      <ld>__in LPCTSTR lpString2</ld>
+      <ld>__in int cchCount2</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Locale">local identifier</par>
+     <par name="dwCmpFlags">flags that indicate how the function compares the strings</par>
+     <par name="lpString1">pointer to the first string to compare</par>
+     <par name="cchCount1">
+       length of the string indicated by lpString1, excluding the terminating null character,
+       in bytes for the ANSI version and wide characters for the Unicode version. The
+       application can supply a negative value if the string is null-terminated
+     </par>
+     <par name="lpString1">pointer to the second string to compare</par>
+     <par name="cchCount2">
+       length of the string indicated by lpString2, excluding the terminating null character,
+       in bytes for the ANSI version and wide characters for the Unicode version. The
+       application can supply a negative value if the string is null-terminated
+     </par>
+     <return>
+      <rc cond="success">1, 2, or 3</rc>
+      <rc cond="failure">0</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="CompareString">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="Locale" nr="1">
+     <type>LCID</type>
+     <roles>
+        <role rt="ioc:system" rn="id:locale"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwCmpFlag" nr="2">
+     <type>DWORD</type>
+     <pre><enum-value name="file_comparison_flags" flags="true"/></pre>
+     <roles>
+        <role rt="rep:enum" rn="file_comparison_flags"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpString1" nr="3" rep="hex">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:inputs" rn="string comparison"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="cchCount1" nr="4">
+     <type>int</type>
+     <roles>
+        <role rt="size:count" rn="CompareString"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpString2" nr="5" rep="hex">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:inputs" rn="string comparison"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="cchCount2" nr="6">
+     <type>int</type>
+        <roles>
+           <role rt="size:count" rn="CompareString"/>
+        </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="inputs" desc="compares two strings"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><lt/><ci>cchCount1</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-read/>
+	      <type>TCHAR</type>
+	      <ci>lpString1</ci>
+	      <apply><indexsize/><apply><null-terminator-pos/><ci>lpString1</ci></apply></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><geq/><ci>cchCount1</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-read/>
+	      <type>TCHAR</type>
+	      <ci>lpString1</ci>
+	      <apply><indexsize/><ci>cchCount1</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><lt/><ci>cchCount2</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-read/>
+	      <type>TCHAR</type>
+	      <ci>lpString2</ci>
+	      <apply><indexsize/><apply><null-terminator-pos/><ci>lpString2</ci></apply></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><geq/><ci>cchCount2</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-read/>
+	      <type>TCHAR</type>
+	      <ci>lpString2</ci>
+	      <apply><indexsize/><ci>cchCount2</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

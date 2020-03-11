@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GlobalFlags.xml" time="2016-03-06 15:41:03.432302"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="GlobalFlags" lib="kernel32">
+    <documentation>
+      <desc>
+	Retrieves information about the specified global memory object
+      </desc>
+      <apidoc>
+        <pt>UINT WINAPI GlobalFlags (_In_ HGLOBAL hMem)</pt>
+        <par name="hMem">
+	  A handle to the global memory object. This handle is
+	  returned by either the GlobalAlloc or GlobalReAlloc
+	  function.
+	</par>
+        <return>
+          <rc cond="success">
+	    the allocation values and the lock count for the memory object
+	  </rc>
+          <rc cond="failure">GMEM_INVALID_HANDLE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="4" name="GlobalFlags">
+      <par loc="stack" io="r" nr="1" name="hMem">
+        <type>HGLOBAL</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:global memory"/>
+	</roles>
+      </par>
+      <returntype>UINT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="retrieves information about a global memory object"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

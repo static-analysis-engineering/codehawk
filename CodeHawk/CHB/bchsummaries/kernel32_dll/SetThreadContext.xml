@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SetThreadContext.xml" time="2016-07-15 14:13:58.527179"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="SetThreadContext">
+    <documentation>
+      <desc>Sets the context for the specified thread</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI SetThreadContext(</ll>
+          <ld>_In_       HANDLE  hThread</ld>
+          <ld>_In_ const CONTEXT *lpContext</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hThread">
+	  A handle to the thread whose context is to be set. The
+	  handle must have the THREAD_SET_CONTEXT access right to the
+	  thread. For more information, see Thread Security and Access
+	  Rights.
+	</par>
+        <par name="lpContext">
+	  A pointer to a CONTEXT structure that contains the context
+	  to be set in the specified thread. The value of the
+	  ContextFlags member of this structure specifies which
+	  portions of a thread's context to set. Some values in the
+	  CONTEXT structure that cannot be specified are silently set
+	  to the correct value. This includes bits in the CPU status
+	  register that specify the privileged processor mode, global
+	  enabling bits in the debugging register, and other states
+	  that must be controlled by the operating system.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="SetThreadContext">
+      <par loc="stack" name="hThread" io="r" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:thread"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpContext" io="r" nr="2" rep="hex">
+        <type><ptr>CONTEXT</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-struct:context"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="sets a thread context"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

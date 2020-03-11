@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/06/2015 17:36:52"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetParent">
+   <documentation>
+    <desc>changes the parent window of the specified child window</desc>
+    <apidoc>
+     <pt>
+      <ll>HWND WINAPI SetParent(</ll>
+      <ld>_In_ HWND hWndChild,</ld>
+      <ld>_In_opt_ HWND hWndNewParent</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">handle to the previous parent window</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+     <par name="hWndChild">handle to the child window</par>
+     <par name="hWndNewParent">
+       handle to the new parent window. If NULL, the desktop window
+       becomes the new parent window. If HWND_MESSAGE, the child
+       window becomes a message-only window.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetParent">
+    <returntype>HWND</returntype>
+    <par loc="stack" name="hWndChild" io="r" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hWndNewParent" io="r" nr="2">
+     <type>HWND</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="changes the parent window of a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

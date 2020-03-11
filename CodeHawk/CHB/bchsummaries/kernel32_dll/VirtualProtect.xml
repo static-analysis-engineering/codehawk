@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="VirtualProtect">
+   <documentation>
+    <desc>
+      changes the protection on a region of committed pages in the virtual address space
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI VirtualProtect (</ll>
+      <ld>__in  LPVOID lpAddress,</ld>
+      <ld>__in  SIZE_T dwSize,</ld>
+      <ld>__in  DWORD flNewProtect,</ld>
+      <ld>__out PDWORD lpFlOldProtect</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpAddress">
+       pointer to an address that describes the starting page of the region
+       of pages whose access protection attributes are to be changed
+     </par>
+     <par name="dwSize">
+       the size of the region whose access protection attributes are to be
+       changed, in bytes
+     </par>
+     <par name="flNewProtect">memory protection option</par>
+     <par name="lpflOldProtect">
+       pointer to a variable that receives the previous access protection value
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="VirtualProtect">
+     <returntype>BOOL</returntype>
+    <par loc="stack" name="lpAddress" io="r" nr="1">
+      <type><ptr>VOID</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="memory address"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwSize" io="r" nr="2">
+      <type>SIZE_T</type>
+      <roles>
+	<role rt="size:memory size" rn="VirtualProtect"/>
+      </roles>
+    </par>
+    <par loc="stack" name="flNewProtect" io="r" nr="3">
+      <type>DWORD</type>
+      <pre><enum-value name="memory_protection_constants"/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="memory protection flags"/>
+	<role rt="rep:enum" rn="memory_protection_constants"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpflOldProtect" io="w" nr="4" roles="none">
+      <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="changes the protection of a region of pages in the virtual address space">
+       </io-action>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>byte</type>
+	 <ci>lpAddress</ci>
+	 <ci>dwSize</ci>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

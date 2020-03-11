@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="HeapSetInformation">
+   <documentation>
+    <desc>enables features for a specified heap</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI HeapSetInformation (</ll>
+      <ld>__in_opt HANDLE HeapHandle,</ld>
+      <ld>__in     HEAP_INFORMATION_CLASS HeapInformationClass,</ld>
+      <ld>__in     PVOID HeapInformation,</ld>
+      <ld>__in     SIZE_T HeapInformationLength</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="HeapHandle">
+       handle to the heap where information is to be set; returned by either
+       HeapCreate or GetProcessHeap
+     </par>
+     <par name="HeapInformationClass">class of information to be set</par>
+     <par name="HeapInformation">
+       heap information buffer. the format of this data depends on the value of the
+       HeapInformationClass parameter. If the HeapInformationClass parameter is
+       HeapCompatibilityInformation, the HeapInformation parameter is a pointer
+       to a ULONG variable. If the HeapInformationClass parameter is 
+       HeapEnableTerminationOnCorruption, the HeapInformation parameter should be
+       NULL and HeapInformationLength should be 0.
+     </par>
+     <par name="HeapInformationLength">size of the HeapInformation buffer</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="HeapSetInformation">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="HeapHandle" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:heap"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="HeapInformationClass" nr="2">
+      <type>HEAP_INFORMATION_CLASS</type>
+      <roles>
+         <role rt="ioc:memops" rn="heap info class"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="HeapInformation" nr="3">
+      <type><ptr>void</ptr></type>
+      <roles>
+         <role rt="ioc:memops" rn="heap information"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="HeapInformationLength" nr="4">
+      <type>SIZE_T</type>
+      <roles>
+         <role rt="size:buffersize" rn="HeapSetInformation"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="sets heap features"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>HeapInformation</ci>
+	    <ci>HeapInformationLength</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

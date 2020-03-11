@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="HeapAlloc">
+   <documentation>
+    <desc>allocates a block of memory from a heap</desc>
+    <apidoc>
+     <pt>
+      <ll>LPVOID WINAPI HeapAlloc (</ll>
+      <ld>__in HANDLE hHeap,</ld>
+      <ld>__in DWORD dwFlags,</ld>
+      <ld>__in SIZE_T dwBytes</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hHeap">
+        handle to the heap from which the memory will be allocated; the handle
+	is returned by the HeapCreate or GetProcessHeap functions
+	</par>
+     <par name="dwFlags">heap allocation options</par>
+     <par name="dwBytes">the number of bytes to be allocated</par>
+     <return>
+      <rc cond="success">pointer to the allocated memory block</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="HeapAlloc">
+    <returntype>VOID</returntype>
+    <par loc="stack" io="r" name="hHeap" nr="1">
+      <type>HANDLE</type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:memops" rn="handle:heap"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" nr="2" roles="none">
+     <type>DWORD</type>
+     <pre><enum-value name="heap_allocation_flags" flags="true"/></pre>
+     <rep type="enum" name="heap_allocation_flags"/>
+    </par>
+    <par loc="stack" io="r" name="dwBytes" nr="3">
+     <type>SIZE_T</type>
+     <roles>
+        <role rt="ioc:memops" rn="size:allocation"/>
+        <role rt="size:allocation size" rn="HeapAlloc"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="allocates heap memory"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+     <post>
+      <math>
+       <apply>
+        <new-memory-region/>
+        <return-value/>
+        <ci>dwBytes</ci>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

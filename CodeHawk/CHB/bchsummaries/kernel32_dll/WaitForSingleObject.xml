@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="WaitForSingleObject">
+   <documentation>
+    <desc>
+      waits until the specified object is in the signaled state or the time-out
+      interval elapses
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI WaitForSingleObject (</ll>
+      <ld>__in HANDLE hHandle,</ld>
+      <ld>__in DWORD dwMilliseconds</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hHandle">handle to the object</par>
+     <par name="dwMilliseconds">time-out interval in milliseconds</par>
+     <return>
+      <rc cond="success">otherwise</rc>
+      <rc cond="failure">0xFFFFFFFF</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="WaitForSingleObject">
+     <returntype>DWORD</returntype>
+     <par loc="stack" io="r" name="hHandle" nr="1">
+       <type>HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:synchronization" rn="handle:synchronization object"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwMilliseconds" nr="2">
+      <type>DWORD</type>
+      <roles>
+        <role rt="ioc:synchronization" rn="timeout"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization"
+		  desc="waits until an object is in the signaled state"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

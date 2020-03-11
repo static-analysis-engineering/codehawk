@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-09-12 22:33:17"/>
+  <libfun lib="kernel32" name="CreateTimerQueueTimer">
+    <documentation>
+      <desc>
+	Creates a timer-queue timer. This timer expires at the specified due
+	time, then after every specified period. When the timer expires, the
+	callback function is called.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL CreateTimerQueueTimer(</ll>
+          <ld>PHANDLE phNewTimer</ld>
+          <ld>HANDLE TimerQueue</ld>
+          <ld>WAITORTIMERCALLBACK Callback</ld>
+          <ld>PVoid DueTime</ld>
+          <ld>DWORD Period</ld>
+          <ld>DWORD Flags</ld>
+          <ld>ULONG Parameter</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="phNewTimer">
+	  A pointer to a buffer that receives a handle to the timer-queue timer
+	  on return. When this handle has expired and is no longer required,
+	  release it by calling DeleteTimerQueueTimer.
+	</par>
+        <par name="TimerQueue">
+	  A handle to the timer queue. This handle is returned by the
+	  CreateTimerQueue function.  If this parameter is NULL, the timer is
+	  associated with the default timer queue.
+	</par>
+        <par name="Callback">
+	  A pointer to the application-defined function of type
+	  WAITORTIMERCALLBACK to be executed when the timer expires. For more
+	  information, see WaitOrTimerCallback.
+	</par>
+        <par name="DueTime">
+	  The amount of time in milliseconds relative to the current time that
+	  must elapse before the timer is signaled for the first time.
+	</par>
+        <par name="Period">
+	  The period of the timer, in milliseconds. If this parameter is zero,
+	  the timer is signaled once. If this parameter is greater than zero,
+	  the timer is periodic. A periodic timer automatically reactivates each
+	  time the period elapses, until the timer is canceled.
+	</par>
+        <par name="Flags">Flags</par>
+        <par name="Parameter">
+	  A single parameter value that will be passed to the callback function.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="28" cc="stdcall" name="CreateTimerQueueTimer">
+      <par loc="stack" name="phNewTimer" nr="1">
+        <type><ptr>HANDLE</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:synchronization" rn="handle:synchronization
+					     object"/>
+	</roles>
+      </par>
+      <par loc="stack" name="TimerQueue" nr="2">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:synchronization" rn="handle:timer queue"/>
+	</roles>
+      </par>
+      <par loc="stack" name="Callback" nr="3">
+        <type>WAITORTIMERCALLBACK</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="callbackf:timer callback"/>
+	</roles>
+      </par>
+      <par loc="stack" name="DueTime" nr="4">
+        <type><ptr>VOID</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:synchronization" rn="wait time"/>
+	</roles>
+      </par>
+      <par loc="stack" name="Period" nr="5">
+        <type>DWORDD</type>
+	<roles>
+	  <role rt="ioc:synchronization" rn="period"/>
+	</roles>
+      </par>
+      <par loc="stack" name="Flags" roles="none" nr="6">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="Parameter" roles="none" nr="7">
+        <type>ULONG</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="synchronization" desc="Creates a timer-queue timer"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

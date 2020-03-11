@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetClassLong">
+   <documentation>
+     <desc>
+       replaces the specified 32-bit value at the specified offset into the extra class
+       memory or the WNDCLASSEX structure for the class to which the specified window
+       belongs
+     </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI setClassLong (</ll>
+      <ld>_In_ HWND hWnd,</ld>
+      <ld>_In_ int  nIndex,</ld>
+      <ld>_In_ LONG dwNewLong</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+     handle to the window and, indirectly, the class to which the window belongs</par>
+     <par name="nIndex">
+       the value to be replaced. To set a 32-bit value in the extra class memory, specify
+       the positive, zero-based byte offset of the value to be set. Valid values are in the
+       range zero through the number of bytes of extra class memory, minus four. Other
+       values can be specified to have other effects
+     </par>
+     <par name="dwNewLong">the replacement value</par>
+     <return>
+      <rc cond="success">
+	previous value of the 32-bit integer. If the value was not previously
+	set, the return value is zero
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SetClassLong">
+    <returnbtype ikind="iuint" ttag="tint"/>
+    <par loc="stack" name="hWnd" io="r" nr="1">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nIndex" io="r" nr="2">
+      <type>int</type>
+      <pre><positive/></pre>
+      <roles>
+	<role rt="size:index" rn="SetClassLong"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwNewLong" io="r" roles="none" nr="3">
+      <type>LONG</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="replaces a 32-bit value in the extra class memory"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply><leq/><ci>nIndex</ci><runtime-value/></apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

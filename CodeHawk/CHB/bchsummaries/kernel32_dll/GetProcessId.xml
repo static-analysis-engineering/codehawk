@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-11-27 10:58:00"/>
+  <libfun lib="kernel32" name="GetProcessId">
+    <documentation>
+      <desc>Retrieves the process identifier of the specified process</desc>
+      <apidoc>
+        <pt>DWORD GetProcessId (HANDLE Process)</pt>
+        <par name="Process">
+	  A handle to the process. The handle must have the
+	  PROCESS_QUERY_INFORMATION or
+	  PROCESS_QUERY_LIMITED_INFORMATION access right.
+	</par>
+        <return>
+	  process identifier of the specified process
+	</return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="GetProcessId">
+      <par loc="stack" name="Process" nr="1">
+        <type>HANDLE</type>
+      </par>
+      <returntype>DWORD</returntype>
+    </api>
+    <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves the process id of the specified process">
+	 <args/>
+       </io-action>
+     </io-actions>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

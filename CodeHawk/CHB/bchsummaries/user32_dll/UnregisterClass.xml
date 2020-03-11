@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/06/2015 16:24:30"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="UnregisterClass">
+   <documentation>
+    <desc>
+      unregisters a window class, freeing the memory required for the class
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI UnregisterClass(</ll>
+      <ld>_In_ LPCTSTR lpClassname,</ld>
+      <ld>_In_opt HINSTANCE hInstance</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpClassName">
+       null-terminated string or a class atom. If a string, it specifies the window
+       class name, which must have been registered by a previous call to the 
+       RegisterClass function. If an atom, it must be a class atom created by a
+       previous call to RegisterClass. The atom must be in the low-order word of
+       lpClassName, the high-order word must be zero.
+     </par>
+     <par name="hInstance">
+       handle to the instance of the model that created the class
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="UnregisterClass">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="lpClassName" io="r" nr="1" rep="hex">
+       <type>LPCTSTR</type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="name:window class"/>
+       </roles>
+     </par>
+    <par loc="stack" name="hInstance" io="r" nr="2">
+     <type>HINSTANCE</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:module"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="unregisters a window class"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

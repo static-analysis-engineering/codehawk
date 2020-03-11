@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/02/2015 23:47:40"/>
+  <libfun lib="kernel32" name="WritePrivateProfileString">
+   <documentation>
+    <desc>
+      Copies a string into the specified section of an initialization file
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WritePrivateProfileString(</ll>
+      <ld>_In_ LPCTSTR lpAppName</ld>
+      <ld>_In_ LPCTSTR lpKeyName</ld>
+      <ld>_In_ LPCTSTR lpString</ld>
+      <ld>_In_ LPCTSTR lpFileName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpAppName">
+       The name of the section to which the string will be copied. If the section
+       does not exist, it is created. The name of the section is case-independent; 
+       the string can be any combination of uppercase and lowercase letters.
+     </par>
+     <par name="lpKeyName">
+       The name of the key to be associated with a string. If the key does not exist
+       in the specified section, it is created. If this parameter is NULL, the entire 
+       section, including all entries within the section, is deleted.
+     </par>
+     <par name="lpString">
+       A null-terminated string to be written to the file. If this parameter is NULL,
+       the key pointed to by the lpKeyName parameter is deleted.
+     </par>
+     <par name="lpFileName">The name of the initialization file.</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="WritePrivateProfileString">
+    <par loc="stack" name="lpAppName" io="r" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:system" rn="name:initfile section"/>
+       <role rt="rep:hex" rn="name:initfile section"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpKeyName" io="r" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:system" rn="name:initfile key"/>
+       <role rt="rep:hex" rn="name:initfile key"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpString" io="r" nr="3">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:system" rn="initfile key value"/>
+	<role rt="rep:hex" rn="initfile key value"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpFileName" io="r" nr="4">
+      <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+       <role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="copies a string to an initialization file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

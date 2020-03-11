@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:31:52"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetClassName">
+   <documentation>
+    <desc>Retrieves the name of the class to which the specified window belongs. </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI GetClassName(</ll>
+      <ld>_In_   HWND hWnd</ld>
+      <ld>_Out_  LPTSTR lpClassName</ld>
+      <ld>_In_   int nMaxCount</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	the number of characters copied to the buffer, not including
+	the terminating null character.
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hWnd">
+       A handle to the window and, indirectly, the class to which the window belongs. 
+     </par>
+     <par name="lpClassName">The class name string.</par>
+     <par name="nMaxCount">
+       The length of the lpClassName buffer, in characters. The buffer must be 
+       large enough to include the terminating null character; otherwise, the 
+       class name string is truncated to nMaxCount-1 characters.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetClassName">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" name="hWnd" io="r" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpClassName" nr="2" io="w">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:process" rn="infox:classname"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nMaxCount" io="r" nr="3">
+      <type>int</type>
+      <pre><positive/></pre>
+      <roles>
+	<role rt="size:buffersize" rn="GetClassName"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves the classname of the window"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpClassName</ci>
+	    <apply><indexsize/><ci>nMaxCount</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

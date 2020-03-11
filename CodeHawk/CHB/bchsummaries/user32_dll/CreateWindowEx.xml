@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="CreateWindowEx">
+   <documentation>
+    <desc>creates an overlapped, pop-up, or child window with an extended window style
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>HWND WINAPI CreateWindowEx (</ll>
+      <ld>__in     DWORD dwExStyle,</ld>
+      <ld>__in_opt LPCTSTR lpClassName,</ld>
+      <ld>__in_opt LPCTSTR lpWindowName,</ld>
+      <ld>__in     DWORD dwStyle,</ld>
+      <ld>__in     int x,</ld>
+      <ld>__in     int y,</ld>
+      <ld>__in     int nWidth,</ld>
+      <ld>__in     int nHeight,</ld>
+      <ld>__in_opt HWND hWndParent,</ld>
+      <ld>__in_opt HMENU hMenu,</ld>
+      <ld>__in_opt HINSTANCE hInstance,</ld>
+      <ld>__in_opt LPVOID lpParam</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwExStyle">extended window style</par>
+     <par name="lpClassName">
+       null-terminated string or a class atom created by a previous call to
+       the RegisterClass function
+     </par>
+     <par name="lpWindowName">window name</par>
+     <par name="x">initial horizontal position of the window</par>
+     <par name="y">initial vertical position of the window</par>
+     <par name="nWidth">width, in device units</par>
+     <par name="nHeight">height, in device units</par>
+     <par name="hWndParen">handle to the parent, can be NULL</par>
+     <par name="hMenu">handle to the menu, can be NULL</par>
+     <par name="hInstance">
+       handle to the instance of the module to be associated with the window
+     </par>
+     <par name="lpParam">pointer to a value to be passed to the window</par>
+     <return>
+      <rc cond="success">handle to the new window</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="48" cc="stdcall" name="CreateWindowEx">
+    <returntype>HWND</returntype>
+    <par loc="stack" name="dwExStyle" io="r" roles="none" nr="1">
+      <rep type="enum" name="windowstyle_constants"/>
+      <type>UINT</type>
+      <pre><enum-value name="windowstyle_constants"/></pre>
+    </par>
+    <par loc="stack" name="lpClassName" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="name:window class"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpWindowName" io="r" nr="3" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="name:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwStyle" io="r" roles="none" nr="4">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" name="x" io="r" nr="5">
+      <type>int</type>
+      <roles>
+	<role rt="size:position" rn="CreateWindowEx"/>
+      </roles>
+    </par>
+    <par loc="stack" name="y" io="r" nr="6">
+      <type>int</type>
+      <roles>
+	<role rt="size:position" rn="CreateWindowEx"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nWidth" io="r" nr="7">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="CreateWindowEx"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nHeight" io="r" nr="8">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="CreateWindowEx"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hWndParent" io="r" nr="9">
+     <type>HWND</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hMenu" io="r" nr="10">
+      <type>HMENU</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:menu"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hInstance" io="r" nr="11">
+      <type>HINSTANCE</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:module"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpParam" io="r" nr="12" rep="hex">
+      <type><ptr>VOID</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="callbackp:window"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="creates a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

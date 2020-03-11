@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 16:03:46"/>
+  <libfun lib="user32" name="mouse_event">
+   <documentation>
+    <desc>synthesizes mouse motion and button clicks</desc>
+    <apidoc>
+     <pt>
+      <ll>VOID WINAPI mouse_event(</ll>
+      <ld>_In_ DWORD     dwFlags</ld>
+      <ld>_In_ DWORD     dx</ld>
+      <ld>_In_ DWORD     dy</ld>
+      <ld>_In_ DWORD     dwData</ld>
+      <ld>_In_ ULONG_PTR dwExtraInfo</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwFlags">Controls various aspects of mouse motion and button clicking</par>
+     <par name="dx">
+       The mouse's absolute position along the x-axis or its amount of motion since 
+       the last mouse event was generated, depending on the setting of 
+       MOUSEEVENTF_ABSOLUTE. Absolute data is specified as the mouse's actual x-coordinate; 
+       relative data is specified as the number of mickeys moved. A mickey is the amount 
+       that a mouse has to move for it to report that it has moved.
+     </par>
+     <par name="dy">
+       The mouse's absolute position along the y-axis or its amount of motion since the
+       last mouse event was generated, depending on the setting of MOUSEEVENTF_ABSOLUTE. 
+       Absolute data is specified as the mouse's actual y-coordinate; relative data is 
+       specified as the number of mickeys moved.
+     </par>
+     <par name="dwData">
+       If dwFlags contains MOUSEEVENTF_WHEEL, then dwData specifies the amount of wheel 
+       movement. A positive value indicates that the wheel was rotated forward, away 
+       from the user; a negative value indicates that the wheel was rotated backward,
+       toward the user. One wheel click is defined as WHEEL_DELTA, which is 120.
+       If dwFlags contains MOUSEEVENTF_HWHEEL, then dwData specifies the amount of wheel 
+       movement. A positive value indicates that the wheel was tilted to the right; a 
+       negative value indicates that the wheel was tilted to the left.
+       If dwFlags contains MOUSEEVENTF_XDOWN or MOUSEEVENTF_XUP, then dwData specifies
+       which X buttons were pressed or released. This value may be any combination of 
+       the following flags.
+       If dwFlags is not MOUSEEVENTF_WHEEL, MOUSEEVENTF_XDOWN, or MOUSEEVENTF_XUP, 
+       then dwData should be zero.
+     </par>
+     <par name="dwExtraInfo">
+       An additional value associated with the mouse event. An application calls 
+       GetMessageExtraInfo to obtain this extra information.
+     </par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="mouse_event">
+    <par loc="stack" io="r" name="dwFlags" nr="1">
+     <type>DWORD</type>
+     <roles/>
+    </par>
+    <par loc="stack" io="r" name="dx" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dy" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwData" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwExtraInfo" roles="none" nr="5">
+     <type>ULONG_PTR</type>
+    </par>
+    <returntype>VOID</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="synthesizes mouse motion and button clicks"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

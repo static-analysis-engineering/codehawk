@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ContinueDebugEvent.xml" time="2016-08-07 15:50:01.567364"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="ContinueDebugEvent">
+    <documentation>
+      <desc>
+	Enables a debugger to continue a thread that previously reported a debugging event
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI ContinueDebugEvent(</ll>
+          <ld>_In_ DWORD dwProcessId</ld>
+          <ld>_In_ DWORD dwThreadId</ld>
+          <ld>_In_ DWORD dwContinueStatus</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="dwProcessId">The process identifier of the process to continue</par>
+        <par name="dwThreadId">
+	  The thread identifier of the thread to continue. The
+	  combination of process identifier and thread identifier must
+	  identify a thread that has previously reported a debugging
+	  event.
+	</par>
+        <par name="dwContinueStatus">
+	  The options to continue the thread that reported the debugging event
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="ContinueDebugEvent">
+      <par loc="stack" name="dwProcessId" io="r" nr="1">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:process" rn="id:process"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwThreadId" io="r" nr="2">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:process" rn="id:thread"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwContinueStatus" io="r" roles="none" nr="3">
+        <type>DOWRD</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+		   desc="enables debugger to continue a thread"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

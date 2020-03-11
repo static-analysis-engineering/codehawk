@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GlobalLock">
+   <documentation>
+    <desc>
+      locks a global memory object and returns a pointer to the first byte of the 
+      object&apos;s memory
+    </desc>
+    <apidoc>
+     <pt>LPVOID WINAPI GlobalLock ( __in HGLOBAL hMem ) </pt>
+     <par name="hMem">handle to the global memory object</par>
+     <return>
+      <rc cond="success">pointer to the first block of the memory block</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GlobalLock">
+     <returntype><ptr>void</ptr></returntype>
+    <par loc="stack" name="hMem" io="r" nr="1">
+      <type>HGLOBAL</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:synchronization" rn="handle:synchronization object"/>
+         <role rt="rep:hex" rn="handle:synchronization object"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization" desc="locks a global memory object"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+      <post>
+	<math>
+	  <apply><eq/><return/><ci>hMem</ci></apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

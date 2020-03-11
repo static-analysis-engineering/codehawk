@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 03:25:13"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="StartServiceCtrlDispatcher">
+   <documentation>
+    <desc>
+      Connects the main thread of a service process to the service control 
+      manager, which causes the thread to be the service control dispatcher
+      thread for the calling process.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI StartServiceCtrlDispatcherA(</ll>
+      <ld>_In_  const SERVICE_TABLE_ENTRY *lpServiceTable</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpServiceTable">
+       A pointer to an array of SERVICE_TABLE_ENTRY structures containing 
+       one entry for each service that can execute in the calling process. 
+       The members of the last entry in the table must have NULL values to 
+       designate the end of the table.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="StartServiceCtrlDispatcher">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="lpServiceTable" io="r" nr="1">
+      <type><ptr>SERVICE_TABLE_ENTRY</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:SERVICE_TABLE_ENTRY"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="services"
+                   desc="connects a service process to the service control manager"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

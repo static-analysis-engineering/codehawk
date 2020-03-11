@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="LoadCursor">
+   <documentation>
+    <desc>loads the specified cursor resource from the executable file associated with
+	an application instance
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>HCURSOR WINAPI LoadCursor(</ll>
+      <ld>__in_opt HINSTANCE hInstance,</ld>
+      <ld>__in     LPCTSTR lpCursorName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hInstance">
+       handle to an instance of the module whose executable file contains the cursor
+       to be loaded; can be NULL
+     </par>
+     <par name="lpCursorName">
+       name of the cursor resource to be loaded, or the resource identifier in the
+       low-order word and zero in the high-order word
+     </par>
+     <return>
+       <rc cond="success">handle to the newly loaded cursor</rc>
+       <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="LoadCursor">
+    <returntype>HCURSOR</returntype>
+    <par loc="stack" io="r" name="hInstance" nr="1">
+     <type>HINSTANCE</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:module"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpCursorName" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:process" rn="name:cursor"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="loads a cursor resource from the executable file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

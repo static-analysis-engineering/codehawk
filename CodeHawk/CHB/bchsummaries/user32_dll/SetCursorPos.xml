@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetCursorPos">
+   <documentation>
+    <desc>
+       moves the cursor to the specified screen coordinates. If the
+       new coordinates are not within the screen rectangle set by the
+       most recent ClipCursor function call, the system automatically
+       adjusts the coordinates so that the cursor stays within the
+       rectangle
+      </desc>
+    <apidoc>
+     <pt>BOOL WINAPI SetCursorPos (_In_ int x, _In_ int y)</pt>
+     <par name="x">the new x-coordinate of the cursor, in screen coordinates</par>
+     <par name="y">the new y-coordinate of the cursor, in screen coordinates</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetCursorPos">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="x" nr="1">
+     <type>int</type>
+     <roles>
+        <role rt="size:coordinate" rn="cursor x coordinate"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="y" nr="2">
+     <type>int</type>
+     <roles>
+        <role rt="size:coordinate" rn="cursor y coordinate"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="moves the cursor to a screen position"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

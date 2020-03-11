@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="VkKeyScan.xml" time="2016-05-08 16:33:35.249539"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="VkKeyScan">
+    <documentation>
+      <desc>
+	Translates a character to the corresponding virtual-key code
+	and shift state for the current keyboard
+      </desc>
+      <apidoc>
+        <pt>SHORT VkKeyScan (_In_ TCHAR ch)</pt>
+        <par name="ch">The character to be translated into a virtual-key code</par>
+        <return>
+	  If the function succeeds, the low-order byte of the return
+	  value contains the virtual-key code and the high-order byte
+	  contains the shift state. If the function finds no key that
+	  translates to the passed character code, both the low-order
+	  and high-order bytes contain -1.
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="VkKeyScan">
+      <par loc="stack" name="ch" io="r" roles="none" nr="1">
+        <type>TCHAR</type>
+      </par>
+      <returntype>SHORT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="translates a character to a virtual key code"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

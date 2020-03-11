@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 02:56:47"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CryptSetKeyParam">
+   <documentation>
+    <desc>
+      customizes various aspects of a session key&apos;s operations. 
+      The values set by this function are not persisted to memory and can only 
+      be used with in a single session.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CryptSetKeyParam(</ll>
+      <ld>_In_  HCRYPTKEY hKey</ld>
+      <ld>_In_  DWORD dwParam</ld>
+      <ld>_In_  const BYTE *pbData</ld>
+      <ld>_In_  DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hKey">A handle to the key for which values are to be set.
+    </par>
+     <par name="dwParam">Set of flags.</par>
+     <par name="pbData">
+       A pointer to a buffer initialized with the value to be set before calling 
+       CryptSetKeyParam. 
+       The form of this data varies depending on the value of dwParam.
+     </par>
+     <par name="dwFlags">
+       Used only when dwParam is KP_ALGID. The dwFlags parameter is used to pass 
+       in flag values for the enabled key. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CryptSetKeyParam">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="hKey" io="r" rep="hex" nr="1">
+      <type>HCRYPTKEY</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:crypto" rn="handle:cryptographic key"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwParam" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="pbData" nr="3">
+      <type><ptr>BYTE</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:crypto" rn="key blob"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwFlags" roles="none" nr="4">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="crypto" desc="customizes a session operations"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

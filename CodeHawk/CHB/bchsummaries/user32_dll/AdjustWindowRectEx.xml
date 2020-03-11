@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="AdjustWindowRectEx">
+   <documentation>
+    <desc>
+      calculates the required size of the window rectangle, based on the desired size
+      of the client rectangle
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI AdjustWindowRectEx (</ll>
+      <ld>_Inout_ LPRECT lpRect,</ld>
+      <ld>_In_    DWORD dwStyle,</ld>
+      <ld>_In_    BOOL bMenu,</ld>
+      <ld>_In_    DWORD dwExStyl</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpRect">
+       pointer to a RECT structure that contains the coordinates of the top-left and
+       bottom-right corners of the desired client area. When the function returns the
+       structure contains the coordinates of the top-left and bottom-right corners of
+       the window to accomodate the desired client area
+     </par>
+     <par name="dwStyle">
+       window style of the window whose required size is to be calculated
+     </par>
+     <par name="bMenu">indicates whether the window has a menu</par>
+     <par name="dwExStyle">
+       extended window style of the window whose required size is to be calculated
+     </par>
+     <return>
+      <rc cond="success">non-zero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="AdjustWindowRectEx">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="rw" name="lpRect" rep="hex" nr="1">
+      <type><ptr>RECT</ptr></type>
+      <pre><deref-read/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:RECT"/>
+	<role rt="ioc:memops" rn="dst-struct:RECT"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwStyle" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="bMenu" roles="none" nr="3">
+      <type>BOOL</type>
+    </par>
+    <par loc="stack" io="r" name="dwExStyle" roles="none" nr="4">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="calculates client window size"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegCloseKey">
+   <documentation>
+    <desc>closes a handle to the specified registry key</desc>
+    <apidoc>
+     <pt>LONG WINAPI RegCloseKey (__in HKEY hKey)</pt>
+     <par name="hKey">handle to the open key to be closed</par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">nonzero error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="RegCloseKey">
+     <returntype>LONG</returntype>
+     <par loc="stack" name="hKey" io="r" nr="1" rep="hex">
+       <rep type="enum" name="predefined_registry_key_constants"/>
+       <type>HKEY</type>
+       <pre><deref-read-null/></pre>
+       <sideeffects><invalidates/></sideeffects>
+       <roles>
+	 <role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry" desc="closes a registry key"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="system_error_code_constants"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

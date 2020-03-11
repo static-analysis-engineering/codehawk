@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:42:21"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="WriteProcessMemory">
+   <documentation>
+    <desc>
+      Writes data to an area of memory in a specified process. The entire area 
+      to be written to must be accessible or the operation fails.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WriteProcessMemory(</ll>
+      <ld>_In_   HANDLE hProcess</ld>
+      <ld>_In_   LPVOID lpBaseAddress</ld>
+      <ld>_In_   LPCVOID lpBuffer</ld>
+      <ld>_In_   SIZE_T nSize</ld>
+      <ld>_Out_  SIZE_T *lpNumberOfBytesWritten</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hProcess">
+       A handle to the process memory to be modified. The handle must have
+       PROCESS_VM_WRITE and PROCESS_VM_OPERATION access to the process.
+     </par>
+     <par name="lpBaseAddress">
+       A pointer to the base address in the specified process to which data
+       is written. Before data transfer occurs, the system verifies that all
+       data in the base address and memory of the specified size is accessible 
+       for write access, and if it is not accessible, the function fails.
+	</par>
+     <par name="lpBufer">
+       A pointer to the buffer that contains data to be written in the address
+       space of the specified process.
+     </par>
+     <par name="nSize">The number of bytes to be written to the specified process.</par>
+     <par name="lpNumberOfBytesWritten">
+       A pointer to a variable that receives the number of bytes transferred into
+       the specified process. This parameter is optional. If lpNumberOfBytesWritten 
+       is NULL, the parameter is ignored.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="WriteProcessMemory">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hProcess" io="r" nr="1">
+       <type>HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:process"/>
+       </roles>
+     </par>
+    <par loc="stack" name="lpBaseAddress" io="r" nr="2">
+      <type><ptr>void</ptr></type>
+      <roles>
+	<role rt="ioc:process" rn="dst-bytes:remote process"/>
+	<role rt="rep:hex" rn="dst-bytes"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpBuffer" io="r" nr="3">
+      <type><ptr>void</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="src-bytes:remote process"/>
+	<role rt="rep:hex" rn="src-bytes"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nSize" io="r" nr="4">
+      <type>SIZE_T</type>
+      <roles>
+	<role rt="size:buffersize" rn="WriteProcessMemory"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpNumberOfBytesWritten" nr="5">
+      <type><ptr>SIZE_T</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="size:actualsize" rn="WriteProcessMemory"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="writes data to the memory of another process"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>lpBuffer</ci>
+	    <ci>nSize</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpBaseAddress</ci>
+	    <ci>nSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>lpBuffer</ci>
+	    <ci>nSize</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

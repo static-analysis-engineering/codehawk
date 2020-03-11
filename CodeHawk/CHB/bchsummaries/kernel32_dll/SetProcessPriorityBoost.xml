@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/20/2015 07:33:27"/>
+  <libfun lib="kernel32" name="SetProcessPriorityBoost">
+   <documentation>
+    <desc>
+      Disables or enables the ability of the system to temporarily boost the priority
+      of the threads of the specified process
+    </desc>
+    <remarks>
+      When a thread is running in one of the dynamic priority classes,
+      the system temporarily boosts the thread's priority when it is
+      taken out of a wait state. If SetProcessPriorityBoost is called
+      with the DisablePriorityBoost parameter set to TRUE, its
+      threads' priorities are not boosted. This setting affects all
+      existing threads and any threads subsequently created by the
+      process. To restore normal behavior, call
+      SetProcessPriorityBoost with DisablePriorityBoost set to FALSE.
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetProcessPriorityBoost(</ll>
+      <ld>_In_ HANDLE hProcess</ld>
+      <ld>_In_ BOOL   DisablePriorityBoost</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hProcess">
+       A handle to the process. This handle must have the PROCESS_SET_INFORMATION access right
+     </par>
+     <par name="DisablePriorityBoost">
+       If this parameter is TRUE, dynamic boosting is disabled. If the
+       parameter is FALSE, dynamic boosting is enabled
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetProcessPriorityBoost">
+    <par loc="stack" io="r" name="hProcess" nr="1">
+     <type>HANDLE</type>
+     <roles>
+        <role rt="ioc:process" rn="handle:process"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="DisablePriorityBoost" roles="none" nr="2">
+     <type>BOOL</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="process" desc="affects the ability to boost the priority"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

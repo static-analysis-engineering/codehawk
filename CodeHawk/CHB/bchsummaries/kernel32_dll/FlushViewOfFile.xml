@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/27/2015 22:32:43"/>
+  <libfun lib="kernel32" name="FlushViewOfFile">
+   <documentation>
+    <desc>Writes to the disk a byte range within a mapped view of a file</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI FlushViewOfFile(</ll>
+      <ld>_In_ LPCVOID lpBaseAddress</ld>
+      <ld>_In_ SIZE_T  dwNumberOfBytesToFlush</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpBaseAddress">
+       A pointer to the base address of the byte range to be flushed to 
+       the disk representation of the mapped file
+     </par>
+     <par name="dwNumberOfBytesToFlush">
+       The number of bytes to be flushed. If dwNumberOfBytesToFlush is
+       zero, the file is flushed from the base address to the end of 
+       the mapping
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="FlushViewOfFile">
+    <par loc="stack" name="lpBaseAddress" io="r" rep="hex" nr="1">
+     <type><ptr>void</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="address:memory"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwNumberOfBytesToFlush" io="r" nr="2">
+     <type>SIZE_T</type>
+     <roles>
+       <role rt="size:region" rn="number of bytes to flush"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="writes to disk a portion of a mapped view of a file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

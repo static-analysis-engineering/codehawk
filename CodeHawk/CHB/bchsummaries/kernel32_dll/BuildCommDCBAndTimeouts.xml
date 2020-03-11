@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="BuildCommDCBAndTimeouts.xml" time="2016-10-28 22:15:10.356077"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="BuildCommDCBAndTimeouts">
+    <documentation>
+      <desc>
+	Translates a device-definition string into appropriate
+	device-control block codes and places them into a device
+	control block. The function can also set up time-out values,
+	including the possibility of no time-outs, for a device; the
+	function's behavior in this regard depends on the contents of
+	the device-definition string.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL BuildCommDCBAndTimeouts(</ll>
+          <ld>_In_  LPCTSTR        lpDef</ld>
+          <ld>_Out_ LPDCB          lpDCB</ld>
+          <ld>_Out_ LPCOMMTIMEOUTS lpCommTimeouts</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpDef">
+	  The device-control information. The function takes this
+	  string, parses it, and then sets appropriate values in the
+	  DCB structure pointed to by lpDCB.  The string must have the
+	  same form as the mode command's command-line arguments:
+	  COMx[:][baud={11|110|15|150|30|300|60|600|12|1200|24|2400|48|4800|96|9600|19|19200}][parity={n|e|o|m|s}][data={5|6|7|8}][stop={1|1.5|2}][to={on|off}][xon={on|off}][odsr={on|off}][octs={on|off}][dtr={on|off|hs}][rts={on|off|hs|tg}][idsr={on|off}]
+	  The "baud" substring can be any of the values listed, which
+	  are in pairs. The two-digit values are the first two digits
+	  of the associated values that they represent. For example,
+	  11 represents 110 baud, 19 represents 19,200 baud.  The
+	  "parity" substring indicates how the parity bit is used to
+	  detect transmission errors. The values represent "none",
+	  "even", "odd", "mark", and "space".
+	</par>
+        <par name="lpDCB">
+	  A pointer to a DCB structure that receives information from
+	  the device-control information string pointed to by
+	  lpDef. This DCB structure defines the control settings for a
+	  communications device.
+	</par>
+        <par name="lpCommTimeouts">
+	  A pointer to a COMMTIMEOUTS structure that receives time-out
+	  information.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="BuildCommDCBAndTimeouts">
+      <par loc="stack" io="r" rep="hex" name="lpDef" nr="1">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="device control info"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpDCB" io="w" rep="hex" nr="2">
+        <type><ptr>DCB</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-struct:device control block"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpCommTimeouts" io="w" rep="hex" nr="3">
+        <type><ptr>COMMTIMEOUTS</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-struct:commtimeouts"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="translates a device-definition string into control-block codes"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="FindAtom">
+   <documentation>
+    <desc>
+      searches the local atom table for the specified character string and
+      retrieves the atom associated with that string
+    </desc>
+    <apidoc>
+     <pt>ATOM WINAPI FindAtom ( __in LPCTSTR lpString )</pt>
+     <par name="lpString">character string for which to search</par>
+     <return>
+      <rc cond="success">atom associated with the given string</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="FindAtom">
+    <returntype>ATOM</returntype>
+    <par loc="stack" name="lpString" nr="1">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:system" rn="name:atom"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+   <io-actions>
+       <io-action cat="system" desc="retrieves an atom associated with a string"/>
+   </io-actions>  
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

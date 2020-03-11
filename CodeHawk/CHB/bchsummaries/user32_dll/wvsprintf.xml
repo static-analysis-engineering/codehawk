@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/29/2015 16:57:45"/>
+  <libfun lib="user32" name="wvsprintf">
+   <documentation>
+    <desc>
+      Writes formatted data to the specified buffer using a pointer to a list of
+      arguments. The items pointed to by the argument list are converted and copied 
+      to an output buffer according to the corresponding format specification in 
+      the format-control string. The function appends a terminating null character
+      to the characters it writes, but the return value does not include the
+      terminating null character in its character count
+    </desc>
+    <caution>
+      Using this function incorrectly can compromise the security of your application.
+      The string returned in lpOutput is not guaranteed to be NULL-terminated. Also, 
+      avoid the use of the %s format, which can lead to a buffer overrun. This can
+      lead to a denial of service if it results in an access violation, or an attacker
+      may inject executable code
+    </caution>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI wvsprintf(</ll>
+      <ld>_Out_ LPTSTR  lpOutput</ld>
+      <ld>_In_  LPCTSTR lpFmt</ld>
+      <ld>_In_  va_list arglist</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpOutput">
+       The buffer that is to receive the formatted output. The maximum size of the
+       buffer is 1,024 bytes.
+     </par>
+     <par name="lpFmt">
+       The format-control specifications. In addition to ordinary ASCII characters,
+       a format specification for each argument appears in this string. 
+     </par>
+     <par name="arglist">
+       Each element of this list specifies an argument for the format-control string.
+       The number, type, and interpretation of the arguments depend on the corresponding
+       format-control specifications in the lpFmt parameter.
+     </par>
+     <return>
+      <rc cond="success">
+	the number of characters stored in the buffer, not counting the terminating 
+	null character.
+      </rc>
+      <rc cond="failure">less than the length of the expected output</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="wvsprintf">
+    <par loc="stack" name="lpOutput" io="w" nr="1" rep="hex">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-string:formatted data"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpFmt" io="r" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:outputs" rn="format string"/>
+     </roles>
+    </par>
+    <par loc="stack" name="arglist" io="r" roles="none" nr="3">
+     <type>va_list</type>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="outputs" desc="writes a formatted string"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpOutput</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpOutput</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

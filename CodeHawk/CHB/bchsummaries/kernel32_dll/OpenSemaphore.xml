@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/05/2015 17:32:19"/>
+  <libfun lib="kernel32" name="OpenSemaphore">
+   <documentation>
+    <desc>Opens an existing named semaphore object</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI OpenSemaphore(</ll>
+      <ld>_In_  DWORD dwDesiredAccess</ld>
+      <ld>_In_  BOOL bInheritedHandle</ld>
+      <ld>_In_  LPCTSTR lpName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwDesiredAccess">
+       The access to the semaphore object. The function fails if the security 
+       descriptor of the specified object does not permit the requested access
+       for the calling process
+     </par>
+     <par name="bInheritedHandle">
+       If this value is TRUE, processes created by this process will inherit 
+       the handle. Otherwise, the processes do not inherit this handle
+     </par>
+     <par name="lpName">
+       The name of the semaphore to be opened. Name comparisons are case sensitive
+     </par>
+     <return>
+      <rc cond="success">handle to the semaphore object</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OpenSemaphore">
+    <par loc="stack" io="r" name="dwDesiredAccess" roles="none" nr="1">
+     <rep type="enum" name="synchronization_object_security_access_rights_flags"/>
+     <type>DWORD</type>
+     <pre>
+       <enum-value name="synchronization_object_security_access_rights_flags" flags="true"/>
+     </pre>
+    </par>
+    <par loc="stack" io="r" roles="none" name="bInheritedHandle" nr="2">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" io="r" name="lpName" nr="3" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:synchronization" rn="name:semaphore"/>
+     </roles>
+    </par>
+    <returntype>HANDLE</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="synchronization" desc="opens a semaphore"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

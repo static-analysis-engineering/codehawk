@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:35:19"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SuspendThread">
+   <documentation>
+    <desc>Suspends the specified thread.</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI SuspendThread(</ll>
+      <ld>_In_  HANDLE hThread</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">greater than or equal to 0</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+     <par name="hThread">
+       A handle to the thread that is to be suspended.
+       The handle must have the THREAD_SUSPEND_RESUME access right.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SuspendThread">
+     <returntype>DWORD</returntype>
+    <par loc="stack" io="r" name="hThread" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:thread" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="suspends a thread"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

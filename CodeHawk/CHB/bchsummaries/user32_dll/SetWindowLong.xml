@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetWindowLong">
+   <documentation>
+    <desc>changes an attribute of the specified window</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI SetWindowLong (</ll>
+      <ld>__in HWND hWnd,</ld>
+      <ld>__in int nIndex,</ld>
+      <ld>__in LONG dwNewLong</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window</par>
+     <par name="nIndex">
+       zero-based offset to the value to be set; valid values are in the
+       range zero through the number of bytes of extra window memory, minus
+       the size of an integer
+     </par>
+     <par name="dwNewLong">the replacement value</par>
+     <return>
+      <rc cond="success">previous value of the specified 32-bit integer</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SetWindowLong">
+     <returntype>LONG</returntype>
+     <par loc="stack" name="hWnd" io="r" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+    <par loc="stack" name="nIndex" io="r" nr="2">
+      <type>int</type>
+      <roles>
+	<role rt="size:index" rn="SetWindowLong"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwNewLong" io="r" roles="none" nr="3">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="changes an attribute of a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

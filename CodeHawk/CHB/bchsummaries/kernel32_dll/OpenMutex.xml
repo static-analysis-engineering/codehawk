@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:27:03"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="OpenMutex">
+   <documentation>
+    <desc>Opens an existing named mutex object.</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI OpenMutex(</ll>
+      <ld>_In_  DWORD dwDesiredAccess</ld>
+      <ld>_In_  BOOL bInheritHandle</ld>
+      <ld>_In_  LPCTSTR lpName</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">handle to the mutex object</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="dwDesiredAccess">
+       The access to the mutex object. Only the SYNCHRONIZE access right is required
+       to use a mutex; to change the mutex&apos;s security, specify MUTEX_ALL_ACCESS. 
+       The function fails if the security descriptor of the specified object does 
+       not permit the requested access for the calling process.
+     </par>
+     <par name="bInheritHandle">
+       If this value is TRUE, processes created by this process will inherit the 
+       handle. Otherwise, the processes do not inherit this handle.
+     </par>
+     <par name="lpName">
+       The name of the mutex to be opened. Name comparisons are case sensitive. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OpenMutex">
+     <returntype>HANDLE</returntype>
+     <par loc="stack" io="r" name="dwDesiredAccess" roles="none" nr="1">
+       <type>DWORD</type>
+     </par>
+     <par loc="stack" io="r" name="bInheritHandle" roles="none" nr="2">
+       <type>BOOL</type>
+     </par>
+     <par loc="stack" io="r" name="lpName" nr="3" rep="hex">
+       <type>LPCTSTR</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:synchronization" rn="name:mutex"/>
+       </roles>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization" desc="opens a named mutex"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+   </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

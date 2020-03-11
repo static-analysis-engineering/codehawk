@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="EnableMenuItem">
+   <documentation>
+    <desc>enables, disables, or grays the specified menu item</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI EnableMenuItem (</ll>
+      <ld>__in HMENU hMenu,</ld>
+      <ld>__in UINT uIDEnableItem,</ld>
+      <ld>__in UINT uEnable</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMenu">handle to the menu</par>
+     <par name="uIDEnableItem">menu item to be enabled, disabled, or grayed</par>
+     <par name="uEnable">controls the interpretation of the uIDEnableItem parameter</par>
+     <return>previous state of the menu item</return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="EnableMenuItem">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hMenu" io="r" nr="1">
+      <type>HMENU</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:menu"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uIDEnableItem" io="r" roles="none" nr="2">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="uEnable" io="r" roles="none" nr="3">
+      <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="enables, disables, or grays a menu item"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

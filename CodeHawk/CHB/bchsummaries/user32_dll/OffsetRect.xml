@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="OffsetRect.xml" time="2016-05-13 07:39:57.461762"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="OffsetRect">
+    <documentation>
+      <desc>moves the specified rectangle by the specified offsets</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL OffsetRect(</ll>
+          <ld>_Inout_ LPRECT lprc</ld>
+          <ld>_In_    int    dx</ld>
+          <ld>_In_    int    dy</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lprc">
+	  Pointer to a RECT structure that contains the logical
+	  coordinates of the rectangle to be moved
+	</par>
+        <par name="dx">
+	  Specifies the amount to move the rectangle left or
+	  right. This parameter must be a negative value to move the
+	  rectangle to the left
+	</par>
+        <par name="dy">
+	  Specifies the amount to move the rectangle up or down. This
+	  parameter must be a negative value to move the rectangle up.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="OffsetRect">
+      <par loc="stack" name="lprc" io="rw" nr="1">
+        <type><ptr>RECT</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-struct:RECT"/>
+	  <role rt="ioc:memops" rn="dst-struct:RECT"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dx" io="r" nr="2">
+        <type>int</type>
+	<roles>
+	  <role rt="size:dimension" rn="rectangle displacement"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dy" io="r" nr="3">
+	<roles>
+	  <role rt="size:dimension" rn="rectangle displacement"/>
+	</roles>
+        <type>int</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="moves a rectangle"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

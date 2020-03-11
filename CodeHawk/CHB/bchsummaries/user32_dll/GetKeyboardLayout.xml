@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetKeyboardLayout">
+   <documentation>
+     <desc>
+       retrieves the active input locale identifier for the specified
+       thread. If the idThread parameter is zero, the input locale
+       identifier for the active thread is returned
+      </desc>
+    <apidoc>
+     <pt>HKL WINAPI GetKeyboardLayout (__in DWORD idThread) </pt>
+     <par name="idThread">
+       identifier of the thread to query, or 0 for the current thread
+     </par>
+     <return>input locale identifier for the thread</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetKeyboardLayout">
+    <returntype>HKL</returntype>
+    <par loc="stack" io="r" name="idThread" nr="1">
+     <roles>
+      <role rt="ioc:process" rn="id:thread" />
+     </roles>
+     <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves the input locale for a thread"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

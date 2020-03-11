@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 09:36:01"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CryptGenRandom">
+   <documentation>
+    <desc>fills a buffer with cryptographically random bytes. </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL CryptGenRandom(</ll>
+      <ld>_In_     HCRYPTPROV hProv </ld>
+      <ld>_In_     DWORD dwLen </ld>
+      <ld>_Inout_  BYTE *pbBuffer </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero </rc>
+      <rc cond="failure">zero </rc>
+     </return>
+     <par name="hProv">
+       Handle of a cryptographic service provider (CSP) created by a call to 
+       CryptAcquireContext. 
+     </par>
+     <par name="dwLen">Number of bytes of random data to be generated. </par>
+     <par name="pbBuffer">
+       Buffer to receive the returned data. This buffer must be at least 
+       dwLen bytes in length.  
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CryptGenRandom">
+    <returnbtype tname="BOOL " ttag="tnamed"/>
+    <par loc="stack" io="r" name="hProv" rep="hex" nr="1">
+      <type>HCRYPTPROV</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:crypto" rn="handle:CSP"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwLen" nr="2">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="CryptGenRandom"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="pbBuffer" nr="3">
+     <btype ttag="tptr">
+      <typ tname="BYTE" ttag="tnamed"/>
+     </btype>
+     <roles>
+       <role rt="ioc:memops" rn="dst-bytes:random"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="crypto" desc="fills a buffer with cryptographic random bytes"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>BYTE</type>
+	    <ci>pbBuffer</ci>
+	    <ci>dwLen</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write exsrc="cryptographic service provider"/>
+	    <type>BYTE</type>
+	    <ci>pbBuffer</ci>
+	    <ci>dwLen</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

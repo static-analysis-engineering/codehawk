@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 15:03:40"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ValidateRect">
+   <documentation>
+    <desc>
+     validates the client area within a rectangle by removing the rectangle
+     from the update region of the specified window
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ValidateRect(</ll>
+      <ld>_In_ HWND hWnd,</ld>
+      <ld>_In_ const RECT *lpRect</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hWnd">handle to the window whose update region is to be modified.
+      If NULL, the system invalidates and redraws all windows
+    </par>
+     <par name="lpRect">pointer to a RECT structure that contains the client coordinates
+      of the rectangle to be removed from the update region. If NULL, the
+      entire client area is removed.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ValidateRect">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hWnd" io="r" nr="1">
+     <type>HWND</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpRect" io="r" nr="2">
+     <type><ptr>RECT</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:RECT"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="validates a client area within a rectangle"/>
+    </io-actions>
+    <external-effects/>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

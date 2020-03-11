@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SetSystemPowerState.xml" time="2016-06-20 23:07:25.189615"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="SetSystemPowerState">
+    <documentation>
+      <desc>
+	Suspends the system by shutting power down. Depending on the
+	ForceFlag parameter, the function either suspends operation
+	immediately or requests permission from all applications and
+	device drivers before doing so.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI SetSystemPowerState(</ll>
+          <ld>_In_ BOOL fSuspend</ld>
+          <ld>_In_ BOOL fForce</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="fSuspend">
+	  If this parameter is TRUE, the system is suspended. If the
+	  parameter is FALSE, the system hibernates.
+	</par>
+        <par name="fForce">This parameter has no effect</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="SetSystemPowerState">
+      <par loc="stack" name="fSuspend" io="r" roles="none" nr="1">
+        <type>BOOL</type>
+      </par>
+      <par loc="stack" name="fForce" roles="none" io="r" nr="2">
+        <type>BOOL</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="suspends the system by shutting down the power"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

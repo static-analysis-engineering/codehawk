@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegOpenKeyEx">
+   <documentation>
+    <desc>opens the specified registry key</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegOpenKeyEx (</ll>
+      <ld>__in        HKEY hKey,</ld>
+      <ld>__in_opt    LPCTSTR lpSubKey,</ld>
+      <ld>__reserved  DWORD ulOptions,</ld>
+      <ld>__in        REGSAM samDesired,</ld>
+      <ld>__out       PHKEY phkResult</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">name of the registry key to be opened</par>
+     <par name="lpSubKey">name of the registry subkey to be opened</par>
+     <par name="ulOptions">reserved; must be zero</par>
+     <par name="samDesired">
+       mask that specifies the desired access rights to the key to be opened
+     </par>
+     <par name="phkResult">
+       pointer to a variable that receives a handle to the opened key
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">nonzero error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="RegOpenKeyEx">
+     <returntype>int</returntype>
+     <par loc="stack" name="hKey" io="r" nr="1">
+       <rep type="enum" name="predefined_registry_key_constants"/>
+       <type>HKEY</type>
+       <pre>
+	 <deref-read/>
+	 <enum-value name="predefined_registry_key_constants"/>
+       </pre>
+      <roles>
+	<role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpSubKey" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:registry" rn="name:subkey"/>
+      </roles>
+    </par>
+    <par loc="stack" name="ulOptions" io="r" roles="none" nr="3">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" name="samDesired" io="r" roles="none" nr="4">
+      <rep type="enum" name="registry_key_security_access_rights_flags"/>
+      <type>REGSAM</type>
+      <pre><enum-value name="registry_key_security_access_rights_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" io="w" name="phkResult" nr="5" rep="hex">
+      <type><ptr>HKEY</ptr></type>
+      <pre><deref-write/></pre>
+      <roles>
+	<role rt="ioc:registry" rn="ref:key"/>
+      </roles>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry" desc="opens a registry key"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="system_error_code_constants"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

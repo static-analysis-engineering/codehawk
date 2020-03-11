@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/27/2015 23:08:55"/>
+  <libfun lib="kernel32" name="TryEnterCriticalSection">
+   <documentation>
+    <desc>
+      Attempts to enter a critical section without blocking. If 
+      the call is successful, the calling thread takes ownership 
+      of the critical section
+    </desc>
+    <apidoc>
+     <pt>
+       <ll>BOOL WINAPI TryEnterCriticalSection (</ll>
+       <ld>_Inout_ LPCRITICAL_SECTION lpCriticalSection</ld>
+       <ll>)</ll>
+     </pt>
+     <par name="lpCriticalSection">
+       A pointer to the critical section object
+     </par>
+     <return>
+      <rc cond="success">
+	If the critical section is successfully entered or the current 
+	thread already owns the critical section, the return value is 
+	nonzero.
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="TryEnterCriticalSection">
+    <par loc="stack" io="rw" name="lpCriticalSection" nr="1" rep="hex">
+     <type><ptr>CRITICAL_SECTION</ptr></type>
+     <roles>
+      <role rt="ioc:synchronization" rn="critical section" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization"
+		  desc="attempts to enter a critical section without blocking"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

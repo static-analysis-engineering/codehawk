@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 02:49:33"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CryptDestroyKey">
+   <documentation>
+    <desc>
+      releases the handle referenced by the hKey parameter. After a key 
+      handle has been released, it is no longer valid and cannot be used again.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL CryptDestroyKey(</ll>
+      <ld>_In_  HCRYPTKEY hKey</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hKey">The handle of the key to be destroyed.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CryptDestroyKey">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hKey" nr="1">
+      <type>HCRYPTKEY</type>
+      <roles>
+         <role rt="ioc:crypto" rn="handle:cryptographic key"/>
+      </roles>
+      <pre><deref-read/></pre>
+      <sideeffects><invalidates/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="crypto" desc="releases hash key"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:24:15"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="lstrcat">
+   <documentation>
+    <desc>Appends one string to another.</desc>
+    <caution>
+      Using this function incorrectly can compromise the security of your application.
+      This function uses structured exception handling (SEH) to catch access violations
+      and other errors. When this function catches SEH errors, it returns NULL without
+      null-terminating the string and without notifying the caller of the error. The 
+      caller is not safe to assume that insufficient space is the error condition.
+      lpString1 must be large enough to add lpString2 and the closing '\0', otherwise 
+      a buffer overrun may occur. Buffer overruns may lead to a denial of service 
+      attack against the application if an access violation occurs. In the worst case,
+      a buffer overrun may allow an attacker to inject executable code into your 
+      process, especially if lpString1 is a stack-based buffer.
+    </caution>
+    <apidoc>
+     <pt>
+      <ll>LPTSTR WINAPI lstrcat(</ll>
+      <ld>_Inout_  LPTSTR lpString1</ld>
+      <ld>_In_     LPTSTR lpString2</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="lpString1">
+       The first null-terminated string. This buffer must be large enough to
+       contain both strings.
+     </par>
+     <par name="lpString2">
+       The null-terminated string to be appended to the string specified in the 
+       lpString1 parameter
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="lstrcat">
+     <returntype>LPTSTR</returntype>
+    <par loc="stack" desc="dest buffer" io="rw" name="lpString1" nr="1" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-string:concatenate"/>
+      </roles>
+      <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" desc="src buffer" io="r" name="lpString2" nr="2" rep="hex">
+      <type>LPTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-string:copy"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="copies a string"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpString1</ci>
+	    <apply>
+	      <plus/>
+	      <apply><null-terminator-pos/><ci>lpString1</ci></apply>
+	      <apply><null-terminator-pos/><ci>lpString2</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notnull-null/>
+      <post><math><apply><eq/><return/><ci>lpString1</ci></apply></math></post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpString1</ci>
+	    <apply>
+	      <plus/>
+	      <apply><null-terminator-pos/><ci>lpString1</ci></apply>
+	      <apply><null-terminator-pos/><ci>lpString2</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

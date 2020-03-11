@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/22/2014 15:51:00"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="wsprintf">
+   <documentation>
+    <desc>
+      Writes formatted data to the specified buffer. Any arguments are 
+      converted and copied to the output buffer according to the 
+      corresponding format specification in the format string. The 
+      function appends a terminating null character to the characters 
+      it writes, but the return value does not include the terminating 
+      null character in its character count.
+      Note  Do not use.
+    </desc>
+    <caution>Do not use</caution>
+    <apidoc>
+     <pt>
+      <ll>int __cdecl wsprintf(</ll>
+      <ld>_Out_  LPTSTR lpOut,</ld>
+      <ld>_In_   LPCTSTR lpFmt,</ld>
+      <ld>_In_    ...</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpOut">The buffer that is to receive the formatted output. The maximum size 
+	of the buffer is 1,024 bytes.
+      </par>
+     <par name="lpFmt">The format-control specifications. In addition to ordinary ASCII 
+	characters, a format specification for each argument appears in 
+	this string.
+      </par>
+     <par name="...">One or more optional arguments. The number and type of argument 
+	parameters depend on the corresponding format-control specifications 
+	in the lpFmt parameter.
+      </par>
+     <return>
+      <rc cond="success">the number of characters stored in the output buffer, not counting 
+	  the terminating null character.
+	</rc>
+      <rc cond="failure">the return value is less than the length of the expected output. 
+	</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="wsprintf">
+     <!-- TBD: Requires a par entry for the arguments -->
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" io="w" name="lpOut" nr="1" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:memops" rn="dst-string:formatted data"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpFmt" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/><format-string/></pre>
+      <roles>
+         <role rt="ioc:outputs" rn="format string"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="outputs" desc="writes formatted data to a string"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>TCHAR</type>
+	 <ci>lpOut</ci>
+	 <runtime-value/>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	<type>TCHAR</type>
+        <ci>lpOut</ci>
+        <runtime-value/>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

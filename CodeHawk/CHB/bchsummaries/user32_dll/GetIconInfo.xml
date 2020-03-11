@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 02:59:33"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetIconInfo">
+   <documentation>
+    <desc>Retrieves information about the specified icon or cursor. </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetIconInfo(</ll>
+      <ld>_In_   HICON hIcon</ld>
+      <ld>_Out_  PICONINFO piconinfo</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hIcon">A handle to the icon or cursor.</par>
+     <par name="piconino">
+       A pointer to an ICONINFO structure. The function fills in the
+       structure&apos;s members.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetIconInfo">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hIcon" io="r" nr="1">
+       <type>HICON</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:icon"/>
+       </roles>
+    </par>
+    <par loc="stack" name="piconino" io="w" nr="2" rep="hex">
+      <type><ptr>ICONINFO</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:system" rn="infox:icon information"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves information about an icon"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

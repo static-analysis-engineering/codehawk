@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="DragDetect.xml" time="2016-05-16 19:44:12.890874"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="DragDetect">
+    <documentation>
+      <desc>
+	Captures the mouse and tracks its movement until the user
+	releases the left button, presses the ESC key, or moves the
+	mouse outside the drag rectangle around the specified
+	point. The width and height of the drag rectangle are
+	specified by the SM_CXDRAG and SM_CYDRAG values returned by
+	the GetSystemMetrics function
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI DragDetect(</ll>
+          <ld>_In_ HWND  hwnd</ld>
+          <ld>_In_ POINT pt</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hwnd">A handle to the window receiving mouse input</par>
+        <par name="pt">
+	  Initial position of the mouse, in screen coordinates. The
+	  function determines the coordinates of the drag rectangle by
+	  using this point.
+	</par>
+        <return>
+	  If the user moved the mouse outside of the drag rectangle
+	  while holding down the left button, the return value is
+	  nonzero.  If the user did not move the mouse outside of the
+	  drag rectangle while holding down the left button, the
+	  return value is zero.
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="DragDetect">
+      <par loc="stack" name="hwnd" io="r" nr="1">
+        <type>HWND</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pt" io="r" roles="none" nr="2">
+        <type>POINT</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+		   desc="captures the mouse and tracks its movement"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

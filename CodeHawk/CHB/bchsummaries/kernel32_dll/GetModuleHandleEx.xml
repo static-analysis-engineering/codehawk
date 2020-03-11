@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/22/2015 19:03:46"/>
+  <libfun lib="kernel32" name="GetModuleHandleEx">
+   <documentation>
+    <desc>
+      Retrieves a module handle for the specified module and increments 
+      the module's reference count unless 
+      GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT is specified. 
+      The module must have been loaded by the calling process
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetModuleHandleEx(</ll>
+      <ld>_In_      DWORD dwFlags</ld>
+      <ld>_In_opt_  LPCTSTR lpModuleName</ld>
+      <ld>_Out_     HMODULE *phModule</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwFlags">flags</par>
+     <par name="lpModuleName">
+       The name of the loaded module (either a .dll or .exe file), or an address
+       in the module (if dwFlags is GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS).
+       For a module name, if the file name extension is omitted, the default 
+       library extension .dll is appended. The file name string can include a 
+       trailing point character (.) to indicate that the module name has no 
+       extension. The string does not have to specify a path. When specifying
+       a path, be sure to use backslashes (\), not forward slashes (/). The 
+       name is compared (case independently) to the names of modules currently
+       mapped into the address space of the calling process.
+       If this parameter is NULL, the function returns a handle to the file
+       used to create the calling process (.exe file)
+     </par>
+     <par name="phModule">
+       A handle to the specified module. If the function fails, this parameter
+       is NULL
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetModuleHandleEx">
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="1">
+     <rep type="enum" name="get_module_handle_flags"/>
+     <type>DWORD</type>
+     <pre><enum-value name="get_module_handle_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" name="lpModuleName" io="r" rep="hex" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:module"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="phModule" rep="hex" nr="3">
+     <type><ptr>HMODULE</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:process" rn="handle:module"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves a module handle"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

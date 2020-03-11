@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CloseTouchInputHandle.xml" time="2016-03-05 10:51:24.335431"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="CloseTouchInputHandle" lib="user32">
+    <documentation>
+      <desc>
+	Closes a touch input handle, frees process memory associated
+	with it, and invalidates the handle.
+      </desc>
+      <apidoc>
+        <pt>BOOL WINAPI CloseTouchInputHandle (_In_ hTouchInput)</pt>
+        <par name="hTouchInput">
+	  The touch input handle received in the LPARAM of a touch
+	  message. The function fails with ERROR_INVALID_HANDLE if
+	  this handle is not valid. Note that the handle is not valid
+	  after it has been used in a successful call to
+	  CloseTouchInputHandle or after it has been passed to
+	  DefWindowProc, PostMessage, SendMessage or one of their
+	  variants.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="4" name="CloseTouchInputHandle">
+      <par loc="stack" nr="1" io="r" rep="hex" name="hTouchInput">
+        <type>HTOUCHINPUT</type>
+	<roles>
+	  <role rt="ioc:process" rn="handle:touch input"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="closes a touch input handle"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

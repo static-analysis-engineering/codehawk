@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 03:02:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="ImpersonateSelf">
+   <documentation>
+    <desc>
+      obtains an access token that impersonates the security context 
+      of the calling process. 
+      The token is assigned to the calling thread.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI ImpersonateSelf(</ll>
+      <ld>_In_  SECURITY_IMPERSONATION_LEVEL ImpersonationLevel</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="ImpersonationLevel">
+       Specifies a SECURITY_IMPERSONATION_LEVEL enumerated type that supplies 
+       the impersonation level of the new token.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ImpersonateSelf">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="ImpersonationLevel" nr="1">
+     <type>SECURITY_IMPERSONATION_LEVEL</type>
+     <pre><enum-value name="security_impersonation_level_enum_values"/></pre>
+     <roles>
+        <role rt="ioc:system" rn="impersonation level"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" 
+		  desc="obtains an access token that impersonates the security context of the calling process"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

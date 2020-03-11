@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/05/2015 23:30:13"/>
+  <libfun lib="kernel32" name="GlobalGetAtomName">
+   <documentation>
+    <desc>
+      Retrieves a copy of the character string associated with the specified global atom
+    </desc>
+    <remarks>
+      The string returned for an integer atom (an atom whose value is in the range 
+      0x0001 to 0xBFFF) is a null-terminated string in which the first character 
+      is a pound sign (#) and the remaining characters represent the unsigned 
+      integer atom value.
+    </remarks>
+    <caution>
+      Using this function incorrectly might compromise the security of your program.
+      Incorrect use of this function includes not correctly specifying the size of 
+      the lpBuffer parameter. Also, note that a global atom is accessible by 
+      anyone; thus, privacy and the integrity of its contents is not assured.
+    </caution>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GlobalGetAtomName(</ll>
+      <ld>_In_   ATOM nAtom</ld>
+      <ld>_Out_  LPTSTR lpBuffer</ld>
+      <ld>_In_   int nSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nAtom">
+       The global atom associated with the character string to be retrieved
+     </par>
+     <par name="lpBuffer">The buffer for the character string</par>
+     <par name="nSize">The size, in characters, of the buffer</par>
+     <return>
+      <rc cond="success">
+	the length of the string copied to the buffer, in characters, not including 
+	the terminating null character.
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GlobalGetAtomName">
+    <par loc="stack" io="r" name="nAtom" nr="1">
+     <type>ATOM</type>
+     <roles>
+      <role rt="ioc:system" rn="atom" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpBuffer" nr="2">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-string:atom" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nSize" nr="3">
+     <type>nSize</type>
+     <roles>
+      <role rt="size:buffersize" rn="GlobalGetAtomName" />
+     </roles>
+     <pre><non-negative/></pre>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves the string associated with an atom"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+      <post><math><apply><leq/><return/><ci>nSize</ci></apply></math></post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

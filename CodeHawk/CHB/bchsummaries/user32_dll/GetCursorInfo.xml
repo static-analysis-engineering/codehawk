@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/11/2015 23:05:40"/>
+  <libfun lib="user32" name="GetCursorInfo">
+   <documentation>
+    <desc>Retrieves information about the global cursor</desc>
+    <apidoc>
+     <pt>BOOL WINAPI GetCursorInfo (_Inout_  PCURSORINFO pci)</pt>
+     <par name="pci">
+       A pointer to a CURSORINFO structure that receives the information. 
+       Note that you must set the cbSize member to sizeof(CURSORINFO) before 
+       calling this function
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetCursorInfo">
+    <par loc="stack" io="rw" name="pci" nr="1">
+     <type><ptr>CURSORINFO</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:system" rn="infox:cursor info"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="retrieves information about the global cursor"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

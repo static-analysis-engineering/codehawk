@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 15:52:50"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetUpdateRect">
+   <documentation>
+    <desc>
+      retrieves the coordinates of the smallest rectangle that
+      completely encloses the update region of the specified window, in
+      logical coordinates
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetUpdateRect(</ll>
+      <ld>_In_ HWND hWnd,</ld>
+      <ld>_Out_ LPRECT lpRect,</ld>
+      <ld>_In_ BOOL bErase</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="update region is not empty">nonzero</rc>
+      <rc cond="update region is empty">zero</rc>
+     </return>
+     <par name="hWnd">handle to the window whose update region is to be retrieved
+    </par>
+     <par name="lpRect">
+       pointer to the RECT structure that receives the coordinates, in
+       device units, of the enclosing rectangle. Can be NULL
+    </par>
+     <par name="bErase">
+       specifies whether the background in the update region is to be erased
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetUpdateRect">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hWnd" io="r" rep="hex" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpRect" io="w" rep="hex" nr="2">
+      <type><ptr>RECT</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:memops" rn="dst-struct:RECT"/>
+      </roles>
+    </par>
+    <par loc="stack" name="bErase" io="r" roles="none" nr="3">
+      <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves the coordinates of a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

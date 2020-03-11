@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="TerminateJobObject.xml" time="2016-03-06 13:07:33.943771"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="TerminateJobObject" lib="kernel32">
+    <documentation>
+      <desc>
+	Terminates all processes currently associated with the job. If
+	the job is nested, this function terminates all processes
+	currently associated with the job and all of its child jobs in
+	the hierarchy.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI TerminateJobObject(</ll>
+          <ld>_In_ HANDLE hJob</ld>
+          <ld>_In_ UINT   uExitCode</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hJob">
+	  A handle to the job whose processes will be terminated. The
+	  CreateJobObject or OpenJobObject function returns this
+	  handle. This handle must have the JOB_OBJECT_TERMINATE
+	  access right. For more information, see Job Object Security
+	  and Access Rights.  The handle for each process in the job
+	  object must have the PROCESS_TERMINATE access right
+	</par>
+        <par name="uExitCode">
+	  The exit code to be used by all processes and threads in the
+	  job object. Use the GetExitCodeProcess function to retrieve
+	  each process's exit value. Use the GetExitCodeThread
+	  function to retrieve each thread's exit value.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="8" name="TerminateJobObject">
+      <par loc="stack" io="r" nr="1" name="hJob">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="handle:job"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" nr="2" name="uExitCode">
+        <type>UINT</type>
+	<roles>
+	  <role rt="ioc:process" rn="exit code"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="terminates all processes associated with a job"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:32:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetCaretPos">
+   <documentation>
+    <desc>Moves the caret to the specified coordinates.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetCaretPos(</ll>
+      <ld>_In_  int X,</ld>
+      <ld>_In_  int Y</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="X">The new x-coordinate of the caret.</par>
+     <par name="Y">The new y-coordinate of the caret.</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetCaretPos">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="X" nr="1">
+     <type>int</type>
+     <roles>
+        <role rt="size:coordinate" rn="screen"/>
+     </roles>
+    </par>
+    <par loc="stack" name="Y" nr="2">
+     <type>int</type>
+     <roles>
+        <role rt="size:coordinate" rn="screen"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="moves the caret"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="EnumDependentServices">
+   <documentation>
+    <desc>
+      retrieves the name and status of each service that depends on the specified service; 
+      that is, the specified service must be running before the dependent services can run
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI EnumDependentServices (</ll>
+      <ld>_In_      SC_HANDLE hService,</ld>
+      <ld>_In_      DWORD dwServiceState,</ld>
+      <ld>_Out_opt LPENUM_SERVICE_STATUS lpServices,</ld>
+      <ld>_In_      DWORD cbBufSize,</ld>
+      <ld>_Out_     LPDWORD pcbBytesNeeded,</ld>
+      <ld>_Out_     LPDWORD lpServicesReturned</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hService">handle to the service</par>
+     <par name="dwServiceState">state of the services to be enumerated</par>
+     <par name="lpServices">
+       pointer to an array of ENUM_SERVICE_STATUS structures that receives the name and
+       service status information for each dependent service in the database. The buffer
+       must be large enough to hold the structures, plus the strings to which their
+       members point. The maximum sixe of this array is 64,000 bytes. To determine the
+       required size, specify NULL for this parameter and 0 for the cbBufSize parameter.
+       The function will fail and GetLastError will return ERROR_MORE_DATA. The
+       pcBytesNeeded parameter will receive the required size
+     </par>
+     <par name="chBufSize">
+       size of the buffer pointed to by the lpServices parameter, in bytes
+     </par>
+     <par name="pcbBytesNeeded">
+       pointer to a variable that receives the number of bytes needed to store the array of
+       service entries. The variable only receives this value if the buffer pointed to by
+       lpServices is too small, indicated by function failure and the ERROR_MORE_DATA error;
+       otherwise, the contents of pcbBytesNeeded are undefined
+     </par>
+     <par name="lpServicesReturned">
+       pointer to a variable that receives the number of service entries returned
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="EnumDependentServices">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hService" nr="1">
+      <type>SC_HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:services" rn="handle:service"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwServiceState" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="lpServices" nr="3">
+      <type><ptr>ENUM_SERVICE_STATUS</ptr></type>
+      <pre><deref-write-null/></pre>
+      <roles>
+	<role rt="ioc:services" rn="infox:service status"/>
+	<role rt="ioc:memops" rn="dst-struct:ENUM_SERVICE_STATUS"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="cbBufSize" nr="4">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:buffersize" rn="EnumDependentServices"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="pcbBytesNeeded" nr="5">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="size:actual" rn="EnumDependentServices"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpServicesReturned" nr="6">
+      <type><ptr>DWORD</ptr></type>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="size:count" rn="EnumDependentServices"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="services" desc="enumerates services"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write-null/>
+	 <type>ENUM_SERIVCE_STATUS</type>
+	 <ci>lpServices</ci>
+	 <ci>cbBufSize</ci>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+	 <block-write/>
+	 <type>ENUM_SERIVCE_STATUS</type>
+	 <ci>lpServices</ci>
+	 <ci>cbBufSize</ci>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 07:53:09"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CompareFileTime">
+   <documentation>
+    <desc>Compares two file times.</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI CompareFileTime(</ll>
+      <ld>_In_  const FILETIME *lpFileTime1 </ld>
+      <ld>_In_  const FILETIME *lpFileTime2 </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">Returns -1, 0, or 1</rc>
+     </return>
+     <par name="lpFileTime1">
+       A pointer to a FILETIME structure that specifies the first file time.
+     </par>
+     <par name="lpFileTime2">
+       A pointer to a FILETIME structure that specifies the second file time. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CompareFileTime">
+    <returnbtype tname="LONG" ttag="tnamed"/>
+    <par loc="stack" name="lpFileTime1" io="r" rep="hex" nr="1">
+      <type><ptr>FILETIME</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:filetime"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpFileTime2" io="r" rep="hex" nr="2">
+      <type><ptr>FILETIME</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:filetime"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="compares two file times"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post><math><apply><geq/><return/><cn>-1</cn></apply></math></post>
+      <post><math><apply><leq/><return/><cn>1</cn></apply></math></post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

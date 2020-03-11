@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:25:19"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="MoveFile">
+   <documentation>
+    <desc>Moves an existing file or a directory, including its children.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI MoveFile(</ll>
+      <ld>_In_  LPCTSTR lpExistingFileName</ld>
+      <ld>_In_  LPCTSTR lpNewFileName</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpExistingFileName">
+       The current name of the file or directory on the local computer.
+       
+       In the ANSI version of this function, the name is limited to MAX_PATH 
+       characters. To extend this limit to 32,767 wide characters, call the 
+       Unicode version of the function and prepend &quot;\\?\&quot; to the path.
+     </par>
+     <par name="lpNewFileName">
+       The new name for the file or directory. The new name must not already 
+       exist. A new file may be on a different file system or drive. A new 
+       directory must be on the same drive.
+
+       In the ANSI version of this function, the name is limited to MAX_PATH 
+       characters. To extend this limit to 32,767 wide characters, call the 
+       Unicode version of the function and prepend &quot;\\?\&quot; to the path.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="MoveFile">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="lpExistingFileName" io="r" nr="1">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+	 <role rt="rep:hex" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpNewFileName" io="r" nr="2">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:file"/>
+	<role rt="rep:hex" rn="name:file"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="moves a file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

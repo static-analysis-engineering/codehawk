@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="FormatMessage">
+   <documentation>
+    <desc>formats a message string</desc>
+    <remarks>
+      Formats a message string. The function requires a message
+      definition as input. The message definition can come from a
+      buffer passed into the function. It can come from a message
+      table resource in an already-loaded module. Or the caller can
+      ask the function to search the system&apos;s message table
+      resource(s) for the message definition. The function finds the
+      message definition in a message table resource based on a
+      message identifier and a language identifier. The function
+      copies the formatted message text to an output buffer,
+      processing any embedded insert sequences if requested.
+      FORMAT_MESSAGE_ALLOCATE_BUFFER: The function allocates a buffer
+      large enough to hold the formatted message, and places a pointer
+      to the allocated buffer at the address specified by
+      lpBuffer. The lpBuffer parameter is a pointer to an LPTSTR; you
+      must cast the pointer to an LPTSTR (for example,
+      (LPTSTR)(address-of)lpBuffer). The nSize parameter specifies the
+      minimum number of TCHARs to allocate for an output message
+      buffer. The caller should use the LocalFree function to free the
+      buffer when it is no longer needed.  If the length of the
+      formatted message exceeds 128K bytes, then FormatMessage will
+      fail and a subsequent call to GetLastError will return
+      ERROR_MORE_DATA.
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI FormatMessage (</ll>
+      <ld>_In_ DWORD dwFlags,</ld>
+      <ld>_In_opt_ LPCVOID lpSource,</ld>
+      <ld>_In_ DWORD dwMessageId,</ld>
+      <ld>_In_ DWORD dwLanguageId,</ld>
+      <ld>_Out_ LPTSTR lpBuffer,</ld>
+      <ld>_In_ DWORD nSize,</ld>
+      <ld>_In_opt_ va_list *Arguments</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwFlags">
+       the formatting options, and how to interpret the lpSource parameter. The 
+       low-order byte of dwFlags specifies how the function handles the line breaks
+       in the output buffer. The low-order byte can also specify the maximum width
+       of a formatted output line.
+     </par>
+     <par name="lpSource">location of the message definition</par>
+     <par name="dwMessageId">message identifier for the requested message</par>
+     <par name="dwLanguageId">language identifier for the requested message</par>
+     <par name="lpBuffer">
+       pointer to a buffer that receives the null-terminated string that specifies the
+       formatted message. If dwFlags includes FORMAT_MESSAGE_ALLOCATE_BUFFER, the
+       function allocates a buffer using the LocalAlloc function, and places the
+       pointer to the buffer at the address specified in lpBuffer. This buffer cannot
+       be larget than 64K bytes
+     </par>
+     <par name="nSize">
+       If the FORMAT_MESSAGE_ALLOCATE_BUFFER flag is not set, this parameter specifies
+       the size of the output buffer, in TCHARs. Otherwise, this parameter specifies
+       the minimum number of TCHARs to allocate for an output buffer. The output
+       buffer ccannot be larger than 64K bytes
+     </par>
+     <par name="Arguments">
+       array of values that are used as insert values in the formatted message. A %1
+       in the format string indicates the first value in the Arguments array, a %2
+       indicates the second argument, and so on.
+     </par>
+     <return>
+       <rc cond="success">
+	 the number of TCHARs stored in the output buffer, excluding
+	 the terminating null-character
+       </rc>
+       <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="FormatMessage">
+     <returntype>DWORD</returntype>
+     <par loc="stack" name="dwFlags" io="r" roles="none" nr="1">
+       <rep type="enum" name="format_message_flags"/>
+       <type>DWORD</type>
+       <pre><enum-value name="format_message_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" name="lpSource" io="r" rep="hex" nr="2">
+      <type>LPCVOID</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-bytes:message definition"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwMessageId" io="r" roles="none" nr="3">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" name="dwLanguageId" io="r" roles="none" nr="4">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpBuffer" io="w" rep="hex" nr="5">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-string:formatted data"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nSize" io="r" nr="6">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:buffersize" rn="FormatMessage"/>
+      </roles>
+    </par>
+    <par loc="stack" name="Arguments" io="r" roles="none" nr="7">
+      <type>va_list</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="outputs"  desc="formats a message string"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	<type>TCHAR</type>
+        <ci>lpBuffer</ci>
+        <apply><indexsize/><ci>nSize</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

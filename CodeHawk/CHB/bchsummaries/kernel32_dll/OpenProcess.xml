@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:33:37"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="OpenProcess">
+   <documentation>
+    <desc>Opens an existing local process object.</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI OpenProcess(</ll>
+      <ld>_In_  DWORD dwDesiredAccess,</ld>
+      <ld>_In_  BOOL bInheritHandle,</ld>
+      <ld>_In_  DWORD dwProcessId</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwDesiredAccess">The access to the process object.</par>
+     <par name="bInheritHandle">
+       If this value is TRUE, processes created by this process will inherit the handle.
+     </par>
+     <par name="dwProcessId">The identifier of the local process to be opened.</par>
+     <return>
+      <rc cond="success">Open handle to the specified process</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OpenProcess">
+     <returntype>HANDLE</returntype>
+     <par loc="stack" io="r" name="dwDesiredAccess" roles="none" nr="1">
+       <rep type="enum" name="process_security_access_rights_flags"/>
+       <type>DWORD</type>
+       <pre><enum-value name="process_security_access_rights_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" io="r" name="bInheritHandle" nr="2" roles="none">
+      <type>BOOL</type>
+    </par>
+    <par loc="stack" io="r" name="dwProcessId" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="ioc:process" rn="id:process"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="opens an existing local process"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

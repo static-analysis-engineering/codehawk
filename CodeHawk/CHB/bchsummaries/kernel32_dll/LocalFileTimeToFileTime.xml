@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/02/2015 13:15:07"/>
+  <libfun lib="kernel32" name="LocalFileTimeToFileTime">
+   <documentation>
+    <desc>
+      Converts a local file time to a file time based on the Coordinated 
+      Universal Time (UTC).
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI LocalFileTimeToFileTime(</ll>
+      <ld>_In_   const FILETIME *lpLocalFileTime</ld>
+      <ld>_Out_  LPFILETIME lpFileTime</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpLocalFileTime">
+       A pointer to a FILETIME structure that specifies the local file time 
+       to be converted into a UTC-based file time.
+     </par>
+     <par name="lpFileTime">
+       A pointer to a FILETIME structure to receive the converted UTC-based 
+       file time. This parameter cannot be the same as the lpLocalFileTime 
+       parameter.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="LocalFileTimeToFileTime">
+    <par loc="stack" io="r" name="lpLocalFileTime" nr="1">
+     <type><ptr>FILETIME</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-struct:FILETIME"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpFileTime" nr="2">
+     <type><ptr>FILETIME</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:FILETIME" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="converts a local time to a UTC"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

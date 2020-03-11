@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:04:14"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CreateSemaphore">
+   <documentation>
+    <desc>Creates or opens a named or unnamed semaphore object.</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI CreateSemaphoreA(</ll>
+      <ld>_In_opt_  LPSECURITY_ATTRIBUTES lpSemaphoreAttributes </ld>
+      <ld>_In_      LONG lInitialCount </ld>
+      <ld>_In_      LONG lMaximumCount </ld>
+      <ld>_In_opt_  LPCTSTR lpName </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="lpSemaphoreAttributes">
+       A pointer to a SECURITY_ATTRIBUTES structure. If this parameter is
+       NULL, the handle cannot be inherited by child processes.
+     </par>
+     <par name="lInitialCount">
+       The initial count for the semaphore object. This value must be greater 
+       than or equal to zero and less than or equal to lMaximumCount.
+     </par>
+     <par name="lMaximumCount">
+       The maximum count for the semaphore object. This value must be greater 
+       than zero.
+     </par>
+     <par name="lpName">
+       The name of the semaphore object. The name is limited to MAX_PATH
+       characters. Name comparison is case sensitive.
+
+       If lpName matches the name of an existing named semaphore object, this 
+       function requests the SEMAPHORE_ALL_ACCESS access right. In this case, 
+       the lInitialCount and lMaximumCount parameters are ignored because 
+       they have already been set by the creating process. If the
+       lpSemaphoreAttributes parameter is not NULL, it determines whether 
+       the handle can be inherited, but its security-descriptor member is 
+       ignored.
+
+	If lpName is NULL, the semaphore object is created without a name.
+	</par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CreateSemaphore">
+    <return>HANDLE</return>
+    <par loc="stack" name="lpSemaphoreAttributes" rep="hex" io="r" roles="none" nr="1">
+      <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="lInitialCount" nr="2">
+     <type>LONG</type>
+     <pre><non-negative/></pre>
+     <roles>
+        <role rt="size:count" rn="semaphone initial value"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lMaximumCount" nr="3">
+     <type>LONG</type>
+     <roles>
+        <role rt="size:count" rn="semaphore maximum count"/>
+     </roles>
+     <pre><positive/></pre>
+    </par>
+    <par loc="stack" name="lpName" io="r" nr="4" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:synchronization" rn="name:semaphore"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization" desc="creates a semaphore"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply><leq/><ci>lInitialCount</ci><ci>lMaximumCount</ci></apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

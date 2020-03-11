@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/02/2015 23:20:51"/>
+  <libfun lib="kernel32" name="GlobalDeleteAtom">
+   <documentation>
+    <desc>
+      Decrements the reference count of a global string atom. If the atom's 
+      reference count reaches zero, GlobalDeleteAtom removes the string 
+      associated with the atom from the global atom table
+    </desc>
+    <apidoc>
+     <pt>ATOM WINAPI GlobalDeleteAtom (_In_ ATOM nAtom)</pt>
+     <par name="nAtom">The atom and character string to be deleted</par>
+     <return>0</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GlobalDeleteAtom">
+    <par loc="stack" io="r" name="nAtom" nr="1">
+     <type>ATOM</type>
+     <roles>
+      <role rt="ioc:system" rn="atom" />
+     </roles>
+    </par>
+    <returntype>ATOM</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="deletes a global string atom"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

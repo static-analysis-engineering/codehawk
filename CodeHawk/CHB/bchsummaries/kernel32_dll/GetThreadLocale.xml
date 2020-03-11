@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/16/2015 09:05:23"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetThreadLocale">
+   <documentation>
+    <desc>Returns the locale identifier of the current locale for the calling thread.</desc>
+    <apidoc>
+     <pt>LCID GetThreadLocale ( )</pt>
+     <return>
+      <rc cond="success">
+      Returns the locale identifier of the locale associated with the current thread.</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetThreadLocale">
+    <returnbtype tname="LCID" ttag="tnamed"/>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves the thread locale id"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

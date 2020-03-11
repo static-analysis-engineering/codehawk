@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="04/15/2015 16:38:45"/>
+  <libfun lib="advapi32" name="CryptExportKey">
+   <documentation>
+    <desc>
+      The CryptExportKey function exports a cryptographic key or a key pair from 
+      a cryptographic service provider (CSP) in a secure manner.
+      A handle to the key to be exported is passed to the function, and the 
+      function returns a key BLOB. This key BLOB can be sent over a nonsecure 
+      transport or stored in a nonsecure storage location. This function can 
+      export an Schannel session key, regular session key, public key, or 
+      public/private key pair. The key BLOB to export is useless until the 
+      intended recipient uses the CryptImportKey function on it to import 
+      the key or key pair into a recipient's CSP.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CryptExportKey(</ll>
+      <ld>_In_     HCRYPTKEY hKey</ld>
+      <ld>_In_     HCRYPTKEY hExpKey</ld>
+      <ld>_In_     DWORD dwBlobType</ld>
+      <ld>_In_     DWORD dwFlags</ld>
+      <ld>_Out_    BYTE *pbData</ld>
+      <ld>_Inout_  DWORD *pdwDataLen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">A handle to the key to be exported.</par>
+     <par name="hExpKey">
+       A handle to a cryptographic key of the destination user. The key data 
+       within the exported key BLOB is encrypted using this key. This ensures 
+       that only the destination user is able to make use of the key BLOB. 
+       Both hExpKey and hKey must come from the same CSP.
+     </par>
+     <par name="dwBlobType">
+       Specifies the type of key BLOB to be exported in pbData.
+     </par>
+     <par name="dwFlags">
+       Specifies additional options for the function.
+     </par>
+     <par name="pbData">
+       A pointer to a buffer that receives the key BLOB data. The format of 
+       this BLOB varies depending on the BLOB type requested in the dwBlobType 
+       parameter. 
+       If this parameter is NULL, the required buffer size is placed in the 
+       value pointed to by the pdwDataLen parameter. 
+     </par>
+     <par name="pdwDataLen">
+       A pointer to a DWORD value that, on entry, contains the size, in bytes,
+       of the buffer pointed to by the pbData parameter. When the function 
+       returns, this value contains the number of bytes stored in the buffer.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="CryptExportKey">
+    <par loc="stack" io="r" name="hKey" rep="hex" nr="1">
+     <type>HCRYPTKEY</type>
+     <roles>
+       <role rt="ioc:crypto" rn="handle:cryptographic key"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="hExpKey" rep="hex" nr="2">
+     <type>HCRYPTKEY</type>
+     <roles>
+       <role rt="ioc:crypto" rn="handle:cryptographic key"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwBlobType" roles="none" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="ioc:crypto" rn="type:key blob"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="pbData" rep="hex" nr="5">
+     <type><ptr>BYTE</ptr></type>
+     <roles>
+       <role rt="ioc:crypto" rn="infox:key blob data"/>
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="pdwDataLen" nr="6">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+       <role rt="size:buffersize" rn="CryptExportKey"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="crypto" desc="exports a cryptographic key"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>BYTE</type>
+	    <ci>pbData</ci>
+	    <apply><addressed-value/><ci>pdwDataLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write exsrc="cryptographic service provider"/>
+	    <type>BYTE</type>
+	    <ci>pbData</ci>
+	    <apply><addressed-value/><ci>pdwDataLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

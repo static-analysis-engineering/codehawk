@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:33:09"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetFileAttributes">
+   <documentation>
+    <desc>Sets the attributes for a file or directory.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetFileAttributes(</ll>
+      <ld>_In_  LPCTSTR lpFileName</ld>
+      <ld>_In_  DWORD dwFileAttributes</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpFileName">
+       The name of the file whose attributes are to be set.
+
+       In the ANSI version of this function, the name is limited to MAX_PATH 
+       characters. To extend this limit to 32,767 wide characters, call the 
+       Unicode version of the function and prepend &quot;\\?\&quot; to the path.
+     </par>
+     <par name="dwFileAttributes">The file attributes to set for the file.</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetFileAttributes">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="lpFileName" io="r" nr="1">
+       <type>LPCTSTR</type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	<role rt="ioc:filesystem" rn="name:file"/>
+	<role rt="rep:hex" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwFileAttributes" io="r" nr="2">
+      <type>DWORD</type>
+      <pre><enum-value name="file_attributes_flags" flags="true"/></pre>
+      <roles>
+	<role rt="rep:enum" rn="file_attributes_flags"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"  desc="sets file attributes">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

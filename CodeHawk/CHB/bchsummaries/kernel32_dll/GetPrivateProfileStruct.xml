@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/06/2015 21:54:45"/>
+  <libfun lib="kernel32" name="GetPrivateProfileStruct">
+   <documentation>
+    <desc> 
+      Retrieves the data associated with a key in the specified section of an 
+      initialization file. As it retrieves the data, the function calculates a 
+      checksum and compares it with the checksum calculated by the 
+      WritePrivateProfileStruct function when the data was added to the file
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetPrivateProfileStruct(</ll>
+      <ld>_In_   LPCTSTR lpszSection</ld>
+      <ld>_In_   LPCTSTR lpszKey</ld>
+      <ld>_Out_  LPVOID lpStruct</ld>
+      <ld>_In_   UINT uSizeStruct</ld>
+      <ld>_In_   LPCTSTR szFile</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszSection">The name of the section in the initialization file</par>
+     <par name="lpszKey">The name of the key whose data is to be retrieved</par>
+     <par name="lpStruct"> 
+       A pointer to the buffer that receives the data associated with the file, 
+       section, and key names
+     </par>
+     <par name="uSizeStruct">
+       The size of the buffer pointed to by the lpStruct parameter, in bytes 
+     </par>
+     <par name="szFile">
+       The name of the initialization file. If this parameter does not contain a
+       full path to the file, the system searches for the file in the Windows directory.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="GetPrivateProfileStruct">
+    <par loc="stack" io="r" name="lpszSection" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:system" rn="name:initfile section"/>
+	<role rt="rep:hex" rn="name:initfile section"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszKey" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:system" rn="name:initfile key"/>
+	<role rt="rep:hex" rn="name:initfile key"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpStruct" nr="3">
+     <type>LPVOID</type>
+     <roles>
+        <role rt="ioc:system" rn="infox:initfile keys and values"/>
+	<role rt="rep:hex" rn="infox:initfile keys and values"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="uSizeStruct" nr="4">
+     <type>UINT</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetPrivateProfileStruct"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="szFile" nr="5">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:file"/>
+	<role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" 
+                  desc="retrieves information from the initialization file"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpStruct</ci>
+	    <ci>uSizeStruct</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>lpStruct</ci>
+	    <ci>uSizeStruct</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

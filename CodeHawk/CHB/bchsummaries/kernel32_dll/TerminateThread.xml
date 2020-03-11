@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="TerminateThread">
+   <documentation>
+     <remarks>
+       TerminateThread is a dangerous function that should only be used in the 
+       most extreme cases. You should call TerminateThread only if you know 
+       exactly what the target thread is doing, and you control all of the 
+       code that the target thread could possibly be running at the time of 
+       the termination. For example, TerminateThread can result in the 
+       following problems:
+       If the target thread owns a critical section, the critical section 
+       will not be released.
+       If the target thread is allocating memory from the heap, the heap 
+       lock will not be released.
+       If the target thread is executing certain kernel32 calls when it is 
+       terminated, the kernel32 state for the thread's process could be 
+       inconsistent.
+       If the target thread is manipulating the global state of a shared DLL,
+       the state of the DLL could be destroyed, affecting other users of the DLL.
+       A thread cannot protect itself against TerminateThread, other than by 
+       controlling access to its handles. The thread handle returned by the 
+       CreateThread and CreateProcess functions has THREAD_TERMINATE access, 
+       so any caller holding one of these handles can terminate your thread.
+       If the target thread is the last thread of a process when this function 
+       is called, the thread's process is also terminated.
+       The state of the thread object becomes signaled, releasing any other 
+       threads that had been waiting for the thread to terminate. The thread's
+       termination status changes from STILL_ACTIVE to the value of the 
+       dwExitCode parameter.
+       Terminating a thread does not necessarily remove the thread object 
+       from the system. A thread object is deleted when the last thread 
+       handle is closed.
+     </remarks>
+    <desc>terminates a thread</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI TerminateThread (</ll>
+      <ld>_Inout_ HANDLE hThread,</ld>
+      <ld>_In_    DWORD dwExitCode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hThread">handle to the thread to be terminated</par>
+     <par name="dwExitCode">exit code for the thread</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="TerminateThread">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hThread" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:thread"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwExitCode" nr="2">
+      <type>DWORD</type>
+      <roles>
+         <role rt="ioc:process" rn="exit code"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="terminates thread"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/29/2015 21:43:22"/>
+  <libfun lib="user32" name="GetLastInputInfo">
+   <documentation>
+    <desc>Retrieves the time of the last input event</desc>
+    <apidoc>
+     <pt>BOOL WINAPI GetLastInputInfo (_Out_ PLASTINPUTINFO plii)</pt>
+     <par name="plii">
+       A pointer to a LASTINPUTINFO structure that receives the time of 
+       the last input event
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetLastInputInfo">
+    <par loc="stack" io="w" name="plii" nr="1">
+     <type><ptr>LASTINPUTINFO</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:LASTINPUTINFO" />
+     </roles>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" desc="retrieves the time of the last input event">
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

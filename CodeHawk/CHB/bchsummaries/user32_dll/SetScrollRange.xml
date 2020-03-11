@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SetScrollRange.xml" time="2016-06-19 22:40:45.183878"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="SetScrollRange">
+    <documentation>
+      <desc> 
+         sets the minimum and maximum scroll box positions for the specified scroll bar.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL SetScrollRange(</ll>
+          <ld>_In_ HWND hWnd</ld>
+          <ld>_In_ int  nBar</ld>
+          <ld>_In_ int  nMinPos</ld>
+          <ld>_In_ int  nMaxPos</ld>
+          <ld>_In_ BOOL bRedraw</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hWnd">
+           Handle to a scroll bar control or a window with a standard
+           scroll bar, depending on the value of the nBar parameter.
+	</par>
+        <par name="nBar">Specifies the scroll bar to be set</par>
+        <par name="nMinPos">Specifies the minimum scrolling position</par>
+        <par name="nMaxPos">Specifies the maximum scrolling position</par>
+        <par name="bRedraw">
+           Specifies whether the scroll bar should be redrawn to
+           reflect the change. If this parameter is TRUE, the scroll
+           bar is redrawn. If it is FALSE, the scroll bar is not
+           redrawn.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="SetScrollRange">
+      <par loc="stack" name="hWnd" io="r" nr="1">
+        <type>HWND</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="ioc:process" rn="handle:window"/>
+        </roles>
+      </par>
+      <par loc="stack" name="nBar" io="r" roles="none" nr="2">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="nMinPos" io="r" nr="3">
+        <type>int</type>
+        <roles>
+           <role rt="size:distance" rn="minimum scroll position"/>
+        </roles>
+      </par>
+      <par loc="stack" name="nMaxPos" io="r" nr="4">
+        <type>int</type>
+        <roles>
+           <role rt="size:distance" rn="maximum scroll position"/>
+        </roles>
+      </par>
+      <par loc="stack" name="bRedraw" io="r" roles="none" nr="5">
+        <type>BOOL</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+                   desc="sets the minimum and maximum scroll positions"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetClipboardData">
+   <documentation>
+    <desc>places data on the clipboard in a specified format</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI SetClipboardData (</ll>
+      <ld>__in     UINT uFormat,</ld>
+      <ld>__in_opt HANDLE hMem</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="uFormat">clipboard format</par>
+     <par name="hMem">handle to the data in the specified format; can be NULL</par>
+     <return>
+      <rc cond="success">handle to the data</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetClipboardData">
+     <returntype>HANDLE</returntype>
+    <par loc="stack" name="uFormat" roles="none" nr="1">
+     <rep type="enum" name="clipboard_formats_constants"/>
+     <type>UINT</type>
+     <pre><enum-value name="clipboard_formats_constants"/></pre>
+    </par>
+    <par loc="stack" name="hMem" io="r" nr="2">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:data"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="places data on the clipboard"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

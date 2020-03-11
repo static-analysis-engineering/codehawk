@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="HeapQueryInformation">
+   <documentation>
+    <desc>retrieves information about the specified heap</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI HeapQueryInformation (</ll>
+      <ld>__in_opt  HANDLE HeapHandle,</ld>
+      <ld>__in      HEAP_INFORMATION_CLASS HeapInformationClass,</ld>
+      <ld>__out     PVOID HeapInformation,</ld>
+      <ld>__in      SIZE_T HeapInformationLength,</ld>
+      <ld>__out_opt PSIZE_T ReturnLength</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="HeapHandle">handle to the heap whose information is to be retrieved</par>
+     <par name="HeapInformationClass">
+       class of information to be retrieved; can be 0, 1 or 2
+     </par>
+     <par name="HeapInformation">pointer to a buffer that receives the heap information</par>
+     <par name="HeapInformationLength">
+       size of the heap information being queried, in bytes
+     </par>
+     <par name="ReturnLength">
+       pointer to a variable that receives the length of data written to the HeapInformation
+       buffer. If the buffer is too small, the function fails and ReturnLength specifies the
+       minimum size required for the buffer
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="HeapQueryInformation">
+     <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="HeapHandle" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:heap" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="HeapInformationClass" roles="none" nr="2">
+      <type>HEAP_INFORMATION_CLASS</type>
+      <rep type="enum" name="heap_information_class"/>
+    </par>
+    <par loc="stack" io="w" name="HeapInformation" nr="3" rep="hex">
+     <type><ptr>void</ptr></type>
+     <roles>
+      <role rt="ioc:process" rn="infox:heap information" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="HeapInformationLength" nr="4">
+      <type>SIZE_T</type>
+     <roles>
+      <role rt="size:buffersize" rn="HeapQueryInformation" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="ReturnLength" nr="5" rep="hex">
+     <type><ptr>SIZE_T</ptr></type>
+     <roles>
+      <role rt="size:buffersize" rn="HeapQueryInformation" />
+     </roles>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves information about the heap"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>BYTE</type>
+	    <ci>HeapInformation</ci>
+	    <ci>HeapInformationLength</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>BYTE</type>
+	    <ci>HeapInformation</ci>
+	    <ci>HeapInformationLength</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

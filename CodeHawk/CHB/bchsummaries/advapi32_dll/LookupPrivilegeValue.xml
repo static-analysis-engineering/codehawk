@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/03/2015 13:29:37"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="LookupPrivilegeValue">
+   <documentation>
+    <desc>
+      retrieves the locally unique identifier (LUID) used a specified system
+      to locally represent the specified privilege name
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI LookupPrivilegeValue(</ll>
+      <ld>_In_opt_ LPCTSTR lpSystemName,</ld>
+      <ld>_In_     LPCTSTR lpName,</ld>
+      <ld>_Out_    PLUID lpLuid</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpSystemName">
+       pointer to a null-terminated string that specifies the name of the system
+      on which the privilege name is retrieved. If a null string is specified, it
+      attempts to find the privilege name on the local system.
+    </par>
+     <par name="lpName">
+       pointer to a null-terminated string that specifies the name of the privilege,
+       as defined in Winnt.h header file.
+    </par>
+     <par name="lpLuid">
+       pointer to a variable that receives the LUID by which the privilege is known
+       on the system specified by lpSystemName.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="LookupPrivilegeValue">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="lpSystemName" nr="1" rep="hex">
+       <type>LPCTSTR</type>
+       <pre><deref-read-null-nt/></pre>
+       <roles>
+	 <role rt="ioc:system" rn="name:system"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r"  name="lpName" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:system" rn="name:privilege"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpLuid" nr="3" rep="hex">
+      <type><ptr>LUID</ptr></type>
+      <roles>
+	<role rt="ioc:system" rn="infox:privilege id"/>
+      </roles>
+      <pre><deref-write/></pre>
+     <sideeffects>
+       <block-write/>
+     </sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves the identifier for a privilege name"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

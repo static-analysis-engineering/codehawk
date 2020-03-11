@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/01/2015 15:26:11"/>
+  <libfun lib="user32" name="SendMessageTimeout">
+   <documentation>
+    <desc>Sends the specified message to one or more windows</desc>
+    <apidoc>
+     <pt>
+      <ll>LRESULT WINAPI SendMessageTimeout(</ll>
+      <ld>_In_      HWND       hWnd</ld>
+      <ld>_In_      UINT       Msg</ld>
+      <ld>_In_      WPARAM     wParam</ld>
+      <ld>_In_      LPARAM     lParam</ld>
+      <ld>_In_      UINT       fuFlags</ld>
+      <ld>_In_      UINT       uTimeout</ld>
+      <ld>_Out_opt_ PDWORD_PTR lpdwResult</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       A handle to the window whose window procedure will receive the message.
+       If this parameter is HWND_BROADCAST ((HWND)0xffff), the message is sent
+       to all top-level windows in the system, including disabled or invisible 
+       unowned windows. The function does not return until each window has timed
+       out. Therefore, the total wait time can be up to the value of uTimeout
+       multiplied by the number of top-level window
+     </par>
+     <par name="Msg">The message to be sent.</par>
+     <par name="wParam">Any additional message-specific information</par>
+     <par name="lParam">Any additional message-specific information</par>
+     <par name="fuFlags">The behavior of this function</par>
+     <par name="uTimeout">
+       The duration of the time-out period, in milliseconds. If the message is 
+       a broadcast message, each window can use the full time-out period
+     </par>
+     <par name="lpdwResult">
+       The result of the message processing. The value of this parameter depends
+       on the message that is specified.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="SendMessageTimeout">
+    <par loc="stack" name="hWnd" io="r" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="Msg" io="r" nr="2">
+     <type>UINT</type>
+     <roles>
+       <role rt="ioc:process" rn="id:message"/>
+     </roles>
+    </par>
+    <par loc="stack" name="wParam" io="r" nr="3">
+     <type>WPARAM</type>
+     <roles>
+       <role rt="ioc:process" rn="msg:wparam"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lParam" io="r" nr="4">
+     <type>LPARAM</type>
+     <roles>
+       <role rt="ioc:process" rn="msg:lparam"/>
+     </roles>
+    </par>
+    <par loc="stack" name="fuFlags" roles="none" nr="5">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="uTimeout" io="r" nr="6">
+      <type>UINT</type>
+      <roles>
+	<role rt="ioc:process" rn="timeout"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpdwResult" io="w" roles="none" nr="7">
+     <type><ptr>DWORD_PTR</ptr></type>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>LRESULT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="sends a message to a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

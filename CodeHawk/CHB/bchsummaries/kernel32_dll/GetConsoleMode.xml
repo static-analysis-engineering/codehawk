@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetConsoleMode">
+   <documentation>
+    <desc>
+      retrieves the current input mode of a console&apos;s input buffer or the
+      current output mode of a console screen buffer
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetConsoleMode (</ll>
+      <ld>__in  HANDLE hConsoleHandle,</ld>
+      <ld>__out LPDWORD lpMode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hConsoleHandle">
+       handle to the console input buffer or screen buffer
+     </par>
+     <par name="lpMode">
+       pointer to a variable that receives the current mode of the specified buffer
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetConsoleMode">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hConsoleHandle" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:console"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpMode" rep="hex" nr="2">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:system" rn="infox:console input mode"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves the I/O mode of the console"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

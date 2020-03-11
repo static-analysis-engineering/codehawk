@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="InsertMenuItemA.xml" time="2016-03-05 18:03:49.540393"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="InsertMenuItemA" lib="user32">
+    <refer-to char-type="ansi" name="InsertMenuItem"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

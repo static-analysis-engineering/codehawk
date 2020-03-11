@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="LoadIcon">
+   <documentation>
+    <desc>
+      loads the specified icon resource from the executable file associated with an
+      application instance
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HICON WINAPI LoadIcon (</ll>
+      <ld>__in_opt HINSTANCE hInstance,</ld>
+      <ld>__in     LPCTSTR lpIconName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hInstance">
+       handle to the instance of the module whose executable file contains the icon
+       to be loaded; can be NULL
+     </par>
+     <par name="lpIconName">
+       name of the icon resource to be loaded, or the resource identifier in the 
+       low-order word and zero in the high-order word
+     </par>
+     <return>
+      <rc cond="success">handle the newly loaded icon</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="LoadIcon">
+     <returntype>HICON</returntype>
+     <par loc="stack" name="hInstance" io="r" nr="1">
+       <type>HINSTANCE</type>
+       <pre><deref-read-null/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:module"/>
+       </roles>
+     </par>
+    <par loc="stack" name="lpIconName" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="name:icon"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="loads an icon from an executable file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

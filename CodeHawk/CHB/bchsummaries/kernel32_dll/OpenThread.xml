@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/28/2015 23:59:14"/>
+  <libfun lib="kernel32" name="OpenThread">
+   <documentation>
+    <desc>Opens an existing thread object</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI OpenThread(</ll>
+      <ld>_In_ DWORD dwDesiredAccess</ld>
+      <ld>_In_ BOOL  bInheritHandle</ld>
+      <ld>_In_ DWORD dwThreadId</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwDesiredAccess">
+       The access to the thread object. This access right is checked against
+       the security descriptor for the thread. This parameter can be one or
+       more of the thread access rights.
+       If the caller has enabled the SeDebugPrivilege privilege, the requested
+       access is granted regardless of the contents of the security descriptor.
+     </par>
+     <par name="bInheritHandle">
+       If this value is TRUE, processes created by this process will inherit 
+       the handle. Otherwise, the processes do not inherit this handle.
+     </par>
+     <par name="dwThreadId">The identifier of the thread to be opened</par>
+     <return>
+      <rc cond="success">
+	an open handle to the specified thread
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OpenThread">
+    <par loc="stack" io="r" name="dwDesiredAccess" roles="none" nr="1">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="bInheritHandle" roles="none" nr="2">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" io="r" name="dwThreadId" nr="3">
+     <type>dwThreadId</type>
+     <roles>
+      <role rt="ioc:process" rn="id:thread" />
+     </roles>
+    </par>
+    <returntype>HANDLE</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="process"
+		 desc="opens a thread object">
+      </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

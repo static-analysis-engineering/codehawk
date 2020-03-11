@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:39:26"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="UpdateResource">
+   <documentation>
+    <desc>
+      Adds, deletes, or replaces a resource in a portable executable (PE) file.
+      There are some restrictions on resource updates in files that contain
+      Resource Configuration (RC Config) data: language-neutral (LN) files 
+      and language-specific resource (.mui) files.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI UpdateResource(</ll>
+      <ld>_In_      HANDLE hUpdate</ld>
+      <ld>_In_      LPCTSTR lpType</ld>
+      <ld>_In_      LPCTSTR lpName</ld>
+      <ld>_In_      WORD wLanguage</ld>
+      <ld>_In_opt_  LPVOID lpData</ld>
+      <ld>_In_      DWORD cbData</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hUpdate">
+       A module handle returned by the BeginUpdateResource function, referencing 
+       the file to be updated. 
+     </par>
+     <par name="lpType">
+       The resource type to be updated. Alternatively, rather than a pointer,
+       this parameter can be MAKEINTRESOURCE(ID), where ID is an integer value 
+       representing a predefined resource type. If the first character of the 
+       string is a pound sign (#), then the remaining characters represent a 
+       decimal number that specifies the integer identifier of the resource type. 
+       For example, the string &quot;#258&quot; represents the identifier 258. 
+     </par>
+     <par name="lpName">
+       The name of the resource to be updated. Alternatively, rather than a pointer,
+       this parameter can be MAKEINTRESOURCE(ID), where ID is a resource ID. When
+       creating a new resource do not use a string that begins with a &apos;#&apos;
+       character for this parameter.
+     </par>
+     <par name="wLanguage">
+       The language identifier of the resource to be updated. For a list of the 
+       primary language identifiers and sublanguage identifiers that make up a 
+       language identifier, see the MAKELANGID macro. 
+     </par>
+     <par name="lpData">
+       The resource data to be inserted into the file indicated by hUpdate. If
+       the resource is one of the predefined types, the data must be valid and 
+       properly aligned. Note that this is the raw binary data to be stored in 
+       the file indicated by hUpdate, not the data provided by LoadIcon, 
+       LoadString, or other resource-specific load functions. All data containing 
+       strings or text must be in Unicode format. lpData must not point to ANSI data.
+
+       If lpData is NULL and cbData is 0, the specified resource is deleted from
+       the file indicated by hUpdate.
+     </par>
+     <par name="cbData">The size, in bytes, of the resource data at lpData. </par>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="UpdateResource">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hUpdate" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:module" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpType" nr="2">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:process" rn="type:resource" />
+     </roles>
+      <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpName" nr="3">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:process" rn="name:resource" />
+     </roles>
+      <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="wLanguage" roles="none" nr="4">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="lpData" nr="5" rep="hex">
+     <type><ptr>void</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:resource data" />
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="cbData" nr="6">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:count" rn="UpdateResource" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="adds, deletes, or replaces a resource in a PE file"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <type>byte</type>
+	    <ci>lpData</ci>
+	    <ci>cbData</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

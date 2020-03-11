@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-11-27 11:07:40"/>
+  <libfun lib="user32" name="TranslateAccelerator">
+    <documentation>
+      <desc>Processes accelerator keys for menu commands</desc>
+      <apidoc>
+        <pt>
+          <ll>int TranslateAccelerator(</ll>
+          <ld>HWND hWnd</ld>
+          <ld>HACCEL hAccTable</ld>
+          <ld>LPMSG lpMsg</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hWnd">
+	  A handle to the window whose messages are to be translated.
+	</par>
+        <par name="hAccTable">
+	  A handle to the accelerator table. The accelerator table
+	  must have been loaded by a call to the LoadAccelerators
+	  function or created by a call to the CreateAcceleratorTable
+	  function.
+	</par>
+        <par name="lpMsg">
+	  A pointer to an MSG structure that contains message
+	  information retrieved from the calling thread's message
+	  queue using the GetMessage or PeekMessage function.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="TranslateAccelerator">
+      <par loc="stack" name="hWnd" nr="1">
+        <type>HWND</type>
+	<pre><deref-read/></pre>
+	<roles>
+          <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <par loc="stack" name="hAccTable" nr="2">
+        <type>HACCEL</type>
+	<roles>
+          <role rt="ioc:process" rn="handle:accelerator table" />
+	</roles>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="lpMsg" nr="3">
+       <type><ptr>MSG</ptr></type>
+       <pre><deref-write/></pre>
+       <sideeffects><block-write/></sideeffects>
+       <roles>
+         <role rt="ioc:memops" rn="dst-struct:msg"/>
+         <role rt="rep:hex" rn="dst-struct"/>
+       </roles>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+    <io-actions>
+      <io-action
+	  cat="process"
+	  desc="retrieves a message from the calling thread message queue"/>
+    </io-actions>
+      <preconditions/>
+      <postconditions>
+	<nonzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

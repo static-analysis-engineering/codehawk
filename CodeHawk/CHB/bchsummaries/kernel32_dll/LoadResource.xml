@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:23:30"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="LoadResource">
+   <documentation>
+    <desc>
+      Retrieves a handle that can be used to obtain a pointer to the first
+      byte of the specified resource in memory.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HGLOBAL WINAPI LoadResource(</ll>
+      <ld>_In_opt_  HMODULE hModule</ld>
+      <ld>_In_      HRSRC hResInfo</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">handle to the data associated with the resource</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="hModule">
+       A handle to the module whose executable file contains the resource. 
+       If hModule is NULL, the system loads the resource from the module that 
+       was used to create the current process. 
+     </par>
+     <par name="hResInfo">
+       A handle to the resource to be loaded. This handle is returned by the
+       FindResource or FindResourceEx function. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="LoadResource">
+     <returntype>HGLOBAL</returntype>
+     <par loc="stack" name="hModule" io="r" nr="1">
+       <type>HMODULE</type>
+       <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:module"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hResInfo" io="r" nr="2">
+      <type>HRSRC</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:resource"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves a handle to a resource in memory">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

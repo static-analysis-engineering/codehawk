@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="09/07/2015 01:44:59"/>
+  <libfun lib="user32" name="CharToOemBuffW">
+   <refer-to char-type="unicode" name="CharToOemBuff"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

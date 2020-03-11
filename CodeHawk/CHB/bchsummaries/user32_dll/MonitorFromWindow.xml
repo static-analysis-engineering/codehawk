@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 15:32:26"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="MonitorFromWindow">
+   <documentation>
+    <desc>retrieves a handle to the display monitor that has the largest area
+     of intersection with the bounding rectangle of a specified window
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HMONITOR MonitorFromWindow(</ll>
+      <ld>_In_ HWND hwnd,</ld>
+      <ld>_In_ DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>handle to display monitor</return>
+     <par name="hwnd">handle to the window of interest</par>
+     <par name="dwFlags">determines the return value if the window does not intersect with any
+      display monitor
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="MonitorFromWindow">
+    <returntype>HMONITOR</returntype>
+    <par loc="stack" name="hwnd" io="r" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwFlags" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+    <external-effects/>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

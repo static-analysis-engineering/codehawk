@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 02:54:27"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CryptGetUserKey">
+   <documentation>
+    <desc>
+      retrieves a handle of one of a user&apos;s 
+      two public/private key pairs. This function is used only by the owner of
+      the public/private key pairs and only when the handle of a cryptographic 
+      service provider (CSP) and its associated key container is available
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CryptGetUserKey(</ll>
+      <ld>_In_   HCRYPTPROV hProv</ld>
+      <ld>_In_   DWORD dwKeySpec</ld>
+      <ld>_Out_  HCRYPTKEY *phUserKey</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hProv">
+       HCRYPTPROV handle of a cryptographic service provider (CSP) created by 
+       a call to CryptAcquireContext.
+     </par>
+     <par name="dwKeySpec">
+       Identifies the private key to use from the key container. It can be 
+       AT_KEYEXCHANGE or AT_SIGNATURE. 
+     </par>
+     <par name="phUserKey">
+       A pointer to the HCRYPTKEY handle of the retrieved keys. When you have 
+       finished using the key, delete the handle by calling the CryptDestroyKey 
+       function.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CryptGetUserKey">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hProv" rep="hex" nr="1">
+      <type>HCRYPTPROV</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:crypto" rn="handle:CSP"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwKeySpec" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="phUserKey" rep="hex" nr="3">
+      <type><ptr>HCRTYPTKEY</ptr></type>
+      <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:crypto" rn="infox:cryptographic key"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="crypto" desc="retrieves handle to public/private key pair"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:21:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetMenuItemInfo">
+   <documentation>
+    <desc>Changes information about a menu item.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetMenuItemInfoA(</ll>
+      <ld>_In_  HMENU hMenu </ld>
+      <ld>_In_  UINT uItem </ld>
+      <ld>_In_  BOOL fByPosition </ld>
+      <ld>_In_  LPMENUITEMINFO lpmii </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hMenu">A handle to the menu that contains the menu item.  </par>
+     <par name="uItem">
+       The identifier or position of the menu item to change. The meaning of
+       this parameter depends on the value of fByPosition. 
+	</par>
+     <par name="fByPosition">
+       The meaning of uItem. If this parameter is FALSE, uItem is a menu item 
+       identifier. Otherwise, it is a menu item position.
+     </par>
+     <par name="lpmii">
+       A pointer to a MENUITEMINFO structure that contains information about
+       the menu item and specifies which menu item attributes to change. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SetMenuItemInfo">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hMenu" io="r" nr="1">
+      <type>HMENU</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:menu"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uItem" roles="none" nr="2">
+     <btype tname="UINT" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="fByPosition" roles="none" nr="3">
+     <btype tname="BOOL" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="lpmii" nr="4">
+      <type><ptr>MENUITEMINFO</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:memops" rn="src-struct:MENUITEMINFO"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="changes a menu item"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

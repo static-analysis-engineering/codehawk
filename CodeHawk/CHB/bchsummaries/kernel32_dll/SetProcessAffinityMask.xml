@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 14:39:04"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetProcessAffinityMask">
+   <documentation>
+     <remarks>
+       A process affinity mask is a bit vector in which each bit represents a 
+       logical processor on which the threads of the process are allowed to run. 
+       The value of the process affinity mask must be a subset of the system 
+       affinity mask values obtained by the GetProcessAffinityMask function. 
+       A process is only allowed to run on the processors configured into a 
+       system. Therefore, the process affinity mask cannot specify a 1 bit 
+       for a processor when the system affinity mask specifies a 0 bit for 
+       that processor.
+     </remarks>
+    <desc>sets a process affinity mask for the threads of the specified process
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetProcessAffinityMask(</ll>
+      <ld>_In_ HANDLE hProcess,</ld>
+      <ld>_In_ DWORD_PTR dwProcessAffinityMask</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hProcess">
+       handle to the process whose affinity mask is to be set. This
+       handle must have the PROCESS_SET_INFORMATION access right.
+    </par>
+     <par name="dwProcessAffinityMask">
+       the affinity massk for the threads of the process
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetProcessAffinityMask">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hProcess" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:process" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwProcessAffinityMask" roles="none" nr="2">
+      <rep type="enum" name="thread_affinity_mask"/>
+      <type>DWORD_PTR</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="sets process affinity mask"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="InitializeAcl.xml" time="2016-06-22 13:22:37.053913"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="InitializeAcl">
+    <documentation>
+      <desc>initializes a new ACL structure</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI InitializeAcl(</ll>
+          <ld>_Out_ PACL  pAcl</ld>
+          <ld>_In_  DWORD nAclLength</ld>
+          <ld>_In_  DWORD dwAclRevision</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pAcl">
+	  A pointer to an ACL structure to be initialized by this
+	  function. Allocate memory for pAcl before calling this
+	  function.
+	</par>
+        <par name="nAclLength">
+	  The length, in bytes, of the buffer pointed to by the pAcl
+	  parameter. This value must be large enough to contain the
+	  ACL header and all of the access control entries (ACEs) to
+	  be stored in the ACL. In addition, this value must be
+	  DWORD-aligned
+	</par>
+        <par name="dwAclRevision">
+	  The revision level of the ACL structure being created. This
+	  value can be ACL_REVISION or ACL_REVISION_DS. Use
+	  ACL_REVISION_DS if the access control list (ACL) supports
+	  object-specific ACEs.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="InitializeAcl">
+      <par loc="stack" name="pAcl" io="w" nr="1">
+        <type><ptr>ACL</ptr></type>
+	<roles>
+	  <role rt="ioc:system" rn="acl structure"/>
+	  <role rt="rep:hex" rn="acl structure"/>
+	</roles>
+      </par>
+      <par loc="stack" name="nAclLength" io="r" nr="2">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:buffersize" rn="InitializeAcl"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwAclRevision" io="r" nr="3">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:system" rn="acl revision"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="initializes an access control list structure"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>ACL</type>
+	      <ci>pAcl</ci>
+	      <ci>nAclLength</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>ACL</type>
+	      <ci>pAcl</ci>
+	      <ci>nAclLength</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

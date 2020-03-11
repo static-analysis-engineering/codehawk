@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:28:25"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="QueryDosDevice">
+   <documentation>
+    <desc>
+      Retrieves information about MS-DOS device names. The function can 
+      obtain the current mapping for a particular MS-DOS device name. 
+      The function can also obtain a list of all existing MS-DOS device names.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI QueryDosDevice(</ll>
+      <ld>_In_opt_  LPCTSTR lpDeviceName</ld>
+      <ld>_Out_     LPTSTR lpTargetPath</ld>
+      <ld>_In_      DWORD ucchMax</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	the number of TCHARs stored into the buffer pointed to by lpTargetPathnotzero
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpDeviceName">
+       An MS-DOS device name string specifying the target of the query. 
+       The device name cannot have a trailing backslash; for example,
+       use &quot;C:&quot;, not &quot;C:\&quot;.
+       
+       This parameter can be NULL. In that case, the QueryDosDevice function 
+       will store a list of all existing MS-DOS device names into the buffer 
+       pointed to by lpTargetPath.
+     </par>
+     <par name="lpTargetPath">
+       A pointer to a buffer that will receive the result of the query. 
+       The function fills this buffer with one or more null-terminated 
+       strings. The final null-terminated string is followed by an
+       additional NULL.
+
+       If lpDeviceName is non-NULL, the function retrieves information
+       about the particular MS-DOS device specified by lpDeviceName.
+       The first null-terminated string stored into the buffer is the 
+       current mapping for the device. The other null-terminated strings
+       represent undeleted prior mappings for the device.
+       
+       If lpDeviceName is NULL, the function retrieves a list of all existing 
+       MS-DOS device names. Each null-terminated string stored into the buffer
+       is the name of an existing MS-DOS device, for example, 
+       \Device\HarddiskVolume1 or \Device\Floppy0.
+     </par>
+     <par name="ucchMax">
+       The maximum number of TCHARs that can be stored into the buffer pointed 
+       to by lpTargetPath.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="QueryDosDevice">
+    <returnbtype ikind="iuint" ttag="tint"/>
+    <par loc="stack" io="r" name="lpDeviceName" nr="1">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:device" />
+     </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpTargetPath" nr="2" rep="hex">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="infox:dos device names" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="ucchMax" nr="3">
+     <roles>
+      <role rt="size:buffersize" rn="QueryDosDevice" />
+     </roles>
+     <btype ikind="iuint" ttag="tint"/>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves dos device names"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpTargetPath</ci>
+	    <apply><indexsize/><ci>ucchMax</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpTargetPath</ci>
+	    <apply><indexsize/><ci>ucchMax</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

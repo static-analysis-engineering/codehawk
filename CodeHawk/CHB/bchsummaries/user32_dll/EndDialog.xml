@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="EndDialog">
+   <documentation>
+    <desc>destroys a modal dialog box</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI EndDialog (</ll>
+      <ld>__in HWND hDlg,</ld>
+      <ld>__in INT_PTR nResult</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDlg">handle to the dialog box to be destroyed</par>
+     <par name="nResult">
+       value to be returned to the application from the function that created
+       the dialog box
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="EndDialog">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hDlg" io="r" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+    <par loc="stack" name="nResult" io="r" roles="none" nr="2">
+      <type>INT_PTR</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="destroys a dialog box"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

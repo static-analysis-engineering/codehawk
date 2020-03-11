@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:30:24"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="IsWindow">
+   <documentation>
+    <desc>Determines whether the specified window handle identifies an existing window.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI IsWindow(</ll>
+      <ld>_In_opt_  HWND hWnd</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">A handle to the window to be tested.</par>
+     <return>nonzero if the handle identifies an existing window</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="IsWindow">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hWnd" io="r" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="determines if a window handle identifies an existing window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

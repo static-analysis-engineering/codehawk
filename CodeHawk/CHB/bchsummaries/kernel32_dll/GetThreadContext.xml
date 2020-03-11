@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/16/2015 09:05:02"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetThreadContext">
+   <documentation>
+    <desc>Retrieves the context of the specified thread.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetThreadContext(</ll>
+      <ld>_In_     HANDLE hThread </ld>
+      <ld>_Inout_  LPCONTEXT lpContext </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hThread">
+       A handle to the thread whose context is to be retrieved. The handle must
+       have THREAD_GET_CONTEXT access to the thread.
+     </par>
+     <par name="lpContext">
+       A pointer to a CONTEXT structure that receives the appropriate context 
+       of the specified thread. The value of the ContextFlags member of this 
+       structure specifies which portions of a thread&apos;s context are retrieved.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetThreadContext">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hThread" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:thread"/>
+      </roles>
+    </par>
+    <par loc="stack" io="rw" name="lpContext" nr="2" rep="hex">
+      <type><ptr>CONTEXT</ptr></type>
+      <pre><deref-read/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:process" rn="thread context"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves a thread context"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

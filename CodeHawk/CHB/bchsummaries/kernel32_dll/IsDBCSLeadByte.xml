@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:22:36"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="IsDBCSLeadByte">
+   <documentation>
+    <desc>
+      Determines if a specified character is a lead byte for the system default 
+      Windows ANSI code page (CP_ACP). A lead byte is the first byte of a two-byte 
+      character in a double-byte character set (DBCS) for the code page.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL IsDBCSLeadByte(</ll>
+      <ld>_In_  BYTE TestChar</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="TestChar">The character to test.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="IsDBCSLeadByte">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="TestChar" roles="none" nr="1">
+      <type>BYTE</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

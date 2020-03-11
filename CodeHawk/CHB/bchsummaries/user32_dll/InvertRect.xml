@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="02/04/2015 17:04:52"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="InvertRect">
+   <documentation>
+    <desc>The InvertRect function inverts a rectangle in a window by performing a 
+     logical NOT operation on the color values for each pixel in the rectangle&apos;s 
+     interior.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL InvertRect(</ll>
+      <ld>_In_ HDC hDC,</ld>
+      <ld>_In_ const RECT *lprc</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hDC">handle to the device context</par>
+     <par name="lprc">pointer to a RECT structure that contains the logical coordinates of the 
+      rectangle to be inverted
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="InvertRect">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hDC" io="r" rep="hex" nr="1">
+      <type>HDC</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lprc" io="r" rep="hex" nr="2">
+     <type><ptr>RECT</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:RECT"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="inverts a rectangle"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/05/2015 21:59:25"/>
+  <libfun lib="kernel32" name="GetPrivateProfileSection">
+   <documentation>
+    <desc>
+      Retrieves all the keys and values for the specified section of an initialization file
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetPrivateProfileSection(</ll>
+      <ld>_In_   LPCTSTR lpAppName</ld>
+      <ld>_Out_  LPTSTR lpReturnedString</ld>
+      <ld>_In_   DWORD nSize</ld>
+      <ld>_In_   LPCTSTR lpFileName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpAppName">The name of the section in the initialization file</par>
+     <par name="lpReturnedString">
+       A pointer to a buffer that receives the key name and value pairs associated 
+       with the named section. The buffer is filled with one or more null-terminated 
+       strings; the last string is followed by a second null character
+     </par>
+     <par name="nSize">
+       The size of the buffer pointed to by the lpReturnedString parameter, in 
+       characters. The maximum profile section size is 32,767 characters
+     </par>
+     <par name="lpFileName">
+       The name of the initialization file. If this parameter does not contain a 
+       full path to the file, the system searches for the file in the Windows directory
+     </par>
+     <return>
+       The return value specifies the number of characters copied to the buffer, 
+       not including the terminating null character. If the buffer is not large 
+       enough to contain all the key name and value pairs associated with the 
+       named section, the return value is equal to nSize minus two
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetPrivateProfileSection">
+    <par loc="stack" io="r"  name="lpAppName" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:system" rn="name:initfile section"/>
+	<role rt="rep:hex" rn="name:initfile section"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpReturnedString" nr="2">
+     <type>LPTSTR</type>
+     <roles>
+        <role rt="ioc:system" rn="infox:initfile keys and values"/>
+	<role rt="rep:hex" rn="infox:initfile keys and values"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nSize" nr="3">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetPrivateProfileSection"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpFileName" nr="4">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:file"/>
+	<role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" 
+                  desc="retrieves keys and values from the initialization file"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math><apply><leq/><ci>nSize</ci><cn>32767</cn></apply></math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpReturnedString</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math><apply><geq/><return/><cn>0</cn></apply></math>
+      </post>
+      <post>
+	<math><apply><leq/><return/><ci>nSize</ci></apply></math>
+      </post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpReturnedString</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

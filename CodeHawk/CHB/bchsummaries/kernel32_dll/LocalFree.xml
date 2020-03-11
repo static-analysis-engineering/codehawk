@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="LocalFree">
+   <documentation>
+    <desc>Frees the specified local memory object and invalidates its handle.
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>HLOCAL WINAPI LocalFree(</ll>
+      <ld>_In_  HLOCAL hMem</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMem">
+       A handle to the local memory object. This handle is returned by either 
+       the LocalAlloc or LocalReAlloc function. It is not safe to free memory 
+       allocated with GlobalAlloc.
+     </par>
+     <return>
+      <rc cond="success">NULL</rc>
+      <rc cond="failure">Handle to the local memory object</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="LocalFree">
+     <returntype>HLOCAL</returntype>
+    <par loc="stack" io="r" name="LocalFree" nr="1">
+      <type>HLOCAL</type>
+      <pre><deref-read/><allocation-base/></pre>
+      <sideeffects><invalidates/></sideeffects>
+      <roles>
+         <role rt="ioc:memops" rn="handle:local memory"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="frees local memory"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <null-notnull/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

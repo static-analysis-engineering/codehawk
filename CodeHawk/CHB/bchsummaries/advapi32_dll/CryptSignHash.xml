@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 02:58:47"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CryptSignHash">
+   <documentation>
+    <desc>
+      signs data. Because all signature algorithms 
+      are asymmetric and thus slow, CryptoAPI does not allow data to be signed directly. 
+      Instead, data is first hashed, and CryptSignHash is used to sign the hash.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CryptSignHashA(</ll>
+      <ld>_In_     HCRYPTHASH hHash</ld>
+      <ld>_In_     DWORD dwKeySpec</ld>
+      <ld>_In_     LPCTSTR sDescription</ld>
+      <ld>_In_     DWORD dwFlags</ld>
+      <ld>_Out_    BYTE *pbSignature</ld>
+      <ld>_Inout_  DWORD *pdwSigLen</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hHash">Handle of the hash object to be signed.</par>
+     <par name="dwKeySpec">
+       Identifies the private key to use from the provider&apos;s container.
+       It can be AT_KEYEXCHANGE or AT_SIGNATURE. 
+     </par>
+     <par name="sDescription">
+       This parameter is no longer used and must be set to NULL to prevent 
+       security vulnerabilities.
+     </par>
+     <par name="dwFlags">Flags, these are either unused or related to RSA</par>
+     <par name="pbSignature">
+       A pointer to a buffer receiving the signature data.
+       This parameter can be NULL to set the buffer size for memory allocation purposes.
+     </par>
+     <par name="pdwSigLen">
+       A pointer to a DWORD value that specifies the size, in bytes, of the 
+       pbSignature buffer. 
+       When the function returns, the DWORD value contains the number of bytes stored 
+       in the buffer. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="CryptSignHash">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hHash" rep="hex" nr="1">
+      <type>HCRYPTHASH</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:crypto" rn="handle:cryptographic hash"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwKeySpec" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="sDescription" nr="3">
+      <type>LPCTSTR</type>
+      <pre><null/></pre>
+      <roles>
+	<role rt="ioc:crypto" rn="name:signature"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwFlags" roles="none" io="r" nr="4">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="pbSignature" rep="hex" nr="5">
+      <type><ptr>BYTE</ptr></type>
+      <roles>
+	<role rt="ioc:crypto" rn="infox:signature data"/>
+      </roles>
+    </par>
+    <par loc="stack" io="rw" name="pdwSigLen" rep="hex"  nr="6">
+      <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:actual" rn="CryptSignHash"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="crypto" desc="signs data"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>byte</type>
+	    <ci>pbSignature</ci>
+	    <apply><addressed-value/><ci>pdwSigLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>pbSignature</ci>
+	    <apply><addressed-value/><ci>pdwSigLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

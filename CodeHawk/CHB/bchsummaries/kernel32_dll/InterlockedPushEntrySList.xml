@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="02/04/2015 17:14:06"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="InterlockedPushEntrySList">
+   <documentation>
+    <desc>
+      Inserts an item at the front of a singly linked list. Access to the list is 
+      synchronized on a multiprocessor system.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>PSLIST_ENTRY WINAPI InterlockedPushEntrySList(</ll>
+      <ld>_Inout_ PSLIST_HEADER ListHead,</ld>
+      <ld>_Inout_ PSLIST_ENTRY ListEntry</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       The return value is the previous first item in the list. If the list was previously 
+       empty, the return value is NULL.
+    </return>
+     <par name="ListHead">
+       pointer to an SLIST_HEADER structure that represents the head of a singly linked list
+    </par>
+     <par name="ListEntry">
+       pointer to an SLIST_ENTRY structure that represents an item in a singly linked list
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="InterlockedPushEntrySList">
+     <returntype><ptr>SLIST_ENTRY</ptr></returntype>
+    <par loc="stack" io="rw" name="ListHead" nr="1" rep="hex">
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:SLIST_HEADER" />
+      <role rt="ioc:memops" rn="dst-struct:SLIST_HEADER" />
+      <role rt="ioc:synchronization" rn="synchronized list"/>
+     </roles>
+     <type><ptr>SLIST_HEADER</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="rw" name="ListEntry" nr="2">
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:SLIST_ENTRY"/>
+      <role rt="ioc:memops" rn="dst-struct:SLIST_ENTRY"/>
+      <role rt="ioc:synchronization" rn="synchronized list"/>
+     </roles>
+     <type><ptr>SLIST_ENTRY</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization" 
+		  desc="enters an item into a synchronized list"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

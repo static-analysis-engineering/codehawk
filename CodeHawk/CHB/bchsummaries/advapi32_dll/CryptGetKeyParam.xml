@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 02:53:52"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CryptGetKeyParam">
+   <documentation>
+    <desc>retrieves data that governs the operations of a key.  </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CryptGetKeyParam(</ll>
+      <ld>_In_     HCRYPTKEY hKey </ld>
+      <ld>_In_     DWORD dwParam </ld>
+      <ld>_Out_    BYTE *pbData </ld>
+      <ld>_Inout_  DWORD *pdwDataLen </ld>
+      <ld>_In_     DWORD dwFlags </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hKey">The handle of the key being queried.</par>
+     <par name="dwParam">Specifies the type of query being made.</par>
+     <par name="pbData">
+       A pointer to a buffer that receives the data. The form of this data depends 
+       on the value of dwParam.
+       If the size of this buffer is not known, the required size can be retrieved 
+       at run time by passing NULL for this parameter and setting the value pointed 
+       to by pdwDataLen to zero.  
+    </par>
+     <par name="pdwDataLen">
+       A pointer to a DWORD value that, on entry, contains the size, in bytes, of 
+       the buffer pointed to by the pbData parameter. 
+       When the function returns, the DWORD value contains the number of bytes 
+       stored in the buffer. 
+    </par>
+     <par name="dwFlags">
+       This parameter is reserved for future use and must be set to zero.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="CryptGetKeyParam">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hKey" nr="1">
+      <type>HCRYPTKEY</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:crypto" rn="handle:cryptographic key"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwParam" roles="none"  nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="pbData" rep="hex" nr="3">
+      <type><ptr>BYTE</ptr></type>
+      <roles>
+	<role rt="ioc:crypto" rn="infox:key blob data"/>
+      </roles>
+    </par>
+    <par loc="stack" io="rw" name="pdwDataLen" nr="4">
+      <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:actual" rn="CryptGetKeyParam"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="5">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="crypto"
+		  desc="retrieves data that governs the operations of a key"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><not-null/><ci>pbData</ci></apply>
+	    <apply>
+	      <deref-write/>
+	      <type>byte</type>
+	      <ci>pbData</ci>
+	      <apply><addressed-value/><ci>pdwDataLen</ci><cn>0</cn></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="cryptographic service provider"
+			 xdata="data that governs key operation"/>
+	    <type>byte</type>
+	    <ci>pbData</ci>
+	    <apply><addressed-value/><ci>pdwDataLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

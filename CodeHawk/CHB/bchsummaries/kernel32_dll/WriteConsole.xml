@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="WriteConsole">
+   <documentation>
+    <desc>
+      writes a character string to console screen buffer beginning at the current 
+      cursor location
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WriteConsole (</ll>
+      <ld>__in       HANDLE hConsoleOutput,</ld>
+      <ld>__in       const VOID *lpBuffer,</ld>
+      <ld>__in       DWORD nNumberOfCharsToWrite,</ld>
+      <ld>__out      LPDWORD lpNumberOfCharsWritten,</ld>
+      <ld>__reserved LPVOID lpReserved</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hConsoleOutput">handle to the console screen buffer</par>
+     <par name="lpBuffer">
+       pointer to a buffer that contains characters to be written to the console
+       screen buffer
+     </par>
+     <par name="nNumberOfCharsToWrite">the number of characters to be written</par>
+     <par name="lpNumberOfCharsWritten">
+       pointer to a variable that receives the number of characters actually written
+     </par>
+     <par name="lpReserved">reserved, must be NULL</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="WriteConsole">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hConsoleOutput" rep="hex" nr="1">
+      <type>HANDLE</type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:console output"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpBuffer" rep="hex" nr="2">
+      <type><ptr>TCHAR</ptr></type>
+      <roles>
+         <role rt="ioc:outputs" rn="screen output"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nNumberOfCharsToWrite" nr="3">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="WriteConsole"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpNumberOfCharsWritten" nr="4">
+      <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="size:used" rn="WriteConsole"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpReserved" roles="none" nr="5">
+      <type><ptr>VOID</ptr></type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="writes to a console screen"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>nNumberOfCharsToWrite</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

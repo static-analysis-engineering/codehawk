@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="MessageBox">
+   <documentation>
+    <desc>
+      displays a modal dialog box that contains a system icon, a set of buttons,
+      and a brief application-specific message, such as status or error information.
+      The message box returns an integer value that indicates which button the user
+      clicked
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI MessageBox (</ll>
+      <ld>_in_opt_ HWND hWnd,</ld>
+      <ld>_in_opt_ LPCTSTR lpText,</ld>
+      <ld>_in_opt_ LPCTSTR lpCaption,</ld>
+      <ld>_in_     UINT uType</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the owner window of the message box to be created. If this
+	  parameter is NULL, the message box has no owner window
+     </par>
+     <par name="lpText">the message to be displayed. If the string consists of more than one
+	  line, the lines can be separated using a carriage return and/or linefeed
+	  character between the lines
+     </par>
+     <par name="lpCaption">
+       the dialog title. If this parameter is NULL, the default title is Error
+     </par>
+     <par name="uType">the contents and behavior of the dialog box, a combination of flags
+     </par>
+     <return>
+      <rc cond="success">non-zero value</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="MessageBox">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="hWnd" nr="1">
+      <type>HWND</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpText" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:process" rn="text:message"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpCaption" nr="3" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:process" rn="text:dialog title"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="uType" roles="none" nr="4">
+     <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="displays a dialog box with buttons to click"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

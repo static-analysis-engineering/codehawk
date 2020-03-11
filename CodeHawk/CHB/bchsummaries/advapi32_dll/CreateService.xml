@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/24/2014 22:03:26"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CreateService">
+   <documentation>
+    <desc>
+      Creates a service object and adds it to the specified service 
+      control manager database.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>SC_HANDLE WINAPI CreateServiceA(</ll>
+      <ld>_In_       SC_HANDLE hSCManager,</ld>
+      <ld>_In_       LPCTSTR lpServiceName,</ld>
+      <ld>_In_opt_   LPCTSTR lpDisplayName,</ld>
+      <ld>_In_       DWORD dwDesiredAccess,</ld>
+      <ld>_In_       DWORD dwServiceType,</ld>
+      <ld>_In_       DWORD dwStartType,</ld>
+      <ld>_In_       DWORD dwErrorControl,</ld>
+      <ld>_In_opt_   LPCTSTR lpBinaryPathName,</ld>
+      <ld>_In_opt_   LPCTSTR lpLoadOrderGroup,</ld>
+      <ld>_Out_opt_  LPDWORD lpdwTagId,</ld>
+      <ld>_In_opt_   LPCTSTR lpDependencies,</ld>
+      <ld>_In_opt_   LPCTSTR lpServiceStartName,</ld>
+      <ld>_In_opt_   LPCTSTR lpPassword</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">handle to the service</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+     <par name="hSCManager">
+       A handle to the service control manager database. This handle is 
+       returned by the OpenSCManager function and must have the 
+       SC_MANAGER_CREATE_SERVICE access right. 
+     </par>
+     <par name="lpServiceName">
+       The name of the service to install. The maximum string length is 
+       256 characters. The service control manager database preserves 
+       the case of the characters, but service name comparisons are 
+       always case insensitive. Forward-slash (/) and backslash (\) 
+       are not valid service name characters.
+     </par>
+     <par name="lpDisplayName">
+       The display name to be used by user interface programs to identify 
+       the service. This string has a maximum length of 256 characters. 
+       The name is case-preserved in the service control manager. Display 
+       name comparisons are always case-insensitive.
+     </par>
+     <par name="dwDesiredAccess">
+       The access to the service. Before granting the requested access, 
+       the system checks the access token of the calling process.
+     </par>
+     <par name="dwServiceType">The service type.</par>
+     <par name="dwStartType">The service start options.</par>
+     <par name="dwErrorControl">
+       The severity of the error, and action taken, if this service fails to start.
+     </par>
+     <par name="lpBinaryPathName">
+       The fully qualified path to the service binary file. If the path 
+       contains a space, it must be quoted so that it is correctly 
+       interpreted. For example, &quot;d:\\my share\\myservice.exe&quot; should 
+       be specified as &quot;\&quot;d:\\my share\\myservice.exe\&quot;&quot;.
+       The path can also include arguments for an auto-start service. 
+       For example, &quot;d:\\myshare\\myservice.exe arg1 arg2&quot;. These arguments 
+       are passed to the service entry point (typically the main function).
+       If you specify a path on another computer, the share must be accessible 
+       by the computer account of the local computer because this is the 
+       security context used in the remote call. However, this requirement
+       allows any potential vulnerabilities in the remote computer to 
+       affect the local computer. Therefore, it is best to use a local file.
+     </par>
+     <par name="lpLoadOrderGroup">
+       The names of the load ordering group of which this service is a 
+       member. Specify NULL or an empty string if the service does not 
+       belong to a group.
+       The startup program uses load ordering groups to load groups of 
+       services in a specified order with respect to the other groups.
+     </par>
+     <par name="lpdwTagId">
+       A pointer to a variable that receives a tag value that is unique 
+       in the group specified in the lpLoadOrderGroup parameter. Specify 
+       NULL if you are not changing the existing tag.
+       You can use a tag for ordering service startup within a load 
+       ordering group by specifying a tag order vector in the following 
+       registry value:
+       HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\GroupOrderList
+       Tags are only evaluated for driver services that have 
+       SERVICE_BOOT_START or SERVICE_SYSTEM_START start types.
+     </par>
+     <par name="lpDependencies">
+       A pointer to a double null-terminated array of null-separated 
+       names of services or load ordering groups that the system must 
+       start before this service. Specify NULL or an empty string if 
+       the service has no dependencies. Dependency on a group means 
+       that this service can run if at least one member of the group 
+       is running after an attempt to start all members of the group.
+       You must prefix group names with SC_GROUP_IDENTIFIER so that 
+       they can be distinguished from a service name, because services 
+       and service groups share the same name space.
+     </par>
+     <par name="lpServiceStartName">
+       The name of the account under which the service should run. If 
+       the service type is SERVICE_WIN32_OWN_PROCESS, use an account 
+       name in the form DomainName\UserName. The service process will 
+       be logged on as this user. If the account belongs to the built-in 
+       domain, you can specify .\UserName.
+       If this parameter is NULL, CreateService uses the LocalSystem 
+       account. If the service type specifies SERVICE_INTERACTIVE_PROCESS, 
+       the service must run in the LocalSystem account.
+       If this parameter is NT AUTHORITY\LocalService, CreateService 
+       uses the LocalService account. If the parameter is 
+       NT AUTHORITY\NetworkService, CreateService uses the NetworkService account.
+       A shared process can run as any user.
+       If the service type is SERVICE_KERNEL_DRIVER or 
+       SERVICE_FILE_SYSTEM_DRIVER, the name is the driver object name 
+       that the system uses to load the device driver. Specify NULL if 
+       the driver is to use a default object name created by the I/O system.
+       A service can be configured to use a managed account or a virtual 
+       account. If the service is configured to use a managed service 
+       account, the name is the managed service account name. If the 
+       service is configured to use a virtual account, specify the 
+       name as NT SERVICE\ServiceName. 
+     </par>
+     <par name="lpPassword">
+       The password to the account name specified by the lpServiceStartName 
+       parameter. Specify an empty string if the account has no password or 
+       if the service runs in the LocalService, NetworkService, or 
+       LocalSystem account. 
+       If the account name specified by the lpServiceStartName parameter 
+       is the name of a managed service account or virtual account name, 
+       the lpPassword parameter must be NULL.
+       Passwords are ignored for driver services.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="52" cc="stdcall" name="CreateService">
+     <returntype>SC_HANDLE</returntype>
+     <par loc="stack" io="r" name="hSCManager" nr="1">
+       <type>SC_HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:services" rn="handle:SCM"/>
+       </roles>
+    </par>
+    <par loc="stack" io="r" name="lpServiceName" rep="hex" nr="2">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:services" rn="name:service"/>
+      </roles>
+      <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpDisplayName" rep="hex" nr="3">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:services" rn="name:service display"/>
+      </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwDesiredAccess" roles="none" nr="4">
+     <rep type="enum" name="service_access_rights_flags"/>
+     <type>DWORD</type>
+     <pre><enum-value name="service_access_rights_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwServiceType" nr="5">
+     <rep type="enum" name="service_type_constants"/>
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:services" rn="type:service"/>
+     </roles>
+     <pre><enum-value name="service_type_constants" flags="true"/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwStartType" nr="6">
+     <rep type="enum" name="service_start_constants"/>
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:services" rn="type:service start"/>
+     </roles>
+     <pre><enum-value name="service_start_constants"/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwErrorControl" roles="none" nr="7">
+     <rep type="enum" name="service_error_constants"/>
+     <type>DWORD</type>
+     <pre><enum-value name="service_error_constants"/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpBinaryPathName" rep="hex" nr="8">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:services" rn="name:binary path"/>
+         <role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpLoadOrderGroup" rep="hex" nr="9">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:services" rn="name:load order group"/>
+      </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpdwTagId" roles="none" nr="10">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="lpDependencies" rep="hex" nr="11">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:services" rn="name:service dependencies"/>
+      </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpServiceStartName" rep="hex" nr="12">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:services" rn="name:service start"/>
+      </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpPassword" rep="hex" nr="13">
+     <type>LPCTSTR</type>
+     <roles>
+        <role rt="ioc:services" rn="name:service password"/>
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="services" 
+		  desc="creates service and adds it to the service database">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

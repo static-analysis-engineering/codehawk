@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="FatalAppExit">
+   <documentation>
+    <desc>
+      displays a message box and terminates the application when the message box is closed
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>void WINAPI FatalAppExit</ll>
+      <ld>__in UINT uAction,</ld>
+      <ld>__in LPCTSTR lpMessageText</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="uAction">must be zero</par>
+     <par name="lpMessageText">
+       null-terminated string that is displayed in the message box
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="FatalAppExit">
+     <returntype>void</returntype>
+     <par loc="stack" name="uAction" io="r" roles="none" nr="1">
+       <type>UINT</type>
+     </par>
+    <par loc="stack" name="lpMessageText" io="r" rep="hex" nr="2">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="text:exit message"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="displays a message box and terminates the application"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <non-returning/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

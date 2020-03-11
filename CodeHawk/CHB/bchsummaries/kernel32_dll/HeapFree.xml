@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="HeapFree">
+   <documentation>
+    <desc>frees a memory block allocated from a heap by HeapAlloc or HeapReAlloc function
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI HeapFree (</ll>
+      <ld>__in HANDLE hHeap,</ld>
+      <ld>__in DWORD dwFlags,</ld>
+      <ld>__in LPVOID lpMem</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hHeap">handle to the heap whose memory block is to be freed. This handle is
+	  returned by either the HeapCreate or GetProcessHeap function
+	</par>
+     <par name="dwFlags">heap free option</par>
+     <par name="lpMem">pointer to the memory block to be freed. This pointer is returned by
+	  the HeapAlloc or HeapReAlloc function; cannot be NULL
+	</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="HeapFree">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hHeap" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:heap"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" nr="2">
+     <btype ikind="iuint" ttag="tint"/>
+     <pre><enum-value name="heap_allocation_flags" flags="true"/></pre>
+     <roles>
+        <role rt="rep:enum" rn="heap_allocation_flags"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpMem" nr="3">
+      <type>LPVOID</type>
+      <pre><deref-read/><allocation-base/></pre>
+     <sideeffects><invalidates/></sideeffects>
+      <roles>
+         <role rt="rep:enum" rn="heap_allocation_flags" ra="flags"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="frees heap memory"/>
+     </io-actions>
+    <preconditions>
+      <nonzero-zero/>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

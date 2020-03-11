@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="InvalidateRect">
+   <documentation>
+    <desc>adds a rectangle to the specified window&apos;s update region</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL InvalidateRect (</ll>
+      <ld>__in HWND hWnd,</ld>
+      <ld>__in const RECT *lpRect,</ld>
+      <ld>__in BOOL bErase</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       handle to the window whose update region has changed; can be NULL, but setting
+       it to NULL is not recommended
+     </par>
+     <par name="lpRect">
+       pointer to a RECT structure that contains the client coordinates of the rectangle
+       to be added to the update region; can be NULL
+     </par>
+     <par name="bErase">
+       specifies whether the background within the update region is to be erased when the
+       update region is processed
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="InvalidateRect">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="hWnd" io="r" nr="1">
+     <type>HWND</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpRect" io="r" nr="2">
+      <type><ptr>RECT</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:RECT"/>
+      </roles>
+    </par>
+    <par loc="stack" name="bErase" io="r" roles="none" nr="3">
+      <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="adds a rectangle to a window update region"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 00:01:02"/>
+  <libfun lib="advapi32" name="RegCreateKeyTransacted">
+   <documentation>
+    <desc>
+      Creates the specified registry key and associates it with a transaction.
+      If the key already exists, the function opens it
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegCreateKeyTransacted(</ll>
+      <ld>_In_             HKEY                  hKey</ld>
+      <ld>_In_             LPCTSTR               lpSubKey</ld>
+      <ld>_Reserved_       DWORD                 Reserved</ld>
+      <ld>_In_opt_         LPTSTR                lpClass</ld>
+      <ld>_In_             DWORD                 dwOptions</ld>
+      <ld>_In_             REGSAM                samDesired</ld>
+      <ld>_In_opt_   const LPSECURITY_ATTRIBUTES lpSecurityAttributes</ld>
+      <ld>_Out_            PHKEY                 phkResult</ld>
+      <ld>_Out_opt_        LPDWORD               lpdwDisposition</ld>
+      <ld>_In_             HANDLE                hTransaction</ld>
+      <ld>_Reserved_       PVOID                 pExtendedParameter</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">
+       A handle to an open registry key. The calling process must have 
+       KEY_CREATE_SUB_KEY access to the key
+     </par>
+     <par name="lpSubKey">
+       The name of a subkey that this function opens or creates. The subkey 
+       specified must be a subkey of the key identified by the hKey parameter;
+       it can be up to 32 levels deep in the registry tree. For more information
+       on key names, see Structure of the Registry.
+       If lpSubKey is a pointer to an empty string, phkResult receives a new 
+       handle to the key specified by hKey.
+       This parameter cannot be NULL.
+     </par>
+     <par name="Reserved">
+       This parameter is reserved and must be zero
+     </par>
+     <par name="lpClass">
+       The user-defined class of this key. This parameter may be ignored.
+       This parameter can be NULL
+     </par>
+     <par name="dwOptions">volatile option</par>
+     <par name="samDesired">
+       A mask that specifies the access rights for the key to be created
+     </par>
+     <par name="lpSecurityAttributes">
+       A pointer to a SECURITY_ATTRIBUTES structure that determines whether 
+       the returned handle can be inherited by child processes. If 
+       lpSecurityAttributes is NULL, the handle cannot be inherited.
+       The lpSecurityDescriptor member of the structure specifies a security 
+       descriptor for the new key. If lpSecurityAttributes is NULL, the key 
+       gets a default security descriptor. The ACLs in a default security 
+       descriptor for a key are inherited from its direct parent key.
+     </par>
+     <par name="phkResult">
+       A pointer to a variable that receives a handle to the opened or
+       created key. If the key is not one of the predefined registry keys,
+       call the RegCloseKey function after you have finished using the handle
+     </par>
+     <par name="lpdwDisposition">
+       A pointer to a variable that receives one of the disposition values.
+       If lpdwDisposition is NULL, no disposition information is returned
+     </par>
+     <par name="hTransaction">A handle to an active transaction</par>
+     <par name="pExtendedParameter">
+       This parameter is reserved and must be NULL
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="44" cc="stdcall" name="RegCreateKeyTransacted">
+    <par loc="stack" name="hKey" io="r" nr="1">
+      <rep type="enum" name="predefined_registry_key_constants"/>
+      <type>HKEY</type>
+      <pre>
+	<deref-read/>
+	<enum-value name="predefined_registry_key_constants"/>
+      </pre>
+      <roles>
+	<role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpSubKey" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:registry" rn="name:subkey"/>
+      </roles>
+    </par>
+    <par loc="stack" name="Reserved" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpClass" io="r" nr="4">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:registry" rn="name:class"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwOptions" io="r" roles="none" nr="5">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="samDesired" io="r" roles="none" nr="6">
+     <type>REGSAM</type>
+    </par>
+    <par loc="stack" name="lpSecurityAttributes" io="r" roles="none" nr="7">
+     <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="phkResult" io="r" nr="8" rep="hex">
+     <type><ptr>HKEY</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:registry" rn="ref:key"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpdwDisposition" io="r" roles="none" nr="9" rep="hex">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="hTransaction" io="r" nr="10">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:registry" rn="handle:transaction"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pExtendedParameter" nr="11" roles="none" rep="hex">
+     <type><ptr>VOID</ptr></type>
+    </par>
+    <returntype>LONG</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="registry" 
+		desc="creates a registry key and associates it with a transaction"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

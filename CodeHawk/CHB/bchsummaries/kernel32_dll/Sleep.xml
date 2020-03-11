@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="Sleep">
+   <documentation>
+    <desc>suspends execution of the current thread until the time-out interval elapses</desc>
+    <apidoc>
+     <pt>VOID WINAPI Sleep ( __in DWORD dwMilliseconds )</pt>
+     <par name="dwMilliseconds">
+       The time interval for which execution is to be suspended, in milliseconds.
+       A value of zero causes the thread to relinquish the remainder of its time 
+       slice to any other thread that is ready to run. If there are no other 
+       threads ready to run, the function returns immediately, and the thread 
+       continues execution.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="Sleep">
+     <returntype>VOID</returntype>
+     <par loc="stack" name="dwMilliseconds" io="r" nr="1">
+       <type>DWORD</type>
+       <roles>
+	 <role rt="ioc:process" rn="sleep time"/>
+       </roles>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="suspends execution (sleep)"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

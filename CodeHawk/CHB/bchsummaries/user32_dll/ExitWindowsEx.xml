@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/29/2015 10:31:55"/>
+  <libfun lib="user32" name="ExitWindowsEx">
+   <documentation>
+    <desc>
+      Logs off the interactive user, shuts down the system, or shuts down 
+      and restarts the system. It sends the WM_QUERYENDSESSION message to 
+      all applications to determine if they can be terminated
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI ExitWindowsEx(</ll>
+      <ld>_In_ UINT  uFlags</ld>
+      <ld>_In_ DWORD dwReason</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="uFlags">The shutdown type</par>
+     <par name="dwReason">
+       The reason for initiating the shutdown.
+       If this parameter is zero, the SHTDN_REASON_FLAG_PLANNED reason code 
+       will not be set and therefore the default action is an undefined shutdown 
+       that is logged as "No title for this reason could be found". By default,
+       it is also an unplanned shutdown. Depending on how the system is configured,
+       an unplanned shutdown triggers the creation of a file that contains the 
+       system state information, which can delay shutdown. Therefore, do not use 
+       zero for this parameter
+     </par>
+     <return>
+       If the function succeeds, the return value is nonzero. Because the function
+       executes asynchronously, a nonzero return value indicates that the shutdown
+       has been initiated. It does not indicate whether the shutdown will succeed.
+       It is possible that the system, the user, or another application will abort
+       the shutdown.
+       If the function fails, the return value is zero. To get extended error 
+       information, call GetLastError.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ExitWindowsEx">
+    <par loc="stack" name="uFlags" io="r" roles="none" nr="1">
+      <rep type="enum" name="shutdown_type_flags"/>
+     <type>UINT</type>
+     <pre><enum-value name="shutdown_type_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" name="dwReason" io="r" roles="none" nr="2">
+      <rep type="enum" name="system_shutdown_reason_codes"/>
+      <type>DOWRD</type>
+     <pre><enum-value name="system_shutdown_reason_codes" flags="true"/></pre>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="logs of interactive users and shuts down the system">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

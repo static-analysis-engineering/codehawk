@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="EndPaint">
+   <documentation>
+    <desc>marks the end of painting in the specified window</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL EndPaint (</ll>
+      <ld>__in HWND hWnd,</ld>
+      <ld>__in const PAINTSTRUCT *lpPaint</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window that has been repainted</par>
+     <par name="lpPaint">
+       pointer to a PAINTSTRUCT structure that contains the painting information
+     </par>
+     <return>nonzero</return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="EndPaint">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hWnd" io="r" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpPaint" nr="2">
+     <type><ptr>PAINTSTRUCT</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-struct:paintstruct"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="process" desc="marks the end of window painting"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

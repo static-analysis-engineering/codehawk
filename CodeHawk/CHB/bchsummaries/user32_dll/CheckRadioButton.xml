@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="CheckRadioButton">
+   <documentation>
+    <desc>
+      adds a check mark to (checks) a specified radio button in a group and removes
+      a check mark from (clears) all other radio buttons in the group
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL CheckRadioButton (</ll>
+      <ld>__in HWND hDlg,</ld>
+      <ld>__in int nIDFirstButton,</ld>
+      <ld>__in int nIDLastButton,</ld>
+      <ld>__in int nIDCheckButton</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDlg">handle to the dialog box that contains the radio button</par>
+     <par name="nIDFirstButton">identifier of the first radio button in the group</par>
+     <par name="nIDLastButton">identifier of the last radio button in the group</par>
+     <par name="nIDCheckButton">identifier of the radio button to select</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CheckRadioButton">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hDlg" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="nIDFirstButton" io="r" roles="none" nr="2">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="nIDLastButton" io="r" roles="none" nr="3">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="nIDCheckButton" io="r" roles="none" nr="4">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="adds a checkmark to a radio button"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

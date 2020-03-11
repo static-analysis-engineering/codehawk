@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun name="GetTimeZoneInformation" lib="kernel32">
+   <documentation>
+    <desc>retrieves the current time zone settings</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetTimeZoneInformation (</ll>
+      <ld>__out LPTIME_ZONE_INFORMATION lpTimeZoneInformation</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpTimeZoneInformation">
+       pointer to a TIME_ZONE_INFORMATION structure to receive the current settings
+     </par>
+     <return>
+      <rc cond="success">0,1, or 2</rc>
+      <rc cond="failure">TIME_ZONE_ID_INVALID</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetTimeZoneInformation">
+    <returntype>DWORD</returntype>
+    <par loc="stack" io="w" name="lpTimeZoneInformation" nr="1">
+      <type><ptr>TIME_ZONE_INFORMATION</ptr></type>
+      <roles>
+	<role rt="ioc:system" rn="infox:time zone info"/>
+      </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="retrieves time zone settings"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

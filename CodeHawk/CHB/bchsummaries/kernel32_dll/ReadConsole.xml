@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/02/2015 14:52:00"/>
+  <libfun lib="kernel32" name="ReadConsole">
+   <documentation>
+    <desc>
+      Reads character input from the console input buffer and removes it from the buffer
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI ReadConsole(</ll>
+      <ld>_In_      HANDLE hConsoleInput</ld>
+      <ld>_Out_     LPVOID lpBuffer</ld>
+      <ld>_In_      DWORD nNumberOfCharsToRead</ld>
+      <ld>_Out_     LPDWORD lpNumberOfCharsRead</ld>
+      <ld>_In_opt_  pInputControl</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hConsoleInput">
+       A handle to the console input buffer. The handle must have the 
+       GENERIC_READ access right
+     </par>
+     <par name="lpBuffer">
+       A pointer to a buffer that receives the data read from the console input buffer.
+       The storage for this buffer is allocated from a shared heap for the process 
+       that is 64 KB in size. The maximum size of the buffer will depend on heap usage.
+     </par>
+     <par name="nNumberOfCharsToRead">
+       The number of characters to be read. The size of the buffer pointed to by the 
+       lpBuffer parameter should be at least nNumberOfCharsToRead * sizeof(TCHAR) bytes.
+     </par>
+     <par name="lpNumberOfCharsRead">
+       A pointer to a variable that receives the number of characters actually read
+     </par>
+     <par name="pInputControl">
+       A pointer to a CONSOLE_READCONSOLE_CONTROL structure that specifies a control 
+       character to signal the end of the read operation. This parameter can be NULL.
+       This parameter requires Unicode input by default. For ANSI mode, set this 
+       parameter to NULL
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="ReadConsole">
+    <par loc="stack" name="hConsoleInput" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:console input buffer"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpBuffer" io="w" rep="hex" nr="2">
+     <type>LPVOID</type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-bytes:console input"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nNumberOfCharsToRead" io="r" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="ReadConsole"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpNumberOfCharsRead" io="w" rep="hex" nr="4">
+     <type>LPDWORD</type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:actual" rn="ReadConsole"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pInputControl" io="r" rep="hex" nr="5">
+     <type><ptr>CONSOLE_READCONSOLE_CONTROL</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-struct:read console control"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="reads console input"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>nNumberOfCharsToRead</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="console" xdata="characters read from console"/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>nNumberOfCharsToRead</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="ClearCommBreak">
+   <documentation>
+    <desc>restores character transmission for a specified communications device</desc>
+    <apidoc>
+     <pt>BOOL WINAPI ClearCommBreak ( __in HANDLE hFile )</pt>
+     <par name="hFile">handle to the communications device</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ClearCommBreak">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="hFile" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:communications device"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="restores transmission for a communications device"/>
+    </io-actions>
+    <preconditions/>
+   <postconditions>
+     <nonzero-zero/>
+   </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

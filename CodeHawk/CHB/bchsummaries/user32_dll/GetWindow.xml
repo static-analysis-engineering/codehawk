@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:03:16"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetWindow">
+   <documentation>
+    <desc>
+      Retrieves a handle to a window that has the specified relationship 
+      (Z-Order or owner) to the specified window. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HWND WINAPI GetWindow(</ll>
+      <ld>_In_  HWND hWnd</ld>
+      <ld>_In_  UINT uCmd</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="hWnd">
+       A handle to a window. The window handle retrieved is relative to this window, 
+       based on the value of the uCmd parameter. 
+     </par>
+     <par name="uCmd">
+     The relationship between the specified window and the window whose handle 
+     is to be retrieved.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetWindow">
+     <returntype>HWND</returntype>
+    <par loc="stack" name="hWnd" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="uCmd" io="r" roles="none" nr="2">
+     <rep type="enum" name="get_window_command_constants"/>
+     <type>UINT</type>
+     <pre><enum-value name="get_window_command_constants"/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="retrieves a handle to a related window"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

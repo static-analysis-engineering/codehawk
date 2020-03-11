@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/16/2015 21:09:06"/>
+  <libfun lib="user32" name="CharLowerBuff">
+   <documentation>
+    <desc>
+      Converts uppercase characters in a buffer to lowercase characters. 
+      The function converts the characters in place
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI CharLowerBuff(</ll>
+      <ld>_Inout_  LPTSTR lpsz</ld>
+      <ld>_In_     DWORD cchLength</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpsz">A buffer containing one or more characters to be processed</par>
+     <par name="cchLength">
+       The size, in characters, of the buffer pointed to by lpsz. The function 
+       examines each character, and converts uppercase characters to lowercase 
+       characters. The function examines the number of characters indicated by 
+       cchLength, even if one or more characters are null characters
+     </par>
+     <return>the number of characters processed</return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CharLowerBuff">
+    <par loc="stack" name="lpsz" io="r" rep="hex" nr="1">
+     <type>LPTSTR</type>
+     <roles>
+        <role rt="ioc:memops" rn="src-string:convert"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cchLength" io="r" nr="2">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="CharLowerBuff"/>
+     </roles>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="converts uppercase to lowercase"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpsz</ci>
+	    <apply><indexsize/><ci>cchLength</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post><math><apply><geq/><return/><cn>0</cn></apply></math></post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpsz</ci>
+	    <apply><indexsize/><ci>cchLength</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

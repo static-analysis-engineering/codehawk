@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="DefDlgProc">
+   <documentation>
+    <desc>
+      calls the default dialog box window procedure to provide default processing
+      for any window messages that a dialog box with a private window does not process
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LRESULT WINAPI DefDlgProc (</ll>
+      <ld>__in HWND hDlg,</ld>
+      <ld>__in UINT Msg,</ld>
+      <ld>__in WPARAM wParam,</ld>
+      <ld>__in LPARAM lParam</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDlg">handle to the dialog box</par>
+     <par name="Msg">the message</par>
+     <par name="wParam">additional message-specific information</par>
+     <par name="lParam">additional message-specific information</par>
+     <return>result of the message processing</return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="DefDlgProc">
+     <returntype>LRESULT</returntype>
+    <par loc="stack" io="r" name="hDlg" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="Msg" nr="2">
+     <roles>
+      <role rt="ioc:process" rn="id:message" />
+     </roles>
+      <type>UINT</type>
+    </par>
+    <par loc="stack" io="r" name="wParam" nr="3">
+     <type>WPARAM</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackp:wparam" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lParam" nr="4">
+      <type>LPARAM</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackp:lparam" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="calls the default dialog window procedure"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

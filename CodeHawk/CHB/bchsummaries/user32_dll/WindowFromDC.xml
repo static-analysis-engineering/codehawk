@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/06/2015 16:19:57"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="WindowFromDC">
+   <documentation>
+    <desc>returns a handle to the window associated with the specified display
+     device context (DC)
+   </desc>
+    <apidoc>
+     <pt>HWND WindowFromDC (_In_ HDC hDC)</pt>
+     <return>
+      <rc cond="success">handle to the window associated with the specified DC</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+     <par name="hDC">
+         handle to the device context from which a handle to the associated window
+         is to be retrieved
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="WindowFromDC">
+     <returntype>HWND</returntype>
+    <par loc="stack" name="hDC" io="r" nr="1">
+      <type>HDC</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="retrieves the window associated with a display"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

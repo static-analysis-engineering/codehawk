@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="DeleteMenu">
+   <documentation>
+    <desc>deletes an item from the specified menu</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI DeleteMenu (</ll>
+      <ld>__in HMENU hMenu,</ld>
+      <ld>__in UINT uPosition,</ld>
+      <ld>__in UINT uFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMenu">handle to the menu to be changed</par>
+     <par name="uPosition">menu item to be deleted</par>
+     <par name="uFlags">indicates how the uPosition parameter is to be interpreted</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="DeleteMenu">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hMenu" nr="1">
+       <type>HMENU</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:menu"/>
+       </roles>
+     </par>
+    <par loc="stack" name="uPosition" nr="2">
+      <type>UINT</type>
+      <roles>
+	<role rt="size:position" rn="DeleteMenu"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uFlags" nr="3" roles="none">
+      <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+    <external-effects/>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

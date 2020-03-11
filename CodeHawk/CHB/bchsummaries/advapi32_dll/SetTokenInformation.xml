@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 15:44:24"/>
+  <libfun lib="advapi32" name="SetTokenInformation">
+   <documentation>
+    <desc>
+      sets various types of information for a specified access token. The information 
+      that this function sets replaces existing information. The calling process must 
+      have appropriate access rights to set the information
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetTokenInformation(</ll>
+      <ld>_In_ HANDLE                  TokenHandle</ld>
+      <ld>_In_ TOKEN_INFORMATION_CLASS TokenInformationClass</ld>
+      <ld>_In_ LPVOID                  TokenInformation</ld>
+      <ld>_In_ DWORD                   TokenInformationLength</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="TokenHandle">
+       A handle to the access token for which information is to be set
+     </par>
+     <par name="TokenInformationClass">
+       A value from the TOKEN_INFORMATION_CLASS enumerated type that identifies the 
+       type of information the function sets. 
+     </par>
+     <par name="TokenInformation">
+       A pointer to a buffer that contains the information set in the access token. 
+       The structure of this buffer depends on the type of information specified by 
+       the TokenInformationClass parameter.
+     </par>
+     <par name="TokenInformationLength">
+       Specifies the length, in bytes, of the buffer pointed to by TokenInformation.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SetTokenInformation">
+    <par loc="stack" io="r" name="TokenHandle" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:system" rn="handle:access token"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="TokenInformationClass" roles="none" nr="2">
+     <rep type="enum" name="token_information_class_constants"/>
+     <type>TOKEN_INFORMATION_CLASS</type>
+     <pre><enum-value name="token_information_class_constants"/></pre>
+    </par>
+    <par loc="stack" io="r" name="TokenInformation" nr="3">
+     <type><ptr>byte</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="str-bytes:access token information"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="TokenInformationLength" nr="4">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="SetTokenInformation"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="sets information on an access token"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>TokenInformation</ci>
+	    <ci>TokenInformationLength</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

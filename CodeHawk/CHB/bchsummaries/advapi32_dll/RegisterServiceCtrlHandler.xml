@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 08:26:50"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegisterServiceCtrlHandler">
+   <documentation>
+    <desc>Registers a function to handle service control requests.</desc>
+    <apidoc>
+     <pt>
+      <ll>SERVICE_STATUS_HANDLE WINAPI RegisterServiceCtrlHandlerA(</ll>
+      <ld>_In_  LPCTSTR lpServiceName</ld>
+      <ld>_In_  LPHANDLER_FUNCTION lpHandlerProc</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpServiceName">
+       The name of the service run by the calling thread. This is the service name 
+       that the service control program specified in the CreateService function
+       when creating the service.
+       If the service type is SERVICE_WIN32_OWN_PROCESS, the function does not 
+       verify that the specified name is valid, because there is only one 
+       registered service in the process.
+    </par>
+     <par name="lpHandlerProc">
+       A pointer to the handler function to be registered
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="RegisterServiceCtrlHandler">
+     <returntype>SERVICE_STATUS_HANDLE</returntype>
+     <par loc="stack" io="r" name="lpServiceName" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:services" rn="name:service"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpHandlerProc" nr="2" rep="hex">
+      <type>HANDLER_FUNCTION</type>
+      <pre><deref-read/><function-pointer/></pre>
+      <roles>
+	<role rt="ioc:services" rn="callbackf:service handler"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="services"
+		  desc="registers a function to handle service control requests"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

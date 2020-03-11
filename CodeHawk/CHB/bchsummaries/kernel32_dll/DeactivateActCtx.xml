@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="DeactivateActCtx.xml" time="2016-03-06 10:56:30.472361"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="DeactivateActCtx" lib="kernel32">
+    <documentation>
+      <desc>
+	deactivates the activation context corresponding to the specified cookie
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL DeactivateActCtx(</ll>
+          <ld>_In_ DWORD     dwFlags</ld>
+          <ld>_In_ ULONG_PTR ulCookie</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="dwFlags">Flags that indicate how the deactivation is to occur</par>
+        <par name="ulCookie">
+	  The ULONG_PTR that was passed into the call to
+	  ActivateActCtx. This value is used as a cookie to identify a
+	  specific activated activation context.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="8" name="DeactivateActCtx">
+      <par loc="stack" io="r" nr="1" roles="none" name="dwFlags">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" io="r" nr="2" name="ulCookie">
+        <type>ULONG_PTR</type>
+	<roles>
+	  <role rt="ioc:network" rn="cookie"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="deactivates activation context"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

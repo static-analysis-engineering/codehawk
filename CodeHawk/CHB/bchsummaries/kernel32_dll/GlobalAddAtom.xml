@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/05/2015 22:35:05"/>
+  <libfun lib="kernel32" name="GlobalAddAtom">
+   <documentation>
+    <desc>
+      Adds a character string to the global atom table and returns a unique value 
+      (an atom) identifying the string.
+    </desc>
+    <apidoc>
+     <pt>ATOM WINAPI GlobalAddAtom (_In_  LPCTSTR lpString)</pt>
+     <par name="lpString">
+       The null-terminated string to be added. The string can have a maximum size of 
+       255 bytes. Strings that differ only in case are considered identical. The
+       case of the first string of this name added to the table is preserved and 
+       returned by the GlobalGetAtomName function.
+       Alternatively, you can use an integer atom that has been converted using 
+       the MAKEINTATOM macro. See the Remarks for more information.
+     </par>
+     <return>
+      <rc cond="success">the newly created atom</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GlobalAddAtom">
+    <par loc="stack" io="r" name="lpString" rep="hex" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:system" rn="name:atom"/>
+     </roles>
+    </par>
+    <returntype>ATOM</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="adds a string to the global atom table"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <leq/>
+	    <apply><null-terminator-pos/><ci>lpString</ci></apply>
+	    <cn>255</cn>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

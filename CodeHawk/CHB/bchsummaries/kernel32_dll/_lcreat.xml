@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 22:38:05"/>
+  <libfun lib="kernel32" name="_lcreat">
+   <documentation>
+    <desc>Creates or opens the specified file</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG _lcreat(</ll>
+      <ld>LPCSTR lpszFileName</ld>
+      <ld>int    fnAttribute</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszFileName">
+       The name of the file. The string must consist of characters from the 
+       Windows ANSI character set
+     </par>
+     <par name="fnAttribute">
+       The attributes of the file
+     </par>
+     <return>
+      <rc cond="success">a file handle</rc>
+      <rc cond="failure">HFILE_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="_lcreat">
+    <par loc="stack" name="lpszFileName" io="r" nr="1">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+       <role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="fnAttribute" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <returntype>LONG</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="filesystem" desc="creates or opens a file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

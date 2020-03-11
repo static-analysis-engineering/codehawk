@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/06/2015 17:11:05"/>
+  <libfun lib="user32" name="OpenWindowStation">
+   <documentation>
+    <desc>Opens the specified window station</desc>
+    <apidoc>
+     <pt>
+      <ll>HWINSTA WINAPI OpenWindowStation(</ll>
+      <ld>_In_ LPTSTR      lpszWinSta</ld>
+      <ld>_In_ BOOL        fInherit</ld>
+      <ld>_In_ ACCESS_MASK dwDesiredAccess</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszWinSta">
+       The name of the window station to be opened. Window station names are 
+       case-insensitive.
+       This window station must belong to the current session.
+     </par>
+     <par name="fInherit">
+       If this value is TRUE, processes created by this process will inherit the handle. 
+       Otherwise, the processes do not inherit this handle.
+     </par>
+     <par name="dwDesiredAccess">
+       The access to the window station. For a list of access rights
+     </par>
+     <return>
+      <rc cond="success">the handle to the specified window station</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OpenWindowStation">
+    <par loc="stack" name="lpszWinSta" io="r" nr="1">
+     <type>LPTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:system" rn="name:window station"/>
+     </roles>
+    </par>
+    <par loc="stack" name="fInherit" roles="none" nr="2">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" name="dwDesiredAccess" roles="none" nr="3">
+     <type>ACCESS_MASK</type>
+    </par>
+    <returntype>HWINSTA</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="opens a window station"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

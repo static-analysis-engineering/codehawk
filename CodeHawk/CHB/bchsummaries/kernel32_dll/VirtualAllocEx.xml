@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:39:59"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="VirtualAllocEx">
+   <documentation>
+    <desc>
+      Reserves or commits a region of memory within the virtual address space 
+      of a specified process. The function initializes the memory it allocates 
+      to zero, unless MEM_RESET is used.
+
+      To execute dynamically generated code, use VirtualAllocEx to allocate
+      memory and the VirtualProtectEx function to grant PAGE_EXECUTE access.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>LPVOID WINAPI VirtualAllocEx(</ll>
+      <ld>_In_      HANDLE hProcess</ld>
+      <ld>_In_opt_  LPVOID lpAddress</ld>
+      <ld>_In_      SIZE_T dwSize</ld>
+      <ld>_In_      DWORD flAllocationType</ld>
+      <ld>_In_      DWORD flProtect</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="hProcess">
+       The handle to a process. The function allocates memory within the virtual 
+       address space of this process.
+       
+       The handle must have the PROCESS_VM_OPERATION access right.
+     </par>
+     <par name="lpAddress">
+       The pointer that specifies a desired starting address for the region of 
+       pages that you want to allocate.
+       
+       If you are reserving memory, the function rounds this address down to 
+       the nearest multiple of the allocation granularity.
+
+       If you are committing memory that is already reserved, the function rounds 
+       this address down to the nearest page boundary. To determine the size of 
+       a page and the allocation granularity on the host computer, use the 
+       GetSystemInfo function.
+
+       If lpAddress is NULL, the function determines where to allocate the region.
+     </par>
+     <par name="dwSize">
+       The size of the region of memory to allocate, in bytes.
+       
+       If lpAddress is NULL, the function rounds dwSize up to the next page boundary.
+       
+       If lpAddress is not NULL, the function allocates all pages that contain one
+       or more bytes in the range from lpAddress to lpAddress+dwSize. This means, 
+       for example, that a 2-byte range that straddles a page boundary causes the 
+       function to allocate both pages.
+     </par>
+     <par name="flAllocationType">The type of memory allocation.</par>
+     <par name="flProtect">
+       The memory protection for the region of pages to be allocated.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="VirtualAllocEx">
+    <returnbtype tname="LPVOID" ttag="tnamed"/>
+    <par loc="stack" name="hProcess" io="r" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:process"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpAddress" io="r" nr="2" rep="hex">
+      <type><ptr>VOID</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="address:memory"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwSize" io="r" nr="3">
+      <type>SIZE_T</type>
+      <roles>
+	<role rt="size:allocation size" rn="VirtualAllocEx"/>
+      </roles>
+    </par>
+    <par loc="stack" name="flAllocationType" io="r" roles="none" nr="4">
+      <rep type="enum" name="memory_allocation_type_constants"/>
+      <type>DWORD</type>
+      <pre><enum-value name="memory_allocation_type_constants"/></pre>
+    </par>
+    <par loc="stack" name="flProtect" io="r" roles="none" nr="5">
+      <rep type="enum" name="memory_protection_constants"/>
+      <type>DWORD</type>
+      <pre><enum-value name="memory_protection_constants" flags="true"/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops"
+		  desc="reserves memory in the virtual address space"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

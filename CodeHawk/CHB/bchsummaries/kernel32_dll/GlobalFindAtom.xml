@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/02/2015 23:43:04"/>
+  <libfun lib="kernel32" name="GlobalFindAtom">
+   <documentation>
+    <desc>
+      Searches the global atom table for the specified character string and 
+      retrieves the global atom associated with that string
+    </desc>
+    <apidoc>
+     <pt>ATOM WINAPI GlobalFindAtom (_In_ LPCTSTR lpString)</pt>
+     <par name="lpString">
+       The null-terminated character string for which to search.
+       Alternatively, you can use an integer atom that has been converted using
+       the MAKEINTATOM macro
+     </par>
+     <return>
+      <rc cond="success">the global atom associated with the given string</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GlobalFindAtom">
+    <par loc="stack" io="r" name="lpString" nr="1" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:inputs" rn="string search" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>ATOM</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="searches the global atom table for a string"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

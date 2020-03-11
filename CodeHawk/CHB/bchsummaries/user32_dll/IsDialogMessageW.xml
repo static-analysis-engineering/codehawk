@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="04/04/2015 22:00:06"/>
+  <libfun lib="user32" name="IsDialogMessageW">
+   <refer-to char-type="unicode" name="IsDialogMessage">
+     <replace-type src="MSG" tgt="MSGW"/>
+   </refer-to>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

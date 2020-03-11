@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 15:36:05"/>
+  <libfun lib="advapi32" name="QueryServiceConfig">
+   <documentation>
+    <desc>
+      Retrieves the configuration parameters of the specified service
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI QueryServiceConfig(</ll>
+      <ld>_In_      SC_HANDLE              hService</ld>
+      <ld>_Out_opt_ LPQUERY_SERVICE_CONFIG lpServiceConfig</ld>
+      <ld>_In_      DWORD                  cbBufSize</ld>
+      <ld>_Out_     LPDWORD                pcbBytesNeeded</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hService">
+       A handle to the service. This handle is returned by the OpenService or 
+       CreateService function, and it must have the SERVICE_QUERY_CONFIG access right
+     </par>
+     <par name="lpServiceConfig">
+       A pointer to a buffer that receives the service configuration information. 
+       The format of the data is a QUERY_SERVICE_CONFIG structure.
+       The maximum size of this array is 8K bytes. To determine the required size, 
+       specify NULL for this parameter and 0 for the cbBufSize parameter. The function
+       will fail and GetLastError will return ERROR_INSUFFICIENT_BUFFER. The 
+       pcbBytesNeeded parameter will receive the required size.
+     </par>
+     <par name="cbBufSize">
+       The size of the buffer pointed to by the lpServiceConfig parameter, in bytes.
+     </par>
+     <par name="pcbBytesNeeded">
+       A pointer to a variable that receives the number of bytes needed to store all
+       the configuration information, if the function fails with ERROR_INSUFFICIENT_BUFFER.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="QueryServiceConfig">
+    <par loc="stack" name="hService" io="r" rep="hex" nr="1">
+     <type>SC_HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:services" rn="handle:service"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpServiceConfig" io="w" rep="hex" nr="2">
+     <type><ptr>QUERY_SERVICE_CONFIG</ptr></type>
+     <pre><deref-write-null/></pre>
+     <roles>
+        <role rt="ioc:services" rn="infox:service configuration"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cbBufSize" io="r" nr="3">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="QueryServiceConfig"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pcbBytesNeeded" io="w" rep="hex" nr="4">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="size:buffersize" rn="bytes needed"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="services" desc="retrieves the service configuration parameters"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>QUERY_SERVICE_CONFIG</type>
+	    <ci>lpServiceConfig</ci>
+	    <ci>cbBufSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>QUERY_SERVICE_CONFIG</type>
+	    <ci>lpServiceConfig</ci>
+	    <ci>cbBufSize</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

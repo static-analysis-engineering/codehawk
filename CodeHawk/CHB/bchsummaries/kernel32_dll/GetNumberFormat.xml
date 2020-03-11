@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/29/2015 17:11:59"/>
+  <libfun lib="kernel32" name="GetNumberFormat">
+   <documentation>
+    <desc>
+      Formats a number string as a number string customized for a locale 
+      specified by identifier
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int GetNumberFormat(</ll>
+      <ld>_In_            LCID      Locale</ld>
+      <ld>_In_            DWORD     dwFlags</ld>
+      <ld>_In_            LPCTSTR   lpValue</ld>
+      <ld>_In_opt_  const NUMBERFMT *lpFormat</ld>
+      <ld>_Out_opt_       LPTSTR    lpNumberStr</ld>
+      <ld>_In_            int       cchNumber</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Locale">Locale identifier that specifies the locale</par>
+     <par name="dwFlags">
+       Flags controlling the operation of the function. The application must set
+       this parameter to 0 if lpFormat is not set to NULL. In this case, the 
+       function formats the string using user overrides to the default number
+       format for the locale. If lpFormat is set to NULL, the application can 
+       specify LOCALE_NOUSEROVERRIDE to format the string using the system 
+       default number format for the specified locale.
+     </par>
+     <par name="lpValue">
+       Pointer to a null-terminated string containing the number string to format
+     </par>
+     <par name="lpFormat">
+       Pointer to a NUMBERFMT structure that contains number formatting information,
+       with all members set to appropriate values. If this parameter does is not set
+       to NULL, the function uses the locale only for formatting information not
+       specified in the structure, for example, the locale-specific string value 
+       for the negative sign
+     </par>
+     <par name="lpNumberStr">
+       Pointer to a buffer in which this function retrieves the formatted number
+       string
+     </par>
+     <par name="cchNumber">
+       Size, in TCHAR values, for the number string buffer indicated by lpNumberStr.
+       Alternatively, the application can set this parameter to 0. In this case, 
+       the function returns the required size for the number string buffer, and 
+       does not use the lpNumberStr parameter.
+     </par>
+     <return>
+      <rc cond="success">
+	the number of TCHAR values retrieved in the buffer indicated by lpNumberStr 
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="GetNumberFormat">
+    <par loc="stack" name="Locale" io="r" nr="1">
+     <type>LCID</type>
+     <roles>
+       <role rt="ioc:system" rn="id:locale"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpValue" io="r" rep="hex" nr="3">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-string:convert"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpFormat" io="r" rep="hex" nr="4">
+     <type><ptr>NUMBERFMT</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:outputs" rn="format string"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpNumberStr" io="w" rep="hex" nr="5">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-string:formatted data"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cchNumber" io="r" nr="6">
+     <type>int</type>
+     <roles>
+       <role rt="size:buffersize" rn="number of characters"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="outputs" 
+		  desc="formats a number string as a number according to locale"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>TCHAR</type>
+	    <ci>lpNumberStr</ci>
+	    <apply><indexsize/><ci>cchNumber</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpNumberStr</ci>
+	    <apply><indexsize/><ci>cchNumber</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

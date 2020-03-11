@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/19/2015 22:39:39"/>
+  <libfun lib="kernel32" name="GlobalMemoryStatusEx">
+   <documentation>
+    <desc>
+      Retrieves information about the system's current usage of both 
+      physical and virtual memory
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI GlobalMemoryStatusEx (_Inout_  LPMEMORYSTATUSEX lpBuffer)</pt>
+     <par name="lpBuffer">
+       A pointer to a MEMORYSTATUSEX structure that receives information about 
+       current memory availability
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GlobalMemoryStatusEx">
+    <par loc="stack" io="rw" name="lpBuffer" nr="1" rep="hex">
+     <type><ptr>MEMORYSTATUSEX</ptr></type>
+     <roles>
+      <role rt="ioc:system" rn="infox:memory usage"/>
+      <role rt="ioc:memops" rn="src-struct:memorystatusex"/>
+      <role rt="ioc:memops" rn="dst-struct:memorystatusex"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" 
+		  desc="retrieves information about the system's memory usage"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

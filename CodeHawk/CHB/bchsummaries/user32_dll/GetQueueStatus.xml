@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetQueueStatus">
+   <documentation>
+    <desc>
+      retrieves the type of messages found in the calling thread&apos;s message queue
+    </desc>
+    <apidoc>
+     <pt>DWORD WINAPI GetQueueStatus (__in UINT flags)</pt>
+     <par name="flags">the types of messages for which to check</par>
+     <return>
+       the high-order word of the return value indicates the types of
+       messages currently in the queue; the low-order word indicates
+       the types of messages that have been added to the queue and
+       that are still in the queue since the last call to the
+       GetQueueStatus, GetMessage, or PeekMessage function
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetQueueStatus">
+     <returntype>DWORD</returntype>
+    <par loc="stack" name="flags" io="r" roles="none" nr="1">
+      <rep type="enum" name="queue_status_flags"/>
+      <type>UINT</type>
+      <pre><enum-value name="queue_status_flags" flags="true"/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-actions cat="process"
+		   desc="retrieves the type of messages in the message queue"/>
+   </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

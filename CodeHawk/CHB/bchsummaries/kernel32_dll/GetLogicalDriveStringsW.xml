@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="03/11/2015 21:09:53"/>
+  <libfun lib="kernel32" name="GetLogicalDriveStringsW">
+   <refer-to char-type="unicode" name="GetLogicalDriveStrings"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

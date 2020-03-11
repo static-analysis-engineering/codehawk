@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="02/04/2015 16:59:22"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetGUIThreadInfo">
+   <documentation>
+    <desc>retrieves information about the active window of a specified GUI thread
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetGUIThreadInfo(</ll>
+      <ld>_In_ DWORD idThread,</ld>
+      <ld>_Inout_ LPGUITHREADINFO lpgui</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="idThread">
+       identifier for the thread for which information is to be
+       retrieved. To be retrieved with GetWindowThreadProcessId. Can
+       be NULL.
+    </par>
+     <par name="lpgui">
+       pointer to a GUITHREADINFO structure that receives information
+       describing the thread.  Note that the cbSize member must be set
+       to sizeof(GUITHREADINFO) before calling this function.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetGUIThreadInfo">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="idThread" nr="1">
+       <roles>
+	 <role rt="ioc:process" rn="id:thread" />
+       </roles>
+       <type>UINT</type>
+    </par>
+    <par loc="stack" io="rw" name="lpgui" nr="2">
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:GUITHREADINFO" />
+      <role rt="ioc:memops" rn="dst-struct:GUITHREADINFO" />
+     </roles>
+     <type><ptr>GUITHREADINFO</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves information about the window of a gui thread"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

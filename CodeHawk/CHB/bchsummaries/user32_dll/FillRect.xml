@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:30:06"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="FillRect">
+   <documentation>
+    <desc>
+      The FillRect function fills a rectangle by using the specified brush. 
+      This function includes the left and top borders, but excludes the right
+      and bottom borders of the rectangle.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int FillRect(</ll>
+      <ld>_In_  HDC hDC</ld>
+      <ld>_In_  const RECT *lprc</ld>
+      <ld>_In_  HBRUSH hbr</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hDC">A handle to the device context.</par>
+     <par name="lprc">
+       A pointer to a RECT structure that contains the logical coordinates 
+       of the rectangle to be filled.
+     </par>
+     <par name="hbr">A handle to the brush used to fill the rectangle.</par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="FillRect">
+     <returntype>int</returntype>
+     <par loc="stack" name="hDC" io="r" nr="1">
+       <type>HDC</type>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="lprc" io="r" nr="2">
+      <type><ptr>RECT</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:RECT"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hbr" io="r" nr="3">
+     <type>HBRUSH</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:brush"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="fills a rectangle using a brush"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

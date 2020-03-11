@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="IsDBCSLeadByteEx">
+   <documentation>
+    <desc>determines if a specified character is potentially a lead byte</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL IsDBCSLeadByteEx (</ll>
+      <ld>__in UINT CodePage,</ld>
+      <ld>__in BYTE TestChar</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="CodePage">identifier of the code page used to check lead byte ranges</par>
+     <par name="TestChar">the character to test</par>
+     <return>
+      <rc cond="the lead byte is zero">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="IsDBCSLeadByteEx">
+     <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="CodePage" nr="1">
+     <roles>
+      <role rt="ioc:system" rn="id:code page" />
+     </roles>
+     <type>UINT</type>
+    </par>
+    <par loc="stack" io="r" name="TestChar" roles="none" nr="2">
+      <type>BYTE</type>
+    </par>
+   </api>
+   <semantics>
+   <io-actions/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

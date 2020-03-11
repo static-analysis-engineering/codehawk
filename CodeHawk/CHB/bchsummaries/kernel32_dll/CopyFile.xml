@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:04:50"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CopyFile">
+   <documentation>
+    <desc>
+      Copies an existing file to a new file
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CopyFile(</ll>
+      <ld>_In_  LPCTSTR lpExistingFileName </ld>
+      <ld>_In_  LPCTSTR lpNewFileName </ld>
+      <ld>_In_  BOOL bFailIfExists </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpExistingFileName">
+       The name of an existing file.
+       In the ANSI version of this function, the name is limited to MAX_PATH characters.
+       To extend this limit to 32,767 wide characters, call the Unicode version of the 
+       function and prepend ? to the path.
+     </par>
+     <par name="lpNewFileName">
+       The name of the new file.
+       In the ANSI version of this function, the name is limited to MAX_PATH characters. 
+       To extend this limit to 32,767 wide characters, call the Unicode version of the 
+       function and prepend ? to the path.
+     </par>
+     <par name="bFailIfExists">
+       If this parameter is TRUE and the new file specified by lpNewFileName already
+       exists, the function fails. If this parameter is FALSE and the new file already 
+       exists, the function overwrites the existing file and succeeds.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CopyFile">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="lpExistingFileName" io="r" nr="1">
+      <type>LPCTSTR</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:file"/>
+	<role rt="rep:hex" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpNewFileName" io="r" nr="2">
+      <type>LPCTSTR</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:file"/>
+	<role rt="rep:hex" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="bFailIfExists" roles="none" nr="3">
+     <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="copies an existing file to a new file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

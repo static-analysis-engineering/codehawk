@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="WinHelp">
+   <documentation>
+    <desc>
+      launches Window Help (Winhelp.exe) and passes additional data that indicates the
+      nature of the help requested by the application
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WinHelp (</ll>
+      <ld>HWND hWndMain,</ld>
+      <ld>LPCTSTR lpszHelp,</ld>
+      <ld>UINT uCommand,</ld>
+      <ld>ULONG_PTR dwData</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWndMain">handle to the window requesting help</par>
+     <par name="lpszHelp">
+       address of a null-terminated string containing the path, if necessary, 
+       and the name of the Help file the WinHelp is to display. The file name 
+       can be followed by an angle bracket and the name of a secondary window 
+       if the topic is to be displayed in a secondary window rather than in 
+       the primary window. The name of the secondary window must be defined in the 
+       [WINDOWS] section of the Help project (.hpj) file
+     </par>
+     <par name="uCommand">type of help requested</par>
+     <par name="dwData">
+       additional data that depends on the value of the uCommand parameter
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="WinHelp">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hWndMain" io="r" nr="1">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpszHelp" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uCommand" io="r" nr="3">
+      <type>UINT</type>
+      <roles>
+         <role rt="ioc:process" rn="help command"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwData" io="r" roles="none" nr="4">
+     <type>ULONG_PTR</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="launches Winhelp.exe"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

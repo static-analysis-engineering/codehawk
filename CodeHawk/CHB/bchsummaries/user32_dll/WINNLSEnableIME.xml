@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/10/2015 00:13:30"/>
+  <libfun lib="user32" name="WINNLSEnableIME">
+   <documentation>
+    <desc>
+      Temporarily enables or disables an Input Method Editor (IME) and, at the same time,
+      turns on or off the display of all windows owned by the IME.
+      Note  This function is obsolete and should not be used.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WINNLSEnableIME(</ll>
+      <ld>In_ HWND hwnd</ld>
+      <ld>In_ BOOL bFlag</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hwnd">
+       Must be NULL. Specifying a particular IME for each application is not supported.
+     </par>
+     <par name="bFlag">TRUE to enable the IME; FALSE to disable</par>
+     <return>previous state of the IME</return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="WINNLSEnableIME">
+    <par loc="stack" name="hwnd" io="r" nr="1">
+     <type>HWND</type>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="bFlag" roles="none" nr="2">
+     <type>BOOL</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="enables or disables the input method editor"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

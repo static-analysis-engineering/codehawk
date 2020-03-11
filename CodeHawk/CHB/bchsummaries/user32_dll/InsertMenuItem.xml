@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="InsertMenuItem.xml" time="2016-03-05 18:03:49.533381"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="InsertMenuItem" lib="user32">
+    <documentation>
+      <desc>Inserts a new menu item at the specified position in a menu</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI InsertMenuItem(</ll>
+          <ld>_In_ HMENU           hMenu</ld>
+          <ld>_In_ UINT            uItem</ld>
+          <ld>_In_ BOOL            fByPosition</ld>
+          <ld>_In_ LPCMENUITEMINFO lpmii</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hMenu">
+	  A handle to the menu in which the new menu item is inserted
+	</par>
+        <par name="uItem">
+	  The identifier or position of the menu item before which to
+	  insert the new item. The meaning of this parameter depends
+	  on the value of fByPosition.
+	</par>
+        <par name="fByPosition">
+	  Controls the meaning of uItem. If this parameter is FALSE,
+	  uItem is a menu item identifier. Otherwise, it is a menu
+	  item position
+	</par>
+        <par name="lpmii">
+	  A pointer to a MENUITEMINFO structure that contains
+	  information about the new menu item
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="16" name="InsertMenuItem">
+      <par loc="stack" io="r" nr="1" name="hMenu">
+        <type>HMENU</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:menu"/>
+	</roles>
+      </par>
+      <par loc="stack" nr="2" roles="none" name="uItem">
+        <type>UINT</type>
+      </par>
+      <par loc="stack" nr="3" name="fByPosition" roles="none">
+        <type>BOOL</type>
+      </par>
+      <par loc="stack" io="r" nr="4" name="lpmii" rep="hex">
+        <type><ptr>MENUITEMINFO</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-struct:MENUITEMINFO"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="inserts a menu item into a menu"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <nonzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

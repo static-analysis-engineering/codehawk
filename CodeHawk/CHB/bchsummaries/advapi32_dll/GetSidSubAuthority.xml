@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 03:01:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="GetSidSubAuthority">
+   <documentation>
+    <desc>
+      returns a pointer to a specified subauthority in a security identifier (SID).
+      The subauthority value is a relative identifier (RID).
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>PDWORD WINAPI GetSidSubAuthority(</ll>
+      <ld>_In_  PSID pSid</ld>
+      <ld>_In_  DWORD nSubAuthority</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">Pointer to Specified SID SubAuthority</rc>
+      <rc cond="failure">Undefined</rc>
+     </return>
+     <par name="pSid">
+       A pointer to the SID structure from which a pointer to a subauthority is 
+       to be returned.
+     </par>
+     <par name="nSubAuthority">
+       Specifies an index value identifying the subauthority array element whose 
+       address the function will return. The function performs no validation 
+       tests on this value.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetSidSubAuthority">
+     <returntype><ptr>DWORD</ptr></returntype>
+     <par loc="stack" name="pSid" io="r" rep="hex" nr="1">
+       <type><ptr>SID</ptr></type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:memops" rn="src-struct:security identifier"/>
+       </roles>
+    </par>
+    <par loc="stack" name="nSubAuthority" io="r" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves a subauthority of a security identifier"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

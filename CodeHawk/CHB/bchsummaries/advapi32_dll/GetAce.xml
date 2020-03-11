@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetAce.xml" time="2016-06-22 13:35:32.286169"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="GetAce">
+    <documentation>
+      <desc>
+	obtains a pointer to an access control entry (ACE) in an
+	access control list (ACL)
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI GetAce(</ll>
+          <ld>_In_  PACL   pAcl</ld>
+          <ld>_In_  DWORD  dwAceIndex</ld>
+          <ld>_Out_ LPVOID *pAce</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pAcl">
+	  A pointer to an ACL that contains the ACE to be retrieved
+	</par>
+        <par name="dwAceIndex">
+	  The index of the ACE to be retrieved. A value of zero
+	  corresponds to the first ACE in the ACL, a value of one to
+	  the second ACE, and so on.
+	</par>
+        <par name="pAce">
+	  A pointer to a pointer that the function sets to the address of the ACE.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="GetAce">
+      <par loc="stack" name="pAcl" io="r" nr="1">
+        <type><ptr>ACL</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="acl structure"/>
+	  <role rt="rep:hex" rn="acl structure"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwAceIndex" io="r" nr="2">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:index" rn="GetAce"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pAce" io="w" nr="3">
+        <type><ptr><ptr>VOID</ptr></ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:system" rn="access control entry"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="obtains a pointer to an access control entry"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

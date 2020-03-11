@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/16/2015 09:04:28"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetTempFileName">
+   <documentation>
+    <desc>
+      Creates a name for a temporary file. If a unique file name is generated, 
+      an empty file is created and the handle to it is released; otherwise,
+      only a file name is generated.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetTempFileNameA(</ll>
+      <ld>_In_   LPCTSTR lpPathName </ld>
+      <ld>_In_   LPCTSTR lpPrefixString </ld>
+      <ld>_In_   UINT uUnique </ld>
+      <ld>_Out_  LPTSTR lpTempFileName </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpPathName">
+       The directory path for the file name. Applications typically specify 
+       a period (.) for the current directory or the result of the GetTempPath
+       function. The string cannot be longer than MAX_PATH-14 characters or 
+       GetTempFileName will fail. If this parameter is NULL, the function fails.
+     </par>
+     <par name="lpPrefixString">
+       The null-terminated prefix string. The function uses up to the first
+       three characters of this string as the prefix of the file name. This 
+       string must consist of characters in the OEM-defined character set.
+     </par>
+     <par name="uUnique">
+       An unsigned integer to be used in creating the temporary file name
+     </par>
+     <par name="lpTempFileName">
+       A pointer to the buffer that receives the temporary file name. This buffer 
+       should be MAX_PATH characters to accommodate the path plus the 
+       terminating null character.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetTempFileName">
+     <returntype>UINT</returntype>
+     <par loc="stack" name="lpPathName" io="r" nr="1" rep="hex">
+       <type>LPCTSTR</type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:filesystem" rn="name:file"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpPrefixString" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:file prefix"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uUnique" io="r" roles="none" nr="3">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="lpTempFileName" io="w" nr="4" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-string:filename"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="creates name and file for temporary file"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpTempFileName</ci>
+	    <apply><indexsize/><runtime-value/></apply><!-- should be MAXPATH characters -->
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpTempFileName</ci>
+	    <apply><indexsize/><runtime-value/></apply><!-- should be MAXPATH characters -->
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 22:41:27"/>
+  <libfun lib="kernel32" name="SetDllDirectory">
+   <documentation>
+    <desc>
+      Adds a directory to the search path used to locate DLLs for the application
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI SetDllDirectory (_In_opt_ LPCTSTR lpPathName)</pt>
+     <par name="lpPathName">
+       The directory to be added to the search path. If this parameter is
+       an empty string (""), the call removes the current directory from
+       the default DLL search order. If this parameter is NULL, the function
+       restores the default search order.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetDllDirectory">
+    <par loc="stack" io="r" name="lpPathName" nr="1" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+       <role rt="ioc:process" rn="name:dll directory"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="adds a directory to the search path to locate DLLs"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

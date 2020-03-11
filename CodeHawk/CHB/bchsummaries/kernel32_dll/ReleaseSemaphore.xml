@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:30:17"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="ReleaseSemaphore">
+   <documentation>
+    <desc>Increases the count of the specified semaphore object by a specified amount</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI ReleaseSemaphore(</ll>
+      <ld>_In_       HANDLE hSemaphore</ld>
+      <ld>_In_       LONG lReleaseCount</ld>
+      <ld>_Out_opt_  LPLONG lpPreviousCount</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hSemaphore">
+       A handle to the semaphore object. The CreateSemaphore or OpenSemaphore 
+       function returns this handle.
+
+       This handle must have the SEMAPHORE_MODIFY_STATE access right.
+	</par>
+     <par name="lReleaseCount">
+       The amount by which the semaphore object&apos;s current count is to be 
+       increased. The value must be greater than zero. If the specified amount
+       would cause the semaphore&apos;s count to exceed the maximum count that 
+       was specified when the semaphore was created, the count is not changed
+       and the function returns FALSE.
+     </par>
+     <par name="lpPreviousCount">
+       A pointer to a variable to receive the previous count for the semaphore.
+       This parameter can be NULL if the previous count is not required.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="ReleaseSemaphore">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hSemaphore" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:synchronization" rn="handle:semaphore"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lReleaseCount" nr="2">
+      <type>LONG</type>
+      <pre><positive/></pre>
+      <roles>
+	<role rt="size:semaphore inc" rn="ReleaseSemaphore"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpPreviousCount" nr="3">
+      <type><ptr>LONG</ptr></type>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:semaphore count" rn="ReleaseSemaphore"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization" desc="increases semaphore count"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

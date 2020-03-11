@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/08/2015 19:08:44"/>
+  <libfun lib="advapi32" name="CryptGetProvParam">
+   <documentation>
+    <desc>
+      retrieves parameters that govern the operations of a cryptographic 
+      service provider (CSP).
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CryptGetProvParam(</ll>
+      <ld>_In_     HCRYPTPROV hProv</ld>
+      <ld>_In_     DWORD dwParam</ld>
+      <ld>_Out_    BYTE *pbData</ld>
+      <ld>_Inout_  DWORD *pdwDataLen</ld>
+      <ld>_In_     DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hProv">
+       A handle of the CSP target of the query. This handle must have been 
+       created by using the CryptAcquireContext function.
+     </par>
+     <par name="dwParam">The nature of the query</par>
+     <par name="pbData">
+       A pointer to a buffer to receive the data. The form of this data varies 
+       depending on the value of dwParam. When dwParam is set to 
+       PP_USE_HARDWARE_RNG, pbData must be set to NULL.
+       This parameter can be NULL to set the size of this information for 
+       memory allocation purposes
+     </par>
+     <par name="pdwDataLen">
+       A pointer to a DWORD value that specifies the size, in bytes, of the buffer 
+       pointed to by the pbData parameter. When the function returns, the DWORD 
+       value contains the number of bytes stored or to be stored in the buffer.
+       Note  When processing the data returned in the buffer, applications must 
+       use the actual size of the data returned. The actual size can be slightly 
+       smaller than the size of the buffer specified on input. (On input, buffer 
+       sizes are usually specified large enough to ensure that the largest possible 
+       output data fits in the buffer.) On output, the variable pointed to by this 
+       parameter is updated to reflect the actual size of the data copied to the 
+       buffer.
+       If PP_ENUMALGS, or PP_ENUMALGS_EX is set, the pdwDataLen parameter works 
+       somewhat differently. If pbData is NULL or the value pointed to by pdwDataLen 
+       is too small, the value returned in this parameter is the size of the 
+       largest item in the enumeration list instead of the size of the item
+       currently being read.
+       If PP_ENUMCONTAINERS is set, the first call to the function returns the 
+       size of the maximum key-container allowed by the current provider. This 
+       is in contrast to other possible behaviors, like returning the length of 
+       the longest existing container, or the length of the current container. 
+       Subsequent enumerating calls will not change the dwLen parameter. For
+       each enumerated container, the caller can determine the length of the 
+       null-terminated string programmatically, if desired. If one of the
+       enumeration values is read and the pbData parameter is NULL, the CRYPT_FIRST 
+       flag must be specified for the size information to be correctly retrieved.
+     </par>
+     <par name="dwFlags">
+       If dwParam is PP_KEYSET_SEC_DESCR, the security descriptor on the key 
+       container where the keys are stored is retrieved. For this case, dwFlags 
+       is used to pass in the SECURITY_INFORMATION bit flags that indicate the 
+       requested security information, as defined in the Platform SDK. 
+       SECURITY_INFORMATION bit flags can be combined with a bitwise-OR operation.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="CryptGetProvParam">
+    <par loc="stack" io="r" name="hProv" nr="1">
+     <type>HCRYPTPROV</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:crypto" rn="handle:CSP"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwParam" roles="none" nr="2">
+     <type>DWORD</type>
+     <pre><enum-value name="crypt_get_prov_param_query_type"/></pre>
+     <rep type="enum" name="crypt_get_prov_param_query_type"/>
+    </par>
+    <par loc="stack" io="w" name="pbData" rep="hex" nr="3">
+     <type><ptr>BYTE</ptr></type>
+     <roles>
+       <role rt="ioc:crypto" rn="infox:key blob data"/>
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="pdwDataLen" nr="4">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:actual" rn="CryptGetProvParam"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwFlags" roles="none" nr="5">
+      <type>DWORD</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="crypto"
+		  desc="retrieves parameters that govern the operations of a cryptographic service provider (CSP)"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>byte</type>
+	    <ci>pbData</ci>
+	    <apply><addressed-value/><ci>pdwDataLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>pbData</ci>
+	    <apply><addressed-value/><ci>pdwDataLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

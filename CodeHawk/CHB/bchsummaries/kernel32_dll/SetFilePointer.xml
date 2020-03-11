@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetFilePointer">
+   <documentation>
+    <desc>moves the file pointer of the specified file</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI SetFilePointer (</ll>
+      <ld>__in        HANDLE hFile,</ld>
+      <ld>__in        LONG lDistanceToMove,</ld>
+      <ld>__inout_opt PLONG lpDistanceToMoveHigh,</ld>
+      <ld>__in        DWORD dwMoveMethod</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">handle to the file</par>
+     <par name="lDistanceToMove">
+       lower order 32 bites of a signed value that specifies the number of bytes
+       to move the file pointer
+     </par>
+     <par name="lpDistanceToMoveHigh">
+       pointer to the high order 32 bits of the signed 64-bit distance to move; can be NULL
+     </par>
+     <par name="dwMoveMethod">starting point for the file pointer move</par>
+     <return>
+       <rc cond="success">lpDistanceToMove (if lpDistanceToMoveHigh is NULL)</rc>
+       <rc cond="failure">INVALID_SET_FILE_POINTER</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SetFilePointer">
+    <returnbtype ikind="iuint" ttag="tint"/>
+    <par loc="stack" io="r" name="hFile" nr="1">
+      <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="handle:file"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpDistanceToMove" nr="2">
+     <type>LONG</type>
+     <roles>
+        <role rt="size:distance" rn="SetFilePointer"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpDistanceToMoveHigh" nr="3">
+      <type><ptr>LONG</ptr></type>
+      <roles>
+         <role rt="size:distance" rn="SetFilePointer"/>
+      </roles>
+     <pre><deref-read-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="dwMoveMethod" nr="4">
+     <type>DWORD</type>
+     <pre><enum-value name="file_pointer_move_methods"/></pre>
+     <roles>
+        <role rt="rep:enum" rn="file_pointer_move_methods"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="moves the file pointer"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

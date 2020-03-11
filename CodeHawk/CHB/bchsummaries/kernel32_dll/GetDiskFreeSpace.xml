@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/22/2014 16:12:00"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetDiskFreeSpace">
+   <documentation>
+    <desc>Retrieves information about the specified disk, including the amount 
+      of free space on the disk
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetDiskFreeSpace(</ll>
+      <ld>_In_   LPCTSTR lpRootPathName,</ld>
+      <ld>_Out_  LPDWORD lpSectorsPerCluster,</ld>
+      <ld>_Out_  LPDWORD lpBytesPerSector,</ld>
+      <ld>_Out_  LPDWORD lpNumberOfFreeClusters,</ld>
+      <ld>_Out_  LPDWORD lpTotalNumberOfClusters</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpRootPathName">
+       The root directory of the disk for which information is to be returned. 
+       If this parameter is NULL, the function uses the root of the current
+       disk. If this parameter is a UNC name, it must include a trailing 
+       backslash (for example, &quot;\\MyServer\MyShare\&quot;). Furthermore, a 
+       drive specification must have a trailing backslash (for example, 
+       &quot;C:\&quot;). The calling application must have FILE_LIST_DIRECTORY 
+       access rights for this directory.
+     </par>
+     <par name="lpSectorsPerCluster">
+       A pointer to a variable that receives the number of sectors per cluster.
+      </par>
+     <par name="lpBytesPerSector">
+       A pointer to a variable that receives the number of bytes per sector.
+      </par>
+     <par name="lpNumberOfFreeClusters">
+       A pointer to a variable that receives the total number of free clusters 
+       on the disk that are available to the user who is associated with the
+       calling thread.
+     </par>
+     <par name="lpTotalNumberOfClusters">
+       A pointer to a variable that receives the total number of clusters on 
+       the disk that are available to the user who is associated with the 
+       calling thread.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="GetDiskFreeSpace">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="lpRootPathName" io="r" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpSectorsPerCluster" io="w" nr="2" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:sectors per cluster"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="lpBytesPerSector" io="w" nr="3" rep="hex">
+       <type><ptr>DWORD</ptr></type>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:bytes per sector"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="lpNumberOfFreeClusters" io="w" nr="4" rep="hex">
+       <type><ptr>DWORD</ptr></type>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:free clusters"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="lpTotalNumberOfClusters" io="w" nr="5" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:clusters"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves information about a disk"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

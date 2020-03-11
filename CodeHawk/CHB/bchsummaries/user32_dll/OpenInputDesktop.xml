@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/16/2015 21:40:11"/>
+  <libfun lib="user32" name="OpenInputDesktop">
+   <documentation>
+    <desc>Opens the desktop that receives user input</desc>
+    <apidoc>
+     <pt>
+      <ll>HDESK WINAPI OpenInputDesktop(</ll>
+      <ld>_In_  DWORD dwFlags</ld>
+      <ld>_In_  BOOL fInherit</ld>
+      <ld>_In_  ACCESS_MASK dwDesiredAccess</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwFlags">This parameter can be zero or one</par>
+     <par name="fInherit">
+       If this value is TRUE, processes created by this process will inherit 
+       the handle. Otherwise, the processes do not inherit this handle
+     </par>
+     <par name="dwDesiredAccess">The access to the desktop.</par>
+     <return>
+      <rc cond="success">a handle to the desktop that receives user input</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OpenInputDesktop">
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="1">
+     <type>DWORD</type>
+     <roles/>
+    </par>
+    <par loc="stack" io="r" name="fInherit" roles="none" nr="2">
+     <type>BOOL</type>
+     <roles/>
+    </par>
+    <par loc="stack" io="r" name="dwDesiredAccess" roles="none" nr="3">
+     <type>ACCESS_MASK</type>
+    </par>
+    <returntype>HDESK</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="opens a desktop to receive user input"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

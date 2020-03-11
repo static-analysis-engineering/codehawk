@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/06/2015 17:15:42"/>
+  <libfun lib="user32" name="SetProcessWindowStation">
+   <documentation>
+    <desc>
+      Assigns the specified window station to the calling process. This enables the 
+      process to access objects in the window station such as desktops, the clipboard, 
+      and global atoms. All subsequent operations on the window station use the access 
+      rights granted to hWinSta.
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI SetProcessWindowStation (_In_ HWINSTA hWinSta)</pt>
+     <par name="hWinSta">
+       A handle to the window station. This can be a handle returned by the 
+       CreateWindowStation, OpenWindowStation, or GetProcessWindowStation function.
+       This window station must be associated with the current session.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetProcessWindowStation">
+    <par loc="stack" name="hWinSta" nr="1">
+     <type>HWINSTA</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window station"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="assigns a window station to a process"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

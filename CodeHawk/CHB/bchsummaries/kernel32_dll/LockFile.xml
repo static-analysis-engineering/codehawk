@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/02/2015 13:45:28"/>
+  <libfun lib="kernel32" name="LockFile">
+   <documentation>
+    <desc>
+      Locks the specified file for exclusive access by the calling process
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI LockFile(</ll>
+      <ld>_In_  HANDLE hFile</ld>
+      <ld>_In_  DWORD dwFileOffsetLow</ld>
+      <ld>_In_  DWORD dwFileOffsetHigh</ld>
+      <ld>_In_  DWORD nNumberOfBytesToUnlockLow</ld>
+      <ld>_In_  DWORD nNumberOfBytesToUnlockHigh</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       A handle to the file. The file handle must have been created with 
+       the GENERIC_READ or GENERIC_WRITE access right
+     </par>
+     <par name="dwFileOffsetLow">
+       The low-order 32 bits of the starting byte offset in the file where the 
+       lock should begin
+     </par>
+     <par name="dwFileOffsetHigh">
+       The high-order 32 bits of the starting byte offset in the file where 
+       the lock should begin
+     </par>
+     <par name="nNumberOfBytesToUnlockLow">
+       The low-order 32 bits of the length of the byte range to be locked
+     </par>
+     <par name="nNumberOfBytesToUnlockHigh">
+       The high-order 32 bits of the length of the byte range to be locked
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="LockFile">
+    <par loc="stack" io="r" name="hFile" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:file" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwFileOffsetLow" nr="2">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:offset" rn="LockFile" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFileOffsetHigh" nr="3">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:offset" rn="LockFile" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nNumberOfBytesToUnlockLow" nr="4">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:count" rn="LockFile" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nNumberOfBytesToUnlockHigh" nr="5">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:count" rn="LockFile" />
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="locks a file for exclusive access"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

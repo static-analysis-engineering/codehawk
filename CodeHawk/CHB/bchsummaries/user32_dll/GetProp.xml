@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:02:56"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetProp">
+   <documentation>
+    <desc>
+      Retrieves a data handle from the property list of the specified window. 
+      The character string identifies the handle to be retrieved.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI GetPropA(</ll>
+      <ld>_In_  HWND hWnd</ld>
+      <ld>_In_  LPCTSTR lpString</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	If the property list contains the string, the return value is
+	the associated data handle
+      </rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="hWnd">A handle to the window whose property list is to be searched</par>
+     <par name="lpString">
+       An atom that identifies a string. If this parameter is an atom, it must have been 
+       created by using the GlobalAddAtom function. The atom, a 16-bit value, must be 
+       placed in the low-order word of the lpString parameter; the high-order word must 
+       be zero. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetProp">
+     <returntype>HANDLE</returntype>
+    <par loc="stack" name="hWnd" io="r" nr="1">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpString" io="r" nr="2">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="name:window property"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves a data handle from a window property list"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

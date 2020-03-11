@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/25/2015 14:20:58"/>
+  <libfun lib="advapi32" name="InitializeSecurityDescriptor">
+   <documentation>
+    <desc>initializes a new security descriptor</desc>
+    <remarks>
+      The InitializeSecurityDescriptor function initializes a security descriptor 
+      in absolute format, rather than self-relative format.
+      The InitializeSecurityDescriptor function initializes a security descriptor 
+      to have no system access control list (SACL), no discretionary access control
+      list (DACL), no owner, no primary group, and all control flags set to FALSE
+      (NULL). Thus, except for its revision level, it is empty.
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI InitializeSecurityDescriptor(</ll>
+      <ld>_Out_ PSECURITY_DESCRIPTOR pSecurityDescriptor</ld>
+      <ld>_In_  DWORD                dwRevision</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pSecurityDescriptor">
+       A pointer to a SECURITY_DESCRIPTOR structure that the function initializes
+     </par>
+     <par name="dwRevision">
+       The revision level to assign to the security descriptor. This parameter 
+       must be SECURITY_DESCRIPTOR_REVISION
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="InitializeSecurityDescriptor">
+    <par loc="stack" name="pSecurityDescriptor" io="w" nr="1">
+     <type><ptr>SECURITY_DESCRIPTOR</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:system" rn="security descriptor"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwRevision" io="r" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="initializes a security descriptor"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

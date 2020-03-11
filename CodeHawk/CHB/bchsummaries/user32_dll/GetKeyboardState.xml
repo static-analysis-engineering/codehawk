@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetKeyboardState">
+   <documentation>
+    <desc>copies the status of the 256 virtual keys to the specified buffer</desc>
+    <apidoc>
+     <pt>BOOL WINAPI GetKeyboardState (__out PBYTE lpKeyState)</pt>
+     <par name="lpKeyState">
+       256-byte array that receives the status data for each virtual key
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetKeyboardState">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="w" name="lpKeyState" nr="1">
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:keyboard state" />
+     </roles>
+     <type><ptr>BYTE</ptr></type>
+     <pre><deref-write bytesize="256"/></pre>
+     <sideeffects>
+       <block-write/>
+     </sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="copies the status of the 256 virtual keys"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/16/2015 20:40:22"/>
+  <libfun lib="user32" name="IsRectEmpty">
+   <documentation>
+    <desc>
+      determines whether the specified rectangle is empty. An empty rectangle 
+      is one that has no area; that is, the coordinate of the right side is
+      less than or equal to the coordinate of the left side, or the coordinate
+      of the bottom side is less than or equal to the coordinate of the top 
+      side
+    </desc>
+    <apidoc>
+     <pt>BOOL IsRectEmpty (_In_  const RECT *lprc)</pt>
+     <par name="lprc">
+       Pointer to a RECT structure that contains the logical coordinates of the rectangle
+     </par>
+     <return>
+       If the rectangle is empty, the return value is nonzero.
+       If the rectangle is not empty, the return value is zero
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="IsRectEmpty">
+    <par loc="stack" io="r" name="lprc" nr="1">
+     <type><ptr>RECT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:RECT" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="determines if a rectangle is empty"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

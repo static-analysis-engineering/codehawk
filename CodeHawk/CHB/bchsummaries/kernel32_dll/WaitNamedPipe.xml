@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:41:24"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="WaitNamedPipe">
+   <documentation>
+    <desc>
+      Waits until either a time-out interval elapses or an instance of the 
+      specified named pipe is available for connection.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WaitNamedPipe(</ll>
+      <ld>_In_  LPCTSTR lpNamedPipeName</ld>
+      <ld>_In_  DWORD nTimeOut</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpNamedPipeName">
+       The name of the named pipe. The string must include the name of the 
+       computer on which the server process is executing. A period may be 
+       used for the servername if the pipe is local.
+     </par>
+     <par name="nTimeOut">
+       The number of milliseconds that the function will wait for an instance 
+       of the named pipe to be available.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="WaitNamedPipe">
+    <type>BOOL</type>
+    <par loc="stack" io="r" name="lpNamedPipeName" nr="1">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="filesystem" rn="name:pipe"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nTimeOut" nr="2">
+       <type>DWORD</type>
+       <roles>
+          <role rt="ioc:synchronization" rn="timeout"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem"
+                  desc="waits for a named pipe connection"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

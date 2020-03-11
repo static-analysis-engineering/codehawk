@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:08:52"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="DuplicateHandle">
+   <documentation>
+    <desc>Duplicates an object handle.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI DuplicateHandle(</ll>
+      <ld>_In_   HANDLE hSourceProcessHandle </ld>
+      <ld>_In_   HANDLE hSourceHandle </ld>
+      <ld>_In_   HANDLE hTargetProcessHandle </ld>
+      <ld>_Out_  LPHANDLE lpTargetHandle </ld>
+      <ld>_In_   DWORD dwDesiredAccess</ld>
+      <ld>_In_   BOOL bInheritHandle </ld>
+      <ld>_In_   DWORD dwOptions </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hSourceProcessHandle">
+       A handle to the process with the handle to be duplicated.
+       
+       The handle must have the PROCESS_DUP_HANDLE access right.
+     </par>
+     <par name="hSourceHandle">
+       The handle to be duplicated. This is an open object handle that is 
+       valid in the context of the source process. 
+     </par>
+     <par name="hTargetProcessHandle">
+       A handle to the process that is to receive the duplicated handle. 
+       The handle must have the PROCESS_DUP_HANDLE access right.
+     </par>
+     <par name="lpTargetHandle">
+       A handle to the process that is to receive the duplicated handle. 
+       The handle must have the PROCESS_DUP_HANDLE access right.
+
+       If lpTargetHandle is NULL, the function duplicates the handle, but 
+       does not return the duplicate handle value to the caller.
+     </par>
+     <par name="dwDesiredAccess">
+       The access requested for the new handle.
+
+       This parameter is ignored if the dwOptions parameter specifies the
+       DUPLICATE_SAME_ACCESS flag.
+     </par>
+     <par name="bInheritHandle">
+       A variable that indicates whether the handle is inheritable. 
+       If TRUE, the duplicate handle can be inherited by new processes created
+       by the target process. If FALSE, the new handle cannot be inherited.
+     </par>
+     <par name="dwOptions">
+       Optional actions. This parameter can be zero, or any combination of the 
+       following values : 0x00000001, 0x00000002. 
+	</par>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="DuplicateHandle">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hSourceProcessHandle" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:process"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="hSourceHandle" nr="2">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:duplicate"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="hTargetProcessHandle" nr="3">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:process"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpTargetHandle" nr="4">
+      <type><ptr>HANDLE</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:process" rn="ref:handle duplicate"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwDesiredAccess" roles="none" nr="5">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="bInheritHandle" roles="none" nr="6">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" io="r" name="dwOptions" nr="7">
+     <type>DWORD</type>
+     <pre><enum-value name="duplicate_handle_option_flags"/></pre>
+     <roles>
+        <role rt="rep:enum" rn="duplicate_handle_option_flags"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="duplicates an object handle"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

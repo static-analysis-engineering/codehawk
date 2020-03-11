@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:03:12"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CreateRemoteThread">
+   <documentation>
+    <desc>Creates a thread that runs in the virtual address space of another process.</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI CreateRemoteThread(</ll>
+      <ld>_In_   HANDLE hProcess </ld>
+      <ld>_In_   LPSECURITY_ATTRIBUTES lpThreadAttributes </ld>
+      <ld>_In_   SIZE_T dwStackSize </ld>
+      <ld>_In_   LPTHREAD_START_ROUTINE lpStartAddress </ld>
+      <ld>_In_   LPVOID lpParameter </ld>
+      <ld>_In_   DWORD dwCreationFlags </ld>
+      <ld>_Out_  LPDWORD lpThreadId </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="hProcess">
+       A handle to the process in which the thread is to be created. The
+       handle must have the PROCESS_CREATE_THREAD, PROCESS_QUERY_INFORMATION, 
+       PROCESS_VM_OPERATION, PROCESS_VM_WRITE, and PROCESS_VM_READ access 
+       rights, and may fail without these rights on certain platforms.
+     </par>
+     <par name="lpThreadAttributes">
+       A pointer to a SECURITY_ATTRIBUTES structure that specifies a security
+       descriptor for the new thread and determines whether child processes 
+       can inherit the returned handle. If lpThreadAttributes is NULL, the 
+       thread gets a default security descriptor and the handle cannot be inherited.
+     </par>
+     <par name="dwStackSize">
+       The initial size of the stack, in bytes. The system rounds this
+       value to the nearest page. If this parameter is 0 (zero), the new 
+       thread uses the default size for the executable.
+     </par>
+     <par name="lpStartAddress">
+       A pointer to the application-defined function of type 
+       LPTHREAD_START_ROUTINE to be executed by the thread and represents 
+       the starting address of the thread in the remote process. The 
+       function must exist in the remote process. 
+     </par>
+     <par name="lpParameter">
+       A pointer to a variable to be passed to the thread function. 
+     </par>
+     <par name="dwCreationFlags">The flags that control the creation of the thread. </par>
+     <par name="lpThreadId">
+       A pointer to a variable that receives the thread identifier.
+       
+       If this parameter is NULL, the thread identifier is not returned.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="CreateRemoteThread">
+     <returntype>HANDLE</returntype>
+     <par loc="stack" name="hProcess" io="r" nr="1">
+       <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:process"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpThreadAttributes" io="r" roles="none" nr="2">
+      <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" name="dwStackSize" io="r" nr="3">
+      <type>SIZE_T</type>
+      <roles>
+	<role rt="ioc:memops" rn="stack size"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpStartAddress" io="r" nr="4" rep="hex">
+      <type><ptr>THREAD_START_ROUTINE</ptr></type>
+      <pre><deref-read/><function-pointer/></pre>
+      <roles>
+	<role rt="ioc:process" rn="callbackf:thread"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpParameter" io="r" nr="5" rep="hex">
+      <type><ptr>VOID</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="callbackp:thread"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwCreationFlags" io="r" roles="none" nr="6">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpThreadId" io="w" nr="7">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:process" rn="id:thread"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="creates a thread that runs in the address space of another process"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

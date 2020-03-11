@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 02:59:46"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="EqualSid">
+   <documentation>
+    <desc>
+      tests two security identifier (SID) values for equality. Two SIDs 
+      must match exactly to be considered equal.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI EqualSid(</ll>
+      <ld>_In_  PSID pSid1</ld>
+      <ld>_In_  PSID pSid2</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="pSid1">
+       A pointer to the first SID structure to compare. This structure is 
+       assumed to be valid.
+     </par>
+     <par name="pSid2">
+       A pointer to the second SID structure to compare. This structure is 
+       assumed to be valid.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="EqualSid">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="pSid1" io="r" nr="1">
+       <type><ptr>SID</ptr></type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:memops" rn="src-struct:security identifier"/>
+       </roles>
+    </par>
+    <par loc="stack" name="pSid2" io="r" nr="2">
+      <type><ptr>SID</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:security identifier"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="compares security identifiers"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

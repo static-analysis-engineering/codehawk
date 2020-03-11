@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="VirtualProtectEx.xml" time="2016-05-17 11:13:53.924552"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="VirtualProtectEx">
+    <documentation>
+      <desc>
+	Changes the protection on a region of committed pages in the
+	virtual address space of a specified process.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI VirtualProtectEx(</ll>
+          <ld>_In_  HANDLE hProcess</ld>
+          <ld>_In_  LPVOID lpAddress</ld>
+          <ld>_In_  SIZE_T dwSize</ld>
+          <ld>_In_  DWORD  flNewProtect</ld>
+          <ld>_Out_ PDWORD lpflOldProtect</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hProcess">
+	  A handle to the process whose memory protection is to be
+	  changed. The handle must have the PROCESS_VM_OPERATION
+	  access right
+	</par>
+        <par name="lpAddress">
+	  A pointer to the base address of the region of pages whose
+	  access protection attributes are to be changed.  All pages
+	  in the specified region must be within the same reserved
+	  region allocated when calling the VirtualAlloc or
+	  VirtualAllocEx function using MEM_RESERVE. The pages cannot
+	  span adjacent reserved regions that were allocated by
+	  separate calls to VirtualAlloc or VirtualAllocEx using
+	  MEM_RESERVE.
+	</par>
+        <par name="dwSize">
+	  The size of the region whose access protection attributes
+	  are changed, in bytes. The region of affected pages includes
+	  all pages containing one or more bytes in the range from the
+	  lpAddress parameter to (lpAddress+dwSize). This means that a
+	  2-byte range straddling a page boundary causes the
+	  protection attributes of both pages to be changed.
+	</par>
+        <par name="flNewProtect">
+	  The memory protection option. This parameter can be one of
+	  the memory protection constants.  For mapped views, this
+	  value must be compatible with the access protection
+	  specified when the view was mapped (see MapViewOfFile,
+	  MapViewOfFileEx, and MapViewOfFileExNuma).
+	</par>
+        <par name="lpflOldProtect">
+	  A pointer to a variable that receives the previous access
+	  protection of the first page in the specified region of
+	  pages. If this parameter is NULL or does not point to a
+	  valid variable, the function fails.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="VirtualProtectEx">
+      <par loc="stack" name="hProcess" io="r" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:process"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpAddress" io="r" nr="2">
+        <type><ptr>VOID</ptr></type>
+	<pre><deref-write/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="memory base"/>
+	  <role rt="rep:hex" rn="memory base"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwSize" io="r" nr="3">
+        <type>SIZE_T</type>
+	<roles>
+	  <role rt="size:memory size" rn="VirtualProtextEx"/>
+	</roles>
+      </par>
+      <par loc="stack" name="flNewProtect" io="r" nr="4">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:memops" rn="memory protection flags"/>
+	  <role rt="rep:enum" rn="memory_protection_constants"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpflOldProtect" io="w" nr="5" roles="none">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="changes the protection of a memory region"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

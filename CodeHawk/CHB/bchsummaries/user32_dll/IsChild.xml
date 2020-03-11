@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:04:37"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="IsChild">
+   <documentation>
+    <desc>
+      Determines whether a window is a child window or descendant window of a 
+      specified parent window. A child window is the direct descendant of a 
+      specified parent window if that parent window is in the chain of parent 
+      windows; the chain of parent windows leads from the original overlapped 
+      or pop-up window to the child window. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI IsChild(</ll>
+      <ld>_In_  HWND hWndParent</ld>
+      <ld>_In_  HWND hWnd</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="hWndParent">A handle to the parent window. </par>
+     <par name="hWnd">A handle to the window to be tested. </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="IsChild">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hWndParent" io="r" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+     <par loc="stack" name="hWnd" io="r" nr="2">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" 
+		  desc="determines if a window is child of another window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

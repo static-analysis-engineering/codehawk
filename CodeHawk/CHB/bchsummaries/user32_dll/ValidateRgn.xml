@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:27:20"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ValidateRgn">
+   <documentation>
+    <desc>
+      validates the client area within a region by removing the region from 
+      the current update region of the specified window.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ValidateRgn(</ll>
+      <ld>_In_  HWND hWnd </ld>
+      <ld>_In_  HRGN hRgn </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hWnd">Handle to the window whose update region is to be modified. </par>
+     <par name="hRgn">
+       Handle to a region that defines the area to be removed from the
+       update region. If this parameter is NULL, the entire client
+       area is removed.
+	</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ValidateRgn">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hWnd" io="r" rep="hex" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+    </par>
+    <par loc="stack" name="hRgn" io="r" rep="hex" nr="2">
+      <type>HRGN</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:region"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="validates a client region in a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

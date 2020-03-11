@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="CheckDlgButton">
+   <documentation>
+    <desc>changes the check status of a button control</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL CheckDlgButton (</ll>
+      <ld>__in HWND hDlg,</ld>
+      <ld>__in int nIDButton,</ld>
+      <ld>__in UINT uCheck</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDlg">handle to the dialog box that contains the button</par>
+     <par name="nIDButton">identifier of the button to modify</par>
+     <par name="uCheck">check status of the button</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CheckDlgButton">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hDlg" io="r" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+    </par>
+    <par loc="stack" name="nIDButton" io="r" roles="none" nr="1">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="uCheck" io="r" roles="none" nr="2">
+      <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="changes the check status of a button control"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 08:28:16"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegQueryInfoKey">
+   <documentation>
+    <desc>Retrieves information about the specified registry key.</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG RegQueryInfoKey(</ll>
+      <ld>_In_         HKEY hKey </ld>
+      <ld>_Out_opt_    LPTSTR lpClass </ld>
+      <ld>_Inout_opt_  LPDWORD lpcClass </ld>
+      <ld>_Reserved_   LPDWORD lpReserved </ld>
+      <ld>_Out_opt_    LPDWORD lpcSubKeys </ld>
+      <ld>_Out_opt_    LPDWORD lpcMaxSubKeyLen </ld>
+      <ld>_Out_opt_    LPDWORD lpcMaxClassLen </ld>
+      <ld>_Out_opt_    LPDWORD lpcValues </ld>
+      <ld>_Out_opt_    LPDWORD lpcMaxValueNameLen </ld>
+      <ld>_Out_opt_    LPDWORD lpcMaxValueLen </ld>
+      <ld>_Out_opt_    LPDWORD lpcbSecurityDescriptor </ld>
+      <ld>_Out_opt_    PFILETIME lpftLastWriteTime </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">System Error Code</rc>
+     </return>
+     <par name="hKey">
+       A handle to an open registry key. The key must have been opened with 
+       the KEY_QUERY_VALUE access right.
+     </par>
+     <par name="lpClass">
+       A pointer to a buffer that receives the user-defined class of the key. 
+       This parameter can be NULL. 
+     </par>
+     <par name="lpcClass">
+       A pointer to a variable that specifies the size of the buffer pointed 
+       to by the lpClass parameter, in characters.
+       The size should include the terminating null character. When the function 
+       returns, this variable contains the size of the class string that is stored 
+       in the buffer. The count returned does not include the terminating null 
+       character. If the buffer is not big enough, the function returns 
+       ERROR_MORE_DATA, and the variable contains the size of the string, in 
+       characters, without counting the terminating null character.
+       If lpClass is NULL, lpcClass can be NULL.
+       If the lpClass parameter is a valid address, but the lpcClass parameter 
+       is not, for example, it is NULL, then the function returns 
+       ERROR_INVALID_PARAMETER.
+    </par>
+     <par name="lpReserved">This parameter is reserved and must be NULL. </par>
+     <par name="lpcSubKeys">
+       A pointer to a variable that receives the number of subkeys that are contained
+       by the specified key. This parameter can be NULL.
+     </par>
+     <par name="lpcMaxSubKeyLen">
+       A pointer to a variable that receives the size of the key&apos;s subkey
+       with the longest name, in Unicode characters, not including the terminating
+       null character.
+       This parameter can be NULL.  
+    </par>
+     <par name="lpcMaxClassLen">
+       A pointer to a variable that receives the size of the longest string 
+       that specifies a subkey class, in Unicode characters. 
+       The count returned does not include the terminating null character. This 
+       parameter can be NULL.
+    </par>
+     <par name="lpcValues">
+       A pointer to a variable that receives the number of values that are 
+       associated with the key. This parameter can be NULL.
+     </par>
+     <par name="lpcMaxValueNameLen">
+       A pointer to a variable that receives the size of the key&apos;s longest 
+       value name, in Unicode characters. The size does not include the 
+       terminating null character. This parameter can be NULL.
+    </par>
+     <par name="lpcMaxValueLen">
+       A pointer to a variable that receives the size of the longest data 
+       component among the key&apos;s values, in bytes. This parameter can be NULL. 
+     </par>
+     <par name="lpcbSecurityDescriptor">
+       A pointer to a variable that receives the size of the key&apos;s security
+       descriptor, in bytes. This parameter can be NULL. 
+     </par>
+     <par name="lpftLastWriteTime">
+       A pointer to a FILETIME structure that receives the last write time. 
+       This parameter can be NULL.
+       The function sets the members of the FILETIME structure to indicate the 
+       last time that the key or any of its value entries is modified.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="48" cc="stdcall" name="RegQueryInfoKey">
+    <returnbtype tname="LONG" ttag="tnamed"/>
+    <par loc="stack" name="hKey" io="r" nr="1">
+      <rep type="enum" name="predefined_registry_key_constants"/>
+      <type>HKEY</type>
+      <pre>
+	<deref-read/>
+	<enum-value name="predefined_registry_key_constants"/>
+      </pre>
+      <roles>
+	<role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpClass" io="rw" nr="2" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:registry" rn="infox:key class"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpcClass" nr="3">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-read-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="size:buffersize" rn="RegQueryInfoKey"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpReserved" roles="none" nr="4">
+      <type><ptr>DWORD</ptr></type>
+    </par>
+    <par loc="stack" name="lpcSubKeys" io="w" nr="5" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:registry" rn="infox:subkey count"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpcMaxSubKeyLen" io="w" nr="6" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:registry" rn="infox:max subkey length"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpcMaxClassLen" io="w" nr="7" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:registry" rn="infox:max classname length"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpcValues" io="w" nr="8">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:registry" rn="infox:value count"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpcMaxValueNameLen" io="w" nr="9" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:registry" rn="infox:max value name length"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpcMaxValueLen" io="w" nr="10" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:registry" rn="infox:max value data length"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpcbSecurityDescriptor" io="w" nr="11" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:registry" rn="infox:security descriptor size"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpftLastWriteTime" io="w" nr="12" rep="hex">
+      <type><ptr>FILETIME</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:memops" rn="dst-struct:FILETIME"/>
+	<role rt="ioc:registry" rn="infox:last write time"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry"
+		  desc="retrieves information about a registry key"/>
+     </io-actions>
+   <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>TCHAR</type>
+	    <ci>lpClass</ci>
+	    <apply>
+	      <indexsize/>
+	      <apply><addressed-value/><ci>lpcClass</ci><cn>0</cn></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <enum name="system_error_code_constants"/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpClass</ci>
+	    <apply>
+	      <indexsize/>
+	      <apply><addressed-value/><ci>lpcClass</ci><cn>0</cn></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

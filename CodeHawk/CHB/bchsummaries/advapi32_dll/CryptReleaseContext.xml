@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 02:55:46"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CryptReleaseContext">
+   <documentation>
+    <desc>
+      releases the handle of a cryptographic service provider (CSP) and a key container. 
+      At each call to this function, the reference count on the CSP is reduced by one. 
+      When the reference count reaches zero, the context is fully released and it can
+      no longer be used by any function in the application.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CryptReleaseContext(</ll>
+      <ld>_In_  HCRYPTPROV hProv</ld>
+      <ld>_In_  DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hProv">
+       Handle of a cryptographic service provider (CSP) created by a call 
+       to CryptAcquireContext.
+     </par>
+     <par name="dwFlags">
+       Reserved for future use and must be zero. If dwFlags is not set to zero, 
+       this function returns FALSE but the CSP is released.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CryptReleaseContext">
+     <returntype>BOOL</returntype>
+    <par loc="stack" name="hProv" io="r" rep="hex" nr="1">
+      <type>HCRYPTPROV</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:crypto" rn="handle:CSP"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwFlags" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="crypto"
+		  desc="releases the handle of a cryptographic service provider (CSP)"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

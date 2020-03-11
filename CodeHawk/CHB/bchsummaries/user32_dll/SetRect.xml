@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:23:16"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetRect">
+   <documentation>
+    <desc>The SetRect function sets the coordinates of the specified rectangle. </desc>
+    <apidoc>
+     <pt>
+      <ll>SetRect(</ll>
+      <ld>_Out_  LPRECT lprc </ld>
+      <ld>_In_   int xLeft </ld>
+      <ld>_In_   int yTop </ld>
+      <ld>_In_   int xRight </ld>
+      <ld>_In_   int yBottom </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lprc">
+         Pointer to the RECT structure that contains the rectangle to be set. 
+     </par>
+     <par name="xLeft">
+         Specifies the x-coordinate of the rectangle&apos;s upper-left corner. 
+     </par>
+     <par name="yTop">
+         Specifies the y-coordinate of the rectangle&apos;s upper-left corner.
+     </par>
+     <par name="xRight">
+         Specifies the x-coordinate of the rectangle&apos;s lower-right corner.
+     </par>
+     <par name="yBottom">
+         Specifies the y-coordinate of the rectangle&apos;s lower-right corner.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="SetRect">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="w" name="lprc" rep="hex" nr="1">
+      <type><ptr>RECT</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:memops" rn="dst-struct:RECT"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="xLeft" nr="2">
+     <type>int</type>
+     <roles>
+       <role rt="size:coordinate" rn="left x"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="yTop" nr="3">
+     <type>int</type>
+     <roles>
+       <role rt="size:coordinate" rn="top y"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="xRight" nr="4">
+     <type>int</type>
+     <roles>
+       <role rt="size:coordinate" rn="right x"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="yBottom" nr="5">
+     <type>int</type>
+     <roles>
+       <role rt="size:coordinate" rn="bottom y"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="sets the coordinates of a rectangle"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

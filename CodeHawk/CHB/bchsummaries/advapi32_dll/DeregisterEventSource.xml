@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/24/2014 20:31:42"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="DeregisterEventSource">
+   <documentation>
+    <desc>Closes the specified event log</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL DeregisterEventSource (</ll>
+      <ld>_Inout_  HANDLE hEventLog</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hEventLog">
+       A handle to the event log. The RegisterEventSource function 
+       returns this handle.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DeregisterEventSource">
+     <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hEventLog" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:eventlog"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="closes an event log"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

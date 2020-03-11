@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="DeleteFiber.xml" time="2016-10-28 22:37:03.092585"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="DeleteFiber">
+    <documentation>
+      <desc>Deletes an existing fiber</desc>
+      <apidoc>
+        <pt>VOID WINAPI DeleteFiber (_In_ LPVOID lpFiber)</pt>
+        <par name="lpFiber">The address of the fiber to be deleted</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="DeleteFiber">
+      <par loc="stack" name="lpFiber" io="r" rep="hex" nr="1">
+        <type><ptr>VOID</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="address:fiber"/>
+	</roles>
+      </par>
+      <returntype>VOID</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="deletes a fiber"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

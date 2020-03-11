@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="VerLanguageName.xml" time="2016-09-09 23:22:17.259945"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="VerLanguageName">
+    <documentation>
+      <desc>
+         Retrieves a description string for the language associated
+         with a specified binary Microsoft language identifier.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>DWORD WINAPI VerLanguageName(</ll>
+          <ld>_In_  DWORD  wLang</ld>
+          <ld>_Out_ LPTSTR szLang</ld>
+          <ld>_In_  DWORD  cchLang</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="wLang">The binary language identifier</par>
+        <par name="szLang">The language specified by the wLang parameter</par>
+        <par name="cchLang">
+           The size, in characters, of the buffer pointed to by szLang.
+        </par>
+        <return>
+          <rc cond="success">
+             the size, in characters, of the string returned in the
+             buffer. This value does not include the terminating null
+             character. If the description string is smaller than or
+             equal to the buffer, the entire description string is in
+             the buffer. If the description string is larger than the
+             buffer, the description string is truncated to the length
+             of the buffer.
+          </rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="VerLanguageName">
+      <par loc="stack" name="wLang" io="r" nr="1">
+        <type>DWORD</type>
+        <rep type="enum" name="language_identifiers"/>
+        <roles>
+           <role rt="ioc:system" rn="id:language"/>
+        </roles>
+      </par>
+      <par loc="stack" name="szLang" io="w" nr="2" rep="hex">
+        <type>LPTSTR</type>
+        <roles>
+           <role rt="ioc:system" rn="infox:language description"/>
+        </roles>
+      </par>
+      <par loc="stack" name="cchLang" io="r" nr="3">
+        <type>DWORD</type>
+        <roles>
+           <role rt="size:buffersize" rn="VerLanguageName"/>
+        </roles>
+      </par>
+      <returntype>DWORD</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="retrieves a language description"/>
+      </io-actions>
+      <preconditions>
+         <pre>
+           <math>
+              <apply>
+                 <deref-write/>
+                 <type>TCHAR</type>
+                 <ci>szLang</ci>
+                 <apply><indexsize/><ci>cchLang</ci></apply>
+              </apply>
+	   </math>
+         </pre>
+      </preconditions>
+      <postconditions>
+        <positive-zero/>
+      </postconditions>
+      <sideeffects>
+         <sideeffect>
+            <math>
+               <apply>
+                  <block-write/>
+                 <type>TCHAR</type>
+                 <ci>szLang</ci>
+                 <apply><indexsize/><ci>cchLang</ci></apply>
+              </apply>
+	   </math>
+         </sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

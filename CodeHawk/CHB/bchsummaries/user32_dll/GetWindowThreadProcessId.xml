@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:02:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetWindowThreadProcessId">
+   <documentation>
+    <desc>
+      Retrieves the identifier of the thread that created the specified window 
+      and, optionally, the identifier of the process that created the window. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetWindowThreadProcessId(</ll>
+      <ld>_In_       HWND hWnd</ld>
+      <ld>_Out_opt_  LPDWORD lpdwProcessId</ld>
+      <ll>)</ll>
+     </pt>
+     <return>the identifier of the thread that created the window.</return>
+     <par name="hWnd">A handle to the window.  </par>
+     <par name="lpdwProcessId">
+       A pointer to a variable that receives the process identifier. If this parameter 
+       is not NULL, GetWindowThreadProcessId copies the identifier of the process to 
+       the variable; otherwise, it does not. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetWindowThreadProcessId">
+     <returntype>DWORD</returntype>
+    <par loc="stack" io="r" name="hWnd" nr="1">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:window"/> 
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpdwProcessId" nr="2" rep="hex">
+      <type>LPDWORD</type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:process" rn="infox:process id"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" 
+		  desc="retrieves the thread id of a process associated with a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

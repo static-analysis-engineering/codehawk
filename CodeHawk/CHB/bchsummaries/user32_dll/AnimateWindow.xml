@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="AnimateWindow.xml" time="2016-08-10 10:02:00.223252"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="AnimateWindow">
+    <documentation>
+      <desc>
+	Enables special effects when showing or hiding windows. There
+	are four types of animation: roll, slide, collapse or expand,
+	and alpha-blended fade
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI AnimateWindow(</ll>
+          <ld>_In_ HWND  hwnd</ld>
+          <ld>_In_ DWORD dwTime</ld>
+          <ld>_In_ DWORD dwFlags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hwnd">
+	  A handle to the window to animate. The calling thread must own this window
+	</par>
+        <par name="dwTime">
+	  The time it takes to play the animation, in
+	  milliseconds. Typically, an animation takes 200 milliseconds
+	  to play
+	</par>
+        <par name="dwFlags">The type of animation</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="AnimateWindow">
+      <par loc="stack" name="hwnd" io="r" nr="1">
+        <type>HWND</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwTime" io="r" nr="2">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:elapsed time" rn="animation time"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwFlags" io="r" nr="3">
+	<rep type="flags" name="animation_type_flags"/>
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:process" rn="type:window animation"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+		   desc="enables special effects when showing or hiding windows"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

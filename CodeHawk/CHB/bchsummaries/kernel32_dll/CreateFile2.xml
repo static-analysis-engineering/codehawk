@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 18:28:27"/>
+  <libfun lib="kernel32" name="CreateFile2">
+   <documentation>
+    <desc>Creates or opens a file or I/O device</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI CreateFile2(</ll>
+      <ld>_In_     LPCWSTR                           lpFileName</ld>
+      <ld>_In_     DWORD                             dwDesiredAccess</ld>
+      <ld>_In_     DWORD                             dwShareMode</ld>
+      <ld>_In_     DWORD                             dwCreationDisposition</ld>
+      <ld>_In_opt_ LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpFileName">
+       The name of the file or device to be created or opened
+     </par>
+     <par name="dwDesiredAccess">
+       The requested access to the file or device, which can be summarized 
+       as read, write, both or neither zero
+     </par>
+     <par name="dwShareMode">
+       The requested sharing mode of the file or device, which can be read, 
+       write, both, delete, all of these, or none (refer to the following
+       table). Access requests to attributes or extended attributes are not
+       affected by this flag.
+       If this parameter is zero and CreateFile2 succeeds, the file or device
+       cannot be shared and cannot be opened again until the handle to the 
+       file or device is closed. For more information, see the Remarks section.
+     </par>
+     <par name="dwCreationDisposition">
+       An action to take on a file or device that exists or does not exist.
+     </par>
+     <par name="pCreateExParams">
+       Pointer to an optional CREATEFILE2_EXTENDED_PARAMETERS structure.
+     </par>
+     <return>
+      <rc cond="success">
+	an open handle to the specified file, device, named pipe, or mail slot
+      </rc>
+      <rc cond="failure">INVALID_HANDLE_VALUE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="CreateFile2">
+    <par loc="stack" name="lpFileName" nr="1">
+     <type><ptr>wchar_t</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+       <role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwDesiredAccess" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="dwShareMode" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="dwCreationDisposition" nr="4">
+     <type>DWORD</type>
+     <pre><enum-value name="file_creation_action_constants"/></pre>
+     <roles>
+       <role rt="rep:enum" rn="file_creation_action_constants"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pCreateExParams" roles="none" nr="5">
+     <type><ptr>CREATEFILE2_EXTENDED_PARAMETERS</ptr></type>
+     <pre><deref-read-null/></pre>
+    </par>
+    <returntype>HANDLE</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="creates or opens a file or I/O device"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/11/2015 21:09:53"/>
+  <libfun lib="kernel32" name="GetLogicalDriveStrings">
+   <documentation>
+    <desc>Fills a buffer with strings that specify valid drives in the system</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetLogicalDriveStrings(</ll>
+      <ld>_In_   DWORD nBufferLength</ld>
+      <ld>_Out_  LPTSTR lpBuffer</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nBufferLength">
+       The maximum size of the buffer pointed to by lpBuffer, in TCHARs. This 
+       size does not include the terminating null character. If this parameter
+       is zero, lpBuffer is not used
+     </par>
+     <par name="lpBuffer">
+       A pointer to a buffer that receives a series of null-terminated strings, 
+       one for each valid drive in the system, plus with an additional null 
+       character. Each string is a device name
+     </par>
+     <return>
+      <rc cond="success">
+	the length, in characters, of the strings copied to the buffer, not 
+	including the terminating null character. If the buffer is not large 
+	enough, the return value is greater than nBufferLength. It is the size 
+	of the buffer required to hold the drive strings
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetLogicalDriveStrings">
+    <par loc="stack" io="r" name="nBufferLength" nr="1">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetLogicalDriveStrings"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpBuffer" nr="2">
+     <type>LPTSTR</type>
+     <roles>
+        <role rt="ioc:filesystem" rn="logical drive strings"/>
+     </roles>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="retrieves names of valid system drives"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>nBufferLength</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <implies/>
+	    <pre><apply><gt/><ci>nBufferLength</ci><cn>0</cn></apply></pre>
+	    <apply>
+	      <block-write xsrc="system" xdata="names of valid drives in the system"/>
+	      <type>TCHAR</type>
+	      <ci>lpBuffer</ci>
+	      <apply><indexsize/><ci>nBufferLength</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

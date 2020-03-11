@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="RegisterWindowMessage">
+   <documentation>
+    <desc>
+      defines a new window message that is guaranteed to be unique throughout the system
+    </desc>
+    <apidoc>
+     <pt>UINT WINAPI RegisterWindowMessage (__in LPCTSTR lpString)</pt>
+     <par name="lpString">the message to be registered</par>
+     <return>
+      <rc cond="success">message identifier in the range 0xC000 through 0xFFFF</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="RegisterWindowMessage">
+     <returntype>UINT</returntype>
+     <par loc="stack" name="lpString" nr="1">
+       <type>LPCTSTR</type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="window message"/>
+	 <role rt="rep:hex" rn="window message"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="defines a new window message"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

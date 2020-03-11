@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/31/2015 16:20:22"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CreateToolhelp32Snapshot">
+   <documentation>
+    <desc>
+      takes a snapshot of the specified processes, as well as the heaps, modules and
+      threads used by these processes
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI CreateToolhelp32Snapshot(</ll>
+      <ld>_In_ DWORD dwFlags,</ld>
+      <ld>_In_ DWORD th32ProcessID</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">open handle to the specified snapshot</rc>
+      <rc cond="failure">INVALID_HANDLE_VALUE</rc>
+     </return>
+     <par name="dwFlags">the portions of the system to be included in the snapshot
+    </par>
+     <par name="th32ProcessID">
+       process identifier of the process to be included in the snapshot. Zero to
+       indicate the current process.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CreateToolhelp32Snapshot">
+     <returntype>HANDLE</returntype>
+     <par loc="stack" io="r" name="dwFlags" roles="none" nr="1">
+       <rep type="enum" name="snapshot_flags"/>
+       <type>DWORD</type>
+       <pre><enum-value name="snapshot_flags" flags="true"/></pre>
+     </par>
+     <par loc="stack" io="r" name="th32ProcessID" nr="2">
+       <type>DWORD</type>
+       <roles>
+          <role rt="ioc:process" rn="id:process"/>
+       </roles>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="creates a snapshot of processes"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

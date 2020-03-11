@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/14/2015 14:36:56"/>
+  <libfun lib="kernel32" name="SetFilePointerEx">
+   <documentation>
+    <desc>Moves the file pointer of the specified file</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetFilePointerEx(</ll>
+      <ld>_In_       HANDLE hFile</ld>
+      <ld>_In_       LARGE_INTEGER liDistanceToMove</ld>
+      <ld>_Out_opt_  PLARGE_INTEGER lpNewFilePointer</ld>
+      <ld>_In_       DWORD dwMoveMethod</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       A handle to the file. The file handle must have been created with the 
+       GENERIC_READ or GENERIC_WRITE access right
+     </par>
+     <par name="liDistanceToMove">
+       The number of bytes to move the file pointer. A positive value moves 
+       the pointer forward in the file and a negative value moves the file
+       pointer backward
+     </par>
+     <par name="lpNewFilePointer">
+       A pointer to a variable to receive the new file pointer. If this parameter 
+       is NULL, the new file pointer is not returned
+     </par>
+     <par name="dwMoveMethod">The starting point for the file pointer move</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="SetFilePointerEx">
+    <par loc="stack" io="r" name="hFile" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="handle:file"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="liDistanceToMove_1" nr="2">
+     <type>LARGE_INTEGER</type>
+     <roles>
+       <role rt="size:distance" rn="SetFilePointerEx"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="liDistanceToMove_2" nr="3">
+     <type>LARGE_INTEGER</type>
+     <roles>
+       <role rt="size:distance" rn="SetFilePointerEx"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpNewFilePointer" roles="none" nr="4">
+     <type><ptr>LARGE_INTEGER</ptr></type>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="dwMoveMethod" nr="5">
+      <type>DWORD</type>
+      <pre><enum-value name="filepointer_move_constants"/></pre>
+      <roles>
+	<role rt="rep:enum" rn="filepointer_move_constants"/>
+      </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="moves the file pointer"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

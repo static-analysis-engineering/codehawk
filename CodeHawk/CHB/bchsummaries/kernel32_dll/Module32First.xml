@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/29/2015 23:31:32"/>
+  <libfun lib="kernel32" name="Module32First">
+   <documentation>
+    <desc>Retrieves information about the first module associated with a process</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI Module32First(</ll>
+      <ld>_In_    HANDLE          hSnapshot</ld>
+      <ld>_Inout_ LPMODULEENTRY32 lpme</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hSnapshot">
+       A handle to the snapshot returned from a previous call to the 
+       CreateToolhelp32Snapshot function.
+     </par>
+     <par name="lpme">A pointer to a MODULEENTRY32 structure.</par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="Module32First">
+    <par loc="stack" io="r" name="hSnapshot" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:snapshot"/>
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="lpme" nr="2" rep="hex">
+     <type><ptr>MODULEENTRY32</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:process" rn="ref:module entry"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves information about a process"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

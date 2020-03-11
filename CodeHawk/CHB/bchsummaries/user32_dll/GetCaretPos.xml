@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/12/2015 15:47:10"/>
+  <libfun lib="user32" name="GetCaretPos">
+   <documentation>
+    <desc>Copies the caret's position to the specified POINT structure</desc>
+    <apidoc>
+     <pt>BOOL WINAPI GetCaretPos (_Out_ LPPOINT lpPoint)</pt>
+     <par name="lpPoint">
+       A pointer to the POINT structure that is to receive the client 
+       coordinates of the caret
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetCaretPos">
+    <par loc="stack" io="w" name="lpPoint" nr="1">
+     <type><ptr>POINT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:POINT" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="copies the caret position"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

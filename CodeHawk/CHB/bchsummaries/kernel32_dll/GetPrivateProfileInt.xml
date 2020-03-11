@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/18/2015 21:52:05"/>
+  <libfun lib="kernel32" name="GetPrivateProfileInt">
+   <documentation>
+    <desc>
+      Retrieves an integer associated with a key in the specified section
+      of an initialization file
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetPrivateProfileInt(</ll>
+      <ld>_In_  LPCTSTR lpAppName</ld>
+      <ld>_In_  LPCTSTR lpKeyName</ld>
+      <ld>_In_  INT nDefault</ld>
+      <ld>_In_  LPCTSTR lpFileName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpAppName">The name of the section in the initialization file</par>
+     <par name="lpKeyName">
+       The name of the key whose value is to be retrieved. This value is in the form
+       of a string; the GetPrivateProfileInt function converts the string into an
+       integer and returns the integer
+     </par>
+     <par name="nDefault">
+       The default value to return if the key name cannot be found in the 
+       initialization file
+     </par>
+     <par name="lpFileName">
+       The name of the initialization file. If this parameter does not contain 
+       a full path to the file, the system searches for the file in the Windows 
+       directory
+     </par>
+     <return>
+       the integer equivalent of the string following the specified key name 
+       in the specified initialization file. If the key is not found, the 
+       return value is the specified default value
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetPrivateProfileInt">
+    <par loc="stack" io="r" name="lpAppName" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:system" rn="name:initfile section"/>
+	<role rt="rep:hex" rn="name:initfile section name"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpKeyName" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:system" rn="name:initfile key"/>
+	<role rt="rep:hex" rn="name:initfile key"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nDefault" roles="none" nr="3">
+     <type>INT</type>
+    </par>
+    <par loc="stack" name="lpFileName" nr="4">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:file"/>
+	<role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" 
+		  desc="retrieves integer associated with a key in the initialization file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

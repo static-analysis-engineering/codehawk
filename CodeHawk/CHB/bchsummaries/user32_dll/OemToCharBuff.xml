@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/29/2015 17:05:54"/>
+  <libfun lib="user32" name="OemToCharBuff">
+   <documentation>
+    <desc>
+      Translates a specified number of characters in a string from the OEM-defined 
+      character set into either an ANSI or a wide-character string
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI OemToCharBuff(</ll>
+      <ld>_In_  LPCSTR lpszSrc</ld>
+      <ld>_Out_ LPTSTR lpszDst</ld>
+      <ld>_In_  DWORD  cchDstLength</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszSrc">
+       One or more characters from the OEM-defined character set
+     </par>
+     <par name="lpszDst">
+       The destination buffer, which receives the translated string. If the 
+       OemToCharBuff function is being used as an ANSI function, the string can 
+       be translated in place by setting the lpszDst parameter to the same address 
+       as the lpszSrc parameter. This cannot be done if the OemToCharBuff function
+       is being used as a wide-character function
+     </par>
+     <par name="cchDstLength">
+       The number of characters to be translated in the buffer identified by the 
+       lpszSrc parameter.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OemToCharBuff">
+    <par loc="stack" name="lpszSrc" io="r" rep="hex" nr="1">
+     <type>LPCSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-string:convert"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpszDst" io="w" rep="hex" nr="2">
+     <type>LPTSTR</type>
+     <roles>
+        <role rt="ioc:memops" rn="dst-string:convert"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cchDstLength" io="r" nr="3">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="OemToCharBuff"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="converts an oem string to a regular string"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszDst</ci>
+	    <apply><indexsize/><ci>cchDstLength</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszDst</ci>
+	    <apply><indexsize/><ci>cchDstLength</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

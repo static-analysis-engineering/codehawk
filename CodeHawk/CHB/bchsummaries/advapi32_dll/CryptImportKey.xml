@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/08/2015 22:24:20"/>
+  <libfun lib="advapi32" name="CryptImportKey">
+   <documentation>
+    <desc>
+      transfers a cryptographic key from a key BLOB into a cryptographic service 
+      provider (CSP). This function can be used to import an Schannel session key, 
+      regular session key, public key, or public/private key pair. For all but
+      the public key, the key or key pair is encrypted.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CryptImportKey(</ll>
+      <ld>_In_   HCRYPTPROV hProv</ld>
+      <ld>_In_   BYTE *pbData</ld>
+      <ld>_In_   DWORD dwDataLen</ld>
+      <ld>_In_   HCRYPTKEY hPubKey</ld>
+      <ld>_In_   DWORD dwFlags</ld>
+      <ld>_Out_  HCRYPTKEY *phKey</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hProv">
+       The handle of a CSP obtained with the CryptAcquireContext function
+     </par>
+     <par name="pbData">
+       A BYTE array that contains a PUBLICKEYSTRUC BLOB header followed by the
+       encrypted key. This key BLOB is created by the CryptExportKey function, 
+       either in this application or by another application possibly running 
+       on a different computer
+     </par>
+     <par name="dwDataLen">Contains the length, in bytes, of the key BLOB.</par>
+     <par name="hPubKey">
+       A handle to the cryptographic key that decrypts the key stored in pbData.
+       This key must come from the same CSP to which hProv refers. The meaning of
+       this parameter differs depending on the CSP type and the type of key BLOB 
+       being imported
+     </par>
+     <par name="dwFlags">
+       Currently used only when a public/private key pair in the form of a 
+       PRIVATEKEYBLOB is imported into the CSP.
+     </par>
+     <par name="phKey">
+       A pointer to a HCRYPTKEY value that receives the handle of the imported 
+       key. When you have finished using the key, release the handle by calling 
+       the CryptDestroyKey function
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="CryptImportKey">
+    <par loc="stack" io="r" name="hProv" rep="hex" nr="1">
+     <type>HCRYPTPROV</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:crypto" rn="handle:CSP"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pbData" nr="2">
+     <type><ptr>BYTE</ptr></type>
+     <roles>
+       <role rt="ioc:crypto" rn="key blob"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwDataLen" nr="3">
+     <type>DWORD</type>
+     <pre><non-negative/></pre>
+     <roles>
+       <role rt="size:buffersize" rn="CryptImportKey"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="hPubKey" nr="4">
+     <type>HCRYPTKEY</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:crypto" rn="handle:cryptographic key"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="5">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="phKey" nr="6">
+     <type><ptr>HCRYPTKEY</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:crypto" rn="infox:cryptographic key"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="crypto"
+		  desc="transfers a cryptographic key from a key BLOB into a cryptographic service provider (CSP)"/>
+     </io-actions>		  
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>BYTE</type>
+	    <ci>pbData</ci>
+	    <ci>dwDataLen</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

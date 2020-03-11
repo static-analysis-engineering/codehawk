@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetCurrentThread">
+   <documentation>
+    <desc>retrieves a pseudo handle for the calling thread</desc>
+    <apidoc>
+     <pt>HANDLE WINAPI GetCurrentThread (void)</pt>
+     <return>pseudo handle for the current thread</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetCurrentThread">
+     <returntype>HANDLE</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves a handle for the calling thread">
+	 <args/>
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <not-null/>
+        <return-value/>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

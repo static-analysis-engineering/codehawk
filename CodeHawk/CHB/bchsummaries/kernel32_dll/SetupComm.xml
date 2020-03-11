@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SetupComm.xml" time="2016-03-06 12:53:34.336610"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="SetupComm" lib="kernel32">
+    <documentation>
+      <desc>
+	Initializes the communications parameters for a specified
+	communications device
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI SetupComm(</ll>
+          <ld>_In_ HANDLE hFile</ld>
+          <ld>_In_ DWORD  dwInQueue</ld>
+          <ld>_In_ DWORD  dwOutQueue</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hFile">
+	  A handle to the communications device. The CreateFile
+	  function returns this handle
+	</par>
+        <par name="dwInQueue">
+	  The recommended size of the device's internal input buffer, in bytes
+	</par>
+        <par name="dwOutQueue">
+	  The recommended size of the device's internal output buffer, in bytes
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="12" name="SetupComm">
+      <par loc="stack" io="r" nr="1" name="hFile">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:communications device"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" nr="2" name="dwInQueue">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:inputbuffer" rn="SetupComm"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" nr="3" name="dwOutQueue">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:outputbuffer" rn="SetupComm"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="initializes a communications device"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

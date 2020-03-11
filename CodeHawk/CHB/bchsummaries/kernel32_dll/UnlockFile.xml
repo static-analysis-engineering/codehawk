@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/02/2015 13:39:11"/>
+  <libfun lib="kernel32" name="UnlockFile">
+   <documentation>
+    <desc>
+      Unlocks a region in an open file. Unlocking a region enables other 
+      processes to access the region
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI UnlockFile(</ll>
+      <ld>_In_  HANDLE hFile</ld>
+      <ld>_In_  DWORD dwFileOffsetLow</ld>
+      <ld>_In_  DWORD dwFileOffsetHigh</ld>
+      <ld>_In_  DWORD nNumberOfBytesToUnlockLow</ld>
+      <ld>_In_  DWORD nNumberOfBytesToUnlockHigh</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       A handle to the file that contains a region locked with LockFile. 
+       The file handle must have been created with either the GENERIC_READ or
+       GENERIC_WRITE access right
+     </par>
+     <par name="dwFileOffsetLow">
+       The low-order word of the starting byte offset in the file where the 
+       locked region begins
+     </par>
+     <par name="dwFileOffsetHigh">
+       The high-order word of the starting byte offset in the file where the 
+       locked region begins
+     </par>
+     <par name="nNumberOfBytesToUnlockLow">
+       The low-order word of the length of the byte range to be unlocked
+     </par>
+     <par name="nNumberOfBytesToUnlockHigh">
+       The high-order word of the length of the byte range to be unlocked
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="UnlockFile">
+    <par loc="stack" io="r" name="hFile" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:file" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwFileOffsetLow" nr="2">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:offset" rn="UnlockFile" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFileOffsetHigh" nr="3">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:offset" rn="UnlockFile" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nNumberOfBytesToUnlockLow" nr="4">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:count" rn="UnlockFile" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nNumberOfBytesToUnlockHigh" nr="5">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:count" rn="UnlockFile" />
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="filesystem" desc="unlocks a region in a file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

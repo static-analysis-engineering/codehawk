@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetCommState">
+   <documentation>
+    <desc>
+      Configures a communications device according to the specifications in a 
+      device-control block (a DCB structure). The function reinitializes all 
+      hardware and control settings, but it does not empty output or input queues.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetCommState(</ll>
+      <ld>_In_  HANDLE hFile,</ld>
+      <ld>_In_  LPDCB lpDCB</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       A handle to the communications device. The CreateFile function returns this handle.
+     </par>
+     <par name="lpDCB">
+       A pointer to a DCB structure that contains the configuration information 
+       for the specified communications device.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetCommState">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="hFile" nr="1">
+       <type>HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:filesystem" rn="handle:file"/>
+       </roles>
+     </par>
+     <par loc="stack" io="r" name="lpDCB" nr="2">
+       <type><ptr>DCB</ptr></type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:memops" rn="src-struct:device control block"/>
+       </roles>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="configures a communication device"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

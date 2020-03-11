@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/05/2015 22:33:16"/>
+  <libfun lib="kernel32" name="WinExec">
+   <documentation>
+    <desc>Runs the specified application</desc>
+    <remarks>
+      This function is provided only for compatibility with 16-bit Windows. 
+      Applications should use the CreateProcess function.
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI WinExec(</ll>
+      <ld>_In_ LPCSTR lpCmdLine</ld>
+      <ld>_In_ UINT   uCmdShow</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpCmdLine">
+       The command line (file name plus optional parameters) for the application 
+       to be executed. If the name of the executable file in the lpCmdLine parameter
+       does not contain a directory path, the system searches for the executable file
+     </par>
+     <par name="uCmdShow">The display options</par>
+     <return>
+      <rc cond="success">value is greater than 31</rc>
+      <rc cond="failure">error value</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="WinExec">
+    <par loc="stack" io="r" name="lpCmdLine" nr="1" rep="hex">
+     <type>LPCSTR</type>
+     <roles>
+        <role rt="ioc:system" rn="command:shell"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="uCmdShow" roles="none" nr="2">
+      <rep type="enum" name="show_command_constants"/>
+      <type>UINT</type>
+      <pre><enum-value name="show_command_constants"/></pre>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" desc="runs a commandline application "/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <gt/>
+	    <return/>
+	    <cn>31</cn>
+	  </apply>
+	</math>
+      </post>
+      <error-post>
+	<math>
+	  <apply>
+	    <leq/>
+	    <return/>
+	    <cn>31</cn>
+	  </apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

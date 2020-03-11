@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:11:18"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="FileTimeToLocalFileTime">
+   <documentation>
+    <desc>Converts a file time to a local file time.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI FileTimeToLocalFileTime(</ll>
+      <ld>_In_   const FILETIME *lpFileTime </ld>
+      <ld>_Out_  LPFILETIME lpLocalFileTime </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpFileTime">
+       A pointer to a FILETIME structure containing the UTC-based file time to 
+       be converted into a local file time.
+     </par>
+     <par name="lpLocalFileTime">
+       A pointer to a FILETIME structure to receive the converted local file
+       time. This parameter cannot be the same as the lpFileTime parameter.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="FileTimeToLocalFileTime">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="lpFileTime" nr="1" rep="hex">
+      <type><ptr>FILETIME</ptr></type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:memops" rn="src-struct:filetime"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpLocalFileTime" nr="2" rep="hex">
+      <type><ptr>FILETIME</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:system" rn="dst-struct:filetime"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="converts a file time to a local file time"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

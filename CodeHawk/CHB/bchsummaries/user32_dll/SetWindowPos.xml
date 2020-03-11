@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetWindowPos">
+   <documentation>
+    <desc>changes the size, position, and Z order of a child, pop-up or top-level window
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetWindowPos (</ll>
+      <ld>__in     HWND hWnd,</ld>
+      <ld>__in_opt HWND hWndInsertAfter,</ld>
+      <ld>__in     int X,</ld>
+      <ld>__in     int Y,</ld>
+      <ld>__in     int cx,</ld>
+      <ld>__in     int cy,</ld>
+      <ld>__in     UINT uFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window</par>
+     <par name="hWndInsertAfter">
+       handle to the window to precede the positioned window in the Z order
+     </par>
+     <par name="X">new position of the left side of th window, in client coordinates</par>
+     <par name="Y">new position of the top of the window, in client coordinates</par>
+     <par name="cx">new width of the window, in pixels</par>
+     <par name="cy">new height of the window, in pixels</par>
+     <par name="uFlags">window sizing and positioning flags</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="SetWindowPos">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hWnd" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+    <par loc="stack" name="hWndInsertAfter" nr="2">
+     <type>HWND</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="X" io="r" nr="3">
+      <type>int</type>
+      <roles>
+         <role rt="size:coordinate" rn="window position"/>
+      </roles>
+    </par>
+    <par loc="stack" name="Y" io="r" nr="4">
+      <type>int</type>
+      <roles>
+         <role rt="size:coordinate" rn="window position"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cx" io="r" nr="5">
+      <type>int</type>
+      <roles>
+         <role rt="size:coordinate" rn="window position"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cy" io="r" nr="6">
+      <type>int</type>
+      <roles>
+         <role rt="size:coordinate" rn="window position"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uFlags" roles="none" nr="7">
+     <type>UINT</type>
+     <rep type="enum" name="window_positioning_flags"/>
+     <pre><enum-value name="window_positioning_flags" flags="true"/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="changes the size or position of a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

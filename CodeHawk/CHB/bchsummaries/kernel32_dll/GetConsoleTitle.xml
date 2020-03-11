@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/05/2015 23:40:56"/>
+  <libfun lib="kernel32" name="GetConsoleTitle">
+   <documentation>
+    <desc>Retrieves the title for the current console window</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetConsoleTitle(</ll>
+      <ld>_Out_  LPTSTR lpConsoleTitle</ld>
+      <ld>_In_   DWORD nSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpConsoleTitle">
+       A pointer to a buffer that receives a null-terminated string containing 
+       the title. If the buffer is too small to store the title, the function 
+       stores as many characters of the title as will fit in the buffer, ending 
+       with a null terminator.
+       The storage for this buffer is allocated from a shared heap for the 
+       process that is 64 KB in size. The maximum size of the buffer will 
+       depend on heap usage
+     </par>
+     <par name="nSize">
+       The size of the buffer pointed to by the lpConsoleTitle parameter, in characters
+     </par>
+     <return>
+      <rc cond="success">the length of the console window's title, in characters </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetConsoleTitle">
+    <par loc="stack" io="w" name="lpConsoleTitle" nr="1">
+     <type>LPTSTR</type>
+     <roles>
+        <role rt="ioc:system" rn="console title"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nSize" nr="2">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetConsoleTitle"/>
+     </roles>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="retrieves the console title"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpConsoleTitle</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+      <post><math><apply><leq/><return/><ci>nSize</ci></apply></math></post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpConsoleTitle</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

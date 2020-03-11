@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 08:54:09"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CryptDestroyHash">
+   <documentation>
+    <desc>
+      destroys the hash object referenced by the hHash parameter. 
+      After a hash object has been destroyed, it can no longer be used. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL CryptDestroyHash(</ll>
+      <ld>_In_  HCRYPTHASH hHash </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero </rc>
+      <rc cond="failure">zero </rc>
+     </return>
+     <par name="hHash">The handle of the hash object to be destroyed. </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CryptDestroyHash">
+    <returnbtype tname="BOOL " ttag="tnamed"/>
+    <par loc="stack" io="r" name="hHash" rep="hex" nr="1">
+      <type>HCRYPTHASH</type>
+      <roles>
+         <role rt="ioc:crypto" rn="handle:cryptographic hash"/>
+      </roles>
+      <pre><deref-read/></pre>
+      <sideeffects><invalidates/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="crypto" desc="destroys a hash object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

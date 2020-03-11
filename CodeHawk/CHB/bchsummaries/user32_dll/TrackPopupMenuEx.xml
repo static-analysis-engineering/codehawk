@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/13/2015 14:46:23"/>
+  <libfun lib="user32" name="TrackPopupMenuEx">
+   <documentation>
+     <notes>
+       Error in documentation: although the return type is BOOL, the
+       documentation claims that the return value (for a certain flag
+       value) is the menu-item identifier of the item that the user
+       selected
+     </notes>
+    <desc>
+      Displays a shortcut menu at the specified location and tracks the 
+      selection of items on the shortcut menu. The shortcut menu can 
+      appear anywhere on the screen
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI TrackPopupMenuEx(</ll>
+      <ld>_In_      HMENU hMenu</ld>
+      <ld>_In_      UINT fuFlags</ld>
+      <ld>_In_      int x</ld>
+      <ld>_In_      int y</ld>
+      <ld>_In_      HWND hwnd</ld>
+      <ld>_In_opt_  LPTPMPARAMS lptpm</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMenu">
+       A handle to the shortcut menu to be displayed. This handle can be obtained
+       by calling the CreatePopupMenu function to create a new shortcut menu or
+       by calling the GetSubMenu function to retrieve a handle to a submenu 
+       associated with an existing menu item
+     </par>
+     <par name="fuFlags">Specifies function options</par>
+     <par name="x">The horizontal location of the shortcut menu, in screen coordinates</par>
+     <par name="y">The vertical location of the shortcut menu, in screen coordinates</par>
+     <par name="hwnd">
+       A handle to the window that owns the shortcut menu. This window receives all 
+       messages from the menu. The window does not receive a WM_COMMAND message from 
+       the menu until the function returns. If you specify TPM_NONOTIFY in the fuFlags
+       parameter, the function does not send messages to the window identified by 
+       hwnd. However, you must still pass a window handle in hwnd. It can be any 
+       window handle from your application
+     </par>
+     <par name="lptpm">
+       A pointer to a TPMPARAMS structure that specifies an area of the screen the 
+       menu should not overlap. This parameter can be NULL
+     </par>
+     <return>
+      <rc cond="success">the menu-item identifier of the item that the user selected</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="TrackPopupMenuEx">
+    <par loc="stack" name="hMenu" io="r" nr="1">
+     <type>HMENU</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:menu"/>
+     </roles>
+    </par>
+    <par loc="stack" name="fuFlags" roles="none" nr="2">
+     <rep type="enum" name="track_popup_menu_flags"/>
+     <type>UINT</type>
+     <pre><enum-value name="track_popup_menu_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" name="x" nr="3">
+     <type>int</type>
+     <roles>
+        <role rt="size:coordinate" rn="screen coordinate"/>
+     </roles>
+    </par>
+    <par loc="stack" name="y" nr="4">
+     <type>int</type>
+     <roles>
+        <role rt="size:coordinate" rn="screen coordinate"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hwnd" nr="5">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lptpm" nr="6">
+     <type><ptr>TPMPARAMS</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:TPMPARAMS"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="displays a shortcut menu"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/><!-- See notes -->
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

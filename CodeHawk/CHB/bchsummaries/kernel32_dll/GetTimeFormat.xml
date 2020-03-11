@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetTimeFormat">
+   <documentation>
+    <desc>
+      Formats time as a time string for a locale specified by
+      identifier. The function formats either a specified time or the
+      local system time.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int GetTimeFormat(</ll>
+      <ld>_In_       LCID Locale,</ld>
+      <ld>_In_       DWORD dwFlags,</ld>
+      <ld>_In_opt_   const SYSTEMTIME *lpTime,</ld>
+      <ld>_In_opt_   LPCTSTR lpFormat,</ld>
+      <ld>_Out_opt_  LPTSTR lpTimeStr,</ld>
+      <ld>_In_       int cchTime</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="locale">Locale identifier that specifies the locale.</par>
+     <par name="dwFlags">Flags specifying time format options.</par>
+     <par name="lpTime">
+       Pointer to a SYSTEMTIME structure that contains the time information to format. 
+       The application can set this parameter to NULL if the function is to use 
+       the current local system time.
+     </par>
+     <par name="lpFormat">
+       Pointer to a format picture to use to format the time string. If the application 
+       sets this parameter to NULL, the function formats the string according to the
+       time format of the specified locale.
+     </par>
+     <par name="lpTimeStr">
+       Pointer to a buffer in which this function retrieves the formatted time string.
+     </par>
+     <par name="cchTime">
+       Size, in TCHAR values, for the time string buffer indicated by lpTimeStr. 
+       Alternatively, the application can set this parameter to 0. In this case,
+       the function returns the required size for the 
+       time string buffer, and does not use the lpTimeStr parameter.
+     </par>
+     <return>
+      <rc cond="success">
+	number of TCHAR values retrieved in the buffer indicated by lpTimeStr or the size
+	of the buffer required to hold the formatted string
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="GetTimeFormat">
+     <returntype>int</returntype>
+    <par loc="stack" io="r" name="Locale" nr="1">
+     <roles>
+      <role rt="ioc:system" rn="id:locale" />
+     </roles>
+     <btype tname="LCID" ttag="tnamed"/>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="lpTime" nr="3" rep="hex">
+     <type><ptr>SYSTEMTIME</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:SYSTEMTIME" />
+     </roles>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpFormat" nr="4" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:outputs" rn="format string" />
+     </roles>
+      <pre><deref-read-null-nt/><format-string/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpTimeStr" nr="5" rep="hex">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-string:formatted data" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cchTime" nr="6">
+     <roles>
+      <role rt="size:buffersize" rn="GetTimeFormat" />
+     </roles>
+     <type>int</type>
+     <pre><non-negative/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="outputs" desc="formats time as a string according to locale"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>TCHAR</type>
+	    <ci>lpTimeStr</ci>
+	    <apply><indexsize/><ci>cchTime</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	<type>TCHAR</type>
+	<ci>lpTimeStr</ci>
+	<apply><indexsize/><ci>cchTime</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

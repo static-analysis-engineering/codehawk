@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetLargestConsoleWindowSize.xml" time="2016-10-29 08:05:17.225553"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="GetLargestConsoleWindowSize">
+    <documentation>
+      <desc>
+	Retrieves the size of the largest possible console window,
+	based on the current font and the size of the display.
+      </desc>
+      <apidoc>
+        <pt>COORD WINAPI GetLargestConsoleWindowSize (_In_ HANDLE hConsoleOutput)</pt>
+        <par name="hConsoleOutput">
+	  A handle to the console screen buffer
+	</par>
+        <return>
+          <rc cond="success">
+	     a COORD structure that specifies the number of character
+	     cell rows (X member) and columns (Y member) in the
+	     largest possible console window
+	  </rc>
+          <rc cond="failure">
+	    a COORD structure whose members are zero
+	  </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="GetLargestConsoleWindowSize">
+      <par loc="stack" io="r" name="hConsoleOutput" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="console output"/>
+	</roles>
+      </par>
+      <returntype>COORD</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="retrieves the size of the largest possible console window"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

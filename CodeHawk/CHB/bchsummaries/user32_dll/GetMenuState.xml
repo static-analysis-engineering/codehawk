@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/12/2015 16:15:38"/>
+  <libfun lib="user32" name="GetMenuState">
+   <documentation>
+    <desc>
+      Retrieves the menu flags associated with the specified menu item. 
+      If the menu item opens a submenu, this function also returns the
+      number of items in the submenu
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetMenuState(</ll>
+      <ld>_In_ HMENU hMenu</ld>
+      <ld>_In_ UINT  uId</ld>
+      <ld>_In_ UINT  uFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMenu">
+       A handle to the menu that contains the menu item whose flags are to be retrieved
+     </par>
+     <par name="uId">
+       The menu item for which the menu flags are to be retrieved, as determined by 
+       the uFlags parameter
+     </par>
+     <par name="uFlags">Indicates how the uId parameter is interpreted</par>
+     <return>
+      <rc cond="success">
+	If the menu item opens a submenu, the low-order byte of the return value 
+	contains the menu flags associated with the item, and the high-order 
+	byte contains the number of items in the submenu opened by the item.
+	Otherwise, the return value is a mask (Bitwise OR) of the menu flags
+      </rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetMenuState">
+    <par loc="stack" name="hMenu" nr="1">
+     <type>HMENU</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:menu"/>
+     </roles>
+    </par>
+    <par loc="stack" name="uId" io="r" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="uFlags" io="r" roles="none" nr="3">
+     <type>UINT</type>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves the flags of a menu item"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <geq/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </post>
+      <error-post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return/>
+	    <cn>-1</cn>
+	  </apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

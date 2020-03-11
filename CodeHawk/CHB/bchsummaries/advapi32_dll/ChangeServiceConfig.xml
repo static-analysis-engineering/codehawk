@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 08:51:20"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="ChangeServiceConfig">
+   <documentation>
+    <desc>Changes the configuration parameters of a service</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPIChangeServiceConfig(</ll>
+      <ld>_In_       SC_HANDLE hService </ld>
+      <ld>_In_       DWORD dwServiceType </ld>
+      <ld>_In_       DWORD dwStartType </ld>
+      <ld>_In_       DWORD dwErrorControl </ld>
+      <ld>_In_opt_   LPCTSTR lpBinaryPathName </ld>
+      <ld>_In_opt_   LPCTSTR lpLoadOrderGroup </ld>
+      <ld>_Out_opt_  LPDWORD lpdwTagId </ld>
+      <ld>_In_opt_   LPCTSTR lpDependencies </ld>
+      <ld>_In_opt_   LPCTSTR lpServiceStartName </ld>
+      <ld>_In_opt_   LPCTSTR lpPassword </ld>
+      <ld>_In_opt_   LPCTSTR lpDisplayName </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero </rc>
+      <rc cond="failure">zero </rc>
+     </return>
+     <par name="hService">
+       A handle to the service. This handle is returned by the OpenService or
+       CreateService function and must have the SERVICE_CHANGE_CONFIG access right. 
+    </par>
+     <par name="dwServiceType">The type of service. </par>
+     <par name="dwStartType">The service start options. </par>
+     <par name="dwErrorControl">
+       The severity of the error, and action taken, if this service fails to start.
+     </par>
+     <par name="lpBinaryPathName">
+       The fully qualified path to the service binary file. Specify NULL 
+       if you are not changing the existing path. 
+    </par>
+     <par name="lpLoadOrderGroup">
+       The name of the load ordering group of which this service is a member. 
+       Specify NULL if you are not changing the existing group. 
+       Specify an empty string if the service does not belong to a group.  
+    </par>
+     <par name="lpdwTagId">
+       A pointer to a variable that receives a tag value that is unique in 
+       the group specified in the lpLoadOrderGroup parameter. 
+       Specify NULL if you are not changing the existing tag.  
+     </par>
+     <par name="lpDependencies">
+       A pointer to a double null-terminated array of null-separated names of 
+       services or load ordering groups that the system must start before this
+       service can be started. (Dependency on a group means that this service 
+       can run if at least one member of the group is running after an attempt 
+       to start all members of the group.) Specify NULL if you are not changing 
+       the existing dependencies. Specify an empty string if the service has 
+       no dependencies.  
+    </par>
+     <par name="lpServiceStartName">
+       The name of the account under which the service should run. Specify NULL 
+       if you are not changing the existing account name. 
+       If the service type is SERVICE_WIN32_OWN_PROCESS, use an account name in 
+       the form DomainName\UserName.  
+    </par>
+     <par name="lpPassword">
+       The password to the account name specified by the lpServiceStartName 
+       parameter. Specify NULL if you are not changing the existing password. 
+       Specify an empty string if the account has no password or if the service
+       runs in the LocalService, NetworkService, or LocalSystem account. If the
+       account name specified by the lpServiceStartName parameter is the name of 
+       a managed service account or virtual account name, the lpPassword 
+       parameter must be NULL. 
+     </par>
+     <par name="lpDisplayName">
+       The display name to be used by applications to identify the service for 
+       its users. Specify NULL if you are not changing the existing display name; 
+       otherwise, this string has a maximum length of 256 characters. The name 
+       is case-preserved in the service control manager. Display name comparisons
+       are always case-insensitive. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="44" cc="stdcall" name="ChangeServiceConfig">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="hService" nr="1">
+       <type>SC_HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:services" rn="handle:service"/>
+       </roles>
+     </par>
+    <par loc="stack" io="r" name="dwServiceType" nr="2">
+      <type>DWORD</type>
+      <roles>
+	<role rt="ioc:services" rn="type:service"/>
+	<role rt="enum:const" rn="service_type_constants"/>
+      </roles>
+      <pre><enum-value name="service_type_constants"/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwStartType" nr="3">
+      <rep type="enum" name="service_start_constants"/>
+      <type>DWORD</type>
+      <roles>
+        <role rt="ioc:services" rn="type:service start"/>
+     </roles>
+     <pre><enum-value name="service_start_constants"/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwErrorControl" roles="none" nr="4">
+      <rep type="enum" name="service_error_constants"/>
+      <type>DWORD</type>
+      <pre><enum-value name="service_error_constants"/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpBinaryPathName" nr="5">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+         <role rt="ioc:services" rn="name:binary path"/>
+      </roles>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpLoadOrderGroup" nr="6">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:services" rn="name:load order group"/>
+      </roles>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpdwTagId" roles="none" nr="7">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="lpDependencies" nr="8" rep="hex">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:services" rn="name:service dependencies"/>
+      </roles>
+      <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpServiceStartName" nr="9" rep="hex">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:services" rn="name:service start"/>
+      </roles>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpPassword" nr="10" rep="hex">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:services" rn="name:service password"/>
+      </roles>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpDisplayName" nr="11" rep="hex">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:services" rn="name:service display"/>
+      </roles>
+      <pre><deref-read-null/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="services" desc="changes service configuration"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

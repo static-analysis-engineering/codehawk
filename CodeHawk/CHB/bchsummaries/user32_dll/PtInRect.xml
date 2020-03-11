@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="PtInRect.xml" time="2016-05-16 22:23:39.403679"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="PtInRect">
+    <documentation>
+      <desc>
+	determines whether the specified point lies within the
+	specified rectangle. A point is within a rectangle if it lies
+	on the left or top side or is within all four sides. A point
+	on the right or bottom side is considered outside the
+	rectangle.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL PtInRect(</ll>
+          <ld>_In_ const RECT  *lprc</ld>
+          <ld>_In_       POINT pt</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lprc">
+	  A pointer to a RECT structure that contains the specified rectangle
+	</par>
+        <par name="pt">A POINT structure that contains the specified point</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="PtInRect">
+      <par loc="stack" name="lprc" io="r" rep="hex" nr="1">
+        <type><ptr>RECT</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-struct:RECT"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pt" io="r" nr="2">
+        <type>POINT</type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-struct:POINT"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="determines whether a point lies in a rectangle"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

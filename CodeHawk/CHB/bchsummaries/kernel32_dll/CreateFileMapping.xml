@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CreateFileMapping">
+   <documentation>
+    <desc>creates or opens a named or unnamed file mapping object for a specified file</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI CreateFileMapping (</ll>
+      <ld>__in     HANDLE hFile</ld>
+      <ld>__in_opt LPSECURITY_ATTRIBUTES lpAttributes,</ld>
+      <ld>__in     DWORD flProtect,</ld>
+      <ld>__in     DWORD dwMaximumSizeHigh,</ld>
+      <ld>__in     DWORD dwMaximumSizeLow,</ld>
+      <ld>__in_opt LPCTSTR lpName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">handle to the file from which to create a file mapping object</par>
+     <par name="lpAttributes">
+       pointer to a SECURITY_ATTRIBUTES structure that determines
+       whether a returned handle can be inherited by child processes
+     </par>
+     <par name="flProtect">specifies the page protection of the file mapping object</par>
+     <par name="dwMaximumSizeHigh">
+       high-order word of the maximum size of the file mapping object
+     </par>
+     <par name="dwMaximumSizeLow">
+       low-order word of the maximum size of the file mapping object
+     </par>
+     <par name="lpName">name of the file mapping object; can be NULL</par>
+     <return>
+      <rc cond="success">handle to the newly created file mapping object</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="CreateFileMapping">
+     <returntype>HANDLE</returntype>
+     <par loc="stack" name="hFile" io="r" nr="1">
+       <type>HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:filesystem" rn="handle:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpAttributes" io="r" roles="none" nr="2">
+      <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" name="flProtect" io="r" nr="3">
+      <type>DWORD</type>
+      <pre><enum-value name="memory_protection_constants" flags="true"/></pre>
+      <roles>
+	<role rt="rep:enum" rn="memory_protection_constants"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwMaximumSizeHigh" io="r" nr="4">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:filesize" rn="file mapping object size"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwMaximumSizeLow" io="r" nr="5">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:filesize" rn="file mapping object size"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpName" io="r" nr="6">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="file mapping name"/>
+	<role rt="rep:hex" rn="filemapping name"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="creates a file mapping"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

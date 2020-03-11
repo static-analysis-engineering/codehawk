@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="DefWindowProc">
+   <documentation>
+    <desc>
+      calls the default window procedure to provide the default processessing for
+      any window messages th that an appication does not process
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LRESULT WINAPI DefWindowProc (</ll>
+      <ld>__in HWND hWnd,</ld>
+      <ld>__in UINT Msg,</ld>
+      <ld>__in WPARAM wParam,</ld>
+      <ld>__in LPARAM lParam</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window procedure that received the message</par>
+     <par name="Msg">message</par>
+     <par name="wParam">additional message information</par>
+     <par name="lParam">additional message information</par>
+     <return>depends on the message</return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="DefWindowProc">
+    <returnbtype tname="LRESULT" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hWnd" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="Msg" nr="2">
+      <type>UINT</type>
+     <roles>
+      <role rt="ioc:process" rn="id:message" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="wParam" nr="3">
+     <type>WPARAM</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackp:wparam" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lParam" nr="4">
+     <type>LPARAM</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackp:lparam" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="calls the default window procedure to process messages">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

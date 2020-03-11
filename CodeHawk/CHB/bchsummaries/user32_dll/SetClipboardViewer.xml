@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:19:50"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetClipboardViewer">
+   <documentation>
+    <desc>
+      Adds the specified window to the chain of clipboard viewers. Clipboard 
+      viewer windows receive a WM_DRAWCLIPBOARD message whenever the content 
+      of the clipboard changes.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HWND WINAPI SetClipboardViewer(</ll>
+      <ld>_In_  HWND hWndNewViewer</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure or no more windows in chain">zero</rc>
+     </return>
+     <par name="hWndNewViewer">
+         A handle to the window to be added to the clipboard chain.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetClipboardViewer">
+    <returntype>HWND</returntype>
+    <par loc="stack" name="hWndNewViewer" io="r" nr="1">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="adds the window to the chain of clipboard viewers"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

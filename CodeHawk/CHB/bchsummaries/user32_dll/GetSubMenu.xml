@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/13/2015 10:57:33"/>
+  <libfun lib="user32" name="GetSubMenu">
+   <documentation>
+    <desc>
+      Retrieves a handle to the drop-down menu or submenu activated by the 
+      specified menu item 
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HMENU WINAPI GetSubMenu(</ll>
+      <ld>_In_ HMENU hMenu</ld>
+      <ld>_In_ int   nPos</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMenu">A handle to the menu</par>
+     <par name="nPos">
+       The zero-based relative position in the specified menu of an item that 
+       activates a drop-down menu or submenu
+     </par>
+     <return>
+      <rc cond="success">
+	a handle to the drop-down menu or submenu activated by the menu item
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetSubMenu">
+    <par loc="stack" name="hMenu" io="r" nr="1">
+     <type>HMENU</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:menu"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nPos" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <returntype>HMENU</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves a handle to a menu"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 04:00:23"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="IntersectRect">
+   <documentation>
+    <desc>
+      calculates the intersection of two source rectangles and places 
+      the coordinates of the intersection rectangle into the destination
+      rectangle. If the source rectangles do not intersect, an empty 
+      rectangle (in which all coordinates are set to zero) is placed 
+      into the destination rectangle.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL IntersectRect(</ll>
+      <ld>_Out_  LPRECT lprcDst</ld>
+      <ld>_In_   const RECT *lprcSrc1</ld>
+      <ld>_In_   const RECT *lprcSrc2</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       If the rectangles intersect, the return value is nonzero.
+       If the rectangles do not intersect, the return value is zero
+     </return>
+     <par name="lprcDst">
+       A pointer to the RECT structure that is to receive the intersection
+       of the rectangles pointed to by the lprcSrc1 and lprcSrc2 parameters.
+       This parameter cannot be NULL.
+     </par>
+     <par name="lprcSrc1">
+       A pointer to the RECT structure that contains the first source rectangle.
+     </par>
+     <par name="lprcSrc2">
+       A pointer to the RECT structure that contains the second source rectangle.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="IntersectRect">
+     <returntype>BOOL</returntype>
+    <par loc="stack" name="lprcDst" io="w" nr="1">
+      <type><ptr>RECT</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+       <roles>
+          <role rt="ioc:memops" rn="dst-struct:RECT"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lprcSrc1" io="r" nr="2">
+      <type><ptr>RECT</ptr></type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:memops" rn="src-struct:RECT"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lprcSrc2" io="r" nr="3" rep="hex">
+      <type><ptr>RECT</ptr></type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:memops" rn="src-struct:RECT"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="intersects two rectangles"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

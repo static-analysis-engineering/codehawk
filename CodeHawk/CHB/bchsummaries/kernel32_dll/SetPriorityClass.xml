@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:34:09"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetPriorityClass">
+   <documentation>
+    <desc>
+      Sets the priority class for the specified process. This value together
+      with the priority value of each thread of the process determines each
+      thread&apos;s base priority level.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetPriorityClass(</ll>
+      <ld>_In_  HANDLE hProcess</ld>
+      <ld>_In_  DWORD dwPriorityClass</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hProcess">
+       A handle to the process.	
+       The handle must have the PROCESS_SET_INFORMATION access right.
+     </par>
+     <par name="dwPriorityClass">The priority class for the process.</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetPriorityClass">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hProcess" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:process"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwPriorityClass" nr="2">
+      <type>DWORD</type>
+      <pre><enum-value name="priority_class_constants"/></pre>
+      <roles>
+         <role rt="ioc:process" rn="priority class"/>
+         <role rt="rep:enum" rn="priority_class_constants"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="sets the process priority class"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

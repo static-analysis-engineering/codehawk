@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/13/2015 21:40:56"/>
+  <libfun lib="kernel32" name="SetConsoleTextAttribute">
+   <documentation>
+    <desc>
+      Sets the attributes of characters written to the console screen buffer
+      by the WriteFile or WriteConsole function, or echoed by the ReadFile 
+      or ReadConsole function. This function affects text written after 
+      the function call
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetConsoleTextAttribute(</ll>
+      <ld>_In_  HANDLE hConsoleOutput</ld>
+      <ld>_In_  WORD wAttributes</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hConsoleOutput">
+       A handle to the console screen buffer. The handle must have the 
+       GENERIC_READ access right
+     </par>
+     <par name="wAttributes">The character attributes</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetConsoleTextAttribute">
+    <par loc="stack" io="r" name="hConsoleOutput" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:console" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="wAttributes" roles="none"  nr="2">
+     <type>WORD</type>
+     <rep type="enum" name="character_attribute_data"/>
+     <pre><enum-value name="character_attributes_constants"/></pre>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="outputs"
+		  desc="sets the attributes of characters written to the console"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

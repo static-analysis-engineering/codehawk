@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/08/2015 21:29:14"/>
+  <libfun lib="advapi32" name="RegQueryMultipleValues">
+   <documentation>
+    <desc>
+      Retrieves the type and data for a list of value names associated with an
+      open registry key
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegQueryMultipleValues(</ll>
+      <ld>_In_         HKEY hKey</ld>
+      <ld>_Out_        PVALENT val_list</ld>
+      <ld>_In_         DWORD num_vals</ld>
+      <ld>_Out_opt_    LPTSTR lpValueBuf</ld>
+      <ld>_Inout_opt_  LPDWORD ldwTotsize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">
+       A handle to an open registry key. The key must have been opened with the 
+       KEY_QUERY_VALUE access right
+     </par>
+     <par name="val_list">
+       A pointer to an array of VALENT structures that describe one or more 
+       value entries. On input, the ve_valuename member of each structure must 
+       contain a pointer to the name of a value to retrieve. The function fails 
+       if any of the specified values do not exist in the specified key.
+       If the function succeeds, each element of the array contains the 
+       information for the specified value.
+     </par>
+     <par name="num_vals">The number of elements in the val_list array</par>
+     <par name="lpValueBuf">
+       A pointer to a buffer. If the function succeeds, the buffer receives the
+       data for each value.
+       If lpValueBuf is NULL, the value pointed to by the ldwTotsize parameter
+       must be zero, in which case the function returns ERROR_MORE_DATA and 
+       ldwTotsize receives the required size of the buffer, in bytes
+     </par>
+     <par name="ldwTotsize">
+       A pointer to a variable that specifies the size of the buffer pointed to 
+       by the lpValueBuf parameter, in bytes. If the function succeeds, ldwTotsize
+       receives the number of bytes copied to the buffer. If the function fails 
+       because the buffer is too small, ldwTotsize receives the required size, in bytes
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">system error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="RegQueryMultipleValues">
+    <par loc="stack" name="hKey" io="r" rep="hex" nr="1">
+      <rep type="enum" name="predefined_registry_key_constants"/>
+      <type>HKEY</type>
+      <pre>
+	<deref-read/>
+	<enum-value name="predefined_registry_key_constants"/>
+      </pre>
+      <roles>
+	<role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" name="val_list" io="w" rep="hex" nr="2">
+     <type><ptr>VALENT</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-struct:value entry"/>
+     </roles>
+    </par>
+    <par loc="stack" name="num_vals" io="r" nr="3">
+     <type>DWORD</type>
+     <pre><non-negative/></pre>
+     <roles>
+       <role rt="size:count" rn="number of value entries"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpValueBuf" io="w" rep="hex" nr="4">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:registry" rn="infox:value data"/>
+     </roles>
+    </par>
+    <par loc="stack" name="ldwTotsize" nr="5">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-read-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:actual" rn="value data"/>
+     </roles>
+    </par>
+    <returntype>LONG</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry"
+		  desc="retrieves type and data for a set of value names"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>VALENT</type>
+	    <ci>val_list</ci>
+	    <apply><indexsize/><ci>num_vals</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><null/><ci>lpValueBuf</ci></apply>
+	    <apply>
+	      <eq/>
+	      <apply><addressed-value/><ci>ldwTotsize</ci><cn>0</cn></apply>
+	      <cn>0</cn>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>TCHAR</type>
+	    <ci>lpValueBuf</ci>
+	    <apply><addressed-value/><ci>ldwTotsize</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>VALENT</type>
+	    <ci>val_list</ci>
+	    <apply><indexsize/><ci>num_vals</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpValueBuf</ci>
+	    <apply><addressed-value/><ci>ldwTotsize</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

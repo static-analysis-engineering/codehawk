@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/06/2015 22:04:19"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="MapWindowPoints">
+   <documentation>
+    <desc>
+     converts a set of points from a coordinate space relative to one window
+     to a coordinate space relative to another window
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int MapWindowPoints(</ll>
+      <ld>_In_ HWND hWndFrom,</ld>
+      <ld>_In_ HWND hWndTo,</ld>
+      <ld>_Inout_ LPPOINT lpPoints,</ld>
+      <ld>_In_ UINT cPoints</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       <rc cond="success">number of pixels added</rc>
+       <rc cond="failure">zero</rc>
+    </return>
+     <par name="hWndFrame">
+      handle to the window from which points are converted. If NULL or
+      HWND_DESKTOP, the points are presumed to be in screen coordinates.
+    </par>
+     <par name="hWndTo">
+      handle to the window to which points are converted. If NULL or
+      HWND_DESKTOP, the points are converted to screen coordinates
+    </par>
+     <par name="lpPoints">
+      pointer to an array of POINT structures that contain the set of points
+      to be converted. The points are in device units. Can also point to a
+      RECT structure, in which case the cPoints parameter should be set to 2.
+    </par>
+     <par name="cPoints">
+      number of POINT structures in the array pointed to by the lpPoints
+      parameter.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="MapWindowPoints">
+    <returntype>int</returntype>
+    <par loc="stack" name="hWndFrame" io="r" nr="1">
+     <type>HWND</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hWndTo" io="r" nr="2">
+     <type>HWND</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpPoints" io="rw" nr="3">
+     <type><ptr>POINT</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:POINT"/>
+        <role rt="ioc:memops" rn="dst-struct:POINT"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cPoints" nr="4">
+     <type>UINT</type>
+     <roles>
+        <role rt="size:buffersize" rn="MapWindowPoints"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="converts a set points from one window to another"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>POINT</type>
+	    <ci>lpPoints</ci>
+	    <apply>
+	      <indexsize/>
+	      <ci>cPoints</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply><gt/><return/><cn>0</cn></apply>
+	</math>
+      </post>
+      <error-post>
+	<math>
+	  <apply><eq/><return/><cn>0</cn></apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>POINT</type>
+	    <ci>lpPoints</ci>
+	    <apply>
+	      <indexsize/>
+	      <ci>cPoints</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

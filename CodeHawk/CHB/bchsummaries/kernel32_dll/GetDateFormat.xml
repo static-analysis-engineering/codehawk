@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetDateFormat">
+   <documentation>
+    <desc>
+      formats a date as a date string for a locale specified by the locale identifier
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int GetDateFormat (</ll>
+      <ld>__in LCID Locale,</ld>
+      <ld>__in DWORD dwFlags,</ld>
+      <ld>__in const SYSTEMTIME *lpDate,</ld>
+      <ld>__in LPCTSTR lpFormat,</ld>
+      <ld>__out LPTSTR lpDateStr,</ld>
+      <ld>__in int cchDate</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Locale">locale identifier</par>
+     <par name="dwFlags">flags specifying date format options</par>
+     <par name="lpDate">
+       pointer to a SYSTEMTIME structure that contains the date information to format;
+       can be NULL
+     </par>
+     <par name="lpFormat">pointer to a format picture string; can be NULL</par>
+     <par name="lpDateStr">
+       pointer to a buffer in which this function retrieves the formatted date string;
+       can be NULL
+     </par>
+     <par name="cchDate">
+       size, in characters, of the lpDateStr buffer. If set to 0 the function returns
+       the buffer size, required to hold the string, and the string is not written
+     </par>
+     <return>
+      <rc cond="success">number of characters written to the lpDateStr buffer</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="GetDateFormat">
+     <returntype>int</returntype>
+     <par loc="stack" name="Locale" io="r" roles="none" nr="1">
+       <type>LCID</type>
+     </par>
+     <par loc="stack" name="dwFlags" io="r" roles="none" nr="2">
+       <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpDate" io="r" nr="3" rep="hex">
+      <type><ptr>SYSTEMTIME</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:SYSTEMTIME"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpFormat" io="r" nr="4" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/><format-string/></pre>
+      <roles>
+	<role rt="ioc:outputs" rn="format string"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpDateStr" io="w" nr="5" rep="hex">
+      <type>LPSTR</type>
+      <roles>
+	<role rt="ioc:outputs" rn="formatted data to string"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cchDate" io="r"  nr="6">
+      <type>int</type>
+      <pre><non-negative/></pre>
+      <roles>
+	<role rt="size:bufferize" rn="GetDateFormat"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="outputs" desc="formats a date"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+        <implies/>
+        <apply><gt/><ci>cchDate</ci><cn>0</cn></apply>
+	<apply>
+	  <deref-write/>
+	  <type>TCHAR</type>
+	  <ci>lpDate</ci>
+	  <apply><indexsize/><ci>cchDate</ci></apply>
+	</apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <implies/>
+	    <pre>
+	      <apply><gt/><ci>cchDate</ci><cn>0</cn></apply>
+	    </pre>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>lpDate</ci>
+	      <apply><indexsize/><ci>cchDate</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

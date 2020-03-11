@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:28:58"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="EnumWindows">
+   <documentation>
+    <desc>
+      Enumerates all top-level windows on the screen by passing the handle to 
+      each window, in turn, to an application-defined callback function. 
+      EnumWindows continues until the last top-level window is enumerated 
+      or the callback function returns FALSE. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI EnumWindows(</ll>
+      <ld>_In_  WNDENUMPROC lpEnumFunc</ld>
+      <ld>_In_  LPARAM lParam</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpEnumFunc">A pointer to an application-defined callback function.</par>
+     <par name="lParam">
+         An application-defined value to be passed to the callback function.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="EnumWindows">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="lpEnumFunc" rep="hex" nr="1">
+     <type>WNDENUMPROC</type>
+     <roles>
+        <role rt="ioc:process" rn="callbackf:window"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lParam" rep="hex" nr="2">
+     <type>LPARAM</type>
+     <roles>
+        <role rt="ioc:process" rn="callbackp:window"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="enumerates top level windows"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

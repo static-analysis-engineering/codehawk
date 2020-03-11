@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:28:54"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="QueryPerformanceFrequency">
+   <documentation>
+    <desc>
+      Retrieves the frequency of the performance counter. The frequency of the 
+      performance counter is fixed at system boot and is consistent across all 
+      processors. Therefore, the frequency need only be queried upon application 
+      initialization, and the result can be cached.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI QueryPerformanceFrequency(</ll>
+      <ld>_Out_  LARGE_INTEGER *lpFrequency</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpFrequency">
+       A pointer to a variable that receives the current performance-counter
+       frequency, in counts per second. If the installed hardware doesn&apos;t 
+       support a high-resolution performance counter, this parameter can be 
+       zero (this will not occur on systems that run Windows XP or later).
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="QueryPerformanceFrequency">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="lpFrequency" io="w" nr="1" rep="hex" roles="none">
+       <type><ptr>LARGE_INTEGER</ptr></type>
+       <pre><deref-write/></pre>
+       <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" 
+		  desc="retrieves the frequency of the performance counter"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

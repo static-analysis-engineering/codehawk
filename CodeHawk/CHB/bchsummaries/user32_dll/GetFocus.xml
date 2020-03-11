@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 15:58:18"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetFocus">
+   <documentation>
+    <desc>retrieves the handle to the window that has the keyboard focus, if the
+     window is attached to the calling thread&apos;s message queue
+   </desc>
+    <apidoc>
+     <pt>HWND GetFocus (void)</pt>
+     <return>
+      <rc cond="success">handle to the window with the keyboard focus</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetFocus">
+    <returntype>HWND</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system"
+		 desc="retrieves the window that has keyboard focus"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

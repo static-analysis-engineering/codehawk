@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/13/2015 20:59:52"/>
+  <libfun lib="kernel32" name="ReadProcessMemory">
+   <documentation>
+    <desc>
+      Reads data from an area of memory in a specified process. The entire 
+      area to be read must be accessible or the operation fails
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI ReadProcessMemory(</ll>
+      <ld>_In_   HANDLE hProcess</ld>
+      <ld>_In_   LPCVOID lpBaseAddress</ld>
+      <ld>_Out_  LPVOID lpBuffer</ld>
+      <ld>_In_   SIZE_T nSize</ld>
+      <ld>_Out_  SIZE_T *lpNumberofBytesRead</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hProcess">
+       A handle to the process with memory that is being read. The handle must
+       have PROCESS_VM_READ access to the process
+     </par>
+     <par name="lpBaseAddress">
+       A pointer to the base address in the specified process from which to 
+       read. Before any data transfer occurs, the system verifies that all 
+       data in the base address and memory of the specified size is accessible
+       for read access, and if it is not accessible the function fails
+     </par>
+     <par name="lpBuffer">
+       A pointer to a buffer that receives the contents from the address space 
+       of the specified process.
+     </par>
+     <par name="nSize">The number of bytes to be read from the specified process</par>
+     <par name="lpNumberofBytesRead">
+       A pointer to a variable that receives the number of bytes transferred 
+       into the specified buffer. If lpNumberOfBytesRead is NULL, the parameter 
+       is ignored
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="ReadProcessMemory">
+    <par loc="stack" name="hProcess" io="r" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:process"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpBaseAddress" io="r" nr="2">
+     <type>LPCVOID</type>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:remote process"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpBuffer" io="w" nr="3">
+     <type>LPVOID</type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-bytes:remote process"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nSize" io="r" nr="4">
+     <type>SIZE_T</type>
+     <roles>
+       <role rt="size:buffersize" rn="ReadProcessMemory"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpNumberofBytesRead" io="rw" nr="5">
+     <type><ptr>SIZE_T</ptr></type>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:actualsize" rn="ReadProcessMemory"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="reads process memory area"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>lpBaseAddress</ci>
+	    <ci>nSize</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpBuffer</ci>
+	    <ci>nSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>lpBaseAddress</ci>
+	    <ci>nSize</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

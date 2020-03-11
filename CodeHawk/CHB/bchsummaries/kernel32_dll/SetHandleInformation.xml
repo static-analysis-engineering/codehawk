@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetHandleInformation">
+   <documentation>
+    <desc>Sets certain properties of an object handle</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetHandleInformation(</ll>
+      <ld>_In_  HANDLE hObject,</ld>
+      <ld>_In_  DWORD dwMask,</ld>
+      <ld>_In_  DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hObject">
+       A handle to an object whose information is to be set.
+       You can specify a handle to one of the following types of objects: access 
+       token, console input buffer, console screen buffer, event, file, file 
+       mapping, job, mailslot, mutex, pipe, printer, process, registry key, 
+       semaphore, serial communication device, socket, thread, or waitable timer.
+     </par>
+     <par name="dwMask">A mask that specifies the bit flags to be changed.</par>
+     <par name="dwFlags">
+       Set of bit flags that specifies properties of the object handle.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SetHandleInformation">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hObject" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:system" rn="handle:object"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwMask" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="sets properties of an object handle"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

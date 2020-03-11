@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/05/2015 16:39:56"/>
+  <libfun lib="kernel32" name="WritePrivateProfileStruct">
+   <documentation>
+    <desc>
+      Copies data into a key in the specified section of an initialization file. 
+      As it copies the data, the function calculates a checksum and appends it 
+      to the end of the data. The GetPrivateProfileStruct function uses the 
+      checksum to ensure the integrity of the data.
+      Note  This function is provided only for compatibility with 16-bit versions 
+      of Windows. Applications should store initialization information in the 
+      registry
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WritePrivateProfileStruct(</ll>
+      <ld>_In_  LPCTSTR lpszSection</ld>
+      <ld>_In_  LPCTSTR lpszKey</ld>
+      <ld>_In_  LPVOID lpStruct</ld>
+      <ld>_In_  UINT uSizeStruct</ld>
+      <ld>_In_  LPCTSTR szFile</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszSection">
+       The name of the section to which the string will be copied. If the 
+       section does not exist, it is created.
+     </par>
+     <par name="lpszKey">
+       The name of the key to be associated with a string. If the key does not
+       exist in the specified section, it is created. If this parameter is NULL, 
+       the entire section, including all keys and entries within the section, 
+       is deleted
+     </par>
+     <par name="lpStruct">
+       The data to be copied. If this parameter is NULL, the key is deleted
+     </par>
+     <par name="uSizeStruct">
+       The size of the buffer pointed to by the lpStruct parameter, in bytes
+     </par>
+     <par name="szFile">
+       The name of the initialization file. If this parameter is NULL, the 
+       information is copied into the Win.ini file.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="WritePrivateProfileStruct">
+    <par loc="stack" io="r" name="lpszSection" nr="1" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:initfile section" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpszKey" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:initfile key" />
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpStruct" nr="3" rep="hex">
+     <type><ptr>VOID</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:initfile section" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="uSizeStruct" nr="4">
+     <type>UINT</type>
+     <roles>
+      <role rt="size:buffersize" rn="WritePrivateProfileStruct" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="szFile" nr="5" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="name:file" />
+      <role rt="ioc:system" rn="name:initfile"/>
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <type>byte</type>
+	    <ci>lpStruct</ci>
+	    <ci>uSizeStruct</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

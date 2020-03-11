@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SetVolumeLabelW.xml" time="2016-06-20 23:16:18.997657"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="SetVolumeLabelW">
+    <refer-to char-type="unicode" name="SetVolumeLabel"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

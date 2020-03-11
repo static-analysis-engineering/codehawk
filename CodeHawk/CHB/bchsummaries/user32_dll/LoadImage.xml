@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:21:54"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="LoadImage">
+   <documentation>
+    <desc>Loads an icon, cursor, animated cursor, or bitmap. </desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI LoadImage(</ll>
+      <ld>_In_opt_  HINSTANCE hinst </ld>
+      <ld>_In_      LPCTSTR lpszName </ld>
+      <ld>_In_      UINT uType </ld>
+      <ld>_In_      int cxDesired </ld>
+      <ld>_In_      int cyDesired </ld>
+      <ld>_In_      UINT fuLoad </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="hinst">
+       A handle to the module of either a DLL or executable (.exe) that contains the 
+       image to be loaded. 
+       To load an OEM image, set this parameter to NULL.
+       To load a stand-alone resource (icon, cursor, or bitmap file) for example, 
+       c:myimage.bmpset this parameter to NULL.
+     </par>
+     <par name="lpszName">
+       The image to be loaded. If the hinst parameter is non-NULL and the fuLoad
+       parameter omits LR_LOADFROMFILE, lpszName specifies the image resource in 
+       the hinst module. If the image resource is to be loaded by name from the 
+       module, the lpszName parameter is a pointer to a null-terminated string 
+       that contains the name of the image resource
+     </par>
+     <par name="uType">
+       The type of image to be loaded. This parameter can be one of the following values.
+       IMAGE_BITMAP	: 0
+       IMAGE_ICON	: 1
+       IMAGE_CURSOR	: 2
+     </par>
+     <par name="cxDesired">
+       The width, in pixels, of the icon or cursor. If this parameter is zero and
+       the fuLoad parameter is LR_DEFAULTSIZE, the function uses the SM_CXICON or 
+       SM_CXCURSOR system metric value to set the width. If this parameter is 
+       zero and LR_DEFAULTSIZE is not used, the function uses the actual resource 
+       width.
+     </par>
+     <par name="cyDesired">
+       The height, in pixels, of the icon or cursor. If this parameter is zero 
+       and the fuLoad parameter is LR_DEFAULTSIZE, the function uses the SM_CYICON 
+       or SM_CYCURSOR system metric value to set the height. If this parameter
+       is zero and LR_DEFAULTSIZE is not used, the function uses the actual 
+       resource height.
+     </par>
+     <par name="fuLoad">Flags specifying additional information</par>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="LoadImage">
+     <returntype>HANDLE</returntype>
+    <par loc="stack" name="hinst" io="r" nr="1">
+      <type>HINSTANCE</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:module"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpszName" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="name:image"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uType" io="r" nr="3">
+      <type>UINT</type>
+      <pre><enum-value name="image_types_to_load"/></pre>
+      <roles>
+	<role rt="rep:enum" rn="image_types_to_load"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cxDesired" io="r" nr="4">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="LoadImage"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cyDesired" io="r" nr="5">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="LoadImage"/>
+      </roles>
+    </par>
+    <par loc="stack" name="fuLoad" io="r" roles="none" nr="6">
+      <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="loads an icon, cursor, or bitmap"/>
+     </io-actions>
+     <preconditions/>
+     <postconditions>
+       <notnull-null/>
+     </postconditions>
+     <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

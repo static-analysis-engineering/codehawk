@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/03/2015 09:38:26"/>
+  <libfun lib="kernel32" name="GetSystemWow64Directory">
+   <documentation>
+    <desc>
+      Retrieves the path of the system directory used by WOW64. This directory 
+      is not present on 32-bit Windows.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetSystemWow64Directory(</ll>
+      <ld>_Out_ LPTSTR lpBuffer</ld>
+      <ld>_In_  UINT   uSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpBuffer">
+       A pointer to the buffer to receive the path. This path does not 
+       end with a backslash
+     </par>
+     <par name="uSize">The maximum size of the buffer, in TCHARs.</par>
+     <return>
+      <rc cond="success">
+	the length, in TCHARs, of the string copied to the buffer, not
+	including the terminating null character
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetSystemWow64Directory">
+    <par loc="stack" io="w" name="lpBuffer" nr="1" rep="hex">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="infox:filename" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="uSize" nr="2">
+     <type>UINT</type>
+     <roles>
+      <role rt="size:buffersize" rn="GetSystemWow64Directory" />
+     </roles>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves the path to the system directory used by WOW64"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>uSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>uSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

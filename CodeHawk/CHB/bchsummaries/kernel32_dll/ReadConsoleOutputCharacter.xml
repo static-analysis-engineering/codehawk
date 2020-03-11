@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ReadConsoleOutputCharacter.xml" time="2016-10-29 14:51:44.539383"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="ReadConsoleOutputCharacter">
+    <documentation>
+      <desc>
+	Copies a number of characters from consecutive cells of a
+	console screen buffer, beginning at a specified location.
+
+	If the number of characters to be read from extends beyond the
+	end of the specified screen buffer row, characters are read
+	from the next row. If the number of characters to be read from
+	extends beyond the end of the console screen buffer,
+	characters up to the end of the console screen buffer are
+	read.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI ReadConsoleOutputCharacter(</ll>
+          <ld>_In_  HANDLE  hConsoleOutput</ld>
+          <ld>_Out_ LPTSTR  lpCharacter</ld>
+          <ld>_In_  DWORD   nLength</ld>
+          <ld>_In_  COORD   dwReadCoord</ld>
+          <ld>_Out_ LPDWORD lpNumberOfCharsRead</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hConsoleOutput">
+	  A handle to the console screen buffer. The handle must have
+	  the GENERIC_READ access right
+	</par>
+        <par name="lpCharacter">
+	  A pointer to a buffer that receives the characters read from
+	  the console screen buffer.  The storage for this buffer is
+	  allocated from a shared heap for the process that is 64 KB
+	  in size. The maximum size of the buffer will depend on heap
+	  usage.
+	</par>
+        <par name="nLength">
+	  The number of screen buffer character cells from which to
+	  read. The size of the buffer pointed to by the lpCharacter
+	  parameter should be nLength * sizeof(TCHAR).
+	</par>
+        <par name="dwReadCoord">
+	  The coordinates of the first cell in the console screen
+	  buffer from which to read, in characters. The X member of
+	  the COORD structure is the column, and the Y member is the
+	  row.
+	</par>
+        <par name="lpNumberOfCharsRead">
+	  A pointer to a variable that receives the number of
+	  characters actually read.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="ReadConsoleOutputCharacter">
+      <par loc="stack" name="hConsoleOutput" io="r" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:console output"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpCharacter" io="w" nr="2">
+        <type>LPTSTR</type>
+	<roles>
+	  <role rt="ioc:system" rn="infox:console characters"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" name="nLength" nr="3">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:buffersize" rn="ReadConsoleOutputCharacter"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" name="dwReadCoord" roles="none" nr="4">
+        <type>COORD</type>
+      </par>
+      <par loc="stack" io="w" name="lpNumberOfCharsRead" nr="5">
+        <type><ptr>DWORD</ptr></type>
+	<roles>
+	  <role rt="size:actual size" rn="ReadConsoleOutputCharacter"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="copies characters from a console screen"/>
+      </io-actions>
+      <preconditions>
+        <pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>lpCharacter</ci>
+	      <apply><indexsize/><ci>nLength</ci></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>lpCharacter</ci>
+	      <apply><indexsize/><ci>nLength</ci></apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

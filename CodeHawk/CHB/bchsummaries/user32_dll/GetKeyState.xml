@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetKeyState">
+   <documentation>
+    <desc>retrieves the status of the specified virtual key</desc>
+    <apidoc>
+     <pt>SHORT WINAPI GetKeyState ( _In_ int nVirtKey )</pt>
+     <par name="nVirtKey">
+       virtual key. If the desired virtual key is a letter or digit, nVirtKey must be set
+       to the ASCII value of that character. For other keys, it must be a vritual key
+     </par>
+     <return>
+       status of the specified virtual key:
+       if the high-order bit is 1, the key is down, otherwise it is up;
+       if the low-oder bit is1, the key is toggled
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetKeyState">
+     <returntype>SHORT</returntype>
+     <par loc="stack" name="nVirtKey" io="r" roles="none" nr="1">
+       <type>int</type>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves the status of a virtual key"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

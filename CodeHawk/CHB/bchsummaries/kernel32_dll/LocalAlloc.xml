@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="LocalAlloc">
+   <documentation>
+    <desc>Allocates the specified number of bytes from the heap.
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>HLOCAL WINAPI LocalAlloc(</ll>
+      <ld>_In_  UINT uFlags,</ld>
+      <ld>_In_  SIZE_T uBytes</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="uFlags">
+       The memory allocation attributes. The default is the LMEM_FIXED value.
+     </par>
+     <par name="uBytes">
+       The number of bytes to allocate. If this parameter is zero and the uFlags 
+       parameter specifies LMEM_MOVEABLE, the function returns a handle to a memory 
+       object that is marked as discarded.
+     </par>
+     <return>
+      <rc cond="success">Handle to the newly allocated memory object</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="LocalAlloc">
+     <returntype>HLOCAL</returntype>
+    <par loc="stack" io="r" name="uFlags" roles="none" nr="1">
+     <rep type="enum" name="local_memory_allocation_flags"/>
+     <type>UINT</type>
+     <pre><enum-value name="local_memory_allocation_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" io="r" name="uBytes" nr="2">
+     <type>SIZE_T</type>
+     <roles>
+        <role rt="ioc:memops" rn="size:allocation"/>
+        <role rt="size:allocation" rn="LocalAlloc"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="allocates memory from the heap"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <new-memory-region/>
+	    <return/>
+	    <ci>uBytes</ci>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

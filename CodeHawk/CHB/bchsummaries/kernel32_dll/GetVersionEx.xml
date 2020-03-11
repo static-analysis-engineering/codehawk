@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetVersionEx">
+   <documentation>
+    <desc>retrieves information about the current operating system</desc>
+    <apidoc>
+     <pt>BOOL WINAPI GetVersionEx (__inout LPOSVERSIONINFO lpVersionInfo) </pt>
+     <par name="lpVersionInfo">
+       OSVERSIONINFO or OSVERSIONINFOEX structure that receives the operating system
+       information. Before calling the function, the dwOSVersioninfoSize member of the
+       structure must be set as appropriate to indicate which data struction is being
+       passed to this function
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetVersionEx">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="lpVersionInfo" io="rw" nr="1" rep="hex">
+       <type><ptr>OSVERSIONINFO</ptr></type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:system" rn="infox:os version"/>
+       </roles>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves OS/platform info"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

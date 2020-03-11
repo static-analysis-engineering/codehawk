@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/12/2015 16:10:09"/>
+  <libfun lib="user32" name="GetMenuItemInfo">
+   <documentation>
+    <desc>Retrieves information about a menu item</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetMenuItemInfo(</ll>
+      <ld>_In_    HMENU          hMenu</ld>
+      <ld>_In_    UINT           uItem</ld>
+      <ld>_In_    BOOL           fByPosition</ld>
+      <ld>_Inout_ LPMENUITEMINFO lpmii</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMenu">A handle to the menu that contains the menu item</par>
+     <par name="uItem">
+       The identifier or position of the menu item to get information about. 
+       The meaning of this parameter depends on the value of fByPosition.
+     </par>
+     <par name="fByPosition">
+       The meaning of uItem. If this parameter is FALSE, uItem is a menu item 
+       identifier. Otherwise, it is a menu item position
+     </par>
+     <par name="lpmii">
+       A pointer to a MENUITEMINFO structure that specifies the information 
+       to retrieve and receives information about the menu item. Note that 
+       you must set the cbSize member to sizeof(MENUITEMINFO) before 
+       calling this function
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetMenuItemInfo">
+    <par loc="stack" io="r" name="hMenu" nr="1">
+     <type>HMENU</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:menu" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="uItem" io="r" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="fByPosition" io="r" roles="none" nr="3">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" io="rw" name="lpmii" nr="4">
+     <type><ptr>MENUITEMINFO</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:MENUITEMINFO" />
+      <role rt="ioc:memops" rn="dst-struct:MENUITEMINFO" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

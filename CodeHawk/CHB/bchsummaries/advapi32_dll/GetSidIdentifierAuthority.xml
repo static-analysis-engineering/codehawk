@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/21/2015 23:49:12"/>
+  <libfun lib="advapi32" name="GetSidIdentifierAuthority">
+   <documentation>
+    <desc>
+      returns a pointer to the SID_IDENTIFIER_AUTHORITY structure in a
+      specified security identifier (SID) 
+    </desc>
+    <apidoc>
+     <pt>PSID_IDENTIFIER_AUTHORITY WINAPI GetSidIdentifierAuthority (_In_  PSID pSid)</pt>
+     <par name="pSid">
+       A pointer to the SID structure for which a pointer to the SID_IDENTIFIER_AUTHORITY 
+       structure is returned.
+       This function does not handle SID structures that are not valid. Call the 
+       IsValidSid function to verify that the SID structure is valid before you 
+       call this function
+     </par>
+     <return>
+      <rc cond="success">
+	a pointer to the SID_IDENTIFIER_AUTHORITY structure for the specified SID
+	structure
+      </rc>
+      <rc cond="failure">undefined</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetSidIdentifierAuthority">
+    <par loc="stack" name="pSid" io="r" rep="hex" nr="1">
+     <type><ptr>SID</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:security identifier"/>
+     </roles>
+    </par>
+    <returntype><ptr>SID_IDENTIFIER_AUTHORITY</ptr></returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="crypto" desc="obtains the SID_IDENTIFIER_AUTHORITY structure"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

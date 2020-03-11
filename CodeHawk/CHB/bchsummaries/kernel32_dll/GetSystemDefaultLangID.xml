@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/16/2015 09:02:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetSystemDefaultLangID">
+   <documentation>
+    <desc>Returns the language identifier for the system locale.</desc>
+    <apidoc>
+     <pt>LANGID GetSystemDefaultLangID ( )</pt>
+     <return>
+      <rc cond="success">Language Identifier for the local system</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetSystemDefaultLangID">
+    <returntype>LANGID</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="retrieves the system locale language identifier"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="FlashWindow">
+   <documentation>
+    <desc>flashes the specified window one time</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI FlashWindow (</ll>
+      <ld>__in HWND hWnd,</ld>
+      <ld>__in BOOL bInvert</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window to be flashed</par>
+     <par name="bInvert">
+       if TRUE: window is flashed from one state to the other
+       if FALSE: window is returned to its original state
+     </par>
+     <return>window&apos;s state before the call to the FlashWindow function</return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="FlashWindow">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="hWnd" nr="1">
+       <type>HWND</type>
+       <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="bInvert" io="r" roles="none" nr="2">
+      <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="flashes a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

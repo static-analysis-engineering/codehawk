@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="04/07/2015 17:01:03"/>
+  <libfun lib="advapi32" name="SetSecurityDescriptor">
+   <documentation>
+    <desc>
+      sets information in a discretionary access control list (DACL). If a DACL 
+      is already present in the security descriptor, the DACL is replaced
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetSecurityDescriptor(</ll>
+      <ld>_Inout_   PSECURITY_DESCRIPTOR pSecurityDescriptor</ld>
+      <ld>_In_      BOOL bDaclPresent</ld>
+      <ld>_In_opt_  PACL pDacl</ld>
+      <ld>_In_      BOOL bDaclDefaulted</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pSecurityDescriptor">
+       A pointer to the SECURITY_DESCRIPTOR structure to which the function adds 
+       the DACL. This security descriptor must be in absolute format, meaning that 
+       its members must be pointers to other structures, rather than offsets to 
+       contiguous data
+     </par>
+     <par name="bDaclPresent">
+       A flag that indicates the presence of a DACL in the security descriptor.
+       If this parameter is TRUE, the function sets the SE_DACL_PRESENT flag in 
+       the SECURITY_DESCRIPTOR_CONTROL structure and uses the values in the pDacl 
+       and bDaclDefaulted parameters. If this parameter is FALSE, the function 
+       clears the SE_DACL_PRESENT flag, and pDacl and bDaclDefaulted are ignored.
+     </par>
+     <par name="pDacl">
+       A pointer to an ACL structure that specifies the DACL for the security 
+       descriptor. If this parameter is NULL, a NULL DACL is assigned to the 
+       security descriptor, which allows all access to the object. The DACL 
+       is referenced by, not copied into, the security descriptor.
+     </par>
+     <par name="bDaclDefaulted">
+       A flag that indicates the source of the DACL. If this flag is TRUE, the
+       DACL has been retrieved by some default mechanism. If FALSE, the DACL 
+       has been explicitly specified by a user. The function stores this value 
+       in the SE_DACL_DEFAULTED flag of the SECURITY_DESCRIPTOR_CONTROL 
+       structure. If this parameter is not specified, the SE_DACL_DEFAULTED 
+       flag is cleared
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SetSecurityDescriptor">
+    <par loc="stack" name="pSecurityDescriptor" io="r" rep="hex" nr="1">
+     <type><ptr>SECURITY_DESCRIPTOR</ptr></type>
+     <pre><deref-read/><deref-write/></pre>
+     <pre><block-write/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-struct:security descriptor"/>
+     </roles>
+    </par>
+    <par loc="stack" name="bDaclPresent" io="r" roles="none" nr="2">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" name="pDacl" io="r" rep="hex" nr="3">
+     <type><ptr>ACL</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:system" rn="access control list"/>
+     </roles>
+    </par>
+    <par loc="stack" name="bDaclDefaulted" io="r" roles="none" nr="4">
+     <type>BOOL</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="sets information in a discretionary access control list"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

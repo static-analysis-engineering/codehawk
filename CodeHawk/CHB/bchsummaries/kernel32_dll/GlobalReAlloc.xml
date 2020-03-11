@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/29/2015 00:06:43"/>
+  <libfun lib="kernel32" name="GlobalReAlloc">
+   <documentation>
+    <desc>
+      Changes the size or attributes of a specified global memory object.
+      The size can increase or decrease
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HGLOBAL WINAPI GlobalReAlloc(</ll>
+      <ld>_In_ HGLOBAL hMem</ld>
+      <ld>_In_ SIZE_T  dwBytes</ld>
+      <ld>_In_ UINT    uFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMem">
+       A handle to the global memory object to be reallocated. This handle 
+       is returned by either the GlobalAlloc or GlobalReAlloc function.
+     </par>
+     <par name="dwBytes">
+       The new size of the memory block, in bytes. If uFlags specifies 
+       GMEM_MODIFY, this parameter is ignored
+     </par>
+     <par name="uFlags">
+       The reallocation options. If GMEM_MODIFY is specified, the function 
+       modifies the attributes of the memory object only (the dwBytes parameter 
+       is ignored.) Otherwise, the function reallocates the memory object.
+     </par>
+     <return>
+      <rc cond="success">
+	a handle to the reallocated memory object
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GlobalReAlloc">
+    <par loc="stack" name="hMem" io="r" rep="hex" nr="1">
+     <type>HGLOBAL</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:global memory"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwBytes" io="r"  nr="2">
+     <type>SIZE_T</type>
+      <roles>
+         <role rt="ioc:memops" rn="size:allocation"/>
+         <role rt="size:allocationsize" rn="GlobalReAlloc"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uFlags" io="r" roles="none" nr="3">
+     <type>UINT</type>
+    </par>
+    <returntype>HGLOBAL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="memops" desc="changes a global memory object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

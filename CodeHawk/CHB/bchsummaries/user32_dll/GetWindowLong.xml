@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetWindowLong">
+   <documentation>
+    <desc>
+      retrieves information about the specified window. The function also retrieves the
+      32-bit value at the specified offset into the extra window memory
+    </desc>
+    <apidoc>
+      <pt>LONG WINAPI GetWindowLong ( _In_ HWND hWnd, _In_ int nIndex)</pt>
+      <par name="hWnd">
+	handle to the window and, indirectly, the class to which the window belongs
+      </par>
+      <par name="nIndex">
+	zero-based offset of the value to be retrieved. Valid values are in the range zero
+	through the number of bytes of extra window memory, minus four; for example, if you
+	specified 12 or more bytes of extra memory, a value of 8 would be an index to the
+	third 32-bit integer. Other values are available to retrieve other data
+      </par>
+      <return>
+	<rc cond="success">requested value</rc>
+	<rc cond="failure">zero</rc>
+      </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetWindowLong">
+     <returntype>LONG</returntype>
+     <par loc="stack" name="hWnd" io="r" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+    <par loc="stack" name="nIndex" io="r" roles="none" nr="2">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves information about a window"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply><lt/><ci>nIndex</ci><runtime-value/></apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply><geq/><ci>nIndex</ci><cn>-21</cn></apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

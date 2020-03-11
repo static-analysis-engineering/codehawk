@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/06/2015 16:39:55"/>
+  <libfun lib="advapi32" name="ConvertStringSecurityDescriptorToSecurityDescriptor">
+   <documentation>
+    <desc>
+      converts a string-format security descriptor into a valid, functional security
+      descriptor. This function retrieves a security descriptor that the 
+      ConvertSecurityDescriptorToStringSecurityDescriptor function converted to 
+      string format.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI ConvertStringSecurityDescriptorToSecurityDescriptor(</ll>
+      <ld>_In_  LPCTSTR              StringSecurityDescriptor</ld>
+      <ld>_In_  DWORD                StringSDRevision</ld>
+      <ld>_Out_ PSECURITY_DESCRIPTOR *SecurityDescriptor</ld>
+      <ld>_Out_ PULONG               SecurityDescriptorSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="StringSecurityDescriptor">
+       A pointer to a null-terminated string containing the string-format security 
+       descriptor to convert.
+     </par>
+     <par name="StringSDRevision">
+       Specifies the revision level of the StringSecurityDescriptor string. Currently 
+       this value must be SDDL_REVISION_1.
+     </par>
+     <par name="SecurityDescriptor">
+       A pointer to a variable that receives a pointer to the converted security descriptor.
+       The returned security descriptor is self-relative. To free the returned buffer, call
+       the LocalFree function. To convert the security descriptor to an absolute security 
+       descriptor, use the MakeAbsoluteSD function.
+     </par>
+     <par name="SecurityDescriptorSize">
+       A pointer to a variable that receives the size, in bytes, of the converted security
+       descriptor. This parameter can be NULL
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="ConvertStringSecurityDescriptorToSecurityDescriptor">
+    <par loc="stack" io="r" name="StringSecurityDescriptor" rep="hex" nr="1">
+     <type>LPCTSTR</type>
+     <roles>
+        <role rt="ioc:system" rn="name:security descriptor"/>
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="StringSDRevision" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="SecurityDescriptor" rep="hex" nr="3">
+     <type><ptr>SECURITY_DESCRIPTOR</ptr></type>
+     <roles>
+        <role rt="ioc:system" rn="infox:security descriptor"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="SecurityDescriptorSize" rep="hex" nr="4">
+     <type><ptr>ULONG</ptr></type>
+     <roles>
+        <role rt="size:required" rn="ConvertStringSecurityDescriptorToSecurityDescriptor"/>
+     </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write exsrc="system"/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system"
+                  desc="converts a string security descriptor into a function security descriptor"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

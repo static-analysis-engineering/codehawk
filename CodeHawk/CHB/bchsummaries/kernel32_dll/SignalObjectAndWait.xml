@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/29/2015 13:22:17"/>
+  <libfun lib="kernel32" name="SignalObjectAndWait">
+   <documentation>
+    <desc>
+      Signals one object and waits on another object as a single operation
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI SignalObjectAndWait(</ll>
+      <ld>_In_ HANDLE hObjectToSignal</ld>
+      <ld>_In_ HANDLE hObjectToWaitOn</ld>
+      <ld>_In_ DWORD  dwMilliseconds</ld>
+      <ld>_In_ BOOL   bAlertable</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hObjectToSignal">
+       A handle to the object to be signaled. This object can be a semaphore, 
+       a mutex, or an event.
+       If the handle is a semaphore, the SEMAPHORE_MODIFY_STATE access right is 
+       required. If the handle is an event, the EVENT_MODIFY_STATE access right
+       is required. If the handle is a mutex and the caller does not own the 
+       mutex, the function fails with ERROR_NOT_OWNER
+     </par>
+     <par name="hObjectToWaitOn">
+       A handle to the object to wait on. The SYNCHRONIZE access right is required
+     </par>
+     <par name="dwMilliseconds">
+       The time-out interval, in milliseconds. The function returns if the interval
+       elapses, even if the object's state is nonsignaled and no completion or 
+       asynchronous procedure call (APC) objects are queued. If dwMilliseconds is
+       zero, the function tests the object's state, checks for queued completion 
+       routines or APCs, and returns immediately. If dwMilliseconds is INFINITE,
+       the function's time-out interval never elapses.
+     </par>
+     <par name="bAlertable">
+       If this parameter is TRUE, the function returns when the system queues an
+       I/O completion routine or APC function, and the thread calls the function.
+       If FALSE, the function does not return, and the thread does not call the 
+       completion routine or APC function.
+       A completion routine is queued when the function call that queued the APC
+       has completed. This function returns and the completion routine is called 
+       only if bAlertable is TRUE, and the calling thread is the thread that 
+       queued the APC.
+     </par>
+     <return>
+      <rc cond="success">the event that caused the function to return</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SignalObjectAndWait">
+    <par loc="stack" name="hObjectToSignal" io="r" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:synchronization" rn="handle:synchronization object"/>
+       <role rt="rep:hex" rn="handle:synchronization object"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hObjectToWaitOn" io="r" nr="2">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:synchronization" rn="handle:synchronization object"/>
+       <role rt="rep:hex" rn="handle:synchronization object"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwMilliseconds" io="r" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="ioc:synchronization" rn="timeout"/>
+     </roles>
+    </par>
+    <par loc="stack" name="bAlertable" roles="none" nr="4">
+     <type>BOOL</type>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization"
+		  desc="signals one object and waits on another"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

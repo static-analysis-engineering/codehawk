@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="PurgeComm.xml" time="2016-03-06 12:46:20.358860"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="PurgeComm" lib="kernel32">
+    <documentation>
+      <desc>
+	Discards all characters from the output or input buffer of a
+	specified communications resource. It can also terminate
+	pending read or write operations on the resource.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI PurgeComm(</ll>
+          <ld>_In_ HANDLE hFile</ld>
+          <ld>_In_ DWORD  dwFlags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hFile">
+	  A handle to the communications resource. The CreateFile
+	  function returns this handle
+	</par>
+        <par name="dwFlags">flags</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="8" name="PurgeComm">
+      <par loc="stack" io="r" nr="1" name="hFile">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="handle:file"/>
+	</roles>
+      </par>
+      <par loc="stack" nr="2" io="r" roles="none" name="dwFlags">
+        <type>DWORD</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="discards I/O buffer of communications device"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

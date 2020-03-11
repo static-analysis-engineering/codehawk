@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="05/03/2015 13:12:43"/>
+  <libfun lib="user32" name="GetSysColorBrush">
+   <documentation>
+    <desc>
+      retrieves a handle identifying a logical brush that corresponds to the 
+      specified color index.
+    </desc>
+    <apidoc>
+     <pt>HBRUSH GetSysColorBrush (_In_ int nIndex)</pt>
+     <par name="nIndex">
+       A color index. This value corresponds to the color used to paint one of 
+       the window elements
+     </par>
+     <return>
+      <rc cond="success">
+	a logical brush if the nIndex parameter is supported by the current platform
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetSysColorBrush">
+    <par loc="stack" name="nIndex" io="r" roles="none" nr="1">
+     <type>int</type>
+    </par>
+    <returntype>HBRUSH</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves a handle to a logical brush"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

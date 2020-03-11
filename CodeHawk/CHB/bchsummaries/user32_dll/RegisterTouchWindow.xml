@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="RegisterTouchWindow.xml" time="2016-03-05 10:37:06.427327"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="RegisterTouchWindow" lib="user32">
+    <documentation>
+      <desc>Registers a window as being touch-capable</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI RegisterTouchWindow(</ll>
+          <ld>_In_ HWND  hWnd</ld>
+          <ld>_In_ ULONG ulFlags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hWnd">
+	  The handle of the window being registered. The function
+	  fails with ERROR_ACCESS_DENIED if the calling thread does
+	  not own the specified window.
+	</par>
+        <par name="ulFlags">
+	  A set of bit flags that specify optional modifications
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="8" name="RegisterTouchWindow">
+      <par loc="stack" nr="1" io="r" name="hWnd">
+        <type>HWND</type>
+	<pre><deref-read/></pre>
+        <roles>
+           <role rt="ioc:process" rn="handle:window"/>
+        </roles>
+      </par>
+      <par loc="stack" nr="2" io="r" roles="none" name="ulFlags">
+        <type>ULONG</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="Registers a window as being touch-capable"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

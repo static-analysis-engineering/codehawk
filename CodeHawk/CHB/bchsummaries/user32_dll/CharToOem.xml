@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/07/2015 00:52:47"/>
+  <libfun lib="user32" name="CharToOem">
+   <documentation>
+    <desc>Translates a string into the OEM-defined character set.</desc>
+    <remarks>Warning: Do not use; security concerns</remarks>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CharToOem(</ll>
+      <ld>_In_  LPCTSTR lpszSrc</ld>
+      <ld>_Out_ LPSTR   lpszDst</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszSrc">The null-terminated string to be translated</par>
+     <par name="lpszDst">
+       The destination buffer, which receives the translated string. If the 
+       CharToOem function is being used as an ANSI function, the string can 
+       be translated in place by setting the lpszDst parameter to the same 
+       address as the lpszSrc parameter. This cannot be done if CharToOem 
+       is being used as a wide-character function
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CharToOem">
+    <par loc="stack" name="lpszSrc" io="r" rep="hex" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-string:convert"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpszDst" io="w" rep="hex" nr="2">
+     <type>LPSTR</type>
+     <pre><deref-write/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="dst-string:convert"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="translates a string to an oem-defined character set"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszDst</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszDst</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

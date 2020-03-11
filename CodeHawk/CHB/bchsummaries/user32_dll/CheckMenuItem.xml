@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="CheckMenuItem">
+   <documentation>
+    <desc>
+      sets the state of the specified menu item&apos;s check mark attribute to either
+      selected or clear
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI CheckMenuItem (</ll>
+      <ld>__in HMENU hMenu,</ld>
+      <ld>__in UINT uIDCheckItem,</ld>
+      <ld>__in UINT uCheck</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMenu">handle to the menu of interest</par>
+     <par name="uIDCheckItem">menu item whose check-mark attribute is to be set</par>
+     <par name="uCheck">
+       flags that control the interpretation of the uIDCheckItem parameter
+     </par>
+     <return>
+       previous state of the menu item, or -1 if the menu item does not exist
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CheckMenuItem">
+     <returntype>DWORD</returntype>
+    <par loc="stack" io="r" name="hMenu" nr="1">
+     <type>HMENU</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:menu" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="uIDCheckItem" io="r" roles="none" nr="2">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="uCheck" io="r" roles="none" nr="3">
+       <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="sets the state of a menu item checkmark"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

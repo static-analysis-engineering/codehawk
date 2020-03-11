@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="IsBadReadPtr">
+   <documentation>
+     <desc>
+       verifies that the calling process has read access to the specified range of memory
+     </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI IsBadReadPtr (</ll>
+      <ld>__in const VOID *lp,</ld>
+      <ld>__in UINT_PTR ucb</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lp">pointer to the first byte of the memory block</par>
+     <par name="ucb">size of the memory block, in bytes</par>
+     <return>
+      <rc cond="has no access">nonzero</rc>
+      <rc cond="has access">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="IsBadReadPtr">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="lp" nr="1">
+       <type><ptr>void</ptr></type>
+       <roles>
+          <role rt="ioc:process" rn="memory block"/>
+       </roles>
+    </par>
+    <par loc="stack" io="r" name="ucb" nr="2">
+     <type>UINT_PTR</type>
+     <roles>
+        <role rt="size:memory block" rn="isBadReadPtr"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="verifies read access to memory block"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>lp</ci>
+	    <ci>ucb</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/09/2015 22:26:35"/>
+  <libfun lib="user32" name="CharUpper">
+   <documentation>
+    <desc>
+      Converts a character string or a single character to uppercase. If the 
+      operand is a character string, the function converts the characters in place.
+    </desc>
+    <apidoc>
+     <pt>LPTSTR WINAPI CharUpper (_Inout_  LPTSTR lpsz)</pt>
+     <par name="lpsz">
+       A null-terminated string, or a single character. If the high-order word 
+       of this parameter is zero, the low-order word must contain a single 
+       character to be converted
+     </par>
+     <return>
+       If the operand is a character string, the function returns a pointer 
+       to the converted string. Because the string is converted in place, 
+       the return value is equal to lpsz.
+       If the operand is a single character, the return value is a 32-bit 
+       value whose high-order word is zero, and low-order word contains 
+       the converted character.
+       There is no indication of success or failure. Failure is rare
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CharUpper">
+    <par loc="stack" name="lpsz" io="r"  nr="1" rep="hex">
+     <type>LPTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-string:convert"/>
+     </roles>
+    </par>
+    <returntype>LPTSTR</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="converts a string to uppercase"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpsz</ci>
+	    <apply>
+	      <indexsize/>
+	      <apply><null-terminator-pos/><ci>lpsz</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

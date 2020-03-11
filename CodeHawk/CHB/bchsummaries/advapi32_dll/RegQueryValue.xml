@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 03:21:54"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegQueryValue">
+   <documentation>
+    <desc>
+      Retrieves the data associated with the default or unnamed value of a 
+      specified registry key. The data must be a null-terminated string.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegQueryValueA(</ll>
+      <ld>_In_         HKEY hKey </ld>
+      <ld>_In_opt_     LPCTSTR lpSubKey </ld>
+      <ld>_Out_opt_    LPTSTR lpValue </ld>
+      <ld>_Inout_opt_  PLONG lpcbValue </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">System Error Code</rc>
+     </return>
+     <par name="hKey">
+       A handle to an open registry key. The key must have been opened with the 
+       KEY_QUERY_VALUE access right. 
+     </par>
+     <par name="lpSubKey">
+       The name of the subkey of the hKey parameter for which the default value is retrieved.
+       Key names are not case sensitive.
+       If this parameter is NULL or points to an empty string, the function retrieves the
+       default value for the key identified by hKey. 
+     </par>
+     <par name="lpValue">
+       A pointer to a buffer that receives the default value of the specified key.
+       If lpValue is NULL, and lpcbValue is non-NULL, the function returns 
+       ERROR_SUCCESS, and stores the size of the data, in bytes, in the variable
+       pointed to by lpcbValue. This enables an application to determine the best 
+       way to allocate a buffer for the value&apos;s data.
+    </par>
+    <par name="lpcbValue">
+      A pointer to a variable that specifies the size of the buffer pointed to
+      by the lpValue parameter, in bytes. 
+      When the function returns, this variable contains the size of the data 
+      copied to lpValue, including any terminating null characters.
+      If the data has the REG_SZ, REG_MULTI_SZ or REG_EXPAND_SZ type, this size
+      includes any terminating null character or characters.
+      If the buffer specified lpValue is not large enough to hold the data, the 
+      function returns ERROR_MORE_DATA and stores the required buffer size in 
+      the variable pointed to by lpcbValue. In this case, the contents of the
+      lpValue buffer are undefined.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="RegQueryValue">
+     <returntype>LONG</returntype>
+     <par loc="stack" io="r" name="hKey" nr="1" rep="hex">
+       <rep type="enum" name="predefined_registry_key_constants"/>
+       <type>HKEY</type>
+       <pre>
+	 <deref-read/>
+	 <enum-value name="predefined_registry_key_constants"/>
+       </pre>
+       <roles>
+         <role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpSubKey" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:registry" rn="name:subkey"/>
+      </roles>
+      <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpValue" nr="3" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:registry" rn="infox:default key value"/>
+      </roles>
+    </par>
+    <par loc="stack" io="rw" name="lpcbValue" nr="4">
+      <type><ptr>LONG</ptr></type>
+      <pre><deref-read-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="size:buffersize" rn="RegQueryValue"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry" 
+		  desc="retrieves the data associated with a registry key"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>TCHAR</type>
+	    <ci>lpValue</ci>
+	    <apply><addressed-value/><ci>lpcbValue</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpValue</ci>
+	    <apply><addressed-value/><ci>lpcbValue</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

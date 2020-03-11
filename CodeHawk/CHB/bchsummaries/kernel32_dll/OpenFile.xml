@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 17:27:21"/>
+  <libfun lib="kernel32" name="OpenFile">
+   <documentation>
+    <desc>Creates, opens, reopens, or deletes a file</desc>
+    <apidoc>
+     <pt>
+      <ll>HFILE WINAPI OpenFile(</ll>
+      <ld>_In_  LPCSTR     lpFileName</ld>
+      <ld>_Out_ LPOFSTRUCT lpReOpenBuff</ld>
+      <ld>_In_  UINT       uStyle</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpFileName">
+       The name of the file.
+       The string must consist of characters from the 8-bit Windows 
+       character set.
+       The OpenFile function does not support Unicode file names or 
+       opening named pipes.
+     </par>
+     <par name="lpReOpenBuff">
+       A pointer to the OFSTRUCT structure that receives information about a
+       file when it is first opened.
+       The structure can be used in subsequent calls to the OpenFile function 
+       to see an open file.
+       The OFSTRUCT structure contains a path string member with a length 
+       that is limited to OFS_MAXPATHNAME characters, which is 128 characters. 
+       Because of this, you cannot use the OpenFile function to open a file
+       with a path length that exceeds 128 characters. The CreateFile function
+       does not have this path length limitation.
+     </par>
+     <par name="uStyle">The action to be taken</par>
+     <return>
+      <rc cond="success">
+	specifies a file handle to use when performing file I/O
+      </rc>
+      <rc cond="failure">HFILE_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OpenFile">
+    <par loc="stack" name="lpFileName" io="r" nr="1">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpReOpenBuff" io="r" rep="hex" nr="2">
+     <type><ptr>OFSTRUCT</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:memops" rn="dst-struct:OFSTRUCT"/>
+       <role rt="ioc:filesystem" rn="infox:file info"/>
+     </roles>
+    </par>
+    <par loc="stack" name="uStyle" io="r" roles="none" nr="3">
+     <rep type="enum" name="file_of_action_flags"/>
+     <type>UINT</type>
+     <pre><enum-value name="file_of_action_flags" flags="true"/></pre>
+    </par>
+    <returntype>HFILE</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" desc="creates, opens, or deletes a file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

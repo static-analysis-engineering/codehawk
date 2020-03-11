@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="BuildCommDCB.xml" time="2016-03-06 11:30:13.570917"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="BuildCommDCB" lib="kernel32">
+    <documentation>
+      <desc>
+	Fills a specified DCB structure with values specified in a
+	device-control string. The device-control string uses the
+	syntax of the mode command.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI BuildCommDCB(</ll>
+          <ld>_In_  LPCTSTR lpDef</ld>
+          <ld>_Out_ LPDCB   lpDCB</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpDef">
+	  The device-control information. The function takes this
+	  string, parses it, and then sets appropriate values in the
+	  DCB structure pointed to by lpDCB.  The string must have the
+	  same form as the mode command's command-line arguments:
+	  COMx[:][baud=b][parity=p][data=d][stop=s][to={on|off}]
+	  [xon={on|off}][odsr={on|off}][octs={on|off}][dtr={on|off|hs}][rts=
+	  {on|off|hs|tg}][idsr={on|off}]
+	  The device name is optional, but it must specify a valid
+	  device if used.  For example, the following string specifies
+	  a baud rate of 1200, no parity, 8 data bits, and 1 stop bit:
+	  baud=1200 parity=N data=8 stop=1
+	</par>
+        <par name="lpDCB">
+	  A pointer to a DCB structure that receives the information
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="8" name="BuildCommDCB">
+      <par loc="stack" io="r" nr="1" name="lpDef">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="device-control information"/>
+	</roles>
+      </par>
+      <par loc="stack" io="w" nr="2" name="lpDCB">
+        <type><ptr>DCB</ptr></type>
+	<pre><deref-write/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="serial communications deivce control settings"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="creates a device control structure"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

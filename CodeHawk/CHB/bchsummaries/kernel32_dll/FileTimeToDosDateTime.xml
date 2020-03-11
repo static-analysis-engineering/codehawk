@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/05/2015 22:59:18"/>
+  <libfun lib="kernel32" name="FileTimeToDosDateTime">
+   <documentation>
+    <desc>Converts a file time to MS-DOS date and time values</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI FileTimeToDosDateTime(</ll>
+      <ld>_In_  const FILETIME *lpFileTime</ld>
+      <ld>_Out_       LPWORD   lpFatDate</ld>
+      <ld>_Out_       LPWORD   lpFatTime</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpFileTime">
+       A pointer to a FILETIME structure containing the file time to convert
+       to MS-DOS date and time format
+     </par>
+     <par name="lpFatDate">A pointer to a variable to receive the MS-DOS date</par>
+     <par name="lpFatTime">A pointer to a variable to receive the MS-DOS time</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="FileTimeToDosDateTime">
+    <par loc="stack" name="lpFileTime" io="r" rep="hex" nr="1">
+     <type><ptr>FILETIME</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-struct:filetime"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpFatDate" io="w" roles="none" nr="2">
+     <type><ptr>WORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="lpFatTime" io="w" roles="none" nr="3">
+     <type><ptr>WORD></ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="converts a file time to DOS date and time"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

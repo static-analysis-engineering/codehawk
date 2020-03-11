@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetProcAddress">
+   <documentation>
+    <desc>
+      retrieves the address of an exported function or variable from the
+      specified dynamic-link library
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>FARPROC WINAPI GetProcAddress (</ll>
+      <ld>__in HMODULE hModule,</ld>
+      <ld>__in LPCSTR lpProcName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hModule">
+       handle to the DLL module that contains the function or variable
+     </par>
+     <par name="lpProcName">
+       the function or variable name, or the function&apos;s ordinal number
+     </par>
+     <return>
+      <rc cond="success">address of the exported function or variable</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetProcAddress">
+    <returnbtype ttag="tfun">
+      <typ ttag="tvoid"/>
+    </returnbtype>
+    <par loc="stack" desc="module handle" io="r" name="hModule" nr="1">
+      <type>HMODULE</type>
+      <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:module"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpProcName" nr="2" rep="hex">
+      <type><ptr>char</ptr></type>
+      <roles>
+	<role rt="ioc:process" rn="name:library function"/>
+      </roles>
+      <pre><deref-read-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves the address of an exported function in a dll"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+     <post>
+      <math>
+       <apply>
+        <function-pointer/>
+        <return-value/>
+        <ci>lpProcName</ci>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:30:41"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="MessageBoxIndirect">
+   <documentation>
+    <desc>
+      Creates, displays, and operates a message box. The message box contains 
+      application-defined message text and title, any icon, and any combination 
+      of predefined push buttons.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI MessageBoxIndirect(</ll>
+      <ld>_In_  const LPMSGBOXPARAMS lpMsgBoxParams</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpMsgBoxParams">
+       A pointer to a MSGBOXPARAMS structure that contains information used to 
+       display the message box.
+     </par>
+     <return>Some Menu Item Value</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="MessageBoxIndirect">
+     <returntype>int</returntype>
+     <par loc="stack" io="r" name="lpMsgBoxParams" nr="1" rep="hex">
+       <roles>
+	 <role rt="ioc:memops" rn="src-struct:MSGBOXPARAMS" />
+       </roles>
+       <type><ptr>MSGBOXPARAMS</ptr></type>
+       <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="creates, displays, and operates a message box">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:34:34"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetThreadPriority">
+   <documentation>
+    <desc>
+      Sets the priority value for the specified thread. This value, 
+      together with the priority class of the thread&apos;s process, 
+      determines the thread&apos;s base priority level.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetThreadPriority(</ll>
+      <ld>_In_  HANDLE hThread</ld>
+      <ld>_In_  int nPriority</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hThread">
+       A handle to the thread whose priority value is to be set.
+       
+       The handle must have the THREAD_SET_INFORMATION or 
+       THREAD_SET_LIMITED_INFORMATION access right.
+     </par>
+     <par name="nPriority">The priority value for the thread.</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetThreadPriority">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hThread" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:thread"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nPriority" nr="2">
+     <type>int</type>
+     <roles>
+        <role rt="ioc:process" rn="thread priority"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="sets the thread priority value"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

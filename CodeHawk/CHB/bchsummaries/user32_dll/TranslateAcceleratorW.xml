@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2019-11-27 11:07:40"/>
+  <libfun lib="user32" name="TranslateAcceleratorW">
+    <refer-to char-type="unicode" name="TranslateAccelerator"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

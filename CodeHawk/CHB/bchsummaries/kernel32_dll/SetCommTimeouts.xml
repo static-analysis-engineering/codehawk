@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetCommTimeouts">
+   <documentation>
+    <desc>
+      Sets the time-out parameters for all read and write operations on a specified 
+      communications device.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetCommTimeouts(</ll>
+      <ld>_In_  HANDLE hFile,</ld>
+      <ld>_In_  LPCOMMTIMEOUTS lpCommTimeouts</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hfile">
+       A handle to the communications device. The CreateFile function returns this handle.
+     </par>
+     <par name="lpCommTimeouts">
+       A pointer to a COMMTIMEOUTS structure that contains the new time-out values.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetCommTimeouts">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hFile" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:communications device"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpCommTimeouts" nr="2">
+      <type><ptr>COMMTIMEOUTS</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:system" rn="comm timeout"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="sets communications device time-out parameters"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

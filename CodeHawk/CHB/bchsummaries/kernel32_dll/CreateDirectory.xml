@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CreateDirectory">
+   <documentation>
+    <desc>creates a new directory</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CreateDirectory (</ll>
+      <ld>__in      LPCTSTR lpPathname,</ld>
+      <ld>__in_opt  LPSECURITY_ATTRIBUTES lpSecurityAttributes</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpPathname">path of the directory to be created</par>
+     <par name="lpSecurityAttributes">pointer to a SECURITY_ATTRIBUTES structure</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CreateDirectory">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="lpPathname" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpSecurityAttributes" roles="none" nr="2">
+     <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+     <pre><deref-read-null/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="creates a new directory"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

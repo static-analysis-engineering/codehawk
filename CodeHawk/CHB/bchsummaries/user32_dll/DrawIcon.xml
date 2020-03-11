@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/10/2015 06:28:05"/>
+  <libfun lib="user32" name="DrawIcon">
+   <documentation>
+    <desc>Draws an icon or cursor into the specified device context</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI DrawIcon(</ll>
+      <ld>_In_ HDC   hDC</ld>
+      <ld>_In_ int   X</ld>
+      <ld>_In_ int   Y</ld>
+      <ld>_In_ HICON hIcon</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDC">
+       A handle to the device context into which the icon or cursor will be drawn
+     </par>
+     <par name="X">
+       The logical x-coordinate of the upper-left corner of the icon
+     </par>
+     <par name="Y">
+       The logical y-coordinate of the upper-left corner of the icon.
+     </par>
+     <par name="hIcon">A handle to the icon to be drawn</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="DrawIcon">
+    <par loc="stack" name="hDC" nr="1">
+     <type>HDC</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:device context"/>
+     </roles>
+    </par>
+    <par loc="stack" name="X" nr="2">
+     <type>int</type>
+     <roles>
+       <role rt="size:position" rn="DrawIcon"/>
+     </roles>
+    </par>
+    <par loc="stack" name="Y" nr="3">
+      <type>int</type>
+      <roles>
+	<role rt="size:position" rn="DrawIcon"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hIcon" nr="4">
+     <type>HICON</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:icon"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+    <external-effects>
+      <xeffect xtgt="device" xaction="draw icon"/>
+    </external-effects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

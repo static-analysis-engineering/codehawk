@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="AppendMenu">
+   <documentation>
+    <desc>
+      appends a new item to the end of the specified menu bar, drop-down menu,
+      submenu, or shortcut menu
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI AppendMenu (</ll>
+      <ld>__in      HMENU hMenu,</ld>
+      <ld>__in      UINT uFlags,</ld>
+      <ld>__in      UINT_PTR uIDNewItem,</ld>
+      <ld>__in_opt  LPCTSTR lpNewItem</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMenu">handle to the menu bar</par>
+     <par name="uFlags">controls the appearance and behavior of the new menu item</par>
+     <par name="uIDNewItem">
+       identifier of the new menu item, or a handle to the drop-down menu or submenu
+     </par>
+     <par name="lpNewItem">content of the new item</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="AppendMenu">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hMenu" nr="1">
+      <type>HMENU</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:menu"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uFlags" io="r" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="uIDNewItem" io="r" roles="none" nr="3">
+     <type>UINT_PTR</type>
+    </par>
+    <par loc="stack" name="lpNewItem" io="r" rep="hex" nr="4">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:process" rn="name:menu item"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="appends a new menu to a menu bar"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

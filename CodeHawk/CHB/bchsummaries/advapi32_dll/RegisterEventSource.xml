@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/24/2014 22:53:38"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegisterEventSource">
+   <documentation>
+    <desc>Retrieves a registered handle to the specified event log.</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE RegisterEventSourceA(</ll>
+      <ld>_In_  LPCTSTR lpUNCServerName,</ld>
+      <ld>_In_  LPCTSTR lpSourceName</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">handle to the event log</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+     <par name="lpUNCServerName">
+       The Universal Naming Convention (UNC) name of the remote server 
+       on which this operation is to be performed. If this parameter 
+       is NULL, the local computer is used.
+     </par>
+     <par name="lpSourceName">
+       The name of the event source whose handle is to be retrieved. The 
+       source name must be a subkey of a log under the Eventlog registry 
+       key. Note that the Security log is for system use only.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="RegisterEventSource">
+     <returntype>HANDLE</returntype>
+    <par loc="stack" name="lpUNCServerName" io="r" rep="hex" nr="1">
+      <type>LPCTSTR</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:network" rn="name:server"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpSourceName" io="r" rep="hex" nr="2">
+      <type>LPCTSTR</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:registry" rn="name:event source"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry"
+		  desc="retrieves a handle to a registered event source"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

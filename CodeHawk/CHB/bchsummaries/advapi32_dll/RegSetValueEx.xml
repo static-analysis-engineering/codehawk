@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegSetValueEx">
+   <documentation>
+    <desc>sets the data and type of a specified value under a registry key</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegSetValueEx (</ll>
+      <ld>__in       HKEY hKey,</ld>
+      <ld>__in_opt   LPCTSTR lpValueName,</ld>
+      <ld>__reserved DWORD Reserved,</ld>
+      <ld>__in       DWORD dwType,</ld>
+      <ld>__in_opt   const BYTE *lpData,</ld>
+      <ld>__in       DWORD cbData</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">handle to an open registry key</par>
+     <par name="lpValueName">name of the value to be set; can be NULL</par>
+     <par name="Reserved">must be zero</par>
+     <par name="dwType">type of data pointed to by the lpData parameter</par>
+     <par name="lpData">data to be stored</par>
+     <par name="cbData">
+       size of the information pointed to by the lpData parameter, in bytes
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">nonzero error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="RegSetValueEx">
+     <returntype>LONG</returntype>
+     <par loc="stack" io="r" name="hKey" nr="1">
+       <rep type="enum" name="predefined_registry_key_constants"/>
+       <type>HKEY</type>
+       <pre>
+	 <deref-read/>
+	 <enum-value name="predefined_registry_key_constants"/>
+      </pre>
+      <roles>
+	<role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpValueName" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:registry" rn="name:value"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r"  roles="none" name="Reserved" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwType" nr="4">
+     <type>DWORD</type>
+     <roles>
+       <role rt="ioc:registry" rn="type:value"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpData" nr="5" rep="hex">
+      <type><ptr>BYTE</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+          <role rt="ioc:registry" rn="value:data"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="cbData" nr="6">
+     <type>DWORD</type>
+        <roles>
+           <role rt="size:buffersize" rn="RegSetValueEx"/>
+        </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry" desc="sets the value of a registry key"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <type>BYTE</type>
+	    <ci>lpData</ci>
+	    <ci>cbData</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

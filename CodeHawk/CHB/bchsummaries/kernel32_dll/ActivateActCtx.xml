@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ActivateActCtx.xml" time="2016-03-06 10:25:37.053899"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="ActivateActCtx" lib="kernel32">
+    <documentation>
+      <desc>
+	activates the specified activation context. It does this by
+	pushing the specified activation context to the top of the
+	activation stack. The specified activation context is thus
+	associated with the current thread and any appropriate
+	side-by-side API functions.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL ActivateActCtx(</ll>
+          <ld>_In_  HANDLE    hActCtx</ld>
+          <ld>_Out_ ULONG_PTR *lpCookie</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hActCtx">
+	  Handle to an ACTCTX structure that contains information on
+	  the activation context that is to be made active.
+	</par>
+        <par name="lpCookie">
+	  Pointer to a ULONG_PTR that functions as a cookie, uniquely
+	  identifying a specific, activated activation context.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="8" name="ActivateActCtx">
+      <par loc="stack" io="r" nr="1" name="hActCtx">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="activation context"/>
+	</roles>
+      </par>
+      <par loc="stack" io="w" nr="2" name="lpCookie">
+        <type><ptr>ULONG_PTR</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:process" rn="cookie that identifies activation context"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="activates an activation context"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <nonzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

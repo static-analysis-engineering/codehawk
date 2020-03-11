@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="WriteFile">
+   <documentation>
+    <desc>writes data to the specified file or input/output device</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WriteFile (</ll>
+      <ld>_In_ HANDLE hFile,</ld>
+      <ld>_In_ LPCVOID lpBuffer,</ld>
+      <ld>_In_ DWORD nNumberOfBytesToWrite,</ld>
+      <ld>_Out_opt_ LPDWORD lpNumberOfBytesWritten,</ld>
+      <ld>_Inout_opt_ LPOVERLAPPED lpOverlapped</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       handle to the or I/O device (e.g., a file, file stream, physical disk, volume, console
+       buffer, tape drive, socket, communications resource, mailslot, or pipe)
+     </par>
+     <par name="lpBuffer">
+       pointer to the buffer containing the data to be written to the file or device
+     </par>
+     <par name="nNumberOfBytesToWrite">
+       number of bytes to be written to the file or device
+     </par>
+     <par name="lpNumberOfBytesWritten">
+       pointer to the variable that receives the number of bytes written when using a
+       synchronous hFile parameters. WriteFile sets this value to zero before doing any
+       work or error checking. Use NULL for this parameter if this is an asynchronous
+       operation to avoid potentially erroneous results. 
+       This parameter can be NULL only when the lpOverlapped parameter is not NULL.
+     </par>
+     <par name="lpOverlapped">
+       pointer to an OVERLAPPED structure is required if the hFile parameter was opened with
+       FILE_FLAG_OVERLAPPED, otherwise this parameter can be NULL
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="WriteFile">
+     <returntype>BOOL</returntype>
+     <par loc="stack" desc="file handle" io="r" name="hFile" nr="1" rep="hex">
+      <type>HANDLE</type>
+      <roles>
+	<role rt="ioc:filesystem" rn="handle:file"/>
+      </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpBuffer" nr="2" rep="hex">
+      <type>LPCVOID</type>
+      <roles>
+	<role rt="ioc:memops" rn="src-bytes:file output"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nNumberOfBytesToWrite" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="WriteFile"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpNumberOfBytesWritten" nr="4">
+      <type><ptr>DWORD</ptr></type>
+     <roles>
+       <role rt="size:actual" rn="WriteFile"/>
+     </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" desc="overlapped" io="rw" roles="none" name="lpOverlapped" nr="5">
+      <type><ptr>OVERLAPPED</ptr></type>
+     <pre><deref-read-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="writes data to a file or I/O device"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+       <math>
+	 <apply>
+	   <deref-read/>
+	   <type>byte</type>
+	   <ci>lpBuffer</ci>
+	   <ci>nNumberOfBytesToWrite</ci>
+	 </apply>
+       </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

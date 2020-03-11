@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="OpenClipboard">
+   <documentation>
+    <desc>
+      opens the clipboard for examination and prevents other applications from
+	modifying the clipboard content
+      </desc>
+    <apidoc>
+     <pt>BOOL WINAPI OpenClipboard ( __in_opt HWND hWndNewOwner )</pt>
+     <par name="hWndNewOwner">
+       handle to the window to be associated with the open clipboard; can be NULL
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="OpenClipboard">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="hWndNewOwner" nr="1">
+      <type>HWND</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="opens the clipboard and prevents others from modifying it"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

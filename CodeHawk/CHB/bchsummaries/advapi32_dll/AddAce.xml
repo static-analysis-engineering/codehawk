@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="AddAce.xml" time="2016-05-08 17:21:25.207244"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="AddAce">
+    <documentation>
+      <desc>
+	adds one or more access control entries (ACEs) to a specified
+	access control list (ACL).
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI AddAce(</ll>
+          <ld>_Inout_ PACL   pAcl</ld>
+          <ld>_In_    DWORD  dwAceRevision</ld>
+          <ld>_In_    DWORD  dwStartingAceIndex</ld>
+          <ld>_In_    LPVOID pAceList</ld>
+          <ld>_In_    DWORD  nAceListLength</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pAcl">
+	  A pointer to an ACL. This function adds an ACE to this ACL
+	</par>
+        <par name="dwAceRevision">
+	  Specifies the revision level of the ACL being modified. This
+	  value can be ACL_REVISION or ACL_REVISION_DS. Use
+	  ACL_REVISION_DS if the ACL contains object-specific
+	  ACEs. This value must be compatible with the AceType field
+	  of all ACEs in pAceList. Otherwise, the function will fail
+	  and set the last error to ERROR_INVALID_PARAMETER.
+	</par>
+        <par name="dwStartingAceIndex">
+	  Specifies the position in the ACL's list of ACEs at which to
+	  add new ACEs. A value of zero inserts the ACEs at the
+	  beginning of the list. A value of MAXDWORD appends the ACEs
+	  to the end of the list.
+	</par>
+        <par name="pAceList">
+	  A pointer to a list of one or more ACEs to be added to the
+	  specified ACL. The ACEs in the list must be stored
+	  contiguously.
+	</par>
+        <par name="nAceListLength">
+	  Specifies the size, in bytes, of the input buffer pointed to
+	  by the pAceList parameter.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="AddAce">
+      <par loc="stack" name="pAcl" io="rw" nr="1" rep="hex">
+        <type><ptr>ACL</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="access control list"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwAceRevision" roles="none" io="r" nr="2">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="dwStartingAceIndex" io="r" roles="none" nr="3">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="pAceList" io="r" nr="4" rep="hex">
+        <type><ptr>void</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="access control entries"/>
+	</roles>
+      </par>
+      <par loc="stack" name="nAceListLength" io="r" roles="none" nr="5">
+        <type>DWORD</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="adds access control entries to an access control list"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <nonzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

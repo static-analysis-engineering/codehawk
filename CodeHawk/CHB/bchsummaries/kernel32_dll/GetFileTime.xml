@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/16/2015 08:59:05"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetFileTime">
+   <documentation>
+    <desc>
+      Retrieves the date and time that a file or directory was created, last 
+      accessed, and last modified.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetFileTime(</ll>
+      <ld>_In_       HANDLE hFile </ld>
+      <ld>_Out_opt_  LPFILETIME lpCreationTime </ld>
+      <ld>_Out_opt_  LPFILETIME lpLastAccessTime </ld>
+      <ld>_Out_opt_  LPFILETIME lpLastWriteTime </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hFile">
+       A handle to the file or directory for which dates and times are to be retrieved. 
+       The handle must have been created using the CreateFile function with the 
+       GENERIC_READ access right.
+     </par>
+     <par name="lpCreationTime">
+       A pointer to a FILETIME structure to receive the date and time the file or 
+       directory was created. This parameter can be NULL if the application does not 
+       require this information.
+     </par>
+     <par name="lpLastAccessTime">
+       A pointer to a FILETIME structure to receive the date and time the file or 
+       directory was last accessed. The last access time includes the last time 
+       the file or directory was written to, read from, or, in the case of executable 
+       files, run. This parameter can be NULL if the application does not require 
+       this information
+     </par>
+     <par name="lpLastWriteTime">
+       A pointer to a FILETIME structure to receive the date and time the file or 
+       directory was last written to, truncated, or overwritten (for example, with 
+       WriteFile or SetEndOfFile). This date and time is not updated when file 
+       attributes or security descriptors are changed. This parameter can be NULL 
+       if the application does not require this information.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetFileTime">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hFile" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="handle:file"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpCreationTime" rep="hex" nr="2">
+      <type><ptr>FILETIME</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:filesystem" rn="infox:file creation time"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpLastAccessTime" rep="hex" nr="3">
+      <type><ptr>FILETIME</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+        <role rt="ioc:filesystem" rn="infox:file last access time"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpLastWriteTime" rep="hex"  nr="4">
+      <type><ptr>FILETIME</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+        <role rt="ioc:filesystem" rn="infox:file last write time"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="retrieves file creation and modification times"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/29/2015 23:53:02"/>
+  <libfun lib="kernel32" name="Heap32First">
+   <documentation>
+    <desc>
+      Retrieves information about the first block of a heap that has been 
+      allocated by a process
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI Heap32First(</ll>
+      <ld>_Inout_ LPHEAPENTRY32 lphe</ld>
+      <ld>_In_    DWORD         th32ProcessID</ld>
+      <ld>_In_    ULONG_PTR     th32HeapID</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lphe">A pointer to a HEAPENTRY32 structure.</par>
+     <par name="th32ProcessID">
+       The identifier of the process context that owns the heap.
+     </par>
+     <par name="th32HeapID">The identifier of the heap to be enumerated.</par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="Heap32First">
+    <par loc="stack" io="rw" name="lphe" nr="1" rep="hex">
+     <type><ptr>HEAPENTRY32</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:heapentry32" />
+      <role rt="ioc:memops" rn="src-struct:heapentry32" />
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="th32ProcessID" nr="2">
+     <type>DWORD</type>
+     <roles>
+      <role rt="ioc:process" rn="id:process" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="th32HeapID" roles="none" nr="3">
+     <type>ULONG_PTR</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves information about the heap"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/08/2015 23:30:21"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ClientToScreen">
+   <documentation>
+    <desc>
+      converts the client-area coordinates of a specified point to screen
+      coordinates
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ClientToScreen(</ll>
+      <ld>_In_ HWND hWnd,</ld>
+      <ld>_Inout_ LPPOINT lpPoint</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hWnd">handle to the window whose client area is used for the conversion
+    </par>
+     <par name="lpPoint">pointer to a POINT structure that contains the client coordinates
+      to be converted. The new screen coordinates are copied into this
+      structure if the function succeeds
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ClientToScreen">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hWnd" io="r" nr="1">
+       <type>HWND</type>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="lpPoint" io="rw" nr="2">
+      <type><ptr>POINT</ptr></type>
+      <pre><deref-read/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:POINT"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="converts client area coordinates to screen coordinates"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

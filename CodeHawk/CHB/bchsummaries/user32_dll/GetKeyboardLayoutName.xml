@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetKeyboardLayoutName.xml" time="2016-06-22 12:52:31.227829"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="GetKeyboardLayoutName">
+    <documentation>
+      <desc>
+	Retrieves the name of the active input locale identifier
+	(formerly called the keyboard layout) for the system
+      </desc>
+      <apidoc>
+        <pt>BOOL WINAPI GetKeyboardLayoutName (_Out_ LPTSTR pwszKLID)</pt>
+        <par name="pwszKLID">
+	  The buffer (of at least KL_NAMELENGTH characters in length)
+	  that receives the name of the input locale identifier,
+	  including the terminating null character. This will be a
+	  copy of the string provided to the LoadKeyboardLayout
+	  function, unless layout substitution took place.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="GetKeyboardLayoutName">
+      <par loc="stack" name="pwszKLID" io="w" nr="1" rep="hex">
+        <type>LPTSTR</type>
+	<roles>
+	  <role rt="ioc:system" rn="infox:keyboard layout name"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="retrieves the name of input locale identifier"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>pwszKLID</ci>
+	      <apply><indexsize/><cn>256</cn></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

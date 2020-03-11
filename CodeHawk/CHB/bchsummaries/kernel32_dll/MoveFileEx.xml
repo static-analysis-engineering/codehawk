@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:26:02"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="MoveFileEx">
+   <documentation>
+    <desc>
+      Moves an existing file or directory, including its children, with various 
+      move options.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI MoveFileEx(</ll>
+      <ld>_In_      LPCTSTR lpExistingFileName</ld>
+      <ld>_In_opt_  LPCTSTR lpNewFileName</ld>
+      <ld>_In_      DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpExistingFileName">
+       The current name of the file or directory on the local computer.
+       
+       If dwFlags specifies MOVEFILE_DELAY_UNTIL_REBOOT, the file cannot exist 
+       on a remote share, because delayed operations are performed before 
+       the network is available.
+       
+       In the ANSI version of this function, the name is limited to MAX_PATH 
+       characters. To extend this limit to 32,767 wide characters, call the
+       Unicode version of the function and prepend &quot;\\?\&quot; to the path.
+     </par>
+     <par name="lpNewFileName">
+       The new name of the file or directory on the local computer.
+
+       When moving a file, the destination can be on a different file system or
+       volume. If the destination is on another drive, you must set the 
+       MOVEFILE_COPY_ALLOWED flag in dwFlags.
+     </par>
+     <par name="dwFlags">Parameter specifying how the file is to be handled</par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="MoveFileEx">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="lpExistingFileName" nr="1">
+       <type>LPCTSTR</type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:filesystem" rn="name:file"/>
+	 <role rt="rep:hex" rn="name:file"/>
+       </roles>
+     </par>
+    <par loc="stack" io="r" name="lpNewFileName" nr="2">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:file"/>
+	<role rt="rep:hex" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwFlags" nr="3">
+      <type>DWORD</type>
+     <pre><enum-value name="move_file_copy_flags" flags="true"/></pre>
+     <roles>
+       <role rt="rep:enum" rn="move_file_copy_flags"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="moves a file or directory"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

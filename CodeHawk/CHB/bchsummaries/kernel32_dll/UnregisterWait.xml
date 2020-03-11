@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-09-12 21:52:39"/>
+  <libfun lib="kernel32" name="UnregisterWait">
+    <documentation>
+      <desc>
+	Cancels a registered wait operation issued by the
+	RegisterWaitForSingleObject function
+      </desc>
+      <apidoc>
+        <pt>BOOL UnregisterWait (HANDLE WaitHandle)</pt>
+        <par name="WaitHandle">
+	  The wait handle. This handle is returned by the
+	  RegisterWaitForSingleObject function.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="UnregisterWait">
+      <par loc="stack" name="WaitHandle" nr="1" rep="hex">
+        <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:synchronization" rn="handle:event object" />
+     </roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="cancels a wait operation"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

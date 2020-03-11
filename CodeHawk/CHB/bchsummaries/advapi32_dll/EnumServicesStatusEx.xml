@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 13:39:07"/>
+  <libfun lib="advapi32" name="EnumServicesStatusEx">
+   <documentation>
+    <desc>
+      Enumerates services in the specified service control manager database. The 
+      name and status of each service are provided, along with additional data 
+      based on the specified information level
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI EnumServicesStatusEx(</ll>
+      <ld>_In_        SC_HANDLE    hSCManager</ld>
+      <ld>_In_        SC_ENUM_TYPE InfoLevel</ld>
+      <ld>_In_        DWORD        dwServiceType</ld>
+      <ld>_In_        DWORD        dwServiceState</ld>
+      <ld>_Out_opt_   LPBYTE       lpServices</ld>
+      <ld>_In_        DWORD        cbBufSize</ld>
+      <ld>_Out_       LPDWORD      pcbBytesNeeded</ld>
+      <ld>_Out_       LPDWORD      lpServicesReturned</ld>
+      <ld>_Inout_opt_ LPDWORD      lpResumeHandle</ld>
+      <ld>_In_opt_    LPCTSTR      pszGroupName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hSCManager">
+       A handle to the service control manager database. This handle is returned 
+       by the OpenSCManager function, and must have the SC_MANAGER_ENUMERATE_SERVICE 
+       access right.
+     </par>
+     <par name="InfoLevel">
+       The service attributes that are to be returned. Use SC_ENUM_PROCESS_INFO to 
+       retrieve the name and service status information for each service in the 
+       database. The lpServices parameter is a pointer to a buffer that receives 
+       an array of ENUM_SERVICE_STATUS_PROCESS structures. The buffer must be 
+       large enough to hold the structures as well as the strings to which their
+       members point.
+       Currently, no other information levels are defined
+     </par>
+     <par name="dwServiceType">The type of services to be enumerated</par>
+     <par name="dwServiceState">The state of the services to be enumerated</par>
+     <par name="lpServices">
+       A pointer to the buffer that receives the status information. The format of 
+       this data depends on the value of the InfoLevel parameter.
+       The maximum size of this array is 256K bytes. To determine the required size,
+       specify NULL for this parameter and 0 for the cbBufSize parameter. The function
+       will fail and GetLastError will return ERROR_MORE_DATA. The pcbBytesNeeded 
+       parameter will receive the required size.
+       Windows Server 2003 and Windows XP:  The maximum size of this array is 64K bytes.
+       This limit was increased as of Windows Server 2003 with SP1 and Windows XP 
+       with SP2.
+     </par>
+     <par name="cbBufSize">
+       The size of the buffer pointed to by the lpServices parameter, in bytes
+     </par>
+     <par name="pcbBytesNeeded">
+       A pointer to a variable that receives the number of bytes needed to return 
+       the remaining service entries, if the buffer is too small.
+     </par>
+     <par name="lpServicesReturned">
+       A pointer to a variable that receives the number of service entries returned
+     </par>
+     <par name="lpResumeHandle">
+       A pointer to a variable that, on input, specifies the starting point of 
+       enumeration. You must set this value to zero the first time the 
+       EnumServicesStatusEx function is called. On output, this value is zero if 
+       the function succeeds. However, if the function returns zero and the
+       GetLastError function returns ERROR_MORE_DATA, this value indicates the 
+       next service entry to be read when the EnumServicesStatusEx function is 
+       called to retrieve the additional data
+     </par>
+     <par name="pszGroupName">
+       The load-order group name. If this parameter is a string, the only services 
+       enumerated are those that belong to the group that has the name specified 
+       by the string. If this parameter is an empty string, only services that do 
+       not belong to any group are enumerated. If this parameter is NULL, group 
+       membership is ignored and all services are enumerated.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="40" cc="stdcall" name="EnumServicesStatusEx">
+    <par loc="stack" name="hSCManager" io="r" nr="1">
+     <type>SC_HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:services" rn="handle:SCM"/>
+     </roles>
+    </par>
+    <par loc="stack" name="InfoLevel" roles="none" nr="2">
+     <type>SC_ENUM_TYPE</type>
+    </par>
+    <par loc="stack" name="dwServiceType" io="r" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="ioc:services" rn="type:service"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwServiceState" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpServices" io="w" nr="5">
+     <type><ptr>BYTE</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-bytes:service status info"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cbBufSize" nr="6">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="EnumServiceStatusEx"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pcbBytesNeeded" nr="7">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:needed" rn="EnumServiceStatusEx"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpServicesReturned" io="w" nr="8">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:actual" rn="EnumServiceStatusEx"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpResumeHandle" io="rw" roles="none" nr="9">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write-null/></pre>
+    </par>
+    <par loc="stack" name="pszGroupName" io="r" nr="10" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:services" rn="name:load order group"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="services" desc="enumerates services in the service database"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>BYTE</type>
+	    <ci>lpServices</ci>
+	    <ci>cbBufSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>BYTE</type>
+	    <ci>lpServices</ci>
+	    <ci>cbBufSize</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

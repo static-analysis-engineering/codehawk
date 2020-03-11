@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="LoadBitmap">
+   <documentation>
+    <desc>loads the specified bitmap resource from a module&apos;s execuable file
+       </desc>
+    <apidoc>
+     <pt>
+      <ll>HBITMAP LoadBitmap (</ll>
+      <ld>_In_ HINSTANCE hInstance,</ld>
+      <ld>_In_ LPCTSTR lpBitmapName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hInstance">
+       handle to the instance of the module whose executable file contains the bitmap
+       to be loaded
+     </par>
+     <par name="lpBitmapName">
+       pointer to a null-terminated string that contains the name of the bitmap resource
+       to be loaded. Alternatively, this parameter can consist of the resource identifier
+       in the low-order word and zero in the high-order word
+     </par>
+     <return>
+      <rc cond="success">handle to the specified bitmap</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="LoadBitmap">
+     <returntype>HBITMAP</returntype>
+     <par loc="stack" name="hInstance" io="r" nr="1">
+       <type>HINSTANCE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:module"/>
+       </roles>
+     </par>
+    <par loc="stack" name="lpBitmapName" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="name:bitmap"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="loads a bitmap resource from an executable file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

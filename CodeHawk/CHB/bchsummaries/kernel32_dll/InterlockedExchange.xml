@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun name="InterlockedExchange" lib="kernel32">
+   <documentation>
+    <desc>sets a 32-bit variable to the specified value as an atomic operation</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG __cdecl InterlockedExchange (</ll>
+      <ld>__inout LONG volatile *Target,</ld>
+      <ld>__in    LONG Value</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Target">pointer to the value to be exchanged</par>
+     <par name="Value">value to be exchanged with the value pointed to by Target</par>
+     <return>initial value of the Target parameter</return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="InterlockedExchange">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" io="rw" name="Target" nr="1" rep="hex">
+       <type><ptr>int</ptr></type>
+     <roles>
+        <role rt="ioc:synchronization" rn="synchronized variable"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" desc="exchange value" io="r" roles="none" name="Value" nr="2">
+     <type>int</type>
+     <roles/>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="synchronization" desc="performs atomic operation"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

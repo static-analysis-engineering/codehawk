@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/16/2015 08:58:05"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetFileAttributesEx">
+   <documentation>
+    <desc>Retrieves attributes for a specified file or directory.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetFileAttributesExA(</ll>
+      <ld>_In_   LPCTSTR lpFileName </ld>
+      <ld>_In_   GET_FILEEX_INFO_LEVELS fInfoLevelId </ld>
+      <ld>_Out_  LPVOID lpFileInformation </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpFileName">The name of the file or directory.
+
+	In the ANSI version of this function, the name is limited to MAX_PATH 
+	characters. To extend this limit to 32,767 wide characters, call the 
+	Unicode version of the function and prepend &quot;\\?\&quot; to the path.
+	</par>
+     <par name="fInfoLevelId">A class of attribute information to retrieve.</par>
+     <par name="lpFileInformation">
+       A pointer to a buffer that receives the attribute information.
+
+       The type of attribute information that is stored into this buffer 
+       is determined by the value of fInfoLevelId.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetFileAttributesEx">
+     <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="lpFileName" rep="hex" nr="1">
+      <type>LPCTSTR</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="fInfoLevelId" roles="none" nr="2">
+      <type>GET_FILEEX_INFO_LEVELS</type>
+    </par>
+    <par loc="stack" io="w" name="lpFileInformation" rep="hex" nr="3">
+      <type><ptr>WIN32_FILE_ATTRIBUTE_DATA</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:filesystem" rn="infox:file attributes"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="retrieves file attributes"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 08:53:30"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CryptCreateHash">
+   <documentation>
+    <desc>
+      initiates the hashing of a stream of data. 
+      It creates and returns to the calling application a handle to a cryptographic 
+      service provider (CSP) hash object. 
+      This handle is used in subsequent calls to CryptHashData and CryptHashSessionKey 
+      to hash session keys and other streams of data. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CryptCreateHash(</ll>
+      <ld>_In_   HCRYPTPROV hProv </ld>
+      <ld>_In_   ALG_ID Algid </ld>
+      <ld>_In_   HCRYPTKEY hKey </ld>
+      <ld>_In_   DWORD dwFlags </ld>
+      <ld>_Out_  HCRYPTHASH *phHash </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">true </rc>
+      <rc cond="failure">false </rc>
+     </return>
+     <par name="hProv">A handle to a CSP created by a call to CryptAcquireContext. </par>
+     <par name="Algid">An ALG_ID value that identifies the hash algorithm to use. </par>
+     <par name="hKey">
+       If the type of hash algorithm is a keyed hash, such as the Hash-Based 
+       Message Authentication Code (HMAC) or Message Authentication 	
+       Code (MAC) algorithm, the key for the hash is passed in this parameter.
+       For nonkeyed algorithms, this parameter must be set to zero. 
+    </par>
+     <par name="dwFlags">
+       The following flag value is defined. CRYPT_SECRETDIGEST : 0x00000001
+     </par>
+     <par name="phHash">
+       The address to which the function copies a handle to the new hash object. 
+       When you have finished using the hash object, release the handle by calling 
+       the CryptDestroyHash function. 
+   </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="CryptCreateHash">
+    <returnbtype tname="BOOL " ttag="tnamed"/>
+    <par loc="stack" io="r" name="hProv" nr="1">
+      <type>HCRYPTPROV</type>
+      <roles>
+         <role rt="ioc:crypto" rn="handle:CSP"/>
+      </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="Algid" nr="2">
+     <type>ALG_ID</type>
+     <roles>
+        <role rt="ioc:crypto" rn="id:algorithm"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="hKey" nr="3">
+      <type>HCRYPTKEY</type>
+      <roles>
+         <role rt="ioc:crypto" rn="handle:cryptographic key"/>
+      </roles>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="4"><!-- not used -->
+     <btype tname="DWORD " ttag="tnamed"/>
+    </par>
+    <par loc="stack" io="w" name="phHash" nr="5">
+      <type>HCRYPTHASH</type>
+      <roles>
+         <role rt="ioc:crypto" rn="handle:cryptographic hash"/>
+      </roles>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="crypto"
+                  desc="initiates hashing of a stream of data"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

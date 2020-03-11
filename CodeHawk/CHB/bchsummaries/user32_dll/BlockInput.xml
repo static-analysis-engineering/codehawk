@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/29/2015 10:45:54"/>
+  <libfun lib="user32" name="BlockInput">
+   <documentation>
+    <desc>
+      Blocks keyboard and mouse input events from reaching
+      applications When input is blocked, real physical input from the
+      mouse or keyboard will not affect the input queue's synchronous
+      key state (reported by GetKeyState and GetKeyboardState), nor
+      will it affect the asynchronous key state (reported by
+      GetAsyncKeyState). However, the thread that is blocking input
+      can affect both of these key states by calling SendInput. No
+      other thread can do this.  The system will unblock input in the
+      following cases: The thread that blocked input unexpectedly
+      exits without calling BlockInput with fBlock set to FALSE. In
+      this case, the system cleans up properly and re-enables input.
+      The user presses CTRL+ALT+DEL or the system invokes the Hard
+      System Error modal message box (for example, when a program
+      faults or a device fails).
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI BlockInput (_In_ BOOL fBlockIt)</pt>
+     <par name="fBlockIt">
+       The function's purpose. If this parameter is TRUE, keyboard and mouse
+       input events are blocked. If this parameter is FALSE, keyboard and mouse
+       events are unblocked. Note that only the thread that blocked input can
+       successfully unblock input.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="BlockInput">
+    <par loc="stack" io="r" name="fBlockIt" nr="1">
+     <type>BOOL</type>
+     <roles/>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="process" desc="blocks keyboard and mouse inputs"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

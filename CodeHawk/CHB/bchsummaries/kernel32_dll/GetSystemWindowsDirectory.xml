@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/16/2015 09:03:49"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetSystemWindowsDirectory">
+   <documentation>
+    <desc>Retrieves the path of the shared Windows directory on a multi-user system.</desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetSystemWindowsDirectoryA(</ll>
+      <ld>_Out_  LPTSTR lpBuffer </ld>
+      <ld>_In_   UINT uSize </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpBuffer">
+       A pointer to the buffer to receive the path. This path does not end
+       with a backslash unless the Windows directory is the root directory.
+     </par>
+     <par name="uSize">
+       The maximum size of the buffer specified by the lpBuffer parameter, 
+       in TCHARs.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetSystemWindowsDirectory">
+    <returntype>UINT</returntype>
+    <par loc="stack" name="lpBuffer" io="w" rep="hex" nr="1">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:system" rn="infox:windows directory"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uSize" nr="2">
+     <type>UINT</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetSystemWindowsDirectory"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="retrieves the shared windows directory"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>uSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>uSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

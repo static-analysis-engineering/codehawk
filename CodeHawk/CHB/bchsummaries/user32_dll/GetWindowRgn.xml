@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/13/2015 15:57:18"/>
+  <libfun lib="user32" name="GetWindowRgn">
+   <documentation>
+    <desc>
+      obtains a copy of the window region of a window. The window region of a
+      window is set by calling the SetWindowRgn function. The window region
+      determines the area within the window where the system permits drawing. 
+      The system does not display any portion of a window that lies outside
+      of the window region
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int GetWindowRgn(</ll>
+      <ld>_In_  HWND hWnd</ld>
+      <ld>_In_  HRGN hRgn</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">Handle to the window whose window region is to be obtained</par>
+     <par name="hRgn">
+       Handle to the region which will be modified to represent the window region
+     </par>
+     <return>specifies the type of the region that the function obtains</return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetWindowRgn">
+    <par loc="stack" name="hWnd" io="r" rep="hex" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hRgn" io="r" rep="hex" nr="2">
+     <type>HRGN</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:region"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="obtains a copy of a window region"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

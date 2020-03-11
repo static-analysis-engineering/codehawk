@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ReleaseDC">
+   <documentation>
+    <desc>releases a device context, freeing it for use by other applications</desc>
+    <apidoc>
+     <pt>
+      <ll>int ReleaseDC (</ll>
+      <ld>__in HWND hWnd,</ld>
+      <ld>__in HDC hDC</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window whose DC is to be released</par>
+     <par name="hDC">handle to the DC to be released</par>
+     <return>
+      <rc cond="success">1</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ReleaseDC">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="hWnd" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="hDC" nr="2">
+     <type>HDC</type>
+     <pre><deref-read/></pre>
+     <sideeffects><invalidates/></sideeffects>
+     <roles>
+        <role rt="ioc:process" rn="handle:device context"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="releases a device context"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <one-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

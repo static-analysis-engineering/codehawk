@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:33:21"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="TrackPopupMenu">
+   <documentation>
+    <desc>
+      Displays a shortcut menu at the specified location and tracks the selection 
+      of items on the menu. 
+      The shortcut menu can appear anywhere on the screen.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI TrackPopupMenu(</ll>
+      <ld>_In_      HMENU hMenu,</ld>
+      <ld>_In_      UINT uFlags,</ld>
+      <ld>_In_      int x,</ld>
+      <ld>_In_      int y,</ld>
+      <ld>_In_      int nReserved,</ld>
+      <ld>_In_      HWND hWnd,</ld>
+      <ld>_In_opt_  const RECT *prcRect</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMenu">A handle to the shortcut menu to be displayed.</par>
+     <par name="uFlags">Flags to specify function options.</par>
+     <par name="x">The horizontal location of the shortcut menu, in screen coordinates.</par>
+     <par name="y">The vertical location of the shortcut menu, in screen coordinates.</par>
+     <par name="nReserved">Reserved; must be zero.</par>
+     <par name="hWnd">
+       A handle to the window that owns the shortcut menu. This window receives all 
+       messages from the menu.
+     </par>
+     <par name="prcRect">Ignored.</par>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="TrackPopupMenu">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hMenu" nr="1">
+      <type>HMENU</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:menu"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uFlags" io="r" roles="none" nr="2">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="x" io="r" nr="3">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="window position"/>
+      </roles>
+    </par>
+    <par loc="stack" name="y" io="r" roles="none" nr="4">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="window position"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nReserved" io="r" roles="none" nr="5">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="hWnd" nr="6">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="prcRect" io="r" nr="7">
+      <type><ptr>RECT</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:RECT"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="displays a shortcut menu on the screen"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+        <eq/>
+        <ci>nReserved</ci>
+        <cn>0</cn>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

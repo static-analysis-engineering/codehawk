@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FindVolumeMountPointClose.xml" time="2016-09-10 13:20:16.732984"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="FindVolumeMountPointClose">
+    <documentation>
+      <desc>
+         Closes the specified mounted folder search handle. The
+         FindFirstVolumeMountPoint and FindNextVolumeMountPoint
+         functions use this search handle to locate mounted folders on
+         a specified volume.
+      </desc>
+      <apidoc>
+        <pt>BOOL WINAPI FindVolumeMountPointClose (_In_ HANDLE hFindVolumeMountPoint)</pt>
+        <par name="hFindVolumeMountPoint">
+           The mounted folder search handle to be closed. This handle
+           must have been previously opened by the
+           FindFirstVolumeMountPoint function.
+        </par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="FindVolumeMountPointClose">
+      <par loc="stack" name="hFindVolumeMountPoint" io="r" rep="hex" nr="1">
+        <type>HANDLE</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="ioc:filesystem" rn="handle:volume mount point"/>
+        </roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="closes a mounted folder search handle"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

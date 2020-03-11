@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/22/2014 16:12:00"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="SetServiceStatus">
+   <documentation>
+    <desc>
+      Updates the service control manager&apos;s status information for the calling service.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetServiceStatus(</ll>
+      <ld>_In_  SERVICE_STATUS_HANDLE hServiceStatus,</ld>
+      <ld>_In_  LPSERVICE_STATUS lpServiceStatus</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hServiceStatus">
+       A handle to the status information structure for the current service. 
+       This handle is returned by the RegisterServiceCtrlHandlerEx function.
+     </par>
+     <par name="lpServiceStatus">
+       A pointer to the SERVICE_STATUS structure that contains the latest 
+       status information for the calling service.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetServiceStatus">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hServiceStatus" rep="hex" nr="1">
+      <type>SERVICE_STATUS_HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:services" rn="handle:service status"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpServiceStatus" rep="hex" nr="2">
+      <type><ptr>SERVICE_STATUS</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:service status"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="services"
+		  desc="updates the service control manager's status information"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

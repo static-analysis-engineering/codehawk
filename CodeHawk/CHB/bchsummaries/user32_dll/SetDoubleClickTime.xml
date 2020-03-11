@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/13/2015 14:54:38"/>
+  <libfun lib="user32" name="SetDoubleClickTime">
+   <documentation>
+    <desc>
+      Sets the double-click time for the mouse. A double-click is a series 
+      of two clicks of a mouse button, the second occurring within a specified
+      time after the first. The double-click time is the maximum number of 
+      milliseconds that may occur between the first and second clicks of
+      a double-click
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI SetDoubleClickTime (_In_  UINT uInterval)</pt>
+     <par name="uInterval">
+       The number of milliseconds that may occur between the first and second 
+       clicks of a double-click. If this parameter is set to 0, the system 
+       uses the default double-click time of 500 milliseconds. If this parameter 
+       value is greater than 5000 milliseconds, the system sets the value to
+       5000 milliseconds
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetDoubleClickTime">
+    <par loc="stack" name="uInterval" io="r"  nr="1">
+     <type>UINT</type>
+     <roles>
+       <role rt="ioc:system" rn="mouse double-click time"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="sets mouse double click-time"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

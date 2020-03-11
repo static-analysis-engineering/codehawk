@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CreateFile">
+   <documentation>
+    <desc>creates or opens a file or I/O device</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI CreateFile (</ll>
+      <ld>__in     LPCTSTR lpFileName,</ld>
+      <ld>__in     DWORD dwDesiredAccess,</ld>
+      <ld>__in     DWORD dwSharedMode,</ld>
+      <ld>__in_opt LPSECURITY_ATTRIBUTES lpSecurityAttributes,</ld>
+      <ld>__in     DWORD dwCreationDisposition,</ld>
+      <ld>__in     DWORD dwFlagsAndAttributes,</ld>
+      <ld>__in_opt HANDLE hTemplateFile</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpfileName">pointer to the name of the file or device to be opened</par>
+     <par name="dwDesiredAccess">r/w/both access</par>
+     <par name="dwSharedMode">requested sharing mode</par>
+     <par name="lpSecurityAttributes">
+       pointer to SECURITY_ATTRIBUTES structure; can be NULL
+     </par>
+     <par name="dwCreationDisposition">
+       action to take on a file or device that does not exist
+     </par>
+     <par name="dwFlagsAndAttributes">file or device attributes flags</par>
+     <par name="hTemplateFile">valid handle to a template file; can be NULL</par>
+     <return>
+      <rc cond="success">open handle to the specified file or device</rc>
+      <rc cond="failure">INVALID_HANDLE_VALUE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="CreateFile">
+     <returntype>HANDLE</returntype>
+    <par loc="stack" name="lpFileName" io="r" rep="hex" nr="1">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwDesiredAccess" io="r" roles="none" nr="2">
+      <rep type="enum" name="file_access_rights_constants"/>
+      <type>DWORD</type>
+      <pre><enum-value name="file_access_rights_constants" flags="true"/></pre>
+    </par>
+    <par loc="stack" name="dwSharedMode" io="r"  roles="none" nr="3">
+      <type>DWORD</type>
+      <rep type="enum" name="file_sharing_flags"/>
+      <pre><enum-value name="file_sharing_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" name="lpSecurityAttributes" io="r" rep="hex" roles="none" nr="4">
+      <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" name="dwCreationDisposition" roles="none" io="r" nr="5">
+      <rep type="enum" name="file_creation_action_constants"/>
+      <type>DWORD</type>
+      <pre><enum-value name="file_creation_action_constants"/></pre>
+    </par>
+    <par loc="stack" name="dwFlagsAndAttributes" roles="none" io="r" nr="6">
+      <type>DWORD</type>
+      <rep type="enum" name="file_attributes_constants"/>
+      <pre><enum-value name="file_attributes_constants" flags="true"/></pre>
+    </par>
+    <par loc="stack" name="hTemplateFile" nr="7">
+      <type>HANDLE</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="handle:template file"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="creates or opens a file or I/O device"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

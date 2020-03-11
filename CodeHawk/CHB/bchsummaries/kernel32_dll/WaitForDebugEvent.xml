@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="WaitForDebugEvent.xml" time="2016-08-07 15:41:04.810099"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="WaitForDebugEvent">
+    <documentation>
+      <desc>
+	Waits for a debugging event to occur in a process being debugged
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI WaitForDebugEvent(</ll>
+          <ld>_Out_ LPDEBUG_EVENT lpDebugEvent</ld>
+          <ld>_In_  DWORD         dwMilliseconds</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpDebugEvent">
+	  A pointer to a DEBUG_EVENT structure that receives
+	  information about the debugging event.
+	</par>
+        <par name="dwMilliseconds">
+	  The number of milliseconds to wait for a debugging event. If
+	  this parameter is zero, the function tests for a debugging
+	  event and returns immediately. If the parameter is INFINITE,
+	  the function does not return until a debugging event has
+	  occurred
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="WaitForDebugEvent">
+      <par loc="stack" name="lpDebugEvent" io="w" nr="1" rep="hex">
+        <type><ptr>DEBUG_EVENT</ptr></type>
+	<roles>
+	  <role rt="ioc:synchronization" rn="debug event"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwMilliseconds" io="r" nr="2">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:synchronization" rn="time:wait"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="waits for a debugging event"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

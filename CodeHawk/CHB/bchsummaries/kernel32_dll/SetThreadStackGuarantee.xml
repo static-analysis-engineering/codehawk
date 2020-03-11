@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SetThreadStackGuarantee.xml" time="2016-03-06 15:34:28.070765"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="SetThreadStackGuarantee" lib="kernel32">
+    <documentation>
+      <desc>
+	Sets the minimum size of the stack associated with the calling
+	thread or fiber that will be available during any stack
+	overflow exceptions. This is useful for handling stack
+	overflow exceptions; the application can safely use the
+	specified number of bytes during exception handling
+      </desc>
+      <apidoc>
+        <pt>BOOL WINAPI SetThreadStackGuarantee (_InOut_ PULONG StackSizeInBytes)</pt>
+        <par name="StackSizeInBytes">
+	  The size of the stack, in bytes. On return, this value is
+	  set to the size of the previous stack, in bytes.  If this
+	  parameter is 0 (zero), the function succeeds and the
+	  parameter contains the size of the current stack.  If the
+	  specified size is less than the current size, the function
+	  succeeds but ignores this request. Therefore, you cannot use
+	  this function to reduce the size of the stack.  This value
+	  cannot be larger than the reserved stack size
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="4" name="SetThreadStackGuarantee">
+      <par loc="stack" io="rw" nr="1" name="StackSizeInBytes">
+        <type><ptr>ULONG</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="size:stack size" rn="SetThreadStackGuarantee"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="sets the minimum size of the stack"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

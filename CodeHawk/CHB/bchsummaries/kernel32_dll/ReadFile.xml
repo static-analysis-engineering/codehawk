@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:31:41"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="ReadFile">
+   <documentation>
+    <desc>
+      Reads data from the specified file or input/output (I/O) device. 
+      Reads occur at the position 
+      specified by the file pointer if supported by the device.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI ReadFile(</ll>
+      <ld>_In_         HANDLE hFile,</ld>
+      <ld>_Out_        LPVOID lpBuffer,</ld>
+      <ld>_In_         DWORD nNumberOfBytesToRead,</ld>
+      <ld>_Out_opt_    LPDWORD lpNumberOfBytesRead,</ld>
+      <ld>_Inout_opt_  LPOVERLAPPED lpOverlapped</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       A handle to the device (for example, a file, file stream, physical disk,
+       volume, console buffer, tape drive, socket, communications resource, mailslot, 
+       or pipe).
+     </par>
+     <par name="lpBuffer">
+       A pointer to the buffer that receives the data read from a file or device.
+     </par>
+     <par name="nNumberOfBytesToRead">The maximum number of bytes to be read.</par>
+     <par name="lpNumberOfBytesRead">
+       A pointer to the variable that receives the number of bytes read 
+       when using a synchronous hFile parameter.
+     </par>
+     <par name="lpOverlapped">
+       A pointer to an OVERLAPPED structure is required if the hFile parameter was opened with 
+       FILE_FLAG_OVERLAPPED, otherwise it can be NULL
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="ReadFile">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hFile" nr="1">
+      <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="handle:file"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpBuffer" nr="2" rep="hex">
+      <type><ptr>VOID</ptr></type>
+      <roles>
+         <role rt="ioc:memops" rn="dst-bytes:file input"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nNumberOfBytesToRead" nr="3">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="ReadFile"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpNumberOfBytesRead" nr="4" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+      <roles>
+         <role rt="size:returned" rn="ReadFile"/>
+      </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="lpOverlapped" roles="none" nr="5" rep="hex">
+       <type><ptr>OVERLAPPED</ptr></type>
+     <pre><deref-read-null/></pre>
+       <roles/>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="reads data from a file or I/O device"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpBuffer</ci>
+	    <ci>nNumberOfBytesToRead</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	<type>BYTE</type>
+        <ci>lpBuffer</ci>
+        <ci>nNumberOfBytesToRead</ci>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

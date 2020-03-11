@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/16/2015 09:01:49"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetShortPathName">
+   <documentation>
+    <desc>Retrieves the short path form of the specified path.</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetShortPathName(</ll>
+      <ld>_In_   LPCTSTR lpszLongPath </ld>
+      <ld>_Out_  LPTSTR lpszShortPath </ld>
+      <ld>_In_   DWORD cchBuffer </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	the length, in TCHARs, of the string that is copied to lpszShortPath, 
+	not including the terminating null character
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpszLongPath">
+       The path string.
+
+       In the ANSI version of this function, the name is limited to MAX_PATH 
+       characters. To extend this limit to 32,767 wide characters, call the Unicode 
+       version of the function and prepend &quot;\\?\&quot; to the path.
+     </par>
+     <par name="lpszShortPath">
+       A pointer to a buffer to receive the null-terminated short form of the 
+       path that lpszLongPath specifies.
+
+       Passing NULL for this parameter and zero for cchBuffer will always return 
+       the required buffer size for a specified lpszLongPath.
+     </par>
+     <par name="cchBuffer">
+       The size of the buffer that lpszShortPath points to, in TCHARs.
+       
+       Set this parameter to zero if lpszShortPath is set to NULL.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetShortPathName">
+     <returntype>DWORD</returntype>
+     <par loc="stack" io="r" name="lpszLongPath" nr="1" rep="hex">
+       <type>LPCTSTR</type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpszShortPath" nr="2" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:filesystem" rn="infox:filename"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cchBuffer" nr="3">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetShortPathName"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="retrieves short pathname"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><not-null/><ci>lpszShortPath</ci></apply>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>lpszShortPath</ci>
+	      <apply><indexsize/><ci>cchBuffer</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><gt/><ci>cchBuffer</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>lpszShortPath</ci>
+	      <apply><indexsize/><ci>cchBuffer</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszShortPath</ci>
+	    <apply><indexsize/><ci>cchBuffer</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

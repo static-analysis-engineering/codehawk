@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="RegConnectRegistry.xml" time="2016-06-20 23:51:20.189066"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="RegConnectRegistry">
+    <documentation>
+      <desc>Establishes a connection to a predefined registry key on another computer</desc>
+      <apidoc>
+        <pt>
+          <ll>LONG WINAPI RegConnectRegistry(</ll>
+          <ld>_In_opt_ LPCTSTR lpMachineName</ld>
+          <ld>_In_     HKEY    hKey</ld>
+          <ld>_Out_    PHKEY   phkResult</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpMachineName">
+	  The name of the remote computer. The string has the
+	  following form: \\computername The caller must have access
+	  to the remote computer or the function fails.  If this
+	  parameter is NULL, the local computer name is used.
+	</par>
+        <par name="hKey">
+	  A predefined registry handle. This parameter can be one of
+	  the following predefined keys on the remote computer.
+	</par>
+        <par name="phkResult">
+	  A pointer to a variable that receives a key handle
+	  identifying the predefined handle on the remote computer.
+	</par>
+        <return>
+          <rc cond="success">ERROR_SUCCESS</rc>
+          <rc cond="failure">nonzero error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="RegConnectRegistry">
+      <par loc="stack" name="lpMachineName" io="r" nr="1">
+        <type>LPCTSTR</type>
+        <pre><deref-read-null-nt/></pre>
+        <roles>
+           <role rt="ioc:network" rn="name:remote computer"/>
+        </roles>
+      </par>
+      <par loc="stack" name="hKey" io="r" nr="2">
+	<rep type="enum" name="predefined_registry_key_constants"/>
+        <type>HKEY</type>
+	<pre>
+	  <deref-read/>
+	  <enum-value name="predefined_registry_key_constants"/>
+	</pre>
+        <roles>
+           <role rt="ioc:registry" rn="handle:key"/>
+	</roles>
+      </par>
+      <par loc="stack" name="phkResult" io="w" nr="3" rep="hex">
+        <type><ptr>HKEY</ptr></type>
+	<pre><deref-write/></pre>
+        <sideeffects><block-write/></sideeffects>
+        <roles>
+           <role rt="ioc:registry" rn="ref:key"/>
+        </roles>
+      </par>
+      <returntype>LONG</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="registry"
+		   desc="connects to a registry on a remote computer"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

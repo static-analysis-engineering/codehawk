@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SetVolumeLabel.xml" time="2016-06-20 23:16:18.996929"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="SetVolumeLabel">
+    <documentation>
+      <desc>Sets the label of a file system volume</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI SetVolumeLabel(</ll>
+          <ld>_In_opt_ LPCTSTR lpRootPathName</ld>
+          <ld>_In_opt_ LPCTSTR lpVolumeName</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpRootPathName">
+	  A pointer to a string that contains the volume's drive
+	  letter (for example, X:\) or the path of a mounted folder
+	  that is associated with the volume (for example,
+	  Y:\MountX\). The string must end with a trailing backslash
+	  ('\'). If this parameter is NULL, the root of the current
+	  directory is used.
+	</par>
+        <par name="lpVolumeName">
+	  A pointer to a string that contains the new label for the
+	  volume. If this parameter is NULL, the function deletes any
+	  existing label from the specified volume and does not assign
+	  a new label.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="SetVolumeLabel">
+      <par loc="stack" name="lpRootPathName" io="r" nr="1" rep="hex">
+        <type>LPCTSTR</type>
+        <pre><deref-read-null-nt/></pre>
+	<roles>
+           <role rt="ioc:filesystem" rn="name:file"/>
+        </roles>
+      </par>
+      <par loc="stack" name="lpVolumeName" io="r" nr="2" rep="hex">
+        <type>LPCTSTR</type>
+        <pre><deref-read-null-nt/></pre>
+	<roles>
+           <role rt="ioc:filesystem" rn="name:volume"/>
+        </roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="sets the label of a filesystem volume"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

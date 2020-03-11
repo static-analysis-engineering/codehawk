@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:30:41"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="RemoveDirectory">
+   <documentation>
+    <desc>Deletes an existing empty directory.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI RemoveDirectory(</ll>
+      <ld>_In_  LPCTSTR lpPathName</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpPathName">
+       The path of the directory to be removed. This path must specify an empty 
+       directory, and the calling process must have delete access to the directory.
+
+       In the ANSI version of this function, the name is limited to MAX_PATH 
+       characters. To extend this limit to 32,767 wide characters, call the
+       Unicode version of the function and prepend &quot;\\?\&quot; to the path.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="RemoveDirectory">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="lpPathName" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="deletes empty directory"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

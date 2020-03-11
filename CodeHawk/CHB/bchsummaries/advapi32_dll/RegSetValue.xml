@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 03:22:27"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegSetValue">
+   <documentation>
+    <desc>
+      Sets the data for the default or unnamed value of a specified registry key. 
+      The data must be a text string.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegSetValue (</ll>
+      <ld>_In_      HKEY hKey </ld>
+      <ld>_In_opt_  LPCTSTR lpSubKey </ld>
+      <ld>_In_      DWORD dwType </ld>
+      <ld>_In_      LPCTSTR lpData </ld>
+      <ld>_In_      DWORD cbData </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">Error_Success</rc>
+      <rc cond="failure">non zero error code</rc>
+     </return>
+     <par name="hKey">
+       A handle to an open registry key. The key must have been opened with the 
+       KEY_SET_VALUE access right. 
+     </par>
+     <par name="lpSubKey">
+       The name of a subkey of the hKey parameter. The function sets the default
+       value of the specified subkey. If lpSubKey does not exist, the function 
+       creates it.
+       Key names are not case sensitive.
+       If this parameter is NULL or points to an empty string, the function sets
+       the default value of the key identified by hKey.
+     </par>
+     <par name="dwType">
+       The type of information to be stored. This parameter must be the REG_SZ type. 
+     </par>
+     <par name="lpData">The data to be stored. This parameter cannot be NULL. </par>
+     <par name="cbData">
+       This parameter is ignored. The function calculates this value based on the 
+       size of the data in the lpData parameter. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="RegSetValue">
+     <returntype>LONG</returntype>
+     <par loc="stack" name="hKey" io="r" nr="1" rep="hex">
+       <rep type="enum" name="predefined_registry_key_constants"/>
+       <type>HKEY</type>
+       <pre>
+	 <deref-read/>
+	 <enum-value name="predefined_registry_key_constants"/>
+       </pre>
+       <roles>
+	 <role rt="ioc:registry" rn="handle:key"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpSubKey" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:registry" rn="name:subkey"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwType" io="r" nr="3">
+      <type>DWORD</type>
+      <roles>
+	<role rt="ioc:registry" rn="type:value"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpData" io="r" nr="4" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:registry" rn="value:data"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cbData" io="r" nr="5">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:buffersize" rn="RegSetValue"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry" desc="sets the value of a registry key"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="system_error_code_constants"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

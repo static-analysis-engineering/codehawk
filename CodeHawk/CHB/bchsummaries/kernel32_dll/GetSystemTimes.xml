@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/06/2015 17:34:26"/>
+  <libfun lib="kernel32" name="GetSystemTimes">
+   <documentation>
+    <desc>
+      Retrieves system timing information. On a multiprocessor system, the values 
+      returned are the sum of the designated times across all processors
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetSystemTimes(</ll>
+      <ld>_Out_opt_ LPFILETIME lpIdleTime</ld>
+      <ld>_Out_opt_ LPFILETIME lpKernelTime</ld>
+      <ld>_Out_opt_ LPFILETIME lpUserTime</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpIdleTime">
+       A pointer to a FILETIME structure that receives the amount of time that the 
+       system has been idle.
+     </par>
+     <par name="lpKernelTime">
+       A pointer to a FILETIME structure that receives the amount of time that the 
+       system has spent executing in Kernel mode (including all threads in all 
+       processes, on all processors). This time value also includes the amount of 
+       time the system has been idle.
+     </par>
+     <par name="lpUserTime">
+       A pointer to a FILETIME structure that receives the amount of time that the 
+       system has spent executing in User mode (including all threads in all processes, 
+       on all processors).
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetSystemTimes">
+    <par loc="stack" io="w" name="lpIdleTime" nr="1" rep="hex">
+     <type><ptr>FILETIME</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:FILETIME" />
+      <role rt="ioc:system" rn="infox:system idle time"/>
+     </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpKernelTime" nr="2" rep="hex">
+     <type><ptr>FILETIME</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:FILETIME" />
+      <role rt="ioc:system" rn="infox:system kernel time"/>
+     </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpUserTime" nr="3" rep="hex">
+     <type><ptr>FILETIME</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:FILETIME" />
+      <role rt="ioc:system" rn="infox:system user time"/>
+     </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves system timing information"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

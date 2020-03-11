@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/22/2014 15:51:00"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetSystemPowerStatus">
+   <documentation>
+    <desc>
+      Retrieves the power status of the system. The status indicates whether 
+      the system is running on AC or DC power, whether the battery is currently 
+      charging, and how much battery life remains.
+    </desc>
+    <apidoc>
+      <pt>
+      <ll>BOOL WINAPI GetSystemPowerStatus (</ll>
+      <ld>_Out_  LPSYSTEM_POWER_STATUS lpSystemPowerStatus</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpSystemPowerStatus">
+       A pointer to a SYSTEM_POWER_STATUS structure that receives status information
+      </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetSystemPowerStatus">
+     <returntype>BOOL</returntype>
+    <par loc="stack" name="lpSystemPowerStatus" io="w" rep="hex" nr="1">
+     <type><ptr>SYSTEM_POWER_STATUS</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:system" rn="infox:system power status"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves the power status of the system"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

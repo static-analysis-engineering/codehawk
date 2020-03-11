@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/19/2015 21:58:30"/>
+  <libfun lib="kernel32" name="GetHandleInformation">
+   <documentation>
+    <desc>Retrieves certain properties of an object handle</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetHandleInformation(</ll>
+      <ld>_In_   HANDLE hObject</ld>
+      <ld>_Out_  LPDWORD lpdwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hObject">
+       A handle to an object whose information is to be retrieved.
+       You can specify a handle to one of the following types of objects:
+       access token, console input buffer, console screen buffer, event,
+       file, file mapping, job, mailslot, mutex, pipe, printer, process,
+       registry key, semaphore, serial communication device, socket, 
+       thread, or waitable timer
+     </par>
+     <par name="lpdwFlags">
+       A pointer to a variable that receives a set of bit flags that 
+       specify properties of the object handle or 0
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetHandleInformation">
+    <par loc="stack" name="hObject" io="r" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:object"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpdwFlags" io="r" roles="none" nr="2">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves properties of an object handle"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

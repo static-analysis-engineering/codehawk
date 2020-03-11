@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun name="LoadLibrary" lib="kernel32">
+   <documentation>
+    <desc>loads the specified module into the address space of the calling process
+      </desc>
+    <apidoc>
+     <pt>HMODULE LoadLibrary ( __in LPCTSTR lpFileName )</pt>
+     <par name="lpFileName">name of the module</par>
+     <return>
+      <rc cond="success">handle to the module</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="LoadLibrary">
+     <returntype>HMODULE</returntype>
+     <par loc="stack" io="r" name="lpFileName" nr="1">
+       <type>LPCTSTR</type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="name:module"/>
+	 <role rt="ioc:filesystem" rn="name:file"/>
+	 <role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="loads runtime library"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

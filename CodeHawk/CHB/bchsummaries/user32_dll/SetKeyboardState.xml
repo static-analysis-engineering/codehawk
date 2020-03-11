@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetKeyboardState">
+   <documentation>
+    <desc>
+      copies an array of keyboard states into the calling thread&apos;s keyboard 
+      input-state table
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI SetKeyboardState (__in LPBYTE lpKeyState)</pt>
+     <par name="lpKeyState">pointer to a 256-byte array that contains keyboard key state</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetKeyboardState">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="lpKeyState" nr="1">
+      <type><ptr>BYTE</ptr></type>
+      <roles>
+         <role rt="ioc:memops" rn="src-bytes:keyboard state"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" 
+		  desc="copies keyboard states in the thread input-state table"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>BYTE</type>
+	 <ci>lpKeyState</ci>
+	 <cn>256</cn>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/29/2015 13:03:29"/>
+  <libfun lib="kernel32" name="EnumCalendarInfo">
+   <documentation>
+    <desc>Enumerates calendar information for a specified locale</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL EnumCalendarInfo(</ll>
+      <ld>_In_ CALINFO_ENUMPROC pCalInfoEnumProc</ld>
+      <ld>_In_ LCID             Locale</ld>
+      <ld>_In_ CALID            Calendar</ld>
+      <ld>_In_ CALTYPE          CalType</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pCalInfoEnumProc">
+       Pointer to an application-defined callback function
+     </par>
+     <par name="Locale">
+       Locale identifier that specifies the locale for which to retrieve calendar 
+       information
+     </par>
+     <par name="Calendar">
+       Calendar identifier that specifies the calendar for which information
+       is requested. Note that this identifier can be ENUM_ALL_CALENDARS, 
+       to enumerate all calendars that are associated with the locale.
+     </par>
+     <par name="CalType">Type of calendar information</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="EnumCalendarInfo">
+    <par loc="stack" name="pCalInfoEnumProc" io="r" nr="1" rep="hex">
+     <type><ptr>EnumCalendarInfoProc</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="callbackf:calendar info"/>
+     </roles>
+    </par>
+    <par loc="stack" name="Locale" io="r" nr="2">
+     <type>LCID</type>
+     <roles>
+       <role rt="ioc:system" rn="id:locale"/>
+     </roles>
+    </par>
+    <par loc="stack" name="Calendar" io="r"  nr="3">
+      <type>CALID</type>
+      <roles>
+	<role rt="ioc:system" rn="id:calendar"/>
+      </roles>
+    </par>
+    <par loc="stack" name="CalType" io="r" nr="4">
+      <type>CALTYPE</type>
+      <roles>
+	<role rt="ioc:system" rn="type:calendar"/>
+      </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="enumerates calendar information for a locale"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

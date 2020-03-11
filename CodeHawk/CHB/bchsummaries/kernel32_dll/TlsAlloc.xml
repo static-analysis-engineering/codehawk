@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="TlsAlloc">
+   <documentation>
+    <desc>allocates a thread local storage index</desc>
+    <apidoc>
+     <pt>DWORD WINAPI TlsAlloc (void)</pt>
+     <return>
+      <rc cond="success">TLS index</rc>
+      <rc cond="failure">TLS_OUT_OF_INDEXES</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="TlsAlloc">
+     <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="allocates thread local storage"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

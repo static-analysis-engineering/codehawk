@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:22:27"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="BringWindowToTop">
+   <documentation>
+    <desc>
+      Brings the specified window to the top of the Z order. If the 
+      window is a top-level window, it is activated. If the window is 
+      a child window, the top-level parent window associated with 
+      the child window is activated. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI BringWindowToTop(</ll>
+      <ld>_In_  HWND hWnd</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hWnd">A handle to the window to bring to the top of the Z order.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="BringWindowToTop">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hWnd" io="r" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="brings a window to the top of the Z order"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:02:56"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetPropA">
+    <refer-to char-type="ansi" name="GetProp"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

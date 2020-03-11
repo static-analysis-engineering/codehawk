@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="GetNamedSecurityInfo">
+   <documentation>
+    <desc>retrieves a copy of the security descriptor for an object specified by name</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetNamedSecurityInfo (</ll>
+      <ld>_In_ LPTSTR pObjectName,</ld>
+      <ld>_In_ SE_OBJECT_TYPE objectType,</ld>
+      <ld>_In_ SECURITY_INFORMATION SecurityInfo,</ld>
+      <ld>_Out_opt_ PSID *ppsidOwner,</ld>
+      <ld>_Out_opt_ PSID *ppsidGraoup,</ld>
+      <ld>_Out_opt_ PACL *ppDacl,</ld>
+      <ld>_Out-opt_ PCAL *ppSacl,</ld>
+      <ld>_Out_opt_ PSECURITY_DESCRIPTOR *ppSecurityDescriptor</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pObjectName">
+       pointer to a null-terminated string that specifies the name of the object from which
+       to retrieve security information. 
+     </par>
+     <par name="ObjectType">
+       specifies a value from the SE_OBJECT_TYPE enumeration that indicates the type of
+       object named by the pObjectName parameter
+     </par>
+     <par name="SecurityInfo">
+       set of bit flags that indicate the type of security information to retrieve
+     </par>
+     <par name="ppsidOwner">
+       pointer to a variable that receives a pointer to the owner SID in the security
+       descriptor returned in ppSecurityDescriptor or NULL if the security descriptor has
+       no owner SID. The returned pointer is valid only if you set the
+       OWNER_SECURITY_INFORMATION flag. Also, this parameter can be NULL if you do not
+       need the owver SID
+     </par>
+     <par name="ppsidGroup">
+       pointer to a variable that receives a pointer to the primary group SID in the
+       returned security descriptor or NULL if the security descriptor has no group SID.
+       The returned pointer is valid only if you set the GROUP_SECURITY_INFRMATION flag.
+       This parameter can be NULL if you do not need the group SID
+     </par>
+     <par name="ppDacl">
+       pointer to a variable that receives a pointer to the DACL in the returned security
+       descriptor or NULL if the security descriptor has no DACL. The returned pointer is
+       valid only if you set the DACL_SECURITY_INFORMATION flag. Also, this parameter can
+       be NULL if you do not need the DACL.
+     </par>
+     <par name="ppSacl">
+       pointer to a variable that receives a pointer to the SACL in the returned security
+       descriptor or NULL if the security descriptor has no SACL. The returned pointer is
+       valid only if you set the SACL_SECURITY_INFORMATION flag. This parameter can be
+       NULL if you do not need to SACL.
+     </par>
+     <par name="ppSecurityDescriptor">
+       pointer to a variable that receives a pointer to the security descriptor of the 
+       object. When you have finished using the pointer, free the returned buffer by
+       calling the LocalFree function. This parameter is required is any of the 
+       ppsidOwner, ppsidGroup, ppDacl, or ppSacl parameters is not NULL.
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">nonzero error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="GetNamedSecurityInfo">
+     <returntype>DWORD</returntype>
+     <par loc="stack" name="pObjectName" io="r" nr="1">
+       <type>LPTSTR</type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:system" rn="name:object"/>
+       </roles>
+    </par>
+    <par loc="stack" name="ObjectType" io="r" nr="2">
+      <rep type="enum" name="se_object_type_constants"/>
+      <type>OBJECT_TYPE</type>
+      <pre><enum-value name="se_object_type_constants"/></pre>
+      <roles>
+	<role rt="ioc:system" rn="type:object"/>
+      </roles>
+    </par>
+    <par loc="stack" name="SecurityInfo" nr="3">
+     <type>SECURITY_INFORMATION</type>
+     <roles>
+        <role rt="ioc:system" rn="security information"/>
+     </roles>
+    </par>
+    <par loc="stack" name="ppsidOwner" nr="4" rep="hex">
+      <type><ptr>SID</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write xsrc="object" xdata="owner SID"/></sideeffects>
+      <roles>
+         <role rt="ioc:system" rn="infox:owner SID"/>
+      </roles>
+    </par>
+    <par loc="stack" name="ppsidGroup" io="w" nr="5" rep="hex">
+      <type><ptr>SID</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:system" rn="infox:group SID"/>
+      </roles>
+    </par>
+    <par loc="stack" name="ppDacl" io="w" nr="6" rep="hex">
+      <type><ptr>SID</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:system" rn="infox:dacl"/>
+      </roles>
+    </par>
+    <par loc="stack" name="ppSacl" io="w" nr="7" rep="hex">
+      <type><ptr>SID</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:system" rn="infox:sacl"/>
+      </roles>
+    </par>
+    <par loc="stack" name="ppSecurityDescriptor" io="w" nr="8">
+      <type><ptr>SECURITY_DECSCRIPTOR</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:system" rn="infox:security descriptor"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves a security descriptor for an object"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

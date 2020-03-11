@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SetMenu.xml" time="2016-03-05 17:55:35.039859"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="SetMenu" lib="user32">
+    <documentation>
+      <desc>Assigns a new menu to the specified window</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI SetMenu(</ll>
+          <ld>_In_     HWND  hWnd</ld>
+          <ld>_In_opt_ HMENU hMenu</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hWnd">
+	  A handle to the window to which the menu is to be assigned
+	</par>
+        <par name="hMenu">
+	  A handle to the new menu. If this parameter is NULL, the window's
+	  current menu is removed
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="8" name="SetMenu">
+      <par loc="stack" io="r" nr="1" name="hWnd">
+        <type>HWND</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" nr="2" name="hMenu">
+        <type>HMENU</type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:menu"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="assigns a new menu to a window"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

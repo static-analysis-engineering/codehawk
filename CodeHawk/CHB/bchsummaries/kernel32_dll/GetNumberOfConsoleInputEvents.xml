@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/16/2015 09:00:48"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetNumberOfConsoleInputEvents">
+   <documentation>
+    <desc>
+      Retrieves the number of unread input records in the console&apos;s input buffer.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetNumberOfConsoleInputEvents(</ll>
+      <ld>_In_   HANDLE hConsoleInput</ld>
+      <ld>_Out_  LPDWORD lpcNumberOfEvents</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hConsoleInput">
+       A handle to the console input buffer. The handle must have the
+       GENERIC_READ access right.
+     </par>
+     <par name="lpcNumberOfEvents">
+       A pointer to a variable that receives the number of unread input 
+       records in the console&apos;s input buffer.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetNumberOfConsoleInputEvents">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hConsoleInput" nr="1">
+       <type>HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:console input buffer"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpcNumberOfEvents" io="w" rep="hex" roles="none" nr="2">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <external-effects/>
+    <preconditions/>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

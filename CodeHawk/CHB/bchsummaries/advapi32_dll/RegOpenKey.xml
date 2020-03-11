@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegOpenKey">
+   <documentation>
+    <desc>opens the specified registry key</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegOpenKey (</ll>
+      <ld>__in     HKEY hKey,</ld>
+      <ld>__in_opt LPCTSTR lpSubKey,</ld>
+      <ld>__out    PHKEY phkResult</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">handle to an open registry key</par>
+     <par name="lpSubKey">name of the registry key to be opened; can be NULL</par>
+     <par name="phkResult">pointer to a variable that receives a handle to the operand key
+	</par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">nonzero error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="RegOpenKey">
+     <returntype>LONG</returntype>
+     <par loc="stack" name="hKey" io="r" nr="1" rep="hex">
+       <rep type="enum" name="predefined_registry_key_constants"/>
+       <type>HKEY</type>
+       <pre>
+	 <deref-read/>
+	 <enum-value name="predefined_registry_key_constants"/>
+       </pre>
+       <roles>
+	 <role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpSubKey" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:registry" rn="name:subkey"/>
+      </roles>
+    </par>
+    <par loc="stack" name="phkResult" io="w" nr="3" rep="hex">
+      <type><ptr>HKEY</ptr></type>
+      <roles>
+	<role rt="ioc:registry" rn="ref:key"/>
+      </roles>
+      <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry"  desc="opens a registry key"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

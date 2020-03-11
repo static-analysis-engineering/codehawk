@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/11/2015 21:34:48"/>
+  <libfun lib="kernel32" name="IsBadWritePtr">
+   <documentation>
+    <desc>
+      Verifies that the calling process has write access to the specified range of memory 
+    </desc>
+    <remarks>
+      Important  This function is obsolete and should not be used. Despite 
+      its name, it does not guarantee that the pointer is valid or that the 
+      memory pointed to is safe to use
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI IsBadWritePtr(</ll>
+      <ld>_In_  LPVOID lp</ld>
+      <ld>_In_  UINT_PTR ucb</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lp">A pointer to the first byte of the memory block</par>
+     <par name="ucb">
+       The size of the memory block, in bytes. If this parameter is zero, 
+       the return value is zero
+     </par>
+     <return>
+       If the calling process has write access to all bytes in the specified
+       memory range, the return value is zero.
+       If the calling process does not have write access to all bytes in the 
+       specified memory range, the return value is nonzero.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="IsBadWritePtr">
+    <par loc="stack" io="r" name="lp" nr="1">
+     <type>LPVOID</type>
+     <roles>
+        <role rt="ioc:process" rn="memory block"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="ucb" nr="2">
+     <type>UINT_PTR</type>
+     <roles>
+        <role rt="size:memory block" rn="IsBadWritePtr"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="verifies write acccess to memory block"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>lp</ci>
+	    <ci>ucb</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

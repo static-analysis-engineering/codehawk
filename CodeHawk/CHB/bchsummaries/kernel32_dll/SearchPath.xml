@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:31:23"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SearchPath">
+   <documentation>
+    <desc>Searches for a specified file in a specified path.</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI SearchPath(</ll>
+      <ld>_In_opt_   LPCTSTR lpPath</ld>
+      <ld>_In_       LPCTSTR lpFileName</ld>
+      <ld>_In_opt_   LPCTSTR lpExtension</ld>
+      <ld>_In_       DWORD nBufferLength</ld>
+      <ld>_Out_      LPTSTR lpBuffer</ld>
+      <ld>_Out_opt_  LPTSTR *lpFilePart</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	If the function succeeds, the value returned is the length, in TCHARs, 
+	of the string that is copied to the buffer, not including the terminating 
+	null character. If the return value is greater than nBufferLength, the 
+	value returned is the size of the buffer that is required to hold the 
+	path, including the terminating null character.
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpPath">
+       The path to be searched for the file.
+
+	If this parameter is NULL, the function searches for a matching file using a 
+	registry-dependent system search path.
+     </par>
+     <par name="lpFileName">The name of the file for which to search.</par>
+     <par name="lpExtension">
+       The extension to be added to the file name when searching for the file. 
+       The first character of the file name extension must be a period (.). 
+       The extension is added only if the specified file name does not end 
+       with an extension.
+
+       If a file name extension is not required or if the file name contains 
+       an extension, this parameter can be NULL.
+     </par>
+     <par name="nBufferLength">
+       The size of the buffer that receives the valid path 
+       and file name (including the terminating null character), in TCHARs.
+     </par>
+     <par name="lpBuffer">
+       A pointer to the buffer to receive the path and file name of the file 
+       found. The string is a null-terminated string.
+     </par>
+     <par name="lpFilePart">
+       A pointer to the variable to receive the address (within lpBuffer) of 
+       the last component of the valid path and file name, which is the address
+       of the character immediately following the final backslash (\) in the path.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="SearchPath">
+    <returnbtype ikind="iuint" ttag="tint"/>
+    <par loc="stack" name="lpPath" io="r" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:path"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpFileName" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpExtension" io="r" nr="3" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:file extension"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nBufferLength" io="r" nr="4">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:buffersize" rn="SearchPath"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpBuffer" io="w" nr="5" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:filesystem" rn="infox:filename"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpFilePart" io="w" roles="none" nr="6" rep="hex">
+      <type><ptr>LPTSTR</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="searches for a file in a specified path"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>nBufferLength</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+      <post>
+	<math><apply><leq/><return/><ci>nBufferLength</ci></apply></math>
+      </post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpBuffer</ci>
+	    <apply><indexsize/><ci>nBufferLength</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

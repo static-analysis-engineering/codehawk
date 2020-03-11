@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="BuildCommDCBW.xml" time="2016-03-06 11:30:13.571771"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="BuildCommDCBW" lib="kernel32">
+    <refer-to char-type="unicode" name="BuildCommDCB"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

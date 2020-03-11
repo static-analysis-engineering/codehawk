@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/13/2015 14:35:20"/>
+  <libfun lib="user32" name="ScrollWindowEx">
+   <documentation>
+    <desc>scrolls the contents of the specified window's client area</desc>
+    <apidoc>
+     <pt>
+      <ll>int ScrollWindowEx(</ll>
+      <ld>_In_   HWND hWnd</ld>
+      <ld>_In_   int dx</ld>
+      <ld>_In_   int dy</ld>
+      <ld>_In_   const RECT *prcScroll</ld>
+      <ld>_In_   const RECT *prcClip</ld>
+      <ld>_In_   HRGN hrgnUpdate</ld>
+      <ld>_Out_  LPRECT prcUpdate</ld>
+      <ld>_In_   UINT flags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">Handle to the window where the client area is to be scrolled</par>
+     <par name="dx">
+       Specifies the amount, in device units, of horizontal scrolling. This parameter 
+       must be a negative value to scroll to the left
+     </par>
+     <par name="dy">
+       Specifies the amount, in device units, of vertical scrolling. This parameter
+       must be a negative value to scroll up
+     </par>
+     <par name="prcScroll">
+       Pointer to a RECT structure that specifies the portion of the client area to 
+       be scrolled. If this parameter is NULL, the entire client area is scrolled
+     </par>
+     <par name="prcClip">
+       Pointer to a RECT structure that contains the coordinates of the clipping 
+       rectangle. Only device bits within the clipping rectangle are affected. Bits 
+       scrolled from the outside of the rectangle to the inside are painted; bits 
+       scrolled from the inside of the rectangle to the outside are not painted. 
+       This parameter may be NULL
+     </par>
+     <par name="hrgnUpdate">
+       Handle to the region that is modified to hold the region invalidated by 
+       scrolling. This parameter may be NULL
+     </par>
+     <par name="prcUpdate">
+       Pointer to a RECT structure that receives the boundaries of the rectangle
+       invalidated by scrolling. This parameter may be NULL
+     </par>
+     <par name="flags">Specifies flags that control scrolling</par>
+     <return>
+       If the function succeeds, the return value is SIMPLEREGION (rectangular 
+       invalidated region), COMPLEXREGION (nonrectangular invalidated region; 
+       overlapping rectangles), or NULLREGION (no invalidated region).
+       If the function fails, the return value is ERROR
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="ScrollWindowEx">
+    <par loc="stack" name="hWnd" io="r" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dx" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="dy" io="r" roles="none" nr="3">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="prcScroll" io="r" nr="4">
+     <type><ptr>RECT</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:RECT"/>
+     </roles>
+    </par>
+    <par loc="stack" name="prcClip" io="r" nr="5">
+     <type><ptr>RECT</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:RECT"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hrgnUpdate" io="r" nr="6">
+     <type>HRGN</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:region"/>
+     </roles>
+    </par>
+    <par loc="stack" name="prcUpdate" io="w" nr="7" rep="hex">
+     <type><ptr>RECT</ptr></type>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:memops" rn="dst-struct:RECT"/>
+     </roles>
+    </par>
+    <par loc="stack" name="flags" roles="none" nr="8">
+     <type>UINT</type>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="scrolls the contents of a window"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

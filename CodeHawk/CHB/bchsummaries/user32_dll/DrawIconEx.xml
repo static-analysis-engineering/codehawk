@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:27:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="DrawIconEx">
+   <documentation>
+    <desc>
+      Draws an icon or cursor into the specified device context, performing 
+      the specified raster operations, and stretching or compressing the icon 
+      or cursor as specified. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI DrawIconEx(</ll>
+      <ld>_In_      HDC hdc</ld>
+      <ld>_In_      int xLeft</ld>
+      <ld>_In_      int yTop</ld>
+      <ld>_In_      HICON hIcon</ld>
+      <ld>_In_      int cxWidth</ld>
+      <ld>_In_      int cyWidth</ld>
+      <ld>_In_      UINT istepIfAniCur</ld>
+      <ld>_In_opt_  HBRUSH hbrFlickerFreeDraw</ld>
+      <ld>_In_      UINT diFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">
+       A handle to the device context into which the icon or cursor
+       will be drawn. 
+     </par>
+     <par name="xLeft">
+       The logical x-coordinate of the upper-left corner of the icon or cursor.
+     </par>
+     <par name="yTop">
+       The logical y-coordinate of the upper-left corner of the icon or cursor. 
+     </par>
+     <par name="hIcon">
+       A handle to the icon or cursor to be drawn. This parameter can
+       identify an animated cursor.
+     </par>
+     <par name="cxWidth">
+       The logical width of the icon or cursor. If this parameter is
+       zero and the diFlags parameter is DI_DEFAULTSIZE, the function
+       uses the SM_CXICON system metric value to set the width. If
+       this parameter is zero and DI_DEFAULTSIZE is not used, the
+       function uses the actual resource width.
+	</par>
+     <par name="cyWidth">
+       The logical height of the icon or cursor. If this parameter is
+       zero and the diFlags parameter is DI_DEFAULTSIZE, the function
+       uses the SM_CYICON system metric value to set the width. If
+       this parameter is zero and DI_DEFAULTSIZE is not used, the
+       function uses the actual resource height.
+	</par>
+     <par name="istepIfAniCur">
+       The index of the frame to draw, if hIcon identifies an animated
+       cursor. This parameter is ignored if hIcon does not identify an
+       animated cursor.
+     </par>
+     <par name="hbrFlickerFreeDraw">
+       A handle to a brush that the system uses for flicker-free
+       drawing. If hbrFlickerFreeDraw is a valid brush handle, the
+       system creates an offscreen bitmap using the specified brush
+       for the background color, draws the icon or cursor into the
+       bitmap, and then copies the bitmap into the device context
+       identified by hdc. If hbrFlickerFreeDraw is NULL, the system
+       draws the icon or cursor directly into the device context.
+	</par>
+     <par name="diFlags">The drawing flags.</par>
+    </apidoc>
+   </documentation>
+   <api adj="36" cc="stdcall" name="DrawIconEx">
+     <returntype>BOOL</returntype>
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="xLeft" io="r" roles="none" nr="2">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="yTop" io="r" roles="none" nr="3">
+      <type>int</type>
+    </par>
+    <par loc="stack" io="r" name="hIcon" nr="4">
+      <type>HICON</type>
+      <roles>
+	<role rt="ioc:process" rn="handle:icon" />
+      </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="cxWidth" io="r" roles="none" nr="5">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="cyWidth" io="r" roles="none" nr="6">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="istepIfAniCur" io="r" roles="none" nr="7">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" io="r" name="hbrFlickerFreeDraw" nr="8">
+     <type>HBRUSH</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:brush" />
+     </roles>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" name="diFlags" io="r" roles="none" nr="9">
+      <type>UINT</type>
+      <pre><enum-value name="drawing_flags"/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="draws an icon"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

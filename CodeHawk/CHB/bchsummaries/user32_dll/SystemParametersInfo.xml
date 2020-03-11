@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SystemParametersInfo">
+   <documentation>
+    <desc>
+      retrieves or sets the value of one of the system-wide parameters. This function can
+      also update the user profile while setting a parameter
+    </desc>
+    <remarks>
+      The required size of the buffer pointer to by pvParam is determined by the uiAction
+      parameter. For example, it should be 16 (RECT) for uiAction = 0x30, and the size of a
+      CLIENTMETRICS struct for uiAction = 0x29.
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SystemParametersInfo (</ll>
+      <ld>__in    UINT uiAction,</ld>
+      <ld>__in    UINT uiParam,</ld>
+      <ld>__inout PVOID pvParam,</ld>
+      <ld>__in    UINT fWinIni</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="uiAction">the system-wide parameter to be set or retrieved</par>
+     <par name="uiParam">
+       parameter whose usage and format depends on the system-wide parameter being
+       queried or set
+     </par>
+     <par name="pvParam">
+       parameter whose usage and format depends on the system-wide parameter being
+       queried or set
+     </par>
+     <par name="fWinIni">
+       if a system-parameter is being set, specifies whether the user profile is to
+       be updated, and if so, whether the WM_SETTINGCHANGE message is to be broadcast
+       to all top-level windows to notify them of the change. If this parameter is
+       zero, the user profile is not to be updated
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SystemParametersInfo">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="uiAction" nr="1">
+      <rep type="enum" name="system_wide_parameter_constants"/>
+     <type>UINT</type>
+     <pre><enum-value name="system_wide_parameter_constants"/></pre>
+     <roles>
+        <role rt="ioc:system" rn="infox:system parameter"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="uiParam" roles="none" nr="2">
+     <type>UINT</type>
+     <roles/>
+    </par>
+    <par loc="stack" io="rw" name="pvParam" nr="3">
+     <type><ptr>void</ptr></type>
+     <roles/>
+    </par>
+    <par loc="stack" io="r" name="fWinIni" roles="none" nr="4">
+     <type>UINT</type>
+     <roles/>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves or sets the value of a system-wide parameter"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read-null/>
+	 <type>byte</type>
+	 <ci>pvParam</ci>
+	 <runtime-value/>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+        <btype tname="void" ttag="tnamed"/>
+        <ci>pvParam</ci>
+        <runtime-value/>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

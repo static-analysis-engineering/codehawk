@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetAtomName">
+   <documentation>
+    <desc>
+      retrieves a copy of the character string associated with the specified local atom
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetAtomName (</ll>
+      <ld>__in  ATOM nAtom,</ld>
+      <ld>__out LPTSTR lpBuffer,</ld>
+      <ld>__in  int nSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nAtom">local atom that identifies the character string</par>
+     <par name="lpBuffer">character string</par>
+     <par name="nSize">size, in characters, of the buffer</par>
+     <return>
+       <rc cond="success">
+	 length of the string copied to the buffer, in characters, not including
+	 the terminating null character
+       </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetAtomName">
+     <returntype>UINT</returntype>
+     <par loc="stack" name="nAtom" io="r" nr="1">
+       <type>ATOM</type>
+       <roles>
+	 <role rt="ioc:system" rn="atom"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpBuffer" io="w" nr="2">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-string:atom"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nSize" io="r" nr="3">
+      <type>int</type>
+      <pre><non-negative/></pre>
+      <roles>
+	<role rt="size:buffersize" rn="character"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves a string associated with an atom"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>TCHAR</type>
+	 <ci>lpBuffer</ci>
+	 <apply><indexsize/><ci>nSize</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+       <positive-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	<type>TCHAR</type>
+        <ci>lpBuffer</ci>
+        <apply><indexsize/><ci>nSize</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

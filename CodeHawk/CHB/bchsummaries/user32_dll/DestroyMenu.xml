@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:25:35"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="DestroyMenu">
+   <documentation>
+    <desc>Destroys the specified menu and frees any memory that the menu occupies.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI DestroyMenu(</ll>
+      <ld>_In_  HMENU hMenu</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hMenu">A handle to the menu to be destroyed. </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DestroyMenu">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hMenu" nr="1">
+       <type>HMENU</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:menu"/>
+       </roles>
+     </par>
+   </api>
+   <semantics>
+    <external-effects/>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

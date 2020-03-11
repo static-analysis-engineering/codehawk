@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:29:12"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="EqualRect">
+   <documentation>
+     <desc>
+       determines whether the two specified rectangles are equal by 
+       comparing the coordinates of their upper-left and lower-right corners.
+     </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL EqualRect(</ll>
+      <ld>_In_  const RECT *lprc1</ld>
+      <ld>_In_  const RECT *lprc2</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       If the two rectangles are identical, the return value is nonzero.
+       If the two rectangles are not identical, the return value is zero.
+     </return>
+     <par name="lprc1">
+       Pointer to a RECT structure that contains the logical coordinates of 
+       the first rectangle.
+     </par>
+     <par name="lprc2">
+       Pointer to a RECT structure that contains the logical coordinates of
+       the second rectangle.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="EqualRect">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="lprc1" nr="1">
+       <type><ptr>RECT</ptr></type>
+       <roles>
+	 <role rt="ioc:memops" rn="src-struct:RECT" />
+       </roles>
+       <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lprc2" nr="2">
+     <type><ptr>RECT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:RECT" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

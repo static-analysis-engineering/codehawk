@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:00:18"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetKeyboardLayoutList">
+   <documentation>
+    <desc>
+      Retrieves the input locale identifiers (formerly called keyboard 
+      layout handles) corresponding to the current set of input locales 
+      in the system. The function copies the identifiers to the specified
+      buffer.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI GetKeyboardLayoutList(</ll>
+      <ld>_In_   int nBuff</ld>
+      <ld>_Out_  HKL *lpList</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	the number of input locale identifiers copied to the buffer or, if 
+	nBuff is zero, the return value is the size, in array elements, of 
+	the buffer needed to receive all current input locale identifiers
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="nBuff">The maximum number of handles that the buffer can hold. </par>
+     <par name="lpList">
+       A pointer to the buffer that receives the array of input locale identifiers.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetKeyboardLayoutList">
+     <returntype>int</returntype>
+     <par loc="stack" io="r" name="nBuff" nr="1">
+     <roles>
+      <role rt="size:buffersize" rn="GetKeyboardLayoutList" />
+     </roles>
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" io="w" name="lpList" nr="2">
+     <type><ptr>HKL</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:input locale identifiers" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves input locale identifiers"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>HKL</type>
+	    <ci>lpList</ci>
+	    <apply><indexsize/><ci>nBuff</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>HKL</type>
+	    <ci>lpList</ci>
+	    <apply><indexsize/><ci>nBuff</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

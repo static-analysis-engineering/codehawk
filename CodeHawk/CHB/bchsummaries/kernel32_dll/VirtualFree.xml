@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="VirtualFree">
+   <documentation>
+    <desc>
+      Releases, decommits, or releases and decommits a region of pages
+      within the virtual address space of the calling process
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI VirtualFree (</ll>
+      <ld>_In_ LPVOID lpAddress,</ld>
+      <ld>_In_ SIZE_T dwSize,</ld>
+      <ld>_In_ DWORD dwFreeType</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpAddress">
+       A pointer to the base address of the region of pages to be
+       freed.  If the dwFreeType parameter is MEM_RELEASE, this
+       parameter must be the base address return by the VirtualAlloc
+       function when the region of pages is reserved
+	</par>
+     <par name="dwSize">
+       The size of the region of memory to be freed, in bytes.  If the
+       dwFreeType parameter is MEM_RELEASE, this parameter must be
+       zero. The function frees the entire region that is reserved in
+       the initial allocation call to VirtualAlloc
+     </par>
+     <par name="dwFreeType">The type of the free operation</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="VirtualFree">
+      <returntype>BOOL</returntype>
+      <par loc="stack" io="r" name="lpAddress" rep="hex"  nr="1">
+	<type><ptr>VOID</ptr></type>
+	<pre>
+	  <not-null/>
+	</pre>
+	<roles>
+          <role rt="ioc:memops" rn="address:memory"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" name="dwSize" nr="2">
+	<type>SIZE_T</type>
+	<roles>
+	  <role rt="size:memory" rn="VirtualFree"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwFreeType" roles="none" nr="3">
+	<type>DWORD</type>
+      </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="releases memory"/>
+     </io-actions>
+     <preconditions>
+       <pre>
+	 <math>
+	   <apply>
+	     <not-null/>
+	     <ci>lpAddress</ci>
+	   </apply>
+	 </math>
+       </pre>
+     </preconditions>
+     <postconditions>
+       <post>
+	 <math>
+	   <apply>
+	     <neq/>
+	     <return-value/>
+	     <cn>0</cn>
+	   </apply>
+	 </math>
+       </post>
+       <error-post>
+	 <math>
+	   <apply>
+	     <eq/>
+	     <return-value/>
+	     <cn>0</cn>
+	   </apply>
+	 </math>
+       </error-post>
+     </postconditions>
+     <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

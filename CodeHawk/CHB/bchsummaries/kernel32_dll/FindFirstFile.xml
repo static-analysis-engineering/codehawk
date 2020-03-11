@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="FindFirstFile">
+   <documentation>
+    <desc>
+      searches a directory for a file or subdirectory with a name that 
+      matches a specific name
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI FindFirstFile (</ll>
+      <ld>__in  LPCTSTR lpFileName,</ld>
+      <ld>__out LPWIN32_FIND_DATA lpFindFileData</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpFileName">directory or path, and the file name, cannot be NULL</par>
+     <par name="lpFindFileData">
+       pointer to a WIN32_FIND_DATA structure that receives information about
+       a found file or directory
+     </par>
+     <return>
+      <rc cond="success">search handle to be used in a call to FindNextFile or FindClose</rc>
+      <rc cond="failure">INVALID_HANDLE_VALUE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="FindFirstFile">
+     <returntype>HANDLE</returntype>
+    <par loc="stack" io="r" name="lpFileName" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpFindFileData" nr="2" rep="hex">
+       <type><ptr>WIN32_FIND_DATA</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+       <roles>
+          <role rt="ioc:memops" rn="dst-struct:win32-find-data"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="searches a directory for a specific name"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

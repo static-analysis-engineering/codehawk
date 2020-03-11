@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/02/2015 14:21:31"/>
+  <libfun lib="kernel32" name="GetFileInformationByHandle">
+   <documentation>
+    <desc>Retrieves file information for the specified file</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetFileInformationByHandle(</ll>
+      <ld>_In_   HANDLE hFile</ld>
+      <ld>_Out_  LPBY_HANDLE_FILE_INFORMATION lpFileInformation</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       A handle to the file that contains the information to be retrieved.
+       This handle should not be a pipe handle
+     </par>
+     <par name="lpFileInformation">
+       A pointer to a BY_HANDLE_FILE_INFORMATION structure that receives the 
+       file information
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetFileInformationByHandle">
+    <par loc="stack" name="hFile" io="r" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="handle:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpFileInformation" io="w" nr="2">
+     <type><ptr>BY_HANDLE_FILE_INFORMATION</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:file information"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="retrieves file information"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

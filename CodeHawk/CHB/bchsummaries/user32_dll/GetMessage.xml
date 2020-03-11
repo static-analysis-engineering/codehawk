@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetMessage">
+   <documentation>
+    <desc>retrieves a message from the calling thread&apos;s message queue</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetMessage (</ll>
+      <ld>__out    LPMSG lpMsg,</ld>
+      <ld>__in_opt HWND hWnd,</ld>
+      <ld>__in     UINT sMsgFilterMin,</ld>
+      <ld>__in     UINT wMsgFilterMax</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpMsg">
+          pointer to an MSG structure that receives message information from the thread&apos;s
+	  message queue
+	</par>
+     <par name="hWnd">handle to the window whose messages are to be retrieved</par>
+     <par name="wMsgFilterMin">integer value of the lowest message value to be retrieved</par>
+     <par name="sMsgFilterMax">integer value of the highest message value to be retrieved</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="it retrieves WM_QUIT">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetMessage">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="w" name="lpMsg" nr="1">
+       <type><ptr>MSG</ptr></type>
+       <pre><deref-write/></pre>
+       <sideeffects><block-write/></sideeffects>
+       <roles>
+         <role rt="ioc:memops" rn="dst-struct:msg"/>
+	 <role rt="rep:hex" rn="dst-struct"/>
+       </roles>
+     </par>
+    <par loc="stack" io="r" name="hWnd" nr="2">
+     <type>HWND</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="wMsgFilterMin" roles="none" nr="3">
+       <type>UINT</type>
+    </par>
+    <par loc="stack" io="r" name="wMsgFilterMax" roles="none" nr="4">
+     <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves a message from the thread message queue"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

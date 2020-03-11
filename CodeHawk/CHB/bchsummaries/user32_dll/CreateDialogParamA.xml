@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="04/04/2015 21:23:33"/>
+  <libfun lib="user32" name="CreateDialogParamA">
+   <refer-to char-type="ansi" name="CreateDialogParam"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

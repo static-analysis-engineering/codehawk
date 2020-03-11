@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="TlsSetValue">
+   <documentation>
+    <desc>stores a value in the calling thread&apos;s local storage</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI TlsSetValue (</ll>
+      <ld>__in     DWORD dwTlsIndex,</ld>
+      <ld>__in_opt LPVOID lpTlsValue</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwTlsIndex">index that was allocated by the TlsAlloc function</par>
+     <par name="lpTlsValue">value to be stored; can be NULL</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="TlsSetValue">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="dwTlsIndex" nr="1">
+      <type>DWORD</type>
+      <roles>
+         <role rt="ioc:process" rn="TLS index"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpTlsValue" nr="2">
+      <type><ptr>VOID</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:process" rn="TLS value"/>
+        <role rt="rep:hex" rn="TLS value"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="process" desc="sets TLS value"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

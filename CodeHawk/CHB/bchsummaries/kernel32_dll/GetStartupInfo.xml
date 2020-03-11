@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetStartupInfo">
+   <documentation>
+    <desc>
+      retrieves the contents of the STARTUPINFO structure that was specified
+      when the calling process was created
+    </desc>
+    <apidoc>
+      <pt>VOID WINAPI GetStartupInfo ( __out LPSTARTUPINFO lpStartupInfo )</pt>
+     <par name="lpStartupInfo">
+       pointer to a STARTUPINFO structure that receives the startup information
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetStartupInfo">
+    <returnbtype tname="void" ttag="tnamed"/>
+    <par loc="stack" io="w" name="lpStartupInfo" nr="1">
+      <type><ptr>STARTUPINFO</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:process" rn="startup info"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves the process STARTUPINFO structure"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/03/2015 09:44:35"/>
+  <libfun lib="kernel32" name="GetSystemFirmwareTable">
+   <documentation>
+    <desc>Retrieves the specified firmware table from the firmware table provider</desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetSystemFirmwareTable(</ll>
+      <ld>_In_  DWORD FirmwareTableProviderSignature</ld>
+      <ld>_In_  DWORD FirmwareTableID</ld>
+      <ld>_Out_ PVOID pFirmwareTableBuffer</ld>
+      <ld>_In_  DWORD BufferSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="FirmwareTableProviderSignature">
+       The identifier of the firmware table provider to which the query is 
+       to be directed
+     </par>
+     <par name="FirmwareTableID">
+       The identifier of the firmware table. This identifier is little endian, 
+       you must reverse the characters in the string.
+       For example, FACP is an ACPI provider, as described in the Signature 
+       field of the DESCRIPTION_HEADER structure in the ACPI specification 
+       (see http://www.acpi.info). Therefore, use 'PCAF' to specify the FACP
+       table, as shown in the following example:
+       retVal = GetSystemFirmwareTable('ACPI', 'PCAF', pBuffer, BUFSIZE);
+     </par>
+     <par name="pFirmwareTableBuffer">
+       A pointer to a buffer that receives the requested firmware table. If this
+       parameter is NULL, the return value is the required buffer size.
+     </par>
+     <par name="BufferSize">The size of the pFirmwareTableBuffer buffer, in bytes</par>
+     <return>
+      <rc cond="success">
+	the number of bytes written to the buffer or the required buffersize in bytes
+	if the buffer is not large enough
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetSystemFirmwareTable">
+    <par loc="stack" io="r" name="FirmwareTableProviderSignature" nr="1">
+     <rep type="enum" name="firmware_table_provider_identifiers"/>
+     <type>DWORD</type>
+     <pre><enum-value name="firmware_table_provider_identifiers"/></pre>
+     <roles>
+       <role rt="ioc:system" rn="firmware table provider signature"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="FirmwareTableID" nr="2">
+     <type>DWORD</type>
+     <roles>
+       <role rt="ioc:system" rn="id:firmware table"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="pFirmwareTableBuffer" nr="3" rep="hex">
+     <type><ptr>void</ptr></type>
+     <roles>
+       <role rt="ioc:system" rn="infox:firmware table"/>
+     </roles>
+    </par>
+    <par loc="stack" name="BufferSize" nr="4">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="GetSystemFirmwareTable"/>
+     </roles>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves a firmware table"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>byte</type>
+	    <ci>pFirmwareTableBuffer</ci>
+	    <ci>BufferSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="system" xdata="firmware table"/>
+	    <type>byte</type>
+	    <ci>pFirmwareTableBuffer</ci>
+	    <ci>BufferSize</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

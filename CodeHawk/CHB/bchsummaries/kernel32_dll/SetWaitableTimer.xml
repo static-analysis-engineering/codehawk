@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-12-24 16:18:50"/>
+  <libfun lib="kernel32" name="SetWaitableTimer">
+    <documentation>
+      <desc>
+	Activates the specified waitable timer. When the due time
+	arrives, the timer is signaled and the thread that set the
+	timer calls the optional completion routine.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL SetWaitableTimer(</ll>
+          <ld>HANDLE              hTimer</ld>
+          <ld>const LARGE_INTEGER *lpDueTime</ld>
+          <ld>LONG                lPeriod</ld>
+          <ld>PTIMERAPCROUTINE    pfnCompletionRoutine</ld>
+          <ld>LPVOID              lpArgToCompletionRoutine</ld>
+          <ld>BOOL                fResume</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hTimer">
+	  A handle to the timer object. The CreateWaitableTimer or
+	  OpenWaitableTimer function returns this handle.
+	</par>
+        <par name="lpDueTime">
+	  The time after which the state of the timer is to be set to
+	  signaled, in 100 nanosecond intervals. Use the format
+	  described by the FILETIME structure. Positive values
+	  indicate absolute time. Be sure to use a UTC-based absolute
+	  time, as the system uses UTC-based time internally. Negative
+	  values indicate relative time. The actual timer accuracy
+	  depends on the capability of your hardware. For more
+	  information about UTC-based time
+	</par>
+        <par name="lPeriod">
+	  The period of the timer, in milliseconds. If lPeriod is
+	  zero, the timer is signaled once. If lPeriod is greater than
+	  zero, the timer is periodic. A periodic timer automatically
+	  reactivates each time the period elapses, until the timer is
+	  canceled using the CancelWaitableTimer function or reset
+	  using SetWaitableTimer. If lPeriod is less than zero, the
+	  function fails.
+	</par>
+        <par name="pfnCompletionRoutine">
+	  A pointer to an optional completion routine. The completion
+	  routine is application-defined function of type
+	  PTIMERAPCROUTINE to be executed when the timer is
+	  signaled. For more information on the timer callback
+	  function, see TimerAPCProc. For more information about APCs
+	  and thread pool threads
+	</par>
+        <par name="lpArgToCompletionRoutine">
+	  A pointer to a structure that is passed to the completion routine.
+	</par>
+        <par name="fResume">
+	  If this parameter is TRUE, restores a system in suspended
+	  power conservation mode when the timer state is set to
+	  signaled. Otherwise, the system is not restored.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="24" cc="stdcall" name="SetWaitableTimer">
+      <par loc="stack" io="r" name="hTimer" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="synchronization" rn="handle:timer"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" name="lpDueTime" nr="2">
+        <type><ptr>LARGE_INTEGER</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="synchronization" rn="timeout"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" name="lPeriod" nr="3">
+        <type>LONG</type>
+	<roles>
+	  <role rt="synchronization" rn="period"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pfnCompletionRoutine" nr="4">
+        <type><ptr>TIMERAPCROUTINE</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="lpArgToCompletionRoutine" nr="5">
+        <type><ptr>void</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="fResume" nr="6">
+        <type>BOOL</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

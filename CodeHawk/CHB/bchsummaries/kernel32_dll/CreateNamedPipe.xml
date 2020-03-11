@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:05:14"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CreateNamedPipe">
+   <documentation>
+    <desc>
+      Creates an instance of a named pipe and returns a handle for subsequent 
+      pipe operations. A named pipe server process uses this function either 
+      to create the first instance of a specific named pipe and establish 
+      its basic attributes or to create a new instance of an existing named pipe.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI CreateNamedPipeA(</ll>
+      <ld>_In_      LPCTSTR lpName </ld>
+      <ld>_In_      DWORD dwOpenMode </ld>
+      <ld>_In_      DWORD dwPipeMode </ld>
+      <ld>_In_      DWORD nMaxInstances </ld>
+      <ld>_In_      DWORD nOutBufferSize </ld>
+      <ld>_In_      DWORD nInBufferSize </ld>
+      <ld>_In_      DWORD nDefaultTimeOut </ld>
+      <ld>_In_opt_  LPSECURITY_ATTRIBUTES lpSecurityAttributes </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">Handle to the server end of a named pipe instance</rc>
+      <rc cond="failure">INVALID_HANDLE_VALUE</rc>
+     </return>
+     <par name="lpName">The unique pipe name.</par>
+     <par name="dwOpenMode">
+       The open mode. The function fails if dwOpenMode specifies anything other 
+       than 0 or a Pipe Access Flag.
+     </par>
+     <par name="dwPipeMode">
+       The pipe mode. The function fails if dwPipeMode specifies anything other 
+       than 0 or a Pipe Type Flag
+     </par>
+     <par name="nMaxInstances">
+       The maximum number of instances that can be created for this pipe. 
+       The first instance of the pipe can specify this value; the same
+       number must be specified for other instances of the pipe. Acceptable 
+       values are in the range 1 through PIPE_UNLIMITED_INSTANCES (255). 
+     </par>
+     <par name="nOutBufferSize">
+       The number of bytes to reserve for the output buffer.
+     </par>
+     <par name="nInBufferSize">The number of bytes to reserve for the input buffer.</par>
+     <par name="nDefaultTimeOut">
+       The default time-out value, in milliseconds, if the WaitNamedPipe function 
+       specifies NMPWAIT_USE_DEFAULT_WAIT. Each instance of a named pipe must 
+       specify the same value.
+     </par>
+     <par name="lpSecurityAttributes">
+       A pointer to a SECURITY_ATTRIBUTES structure that specifies a security 
+       descriptor for the new named pipe and determines whether child processes 
+       can inherit the returned handle. If lpSecurityAttributes is NULL, the 
+       named pipe gets a default security descriptor and the handle cannot be inherited.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="CreateNamedPipe">
+     <returntype>HANDLE</returntype>
+     <par loc="stack" io="r" name="lpName" rep="hex" nr="1">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:pipe"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwOpenMode" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwPipeMode" roles="none" nr="3">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="nMaxInstances" nr="4">
+      <type>DWORD</type>
+      <roles>
+         <role rt="size:count" rn="max number of pipe instances"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nOutBufferSize" nr="5">
+      <type>DWORD</type>
+      <roles>
+         <role rt="size:buffersize" rn="output buffer"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nInBufferSize" nr="6">
+      <type>DWORD</type>
+      <roles>
+         <role rt="size:buffersize" rn="input buffer"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nDefaultTimeOut" nr="7">
+      <type>DWORD</type>
+      <roles>
+         <role rt="ioc:process" rn="timeout:pipe"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpSecurityAttributes" roles="none" nr="8">
+      <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+     <pre><deref-read-null/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="creates a named pipe"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

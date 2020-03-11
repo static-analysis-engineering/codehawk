@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetProcessHeaps.xml" time="2016-03-06 11:20:12.937475"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="GetProcessHeaps" lib="kernel32">
+    <documentation>
+      <desc>
+	Returns the number of active heaps and retrieves handles to
+	all of the active heaps for the calling process
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>DWORD WINAPI GetProcessHeaps(</ll>
+          <ld>_In_  DWORD   NumberOfHeaps</ld>
+          <ld>_Out_ PHANDLE ProcessHeaps</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="NumberOfHeaps">
+	  The maximum number of heap handles that can be stored into
+	  the buffer pointed to by ProcessHeaps.
+	</par>
+        <par name="ProcessHeaps">
+	  A pointer to a buffer that receives an array of heap handles
+	</par>
+        <return>
+          <rc cond="success">
+	    the number of handles to heaps that are active for the calling process
+	  </rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="8" name="GetProcessHeaps">
+      <par loc="stack" io="r" nr="1" name="NumberOfHeaps">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:buffersize" rn="GetProcessHeaps"/>
+	</roles>
+      </par>
+      <par loc="stack" io="w" nr="2" name="ProcessHeaps">
+        <type><ptr>HANDLE</ptr></type>
+	<roles>
+	  <role rt="ioc:process" rn="heap handles"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="retrieves handles to active heaps"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>HANDLE</type>
+	      <ci>ProcessHeaps</ci>
+	      <apply><indexsize/><ci>NumberOfHeaps</ci></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+        <positive-zero/>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>HANDLE</type>
+	      <ci>ProcessHeaps</ci>
+	      <apply><indexsize/><ci>NumberOfHeaps</ci></apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

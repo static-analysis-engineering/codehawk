@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-09-12 22:14:40"/>
+  <libfun lib="kernel32" name="InterlockedFlushSList">
+    <documentation>
+      <desc>
+	Removes all items from a singly linked list. Access to the list is
+	synchronized on a multiprocessor system
+      </desc>
+      <apidoc>
+        <pt>PSLIST_ENTRY InterlockedFlushSList (PSLIST_HEADER ListHead)</pt>
+        <par name="ListHead">
+	  Pointer to an SLIST_HEADER structure that represents the head of the
+	  singly linked list. This structure is for system use only.
+	</par>
+        <return>
+          <rc cond="success">
+	    The return value is a pointer to the items removed from the list
+	  </rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="InterlockedFlushSList">
+      <par loc="stack" name="ListHead" nr="1">
+        <type><ptr>SLIST_ENTRY</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="list header"/>
+	</roles>
+      </par>
+      <returntype><ptr>SLIST_ENTRY</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+		   desc="Removes all items from a singly linked list"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

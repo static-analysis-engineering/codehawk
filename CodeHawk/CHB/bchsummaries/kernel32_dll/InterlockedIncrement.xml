@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="InterlockedIncrement">
+   <documentation>
+    <desc>
+      increments the value of the specified 32 bit variable as an atomic operation
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG __cdecl InterlockedIncrement (</ll>
+      <ld>__inout LONG volatile *Addend</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Addend">pointer to the value to be incremented</par>
+     <return>resulting incremented value</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="InterlockedIncrement">
+     <returntype>LONG</returntype>
+     <par loc="stack" io="rw" name="Addend" nr="1" rep="hex">
+      <type><ptr>LONG</ptr></type>
+      <pre><deref-read/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:synchronization" rn="synchronized variable"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization"
+		  desc="increments a value as an atomic operation"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <eq/>
+        <return-value/>
+        <apply>
+         <plus/>
+         <apply>
+          <addressed-value/>
+          <ci>Addend</ci>
+	  <cn>0</cn>
+         </apply>
+         <cn>1</cn>
+        </apply>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

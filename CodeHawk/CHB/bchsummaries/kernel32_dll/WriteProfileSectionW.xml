@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="03/05/2015 16:50:04"/>
+  <libfun lib="kernel32" name="WriteProfileSectionW">
+   <refer-to char-type="unicode" name="WriteProfileSection"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

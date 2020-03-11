@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="TranslateMessage">
+   <documentation>
+    <desc>
+      translates virtual-key messages into character messages.
+      The character messages are posted to the calling thread's message 
+      queue, to be read the next time the thread calls the GetMessage 
+      or PeekMessage function.
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI TranslateMessage ( __in const MSG *lpMsg )</pt>
+     <par name="lpMsg">
+       pointer to an MSG structure that contains message information retrieved
+       from the calling thread&apos;s message queue
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="TranslateMessage">
+     <returntype>BOOL</returntype>
+    <par loc="stack" name="lpMsg" nr="1" rep="hex">
+      <type><ptr>MSG</ptr></type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:memops" rn="src-struct:msg"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="translates virtual-key messages into character messages"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

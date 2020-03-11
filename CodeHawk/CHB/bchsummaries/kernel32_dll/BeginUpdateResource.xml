@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:05:28"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="BeginUpdateResource">
+   <documentation>
+    <desc>
+      Retrieves a handle that can be used by the UpdateResource function to 
+      add, delete, or replace resources in a binary module.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI BeginUpdateResourceA(</ll>
+      <ld>_In_  LPCTSTR pFileName </ld>
+      <ld>_In_  BOOL bDeleteExistingResources </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="pFileName">
+       The binary file in which to update resources. An application must be 
+       able to obtain write-access to this file; the file referenced by pFileName 
+       cannot be currently executing. If pFileName does not specify a full path, 
+       the system searches for the file in the current directory. 
+     </par>
+     <par name="bDeleteExistingResources">
+       Indicates whether to delete the pFileName parameter&apos;s existing 
+       resources. If this parameter is TRUE, existing resources are deleted and 
+       the updated file includes only resources added with the UpdateResource 
+       function. If this parameter is FALSE, the updated file includes existing
+       resources unless they are explicitly deleted or replaced by using 
+       UpdateResource. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="BeginUpdateResource">
+     <returntype>HANDLE</returntype>
+    <par loc="stack" name="pFileName" io="r" rep="hex" nr="1">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="bDeleteExistingResources" io="r" roles="none" nr="2">
+      <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves a handle to a binary resource"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

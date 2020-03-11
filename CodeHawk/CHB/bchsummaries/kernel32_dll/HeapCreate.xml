@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="HeapCreate">
+   <documentation>
+    <desc>creates a private heap object that can be used by the calling process</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI HeapCreate (</ll>
+      <ld>__in DWORD flOptions</ld>
+      <ld>__in SIZE_T dwInitialSize</ld>
+      <ld>__in SIZE_T dwMaximumSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="flOptions">heap allocation options</par>
+     <par name="dwSize">initial size of the heap in bytes</par>
+     <par name="dwMaximumSize">maximum size of the heap in bytes</par>
+     <return>
+      <rc cond="success">handle to the newly created heap</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="HeapCreate">
+     <returntype>HANDLE</returntype>
+    <par loc="stack" io="r" name="flOptions" nr="1" roles="none">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwInitialSize" nr="2">
+     <type>SIZE_T</type>
+     <roles>
+        <role rt="ioc:memops" rn="size:allocation"/>
+        <role rt="size:allocation" rn="HeapCreate"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwMaximumSize" nr="3">
+     <type>SIZE_T</type>
+     <roles>
+        <role rt="ioc:memops" rn="size:allocation"/>
+        <role rt="size:allocation" rn="HeapCreate"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="creates a private heap object"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

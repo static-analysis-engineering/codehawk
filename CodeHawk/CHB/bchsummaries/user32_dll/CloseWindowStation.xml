@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/06/2015 17:27:30"/>
+  <libfun lib="user32" name="CloseWindowStation">
+   <documentation>
+    <desc>Closes an open window station handle</desc>
+    <apidoc>
+     <pt>BOOL WINAPI CloseWindowStation (_In_ HWINSTA hWinSta)</pt>
+     <par name="hWinSta">
+       A handle to the window station to be closed. This handle is returned by the 
+       CreateWindowStation or OpenWindowStation function. Do not specify the handle
+       returned by the GetProcessWindowStation function.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CloseWindowStation">
+    <par loc="stack" name="hWinSta" io="r" rep="hex" nr="1">
+     <type>HWINSTA</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:window station"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="closes an open window station handle"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

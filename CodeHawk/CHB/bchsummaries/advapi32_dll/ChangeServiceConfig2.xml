@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 13:30:42"/>
+  <libfun lib="advapi32" name="ChangeServiceConfig2">
+   <documentation>
+    <desc>Changes the optional configuration parameters of a service</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI ChangeServiceConfig2(</ll>
+      <ld>_In_     SC_HANDLE hService</ld>
+      <ld>_In_     DWORD     dwInfoLevel</ld>
+      <ld>_In_opt_ LPVOID    lpInfo</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hService">
+       A handle to the service. This handle is returned by the OpenService or 
+       CreateService function and must have the SERVICE_CHANGE_CONFIG access right
+       If the service controller handles the SC_ACTION_RESTART action, hService must 
+       have the SERVICE_START access right
+     </par>
+     <par name="dwInfoLevel">
+       The configuration information to be changed
+     </par>
+     <par name="lpInfo">
+       A pointer to the new value to be set for the configuration information. The 
+       format of this data depends on the value of the dwInfoLevel parameter. If 
+       this value is NULL, the information remains unchanged.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="ChangeServiceConfig2">
+    <par loc="stack" io="r" name="hService" nr="1">
+     <type>SC_HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:services" rn="handle:service"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwInfoLevel" roles="none" nr="2">
+      <rep type="enum" name="service_config_constants"/>
+     <type>DWORD</type>
+     <pre><enum-value name="service_config_constants"/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpInfo" nr="3">
+     <type><ptr>byte</ptr></type>
+     <roles>
+        <role rt="ioc:services" rn="service info"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="services" desc="changes service configuration"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/27/2015 23:17:01"/>
+  <libfun lib="kernel32" name="FindResourceEx">
+   <documentation>
+    <desc>
+      Determines the location of the resource with the specified type, 
+      name, and language in the specified module.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HRSRC WINAPI FindResourceEx(</ll>
+      <ld>_In_opt_ HMODULE hModule</ld>
+      <ld>_In_     LPCTSTR lpType</ld>
+      <ld>_In_     LPCTSTR lpName</ld>
+      <ld>_In_     WORD    wLanguage</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hModule">
+       A handle to the module whose portable executable file or an 
+       accompanying MUI file contains the resource. If this parameter
+       is NULL, the function searches the module used to create the
+       current process
+     </par>
+     <par name="lpType">
+       The resource type. Alternately, rather than a pointer, this parameter
+       can be MAKEINTRESOURCE(ID), where ID is the integer identifier of the 
+       given resource type
+     </par>
+     <par name="lpName">
+       The name of the resource. Alternately, rather than a pointer, this 
+       parameter can be MAKEINTRESOURCE(ID), where ID is the integer identifier
+       of the resource
+     </par>
+     <par name="wLanguage">
+       The language of the resource. If this parameter is
+       MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL), the current language 
+       associated with the calling thread is used.
+       To specify a language other than the current language, use the
+       MAKELANGID macro to create this parameter
+     </par>
+     <return>
+      <rc cond="success">
+	a handle to the specified resource's information block 
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="FindResourceEx">
+    <par loc="stack" name="hModule" io="r" nr="1">
+     <type>HMODULE</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:module"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpType" io="r" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:process" rn="type:resource"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpName" io="r" nr="3" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:process" rn="name:resource"/>
+     </roles>
+    </par>
+    <par loc="stack" name="wLanguage" io="r" roles="none" nr="4">
+     <type>WORD</type>
+    </par>
+    <returntype>HRSRC</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="determines the location of a resource"/>
+       </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

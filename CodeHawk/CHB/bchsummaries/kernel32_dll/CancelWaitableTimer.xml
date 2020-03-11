@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CancelWaitableTimer.xml" time="2016-10-28 22:30:16.448509"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="CancelWaitableTimer">
+    <documentation>
+      <desc>Sets the specified waitable timer to the inactive state</desc>
+      <apidoc>
+        <pt>BOOL WINAPI CancelWaitableTimer (_In_ HANDLE hTimer)</pt>
+        <par name="hTimer">
+	  A handle to the timer object. The CreateWaitableTimer or
+	  OpenWaitableTimer function returns this handle. The handle
+	  must have the TIMER_MODIFY_STATE access right. For more
+	  information, see Synchronization Object Security and Access
+	  Rights.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="CancelWaitableTimer">
+      <par loc="stack" io="r" name="hTimer" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:synchronization" rn="handle:timer"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="synchronization"
+		   desc="sets a waitable timer to the inactive state"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

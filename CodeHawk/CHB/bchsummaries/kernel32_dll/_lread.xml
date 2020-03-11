@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="_lread.xml" time="2016-08-12 22:08:37.943621"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="_lread">
+    <documentation>
+      <desc>
+	reads data from the specified file. This function is provided
+	for compatibility with 16-bit versions of Windows. Win32-based
+	applications should use the ReadFile function
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>UINT WINAPI _lread(</ll>
+          <ld>HFILE  hFile</ld>
+          <ld>LPVOID lpBuffer</ld>
+          <ld>UINT   uBytes</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hFile">Identifies the specified file</par>
+        <par name="lpBuffer">
+	  Pointer to a buffer that contains the data read from the file
+	</par>
+        <par name="uBytes">
+	  Specifies the number of bytes to be read from the file
+	</par>
+        <return>
+	  indicates the number of bytes actually read from the file. If the
+	  number of bytes read is less than uBytes, the function has reached the
+	  end of file (EOF) before reading the specified number of bytes.
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="_lread">
+      <par loc="stack" name="hFile" io="r" nr="1">
+        <type>HFILE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="handle:file"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpBuffer" io="w" nr="2" rep="hex">
+        <type><ptr>void</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-bytes:file input"/>
+	</roles>
+      </par>
+      <par loc="stack" name="uBytes" io="r" nr="3">
+        <type>UINT</type>
+	<roles>
+	  <role rt="size:buffersize" rn="_lread"/>
+	</roles>
+      </par>
+      <returntype>UINT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="reads from a file"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>byte</type>
+	      <ci>lpBuffer</ci>
+	      <ci>uBytes</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>byte</type>
+	      <ci>lpBuffer</ci>
+	      <ci>uBytes</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

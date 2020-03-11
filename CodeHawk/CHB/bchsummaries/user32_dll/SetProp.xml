@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:21:40"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetProp">
+   <documentation>
+    <desc>
+      Adds a new entry or changes an existing entry in the property list of the 
+      specified window. The function adds a new entry to the list if the specified 
+      character string does not exist already in the list.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetPropA(</ll>
+      <ld>_In_      HWND hWnd </ld>
+      <ld>_In_      LPCTSTR lpString </ld>
+      <ld>_In_opt_  HANDLE hData </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hWnd">
+       A handle to the window whose property list receives the new entry. 
+     </par>
+     <par name="lpString">
+       A null-terminated string or an atom that identifies a string
+     </par>
+     <par name="hData">
+       A handle to the data to be copied to the property list. The data handle can 
+       identify any value useful to the application. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SetProp">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hWnd" io="r" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpString" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="name:window property"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hData" nr="3" io="r">
+      <type>HANDLE</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:data"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" 
+		  desc="adds or changes an entry in a window property list"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

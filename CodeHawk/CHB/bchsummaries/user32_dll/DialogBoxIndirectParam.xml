@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:26:13"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="DialogBoxIndirectParam">
+   <documentation>
+    <desc>
+      Creates a modal dialog box from a dialog box template in memory. Before 
+      displaying the dialog box, the function passes an application-defined 
+      value to the dialog box procedure as the lParam parameter of the
+      WM_INITDIALOG message.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>INT_PTR WINAPI DialogBoxIndirectparam (</ll>
+      <ld>_In_opt_  HINSTANCE hInstance</ld>
+      <ld>_In_      LPCDLGTEMPLATE hDialogTemplate</ld>
+      <ld>_In_opt_  HWND hWndParent</ld>
+      <ld>_In_opt_  DLGPROC lpDialogFunc</ld>
+      <ld>_In_      LPARAM dwInitParam</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">not zero or negative one</rc>
+      <rc cond="failure">zero or negative one</rc>
+     </return>
+     <par name="hInstance">A handle to the module that creates the dialog box. </par>
+     <par name="hDialogTemplate">
+       The template that DialogBoxIndirectParam uses to create the dialog box. 
+       A dialog box template consists of a header that describes the dialog box, 
+       followed by one or more additional blocks of data that describe each of 
+       the controls in the dialog box. The template can use either the standard 
+       format or the extended format. 
+     </par>
+     <par name="hWndParent">A handle to the window that owns the dialog box. </par>
+     <par name="lpDialogFunc">A pointer to the dialog box procedure.</par>
+     <par name="dwInitParam">
+       The value to pass to the dialog box in the lParam parameter of the 
+       WM_INITDIALOG message. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="DialogBoxIndirectParam">
+     <returntype>INT_PTR</returntype>
+     <par loc="stack" name="hInstance" io="r" nr="1">
+       <type>HINSTANCE</type>
+       <pre><deref-read-null/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:module"/>
+       </roles>
+    </par>
+    <par loc="stack" io="r" name="hDialogTemplate" nr="2" rep="hex">
+     <type><ptr>DLGTEMPLATE</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:DLGTEMPLATE" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="hWndParent" io="r" nr="3">
+      <type>HWND</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpDialogFunc" io="r" nr="4" rep="hex">
+      <type>DLGPROC</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="callbackf:dialog"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwInitParam" io="r" nr="5">
+      <type>LPARAM</type>
+      <roles>
+	<role rt="ioc:process" rn="callbackp:dialog"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="creates a dialog box"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <neq/>
+        <return-value/>
+        <cn>0</cn>
+       </apply>
+      </math>
+     </post>
+     <post>
+      <math>
+       <apply>
+        <neq/>
+        <return-value/>
+        <cn>-1</cn>
+       </apply>
+      </math>
+     </post>
+     <error-post>
+       <math><apply><eq/><return/><cn>-1</cn></apply></math>
+     </error-post>
+     <error-post>
+       <math><apply><eq/><return/><cn>0</cn></apply></math>
+     </error-post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

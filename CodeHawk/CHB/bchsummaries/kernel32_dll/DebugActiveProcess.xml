@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="DebugActiveProcess.xml" time="2016-08-07 15:36:59.609827"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="DebugActiveProcess">
+    <documentation>
+      <desc>Enables a debugger to attach to an active process and debug it</desc>
+      <apidoc>
+        <pt>BOOL WINAPI DebugActiveProcess (_In_ DWORD dwProcessId)</pt>
+        <par name="dwProcessId">
+	  The identifier for the process to be debugged. The debugger
+	  is granted debugging access to the process as if it created
+	  the process with the DEBUG_ONLY_THIS_PROCESS flag
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="DebugActiveProcess">
+      <par loc="stack" name="dwProcessId" io="r" nr="1">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:process" rn="id:process"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+		   desc="enables a debugger to attach to an active process"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

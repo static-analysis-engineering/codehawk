@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/29/2015 16:48:35"/>
+  <libfun lib="user32" name="OemToChar">
+   <documentation>
+    <desc>
+      Translates a string from the OEM-defined character set into either an ANSI 
+      or a wide-character string
+    </desc>
+    <remarks>
+      Using this function incorrectly can compromise the security of your application
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI OemToChar(</ll>
+      <ld>_In_  LPCSTR lpszSrc</ld>
+      <ld>_Out_ LPTSTR lpszDst</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszSrc">
+       A null-terminated string of characters from the OEM-defined character set
+     </par>
+     <par name="lpszDst">
+       The destination buffer, which receives the translated string. If the OemToChar 
+       function is being used as an ANSI function, the string can be translated in 
+       place by setting the lpszDst parameter to the same address as the lpszSrc 
+       parameter. This cannot be done if OemToChar is being used as a wide-character 
+       function
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="OemToChar">
+    <par loc="stack" io="r" name="lpszSrc" nr="1" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:memops" rn="src-string:convert" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpszDst" nr="2" rep="hex">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-string:convert" />
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="converts an OEM-string into ANSI"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszDst</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszDst</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

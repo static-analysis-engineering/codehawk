@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:28:42"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="EnumThreadWindows">
+   <documentation>
+    <desc>
+      Enumerates all nonchild windows associated with a thread by passing the 
+      handle to each window, in turn, to an application-defined callback function.
+      EnumThreadWindows continues until the last window is enumerated or the 
+      callback function returns FALSE. To enumerate child windows of a particular
+      window, use the EnumChildWindows function. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI EnumThreadWindows(</ll>
+      <ld>_In_  DWORD dwThreadId</ld>
+      <ld>_In_  WNDENUMPROC lpfn</ld>
+      <ld>_In_  LPARAM lParam</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       <rc cond="success">nonzero</rc>
+       <rc cond="failure">zero</rc>
+     </return>
+     <par name="dwThreadId">
+       The identifier of the thread whose windows are to be enumerated.
+     </par>
+     <par name="lpfn">A pointer to an application-defined callback function.</par>
+     <par name="lParam">
+       An application-defined value to be passed to the callback function.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="EnumThreadWindows">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="dwThreadId" nr="1">
+       <type>UINT</type>
+       <roles>
+	 <role rt="ioc:process" rn="id:thread" />
+       </roles>
+    </par>
+    <par loc="stack" io="r" name="lpfn" nr="2">
+     <type>WNDENUMPROC</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackf:window" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lParam" nr="3">
+     <roles>
+      <role rt="ioc:process" rn="callbackp:lparam" />
+     </roles>
+     <btype tname="LPARAM" ttag="tnamed"/>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="enumerates nonchild windows associated with a thread"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

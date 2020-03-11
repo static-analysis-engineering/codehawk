@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="EncodePointer">
+   <documentation>
+    <desc>encodes the specified pointer</desc>
+    <apidoc>
+     <pt>PVOID EncodePointer ( __in PVOID ptr )</pt>
+     <par name="ptr">pointer to be encoded</par>
+     <return>encoded pointer</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="EncodePointer">
+    <returntype><ptr>void</ptr></returntype>
+    <par loc="stack" io="r" name="ptr" nr="1" rep="hex">
+     <type><ptr>VOID</ptr></type>
+     <roles>
+        <role rt="ioc:process" rn="encoding:plain pointer"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="encodes a pointer"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+ </codehawk-binary-analyzer>

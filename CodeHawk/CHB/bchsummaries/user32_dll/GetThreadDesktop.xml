@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/16/2015 20:43:31"/>
+  <libfun lib="user32" name="GetThreadDesktop">
+   <documentation>
+    <desc>
+      Retrieves a handle to the desktop assigned to the specified thread
+    </desc>
+    <apidoc>
+     <pt>HDESK WINAPI GetThreadDesktop (_In_  DWORD dwThreadId)</pt>
+     <par name="dwThreadId">
+       The thread identifier. The GetCurrentThreadId and CreateProcess functions
+       return thread identifiers
+     </par>
+     <return>
+      <rc cond="success">
+	a handle to the desktop associated with the specified thread
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetThreadDesktop">
+    <par loc="stack" io="r" name="dwThreadId" nr="1">
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:process" rn="handle:thread"/>
+     </roles>
+    </par>
+    <returntype>HDESK</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="retrieves desktop handle from thread"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

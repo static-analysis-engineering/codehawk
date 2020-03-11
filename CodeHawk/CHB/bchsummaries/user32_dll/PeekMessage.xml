@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="PeekMessage">
+   <documentation>
+    <desc>
+      dispatches incoming sent messages, checks the thread message queue for a posted
+      message, and retrieves the message (if any exist)
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI PeekMessage (</ll>
+      <ld>__out    LPMSG lpMsg,</ld>
+      <ld>__in_opt HWND hWnd,</ld>
+      <ld>__in     UINT wMsgFilterMin,</ld>
+      <ld>__in     UINT wMsgFilterMax,</ld>
+      <ld>__in     UINT wRemoveMsg</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpMsg">pointer to an MSG structure that receives message information</par>
+     <par name="hWnd">
+       handle to the window whose messages are to be retrieved; can be NULL
+     </par>
+     <par name="wMsgFilterMin">
+       value of the first message in the range of messages to be examined
+     </par>
+     <par name="wMsgFilterMax">
+       value of the last message in the range of messages to be examined
+     </par>
+     <par name="wRemoveMsg">specifies how messages are to be handled</par>
+     <return>
+      <rc cond="messages are available">nonzero</rc>
+      <rc cond="no messages are available">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="PeekMessage">
+     <type>BOOL</type>
+     <par loc="stack" name="lpMsg" io="w" nr="1">
+       <type><ptr>MSG</ptr></type>
+       <pre><deref-write/></pre>
+       <sideeffects><block-write/></sideeffects>
+       <roles>
+	 <role rt="ioc:memops" rn="dst-struct:msg"/>
+       </roles>
+    </par>
+    <par loc="stack" name="hWnd" io="r" nr="2">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="wMsgFilterMin" roles="none" nr="3">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="wMsgFilterMax" roles="none" nr="4">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="wRemoveMsg" roles="none" nr="5">
+      <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="dispatches incoming sent messages and retrieves the message"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

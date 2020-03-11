@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:04:36"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CreateMutex">
+   <documentation>
+    <desc>Creates or opens a named or unnamed mutex object.</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI CreateMutexA(</ll>
+      <ld>_In_opt_  LPSECURITY_ATTRIBUTES lpMutexAttributes </ld>
+      <ld>_In_      BOOL bInitialOwner </ld>
+      <ld>_In_opt_  LPCTSTR lpName </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="lpMutexAttributes">
+       A pointer to a SECURITY_ATTRIBUTES structure. If this parameter is NULL, 
+       the handle cannot be inherited by child processes.
+	
+       The lpSecurityDescriptor member of the structure specifies a security 
+       descriptor for the new mutex. If lpMutexAttributes is NULL, the mutex 
+       gets a default security descriptor. The ACLs in the default security
+       descriptor for a mutex come from the primary or impersonation token of 
+       the creator.
+     </par>
+     <par name="bInitialOwner">
+       If this value is TRUE and the caller created the mutex, the calling 
+       thread obtains initial ownership of the mutex object. Otherwise, the 
+       calling thread does not obtain ownership of the mutex.
+     </par>
+     <par name="lpName">
+       The name of the mutex object. The name is limited to MAX_PATH 
+       characters. Name comparison is case sensitive.
+
+       If lpName matches the name of an existing named mutex object, this 
+       function requests the MUTEX_ALL_ACCESS access right. In this case, 
+       the bInitialOwner parameter is ignored because it has already been 
+       set by the creating process. If the lpMutexAttributes parameter is 
+       not NULL, it determines whether the handle can be inherited, but 
+       its security-descriptor member is ignored.
+
+	If lpName is NULL, the mutex object is created without a name.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CreateMutex">
+    <returntype>HANDLE</returntype>
+    <par loc="stack" io="r" name="lpMutexAttributes" roles="none" nr="1" rep="hex">
+      <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="bInitialOwner" roles="none" nr="2" rep="hex">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" io="r" name="lpName" nr="3">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:synchronization" rn="name:mutex"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization" desc="creates a mutex"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

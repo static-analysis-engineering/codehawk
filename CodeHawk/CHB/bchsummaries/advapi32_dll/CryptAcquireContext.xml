@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="04/07/2015 17:25:05"/>
+  <libfun lib="advapi32" name="CryptAcquireContext">
+   <documentation>
+    <desc>
+      acquires a handle to a particular key container within a particular cryptographic
+      service provider (CSP). This returned handle is used in calls to CryptoAPI 
+      functions that use the selected CSP.
+      This function first attempts to find a CSP with the characteristics described 
+      in the dwProvType and pszProvider parameters. If the CSP is found, the function 
+      attempts to find a key container within the CSP that matches the name specified 
+      by the pszContainer parameter. To acquire the context and the key container of
+      a private key associated with the public key of a certificate, use 
+      CryptAcquireCertificatePrivateKey.
+      With the appropriate setting of dwFlags, this function can also create and 
+      destroy key containers and can provide access to a CSP with a temporary key 
+      container if access to a private key is not required
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CryptAcquireContext(</ll>
+      <ld>_Out_  HCRYPTPROV *phProv</ld>
+      <ld>_In_   LPCTSTR pszContainer</ld>
+      <ld>_In_   LPCTSTR pszProvider</ld>
+      <ld>_In_   DWORD dwProvType</ld>
+      <ld>_In_   DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="phProv">
+       A pointer to a handle of a CSP. When you have finished using the CSP, 
+       release the handle by calling the CryptReleaseContext function
+     </par>
+     <par name="pszContainer">
+       The key container name. This is a null-terminated string that identifies 
+       the key container to the CSP. This name is independent of the method used 
+       to store the keys. Some CSPs store their key containers internally (in
+       hardware), some use the system registry, and others use the file system. 
+       In most cases, when dwFlags is set to CRYPT_VERIFYCONTEXT, pszContainer 
+       must be set to NULL. However, for hardware-based CSPs, such as a smart 
+       card CSP, can be access publically available information in the specfied 
+       container
+     </par>
+     <par name="pszProvider">
+       A null-terminated string that contains the name of the CSP to be used.
+       If this parameter is NULL, the user default provider is used
+     </par>
+     <par name="dwProvType">Specifies the type of provider to acquire</par>
+     <par name="dwFlags">Flag values</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="CryptAcquireContext">
+    <par loc="stack" io="w" name="phProv" rep="hex" nr="1">
+     <type><ptr>HCRYPTPROV</ptr></type>
+     <roles>
+        <role rt="ioc:crypto" rn="handle:CSP"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="pszContainer" rep="hex" nr="2">
+     <type>LPCTSTR</type>
+     <roles>
+        <role rt="ioc:crypto" rn="name:key container"/>
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="pszProvider" rep="hex" nr="3">
+     <type>LPCTSTR</type>
+     <roles>
+        <role rt="ioc:crypto" rn="name:CSP"/>
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwProvType" nr="4">
+     <rep type="enum" name="cryptographic_provider_types"/>
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:crypto" rn="type:CSP"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="5">
+     <rep type="enum" name="acquire_context_constants"/>
+     <type>DWORD</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="crypto"
+                  desc="acquires a handle to a key container with a cryptographic service provider"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

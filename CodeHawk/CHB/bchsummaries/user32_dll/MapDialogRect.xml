@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:30:35"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="MapDialogRect">
+   <documentation>
+    <desc>
+      Converts the specified dialog box units to screen units (pixels). The function 
+      replaces the coordinates in the specified RECT structure with the converted 
+      coordinates, which allows the structure to be used to create a dialog box or 
+      position a control within a dialog box.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI MapDialogRect(</ll>
+      <ld>_In_     HWND hDlg,</ld>
+      <ld>_Inout_  LPRECT lpRect</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDlg">
+       A handle to a dialog box. This function accepts only handles returned 
+       by one of the dialog box creation functions; handles for other windows 
+       are not valid.
+     </par>
+     <par name="lpRect">
+       A pointer to a RECT structure that contains the dialog box coordinates 
+       to be converted.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="MapDialogRect">
+     <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hDlg" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="rw" name="lpRect" nr="2" rep="hex">
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:RECT" />
+      <role rt="ioc:memops" rn="dst-struct:RECT" />
+     </roles>
+     <type><ptr>RECT</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="converts a dialog box to screen units"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

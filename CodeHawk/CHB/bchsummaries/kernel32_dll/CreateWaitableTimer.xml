@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 19:09:58"/>
+  <libfun lib="kernel32" name="CreateWaitableTimer">
+   <documentation>
+    <desc>Creates or opens a waitable timer object</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI CreateWaitableTimer(</ll>
+      <ld>_In_opt_ LPSECURITY_ATTRIBUTES lpTimerAttributes</ld>
+      <ld>_In_     BOOL                  bManualReset</ld>
+      <ld>_In_opt_ LPCTSTR               lpTimerName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpTimerAttributes">
+       A pointer to a SECURITY_ATTRIBUTES structure that specifies a security 
+       descriptor for the new timer object and determines whether child processes
+       can inherit the returned handle.
+       If lpTimerAttributes is NULL, the timer object gets a default security 
+       descriptor and the handle cannot be inherited. The ACLs in the default 
+       security descriptor for a timer come from the primary or impersonation 
+       token of the creator
+     </par>
+     <par name="bManualReset">
+       If this parameter is TRUE, the timer is a manual-reset notification timer. 
+       Otherwise, the timer is a synchronization timer.
+     </par>
+     <par name="lpTimerName">
+       The name of the timer object. The name is limited to MAX_PATH characters.
+       If lpTimerName is NULL, the timer object is created without a name.
+       If lpTimerName matches the name of an existing event, semaphore, mutex, 
+       job, or file-mapping object, the function fails.
+       The name can have a "Global\" or "Local\" prefix to explicitly create 
+       the object in the global or session namespace. The remainder of the 
+       name can contain any character except the backslash character (\). 
+     </par>
+     <return>
+      <rc cond="success">a handle to the timer object</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CreateWaitableTimer">
+    <par loc="stack" name="lpTimerAttributes" io="r" roles="none" nr="1">
+     <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+    </par>
+    <par loc="stack" name="bManualReset" io="r" roles="none" nr="2">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" name="lpTimerName" io="r" rep="hex" nr="3">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:synchronization" rn="name:timer"/>
+     </roles>
+    </par>
+    <returntype>HANDLE</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" 
+		desc="creates or opens a waitable timer"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

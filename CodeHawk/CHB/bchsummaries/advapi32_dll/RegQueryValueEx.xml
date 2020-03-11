@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegQueryValueEx">
+   <documentation>
+     <desc>
+       retrieves the type and data for the specified value name associated
+       with an open registry key
+     </desc>
+     <remarks>
+       The lpcbData parameter can be NULL only if lpData is NULL.
+       
+       If the data has the REG_SZ, REG_MULTI_SZ or REG_EXPAND_SZ
+       type, this size includes any terminating null character or
+       characters unless the data was stored without them. For more
+       information, see Remarks.
+       
+       If the buffer specified by lpData parameter is not large enough to
+       hold the data, the function returns ERROR_MORE_DATA and stores the
+       required buffer size in the variable pointed to by lpcbData. In this
+       case, the contents of the lpData buffer are undefined.
+       
+       If lpData is NULL, and lpcbData is non-NULL, the function
+       returns ERROR_SUCCESS and stores the size of the data, in
+       bytes, in the variable pointed to by lpcbData. This enables an
+       application to determine the best way to allocate a buffer for
+       the value&apos;s data.
+       
+       If hKey specifies HKEY_PERFORMANCE_DATA and the lpData buffer
+       is not large enough to contain all of the returned data,
+       RegQueryValueEx returns ERROR_MORE_DATA and the value returned
+       through the lpcbData parameter is undefined. This is because
+       the size of the performance data can change from one call to
+       the next. In this case, you must increase the buffer size and
+       call RegQueryValueEx again passing the updated buffer size in
+       the lpcbData parameter. Repeat this until the function
+       succeeds. You need to maintain a separate variable to keep
+       track of the buffer size, because the value returned by
+       lpcbData is unpredictable.
+       
+       If the lpValueName registry value does not exist,
+       RegQueryValueEx returns ERROR_FILE_NOT_FOUND and the value
+       returned through the lpcbData parameter is undefined.
+     </remarks>
+     <apidoc>
+       <pt>
+	 <ll>LONG WINAPI RegQueryValueEx (</ll>
+	 <ld>__in        HKEY hKey,</ld>
+	 <ld>__in_opt    LPCTSTR lpValueName,</ld>
+	 <ld>__reserved  LPDWORD lpReserved,</ld>
+	 <ld>__out_opt   LPDWORD lpType,</ld>
+	 <ld>__out_opt   LPBYTE lpData,</ld>
+	 <ld>__inout_opt LPDWORD lpcbData</ld>
+     </pt>
+     <par name="hKey">handle to an open registry key</par>
+     <par name="lpValueName">name of the registry value; can be NULL</par>
+     <par name="lpReserved">must be NULL</par>
+     <par name="lpType">
+       pointer to a variable that receives a code indicating the type of data
+       stored in the specified value; can be NULL
+     </par>
+     <par name="lpData">
+       pointer to a buffer that receives the value&apos;s data; can be NULL
+     </par>
+     <par name="lpcbData">
+       pointer to a variable that specifies the size of the buffer pointed to
+       by the lpData parameter, in bytes, can be NULL only if lpData is NULL
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">system error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="RegQueryValueEx">
+     <returntype>LONG</returntype>
+     <par loc="stack" name="hKey" io="r" nr="1" rep="hex">
+       <rep type="enum" name="predefined_registry_key_constants"/>
+       <type>HKEY</type>
+       <pre>
+	 <deref-read/>
+	 <enum-value name="predefined_registry_key_constants"/>
+      </pre>
+      <roles>
+	<role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpValueName" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:registry" rn="name:value"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpReserved" roles="none" nr="3">
+      <type><ptr>DWORD</ptr></type>
+      <pre><null/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpType" nr="4">
+      <type><ptr>DWORD</ptr></type>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:registry" rn="type:value"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpData" io="w" nr="5" rep="hex">
+       <type><ptr>BYTE</ptr></type>
+     <roles>
+       <role rt="ioc:registry" rn="infox:value data"/>
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="lpcbData" nr="6">
+       <type><ptr>DWORD</ptr></type>
+       <pre><deref-read-null/></pre>
+       <roles>
+	 <role rt="size:buffersize" rn="RegQueryValueEx"/>
+       </roles>
+       <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry"
+		  desc="retrieves the data associated with a registry key"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write-null/>
+	 <type>byte</type>
+	 <ci>lpData</ci>
+	 <apply><addressed-value/><ci>lpcbData</ci><cn>0</cn></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <enum name="system_error_code_constants"/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+	 <block-write/>
+	 <type>byte</type>
+	 <ci>lpData</ci>
+	 <apply><addressed-value/><ci>lpcbData</ci><cn>0</cn></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

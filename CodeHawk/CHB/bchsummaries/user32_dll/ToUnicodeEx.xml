@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 15:12:14"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ToUnicodeEx">
+   <documentation>
+    <desc>translates the specified virtual-key code and keyboard state to the
+     corresponding Unicode character or characters
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI ToUnicodeEx(</ll>
+      <ld>_In_ UINT wVirtKey,</ld>
+      <ld>_In_ UINT wScanCode,</ld>
+      <ld>_In_ const BYTE *lpKeyState,</ld>
+      <ld>_Out_ LPWSTR pwszBuff,</ld>
+      <ld>_In_ int cchBuff,</ld>
+      <ld>_In_ UINT wFlags,</ld>
+      <ld>_In_opt_ HKL dwhkl</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="virtual key is dead">-1</rc>
+      <rc cond="virtual key has no translation">0</rc>
+      <rc cond="one character is written to the buffer">1</rc>
+      <rc cond="two or more characters are written to the buffer">2 or more</rc>
+     </return>
+     <par name="wVirtKey">virtual key code to be translated,</par>
+     <par name="wScanCode">hardware scan code of the key to be translated
+    </par>
+     <par name="lpKeyState">
+      pointer to a 256-byte array that contains the current keyboard state. Each
+      element of the array contains the state of one key. If the high-order bit
+      of a byte is set they key is down
+    </par>
+     <par name="pwszBuff">
+      buffer that receives the translated Unicode character or characters. May not
+      be null-terminated
+    </par>
+     <par name="cchBuff">size, in characters, of pwszBuff</par>
+     <par name="wFlags">behavior of the function </par>
+     <par name="dwhkl">input locale identifier used to translate the specified code
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="ToUnicodeEx">
+     <returntype>int</returntype>
+     <par loc="stack" name="wVirtKey" io="r" roles="none" nr="1">
+       <type>UINT</type>
+    </par>
+    <par loc="stack" name="wScanCode" io="r" roles="none" nr="2">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="lpKeyState" io="r" rep="hex" nr="3">
+      <type><ptr>BYTE</ptr></type>
+      <pre><deref-read bytesize="256"/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-bytes:keyboard state"/>
+      </roles>
+    </par>
+    <par loc="stack" name="pwszBuff" io="w" roles="none" nr="4">
+      <type>LPWSTR</type>
+    </par>
+    <par loc="stack" name="cchBuff" io="r" nr="5">
+      <type>int</type>
+      <roles>
+	<role rt="size:buffersize" rn="ToUnicodeEx"/>
+      </roles>
+    </par>
+    <par loc="stack" name="wFlags" io="r" roles="none" nr="6">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="dwhkl" io="r" rep="hex" nr="7">
+     <type>HKL</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:keyboard layout"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="translates a virtual key and keyboard state"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>wchar_t</type>
+	    <ci>pwszBuff</ci>
+	    <apply><indexsize/><ci>cchBuff</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="keyboard" xdata="state"/>
+	    <type>wchar_t</type>
+	    <ci>pwszBuff</ci>
+	    <apply><indexsize/><ci>cchBuff</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

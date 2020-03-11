@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegCreateKeyEx">
+   <documentation>
+    <desc>creates the specified registry key</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegCreateKeyEx (</ll>
+      <ld>__in       HKEY hKey,</ld>
+      <ld>__in       LPCTSTR lpSubKey,</ld>
+      <ld>__reserved DWORD Reserved,</ld>
+      <ld>__in_opt   LPTSTR lpClass,</ld>
+      <ld>__in       DWORD dwOptions,</ld>
+      <ld>__in       REGSAM samDesired,</ld>
+      <ld>__in_opt   LPSECURITY_ATTRIBUTES lpSecurityAttributes,</ld>
+      <ld>__out      PHKEY phkResult,</ld>
+      <ld>__out_opt  LPDWORD lpdwDisposition</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">handle to the open registry key</par>
+     <par name="lpSubKey">name of a subkey that this function opens or creates; cannot be NULL
+	</par>
+     <par name="Reserved">must be zero</par>
+     <par name="lpClass">user-defined class type of this key; can be NULL</par>
+     <par name="dwOptions">options for creation</par>
+     <par name="samDesired">
+       mask that specifies the access rights for the key to be created
+     </par>
+     <par name="lpSecurityAttributes">
+       pointer to a SECURITIES_ATTRIBUTES structure that determines whether the
+       return handle can be inherited by child processes
+     </par>
+     <par name="phkResult">
+       pointer to a variable that receives a handle to the opened or created key
+     </par>
+     <par name="lpdwDisposition">
+       pointer to a variable that receives the disposition value; can be NULL
+     </par>
+     <return>
+      <rc cond="success">ERROR_SCUCCESS</rc>
+      <rc cond="failure">nonzero error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="36" cc="stdcall" name="RegCreateKeyEx">
+     <returntype>LONG</returntype>
+     <par loc="stack" io="r" name="hKey" nr="1" rep="hex">
+       <rep type="enum" name="predefined_registry_key_constants"/>
+       <type>HKEY</type>
+       <pre>
+	 <deref-read/>
+	 <enum-value name="predefined_registry_key_constants"/>
+       </pre>
+       <roles>
+         <role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpSubKey" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:registry" rn="name:subkey"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="Reserved" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="lpClass" nr="4" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:registry" rn="type:key class"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwOptions" roles="none" nr="5">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="samDesired" roles="none" nr="6">
+     <type>REGSAM</type>
+    </par>
+    <par loc="stack" io="r" name="lpSecurityAttributes" roles="none" nr="7">
+      <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="w" name="phkResult" nr="8" rep="hex">
+       <type><ptr>HKEY</ptr></type>
+       <roles>
+	 <role rt="ioc:registry" rn="ref:key"/>
+       </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpdwDisposition" roles="none" nr="9">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry"  desc="creates a registry key"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="system_error_code_constants"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

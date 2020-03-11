@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/02/2015 23:45:35"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetVersion">
+   <documentation>
+    <apidoc>
+     <pt>DWORD GetVersion (void)</pt>
+     <return>
+      <rc cond="success">
+	major and minor version numbers of the OS in the low-order word and
+	information about the OS platform in the high-order word
+      </rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetVersion">
+    <returnbtype ikind="iuint" ttag="tint"/>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves OS/platform info">
+	 <args>
+	   <return io="w" role="OS/platform info"/>
+	 </args>
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

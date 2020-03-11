@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetWindowTextLength">
+   <documentation>
+    <desc>
+      retrieves the length, in characters, of the specified window&apos;s title bar text
+    </desc>
+    <apidoc>
+     <pt>int WINAPI GetWindowTextLength (__in HWND hWnd)</pt>
+     <par name="hWnd">handle to the window or control</par>
+     <return>
+      <rc cond="success">length in characters</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetWindowTextLength">
+     <returntype>int</returntype>
+     <par loc="stack" name="hWnd" io="r" rep="hex" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves the length of a window's title bar text"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

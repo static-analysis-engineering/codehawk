@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetCurrentDirectory">
+   <documentation>
+    <desc>changes the current directory for the current process</desc>
+    <apidoc>
+     <pt>BOOL WINAPI SetCurrentDirectory ( _In_ LPCTSTR lpPathName )</pt>
+     <par name="lpPathName">
+       the path to the new current directory. This parameter may specify a relative path or
+       a full path. In either case, the full path of the specified directory is calculated
+       and stored as the current directory
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetCurrentDirectory">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="lpPathName" io="r" nr="1" rep="hex">
+       <type>LPCTSTR</type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:filesystem" rn="name:file"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="sets current directory"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

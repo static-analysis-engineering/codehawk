@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/02/2015 12:09:47"/>
+  <libfun lib="kernel32" name="MapViewOfFileEx">
+   <documentation>
+    <desc>
+      Maps a view of a file mapping into the address space of a calling process.
+      A caller can optionally specify a suggested base memory address for the view.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LPVOID WINAPI MapViewOfFileEx(</ll>
+      <ld>_In_     HANDLE hFileMappingObject</ld>
+      <ld>_In_     DWORD  dwDesiredAccess</ld>
+      <ld>_In_     DWORD  dwFileOffsetHigh</ld>
+      <ld>_In_     DWORD  dwFileOffsetLow</ld>
+      <ld>_In_     SIZE_T dwNumberOfBytesToMap</ld>
+      <ld>_In_opt_ LPVOID lpBaseAddress</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFileMappingObject">
+       A handle to a file mapping object. The CreateFileMapping and OpenFileMapping
+       functions return this handle.
+     </par>
+     <par name="dwDesiredAccess">
+       The type of access to a file mapping object, which determines the page 
+       protection of the pages
+     </par>
+     <par name="dwFileOffsetHigh">
+       The high-order DWORD of the file offset where the view is to begin.
+     </par>
+     <par name="dwFileOffsetLow">
+       The low-order DWORD of the file offset where the view is to begin. The 
+       combination of the high and low offsets must specify an offset within 
+       the file mapping. They must also match the memory allocation granularity
+       of the system. That is, the offset must be a multiple of the allocation 
+       granularity. To obtain the memory allocation granularity of the system,
+       use the GetSystemInfo function, which fills in the members of a 
+       SYSTEM_INFO structure.
+     </par>
+     <par name="dwNumberOfBytesToMap">
+       The number of bytes of a file mapping to map to a view. All bytes must be
+       within the maximum size specified by CreateFileMapping. If this parameter 
+       is 0 (zero), the mapping extends from the specified offset to the end of
+       the file mapping.
+     </par>
+     <par name="lpBaseAddress">
+       A pointer to the memory address in the calling process address space where
+       mapping begins. This must be a multiple of the system's memory allocation 
+       granularity, or the function fails. To determine the memory allocation
+       granularity of the system, use the GetSystemInfo function. If there is not
+       enough address space at the specified address, the function fails.
+       If lpBaseAddress is NULL, the operating system chooses the mapping address.
+       In this scenario, the function is equivalent to the MapViewOfFile function.
+       While it is possible to specify an address that is safe now (not used by the
+       operating system), there is no guarantee that the address will remain safe 
+       over time. Therefore, it is better to let the operating system choose the 
+       address. In this case, you would not store pointers in the memory mapped 
+       file, you would store offsets from the base of the file mapping so that 
+       the mapping can be used at any address.
+     </par>
+     <return>
+      <rc cond="success">the starting address of the mapped view</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="MapViewOfFileEx">
+    <par loc="stack" name="hFileMappingObject" io="r" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:filemapping"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwDesiredAccess" io="r" roles="none" nr="2">
+     <rep type="enum" name="file_map_flags"/>
+     <pre><enum-value name="file_map_flags" flags="true"/></pre>
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="dwFileOffsetHigh" io="r" nr="3">
+     <type>DOWRD</type>
+     <roles>
+       <role rt="size:offset" rn="MapViewOfFileEx"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwFileOffsetLow" io="r" nr="4">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:offset" rn="MapViewOfFileEx"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwNumberOfBytesToMap" io="r" nr="5">
+     <type>SIZE_T</type>
+     <roles>
+       <role rt="size:count" rn="MapViewOfFileEx"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpBaseAddress" io="r" nr="6" rep="hex">
+     <type><ptr>void</ptr></type>
+     <pre><deref-write-null/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="dst-bytes:filemapping"/>
+     </roles>
+    </par>
+    <returntype><ptr>void</ptr></returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="maps a file into the address space of the process"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

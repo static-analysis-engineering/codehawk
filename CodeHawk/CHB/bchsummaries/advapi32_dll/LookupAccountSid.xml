@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/03/2015 12:57:07"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="LookupAccountSid">
+   <documentation>
+    <desc>
+      retrieves the name of the account for a given security identifier
+      and the name of the first domain on which the security identifier
+      is found.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI LookupAccountSidA(</ll>
+      <ld>_In_opt_  LPCTSTR lpSystemName,</ld>
+      <ld>_In_      PSID lpSid,</ld>
+      <ld>_Out_opt_ LPTSTR lpName,</ld>
+      <ld>_Inout_   LPDWORD cchName,</ld>
+      <ld>_Out_opt_ LPTSTR lpReferencedDomainName,</ld>
+      <ld>_Inout_   LPDWORD cchReferencedDomainName,</ld>
+      <ld>_Out_     PSID_NAME_USE peUse</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpSystemName">
+       pointer to a null-terminated character string that specifies the target
+       computer (can be a remote computer). If null, the account name translation
+       begins on the local system. If the name cannot be resolved on the local
+       system, it will try to resolve the name using domain controllers trusted
+       by the local system. Generally, specify a value only when the account is
+       in an untrusted domain and the name of a computer in that domain is known.
+     </par>
+     <par name="lpSid">pointer to the SID to look up.
+    </par>
+     <par name="lpName">
+       pointer to a buffer that receives a null-terminated string that contains
+       the account name that corresponds to the lpSid parameter.
+     </par>
+     <par name="cchName">
+       on input, specifies the size, in TCHARs, of the lpName buffer. If the
+       function failse because the buffer is too small or if cchName is zero,
+       cchName receives the required buffer size, including the terminating
+       null character.
+     </par>
+     <par name="lpReferencedDomainName">
+       pointer to a buffer that receives a null-terminated string that contains
+       the name of the domain where the account name was found.
+       On a server, the domain name returned for most accounts in the security
+       database of the local computer is the name of the domain for which the
+       server is a domain controller.
+       On a workstation, the domain name returned for most accounts in the
+       security database of the local computer is the name of the computer as
+       of the last start of the system. If the name of the computer changes,
+       the old name continues to be returned as the domain name until the 
+       system is restarted.
+     </par>
+     <par name="cchReferencedDomainName">
+       on input, specifies the size, in TCHARs, of the lpReferencedDomainName
+       buffer. If the function fails because the buffer is too small or if 
+       cchReferencedDomain is zero, cchReferencedDomainName receives the required
+       buffer size, including the terminating null character.
+     </par>
+     <par name="peUse">
+       pointer to a variable that receives a SID_NAME_USE value that indicates the
+       type of the account.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="LookupAccountSid">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="lpSystemName" nr="1" rep="hex">
+       <type>LPCTSTR</type>
+       <pre><deref-read-null/></pre>
+       <roles>
+	 <role rt="ioc:system" rn="name:computer"/>
+       </roles>
+    </par>
+    <par loc="stack" io="r" name="lpSid" nr="2" rep="hex">
+      <type><ptr>SID</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:security identifier"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpName" nr="3" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:system" rn="infox:account name"/>
+      </roles>
+    </par>
+    <par loc="stack" desc="account name length" io="rw" name="cchName" nr="4">
+      <type><ptr>DWORD</ptr></type>
+      <roles>
+	<role rt="size:buffersize" rn="LookupAccountSid"/>
+      </roles>
+      <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpReferencedDomainName" nr="5" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:system" rn="infox:reference domain name"/>
+      </roles>
+    </par>
+    <par loc="stack" io="rw" name="cchReferencedDomainName" nr="6">
+      <type><ptr>DWORD</ptr></type>
+      <roles>
+	<role rt="size:buffersize" rn="LookupAccountSid"/>
+      </roles>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="peUse" nr="7" rep="hex">
+      <type><ptr>SID</ptr></type>
+      <roles>
+	<role rt="ioc:system" rn="infox:account type"/>
+      </roles>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves the account name for a security identifier"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpName</ci>
+	    <apply><indexsize/><ci>cchName</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpReferencedDomainName</ci>
+	    <apply><indexsize/><ci>cchReferencedDomainName</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+	<apply>
+	  <block-write xsrc="system" 
+		       xdata="name of account associated with a given security identifier"/>
+	  <type>TCHAR</type>
+	  <ci>lpName</ci>
+	  <apply><indexsize/><ci>cchName</ci></apply>
+	</apply>
+      </math>
+     </sideeffect>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write xsrc="system"
+		     xdata="name of domain where account associated with security identifier was found"/>
+	<type>TCHAR</type>
+	<ci>lpReferencedDomainName</ci>
+	<apply><indexsize/><ci>cchReferencedDomainName</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

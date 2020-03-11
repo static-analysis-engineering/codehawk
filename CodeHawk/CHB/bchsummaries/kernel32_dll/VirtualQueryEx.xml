@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="VirtualQueryEx.xml" time="2016-08-07 15:24:42.465684"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="VirtualQueryEx">
+    <documentation>
+      <desc>
+	Retrieves information about a range of pages within the
+	virtual address space of a specified process
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>SIZE_T WINAPI VirtualQueryEx(</ll>
+          <ld>_In_     HANDLE                    hProcess</ld>
+          <ld>_In_opt_ LPCVOID                   lpAddress</ld>
+          <ld>_Out_    PMEMORY_BASIC_INFORMATION lpBuffer</ld>
+          <ld>_In_     SIZE_T                    dwLength</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hProcess">
+	  A handle to the process whose memory information is
+	  queried. The handle must have been opened with the
+	  PROCESS_QUERY_INFORMATION access right, which enables using
+	  the handle to read information from the process object
+	</par>
+        <par name="lpAddress">
+	  A pointer to the base address of the region of pages to be
+	  queried. This value is rounded down to the next page
+	  boundary
+	</par>
+        <par name="lpBuffer">
+	  A pointer to a MEMORY_BASIC_INFORMATION structure in which
+	  information about the specified page range is returned
+	</par>
+        <par name="dwLength">
+	  The size of the buffer pointed to by the lpBuffer parameter, in bytes
+	</par>
+        <return>
+          <rc cond="success">
+	    the actual number of bytes returned in the information buffer
+	  </rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="16" cc="stdcall" name="VirtualQueryEx">
+      <par loc="stack" name="hProcess" io="r" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:process"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpAddress" io="r" nr="2" rep="hex">
+        <type><ptr>void</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="base address"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpBuffer" io="w" nr="3" rep="hex">
+        <type><ptr>MEMORY_BASIC_INFORMATION</ptr></type>
+	<roles>
+	  <role rt="ioc:process" rn="infox:memory-info"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwLength" io="r" nr="4">
+        <type>SIZE_T</type>
+	<roles>
+	  <role rt="size:buffersize" rn="VirtualQueryEx"/>
+	</roles>
+      </par>
+      <returntype>SIZE_T</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="retrieves information about the memory in a process"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>MEMORY_BASIC_INFORMATION</type>
+	      <ci>lpBuffer</ci>
+	      <ci>dwLength</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>MEMORY_BASIC_INFORMATION</type>
+	      <ci>lpBuffer</ci>
+	      <ci>dwLength</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

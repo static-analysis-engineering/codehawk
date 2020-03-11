@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="RtlUnwind">
+   <documentation>
+    <desc>initiates an unwind of procedure call frames</desc>
+    <apidoc>
+     <pt>
+      <ll>void WINAPI RtlUnwind</ll>
+      <ld>__in_opt PVOID TargetFrame,</ld>
+      <ld>__in_opt PVOID TargetIp,</ld>
+      <ld>__in_opt PEXCEPTION_RECORD ExceptionRecord,</ld>
+      <ld>__in     PVOID ReturnValue</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="TargetFrame">
+       pointer to the call frame that is the target of the unwind; can be NULL
+     </par>
+     <par name="TargetIp">
+       continuation address of the unwind; ignored if TargetFrame is NULL
+     </par>
+     <par name="ExceptionRecord">pointer to an EXCEPTION_RECORD</par>
+     <par name="ReturnValue">
+       value to be placed in the integer function return register before
+       continuing execution
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="RtlUnwind">
+    <type>void</type>
+    <par loc="stack" io="r" name="TargetFrame" nr="1" rep="hex">
+     <type><ptr>void</ptr></type>
+     <roles>
+        <role rt="ioc:process" rn="call frame"/>
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="TargetIp" nr="2" rep="hex">
+      <type><ptr>void</ptr></type>
+     <pre><deref-read-null/></pre>
+      <roles>
+         <role rt="ioc:process" rn="instruction pointer"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="ExceptionRecord" nr="3" rep="hex">
+      <type><ptr>EXCEPTION_RECORD</ptr></type>
+     <pre><deref-read-null/></pre>
+      <roles>
+         <role rt="ioc:process" rn="exception record"/>
+      </roles>
+    </par>
+    <par loc="stack" name="ReturnValue" nr="4" rep="hex">
+      <type><ptr>void</ptr></type>
+      <roles>
+         <role rt="ioc:process" rn="return value"/>
+      </roles>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="initiates an unwind of procedure call frames"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

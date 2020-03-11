@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetUnhandledExceptionFilter">
+   <documentation>
+    <desc>
+      Enables an application to supersede the top-level exception handler of 
+      each thread of a process.
+      After calling this function, if an exception occurs in a process that 
+      is not being debugged, and the exception makes it to the unhandled 
+      exception filter, that filter will call the exception filter function 
+      specified by the lpTopLevelExceptionFilter parameter.
+    </desc>
+    <remarks>the filter function has syntax similar to that of UnhandledExecptionFilter:
+	it takes a single parameter of type LPEXCEPTION_POINTERS, has a WINAPI calling
+	convention, and returns a value of type LONG
+      </remarks>
+    <apidoc>
+     <pt>
+      <ll>LPTOP_LEVEL_EXCEPTION_FILTER WINAPI SetUnhandledExceptionFilter (</ll>
+      <ld>__in LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpTopLevelExceptionFilter">
+          pointer to a top-level exception filter function that will be called
+	  whenever the UnhandledExceptionFilter function gets control; can be NULL
+	</par>
+     <return>address of the previous exception filter, or NULL if not present</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetUnhandledExceptionFilter">
+     <returntype><ptr>TOP_LEVEL_EXCEPTION_FILTER</ptr></returntype>
+    <par loc="stack" name="lpTopLevelExceptionFilter" nr="1">
+       <type><ptr>TOP_LEVEL_EXCEPTION_FILTER</ptr></type>
+       <pre><deref-read/></pre>
+       <roles>
+          <role rt="ioc:process" rn="unhandled exception filter"/>
+          <role rt="rep:hex" rn="unhandled exception filter"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="supersedes top-level exception handler"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

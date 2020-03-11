@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CreateEvent">
+   <documentation>
+    <desc>creates or opens a named or unnamed event object</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI CreateEvent (</ll>
+      <ld>__in_opt LPSECURITY_ATTRIBUTES lpEventAttributes,</ld>
+      <ld>__in     BOOL bManualReset,</ld>
+      <ld>__in     BOOL bInitialState,</ld>
+      <ld>__in_opt LPCTSTR lpName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpEventAttributes">pointer to a SECURITY_ATTRIBUTES structure; can be NULL</par>
+     <par name="bManualReset">if true, a manual-reset event object is created</par>
+     <par name="bInitialState">if true, the initial state of the event object is signaled</par>
+     <par name="lpName">
+       name of the even object, limited to MAX_PATH characters; can be NULL
+     </par>
+     <return>
+      <rc cond="success">handle to the event object</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CreateEvent">
+     <returntype>HANDLE</returntype>
+     <par loc="stack" io="r" name="lpEventAttributes" roles="none" nr="1">
+       <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+       <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="bManualReset" roles="none" nr="2">
+       <type>BOOL</type>
+    </par>
+    <par loc="stack" io="r" name="bInitialState" roles="none" nr="3">
+      <type>BOOL</type>
+    </par>
+    <par loc="stack" io="r" name="lpName" nr="4">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:synchronization" rn="name:event"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization" desc="creates or opens an event object"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

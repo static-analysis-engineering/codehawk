@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CreateProcess">
+   <documentation>
+    <desc>creates a new process and its primary thread</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CreateProcess (</ll>
+      <ld>__in_opt    LPCTSTR lpApplicationName,</ld>
+      <ld>__inout_opt LPTSTR lpCommandLine,</ld>
+      <ld>__in_opt    LPSECURITY_ATTRIBUTES lpProcessAttributes,</ld>
+      <ld>__in_opt    LPSECURITY_ATTRIBUTES lpThreadAttributes,</ld>
+      <ld>__in        BOOL bInheritHandles,</ld>
+      <ld>__in        DWORD dwCreationFlags,</ld>
+      <ld>__in_opt    LPVOID lpEnvironment,</ld>
+      <ld>__in_opt    LPCTSTR lpCurrentDirectory,</ld>
+      <ld>__in        LPSTARTUPINFO lpStartupInfo,</ld>
+      <ld>__out       LPPROCESS_INFORMATION lpProcessInformation</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpApplicationName">name of the module to be executed; can be NULL</par>
+     <par name="lpCommandLine">
+       the commandline to be executed. The maximum length of this string is 32,768
+       characters, including the Unicode terminating null character. If lpApplicationName
+       is NULL, the module name portion of lpCommandLine is limited to MAX_PATH characters.
+       The Unicode version of this function can modify the contents of this string. Therefore
+       this parameter cannot be a pointer to read-only memory. If this parameter is a
+       constant string, the function may cause an access violation
+     </par>
+     <par name="lpProcessAttributes">
+       pointer to a SECURITY_ATTRIBUTES structure; can be NULL
+     </par>
+     <par name="lpThreadAttributes">
+       pointer to a SECURITY_ATTRIBUTES structure; can be NULL
+     </par>
+     <par name="bInheritHandles">
+       if true, each inheritable handle in the calling process is inherited by the new process
+     </par>
+     <par name="dwCreationFlags">flags that control the priority class</par>
+     <par name="lpEnvironment">
+       pointer to the environment block for the new process; can be NULL
+     </par>
+     <par name="lpCurrentDirectory">
+       full path to the current directory for the process; can be NULL
+     </par>
+     <par name="lpStartupInfo">
+       pointer to a STARTUPINFO or STARTUPINFOEX structure; cannot be NULL
+     </par>
+     <par name="lpProcessInformationInfo">
+       pointer to a PROCESS_INFORMATION structure; cannot be NULL
+     </par>
+     <return>
+      <rc cond="succes">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="40" cc="stdcall" name="CreateProcess">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="lpApplicationName" rep="hex" nr="1">
+       <type>LPCTSTR</type>
+       <roles>
+         <role rt="ioc:filesystem" rn="name:application"/>
+         <role rt="ioc:filesystem" rn="name:file"/>
+       </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="rw" name="lpCommandLine" nr="2" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:process" rn="commandline"/>
+      </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpProcessAttributes" roles="none" nr="3">
+      <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpThreadAttributes" roles="none" nr="4">
+      <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="bInheritHandles" roles="none" nr="5">
+      <type>BOOL</type>
+    </par>
+    <par loc="stack" io="r" name="dwCreationFlags" nr="6">
+      <type>DWORD</type>
+      <roles>
+        <role rt="rep:enum" rn="process_creation_flags"/>
+      </roles>
+      <pre><enum-value name="process_creation_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpEnvironment" nr="7" rep="hex">
+      <type><ptr>VOID</ptr></type>
+      <roles>
+	<role rt="ioc:process" rn="environment block"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpCurrentDirectory" nr="8" rep="hex">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+         <role rt="ioc:process" rn="name:current directory"/>
+      </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpStartupInfo" nr="9" rep="hex">
+        <type><ptr>STARTUPINFO</ptr></type>
+     <roles>
+       <role rt="ioc:process" rn="startup info"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpProcessInformation" nr="10" rep="hex">
+       <type><ptr>PROCESS_INFORMATION</ptr></type>
+       <roles>
+	 <role rt="ioc:process" rn="process info"/>
+       </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="creates new process"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <type>TCHAR</type>
+	    <ci>lpEnvironment</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

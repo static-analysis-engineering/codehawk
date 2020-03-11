@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CreateActCtxA.xml" time="2016-03-06 10:39:39.368038"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="CreateActCtxA" lib="kernel32">
+    <refer-to char-type="ansi" name="CreateActCtx"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

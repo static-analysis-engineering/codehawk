@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun name="GetSystemInfo" lib="kernel32">
+   <documentation>
+    <desc>retrieves information about the current system</desc>
+    <apidoc>
+     <pt>void WINAPI GetSystemInfo ( __out LPSYSTEM_INFO lpSystemInfo) </pt>
+     <par name="lpSystemInfo">pointer to a SYSTEM_INFO structure that receives the information
+	</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetSystemInfo">
+    <returntype>void</returntype>
+    <par loc="stack" io="w" name="lpSystemInfo" nr="1">
+      <type><ptr>SYSTEM_INFO</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:system" rn="infox:system info"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves information about the system"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:24:52"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="lstrcmp">
+   <documentation>
+    <desc>Compares two character strings. The comparison is case-sensitive.</desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI lstrcmp(</ll>
+      <ld>_In_  LPCTSTR lpString1</ld>
+      <ld>_In_  LPCTSTR lpString2</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="lpString1">The first null-terminated string to be compared.</par>
+     <par name="lpString2">The second null-terminated string to be compared.</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="lstrcmp">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="lpString1" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:inputs" rn="string comparison"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpString2" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:inputs" rn="string comparison"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="inputs"  desc="compares strings"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/18/2015 23:21:21"/>
+  <libfun lib="kernel32" name="LockFileEx">
+   <documentation>
+    <desc>
+      Locks the specified file for exclusive access by the calling process.
+      This function can operate either synchronously or asynchronously and
+      can request either an exclusive or a shared lock
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI LockFileEx(</ll>
+      <ld>_In_        HANDLE hFile</ld>
+      <ld>_In_        DWORD dwFlags</ld>
+      <ld>_Reserved_  DWORD dwReserved</ld>
+      <ld>_In_        DWORD nNumberOfBytesToLockLow</ld>
+      <ld>_In_        DWORD nNumberOfBytesToLockHigh</ld>
+      <ld>_Inout_     LPOVERLAPPED lpOverlapped</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       A handle to the file. The handle must have been created with either
+       the GENERIC_READ or GENERIC_WRITE access right
+     </par>
+     <par name="dwFlags">can be 1 or 2</par>
+     <par name="dwReserved">Reserved parameter; must be set to zero</par>
+     <par name="nNumberOfBytesToLockLow">
+       The low-order 32 bits of the length of the byte range to lock
+     </par>
+     <par name="nNumberOfBytesToLockHigh">
+       The high-order 32 bits of the length of the byte range to lock
+     </par>
+     <par name="lpOverlapped">
+       A pointer to an OVERLAPPED structure that the function uses with the
+       locking request. This structure, which is required, contains the file
+       offset of the beginning of the lock range. You must initialize the 
+       hEvent member to a valid handle or zero
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero </rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="LockFileEx">
+    <par loc="stack" io="r" name="hFile" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:file" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" nr="2" rep="hex" roles="none">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwReserved" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="nNumberOfBytesToLockLow" nr="4">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:count" rn="LockFileEx" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nNumberOfBytesToLockHigh" nr="5">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:count" rn="LockFileEx" />
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="lpOverlapped" roles="none" nr="6">
+     <type><ptr>OVERLAPPED</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="locks a file for exclusive access"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

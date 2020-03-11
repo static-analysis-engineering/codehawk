@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:30:54"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="MsgWaitForMultipleObjects">
+   <documentation>
+    <desc>
+      Waits until one or all of the specified objects are in the signaled 
+      state or the time-out interval elapses. The objects can include input
+      event objects, which you specify using the dwWakeMask parameter.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI MsgWaitForMultipleObjects(</ll>
+      <ld>_In_  DWORD nCount,</ld>
+      <ld>_In_  const HANDLE *pHandles,</ld>
+      <ld>_In_  BOOL bWaitAll,</ld>
+      <ld>_In_  DWORD dwMilliseconds,</ld>
+      <ld>_In_  DWORD dwWakeMask</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nCount">
+       The number of object handles in the array pointed to by pHandles. 
+       The maximum number of object handles is MAXIMUM_WAIT_OBJECTS minus one.
+     </par>
+     <par name="pHandles">
+       An array of object handles.
+       If one of these handles is closed while the wait is still pending, 
+       the function&apos;s behavior is undefined.
+     </par>
+     <par name="bWaitAll">
+       If this parameter is TRUE, the function returns when the states of all 
+       objects in the pHandles array have been set to signaled and an input 
+       event has been received. If this parameter is FALSE, the function returns
+       when the state of any one of the objects is set to signaled or an input
+       event has been received. In this case, the return value indicates the 
+       object whose state caused the function to return.
+     </par>
+     <par name="dwMilliseconds">
+       The time-out interval, in milliseconds. If a nonzero value is specified, 
+       the function waits until the specified objects are signaled or the interval 
+       elapses. If dwMilliseconds is zero, the function does not enter a wait 
+       state if the specified objects are not signaled; it always returns 
+       immediately. If dwMilliseconds is INFINITE, the function will return 
+       only when the specified objects are signaled.
+     </par>
+     <par name="dwWakeMask">
+       The input types for which an input event object handle will be added to
+       the array of object handles. 
+     </par>
+     <return>Indicates the event that caused the function to return</return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="MsgWaitForMultipleObjects">
+     <returntype>DWORD</returntype>
+     <par loc="stack" name="nCount" io="r" nr="1">
+       <type>DWORD</type>
+       <roles>
+	 <role rt="size:count" rn="MsgWaitForMultipleObjects"/>
+       </roles>
+    </par>
+    <par loc="stack" name="pHandles" io="r" nr="2">
+      <type><ptr>HANDLE</ptr></type>
+      <roles>
+	<role rt="ioc:synchronization" rn="handle array:synchronization objects"/>
+	<role rt="rep:hex" rn="handle array:synchronization objects"/>
+      </roles>
+    </par>
+    <par loc="stack" name="bWaitAll" io="r" roles="none" nr="3">
+      <type>BOOL</type>
+    </par>
+    <par loc="stack" name="dwMilliseconds" io="r" nr="4">
+      <type>DWORD</type>
+      <roles>
+	<role rt="ioc:synchronization" rn="timeout"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwWakeMask" io="r" roles="none" nr="5">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization"
+		  desc="waits until one or all objects are in the signaled state"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

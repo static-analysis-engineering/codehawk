@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="EnableScrollBar.xml" time="2016-06-19 17:45:18.820718"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="EnableScrollBar">
+    <documentation>
+      <desc>enables or disables one or both scroll bar arrows</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL EnableScrollBar(</ll>
+          <ld>_In_ HWND hWnd</ld>
+          <ld>_In_ UINT wSBflags</ld>
+          <ld>_In_ UINT wArrows</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hWnd">
+           Handle to a window or a scroll bar control, depending on
+           the value of the wSBflags parameter.
+	</par>
+        <par name="wSBflags">Specifies the scroll bar type</par>
+        <par name="wArrows">
+           Specifies whether the scroll bar arrows are enabled or
+           disabled and indicates which arrows are enabled or disabled
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="EnableScrollBar">
+      <par loc="stack" name="hWnd" io="r" nr="1">
+        <type>HWND</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="ioc:process" rn="handle:window"/>
+        </roles>
+      </par>
+      <par loc="stack" name="wSBflags" io="r" roles="none" nr="2">
+        <type>UINT</type>
+      </par>
+      <par loc="stack" name="wArrows" io="r" roles="none" nr="3">
+        <type>UINT</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="enables or disables scroll bar arrows"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

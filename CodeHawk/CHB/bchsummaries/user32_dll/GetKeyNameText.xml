@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/12/2015 15:50:50"/>
+  <libfun lib="user32" name="GetKeyNameText">
+   <documentation>
+    <desc>Retrieves a string that represents the name of a key</desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI GetKeyNameText(</ll>
+      <ld>_In_  LONG   lParam</ld>
+      <ld>_Out_ LPTSTR lpString</ld>
+      <ld>_In_  int    cchSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lParam">
+       The second parameter of the keyboard message (such as WM_KEYDOWN) 
+       to be processed
+     </par>
+     <par name="lpString">The buffer that will receive the key name</par>
+     <par name="cchSize">
+       The maximum length, in characters, of the key name, including the 
+       terminating null character. (This parameter should be equal to the 
+       size of the buffer pointed to by the lpString parameter.)
+     </par>
+     <return>
+      <rc cond="success">
+	the length of the string, in characters, not counting the terminating 
+	null character
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetKeyNameText">
+    <par loc="stack" name="lParam" io="r" roles="none" nr="1">
+     <type>LONG</type>
+    </par>
+    <par loc="stack" io="w" name="lpString" nr="2">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:process" rn="infox:key name" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cchSize" nr="3">
+     <type>int</type>
+     <roles>
+       <role rt="size:buffersize" rn="GetKeyNameText" />
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves the name of a key"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpString</ci>
+	    <apply><indexsize/><ci>cchSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpString</ci>
+	    <apply><indexsize/><ci>cchSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:17:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="RedrawWindow">
+   <documentation>
+    <desc>updates the specified rectangle or region in a window&apos;s client area.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL RedrawWindow(</ll>
+      <ld>_In_  HWND hWnd</ld>
+      <ld>_In_  const RECT *lprcUpdate </ld>
+      <ld>_In_  HRGN hrgnUpdate </ld>
+      <ld>_In_  UINT flags </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hWnd">
+       A handle to the window to be redrawn. If this parameter is
+       NULL, the desktop window is updated.
+     </par>
+     <par name="lprcUpdate">
+       A pointer to a RECT structure containing the coordinates, in
+       device units, of the update rectangle. This parameter is
+       ignored if the hrgnUpdate parameter identifies a region.
+     </par>
+     <par name="hrgnUpdate">
+       A handle to the update region. If both the hrgnUpdate and lprcUpdate parameters 
+       are NULL, the entire client area is added to the update region.
+     </par>
+     <par name="flags">
+       One or more redraw flags. This parameter can be used to invalidate or validate a
+       window, control repainting, and control which windows are affected by RedrawWindow.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="RedrawWindow">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hWnd" io="r" nr="1">
+       <type>HWND</type>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lprcUpdate" io="r" nr="2">
+      <type><ptr>RECT</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:RECT"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hrgnUpdate" io="r" nr="3">
+     <type>HRGN</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:region"/>
+     </roles>
+    </par>
+    <par loc="stack" name="flags" io="r" roles="none" nr="4">
+      <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="updates part of a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

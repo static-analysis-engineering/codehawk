@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="IsClipboardFormatAvailable">
+   <documentation>
+    <desc>determines whether the clipboard contains data in the specified format</desc>
+    <apidoc>
+     <pt>BOOL WINAPI IsClipBoardFormatAvailable ( __in UINT format )</pt>
+     <par name="format">clipboard format</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="IsClipboardFormatAvailable">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="format" io="r" roles="none" nr="1">
+       <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="determines whether the clipboard contains a format"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

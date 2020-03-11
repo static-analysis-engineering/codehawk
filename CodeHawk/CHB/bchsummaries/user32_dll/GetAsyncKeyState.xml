@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/11/2015 22:32:07"/>
+  <libfun lib="user32" name="GetAsyncKeyState">
+   <documentation>
+    <desc>
+      Determines whether a key is up or down at the time the function is
+      called, and whether the key was pressed after a previous call to GetAsyncKeyState
+    </desc>
+    <apidoc>
+     <pt>SHORT WINAPI GetAsyncKeyState (_In_  int vKey)</pt>
+     <par name="vKey">The virtual-key code</par>
+     <return>
+       If the function succeeds, the return value specifies whether the 
+       key was pressed since the last call to GetAsyncKeyState, and whether 
+       the key is currently up or down. If the most significant bit is set, 
+       the key is down, and if the least significant bit is set, the key 
+       was pressed after the previous call to GetAsyncKeyState. However, 
+       you should not rely on this last behavior
+       The return value is zero for the following cases:
+       The current desktop is not the active desktop
+       The foreground thread belongs to another process and the desktop does
+       not allow the hook or the journal record.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetAsyncKeyState">
+    <par loc="stack" name="vKey" io="r" roles="none" nr="1">
+     <type>int</type>
+    </par>
+    <returntype>SHORT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="determines whether a key is up or down"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

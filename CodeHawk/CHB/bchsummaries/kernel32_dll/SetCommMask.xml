@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SetCommMask.xml" time="2016-10-29 16:18:00.052975"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="SetCommMask">
+    <documentation>
+      <desc>
+	Specifies a set of events to be monitored for a communications device
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI SetCommMask(</ll>
+          <ld>_In_ HANDLE hFile</ld>
+          <ld>_In_ DWORD  dwEvtMask</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hFile">
+	  A handle to the communications device. The CreateFile
+	  function returns this handle
+	</par>
+        <par name="dwEvtMask">
+	  The events to be enabled. A value of zero disables all events
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="SetCommMask">
+      <par loc="stack" name="hFile" io="r" nr="1">
+        <type>HANDLE</type>
+	<roles>
+	  <role rt="ioc:process" rn="handle:communications device"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwEvtMask" roles="none" io="r" nr="2">
+        <type>DWORD</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="specifies a set of events to be monitored for a communications device"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

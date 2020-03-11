@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetStringTypeExW.xml" time="2016-07-02 17:56:48.755618"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="GetStringTypeExW">
+    <refer-to char-type="unicode" name="GetStringTypeEx"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ClipCursor">
+   <documentation>
+    <desc>confines the cursor to a rectangular area on the screen</desc>
+    <apidoc>
+     <pt>BOOL WINAPI ClipCursor (_In_opt_ const RECT *lpRect )</pt>
+     <par name="lpRect">
+       pointer tot the structure that contains the screen coordinates
+       of the upper-left and lower-right corners of the confining
+       rectangle. If this parameter is NULL, the cursor is free to
+       move anywhere on the screen
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ClipCursor">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="lpRect" nr="1">
+       <type><ptr>RECT</ptr></type>
+       <pre><deref-read-null/></pre>
+       <roles>
+	 <role rt="ioc:memops" rn="src-struct:RECT"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" 
+		  desc="confines the cursor to a specific area on the screen"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

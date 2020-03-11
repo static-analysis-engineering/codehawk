@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/23/2014 23:21:12"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetComputerName">
+   <documentation>
+    <desc>
+      Retrieves the NetBIOS name of the local computer. This name is 
+      established at system startup, when the system reads it from 
+      the registry.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetComputerName(</ll>
+      <ld>_Out_    LPTSTR lpBuffer,</ld>
+      <ld>_Inout_  LPDWORD lpnSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpBuffer">
+       A pointer to a buffer that receives the computer name or the 
+       cluster virtual server name. The buffer size should be large 
+       enough to contain MAX_COMPUTERNAME_LENGTH + 1 characters.
+     </par>
+     <par name="lpnSize">
+       On input, specifies the size of the buffer, in TCHARs. On output, 
+       the number of TCHARs copied to the destination buffer, not including 
+       the terminating null character.
+       If the buffer is too small, the function fails and GetLastError 
+       returns ERROR_BUFFER_OVERFLOW. The lpnSize parameter specifies 
+       the size of the buffer required, including the terminating 
+       null character.
+      6</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetComputerName">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="w" name="lpBuffer" nr="1" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:system" rn="infox:computer name"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpnSize" io="rw" nr="2">
+       <type><ptr>DWORD</ptr></type>
+      <roles>
+	<role rt="size:buffersize" rn="GetComputerName"/>
+      </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves the NetBIOS name of the local computer"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>TCHAR</type>
+	 <ci>lpBuffer</ci>
+	 <apply>
+	   <indexsize/>
+	   <apply><addressed-value/><ci>lpnSize</ci><cn>0</cn></apply>
+	 </apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	 <type>TCHAR</type>
+	 <ci>lpBuffer</ci>
+	 <apply>
+	   <indexsize/>
+	   <apply><addressed-value/><ci>lpnSize</ci><cn>0</cn></apply>
+	 </apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:23:09"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ChangeClipboardChain">
+   <documentation>
+    <desc>Removes a specified window from the chain of clipboard viewers.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI ChangeClipboardChain(</ll>
+      <ld>_In_  HWND hWndRemove</ld>
+      <ld>_In_  HWND hWndNewNext</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       The return value indicates the result of passing the WM_CHANGECBCHAIN message 
+       to the windows in the clipboard viewer chain. Because a window in the chain 
+       typically returns FALSE when it processes WM_CHANGECBCHAIN, the return value
+       from ChangeClipboardChain is typically FALSE. If there is only one window in 
+       the chain, the return value is typically TRUE.
+     </return>
+     <par name="hWndRemove">
+       A handle to the window to be removed from the chain. The handle must have
+       been passed to the SetClipboardViewer function.
+	</par>
+     <par name="hWndNewNext">
+       A handle to the window that follows the hWndRemove window in the clipboard viewer chain.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ChangeClipboardChain">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="hWndRemove" io="r" rep="hex" nr="1">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hWndNewNext" io="r" rep="hex" nr="2">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="removes a window from the chain of clipboard viewers"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

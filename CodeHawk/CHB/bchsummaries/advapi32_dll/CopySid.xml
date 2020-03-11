@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CopySid">
+   <documentation>
+    <desc>copies a security identifier (SID) to a buffer</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CopySid (</ll>
+      <ld>_In_ DWORD nDestinationSidLength,</ld>
+      <ld>_Out_ PSID pDestinationSid,</ld>
+      <ld>_In_ PSID pSourceSid</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nDestinationSidLength">
+       specifies the length, in bytes, of the buffer receiving the copy of the SID
+     </par>
+     <par name="pDestinationSid">
+       pointer to a buffer that receives a copy of the source SID structure
+     </par>
+     <par name="pSourceSid">
+       pointer to SID structure that the function copies to the buffer pointed to by the
+       pDestination parameter
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CopySid">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="nDestinationSidLength" io="r" nr="1">
+       <type>DWORD</type>
+       <roles>
+	 <role rt="size:buffersize" rn="CopySid"/>
+       </roles>
+     </par>
+     <par loc="stack" io="w" name="pDestinationSid" nr="2">
+       <type><ptr>SID</ptr></type>
+       <roles>
+	 <role rt="ioc:memops" rn="dst-struct:security identifier"/>
+       </roles>
+    </par>
+    <par loc="stack" io="r" name="pSourceSid" nr="3">
+      <type><ptr>SID</ptr></type>
+      <roles>
+         <role rt="ioc:memops" rn="src-struct:security identifier"/>
+      </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="copies a security identifier (sid)"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>SID</type>
+	 <ci>pDestinationSid</ci>
+	 <ci>nDestinationSidLength</ci>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+        <btype tname="SID" ttag="tnamed"/>
+        <ci>pDestinationSid</ci>
+        <ci>nDestinationSidLength</ci>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

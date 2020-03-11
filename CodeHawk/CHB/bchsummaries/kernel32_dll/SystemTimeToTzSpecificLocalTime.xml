@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/19/2015 20:56:06"/>
+  <libfun lib="kernel32" name="SystemTimeToTzSpecificLocalTime">
+   <documentation>
+    <desc>
+      Converts a time in Coordinated Universal Time (UTC) to a specified 
+      time zone's corresponding local time
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SystemTimeToTzSpecificLocalTime(</ll>
+      <ld>_In_opt_  LPTIME_ZONE_INFORMATION lpTimeZone</ld>
+      <ld>_In_      LPSYSTEMTIME lpUniversalTime</ld>
+      <ld>_Out_     LPSYSTEMTIME lpLocalTime</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpTimeZone">
+       A pointer to a TIME_ZONE_INFORMATION structure that specifies the 
+       time zone of interest.
+       If lpTimeZone is NULL, the function uses the currently active time zone
+     </par>
+     <par name="lpUniversalTime">
+       A pointer to a SYSTEMTIME structure that specifies the UTC time to 
+       be converted. The function converts this universal time to the 
+       specified time zone's corresponding local time
+     </par>
+     <par name="lpLocalTime">
+       A pointer to a SYSTEMTIME structure that receives the local time 
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SystemTimeToTzSpecificLocalTime">
+    <par loc="stack" io="r" name="lpTimeZone" nr="1">
+     <type><ptr>TIME_ZONE_INFORMATION</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:TIME_ZONE_INFORMATION" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpUniversalTime" nr="2" rep="hex">
+     <type><ptr>SYSTEMTIME</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:SYSTEMTIME" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpLocalTime" nr="3" rep="hex">
+     <type><ptr>SYSTEMTIME</ptr></type>
+     <roles>
+      <role rt="ioc:system" rn="dst-struct:SYSTEMTIME" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="converts a UTC time to a local time"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

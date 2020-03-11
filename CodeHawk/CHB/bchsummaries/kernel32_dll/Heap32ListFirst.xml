@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/29/2015 23:56:54"/>
+  <libfun lib="kernel32" name="Heap32ListFirst">
+   <documentation>
+    <desc>
+      Retrieves information about the first heap that has been allocated 
+      by a specified process
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI Heap32ListFirst(</ll>
+      <ld>_In_    HANDLE       hSnapshot</ld>
+      <ld>_Inout_ LPHEAPLIST32 lphl</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hSnapshot">
+       A handle to the snapshot returned from a previous call to the 
+       CreateToolhelp32Snapshot function.
+     </par>
+     <par name="lphl">A pointer to a HEAPLIST32 structure.</par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="Heap32ListFirst">
+    <par loc="stack" io="r" name="hSnapshot" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:snapshot" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="rw" name="lphl" nr="2" rep="hex">
+     <type><ptr>HEAPLIST32</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:heaplist32" />
+      <role rt="ioc:memops" rn="dst-struct:heaplist32" />
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves information about a heap"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

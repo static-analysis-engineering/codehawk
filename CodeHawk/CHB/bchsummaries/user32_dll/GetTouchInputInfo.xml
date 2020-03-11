@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetTouchInputInfo.xml" time="2016-03-05 10:44:26.810982"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="GetTouchInputInfo" lib="user32">
+    <documentation>
+      <desc>
+	Retrieves detailed information about touch inputs associated
+	with a particular touch input handle
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI GetTouchInputInfo(</ll>
+          <ld>_In_  HTOUCHINPUT hTouchInput</ld>
+          <ld>_In_  UINT        cInputs</ld>
+          <ld>_Out_ PTOUCHINPUT pInputs</ld>
+          <ld>_In_  int         cbSize</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hTouchInput">
+	  The touch input handle received in the LPARAM of a touch
+	  message. The function fails with ERROR_INVALID_HANDLE if
+	  this handle is not valid. Note that the handle is not valid
+	  after it has been used in a successful call to
+	  CloseTouchInputHandle or after it has been passed to
+	  DefWindowProc, PostMessage, SendMessage or one of their
+	  variants.
+	</par>
+        <par name="cInputs">
+	  The number of structures in the pInputs array. This should
+	  ideally be at least equal to the number of touch points
+	  associated with the message as indicated in the message
+	  WPARAM. If cInputs is less than the number of touch points,
+	  the function will still succeed and populate the pInputs
+	  buffer with information about cInputs touch points.
+	</par>
+        <par name="pInputs">
+	  A pointer to an array of TOUCHINPUT structures to receive
+	  information about the touch points associated with the
+	  specified touch input handle.
+	</par>
+        <par name="cbSize">
+	  The size, in bytes, of a single TOUCHINPUT structure. If
+	  cbSize is not the size of a single TOUCHINPUT structure, the
+	  function fails with ERROR_INVALID_PARAMETER.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="16" name="GetTouchInputInfo">
+      <par loc="stack" nr="1" io="r" name="hTouchInput">
+       <type>HTOUCHINPUT</type>
+       <roles>
+        <role rt="ioc:process" rn="handle:touch input" />
+       </roles>
+      </par>
+      <par loc="stack" nr="2" io="r" name="cInputs">
+       <type>UINT</type>
+       <roles>
+        <role rt="size:count" rn="GetTouchInput" />
+       </roles>
+      </par>
+      <par loc="stack" nr="3" io="w" name="pInputs">
+       <type><ptr>TOUCHINPUT</ptr></type>
+       <roles>
+        <role rt="ioc:memops" rn="dst-array:TOUCHINPUT" />
+       </roles>
+      </par>
+      <par loc="stack" nr="4" io="r" name="cbSize">
+       <type>int</type>
+       <roles>
+        <role rt="size:count" rn="GetTouchInputInfo" />
+       </roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="retrieves information about touch inputs"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

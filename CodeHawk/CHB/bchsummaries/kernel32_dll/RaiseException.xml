@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="RaiseException">
+   <documentation>
+    <desc>raises an exception in the calling thread</desc>
+    <apidoc>
+     <pt>
+      <ll>void WINAPI RaiseException (</ll>
+      <ld>__in DWORD dwExceptionCode,</ld>
+      <ld>__in DWORD dwExceptionFlags,</ld>
+      <ld>__in DWORD nNumberOfArguments,</ld>
+      <ld>__in const ULONG_PTR *lpArguments</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwExceptionCode">application-defined exception code</par>
+     <par name="dwExceptionFlags">exception flags</par>
+     <par name="nNumberOfArguments">number of arguments in the lpArguments array</par>
+     <par name="lpArguments">array of arguments; can be NULL</par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="RaiseException">
+    <returntype>void</returntype>
+    <par loc="stack" io="r" name="dwExceptionCode" nr="1">
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:process" rn="exception code"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwExceptionFlags" nr="2">
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:process" rn="exception flags"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nNumberOfArguments" nr="3">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="RaiseException"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpArguments" nr="4">
+      <type><ptr>ULONG_PTR</ptr></type>
+      <roles>
+         <role rt="ioc:process" rn="exception arguments"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="process" desc="raises an exception"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read-null/>
+	 <type>ULONG</type>
+	 <ci>lpArguments</ci>
+	 <apply><indexsize/><ci>nNumberOfArguments</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <post>
+      <math>
+       <non-returning/>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

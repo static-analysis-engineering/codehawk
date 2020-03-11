@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/24/2014 21:49:32"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="OpenSCManager">
+   <documentation>
+    <desc>
+      Establishes a connection to the service control manager on the 
+      specified computer and opens the specified service control manager 
+      database.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>SC_HANDLE WINAPI OpenSCManager(</ll>
+      <ld>_In_opt_  LPCTSTR lpMachineName,</ld>
+      <ld>_In_opt_  LPCTSTR lpDatabaseName,</ld>
+      <ld>_In_      DWORD dwDesiredAccess</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">a handle to the specified service control manager database.
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+     <par name="lpMachineName">
+       The name of the target computer. If the pointer is NULL or points 
+       to an empty string, the function connects to the service control 
+       manager on the local computer.
+     </par>
+     <par name="lpDatabaseName">
+       The name of the service control manager database. This parameter 
+       should be set to SERVICES_ACTIVE_DATABASE. If it is NULL, the 
+       SERVICES_ACTIVE_DATABASE database is opened by default.
+     </par>
+     <par name="dwDesiredAccess">
+       The access to the service control manager. For a list of access 
+       rights, see Service Security and Access Rights.
+       Before granting the requested access rights, the system checks 
+       the access token of the calling process against the discretionary 
+       access-control list of the security descriptor associated with 
+       the service control manager.
+       The SC_MANAGER_CONNECT access right is implicitly specified by 
+       calling this function.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OpenSCManager">
+     <returntype>SC_HANDLE</returntype>
+     <par loc="stack" name="lpMachineName" io="r" rep="hex" nr="1">
+       <type>LPCTSTR</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:system" rn="name:computer"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpDatabaseName" io="r" rep="hex" nr="2">
+      <type>LPCTSTR</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:services" rn="name:service control manager database"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwDesiredAccess" io="r" roles="none" nr="3">
+      <rep type="enum" name="service_control_manager_access_flags"/>
+      <type>DWORD</type>
+      <pre><enum-value name="service_control_manager_access_flags" flags="true"/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="services"
+		  desc="opens the service control manager database"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

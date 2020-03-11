@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ConvertSidToStringSidA.xml" time="2016-05-08 21:29:13.797850"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="ConvertSidToStringSidA">
+    <refer-to char-type="ansi" name="ConvertSidToStringSid"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

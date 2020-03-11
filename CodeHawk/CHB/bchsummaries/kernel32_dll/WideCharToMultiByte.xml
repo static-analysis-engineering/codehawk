@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="WideCharToMultiByte">
+   <documentation>
+    <desc>maps a UTF-16 string to a new character string; the new character string
+	is not necessarily from a multibyte character set
+    </desc>
+    <caution>Using the WideCharToMultiByte function incorrectly can
+	compromise the security of your application. Calling this
+	function can easily cause a buffer overrun because the size of
+	the input buffer indicated by lpWideCharStr equals the number
+	of characters in the Unicode string, while the size of the
+	output buffer indicated by lpMultiByteStr equals the number of
+	bytes. To avoid a buffer overrun, your application must
+	specify a buffer size appropriate for the data type the buffer
+	receives.
+      </caution>
+    <apidoc>
+     <pt>
+      <ll>int WideCharToMultiByte (</ll>
+      <ld>__in  UINT CodePage,</ld>
+      <ld>__in  DWORD dwFlags,</ld>
+      <ld>__in  LPCWSTR lpWideCharStr,</ld>
+      <ld>__in  int cchWideChar,</ld>
+      <ld>__out LPSTR lpMultiByteStr,</ld>
+      <ld>__in  int cbMultiByte,</ld>
+      <ld>__in  LPCSTR lpDefaultChar,</ld>
+      <ld>__out LPBOOL lpUsedDefaultChar</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="CodePage">code page to use in performing the conversion</par>
+     <par name="dwFlags">flags indicating the conversion type</par>
+     <par name="lpWideCharStr">pointer to the Unicode string to convert</par>
+     <par name="cchWideChar">
+       size, in characters, of the string indicated by lpWideCharStr; alternatively,
+       this parameter can be set to -1 if the string is null-terminated
+     </par>
+     <par name="lpMultiByteStr">
+       pointer to a buffer that receives the converted string; if cbMultiByte 
+       is set to 0, no data is written to this address
+     </par>
+     <par name="cbMultiByte">
+       size, in bytes, of the buffer indicated by lpMultiByteStr; if this parameter is
+       set to 0, the function returns the required buffer size for lpMultiByteStr and
+       makes no use of the output parameter itself
+     </par>
+     <par name="lpDefaultChar">
+       pointer to character to use if a character cannot be represented in the
+       specified code page; can be NULL, in which case the system default 
+       character will be used
+     </par>
+     <par name="lpUsedDefaultChar">
+       pointer to flag that indicates if the function has used a default character
+       in the conversion; can be NULL
+     </par>
+     <return>
+      <rc cond="success">
+	the number of bytes written to the buffer pointed to by lpMultiByteStr. If the
+	function succeeds and cbMultiByte is 0, the return value is the required size,
+	in bytes for the buffer indicated by lpMultiByteStr
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="WideCharToMultiByte">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="CodePage" nr="1">
+     <type>UINT</type>
+     <roles>
+        <role rt="ioc:system" rn="code page"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpWideCharStr" nr="3">
+      <type>LPCWSTR</type>
+      <roles>
+         <role rt="ioc:memops" rn="src-string:convert"/>
+	 <role rt="rep:hex" rn="str-string"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="cchWideChar" nr="4">
+     <type>int</type>
+     <roles>
+        <role rt="size:buffersize" rn="WideCharToMultiByte"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpMultiByteStr" nr="5">
+      <type><ptr>char</ptr></type>
+      <roles>
+         <role rt="ioc:memops" rn="dst-string:convert"/>
+	 <role rt="rep:hex" rn="dst-string"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="cbMultiByte" nr="6">
+     <type>int</type>
+     <pre><non-negative/></pre>
+     <roles>
+        <role rt="size:buffersize" rn="WideCharToMultiByte"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpDefaultChar" roles="none" nr="7">
+     <type>LPCSTR</type>
+    </par>
+    <par loc="stack" io="w" name="lpUsedDefaultChar" roles="none" nr="8">
+     <type><ptr>BOOL</ptr></type>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="maps a UTF-16 string to a character string"/>
+     </io-actions>
+    <preconditions>
+      <!-- if cchWideChar is non-negative: lpWideCharStr must have this many chars -->
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><geq/><ci>cchWideChar</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-read/>
+	      <type>wchar_t</type>
+	      <ci>lpWideCharStr</ci>
+	      <apply><indexsize/><ci>cchWideChar</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <!-- if cchWideChar is -1: lpWideCharStr is read until null-terminating char -->
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><eq/><ci>cchWideChar</ci><cn>-1</cn></apply>
+	    <apply>
+	      <deref-read/>
+	      <type>wchar_t</type>
+	      <ci>lpWideCharStr</ci>
+	      <apply>
+		<indexsize/>
+		<apply><null-terminator-pos/><ci>lpWideCharStr</ci></apply>
+	      </apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <!-- cchWideChar should be no less than -1 -->
+      <pre>
+	<math>
+	  <apply><geq/><ci>cchWideChar</ci><cn>-1</cn></apply>
+	</math>
+      </pre>
+      <!-- if cbMultiByte is positive: this many bytes are written to lpMultiByteStr -->
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><gt/><ci>cbMultiByte</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>lpMultiByteStr</ci>
+	      <ci>cbMultiByte</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <!-- if cbMultiByte is zero: nothing is written to lpMultiByteStr -->
+    </preconditions> 
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

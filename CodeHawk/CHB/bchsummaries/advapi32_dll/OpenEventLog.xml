@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="01/25/2016 15:22:24"/>
+  <libfun lib="advapi32" name="OpenEventLog">
+   <documentation>
+    <desc>Opens a handle to the specified event log</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE OpenEventLog(</ll>
+      <ld>_In_ LPCTSTR lpUNCServerName</ld>
+      <ld>_In_ LPCTSTR lpSourceName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpUNCServerName">
+       The Universal Naming Convention (UNC) name of the remote server
+       on which the event log is to be opened. If this parameter is
+       NULL, the local computer is used.
+     </par>
+     <par name="lpSourceName">
+       The name of the log.  If you specify a custom log and it cannot
+       be found, the event logging service opens the Application log;
+       however, there will be no associated message or category string
+       file.
+     </par>
+     <return>
+      <rc cond="success">handle to an event log</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="OpenEventLog">
+    <par loc="stack" name="lpUNCServerName" io="r" rep="hex" nr="1">
+     <type>LPCSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:network" rn="name:server"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpSourceName" io="r" rep="hex" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:network" rn="name:log"/>
+       <role rt="ioc:system" rn="name:log"/>
+     </roles>
+    </par>
+    <returntype>HANDLE</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" desc="opens a handle to an event log"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

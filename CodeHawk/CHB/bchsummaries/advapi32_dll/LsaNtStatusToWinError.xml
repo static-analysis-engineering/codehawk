@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/04/2015 14:40:21"/>
+  <libfun lib="advapi32" name="LsaNtStatusToWinError">
+   <documentation>
+    <desc>
+      converts an NTSTATUS code returned by an LSA function to a Windows error code.
+    </desc>
+    <apidoc>
+     <pt>ULONG LsaNtStatusToWinError (_In_ NTSTATUS Status)</pt>
+     <par name="Status">
+       An NTSTATUS code returned by an LSA function call. This value will be 
+       converted to a System error code.
+     </par>
+     <return>
+      <rc cond="success">
+	the Windows error code that corresponds to the Status parameter.
+      </rc>
+      <rc cond="failure">ERROR_MR_MID_NOT_FOUND</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="LsaNtStatusToWinError">
+    <par loc="stack" name="Status" io="r" roles="none" nr="1">
+     <type>NTSTATUS</type>
+    </par>
+    <returntype>ULONG</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" 
+		  desc="converts an ntstatus code to a windows error code"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

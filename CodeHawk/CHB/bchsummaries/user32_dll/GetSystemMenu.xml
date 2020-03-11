@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetSystemMenu">
+   <documentation>
+    <desc>
+      enables the application to access the window menu (also known as the system menu
+      or the control menu) for copying and modifying
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HMENU WINAPI GetSystemMenu (</ll>
+      <ld>__in HWND hWnd,</ld>
+      <ld>__in BOOL bRevert</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window that will own a copy of the window menu</par>
+     <par name="bRevert">
+       the action to be taken. If this parameter is false, GetSystemMenu returns a handle
+       to the copy of the window menu currently in use. The copy is initially identical to
+       the window menu, but it can be modified. If this parameter is true, GetSystemMenu
+       resets the window menu back to the default state. The previous window menu, if any,
+       is destroyed
+     </par>
+     <return>
+      <rc cond="bRevert=false">handle to a copy of the window menu</rc>
+      <rc cond="bRevert=true">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetSystemMenu">
+     <returntype>HMENU</returntype>
+     <par loc="stack" name="hWnd" io="r" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+    <par loc="stack" name="bRevert" io="r" roles="none" nr="2">
+      <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="enables access to the system menu for copying and modifying"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

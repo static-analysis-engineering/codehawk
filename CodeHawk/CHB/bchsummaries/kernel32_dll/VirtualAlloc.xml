@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="VirtualAlloc">
+   <documentation>
+    <desc>
+      Reserves or commits a region of pages in the virtual address space of the 
+      calling process.
+      Memory allocated by this function is automatically initialized to zero, 
+      unless MEM_RESET is specified.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LPVOID WINAPI VirtualAlloc(</ll>
+      <ld>_In_opt_  LPVOID lpAddress,</ld>
+      <ld>_In_ SIZE_T dwSize,</ld>
+      <ld>_In_ DWORD flAllocationType,</ld>
+      <ld>_In_ DWORD flProtect</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpAddress">
+       The starting address of the region to allocate. If the memory is being reserved, 
+       the specified address is rounded down to the nearest multiple of the allocation 
+       granularity. If the memory is already reserved and is being committed, the address
+       is rounded down to the next page boundary.
+       If this parameter is NULL, the system determines where to allocate the region.
+     </par>
+     <par name="dwSize">
+       The size of the region, in bytes. If the lpAddress parameter is NULL, this value
+       is rounded up to the next page boundary. Otherwise, the allocated pages include 
+       all pages containing one or more bytes in the range from lpAddress to lpAddress+dwSize.
+     </par>
+     <par name="flAllocationType">The type of memory allocation</par>
+     <par name="flProtect">The memory protection for the region of pages to be allocated.
+    	</par>
+     <return>
+      <rc cond="success">Base Address of the Allocated region of pages</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="VirtualAlloc">
+    <returnbtype tname="LPVOID" ttag="tnamed"/>
+    <par loc="stack" io="r" name="lpAddress" nr="1">
+      <type>LPVOID</type>
+      <roles>
+         <role rt="ioc:memops" rn="address:memory"/>
+      </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r"  name="dwSize" nr="2">
+     <btype tname="SIZE_T" ttag="tnamed"/>
+     <pre><non-negative/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="size:allocation"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="flAllocationType" roles="none" nr="3">
+      <type>DWORD</type>
+      <pre><enum-value name="memory_allocation_flags" flags="true"/></pre>
+      <rep type="enum" name="memory_allocation_flags"/>
+    </par>
+    <par loc="stack" io="r" name="flProtect" nr="4" roles="none">
+      <type>DWORD</type>
+      <rep type="enum" name="memory_protection_constants"/>
+     <pre><enum-value name="memory_protection_constants" flags="true"/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops"
+		  desc="reserves a region of pages in the virtual address space"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

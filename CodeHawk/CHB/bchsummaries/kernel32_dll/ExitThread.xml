@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="ExitThread">
+   <documentation>
+    <desc>ends the calling thread</desc>
+    <apidoc>
+     <pt>VOID WINAPI ExitThread ( __in DWORD dwExitCode )</pt>
+     <par name="dwExitCode">the exit code for the thread</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ExitThread">
+    <returntype>void</returntype>
+    <par loc="stack" io="r" name="dwExitCode" nr="1">
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:process" rn="exit code"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="ends the calling thread"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <non-returning/>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

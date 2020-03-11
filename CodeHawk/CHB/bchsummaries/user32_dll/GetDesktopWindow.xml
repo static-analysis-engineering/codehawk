@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetDesktopWindow">
+   <documentation>
+    <desc>retrieves a handle to the desktop window</desc>
+    <apidoc>
+     <pt>HWND WINAPI GetDesktopWindow (void) </pt>
+     <return>handle to the desktop window</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetDesktopWindow">
+     <returntype>HWND</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves a handle to the desktop window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CloseServiceHandle">
+   <documentation>
+    <desc>closes a handle to a service control manager or service object</desc>
+    <apidoc>
+     <pt>BOOL WINAPI CloseServiceHandle( _In_ SC_HANDLE hSCObject )</pt>
+     <par name="hSCObject">
+       handle to the service control manager object or the serivce object to close
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CloseServiceHandle">
+     <returntype>BOOL</returntype>
+     <par loc="stack" desc="service control handle" io="r" name="hSCObject" nr="1">
+       <type>SC_HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:services" rn="handle:service"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="services"
+		  desc="closes a handle to a service control manager or service object">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

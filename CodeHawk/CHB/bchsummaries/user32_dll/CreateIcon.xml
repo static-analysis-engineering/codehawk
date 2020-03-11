@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/10/2015 02:43:58"/>
+  <libfun lib="user32" name="CreateIcon">
+   <documentation>
+    <desc>Creates an icon that has the specified size, colors, and bit patterns</desc>
+    <apidoc>
+     <pt>
+      <ll>HICON WINAPI CreateIcon(</ll>
+      <ld>_In_opt_       HINSTANCE hInstance</ld>
+      <ld>_In_           int       nWidth</ld>
+      <ld>_In_           int       nHeight</ld>
+      <ld>_In_           BYTE      cPlanes</ld>
+      <ld>_In_           BYTE      cBitsPixel</ld>
+      <ld>_In_     const BYTE      *lpbANDbits</ld>
+      <ld>_In_     const BYTE      *lpbXORBits</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hInstance">A handle to the instance of the module creating the icon</par>
+     <par name="nWidth">The width, in pixels, of the icon</par>
+     <par name="nHeight">The height, in pixels, of the icon</par>
+     <par name="cPlanes">The number of planes in the XOR bitmask of the icon</par>
+     <par name="cBitsPixel">The number of bits-per-pixel in the XOR bitmask of the icon</par>
+     <par name="lpbANDbits">
+       An array of bytes that contains the bit values for the AND bitmask of the icon. 
+       This bitmask describes a monochrome bitmap
+     </par>
+     <par name="lpbXORBits">
+       An array of bytes that contains the bit values for the XOR bitmask of the icon. 
+       This bitmask describes a monochrome or device-dependent color bitmap
+     </par>
+     <return>
+      <rc cond="success">a handle to an icon</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="CreateIcon">
+    <par loc="stack" name="hInstance" io="r" nr="1">
+     <type>HINSTANCE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:module"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nWidth" io="r" nr="2">
+     <type>int</type>
+     <roles>
+       <role rt="size:dimension" rn="icon width"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nHeight" io="r" nr="3">
+     <type>int</type>
+     <roles>
+       <role rt="size:dimension" rn="icon height"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cPlanes" io="r" nr="4">
+     <type>BYTE</type>
+     <roles>
+       <role rt="size:count" rn="planes"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cBitsPixel" io="r" nr="5">
+     <type>BYTE</type>
+     <roles>
+       <role rt="size:count" rn="bits per pixel"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpbANDbits" io="r" rep="hex" nr="6">
+     <type><ptr>BYTE</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:misc"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpbXORBits" io="r" rep="hex" nr="7">
+     <type><ptr>BYTE</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:misc"/>
+     </roles>
+    </par>
+    <returntype>HICON</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="creates an icon"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

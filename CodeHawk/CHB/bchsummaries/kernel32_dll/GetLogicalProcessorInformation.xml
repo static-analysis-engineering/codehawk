@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-09-12 21:35:11"/>
+  <libfun lib="kernel32" name="GetLogicalProcessorInformation">
+    <documentation>
+      <desc>
+	Retrieves information about logical processors and related hardware.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL GetLogicalProcessorInformation(</ll>
+          <ld>PSYSTEM_LOGICAL_PROCESSOR_INFORMATION Buffer</ld>
+          <ld>PDWORD ReturnedLength</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="Buffer">
+	  A pointer to a buffer that receives an array of
+	  SYSTEM_LOGICAL_PROCESSOR_INFORMATION structures. If the function
+	  fails, the contents of this buffer are undefined.
+	</par>
+        <par name="ReturnedLength">
+	  On input, specifies the length of the buffer pointed to by Buffer, in
+	  bytes. If the buffer is large enough to contain all of the data, this
+	  function succeeds and ReturnLength is set to the number of bytes
+	  returned. If the buffer is not large enough to contain all of the
+	  data, the function fails, GetLastError returns
+	  ERROR_INSUFFICIENT_BUFFER, and ReturnLength is set to the buffer
+	  length required to contain all of the data. If the function fails with
+	  an error other than ERROR_INSUFFICIENT_BUFFER, the value of
+	  ReturnLength is undefined.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="GetLogicalProcessorInformation">
+      <par loc="stack" name="Buffer" nr="1">
+        <type><ptr>SYSTEM_LOGICAL_PROCESSOR_INFORMATION</ptr></type>
+      </par>
+      <par loc="stack" name="ReturnedLength" nr="2">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:process" rn="infox:processor information"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="Retrieves information about logical processors"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>SYSTEM_LOGICAL_PROCESSOR_INFORMATION</type>
+	      <ci>Buffer</ci>
+	      <apply><addressed-value/><ci>ReturnedLength</ci><cn>0</cn></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>SYSTEM_LOGICAL_PROCESSOR_INFORMATION</type>
+	      <ci>Buffer</ci>
+	      <apply><addressed-value/><ci>ReturnedLength</ci><cn>0</cn></apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

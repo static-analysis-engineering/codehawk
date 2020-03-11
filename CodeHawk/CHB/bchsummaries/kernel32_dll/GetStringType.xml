@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetStringType">
+   <documentation>
+     <desc>
+       retrieves the character type information for the characters in the specified
+       source string
+     </desc>
+    <caution>
+      Using the GetStringTypeA function incorrectly can compromise the security of
+      your application. To avoid a buffer overflow, the application must set the output
+      buffer size correctly
+    </caution>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetStringType (</ll>
+      <ld>__in DWORD dwInfoType,</ld>
+      <ld>__in LPCTSTR lpSrcStr,</ld>
+      <ld>__in int cchSrc,</ld>
+      <ld>__out LPWORD lpCharType</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwInfoType">flags specifying the character type information</par>
+     <par name="lpSrcStr">
+       pointer to the ANSI string for which to retrieve the character types
+     </par>
+     <par name="cchSrc">
+       size in characters, of the string indicated by lpSrcStr. If negative,
+       the source string is assumed to be null-terminated
+     </par>
+     <par name="lpCharType">pointer to an array of 16-bit values</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetStringType">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="dwInfoType" roles="none" nr="1">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="lpSrcStr" nr="2">
+      <type>LPCTSTR</type>
+      <roles>
+	<role rt="ioc:memops" rn="src-string:examine"/>
+        <role rt="rep:hex" rn="src-string"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="cchSrc" nr="3">
+      <type>int</type>
+      <roles>
+	<role rt="size:buffersize" rn="GetStringType"/>
+      </roles>
+    </par>
+    <par loc="stack" desc="character type" io="w" name="lpCharType" nr="4">
+      <type><ptr>WORD</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-bytes:misc"/>
+	<role rt="rep:hex" rn="dst-bytes"/>
+      </roles>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+        <io-action cat="inputs" desc="retrieves character type information"/>
+    </io-actions>
+    <preconditions>
+      <!-- if cchSrc is non-negative: cchSrc characters are read -->
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><geq/><ci>cchSrc</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-read/>
+	      <type>TCHAR</type>
+	      <ci>lpSrcStr</ci>
+	      <apply><indexsize/><ci>cchSrc</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <!-- if cchSrc is negative: lpSrcStr is read until null-terminator -->
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><lt/><ci>cchSrc</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-read/>
+	      <type>TCHAR</type>
+	      <ci>lpSrcStr</ci>
+	      <apply><null-terminator-pos/><ci>lpSrcStr</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <!-- if cchSrc is non-negative: cchSrc 2-byte values are written -->
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><geq/><ci>cchSrc</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-write/>
+	      <type>WORD</type>
+	      <ci>lpCharType</ci>
+	      <apply><indexsize/><ci>cchSrc</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <!-- if cchSrc is negative: number of words written depends on src string length -->
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><lt/><ci>cchSrc</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-write/>
+	      <type>WORD</type>
+	      <ci>lpCharType</ci>
+	      <apply><indexsize/><apply><null-terminator-pos/><ci>lpSrcStr</ci></apply></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <!-- if cchSrc is non-negative: number of words written is cchSrc -->
+     <sideeffect>
+      <math>
+       <apply>
+        <implies/>
+        <pre><apply><geq/><ci>cchSrc</ci><cn>0</cn></apply></pre>
+        <apply>
+         <block-write/>
+	 <type>WORD</type>
+         <ci>lpCharType</ci>
+	 <apply><indexsize/><ci>cchSrc</ci></apply>
+	</apply>
+       </apply>
+      </math>
+     </sideeffect>
+     <!-- if cchSrc is negative: number of words written depends on source string length -->
+     <sideeffect>
+       <math>
+         <apply>
+	   <implies/>
+	   <pre><apply><lt/><ci>cchSrc</ci><cn>0</cn></apply></pre>
+	   <apply>
+	     <block-write/>
+	     <type>WORD</type>
+	     <ci>lpCharType</ci>
+	     <apply><indexsize/><apply><null-terminator-pos/><ci>lpSrcStr</ci></apply></apply>
+	   </apply>
+	 </apply>
+       </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

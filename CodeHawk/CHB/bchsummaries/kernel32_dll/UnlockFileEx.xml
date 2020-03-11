@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/19/2015 21:02:51"/>
+  <libfun lib="kernel32" name="UnlockFileEx">
+   <documentation>
+    <desc>
+      Unlocks a region in the specified file. This function can operate 
+      either synchronously or asynchronously
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI UnlockFileEx(</ll>
+      <ld>_In_        HANDLE hFile</ld>
+      <ld>_Reserved_  DWORD dwReserved</ld>
+      <ld>_In_        DWORD nNumberOfBytesToUnlockLow</ld>
+      <ld>_In_        DWORD nNumberOfBytesToUnlockHigh</ld>
+      <ld>_Inout_     LPOVERLAPPED lpOverlapped</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile"> 
+       A handle to the file. The handle must have been created with either 
+       the GENERIC_READ or GENERIC_WRITE access right
+     </par>
+     <par name="dwReserved">
+       Reserved parameter; must be zero
+     </par>
+     <par name="nNumberOfBytesToUnlockLow">
+       The low-order part of the length of the byte range to unlock
+     </par>     
+     <par name="nNumberOfBytesToUnlockHigh">
+       The high-order part of the length of the byte range to unlock
+     </par>
+     <par name="lpOverlapped">
+       A pointer to an OVERLAPPED structure that the function uses with 
+       the unlocking request. This structure contains the file offset of 
+       the beginning of the unlock range. You must initialize the hEvent 
+       member to a valid handle or zero
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="UnlockFileEx">
+    <par loc="stack" io="r" name="hFile" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:file" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwReserved" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="nNumberOfBytesToUnlockLow" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="nNumberOfBytesToUnlockHigh" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="rw" name="lpOverlapped" roles="none" nr="5">
+     <type><ptr>OVERLAPPED</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="unlocks a region in a file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

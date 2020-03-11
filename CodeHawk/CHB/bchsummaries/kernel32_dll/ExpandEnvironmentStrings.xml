@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:10:36"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="ExpandEnvironmentStrings">
+   <documentation>
+    <desc>
+      Expands environment-variable strings and replaces them with the values 
+      defined for the current user.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI ExpandEnvironmentStrings(</ll>
+      <ld>_In_       LPCTSTR lpSrc </ld>
+      <ld>_Out_opt_  LPTSTR lpDst </ld>
+      <ld>_In_       DWORD nSize </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpSrc">
+       A buffer that contains one or more environment-variable strings.
+     </par>
+     <par name="lpDst">
+       A pointer to a buffer that receives the result of expanding the environment 
+       variable strings in the lpSrc buffer. Note that this buffer cannot be the 
+       same as the lpSrc buffer.
+     </par>
+     <par name="nSize">
+       The maximum number of characters that can be stored in the buffer pointed 
+       to by the lpDst parameter. When using ANSI strings, the buffer size should 
+       be the string length, plus terminating null character, plus one. When using
+       Unicode strings, the buffer size should be the string length plus the 
+       terminating null character.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="ExpandEnvironmentStrings">
+    <returntype>DWORD</returntype>
+    <par loc="stack" name="lpSrc" io="r" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="name:environment variable"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpDst" io="w" nr="2" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:process" rn="infox:environment variable value"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nSize" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="ExpandEnvironmentStrings"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" 
+		  desc="expands environment-variable strings"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpDst</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpDst</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

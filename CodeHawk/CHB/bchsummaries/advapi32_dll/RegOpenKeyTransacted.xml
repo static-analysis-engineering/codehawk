@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 23:25:59"/>
+  <libfun lib="advapi32" name="RegOpenKeyTransacted">
+   <documentation>
+    <desc>
+      Opens the specified registry key and associates it with a transaction
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegOpenKeyTransacted(</ll>
+      <ld>_In_       HKEY    hKey</ld>
+      <ld>_In_opt_   LPCTSTR lpSubKey</ld>
+      <ld>_In_       DWORD   ulOptions</ld>
+      <ld>_In_       REGSAM  samDesired</ld>
+      <ld>_Out_      PHKEY   phkResult</ld>
+      <ld>_In_       HANDLE  hTransaction</ld>
+      <ld>_Reserved_ PVOID   pExtendedParameter</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">A handle to an open registry key</par>
+     <par name="lpSubKey">
+       The name of the registry subkey to be opened.
+       If this parameter is NULL or a pointer to an empty string, the function
+       will open a new handle to the key identified by the hKey parameter.
+     </par>
+     <par name="ulOptions">This parameter is reserved and must be zero</par>
+     <par name="samDesired">
+       A mask that specifies the desired access rights to the key. The 
+       function fails if the security descriptor of the key does not permit 
+       the requested access for the calling process
+     </par>
+     <par name="phkResult">
+       A pointer to a variable that receives a handle to the opened key. If 
+       the key is not one of the predefined registry keys, call the 
+       RegCloseKey function after you have finished using the handle
+     </par>
+     <par name="hTransaction">
+       A handle to an active transaction. This handle is returned by the 
+       CreateTransaction function
+     </par>
+     <par name="pExtendedParameter">This parameter is reserved and must be NULL</par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="RegOpenKeyTransacted">
+    <par loc="stack" name="hKey" nr="1" io="r">
+      <rep type="enum" name="predefined_registry_key_constants"/>
+      <type>HKEY</type>
+      <pre>
+	<deref-read/>
+	<enum-value name="predefined_registry_key_constants"/>
+      </pre>
+      <roles>
+	<role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpSubKey" io="r" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:registry" rn="name:subkey"/>
+     </roles>
+    </par>
+    <par loc="stack" name="ulOptions" io="r" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="samDesired" io="r" roles="none" nr="4">
+     <type>REGSAM</type>
+      <pre><enum-value name="registry_key_security_access_rights_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" name="phkResult" nr="5">
+     <type><ptr>HKEY</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:registry" rn="ref:key"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hTransaction" io="r" nr="6">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:registry" rn="handle:transaction"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pExtendedParameter" io="r" roles="none" nr="7">
+     <type><ptr>VOID</ptr></type>
+    </par>
+    <returntype>LONG</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="registry" 
+		desc="opens a registry key and associates it with a transaction"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

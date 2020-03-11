@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="EnableWindow">
+   <documentation>
+    <desc>enables or disables mouse and keyboard input to the specified window or control</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI EnableWindow (</ll>
+      <ld>__in HWND hWnd,</ld>
+      <ld>__in BOOL bEnable</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window to be enabled or disabled</par>
+     <par name="bEnable">indicates whether to enable or disable the window</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="EnableWindow">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="hWnd" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="bEnable" roles="none" nr="2">
+     <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="enables or disables mouse and keyboard input to a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

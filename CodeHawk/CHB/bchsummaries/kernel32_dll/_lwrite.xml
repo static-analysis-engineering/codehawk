@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 22:31:55"/>
+  <libfun lib="kernel32" name="_lwrite">
+   <documentation>
+    <desc>Writes data to the specified file</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG _lwrite(</ll>
+      <ld>HFILE hFile</ld>
+      <ld>LPCSTR lpBuffer</ld>
+      <ld>UINT cbWrite</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       A handle to the file that receives the data. This handle is created by _lcreat
+     </par>
+     <par name="lpBuffer">
+       The buffer that contains the data to be added
+     </par>
+     <par name="cbWrite">
+       The number of bytes to write to the file
+     </par>
+     <return>
+      <rc cond="success">the number of bytes written to the file</rc>
+      <rc cond="failure">HFILE_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="_lwrite">
+    <par loc="stack" name="hFile" io="r" nr="1">
+     <type>HFILE</type>
+     <roles>
+       <role rt="ioc:filesystem" rn="handle:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpBuffer" io="r" nr="2" rep="hex">
+     <type>LPCSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-string:file output"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cbWrite" io="r" nr="3">
+     <type>UINT</type>
+     <roles>
+       <role rt="size:count" rn="_lwrite"/>
+     </roles>
+    </par>
+    <returntype>LONG</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" desc="writes data to a file"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>char</type>
+	    <ci>lpBuffer</ci>
+	    <ci>cbWrite</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

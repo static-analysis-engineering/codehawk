@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="LockWindowUpdate.xml" time="2016-06-20 23:46:28.336299"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="LockWindowUpdate">
+    <documentation>
+      <desc>
+	disables or enables drawing in the specified window. Only one
+	window can be locked at a time.
+      </desc>
+      <apidoc>
+        <pt>BOOL LockWindowUpdate (_In_ HWND hWndLock)</pt>
+        <par name="hWndLock">
+	  The window in which drawing will be disabled. If this
+	  parameter is NULL, drawing in the locked window is enabled.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="LockWindowUpdate">
+      <par loc="stack" name="hWndLock" io="r" nr="1">
+        <type>HWND</type>
+	<pre><deref-read-null/></pre>
+        <roles>
+           <role rt="ioc:process" rn="handle:window"/>
+        </roles>
+      </par>
+      <returntype>BOOl</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="disables or enables drawing in a window"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

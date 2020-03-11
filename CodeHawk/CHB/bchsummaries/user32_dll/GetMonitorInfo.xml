@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/16/2015 21:20:26"/>
+  <libfun lib="user32" name="GetMonitorInfo">
+   <documentation>
+    <desc>retrieves information about a display monitor</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetMonitorInfo(</ll>
+      <ld>_In_   HMONITOR hMonitor</ld>
+      <ld>_Out_  LPMONITORINFO lpmi</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMonitor">A handle to the display monitor of interest</par>
+     <par name="lpmi">
+       A pointer to a MONITORINFO or MONITORINFOEX structure that receives 
+       information about the specified display monitor.
+       You must set the cbSize member of the structure to sizeof(MONITORINFO)
+       or sizeof(MONITORINFOEX) before calling the GetMonitorInfo function. 
+       Doing so lets the function determine the type of structure you are
+       passing to it
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetMonitorInfo">
+    <par loc="stack" io="r" name="hMonitor" nr="1">
+     <type>HMONITOR</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:monitor" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpmi" nr="2">
+     <type><ptr>MONITORINFO</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:MONITORINFO" />
+      <role rt="ioc:system" rn="infox:display monitor info"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves information about a display monitor"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

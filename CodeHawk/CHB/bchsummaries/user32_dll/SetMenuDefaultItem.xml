@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SetMenuDefaultItem.xml" time="2016-08-10 15:30:38.851314"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="SetMenuDefaultItem">
+    <documentation>
+      <desc>Sets the default menu item for the specified menu</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI SetMenuDefaultItem(</ll>
+          <ld>_In_ HMENU hMenu</ld>
+          <ld>_In_ UINT  uItem</ld>
+          <ld>_In_ UINT  fByPos</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hMenu">A handle to the menu to set the default item for</par>
+        <par name="uItem">
+	  The identifier or position of the new default menu item or
+	  -1 for no default item. The meaning of this parameter
+	  depends on the value of fByPos.
+	</par>
+        <par name="fByPos">
+	  The meaning of uItem. If this parameter is FALSE, uItem is a
+	  menu item identifier. Otherwise, it is a menu item position
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="SetMenuDefaultItem">
+      <par loc="stack" name="hMenu" io="r" nr="1">
+        <type>HMENU</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:menu"/>
+	</roles>
+      </par>
+      <par loc="stack" name="uItem" io="r"  nr="2">
+        <type>UINT</type>
+	<roles>
+	  <role rt="size:index" rn="menu item"/>
+	</roles>
+      </par>
+      <par loc="stack" name="fByPos" io="r" roles="none" nr="3">
+        <type>UINT</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+		   desc="sets the default menu item for a menu"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

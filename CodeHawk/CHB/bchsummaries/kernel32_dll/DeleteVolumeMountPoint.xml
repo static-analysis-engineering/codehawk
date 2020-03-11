@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="DeleteVolumeMountPoint.xml" time="2016-10-28 23:01:23.306993"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="DeleteVolumeMountPoint">
+    <documentation>
+      <desc>Deletes a drive letter or mounted folder</desc>
+      <apidoc>
+        <pt>BOOL WINAPI DeleteVolumeMountPoint (_In_ LPCTSTR lpsVolumeMountPoint)</pt>
+        <par name="lpsVolumeMountPoint">
+	  The drive letter or mounted folder to be deleted. A trailing
+	  backslash is required, for example, X:\ or Y:\MountX\.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="DeleteVolumeMountPoint">
+      <par loc="stack" name="lpsVolumeMountPoint" io="r" rep="hex" nr="1">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:volume"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem"
+		   desc="deletes a drive letter or mounted folder"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

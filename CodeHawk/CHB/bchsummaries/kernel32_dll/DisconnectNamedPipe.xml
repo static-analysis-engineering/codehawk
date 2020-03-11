@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:07:48"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="DisconnectNamedPipe">
+   <documentation>
+    <desc>Disconnects the server end of a named pipe instance from a client process.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI DisconnectNamedPipe(</ll>
+      <ld>_In_  HANDLE hNamedPipe </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hNamedPipe">
+       A handle to an instance of a named pipe. This handle must be 
+       created by the CreateNamedPipe function.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DisconnectNamedPipe">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hNamedPipe" nr="1">
+       <type>HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+         <role rt="ioc:process" rn="handle:pipe"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="disconnects the server end of a pipe from a client process"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

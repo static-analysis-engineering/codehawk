@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="InsertMenu">
+   <documentation>
+    <desc>inserts a menu item into a menu, moving other items down the menu</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI InsertMenu (</ll>
+      <ld>_In_ HMENU hMenu,</ld>
+      <ld>_In_ UINT uPosition,</ld>
+      <ld>_In_ UINT uFlags,</ld>
+      <ld>_In_ UINT_PTR uIDNewItem,</ld>
+      <ld>_In_opt_ LPCTSTR lpNewItem</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMenu">handle to the menu to be changed</par>
+     <par name="uPosition">
+       the menu item before which the new menu item is to be inserted, as determined by
+       other uFlags parameter
+     </par>
+     <par name="uFlags">
+       controls the interpretation of the uPosition parameter and the content, appearance,
+       and behavior of the new menu item
+     </par>
+     <par name="uIDNewItem">
+       identifier or the new menu item or, if the uFlags parameter has MF_POPUP flag set,
+       a handle to the drop-down mneu or submenu
+     </par>
+     <par name="lpNewItem">content of the new menu item</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="InsertMenu">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hMenu" nr="1">
+      <type>HMENU</type>
+      <pre>deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:menu"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uPosition" nr="2">
+      <type>UINT</type>
+      <roles>
+	<role rt="size:coordinate" rn="position"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uFlags" io="r" roles="none" nr="3">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="uIDNewItem" roles="none" io="r" nr="4">
+      <type>UINT_PTR</type>
+    </par>
+    <par loc="stack" name="lpNewItem" io="r" nr="5" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:process" rn="name:menu item"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="process" desc="inserts a menu item into a menu"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

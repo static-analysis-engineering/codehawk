@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:23:01"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="LoadLibraryEx">
+   <documentation>
+    <desc>
+      Loads the specified module into the address space of the calling process. 
+      The specified module may cause other modules to be loaded.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HMODULE WINAPI LoadLibraryEx(</ll>
+      <ld>_In_        LPCTSTR lpFileName</ld>
+      <ld>_Reserved_  HANDLE hFile</ld>
+      <ld>_In_        DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">handle to the loaded module</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="lpFileName">
+       A string that specifies the file name of the module to load. This name is not 
+       related to the name stored in a library module itself, as specified by the 
+       LIBRARY keyword in the module-definition (.def) file.
+
+       The module can be a library module (a .dll file) or an executable module (an 
+       .exe file). If the specified module is an executable module, static imports
+       are not loaded; instead, the module is loaded as if DONT_RESOLVE_DLL_REFERENCES 
+       was specified.
+     </par>
+     <par name="hFile">This parameter is reserved for future use. It must be NULL.</par>
+     <par name="dwFlags">
+       The action to be taken when loading the module. If no flags are specified, the 
+       behavior of this function is identical to that of the LoadLibrary function.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="LoadLibraryEx">
+    <returnbtype tname="HMODULE" ttag="tnamed"/>
+    <par loc="stack" name="lpFileName" io="r" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="name:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hFile" nr="2" roles="none">
+      <type>HANDLE</type>
+      <pre><null/></pre>
+    </par>
+    <par loc="stack" name="dwFlags" nr="3" roles="none">
+      <rep type="enum" name="load_library_flags" flags="true"/>
+      <type>DWORD</type>
+      <pre><enum-value name="load_library_flags" flags="true"/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="loads runtime library"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

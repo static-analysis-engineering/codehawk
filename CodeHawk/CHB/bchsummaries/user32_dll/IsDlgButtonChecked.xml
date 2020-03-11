@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="IsDlgButtonChecked">
+   <documentation>
+    <desc>
+      determines whether a button control is checked or whether a three-state button
+      control is checked, unchecked or indeterminate
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT IsDlgButtonChecked (</ll>
+      <ld>__in HWND hDlg,</ld>
+      <ld>__in int nIDButton</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDlg">handle to the dialog box that contains the button control</par>
+     <par name="nIDButton">identifier of the button control</par>
+     <return>state of the button</return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="IsDlgButtonChecked">
+     <returntype>UINT</returntype>
+     <par loc="stack" io="r" name="hDlg" nr="1">
+       <type>HWND</type>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window" />
+       </roles>
+       <pre><deref-read/></pre>
+     </par>
+    <par loc="stack" name="nIDButton" io="r" roles="none" nr="2">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="determines if a button is checked"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

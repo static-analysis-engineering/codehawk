@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/06/2015 17:30:57"/>
+  <libfun lib="user32" name="SetThreadDesktop">
+   <documentation>
+    <desc>
+      Assigns the specified desktop to the calling thread. All subsequent operations 
+      on the desktop use the access rights granted to the desktop
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI SetThreadDesktop (_In_ HDESK hDesktop)</pt>
+     <par name="hDesktop">
+       A handle to the desktop to be assigned to the calling thread. This handle is
+       returned by the CreateDesktop, GetThreadDesktop, OpenDesktop, or OpenInputDesktop
+       function.
+       This desktop must be associated with the current window station for the process.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetThreadDesktop">
+    <par loc="stack" io="r" name="hDesktop" nr="1">
+     <type>HDESK</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:desktop"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="assigns a desktop to a thread"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

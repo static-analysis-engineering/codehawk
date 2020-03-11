@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetOverlappedResult">
+   <documentation>
+    <desc>
+      retrieves the results of an overlapped operation on the specified file, named
+      pipe or communications device
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetOverlappedResult (</ll>
+      <ld>__in  HANDLE hFile,</ld>
+      <ld>__in  LPOVERLAPPED lpOverlapped,</ld>
+      <ld>__out LPDWORD lpNumberOfBytesTransferred,</ld>
+      <ld>__in  BOOL bWait</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">handle to the file, named pipe or communications device</par>
+     <par name="lpOverlapped">
+       pointer to an OVERLAPPED structure that was specified when the overlapped
+       operation was started
+     </par>
+     <par name="lpNumberOfBytesTransferred">
+       pointer to a variable to receive the number of bytes that were actually
+       transferred by a read or write operation
+     </par>
+     <par name="bWait">
+       if TRUE, the function does not return until the operation has been completed;
+       if FALSE and the operation is still pending the funciton returns FALSE
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetOverlappedResult">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hFile" io="r" rep="hex" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="handle:file"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpOverlapped" io="r" rep="hex" nr="2">
+      <type><ptr>OVERLAPPED</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:OVERLAPPED"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpNumberOfBytesTransferred" io="w" rep="hex" roles="none" nr="3">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="bWait" io="r" roles="none" nr="4">
+      <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" 
+		  desc="receives the result of an overlapped file operation"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

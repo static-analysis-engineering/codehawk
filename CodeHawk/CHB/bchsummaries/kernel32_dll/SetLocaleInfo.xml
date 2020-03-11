@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/18/2015 19:25:04"/>
+  <libfun lib="kernel32" name="SetLocaleInfo">
+   <documentation>
+    <desc>
+      Sets an item of information in the user override portion of the 
+      current locale. This function does not set the system defaults
+    </desc>
+    <caution>
+      Because this function modifies values for all applications, it should
+      only be called by the regional and language options functionality of 
+      Control Panel, or a similar utility. If making an international change 
+      to system parameters, the calling application must broadcast the 
+      WM_SETTINGCHANGE message to avoid causing instabilities in other applications
+    </caution>
+    <apidoc>
+     <pt>
+      <ll>BOOL SetLocaleInfo(</ll>
+      <ld>_In_  LCID Locale</ld>
+      <ld>_In_  LCTYPE LCType</ld>
+      <ld>_In_  LPCTSTR lpLCData</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Locale">
+       For the ANSI version of the function, the locale identifier of the 
+       locale with the code page used when interpreting the lpLCData 
+       information. For the Unicode version, this parameter is ignored
+     </par>
+     <par name="LCType">
+       Type of locale information to set
+     </par>
+     <par name="lpLCData">
+       Pointer to a null-terminated string containing the locale information 
+       to set. The information must be in the format specific to the specified 
+       constant. The application uses a Unicode string for the Unicode version 
+       of the function, and an ANSI string for the ANSI version
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SetLocaleInfo">
+    <par loc="stack" io="r" name="Locale" nr="1">
+     <type>LCID</type>
+     <roles>
+        <role rt="ioc:system" rn="id:locale"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="LCType" nr="2">
+     <type>LCTYPE</type>
+     <roles>
+        <role rt="ioc:system" rn="type:locale information"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpLCData" nr="3" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:system" rn="name:locale information"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="sets locale info"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

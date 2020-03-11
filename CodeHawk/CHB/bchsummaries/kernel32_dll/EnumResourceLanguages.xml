@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="EnumResourceLanguages.xml" time="2016-10-28 23:06:57.096094"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="EnumResourceLanguages">
+    <documentation>
+      <desc>
+	Enumerates language-specific resources, of the specified type
+	and name, associated with a binary module.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI EnumResourceLanguages(</ll>
+          <ld>_In_ HMODULE         hModule</ld>
+          <ld>_In_ LPCTSTR         lpType</ld>
+          <ld>_In_ LPCTSTR         lpName</ld>
+          <ld>_In_ ENUMRESLANGPROC lpEnumFunc</ld>
+          <ld>_In_ LONG_PTR        lParam</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hModule">
+	  The handle to a module to be searched. Starting with Windows
+	  Vista, if this is a language-neutral Portable Executable (LN
+	  file), then appropriate .mui files (if any exist) are
+	  included in the search. If this is a specific .mui file,
+	  only that file is searched for resources.  If this parameter
+	  is NULL, that is equivalent to passing in a handle to the
+	  module used to create the current process.
+	</par>
+        <par name="lpType">
+	  The type of resource for which the language is being
+	  enumerated. Alternately, rather than a pointer, this
+	  parameter can be MAKEINTRESOURCE(ID), where ID is an integer
+	  value representing a predefined resource type. For a list of
+	  predefined resource types, see Resource Types. For more
+	  information, see the Remarks section below.
+	</par>
+        <par name="lpName">
+	  The name of the resource for which the language is being
+	  enumerated. Alternately, rather than a pointer, this
+	  parameter can be MAKEINTRESOURCE(ID), where ID is the
+	  integer identifier of the resource. For more information,
+	  see the Remarks section below.
+	</par>
+        <par name="lpEnumFunc">
+	  A pointer to the callback function to be called for each
+	  enumerated resource language. For more information, see
+	  EnumResLangProc.
+	</par>
+        <par name="lParam">
+	  An application-defined value passed to the callback
+	  function. This parameter can be used in error checking.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="EnumResourceLanguages">
+      <par loc="stack" name="hModule" io="r" nr="1">
+        <type>HMODULE</type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:process"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpType" io="r" rep="hex" nr="2">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="name:resource type"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpName" io="r" rep="hex" nr="3">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="name:resource"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpEnumFunc" io="r" rep="hex" nr="4">
+        <type>ENUMRESLANGPROC</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="callbackf:resource language"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lParam" io="r" nr="5">
+        <type>LONG_PTR</type>
+	<roles>
+	  <role rt="ioc:process" rn="callbackp:resource language"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+		   desc="enumerates language-specific resources"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

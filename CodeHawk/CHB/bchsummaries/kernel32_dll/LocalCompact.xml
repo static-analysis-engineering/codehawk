@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="LocalCompact.xml" time="2016-10-29 09:16:26.533638"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="LocalCompact">
+    <documentation>
+      <desc>undocumented function</desc>
+      <apidoc>
+        <pt>SIZE_T LocalCompact (_In_ UINT minFree)</pt>
+        <par name="minFree">undocumented</par>
+        <return>
+          <rc cond="success">undocumented</rc>
+          <rc cond="failure">undocumented</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="LocalCompact">
+      <par loc="stack" io="r" roles="none" name="minFree" nr="1">
+        <type>UINT</type>
+      </par>
+      <returntype>SIZE_T</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+		   desc="compacts local memory (undocumented)"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

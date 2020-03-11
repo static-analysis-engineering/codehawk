@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ClearCommError.xml" time="2016-03-06 12:26:47.277474"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="ClearCommError" lib="kernel32">
+    <documentation>
+      <desc>
+	Retrieves information about a communications error and reports
+	the current status of a communications device. The function is
+	called when a communications error occurs, and it clears the
+	device's error flag to enable additional input and output
+	(I/O) operations.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI ClearCommError(</ll>
+          <ld>_In_      HANDLE    hFile</ld>
+          <ld>_Out_opt_ LPDWORD   lpErrors</ld>
+          <ld>_Out_opt_ LPCOMSTAT lpStat</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hFile">
+	  A handle to the communications device. The CreateFile
+	  function returns this handle
+	</par>
+        <par name="lpErrors">
+	  A pointer to a variable that receives a mask indicating the type of error
+	</par>
+        <par name="lpStat">
+	  A pointer to a COMSTAT structure in which the device's
+	  status information is returned. If this parameter is NULL,
+	  no status information is returned.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="12" name="ClearCommError">
+      <par loc="stack" io="r" nr="1" name="hFile">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="handle:file"/>
+	</roles>
+      </par>
+      <par loc="stack" io="w" nr="2" rep="hex" name="lpErrors">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-write-null/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:system" rn="communications device error mask"/>
+	</roles>
+      </par>
+      <par loc="stack" io="w" nr="3" name="lpStat">
+        <type><ptr>COMSTAT</ptr></type>
+	<pre><deref-write-null/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:system" rn="communications device info"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="reports on a communications device"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

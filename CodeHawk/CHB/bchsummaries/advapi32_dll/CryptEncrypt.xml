@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CryptEncrypt.xml" time="2016-05-08 22:20:14.078151"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="CryptEncrypt">
+    <documentation>
+      <desc>
+	encrypts data. The algorithm used to encrypt the data is
+	designated by the key held by the CSP module and is referenced
+	by the hKey parameter.  
+
+	Important changes to support Secure/Multipurpose Internet Mail
+	Extensions (S/MIME) email interoperability have been made to
+	CryptoAPI that affect the handling of enveloped messages. For
+	more information, see the Remarks section of
+	CryptMsgOpenToEncode.  
+
+	Important The CryptEncrypt function is not guaranteed to be
+	thread safe and may return incorrect results if invoked
+	simultaneously by multiple callers.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI CryptEncrypt(</ll>
+          <ld>_In_    HCRYPTKEY  hKey</ld>
+          <ld>_In_    HCRYPTHASH hHash</ld>
+          <ld>_In_    BOOL       Final</ld>
+          <ld>_In_    DWORD      dwFlags</ld>
+          <ld>_Inout_ BYTE       *pbData</ld>
+          <ld>_Inout_ DWORD      *pdwDataLen</ld>
+          <ld>_In_    DWORD      dwBufLen</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hKey">
+	  A handle to the encryption key. An application obtains this
+	  handle by using either the CryptGenKey or the CryptImportKey
+	  function.  The key specifies the encryption algorithm used.
+	</par>
+        <par name="hHash">
+	  A handle to a hash object. If data is to be hashed and
+	  encrypted simultaneously, a handle to a hash object can be
+	  passed in the hHash parameter. The hash value is updated
+	  with the plaintext passed in. This option is useful when
+	  generating signed and encrypted text. 
+
+	  Before calling CryptEncrypt, the application must obtain a
+	  handle to the hash object by calling the CryptCreateHash
+	  function. After the encryption is complete, the hash value
+	  can be obtained by using the CryptGetHashParam function, or
+	  the hash can be signed by using the CryptSignHash function.
+	  If no hash is to be done, this parameter must be NULL.
+	</par>
+        <par name="Final">
+	  A Boolean value that specifies whether this is the last
+	  section in a series being encrypted. Final is set to TRUE
+	  for the last or only block and to FALSE if there are more
+	  blocks to be encrypted
+	</par>
+        <par name="dwFlags">Reserved</par>
+        <par name="pbData">
+	  A pointer to a buffer that contains the plaintext to be
+	  encrypted. The plaintext in this buffer is overwritten with
+	  the ciphertext created by this function.  The pdwDataLen
+	  parameter points to a variable that contains the length, in
+	  bytes, of the plaintext. The dwBufLen parameter contains the
+	  total size, in bytes, of this buffer.  If this parameter
+	  contains NULL, this function will calculate the required
+	  size for the ciphertext and place that in the value pointed
+	  to by the pdwDataLen parameter.
+	</par>
+        <par name="pdwDataLen">
+	  A pointer to a DWORD value that , on entry, contains the
+	  length, in bytes, of the plaintext in the pbData buffer. On
+	  exit, this DWORD contains the length, in bytes, of the
+	  ciphertext written to the pbData buffer.  If the buffer
+	  allocated for pbData is not large enough to hold the
+	  encrypted data, GetLastError returns ERROR_MORE_DATA and
+	  stores the required buffer size, in bytes, in the DWORD
+	  value pointed to by pdwDataLen.  If pbData is NULL, no error
+	  is returned, and the function stores the size of the
+	  encrypted data, in bytes, in the DWORD value pointed to by
+	  pdwDataLen. This allows an application to determine the
+	  correct buffer size.  When a block cipher is used, this data
+	  length must be a multiple of the block size unless this is
+	  the final section of data to be encrypted and the Final
+	  parameter is TRUE.
+	</par>
+        <par name="dwBufLen">
+	  Specifies the total size, in bytes, of the input pbData
+	  buffer.  Note that, depending on the algorithm used, the
+	  encrypted text can be larger than the original plaintext. In
+	  this case, the pbData buffer needs to be large enough to
+	  contain the encrypted text and any padding.  As a rule, if a
+	  stream cipher is used, the ciphertext is the same size as
+	  the plaintext. If a block cipher is used, the ciphertext is
+	  up to a block length larger than the plaintext.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="28" cc="stdcall" name="CryptEncrypt">
+      <par loc="stack" name="hKey" io="r" nr="1">
+        <type>HCRYPTKEY</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:crypto" rn="handle:cryptographic key"/>
+	</roles>
+      </par>
+      <par loc="stack" name="hHash" io="r" nr="2">
+        <type>HCRYPTHASH</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:crypto" rn="handle:cryptographic hash"/>
+	</roles>
+      </par>
+      <par loc="stack" name="Final" io="r" roles="none" nr="3">
+        <type>BOOL</type>
+      </par>
+      <par loc="stack" name="dwFlags" io="r" roles="none" nr="4">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="pbData" io="rw" nr="5">
+        <type><ptr>BYTE</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-bytes:plaintext"/>
+	  <role rt="ioc:memops" rn="dst-bytes:ciphertext"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pdwDataLen" io="rw" nr="6">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="size:buffersize" rn="CryptEncrypt"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwBufLen" io="r" nr="7">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:buffersize" rn="CryptEncrypt"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="crypto"  desc="encrypts data"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write-null/>
+	      <type>BYTE</type>
+	      <ci>pbData</ci>
+	      <ci>dwBufLen</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>BYTE</type>
+	      <ci>pbData</ci>
+	      <ci>dwBufLen</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

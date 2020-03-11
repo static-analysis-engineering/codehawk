@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetExitCodeThread">
+   <documentation>
+    <desc>retrieves the termination status of the specified thread</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetExitCodeThread (</ll>
+      <ld>_In_ HANDLE hThread,</ld>
+      <ld>_Out_ LPDWORD lpExitCode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hThread">handle to thread</par>
+     <par name="lpExitCode">pointer to a variable to receive the thread termination status
+     </par>
+     <return>
+      <rc cond="succces">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetExitCodeThread">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hThread" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:thread"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpExitCode" nr="2">
+      <type>LPDWORD</type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:process" rn="exit code"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves termination status of a thread"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

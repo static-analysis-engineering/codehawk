@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="CallWindowProc">
+   <documentation>
+    <desc>passes message information to the specified window procedure</desc>
+    <apidoc>
+     <pt>
+      <ll>LRESULT WINAPI CallWindowProc (</ll>
+      <ld>__in WNDPROC lpPrevWndFunc,</ld>
+      <ld>__in HWND hWnd,</ld>
+      <ld>__in UINT Msg,</ld>
+      <ld>__in WPARAM wParam,</ld>
+      <ld>__in LPARAM lParam</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpPrevWindFunc">previous window procedure</par>
+     <par name="hWnd">handle to the window procedure to receive the message</par>
+     <par name="Msg">the message</par>
+     <par name="wParam">additional message-specific information</par>
+     <par name="lParam">additional message-specific information</par>
+     <return>specifies the result of the message processing</return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="CallWindowProc">
+     <returntype>LRESULT</returntype>
+    <par loc="stack" name="lpPrevWndFunc" io="r" nr="1" rep="hex">
+      <type>WNDPROC</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="callbackf:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hWnd" io="r" nr="2">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="Msg" io="r"  nr="3">
+      <type>UINT</type>
+      <roles>
+	<role rt="ioc:process" rn="id:message"/>
+      </roles>
+    </par>
+    <par loc="stack" name="wParam" io="r" nr="4">
+      <type>WPARAM</type>
+      <roles>
+	<role rt="ioc:process" rn="callbackp:wparam"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lParam" io="r" nr="5">
+      <type>LPARAM</type>
+      <roles>
+	<role rt="ioc:process" rn="callbackp:lparam"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="passes message information to a window procedure"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

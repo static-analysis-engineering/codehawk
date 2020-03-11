@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 03:24:14"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="StartService">
+   <documentation>
+    <desc>Starts a service.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI StartServiceA(</ll>
+      <ld>_In_      SC_HANDLE hService </ld>
+      <ld>_In_      DWORD dwNumServiceArgs </ld>
+      <ld>_In_opt_  LPCTSTR *lpServiceArgVectors </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hService">
+       A handle to the service. This handle is returned by the OpenService 
+       or CreateService function, and it must have the SERVICE_START access right.
+    </par>
+     <par name="dwNumServiceArgs">
+       The number of strings in the lpServiceArgVectors array. 
+       If lpServiceArgVectors is NULL, this parameter can be zero.
+    </par>
+     <par name="lpServiceArgVectors">
+       The null-terminated strings to be passed to the ServiceMain function
+       for the service as arguments. 
+       If there are no arguments, this parameter can be NULL. Otherwise, the 
+       first argument (lpServiceArgVectors[0]) is the name of the service, 
+       followed by any additional arguments (lpServiceArgVectors[1] through 
+       lpServiceArgVectors[dwNumServiceArgs-1]).
+       Driver services do not receive these arguments.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="StartService">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hService" io="r" nr="1">
+       <type>SC_HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:services" rn="handle:service"/>
+       </roles>
+    </par>
+    <par loc="stack" name="dwNumServiceArgs" io="r" nr="2">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:count" rn="StartService"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpServiceArgVectors" io="r" nr="3" rep="hex">
+      <type><ptr>LPCTSTR</ptr></type>
+      <roles>
+	<role rt="ioc:services" rn="name:service arguments"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="services"  desc="starts a service"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <type>LPCTSTR</type>
+	    <ci>lpServiceArgVectors</ci>
+	    <apply><indexsize/><ci>dwNumServiceArgs</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

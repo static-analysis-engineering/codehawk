@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegEnumKey">
+   <documentation>
+    <desc>enumerates the subkeys of the specified open registry key</desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegEnumKey (</ll>
+      <ld>__in  HKEY hKey,</ld>
+      <ld>__in  DWORD dwIndex,</ld>
+      <ld>__out LPTSTR lpName,</ld>
+      <ld>__in  DWORD cchName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">handle to an open registry key</par>
+     <par name="dwIndex">index of the subkey of hKey to be retrieved</par>
+     <par name="lpName">
+       pointer to a buffer that receives the name of the subkey, including
+       the terminating null character
+     </par>
+     <par name="cchName">
+       size of the buffer pointed to by the lpName parameter, in TCHARs
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">system error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="RegEnumKey">
+     <returntype>LONG</returntype>
+     <par loc="stack" name="hKey" io="r" nr="1" rep="hex">
+       <rep type="enum" name="predefined_registry_key_constants"/>
+       <type>HKEY</type>
+       <pre>
+	 <deref-read/>
+	 <enum-value name="predefined_registry_key_constants"/>
+       </pre>
+       <roles>
+	 <role rt="ioc:registry" rn="handle:key"/>
+       </roles>
+     </par>
+     <par loc="stack" name="dwIndex" io="r" nr="2">
+       <type>DWORD</type>
+       <roles>
+	 <role rt="size:index" rn="RegEnumKey"/>
+       </roles>
+     </par>
+     <par loc="stack" name="lpName" io="w" nr="3" rep="hex">
+       <type>LPTSTR</type>
+       <roles>
+	 <role rt="ioc:registry" rn="name:subkey"/>
+       </roles>
+     </par>
+     <par loc="stack" name="cchName" io="r" nr="4">
+       <type>DWORD</type>
+       <roles>
+	 <role rt="size:buffersize" rn="RegEnumKey"/>
+       </roles>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry"
+		  desc="enumerates the subkeys of a registry key"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>TCHAR</type>
+	    <ci>lpName</ci>
+	    <apply><indexsize/><ci>cchName</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <enum name="system_error_code_constants"/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write xsrc="windows registry"
+		     xdata="name of enumerated subkey"/>
+	<type>TCHAR</type>
+        <ci>lpName</ci>
+        <apply><indexsize/><ci>cchName</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 22:27:23"/>
+  <libfun lib="kernel32" name="CreateHardLink">
+   <documentation>
+    <desc>
+      Establishes a hard link between an existing file and a new file. 
+      This function is only supported on the NTFS file system, and only 
+      for files, not directories
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CreateHardLink(</ll>
+      <ld>_In_       LPCTSTR               lpFileName</ld>
+      <ld>_In_       LPCTSTR               lpExistingFileName</ld>
+      <ld>_Reserved_ LPSECURITY_ATTRIBUTES lpSecurityAttributes</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpFileName">The name of the new file</par>
+     <par name="lpExistingFileName">The name of the existing file</par>
+     <par name="lpSecurityAttributes">Reserved; must be NULL</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CreateHardLink">
+    <par loc="stack" io="r" name="lpFileName" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:file"/>
+	<role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpExistingFileName" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpSecurityAttributes" roles="none" nr="3">
+     <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="establishes a hard link between an existing file and a new file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

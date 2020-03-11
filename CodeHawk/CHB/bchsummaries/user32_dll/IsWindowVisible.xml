@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/06/2015 22:19:47"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="IsWindowVisible">
+   <documentation>
+    <desc>determines the visibility of the specified window</desc>
+    <apidoc>
+     <pt>BOOL WINAPI IsWindowVisible (_In_ HWND hWnd)</pt>
+     <return>true if the parent windows have the WS_VISIBLE style</return>
+     <par name="hWnd">handle to the window to be tested</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="IsWindowVisible">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hWnd" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="determines visibility of a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

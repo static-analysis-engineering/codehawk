@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 15:36:52"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="MapVirtualKeyExW">
+    <refer-to char-type="unicode"  name="MapVirtualKeyEx"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

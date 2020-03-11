@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="InflateRect.xml" time="2016-06-18 17:58:32.670174"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="InflateRect">
+    <documentation>
+      <desc>
+         increases or decreases the width and height of the specified
+         rectangle. The InflateRect function adds dx units to the left
+         and right ends of the rectangle and dy units to the top and
+         bottom. The dx and dy parameters are signed values; positive
+         values increase the width and height, and negative values
+         decrease them.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL InflateRect(</ll>
+          <ld>_Inout_ LPRECT lprc</ld>
+          <ld>_In_    int    dx</ld>
+          <ld>_In_    int    dy</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lprc">
+           A pointer to the RECT structure that increases or decreases in size
+	</par>
+        <par name="dx">
+           The amount to increase or decrease the rectangle
+           width. This parameter must be negative to decrease the
+           width.
+	</par>
+        <par name="dy">
+           The amount to increase or decrease the rectangle
+           height. This parameter must be negative to decrease the
+           height.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" io="rw" name="InflateRect">
+      <par loc="stack" name="lprc" io="rw" nr="1" rep="hex">
+        <type><ptr>RECT</ptr></type>
+        <pre><deref-read/></pre>
+        <sideeffects><block-write/></sideeffects>
+        <roles>
+           <role rt="ioc:memops" rn="src-struct:RECT"/>
+	   <role rt="ioc:memops" rn="dst-struct:RECT"/>
+        </roles>
+      </par>
+      <par loc="stack" name="dx" io="r" nr="2">
+        <type>int</type>
+        <roles>
+           <role rt="size:screen" rn="InflateRect"/>
+        </roles>
+      </par>
+      <par loc="stack" name="dy" io="r" nr="3">
+        <type>int</type>
+        <roles>
+           <role rt="size:screen" rn="InflateRect"/>
+        </roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" 
+                   desc="changes the size of a rectangle"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

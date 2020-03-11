@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="BuildTrusteeWithObjectsAndSid.xml" time="2016-05-08 21:18:09.672945"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="BuildTrusteeWithObjectsAndSid">
+    <documentation>
+      <desc>
+	initializes a TRUSTEE structure with the object-specific
+	access control entry (ACE) information and initializes the
+	remaining members of the structure to default values. The
+	caller also specifies the SID structure that represents the
+	security identifier of the trustee
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>void WINAPI BuildTrusteeWithObjectsAndSid(</ll>
+          <ld>_Inout_  PTRUSTEE         pTrustee</ld>
+          <ld>_In_opt_ POBJECTS_AND_SID pObjSid</ld>
+          <ld>_In_opt_ GUID             *pObjectGuid</ld>
+          <ld>_In_opt_ GUID             *pInheritedObjectGuid</ld>
+          <ld>_In_opt_ PSID             pSid</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pTrustee">
+	  A pointer to a TRUSTEE structure to initialize. The
+	  BuildTrusteeWithObjectsAndSid function does not allocate any
+	  memory. If this parameter is NULL or a pointer that is not
+	  valid, the results are undefined.
+	</par>
+        <par name="pObjSid">
+	  A pointer to an OBJECTS_AND_SID structure that contains
+	  information about the trustee and the securable object
+	</par>
+        <par name="pObjectGuid">
+	  A pointer to a GUID structure that describes the ObjectType
+	  GUID to be added to the TRUSTEE structure.
+	</par>
+        <par name="pInheritedObjectGuid">
+	  A pointer to a GUID structure that describes the
+	  InheritedObjectType GUID to be added to the TRUSTEE
+	  structure.
+	</par>
+        <par name="pSid">
+	  A pointer to a SID structure that identifies the trustee
+	</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="BuildTrusteeWithObjectsAndSid">
+      <par loc="stack" name="pTrustee" io="rw" nr="1">
+        <type><ptr>TRUSTEE</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:system" rn="trustee structure"/>
+	  <role rt="rep:hex" rn="trustee structure"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pObjSid" io="r" nr="2">
+        <type><ptr>OBJECTS_AND_SID</ptr></type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="objects and sid structure"/>
+	  <role rt="rep:hex" rn="obejcts and sid structure"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pObjectGuid" io="r" nr="3">
+        <type><ptr>GUID</ptr></type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="guid structure"/>
+	  <role rt="rep:hex" rn="guid structure"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pInheritedObjectGuid" io="r" nr="4">
+        <type><ptr>GUID</ptr></type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="guid structure"/>
+	  <role rt="rep:hex" rn="guid structure"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pSid" io="r" nr="5">
+        <type><ptr>SID</ptr></type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="sid structure"/>
+	  <role rt="rep:hex" rn="sid structure"/>
+	</roles>
+      </par>
+      <returntype>VOID</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="initializes a trustee structure with an object-specific access control entry"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

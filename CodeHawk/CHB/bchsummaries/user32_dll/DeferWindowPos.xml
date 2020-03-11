@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/10/2015 05:39:13"/>
+  <libfun lib="user32" name="DeferWindowPos">
+   <documentation>
+    <desc>
+      Updates the specified multiple-window - position structure for the specified window. 
+      The function then returns a handle to the updated structure. The EndDeferWindowPos 
+      function uses the information in this structure to change the position and size of 
+      a number of windows simultaneously. The BeginDeferWindowPos function creates the 
+      structure
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HDWP WINAPI DeferWindowPos(</ll>
+      <ld>_In_     HDWP hWinPosInfo</ld>
+      <ld>_In_     HWND hWnd</ld>
+      <ld>_In_opt_ HWND hWindInsertAfter</ld>
+      <ld>_In_     int  x</ld>
+      <ld>_In_     int  y</ld>
+      <ld>_In_     int  cx</ld>
+      <ld>_In_     int  cy</ld>
+      <ld>_In_     UINT uFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWinPosInfo">
+       A handle to a multiple-window - position structure that
+       contains size and position information for one or more
+       windows. This structure is returned by BeginDeferWindowPos or
+       by the most recent call to DeferWindowPos
+     </par>
+     <par name="hWnd">
+       A handle to the window for which update information is stored in the structure. 
+       All windows in a multiple-window - position structure must have the same parent
+     </par>
+     <par name="hWindInsertAfter">
+       A handle to the window that precedes the positioned window in the Z order. This 
+       parameter must be a window handle or one of the following values. This parameter
+       is ignored if the SWP_NOZORDER flag is set in the uFlags parameter.
+     </par>
+     <par name="x">The x-coordinate of the window's upper-left corner</par>
+     <par name="y">The y-coordinate of the window's upper-left corner</par>
+     <par name="cx">The window's new width, in pixels</par>
+     <par name="cy">The window's new height, in pixels</par>
+     <par name="uFlags">
+       A combination of the following values that affect the size and
+       position of the window
+     </par>
+     <return>
+      <rc cond="success">
+	the updated multiple-window - position structure. The handle returned by this 
+	function may differ from the handle passed to the function. The new handle that
+	this function returns should be passed during the next call to the DeferWindowPos
+	or EndDeferWindowPos function.
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="DeferWindowPos">
+    <par loc="stack" io="r" name="hWinPosInfo" nr="1">
+     <type>HDWP</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window position structure" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="hWnd" nr="2">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="hWindInsertAfter" nr="3">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+    </par>
+    <par loc="stack" name="x" io="r" roles="none" nr="4">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="y" io="r" roles="none" nr="5">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="cx" io="r" roles="none" nr="6">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="cy" io="r" roles="none" nr="7">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="uFlags" io="r" roles="none" nr="8">
+     <type>int</type>
+     <pre><enum-value name="windowpos_flags" flags="true"/></pre>
+    </par>
+    <returntype>HDWP</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="process"
+		 desc="updates a multi-window position structure"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

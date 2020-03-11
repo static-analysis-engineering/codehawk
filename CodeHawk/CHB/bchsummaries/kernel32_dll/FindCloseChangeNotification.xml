@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/13/2015 21:32:57"/>
+  <libfun lib="kernel32" name="FindCloseChangeNotification">
+   <documentation>
+    <desc>Stops change notification handle monitoring</desc>
+    <apidoc>
+     <pt>BOOL WINAPI FindCloseChangeNotification (_In_  HANDLE hChangeHandle)</pt>
+     <par name="hChangeHandle">
+       A handle to a change notification handle created by the 
+       FindFirstChangeNotification function
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="FindCloseChangeNotification">
+    <par loc="stack" io="r" name="hChangeHandle" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="change notification handle"/>
+     </roles>
+    </par>
+    <returntype>BOOl</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="stops file change notification"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

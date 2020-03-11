@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetTickCount">
+   <documentation>
+    <desc>
+      retrieves the number of milliseconds that have elapsed since the system was
+      started (up to 49.7 days)
+    </desc>
+    <apidoc>
+      <pt>DWORD WINAPI GetTickCount (void)</pt>
+      <return>number of milliseconds that have elapsed sine the system was started</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetTickCount">
+    <returnbtype ikind="iuint" ttag="tint"/>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves the elapsed time since the system was started">
+	 <args>
+	   <return io="w" role="milliseconds since startup"/>
+	 </args>
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+       <math>
+	 <apply>
+	   <geq/>
+	   <return/>
+	   <cn>0</cn>
+	 </apply>
+       </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

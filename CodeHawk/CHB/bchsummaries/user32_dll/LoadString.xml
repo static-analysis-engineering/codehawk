@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:22:09"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="LoadString">
+   <documentation>
+    <desc>
+      Loads a string resource from the executable file associated with a 
+      specified module, copies the string into a buffer, and appends a 
+      terminating null character.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI LoadString (</ll>
+      <ld>_In_opt_  HINSTANCE hInstance </ld>
+      <ld>_In_      UINT uID </ld>
+      <ld>_Out_     LPTSTR lpBuffer </ld>
+      <ld>_In_      int nBufferMax </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="resource exists">notzero</rc>
+      <rc cond="resource does not exist">zero</rc>
+     </return>
+     <par name="hInstance">
+       A handle to an instance of the module whose executable file contains the 
+       string resource. To get the handle to the application itself, call the 
+       GetModuleHandle function with NULL.
+     </par>
+     <par name="uID">The identifier of the string to be loaded. </par>
+     <par name="lpBuffer">
+       The buffer is to receive the string. Must be of sufficient length to hold 
+       a pointer (8 bytes). 
+     </par>
+     <par name="nBufferMax">
+       The size of the buffer, in characters. The string is truncated and 
+       null-terminated if it is longer than the number of characters specified. 
+       If this parameter is 0, then lpBuffer receives a read-only pointer to
+       the resource itself.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="LoadString">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hInstance" nr="1">
+      <type>HINSTANCE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:module"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="uID" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" io="w" name="lpBuffer" nr="3" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:memops" rn="dst-string:resource input"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nBufferMax" nr="4">
+     <type>int</type>
+     <roles>
+        <role rt="size:buffersize" rn="LoadString"/>
+     </roles>
+     <pre><non-negative/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="loads a string resource from an executable file"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><eq/><ci>nBufferMax</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-write/>
+	      <type><ptr>TCHAR</ptr></type>
+	      <ci>lpBuffer</ci>
+	      <cn>8</cn>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><gt/><ci>nBufferMax</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>lpBuffer</ci>
+	      <apply><indexsize/><ci>nBufferMax</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <implies/>
+	    <pre><apply><eq/><ci>nBufferMax</ci><cn>0</cn></apply></pre>
+	    <apply>
+	      <block-write/>
+	      <type><ptr>TCHAR</ptr></type>
+	      <ci>lpBuffer</ci>
+	      <cn>8</cn>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <implies/>
+	    <pre><apply><gt/><ci>nBufferMax</ci><cn>0</cn></apply></pre>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>lpBuffer</ci>
+	      <apply><indexsize/><ci>nBufferMax</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

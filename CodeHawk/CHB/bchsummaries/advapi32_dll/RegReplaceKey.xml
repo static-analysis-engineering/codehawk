@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/08/2015 16:35:26"/>
+  <libfun lib="advapi32" name="RegReplaceKey">
+   <documentation>
+    <desc>
+      Replaces the file backing a registry key and all its subkeys with another 
+      file, so that when the system is next started, the key and subkeys will 
+      have the values stored in the new file
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegReplaceKey(</ll>
+      <ld>_In_      HKEY hKey</ld>
+      <ld>_In_opt_  LPCTSTR lpSubKey</ld>
+      <ld>_In_      LPCTSTR lpNewFile</ld>
+      <ld>_In_      LPCTSTR lpOldFile</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">
+       A handle to an open registry key. This handle is returned by the RegCreateKeyEx 
+       or RegOpenKeyEx function, or it can be one of a set of predefined keys
+     </par>
+     <par name="lpSubKey">
+       The name of the registry key whose subkeys and values are to be replaced. 
+       If the key exists, it must be a subkey of the key identified by the hKey 
+       parameter. If the subkey does not exist, it is created. This parameter 
+       can be NULL.
+       If the specified subkey is not the root of a hive, RegReplaceKey traverses 
+       up the hive tree structure until it encounters a hive root, then it replaces 
+       the contents of that hive with the contents of the data file specified by 
+       lpNewFile.
+     </par>
+     <par name="lpNewFile">
+       The name of the file with the registry information. This file is typically 
+       created by using the RegSaveKey function
+     </par>
+     <par name="lpOldFile">
+       The name of the file that receives a backup copy of the registry information 
+       being replaced
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">system error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="RegReplaceKey">
+    <par loc="stack" name="hKey" io="r" rep="hex" nr="1">
+      <rep type="enum" name="predefined_registry_key_constants"/>
+      <type>HKEY</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpSubKey" io="r" rep="hex" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:registry" rn="name:subkey"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpNewFile" io="r" rep="hex" nr="3">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpOldFile" io="r" rep="hex" nr="4">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem"  rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>LONG</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry"
+		  desc="replaces the file backing a registry key with another file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="system_error_code_constants"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

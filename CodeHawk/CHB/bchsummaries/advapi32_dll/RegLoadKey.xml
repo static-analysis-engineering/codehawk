@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 12:37:18"/>
+  <libfun lib="advapi32" name="RegLoadKey">
+   <documentation>
+    <desc>
+      Creates a subkey under HKEY_USERS or HKEY_LOCAL_MACHINE and loads the 
+      data from the specified registry hive into that subkey.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegLoadKey(</ll>
+      <ld>_In_     HKEY    hKey</ld>
+      <ld>_In_opt_ LPCTSTR lpSubKey</ld>
+      <ld>_In_     LPCTSTR lpFile</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">
+       A handle to the key where the subkey will be created
+     </par>
+     <par name="lpSubKey">
+       The name of the key to be created under hKey. This subkey is where the 
+       registration information from the file will be loaded.
+     </par>
+     <par name="lpFile">
+       The name of the file containing the registry data. This file must be a 
+       local file that was created with the RegSaveKey function. If this file
+       does not exist, a file is created with the specified name
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="RegLoadKey">
+    <par loc="stack" name="hKey" io="r" nr="1" rep="hex">
+      <rep type="enum" name="predefined_registry_key_constants"/>
+      <type>HKEY</type>
+      <pre>
+	<deref-read/>
+	<enum-value name="predefined_registry_key_constants"/>
+      </pre>
+      <roles>
+	<role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpSubKey" io="r" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:registry" rn="name:subkey"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpFile" nr="3" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>LONG</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="registry" 
+		desc="Creates a subkey under HKEY_USERS or HKEY_LOCAL_MACHINE and loads the 
+      data from a registry hive into that subkey "/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

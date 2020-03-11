@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="DeleteTimerQueueTimer.xml" time="2016-10-28 22:42:41.823678"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="DeleteTimerQueueTimer">
+    <documentation>
+      <desc>
+	Removes a timer from the timer queue and optionally waits for
+	currently running timer callback functions to complete before
+	deleting the timer
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI DeleteTimerQueueTimer(</ll>
+          <ld>_In_opt_ HANDLE TimerQueue</ld>
+          <ld>_In_     HANDLE Timer</ld>
+          <ld>_In_opt_ HANDLE CompletionEvent</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="TimerQueue">
+	  A handle to the timer queue. This handle is returned by the
+	  CreateTimerQueue function.  If the timer was created using
+	  the default timer queue, this parameter should be NULL.
+	</par>
+        <par name="Timer">
+	  A handle to the timer-queue timer. This handle is returned
+	  by the CreateTimerQueueTimer function.
+	</par>
+        <par name="CompletionEvent">
+	  A handle to the event object to be signaled when the system
+	  has canceled the timer and all callback functions have
+	  completed. This parameter can be NULL.  If this parameter is
+	  INVALID_HANDLE_VALUE, the function waits for any running
+	  timer callback functions to complete before returning.  If
+	  this parameter is NULL, the function marks the timer for
+	  deletion and returns immediately. If the timer has already
+	  expired, the timer callback function will run to
+	  completion. However, there is no notification sent when the
+	  timer callback function has completed. Most callers should
+	  not use this option, and should wait for running timer
+	  callback functions to complete so they can perform any
+	  needed cleanup.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="DeleteTimerQueueTimer">
+      <par loc="stack" name="TimerQueue" io="r" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:synchronization" rn="handle:timer queue"/>
+	</roles>
+      </par>
+      <par loc="stack" name="Timer" io="r" nr="2">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:synchronization" rn="handle:timer"/>
+	</roles>
+      </par>
+      <par loc="stack" name="CompletionEvent" io="r" nr="3">
+        <type>HANDLE</type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:synchronization" rn="handle:event object"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="synchronization"
+		   desc="removes a timer from the timer queue"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/26/2014 15:46:18"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CreateProcessAsUser">
+   <documentation>
+    <desc>
+      Creates a new process and its primary thread. The new process runs in 
+      the security context of the user represented by the specified token.
+      Typically, the process that calls the CreateProcessAsUser function 
+      must have the SE_INCREASE_QUOTA_NAME privilege and may require the 
+      SE_ASSIGNPRIMARYTOKEN_NAME privilege if the token is not assignable.
+      If this function fails with ERROR_PRIVILEGE_NOT_HELD (1314), use 
+      the CreateProcessWithLogonW function instead. CreateProcessWithLogonW 
+      requires no special privileges, but the specified user account must
+      be allowed to log on interactively. Generally, it is best to use 
+      CreateProcessWithLogonW to create a process with alternate credentials.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CreateProcessAsUserA(</ll>
+      <ld>_In_opt_     HANDLE hToken,</ld>
+      <ld>_In_opt_     LPCTSTR lpApplicationName,</ld>
+      <ld>_Inout_opt_  LPTSTR lpCommandLine,</ld>
+      <ld>_In_opt_     LPSECURITY_ATTRIBUTES lpProcessAttributes,</ld>
+      <ld>_In_opt_     LPSECURITY_ATTRIBUTES lpThreadAttributes,</ld>
+      <ld>_In_         BOOL bInheritHandles,</ld>
+      <ld>_In_         DWORD dwCreationFlags,</ld>
+      <ld>_In_opt_     LPVOID lpEnvironment,</ld>
+      <ld>_In_opt_     LPCTSTR lpCurrentDirectory,</ld>
+      <ld>_In_         LPSTARTUPINFO lpStartupInfo,</ld>
+      <ld>_Out_        LPPROCESS_INFORMATION lpProcessInformation</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hToken">A handle to the primary token that represents a user. The handle 
+      must have the TOKEN_QUERY, TOKEN_DUPLICATE, and TOKEN_ASSIGN_PRIMARY 
+      access rights. The user represented by the token must have read and 
+      execute access to the application specified by the lpApplicationName 
+      or the lpCommandLine parameter.
+      To get a primary token that represents the specified user, call the 
+      LogonUser function. Alternatively, you can call the DuplicateTokenEx 
+      function to convert an impersonation token into a primary token. 
+      This allows a server application that is impersonating a client 
+      to create a process that has the security context of the client.
+      If hToken is a restricted version of the caller&apos;s primary token, 
+      the SE_ASSIGNPRIMARYTOKEN_NAME privilege is not required. If the 
+      necessary privileges are not already enabled, CreateProcessAsUser
+      enables them for the duration of the call. For more information, 
+      see Running with Special Privileges.
+      Terminal Services:  The process is run in the session specified 
+      in the token. By default, this is the same session that called 
+      LogonUser. To change the session, use the SetTokenInformation 
+      function.
+    </par>
+     <par name="lpApplicationName">
+       The name of the module to be executed. This module can be a 
+      Windows-based application. It can be some other type of module 
+      (for example, MS-DOS or OS/2) if the appropriate subsystem is 
+      available on the local computer.
+      The string can specify the full path and file name of the module 
+      to execute or it can specify a partial name. In the case of a 
+      partial name, the function uses the current drive and current 
+      directory to complete the specification. The function will not 
+      use the search path. This parameter must include the file name
+      extension; no default extension is assumed.
+      The lpApplicationName parameter can be NULL. In that case, 
+      the module name must be the first white space-delimited token 
+      in the lpCommandLine string. If you are using a long file name 
+      that contains a space, use quoted strings to indicate where 
+      the file name ends and the arguments begin; otherwise, the 
+      file name is ambiguous. For example, consider the string 
+      &quot;c:\program files\sub dir\program name&quot;. This string can 
+      be interpreted in a number of ways. The system tries to 
+      interpret the possibilities in the following order:
+      c:\program.exe files\sub dir\program name
+      c:\program files\sub.exe dir\program name
+      c:\program files\sub dir\program.exe name
+      c:\program files\sub dir\program name.exe
+      If the executable module is a 16-bit application, lpApplicationName 
+      should be NULL, and the string pointed to by lpCommandLine should 
+      specify the executable module as well as its arguments. By default, 
+      all 16-bit Windows-based applications created by CreateProcessAsUser
+      are run in a separate VDM (equivalent to CREATE_SEPARATE_WOW_VDM in 
+      CreateProcess).
+    </par>
+     <par name="lpCommandLine">
+       The command line to be executed. The maximum length of this string is
+      32K characters. If lpApplicationName is NULL, the module name portion 
+      of lpCommandLine is limited to MAX_PATH characters.
+      The Unicode version of this function, CreateProcessAsUserW, can modify 
+      the contents of this string. Therefore, this parameter cannot be a 
+      pointer to read-only memory (such as a const variable or a literal 
+      string). If this parameter is a constant string, the function may 
+      cause an access violation.
+      The lpCommandLine parameter can be NULL. In that case, the function 
+      uses the string pointed to by lpApplicationName as the command line.
+      If both lpApplicationName and lpCommandLine are non-NULL, 
+      *lpApplicationName specifies the module to execute, and *lpCommandLine 
+      specifies the command line. The new process can use GetCommandLine to 
+      retrieve the entire command line. Console processes written in C can use 
+      the argc and argv arguments to parse the command line. Because argv[0]
+      is the module name, C programmers generally repeat the module name as 
+      the first token in the command line.
+      If lpApplicationName is NULL, the first white space-delimited token of 
+      the command line specifies the module name. If you are using a long 
+      file name that contains a space, use quoted strings to indicate where 
+      the file name ends and the arguments begin (see the explanation for 
+      the lpApplicationName parameter). If the file name does not contain 
+      an extension, .exe is appended. Therefore, if the file name extension 
+      is .com, this parameter must include the .com extension. If the file 
+      name ends in a period (.) with no extension, or if the file name 
+      contains a path, .exe is not appended. If the file name does not 
+      contain a directory path, the system searches for the executable file 
+      in the following sequence:
+      The directory from which the application loaded.
+      The current directory for the parent process.
+      The 32-bit Windows system directory. Use the GetSystemDirectory 
+      function to get the path of this directory.
+      The 16-bit Windows system directory. There is no function that 
+      obtains the path of this directory, but it is searched.
+      The Windows directory. Use the GetWindowsDirectory function to get 
+      the path of this directory.
+      The directories that are listed in the PATH environment variable. 
+      Note that this function does not search the per-application path 
+      specified by the App Paths registry key. To include this per-application 
+      path in the search sequence, use the ShellExecute function.
+      The system adds a null character to the command line string to separate the 
+      file name from the arguments. This divides the original string 
+      into two strings for internal processing.
+    </par>
+     <par name="lpProcessAttributes">
+       A pointer to a SECURITY_ATTRIBUTES structure that specifies a security 
+      descriptor for the new process object and determines whether child 
+      processes can inherit the returned handle to the process. If 
+      lpProcessAttributes is NULL or lpSecurityDescriptor is NULL, the 
+      process gets a default security descriptor and the handle cannot be 
+      inherited. The default security descriptor is that of the user 
+      referenced in the hToken parameter. This security descriptor may 
+      not allow access for the caller, in which case the process may not
+      be opened again after it is run. The process handle is valid and 
+      will continue to have full access rights.
+    </par>
+     <par name="lpThreadAttributes">
+       A pointer to a SECURITY_ATTRIBUTES structure that specifies a 
+      security descriptor for the new thread object and determines 
+      whether child processes can inherit the returned handle to 
+      the thread. If lpThreadAttributes is NULL or lpSecurityDescriptor 
+      is NULL, the thread gets a default security descriptor and the 
+      handle cannot be inherited. The default security descriptor is 
+      that of the user referenced in the hToken parameter. This security 
+      descriptor may not allow access for the caller.
+    </par>
+     <par name="bInheritedHandles">
+       If this parameter is TRUE, each inheritable handle in the calling
+       process is inherited by the new process. If the parameter is FALSE, 
+       the handles are not inherited. Note that inherited handles have the 
+       same value and access rights as the original handles.
+       Terminal Services:  You cannot inherit handles across sessions. 
+       Additionally, if this parameter is TRUE, you must create the process 
+       in the same session as the caller.
+    </par>
+     <par name="dwCreationFlags">
+       The flags that control the priority class and the creation of the 
+       process. For a list of values, see Process Creation Flags.
+       This parameter also controls the new process&apos;s priority class, 
+       which is used to determine the scheduling priorities of the 
+       process&apos;s threads. For a list of values, see GetPriorityClass. 
+       If none of the priority class flags is specified, the priority 
+       class defaults to NORMAL_PRIORITY_CLASS unless the priority 
+       class of the creating process is IDLE_PRIORITY_CLASS or 
+       BELOW_NORMAL_PRIORITY_CLASS. In this case, the child process 
+       receives the default priority class of the calling process.
+     </par>
+     <par name="lpEnvironment">
+       A pointer to an environment block for the new process. If this 
+       parameter is NULL, the new process uses the environment of the 
+       calling process.
+     </par>
+     <par name="lpCurrentDirectory">
+       The full path to the current directory for the process. The string 
+       can also specify a UNC path.
+       If this parameter is NULL, the new process will have the same 
+       current drive and directory as the calling process. (This feature 
+       is provided primarily for shells that need to start an application 
+       and specify its initial drive and working directory.)
+    </par>
+     <par name="lpStartupInfo">
+       A pointer to a STARTUPINFO or STARTUPINFOEX structure.
+       The user must have full access to both the specified window station 
+       and desktop. If you want the process to be interactive, specify 
+       winsta0\default. If the lpDesktop member is NULL, the new process 
+       inherits the desktop and window station of its parent process. If 
+       this member is an empty string, &quot;&quot;, the new process connects to 
+       a window station using the rules described in Process Connection 
+       to a Window Station.
+       To set extended attributes, use a STARTUPINFOEX structure and 
+       specify EXTENDED_STARTUPINFO_PRESENT in the dwCreationFlags parameter.
+       Handles in STARTUPINFO or STARTUPINFOEX must be closed with 
+       CloseHandle when they are no longer needed.
+       Important  The caller is responsible for ensuring that the 
+       standard handle fields in STARTUPINFO contain valid handle 
+       values. These fields are copied unchanged to the child process 
+       without validation, even when the dwFlags member specifies 
+       STARTF_USESTDHANDLES. Incorrect values can cause the child 
+       process to misbehave or crash. Use the Application Verifier 
+       runtime verification tool to detect invalid handles.
+    </par>
+     <par name="lpProcessInformation">
+       pointer to a PROCESS_INFORMATION structure that receives 
+       identification information about the new process.
+       Handles in PROCESS_INFORMATION must be closed with CloseHandle 
+       when they are no longer needed.
+     </par>
+   </apidoc>
+ </documentation>
+   <api adj="44" cc="stdcall" name="CreateProcessAsUser">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hToken" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:user token"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpApplicationName" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+         <role rt="ioc:filesystem" rn="name:application"/>
+      </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpCommandLine" nr="3" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:process" rn="commandline"/>
+      </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpProcessAttributes" roles="none" nr="4">
+      <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpThreadAttributes" roles="none" nr="5">
+      <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="bInheritedHandles" roles="none" nr="6">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" io="r" name="dwCreationFlags" nr="7">
+     <type>DWORD</type>
+     <roles>
+        <role rt="rep:enum" rn="process_creation_flags"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpEnvironment" nr="8" rep="hex">
+      <type><ptr>void</ptr></type>
+      <roles>
+         <role rt="ioc:process" rn="environment block"/>
+      </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpCurrentDirectory" nr="9" rep="hex">
+      <type>LPCTSTR</type>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+         <role rt="ioc:process" rn="name:current directory"/>
+      </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpStartupInfo" nr="10" rep="hex">
+      <type><ptr>STARTUPINFO</ptr></type>
+      <roles>
+         <role rt="ioc:process" rn="startup info"/>
+      </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpProcessInformation" nr="11" rep="hex">
+      <type><ptr>PROCESS_INFORMATION</ptr></type>
+      <roles>
+         <role rt="ioc:process" rn="process info"/>
+      </roles>
+      <pre><deref-write/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="creates a new process">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

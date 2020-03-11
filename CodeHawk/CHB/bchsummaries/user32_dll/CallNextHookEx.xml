@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:22:46"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="CallNextHookEx">
+   <documentation>
+    <desc>
+      Passes the hook information to the next hook procedure in the current 
+      hook chain. A hook procedure can call this function either before or 
+      after processing the hook information. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>LRESULT WINAPI CallNextHookEx(</ll>
+      <ld>_In_opt_  HHOOK hhk</ld>
+      <ld>_In_      int nCode</ld>
+      <ld>_In_      WPARAM wParam</ld>
+      <ld>_In_      LPARAM lParam</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="hhk">This parameter is ignored. </par>
+     <par name="nCode">
+       The hook code passed to the current hook procedure. The next hook 
+       procedure uses this code to determine how to process the hook information.
+     </par>
+     <par name="wParam">
+       The wParam value passed to the current hook procedure. The meaning of 
+       this parameter depends on the type of hook associated with the current hook chain.
+     </par>
+     <par name="lParam">
+       The lParam value passed to the current hook procedure.
+       The meaning of this parameter depends on the type of hook associated
+       with the current hook chain.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CallNextHookEx">
+    <returnbtype tname="LRESULT" ttag="tnamed"/>
+    <par loc="stack" name="hhk" io="r" roles="none" nr="1">
+      <type>HHOOK</type>
+    </par>
+    <par loc="stack" name="nCode" io="r" roles="none" nr="2">
+      <type>int</type>
+    </par>
+    <par loc="stack" io="r" name="wParam" nr="3">
+     <roles>
+      <role rt="ioc:process" rn="callbackp:wparam" />
+     </roles>
+     <btype tname="WPARAM" ttag="tnamed"/>
+    </par>
+    <par loc="stack" io="r" name="lParam" nr="4">
+     <roles>
+      <role rt="ioc:process" rn="callbackp:lparam" />
+     </roles>
+     <btype tname="LPARAM" ttag="tnamed"/>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="passes hook information to a hook procedure"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

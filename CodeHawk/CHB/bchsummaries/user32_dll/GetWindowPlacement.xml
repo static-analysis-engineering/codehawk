@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetWindowPlacement">
+    <documentation>
+      <desc>
+	retrieves the show state and the restored, minimized, and maximized positions of the
+	specified window
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetWindowPlacement (</ll>
+      <ld>_In_ HWND hWnd,</ld>
+      <ld>_Inout_ WINDOWPLACEMENT *lpwndpl</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window</par>
+     <par name="lpwndpl">
+       pointer to the WINDOWPLACEMENT structure that receives the show state and 
+       position information. Before calling GetWindowPlacement, the length member must
+       be set to sizeof(WINDOWPLACEMENT). The function fails if lpwndpl-length is not
+       set correctly
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetWindowPlacement">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hWnd" io="r" nr="1">
+      <type>HWND</type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpwndpl" nr="2" rep="hex">
+      <type><ptr>WINDOWPLACEMENT</ptr></type>
+      <pre><deref-read/></pre>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+        <role rt="ioc:memops" rn="dst-struct:WINDOWPLACEMENT"/>
+	<role rt="ioc:memops" rn="src-struct:WINDOWPLACEMENT"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves the show state of a window"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

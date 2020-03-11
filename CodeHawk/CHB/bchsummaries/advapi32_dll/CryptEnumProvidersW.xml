@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="04/15/2015 16:52:37"/>
+  <libfun lib="advapi32" name="CryptEnumProvidersW">
+   <refer-to char-type="unicode" name="CryptEnumProviders"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

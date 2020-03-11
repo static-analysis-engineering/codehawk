@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetCurrentDirectory">
+   <documentation>
+    <desc>retrieves the current directory for the current process</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetCurrentDirectory (</ll>
+      <ld>__in  DWORD nBufferLength,</ld>
+      <ld>_out  LPTSTR lpBuffer</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nBufferLength">
+       length of the buffer for the current directory string, in TCHARS
+     </par>
+     <par name="lpBuffer">
+       pointer to the buffer that receives the current directory string
+     </par>
+     <return>
+      <rc cond="success">
+	number of characters that are written to the buffer, not including the terminating
+	null character
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <remarks>
+       to determine the required buffer size, set lpBuffer to NULL and the 
+       nBufferLength to zero;
+       if the buffer that is pointed to by lpBuffer is not large enough, the return value
+       specifies the required size of the buffer, in characters including the null-terminating
+       character
+     </remarks>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetCurrentDirectory">
+    <returntype>DWORD</returntype>
+    <par loc="stack" name="nBufferLength" nr="1">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetCurrentDirectory"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpBuffer" nr="2">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:filesystem" rn="infox:current directory"/>
+	 <role rt="rep:hex" rn="infox:current directory"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves the current directory for the process"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+        <implies/>
+        <apply><not-null/><ci>lpBuffer</ci></apply>
+	<apply>
+	  <deref-write/>
+	  <type>TCHAR</type>
+	  <ci>lpBuffer</ci>
+	  <apply><indexsize/><ci>nBufferLength</ci></apply>
+	</apply>
+       </apply>
+      </math>
+     </pre>
+     <pre>
+       <math>
+	 <apply>
+	   <implies/>
+	   <apply><gt/><ci>nBufferLength</ci><cn>0</cn></apply>
+	<apply>
+	  <deref-write/>
+	  <type>TCHAR</type>
+	  <ci>lpBuffer</ci>
+	  <apply><indexsize/><ci>nBufferLength</ci></apply>
+	</apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+	 <block-write/>
+	 <type>TCHAR</type>
+	 <ci>lpBuffer</ci>
+	 <apply><indexsize/><ci>nBufferLength</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+     <sideeffect>
+       <math>
+	 <apply>
+	   <block-write/>
+	   <type>TCHAR</type>
+	   <ci>lpBuffer</ci>
+	   <apply><indexsize/><ci>nBufferLength</ci></apply>
+	 </apply>
+       </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

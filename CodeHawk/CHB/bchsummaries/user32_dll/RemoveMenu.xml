@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="RemoveMenu.xml" time="2016-05-16 21:37:13.110523"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="RemoveMenu">
+    <documentation>
+      <desc>
+	Deletes a menu item or detaches a submenu from the specified
+	menu. If the menu item opens a drop-down menu or submenu,
+	RemoveMenu does not destroy the menu or its handle, allowing
+	the menu to be reused. Before this function is called, the
+	GetSubMenu function should retrieve a handle to the drop-down
+	menu or submenu.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI RemoveMenu(</ll>
+          <ld>_In_ HMENU hMenu</ld>
+          <ld>_In_ UINT  uPosition</ld>
+          <ld>_In_ UINT  uFlags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hMenu">A handle to the menu to be changed</par>
+        <par name="uPosition">
+	  The menu item to be deleted, as determined by the uFlags parameter
+	</par>
+        <par name="uFlags">
+	  Indicates how the uPosition parameter is interpreted
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="RemoveMenu">
+      <par loc="stack" name="hMenu" io="r" nr="1">
+        <type>HMENU</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:menu"/>
+	</roles>
+      </par>
+      <par loc="stack" name="uPosition" roles="none" io="r" nr="2">
+        <type>UINT</type>
+      </par>
+      <par loc="stack" name="uFlags" io="r" roles="none" nr="3">
+        <type>UINT</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="deletes a menu item"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

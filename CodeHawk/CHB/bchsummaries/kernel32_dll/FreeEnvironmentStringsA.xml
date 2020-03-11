@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="FreeEnvironmentStringsA">
+    <refer-to char-type="ansi" name="FreeEnvironmentStrings">
+      <replace-type src="LPTCH" tgt="LPCH"/>
+    </refer-to>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

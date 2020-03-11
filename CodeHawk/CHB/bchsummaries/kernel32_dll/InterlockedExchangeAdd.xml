@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="InterlockedExchangeAdd.xml" time="2017-04-27 09:53:09.595292"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="kernel32" name="InterlockedExchangeAdd">
+    <documentation>
+      <desc>Performs an atomic addition of two 32-bit values</desc>
+      <apidoc>
+        <pt>
+          <ll>LONG __cdecl InterlockedExchangeAdd(</ll>
+          <ld>_Inout_ LONG volatile *Addend</ld>
+          <ld>_In_    LONG          Value</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="Addend">
+	  A pointer to a variable. The value of this variable will be
+	  replaced with the result of the operation
+	</par>
+        <par name="Value">
+	  The value to be added to the variable pointed to by the
+	  Addend parameter.
+	</par>
+        <return>the initial value of the Addend parameter</return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="InterlockedExchangeAdd">
+      <par loc="stack" name="Addend" io="rw" rep="hex" nr="1">
+        <type><ptr>LONG</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:synchronization" rn="synchronized variable"/>
+	</roles>
+      </par>
+      <par loc="stack" name="Value" io="r" roles="none" nr="2">
+        <type>LONG</type>
+      </par>
+      <returntype>LONG</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="synchronization" desc="Performs an atomic addition"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

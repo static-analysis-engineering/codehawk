@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/12/2015 16:05:22"/>
+  <libfun lib="user32" name="GetMenuItemID">
+   <documentation>
+    <desc>
+      Retrieves the menu item identifier of a menu item located at the 
+      specified position in a menu
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI GetMenuItemID(</ll>
+      <ld>_In_ HMENU hMenu</ld>
+      <ld>_In_ int   nPos</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMenu">
+       A handle to the menu that contains the item whose identifier is to be retrieved
+     </par>
+     <par name="nPos">
+       The zero-based relative position of the menu item whose identifier is 
+       to be retrieved
+     </par>
+     <return>
+      <rc cond="success">the identifier of the specified menu item</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetMenuItemID">
+    <par loc="stack" name="hMenu" io="r" nr="1">
+     <type>HMENU</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:menu"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nPos" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves the menu item identifier"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <geq/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </post>
+      <error-post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return/>
+	    <cn>-1</cn>
+	  </apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

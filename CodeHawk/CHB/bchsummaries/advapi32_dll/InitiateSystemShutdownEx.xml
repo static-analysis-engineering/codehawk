@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="InitiateSystemShutdownEx.xml" time="2016-06-22 13:04:02.993658"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="InitiateSystemShutdownEx">
+    <documentation>
+      <desc>
+	Initiates a shutdown and optional restart of the specified
+	computer, and optionally records the reason for the shutdown.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI InitiateSystemShutdownEx(</ll>
+          <ld>_In_opt_ LPTSTR lpMachineName</ld>
+          <ld>_In_opt_ LPTSTR lpMessage</ld>
+          <ld>_In_     DWORD  dwTimeout</ld>
+          <ld>_In_     BOOL   bForceAppsClosed</ld>
+          <ld>_In_     BOOL   bRebootAfterShutdown</ld>
+          <ld>_In_     DWORD  dwReason</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpMachineName">
+	  The network name of the computer to be shut down. If
+	  lpMachineName is NULL or an empty string, the function shuts
+	  down the local computer.
+	</par>
+        <par name="lpMessage">
+	  The message to be displayed in the shutdown dialog box. This
+	  parameter can be NULL if no message is required.
+	</par>
+        <par name="dwTimeout">
+	  The length of time that the shutdown dialog box should be
+	  displayed, in seconds. While this dialog box is displayed,
+	  shutdown can be stopped by the AbortSystemShutdown function.
+	  If dwTimeout is not zero, InitiateSystemShutdownEx displays
+	  a dialog box on the specified computer. The dialog box
+	  displays the name of the user who called the function,
+	  displays the message specified by the lpMessage parameter,
+	  and prompts the user to log off. The dialog box beeps when
+	  it is created and remains on top of other windows in the
+	  system. The dialog box can be moved but not closed. A timer
+	  counts down the remaining time before shutdown.  If
+	  dwTimeout is zero, the computer shuts down without
+	  displaying the dialog box, and the shutdown cannot be
+	  stopped by AbortSystemShutdown.
+	</par>
+        <par name="bForceAppsClosed">
+	  If this parameter is TRUE, applications with unsaved changes
+	  are to be forcibly closed. If this parameter is FALSE, the
+	  system displays a dialog box instructing the user to close
+	  the applications.
+	</par>
+        <par name="bRebootAfterShutdown">
+	  If this parameter is TRUE, the computer is to restart
+	  immediately after shutting down. If this parameter is FALSE,
+	  the system flushes all caches to disk and safely powers down
+	  the system.
+	</par>
+        <par name="dwReason">
+	  The reason for initiating the shutdown. This parameter must
+	  be one of the system shutdown reason codes.  If this
+	  parameter is zero, the default is an undefined shutdown that
+	  is logged as "No title for this reason could be found". By
+	  default, it is also an unplanned shutdown. Depending on how
+	  the system is configured, an unplanned shutdown triggers the
+	  creation of a file that contains the system state
+	  information, which can delay shutdown. Therefore, do not use
+	  zero for this parameter.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="24" cc="stdcall" name="InitiateSystemShutdownEx">
+      <par loc="stack" name="lpMachineName" io="r" nr="1" rep="hex">
+        <type>LPTSTR</type>
+	<pre><deref-read-null-nt/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="name:computer"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpMessage" io="r" nr="2" rep="hex">
+        <type>LPTSTR</type>
+	<pre><deref-read-null-nt/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="shutdown message"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwTimeout" io="r" nr="3">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:system" rn="shutdown timeout"/>
+	</roles>
+      </par>
+      <par loc="stack" name="bForceAppsClosed" roles="none" io="r" nr="4">
+        <type>BOOL</type>
+      </par>
+      <par loc="stack" name="bRebootAfterShutdown" io="r" roles="none" nr="5">
+        <type>BOOL</type>
+      </par>
+      <par loc="stack" name="dwReason" io="r" nr="6">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:system" rn="shutdown reason"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="initiates a system shutdown"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:17:28"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetExitCodeProcess">
+   <documentation>
+    <desc>Retrieves the termination status of the specified process.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetExitCodeProcess(</ll>
+      <ld>_In_   HANDLE hProcess </ld>
+      <ld>_Out_  LPDWORD lpExitCode </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hProcess">
+       A handle to the process.
+
+	The handle must have the PROCESS_QUERY_INFORMATION or 
+	PROCESS_QUERY_LIMITED_INFORMATION access right.
+     </par>
+     <par name="lpExitCode">
+       A pointer to a variable to receive the process termination status.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetExitCodeProcess">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hProcess" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:process"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpExitCode" nr="2">
+       <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:process" rn="exit code"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"  desc="retrieves a process termination status"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

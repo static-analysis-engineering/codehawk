@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/24/2014 08:47:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="DeleteService">
+   <documentation>
+    <desc>
+      Marks the specified service for deletion from the service control 
+      manager database.
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI DeleteService( _In_  SC_HANDLE hService)</pt>
+     <par name="hService">
+       A handle to the service. This handle is returned by the OpenService 
+       or CreateService function, and it must have the DELETE access right. 
+       For more information, see Service Security and Access Rights.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DeleteService">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hService" nr="1">
+       <type>SC_HANDLE</type>
+       <roles>
+	 <role rt="ioc:services" rn="handle:service"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="services" desc="deletes a service"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

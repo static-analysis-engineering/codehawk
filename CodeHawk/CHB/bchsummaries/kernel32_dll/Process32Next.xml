@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/31/2015 16:39:05"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="Process32Next">
+   <documentation>
+    <desc>
+      retrieves information about the next process recorded in a system snapshot
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI Process32Next(</ll>
+      <ld>_In_ HANDLE hSnapshot,</ld>
+      <ld>_Out_ LPPROCESSENTRY32 lppe</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	true, next entry of the process list has been copied to the buffer
+      </rc>
+      <rc cond="failure">false</rc>
+     </return>
+     <par name="hSnapshot">
+       handle to the snapshot returned from a previous call to CreateToolhelp32Snapshot
+    </par>
+     <par name="lppe">pointer to a PROCESSENTRY32 structure</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="Process32Next">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="hSnapshot" nr="1">
+       <type>HANDLE</type>
+       <roles>
+         <role rt="ioc:process" rn="handle:snapshot"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lppe" nr="2" rep="hex">
+      <type><ptr>PROCESSENTRY32</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:process" rn="ref:process entry"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves information about a process from a system snapshot"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

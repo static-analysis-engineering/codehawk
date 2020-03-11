@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetFileSize">
+   <documentation>
+    <desc>retrieves the size of the specified file, in bytes</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetFileSize (</ll>
+      <ld>_In_ HANDLE hFile,</ld>
+      <ld>_Out_opt_ LPDWORD lpFileSizeHigh</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">handle to the file</par>
+     <par name="lpFileSizeHigh">
+       pointer to the variable where the high-order doubleword of the file size is returned.
+       This parameter can be NULL if the application does not require the high-order
+       doubleword
+     </par>
+     <return>
+      <rc cond="success">low-order doubleword of the file size</rc>
+      <rc cond="failure">INVALID_FILE_SIZE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetFileSize">
+     <returntype>DWORD</returntype>
+     <par loc="stack" io="r" name="hFile" nr="1">
+       <type>HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+         <role rt="ioc:filesystem" rn="handle:file"/>
+       </roles>
+     </par>
+     <par loc="stack" io="w" name="lpFileSizeHigh" nr="2">
+       <type><ptr>DWORD</ptr></type>
+       <pre><deref-write-null/></pre>
+       <sideeffects><block-write/></sideeffects>
+       <roles>
+         <role rt="ioc:filesystem" rn="infox:file size"/>
+       </roles>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="retrieves the size of a file"/>
+     </io-actions>
+     <preconditions/>
+     <postconditions/>
+     <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

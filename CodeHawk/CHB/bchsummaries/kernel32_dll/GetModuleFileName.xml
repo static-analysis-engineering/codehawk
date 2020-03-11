@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetModuleFileName">
+   <documentation>
+    <desc>gets the file name of a loaded module from its handle</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD GetModuleFileName</ll>
+      <ld>__in  HMODULE hModule,</ld>
+      <ld>__out LPTSTR lpFilename,</ld>
+      <ld>__in  DWORD nSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hModule">module handle</par>
+     <par name="lpFileName">
+       a pointer to a buffer that receives the fully qualified path of
+       the module. If the length of the path is less than the size
+       that the nSize parameter specifies, the function succeeds and
+       the path is returned as a null-terminated string.  If the
+       length of the path exceeds the size that the nSize parameter
+       specifies, the function succeeds and the string is truncated to
+       nSize characters including the terminating null character
+     </par>
+     <par name="size">size of lpFilename in TCHARs</par>
+     <return>
+      <rc cond="success">
+	length of the string that is copied to the buffer, in
+	characters, not including the terminating null character. If
+	the buffer is too small to hold the module name, the string is
+	truncated to nSize characters, including the terminating null
+	character, the function returns nSize, and the function sets
+	the last error to ERROR_INSUFFICIENT_BUFFER.
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetModuleFileName">
+    <returnbtype ikind="iuint" ttag="tint"/>
+    <par loc="stack" io="r" name="hModule" nr="1">
+      <type>HMODULE</type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:module"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpFilename" nr="2" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:filesystem" rn="infox:filename"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nSize" nr="3">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetModuleFileName"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves filename of a loaded module"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>TCHAR</type>
+	 <ci>lpFilename</ci>
+	 <apply><indexsize/><ci>nSize</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	<type>TCHAR</type>
+        <ci>lpFilename</ci>
+        <apply><indexsize/><ci>nSize</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/02/2015 15:23:06"/>
+  <libfun lib="kernel32" name="HeapWalk">
+   <documentation>
+    <desc>Enumerates the memory blocks in the specified heap</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI HeapWalk(</ll>
+      <ld>_In_     HANDLE hHeap</ld>
+      <ld>_Inout_  LPPROCESS_HEAP_ENTRY lpEntry</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hHeap">
+       A handle to the heap. This handle is returned by either the HeapCreate or 
+       GetProcessHeap function.
+     </par>
+     <par name="lpEntry">
+       A pointer to a PROCESS_HEAP_ENTRY structure that maintains state information 
+       for a particular heap enumeration.
+       If the HeapWalk function succeeds, returning the value TRUE, this structure's 
+       members contain information about the next memory block in the heap.
+       To initiate a heap enumeration, set the lpData field of the PROCESS_HEAP_ENTRY 
+       structure to NULL. To continue a particular heap enumeration, call the HeapWalk 
+       function repeatedly, with no changes to hHeap, lpEntry, or any of the members 
+       of the PROCESS_HEAP_ENTRY structure
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="HeapWalk">
+    <par loc="stack" io="r" name="hHeap" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:heap" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="rw" name="lpEntry" nr="2">
+     <type><ptr>PROCESS_HEAP_ENTRY</ptr></type>
+     <roles>
+      <role rt="ioc:process" rn="infox:heap information" />
+      <role rt="ioc:memops" rn="src-struct:process-heap-entry" />
+      <role rt="ioc:memops" rn="dst-struct:process-heap-entry" />
+     </roles>
+     <pre><deref-read-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="enumerates heap blocks"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

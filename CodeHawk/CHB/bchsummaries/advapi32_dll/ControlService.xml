@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="ControlService">
+   <documentation>
+    <desc>sends a control code to a service</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI ControlService (</ll>
+      <ld>_In_ SC_HANDLE hService,</ld>
+      <ld>_In_ DWORD dwControl,</ld>
+      <ld>_Out_ LPSERVICE_STATUS lpServiceStatus</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hService">handle to the service</par>
+     <par name="dwControl">control code</par>
+     <par name="lpServiceStatus">
+       pointer to a SERVICE_STATUS structure that receives the latest service status
+       information. The information returned reflects the most recent status that the
+       service reported to the service control manager.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="ControlService">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hService" io="r" nr="1">
+       <type>SC_HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:services" rn="handle:service"/>
+       </roles>
+     </par>
+     <par loc="stack" name="dwControl" io="r" nr="2">
+       <rep type="enum" name="control_code_constants"/>
+       <type>DWORD</type>
+       <pre><enum-value name="control_code_constants"/></pre>
+       <roles>
+	 <role rt="ioc:services" rn="control code"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpServiceStatus" io="w" rep="hex" nr="3">
+      <type><ptr>SERVICE_STATUS</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:services" rn="infox:service status"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="services" desc="sends a control code to a service"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

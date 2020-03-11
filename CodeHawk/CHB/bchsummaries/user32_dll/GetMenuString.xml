@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/12/2015 16:30:25"/>
+  <libfun lib="user32" name="GetMenuString">
+   <documentation>
+    <desc>
+      Copies the text string of the specified menu item into the specified buffer 
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI GetMenuString(</ll>
+      <ld>_In_      HMENU  hMenu</ld>
+      <ld>_In_      UINT   uIDItem</ld>
+      <ld>_Out_opt_ LPTSTR lpString</ld>
+      <ld>_In_      int    nMaxCount</ld>
+      <ld>_In_      UINT   uFlag</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMenu">A handle to the menu</par>
+     <par name="uIDItem">
+       The menu item to be changed, as determined by the uFlag parameter
+     </par>
+     <par name="lpString">
+       The buffer that receives the null-terminated string. If the string is 
+       as long or longer than lpString, the string is truncated and the 
+       terminating null character is added. If lpString is NULL, the function 
+       returns the length of the menu string
+     </par>
+     <par name="nMaxCount">
+       The maximum length, in characters, of the string to be copied. If the
+       string is longer than the maximum specified in the nMaxCount parameter,
+       the extra characters are truncated. If nMaxCount is 0, the function
+       returns the length of the menu string
+     </par>
+     <par name="uFlag">Indicates how the uIDItem parameter is interpreted</par>
+     <return>
+      <rc cond="success">
+	the number of characters copied to the buffer, not including the terminating 
+	null character
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="GetMenuString">
+    <par loc="stack" name="hMenu" io="r" nr="1">
+     <type>HMENU</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:menu"/>
+     </roles>
+    </par>
+    <par loc="stack" name="uIDItem" io="r" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="lpString" nr="3">
+     <type>LPTSTR</type>
+     <roles>
+        <role rt="ioc:process" rn="infox:menu item"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nMaxCount" io="r" nr="4">
+     <type>int</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetMenuString" />
+     </roles>
+    </par>
+    <par loc="stack" name="uFlag" io="r" roles="none" nr="5">
+     <type>UINT</type>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves a menu item string"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>TCHAR</type>
+	    <ci>lpString</ci>
+	    <apply>
+	      <plus/>
+	      <apply><indexsize/><ci>nMaxCount</ci></apply>
+	      <cn>1</cn>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpString</ci>
+	    <apply>
+	      <plus/>
+	      <apply><indexsize/><ci>nMaxCount</ci></apply>
+	      <cn>1</cn>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

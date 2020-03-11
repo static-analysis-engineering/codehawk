@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 03:01:35"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="GetSidSubAuthorityCount">
+   <documentation>
+     <desc>
+	 returns a pointer to the member in a security identifier (SID) 
+	 structure that contains the subauthority count.
+     </desc>
+    <apidoc>
+     <pt>
+      <ll>PUCHAR WINAPI GetSidSubAuthorityCount(</ll>
+      <ld>_In_  PSID pSid</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	Pointer to the subauthority count for the specified SID structure
+      </rc>
+      <rc cond="failure">Undefined</rc>
+     </return>
+     <par name="pSid">
+       A pointer to the SID structure from which a pointer to the subauthority count 
+       is returned.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetSidSubAuthorityCount">
+     <returntype>PUCHAR</returntype>
+     <par loc="stack" name="pSid" nr="1">
+       <type><ptr>SID</ptr></type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:memops" rn="src-struct:security identifier"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" 
+		  desc="retrieves the subauthority count of a security identifier" />
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/29/2015 23:49:47"/>
+  <libfun lib="kernel32" name="Heap32Next">
+   <documentation>
+    <desc>
+      Retrieves information about the next block of a heap that has been 
+      allocated by a process
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI Heap32Next (_Out_ LPHEAPENTRY32 lphe)</pt>
+     <par name="lphe">A pointer to a HEAPENTRY32 structure.</par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="Heap32Next">
+    <par loc="stack" io="w" name="lphe" nr="1" rep="hex">
+     <type><ptr>HEAPENTRY32</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:heapentry32" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves information about a heap block"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

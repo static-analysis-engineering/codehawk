@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="IsValidLocale">
+   <documentation>
+    <desc>determines if the specified locale is installed or supported</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL IsValidLocale</ll>
+      <ld>__in LCID Locale,</ld>
+      <ld>__in DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Locale">locale identifier of the locale to validate</par>
+     <par name="dwFlags">flags specifying the validity test to apply</par>
+     <return>
+      <rc cond="passes the specified validity test">nonzero</rc>
+      <rc cond="otherwise">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="IsValidLocale">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="Locale" nr="1">
+       <type>LCID</type>
+       <roles>
+	 <role rt="ioc:system" rn="id:locale"/>
+       </roles>
+    </par>
+    <par loc="stack" name="dwFlags" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="checks if a locale is supported"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

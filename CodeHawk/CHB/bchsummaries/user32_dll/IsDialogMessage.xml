@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="IsDialogMessage">
+   <documentation>
+    <desc>
+      determines whether a message is intended for the specified dialog box and, if it is,
+      processes the message
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI IsDialogMessage (</ll>
+      <ld>_In_ HWND hDlg,</ld>
+      <ld>_In_ LPMSG lpMsg</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDlg">handle to the dialog box</par>
+     <par name="lpMsg">pointer to an MSG structure that contains the message to be checked
+	</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="IsDialogMessage">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hDlg" io="r" rep="hex" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+    <par loc="stack" name="lpMsg" io="r" rep="hex" nr="2">
+      <type><ptr>MSG</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:msg"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="processes a dialog message if valid"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

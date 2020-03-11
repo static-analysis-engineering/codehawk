@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="OpenService">
+   <documentation>
+    <desc>opens an existing service</desc>
+    <apidoc>
+     <pt>
+      <ll>SC_HANDLE WINAPI OpenService (</ll>
+      <ld>_In_ SC_HANDLE hSCManager,</ld>
+      <ld>_In_ LPCTSTR lpServiceName,</ld>
+      <ld>_In_ DWORD dwDesiredAccess</ld>
+     </pt>
+     <par name="hSCManager">handle to the service control manager database</par>
+     <par name="lpServiceName">name of the service to be opened</par>
+     <par name="dwDesiredAccess">access of the service</par>
+     <return>
+      <rc cond="success">handle to the service</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OpenService">
+     <returntype>SC_HANDLE</returntype>
+     <par loc="stack" name="hSCManager" io="r" nr="1">
+       <type>SC_HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:services" rn="handle:SCM"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpServiceName" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:services" rn="name:service"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwDesiredAccess" io="r" roles="none" nr="3">
+      <rep type="enum" name="service_access_rights_flags"/>
+      <type>DWORD</type>
+      <pre><enum-value name="service_access_rights_flags" flags="true"/></pre>
+      <roles>
+	<role rt="ioc:services" rn="service access rights"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="services"  desc="opens an existing service"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

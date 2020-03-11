@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FrameRect.xml" time="2016-06-18 17:52:08.831285"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="FrameRect">
+    <documentation>
+      <desc>
+         The FrameRect function draws a border around the specified
+         rectangle by using the specified brush. The width and height
+         of the border are always one logical unit.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>int FrameRect(</ll>
+          <ld>_In_       HDC    hDC</ld>
+          <ld>_In_ const RECT   *lprc</ld>
+          <ld>_In_       HBRUSH hbr</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hDC">
+           A handle to the device context in which the border is drawn
+	</par>
+        <par name="lprc">
+           A pointer to a RECT structure that contains the logical
+           coordinates of the upper-left and lower-right corners of
+           the rectangle.
+	</par>
+        <par name="hbr">
+           A handle to the brush used to draw the border
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="FrameRect">
+      <par loc="stack" name="hDC" nr="1">
+        <type>HDC</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="ioc:process" rn="handle:device context"/>
+        </roles>
+      </par>
+      <par loc="stack" name="lprc" nr="2" rep="hex">
+        <type><ptr>RECT</ptr></type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="ioc:memops" rn="src-struct:RECT"/>
+        </roles>
+      </par>
+      <par loc="stack" name="hbr" nr="3">
+        <type>HBRUSH</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="ioc:process" rn="handle:brush"/>
+        </roles>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="draws a border around a rectangle"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

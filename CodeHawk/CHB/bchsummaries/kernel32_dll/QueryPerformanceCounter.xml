@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="QueryPerformanceCounter">
+   <documentation>
+    <desc>retrieves the current value of the high-resolution performance counter</desc>
+    <apidoc>
+     <pt>BOOL WINAPI QueryPerformanceCount ( __out LARGE_INTEGER *lpPerformanceCount )</pt>
+     <par name="lpPerformanceCount">
+       pointer to a variable that receives the current performance counter value
+	</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="QueryPerformanceCounter">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="w" name="lpPerformanceCount" roles="none" rep="hex" nr="1">
+     <type><ptr>LARGE_INTEGER</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves the value of the high-resolution performance counter"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <neq/>
+        <return-value/>
+        <cn>0</cn>
+       </apply>
+      </math>
+     </post>
+     <error-post>
+      <math>
+       <apply>
+        <eq/>
+        <return-value/>
+        <cn>0</cn>
+       </apply>
+      </math>
+     </error-post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

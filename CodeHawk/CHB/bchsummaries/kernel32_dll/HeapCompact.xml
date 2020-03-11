@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/02/2015 15:30:04"/>
+  <libfun lib="kernel32" name="HeapCompact">
+   <documentation>
+    <desc>
+      Returns the size of the largest committed free block in the specified heap. 
+      If the Disable heap coalesce on free global flag is set, this function also 
+      coalesces adjacent free blocks of memory in the heap.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>SIZE_T HeapCompact(</ll>
+      <ld>_In_  HANDLE hHeap</ld>
+      <ld>_In_  DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hHeap">
+       A handle to the heap. This handle is returned by either the HeapCreate or 
+       GetProcessHeap function.
+     </par>
+     <par name="dwFlags">The heap access options</par>
+     <return>
+      <rc cond="success">size of the largest committed free block in the heap, in bytes</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="HeapCompact">
+    <par loc="stack" io="r" name="hHeap" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:heap" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" nr="2" rep="hex" roles="none">
+     <type>DWORD</type>
+    </par>
+    <returntype>SIZE_T</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions><positive-zero/></postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="HeapReAlloc">
+   <documentation>
+    <desc>reallocates a block of memory from a heap</desc>
+    <apidoc>
+     <pt>
+      <ll>LPVOID WINAPI HeapReAlloc (</ll>
+      <ld>__in HANDLE hHeap,</ld>
+      <ld>__in DWORD dwFlags,</ld>
+      <ld>__in LPVOID lpMem,</ld>
+      <ld>__in SIZE_T dwBytes</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hHeap">handle to the heap from which the memory is to be reallocated</par>
+     <par name="dwFlags">heap reallocation option</par>
+     <par name="lpMem">pointer to the block of memory that the function reallocates</par>
+     <par name="dwBytes">the new size of the memory block, in bytes</par>
+     <return>
+      <rc cond="success">pointer to the reallocated memory block</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="HeapReAlloc">
+    <returntype><ptr>VOID</ptr></returntype>
+    <par loc="stack" io="r" name="hHeap" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:heap"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="lpMem" roles="none" nr="3">
+      <type>LPVOID</type>
+      <pre><deref-read/><allocation-base/></pre>
+     <sideeffects><invalidates/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="dwBytes" nr="4">
+     <type>SIZE_T</type>
+     <roles>
+        <role rt="ioc:memops" rn="size:allocation"/>
+        <role rt="size:allocation size" rn="HeapReAlloc"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="reallocates heap memory"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+      <post>
+	<math>
+	  <apply>
+	    <new-memory-region/>
+	    <return-value/>
+	    <ci>dwBytes</ci>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

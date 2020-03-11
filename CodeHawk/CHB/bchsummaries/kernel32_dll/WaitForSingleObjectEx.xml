@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/27/2015 22:37:11"/>
+  <libfun lib="kernel32" name="WaitForSingleObjectEx">
+   <documentation>
+    <desc>
+      Waits until the specified object is in the signaled state,
+      an I/O completion routine or asynchronous procedure call (APC) 
+      is queued to the thread, or the time-out interval elapses
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI WaitForSingleObjectEx(</ll>
+      <ld>_In_ HANDLE hHandle</ld>
+      <ld>_In_ DWORD  dwMilliseconds</ld>
+      <ld>_In_ BOOL   bAlertable</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hHandle">A handle to the object.</par>
+     <par name="dwMilliseconds">
+       The time-out interval, in milliseconds. If a nonzero value is 
+       specified, the function waits until the object is signaled, an
+       I/O completion routine or APC is queued, or the interval elapses.
+       If dwMilliseconds is zero, the function does not enter a wait 
+       state if the criteria is not met; it always returns immediately.
+       If dwMilliseconds is INFINITE, the function will return only when 
+       the object is signaled or an I/O completion routine or APC is queued
+     </par>
+     <par name="bAlertable">
+       If this parameter is TRUE and the thread is in the waiting state,
+       the function returns when the system queues an I/O completion routine
+       or APC, and the thread runs the routine or function. Otherwise, the
+       function does not return, and the completion routine or APC function
+       is not executed.
+       A completion routine is queued when the ReadFileEx or WriteFileEx 
+       function in which it was specified has completed. The wait function
+       returns and the completion routine is called only if bAlertable is 
+       TRUE, and the calling thread is the thread that initiated the read 
+       or write operation. An APC is queued when you call QueueUserAPC.
+     </par>
+     <return>
+      <rc cond="success">the event that caused the function to return</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="WaitForSingleObjectEx">
+    <par loc="stack" io="r" name="hHandle" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:synchronization" rn="handle:synchronization object" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwMilliseconds" nr="2">
+     <type>DWORD</type>
+     <roles>
+      <role rt="ioc:synchronization" rn="timeout" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="bAlertable" roles="none" nr="3">
+     <type>BOOL</type>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization"
+		  desc="waits for an object to be in the signaled state"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

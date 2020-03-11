@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/12/2015 13:17:04"/>
+  <libfun lib="kernel32" name="LocalLock">
+   <documentation>
+    <desc>
+      Locks a local memory object and returns a pointer to the first 
+      byte of the object's memory block
+    </desc>
+    <apidoc>
+     <pt>LPVOID WINAPI LocalLock (_In_  HLOCAL hMem)</pt>
+     <par name="hMem">
+       A handle to the local memory object. This handle is returned by 
+       either the LocalAlloc or LocalReAlloc function
+     </par>
+     <return>
+      <rc cond="success">
+	pointer to the first byte of the memory block
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="LocalLock">
+    <par loc="stack" name="hMem" io="r" rep="hex" nr="1">
+     <type>HLOCAL</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="handle:local memory"/>
+     </roles>
+    </par>
+    <returntype>LPVOID</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="synchronization" desc="locks a local memory object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

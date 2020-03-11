@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:32:39"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetErrorMode">
+   <documentation>
+    <desc>
+      Controls whether the system will handle the specified types of serious 
+      errors or whether the process will handle them.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI SetErrorMode(</ll>
+      <ld>_In_  UINT uMode</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	The return value is the previous state of the error-mode bit flags.
+      </rc>
+     </return>
+     <par name="uMode">The process error mode.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetErrorMode">
+    <returnbtype tname="UINT" ttag="tnamed"/>
+    <par loc="stack" io="r" name="uMode" nr="1">
+     <btype tname="UINT" ttag="tnamed"/>
+     <pre><enum-value name="process_error_mode_flags" flags="true"/></pre>
+     <roles>
+        <role rt="ioc:process" rn="error mode"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="sets error mode"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

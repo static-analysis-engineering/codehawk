@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:07:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="DeviceIoControl">
+   <documentation>
+    <desc>
+      Sends a control code directly to a specified device driver, causing 
+      the corresponding device to perform the corresponding operation.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI DeviceIoControl(</ll>
+      <ld>_In_         HANDLE hDevice </ld>
+      <ld>_In_         DWORD dwIoControlCode </ld>
+      <ld>_In_opt_     LPVOID lpInBuffer </ld>
+      <ld>_In_         DWORD nInBufferSize </ld>
+      <ld>_Out_opt_    LPVOID lpOutBuffer </ld>
+      <ld>_In_         DWORD nOutBufferSize </ld>
+      <ld>_Out_opt_    LPDWORD lpBytesReturned </ld>
+      <ld>_Inout_opt_  LPOVERLAPPED lpOverlapped </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hDevice">
+       A handle to the device on which the operation is to be performed. The 
+       device is typically a volume, directory, file, or stream.
+     </par>
+     <par name="dwIOControlCode">
+       The control code for the operation. This value identifies the specific 
+       operation to be performed and the type of device on which to perform it.
+     </par>
+     <par name="lpInBuffer">
+       A pointer to the input buffer that contains the data required to perform 
+       the operation. The format of this data depends on the value of the 
+       dwIoControlCode parameter.
+
+       This parameter can be NULL if dwIoControlCode specifies an operation 
+       that does not require input data.
+     </par>
+     <par name="nInBufferSize">The size of the input buffer, in bytes.</par>
+     <par name="lpOutBuffer">
+       A pointer to the output buffer that is to receive the data returned
+       by the operation. The format of this data depends on the value of the 
+       dwIoControlCode parameter.
+
+       This parameter can be NULL if dwIoControlCode specifies an operation 
+       that does not return data.
+     </par>
+     <par name="nOutBufferSize">The size of the output buffer, in bytes.</par>
+     <par name="lpBytesReturned">
+       A pointer to a variable that receives the size of the data stored in the 
+       output buffer, in bytes.
+
+       If the output buffer is too small to receive any data, the call fails,
+       GetLastError returns ERROR_INSUFFICIENT_BUFFER, and lpBytesReturned is zero.
+
+       If the output buffer is too small to hold all of the data but can hold 
+       some entries, some drivers will return as much data as fits. In this 
+       case, the call fails, GetLastError returns ERROR_MORE_DATA, and
+       lpBytesReturned indicates the amount of data received. Your application 
+       should call DeviceIoControl again with the same operation, specifying
+       a new starting point.
+
+       If lpOverlapped is NULL, lpBytesReturned cannot be NULL. Even when
+       an operation returns no output data and lpOutBuffer is NULL, 
+       DeviceIoControl makes use of lpBytesReturned. After such an operation, 
+       the value of lpBytesReturned is meaningless.
+
+       If lpOverlapped is not NULL, lpBytesReturned can be NULL. If this
+       parameter is not NULL and the operation returns data, lpBytesReturned 
+       is meaningless until the overlapped operation has completed. To 
+       retrieve the number of bytes returned, call GetOverlappedResult. If 
+       hDevice is associated with an I/O completion port, you can retrieve
+       the number of bytes returned by calling GetQueuedCompletionStatus.
+     </par>
+     <par name="lpOverlapped">
+       A pointer to an OVERLAPPED structure.
+       If hDevice was opened without specifying FILE_FLAG_OVERLAPPED, 
+       lpOverlapped is ignored.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="DeviceIoControl">
+    <returntype>BOOL</returntype>
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="hDevice" io="r" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:device"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwIOControlCode" io="r" nr="2">
+      <rep type="enum" name="device_control_code_constants"/>
+      <type>DWORD</type>
+      <pre><enum-value name="device_control_code_constants"/></pre>
+      <roles>
+	<role rt="ioc:system" rn="io control code"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpInBuffer" io="r" nr="3" rep="hex">
+      <type><ptr>VOID</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="src-bytes:device output"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nInBufferSize" io="r" nr="4">
+      <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="DeviceIoControl"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpOutBuffer" io="w" nr="5" rep="hex">
+      <type><ptr>VOID</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-bytes:device input"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nOutBufferSize" io="r" nr="6">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:buffersize" rn="DeviceIOControl"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpBytesReturned" io="w" nr="7" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+      <roles>
+	<role rt="size:actual size" rn="DeviceIoControl"/>
+      </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="lpOverlapped" io="rw" roles="none" nr="8">
+      <type><ptr>OVERLAPPED</ptr></type>
+      <pre><deref-read-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles/>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="sends a control code directly to a device driver"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>lpInBuffer</ci>
+	    <ci>nInBufferSize</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpOutBuffer</ci>
+	    <ci>nOutBufferSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>      
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="device driver"
+			 xdata="result data from operation on device"/>
+	    <type>byte</type>
+	    <ci>lpOutBuffer</ci>
+	    <ci>nOutBufferSize</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

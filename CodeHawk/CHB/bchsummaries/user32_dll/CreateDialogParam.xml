@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="CreateDialogParam">
+   <documentation>
+    <desc>creates a modeless dialog box from a dialog box template resource</desc>
+    <apidoc>
+     <pt>
+      <ll>HWND WINAPI CreateDialogParam (</ll>
+      <ld>__in_opt HINSTANCE hInstance,</ld>
+      <ld>__in     LPCTSTR lpTemplateName,</ld>
+      <ld>__in_opt HWND hWndParent,</ld>
+      <ld>__in_opt DLGPROC lpDialogFunc,</ld>
+      <ld>__in     LPARAM dwInitParam</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hInstance">
+       handle to the module whose executable file contains the dialog box template
+     </par>
+     <par name="lpTemplateName">
+       dialog box template. This parameter is eigher the pointer to a null-terminated
+       character string that specifies the name of the dialog box template or an integer
+       value that specifies the resource identifier of the dialog box template. If the
+       parameter specifies a resource identifier, its high-order word must be zero and
+       low-order word must contain the identifier
+     </par>
+     <par name="hWndParent">handle to the window that owns the dialog box</par>
+     <par name="lpDialogFunc">pointer to the dialog box procedure</par>
+     <par name="dwInitParam">
+       the value to be passed to the dialog box procedure in the iParam parameter in the
+       WM_INITDIALOG message
+     </par>
+     <return>
+      <rc cond="success">window handle to the dialog box</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="CreateDialogParam">
+    <returnbtype tname="HWND" ttag="tnamed"/>
+    <par loc="stack" name="hInstance" io="r" nr="1">
+      <type>HINSTANCE</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:module"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpTemplateName" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="name:template"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hWndParent" io="r" nr="3">
+      <type>HWND</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpDialogFunc" io="r" nr="4" rep="hex">
+      <type>DLGPROC</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="callbackf:dialog"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwInitParam" io="r" nr="5">
+      <type>LPARAM</type>
+      <roles>
+	<role rt="ioc:process" rn="callbackp:dialog"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="creates a dialog box from a dialog box template"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

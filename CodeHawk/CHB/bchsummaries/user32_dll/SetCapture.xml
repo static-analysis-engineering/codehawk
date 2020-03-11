@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetCapture">
+   <documentation>
+    <desc>sets the mouse capture to the specified window belonging to the current thread
+      </desc>
+    <apidoc>
+     <pt>HWND WINAPI SetCapture (_In_ HWND hWnd)</pt>
+     <par name="hWnd">
+       handle to the window in the current thread that is to capture the mouse
+     </par>
+     <return>handle to the window that previously captured the mouse. If there is no such window,
+	  the return value is NULL
+	</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetCapture">
+    <returntype>HWND</returntype>
+    <par loc="stack" io="r" name="hWnd" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="sets mouse capture to a window"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/19/2015 19:19:22"/>
+  <libfun lib="kernel32" name="CancelIo">
+   <documentation>
+    <desc>
+      Cancels all pending input and output (I/O) operations that are issued
+      by the calling thread for the specified file. The function does not 
+      cancel I/O operations that other threads issue for a file handle
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI CancelIo (_In_  HANDLE hFile)</pt>
+     <par name="hFile">
+       A handle to the file.
+       The function cancels all pending I/O operations for this file handle
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CancelIo">
+    <par loc="stack" io="r" name="hFile" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="handle:file"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="cancels pending I/O for a file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

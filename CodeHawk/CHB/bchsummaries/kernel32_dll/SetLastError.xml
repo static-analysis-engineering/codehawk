@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetLastError">
+   <documentation>
+    <desc>sets the last error code for the calling thread</desc>
+    <apidoc>
+     <pt>void WINAPI SetLastError ( __in DWORD dwErrCode )</pt>
+     <par name="dwErrCode">the last-error code for the thread</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetLastError">
+    <returnbtype tname="void" ttag="tnamed"/>
+    <par loc="stack" name="dwErrCode" io="r" nr="1">
+      <type>DWORD</type>
+      <roles>
+	<role rt="ioc:process" rn="error code"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="sets the last error code">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

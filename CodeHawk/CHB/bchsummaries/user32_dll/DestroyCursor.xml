@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/08/2015 23:34:56"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="DestroyCursor">
+   <documentation>
+    <desc>destroys a cursor and frees any memory the cursor occupied
+   </desc>
+    <apidoc>
+     <pt>BOOL WINAPI DestroyCursor (_In_ HCURSOR hCursor)</pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hCursor">handle to the cursor to be destroyed</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DestroyCursor">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="hCursor" rep="hex" nr="1">
+       <type>HCURSOR</type>
+       <pre><deref-read/></pre>
+       <sideeffects><invalidates/></sideeffects>
+       <roles>
+         <role rt="ioc:process" rn="handle:cursor"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="destroys a cursor"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:32:25"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetScrollInfo">
+   <documentation>
+    <desc>
+      sets the parameters of a scroll bar, including the minimum and maximum 
+      scrolling positions, the page size, and the position of the scroll box (thumb).
+      The function also redraws the scroll bar, if requested.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int SetScrollInfo(</ll>
+      <ld>_In_  HWND hwnd,</ld>
+      <ld>_In_  int fnBar,</ld>
+      <ld>_In_  LPCSCROLLINFO lpsi,</ld>
+      <ld>_In_  BOOL fRedraw</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hwnd">
+       Handle to a scroll bar control or a window with a standard scroll bar, 
+       depending on the value of the fnBar parameter.
+     </par>
+     <par name="fnBar">Specifies the type of scroll bar for which to set parameters.</par>
+     <par name="lpsi">Pointer to a SCROLLINFO structure.</par>
+     <par name="fRedraw">
+       Specifies whether the scroll bar is redrawn to reflect the changes to the scroll bar.
+     </par>
+     <return>Current position of the scroll box</return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SetScrollInfo">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hwnd" io="r" nr="1">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="fnBar" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="lpsi" io="r" rep="hex" nr="3">
+      <type><ptr>SCROLLINFO</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:scroll info"/>
+      </roles>
+    </par>
+    <par loc="stack" name="fRedraw" roles="none" nr="4">
+     <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="sets the parameters of a scroll bar"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

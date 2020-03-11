@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:31:58"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetConsoleCtrlHandler">
+   <documentation>
+    <desc>
+      Adds or removes an application-defined HandlerRoutine function from the list 
+      of handler functions for the calling process.
+
+      If no handler function is specified, the function sets an inheritable attribute
+      that determines whether the calling process ignores CTRL+C signals.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetConsoleCtrlHandler(</ll>
+      <ld>_In_opt_  PHANDLER_ROUTINE HandlerRoutine</ld>
+      <ld>_In_      BOOL Add</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="HandlerRoutine">
+       A pointer to the application-defined HandlerRoutine function to be added 
+       or removed. This parameter can be NULL. 
+     </par>
+     <par name="Add">
+       If this parameter is TRUE, the handler is added; if it is FALSE, the handler 
+       is removed.
+
+       If the HandlerRoutine parameter is NULL, a TRUE value causes the calling 
+       process to ignore CTRL+C input, and a FALSE value restores normal processing 
+       of CTRL+C input. This attribute of ignoring or processing CTRL+C is inherited
+       by child processes.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetConsoleCtrlHandler">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="HandlerRoutine" nr="1">
+     <type><ptr>HANDLER_ROUTINE</ptr></type>
+     <roles>
+      <role rt="ioc:process" rn="callbackf:console signal handler" />
+     </roles>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="Add" roles="none" nr="2">
+     <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="adds or removes console signal handlers"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

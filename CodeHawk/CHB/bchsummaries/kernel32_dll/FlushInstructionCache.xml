@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:14:46"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="FlushInstructionCache">
+   <documentation>
+    <desc>Flushes the instruction cache for the specified process.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI FlushInstructionCache(</ll>
+      <ld>_In_  HANDLE hProcess </ld>
+      <ld>_In_  LPCVOID lpBaseAddress </ld>
+      <ld>_In_  SIZE_T dwSize </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hProcess">
+       A handle to a process whose instruction cache is to be flushed.
+     </par>
+     <par name="lpBaseAddress">
+       A pointer to the base of the region to be flushed. This parameter can be NULL.
+     </par>
+     <par name="dwSize">
+       The size of the region to be flushed if the lpBaseAddress parameter 
+       is not NULL, in bytes.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="FlushInstructionCache">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hProcess" io="r" rep="hex" nr="1">
+       <type>HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:process"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpBaseAddress" io="r" rep="hex" nr="2">
+      <type>LPCVOID</type>
+      <roles>
+	<role rt="ioc:memops" rn="address:memory"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwSize" nr="3">
+      <type>SIZE_T</type>
+      <roles>
+	<role rt="size:region" rn="memory region"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="flushes the instruction cache"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <type>byte</type>
+	    <ci>lpBaseAddress</ci>
+	    <ci>dwSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

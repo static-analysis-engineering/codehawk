@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/29/2015 14:52:13"/>
+  <libfun lib="user32" name="GetKeyboardType">
+   <documentation>
+    <desc>Retrieves information about the current keyboard</desc>
+    <apidoc>
+     <pt>int GetKeyboardType (_In_ int nTypeFlag)</pt>
+     <par name="nTypeFlag">The type of keyboard information to be retrieved</par>
+     <return>
+      <rc cond="success">requested information</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetKeyboardType">
+    <par loc="stack" name="nTypeFlag" io="r" roles="none" nr="1">
+     <rep type="enum" name="keyboard_type_request_constants"/>
+     <type>int</type>
+     <pre><enum-value name="keyboard_type_request_constants"/></pre> 
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves information about the keyboard">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

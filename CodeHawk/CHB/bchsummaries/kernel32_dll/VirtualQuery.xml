@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="VirtualQuery">
+   <documentation>
+    <desc>
+      retrieves information about a range of pages in the virtual address space of
+      the calling process
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>SIZE_T WINAPI VirtualQuery (</ll>
+      <ld>__in_opt LPCVOID lpAddress,</ld>
+      <ld>__out    PMEMORY_BASIC_INFORMATION lpBuffer,</ld>
+      <ld>__in     SIZE_T dwLength</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpAddress">
+       pointer to the base address of the region of pages to be queried. 
+     </par>
+     <par name="lpBuffer">
+       pointer to a MEMORY_BASIC_INFORMATION structure in which information
+       about the specified page range is returned
+     </par>
+     <par name="dwLength">
+       the size of the buffer pointed by the lpBuffer parameter in bytes
+     </par>
+     <return>
+       <rc cond="success">actual number of bytes returned in the information buffer</rc>
+       <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="VirtualQuery">
+     <returntype>SIZE_T</returntype>
+    <par loc="stack" io="r" name="lpAddress" nr="1">
+     <roles>
+      <role rt="ioc:memops" rn="address:memory" />
+     </roles>
+     <type><ptr>VOID</ptr></type>
+    </par>
+    <par loc="stack" io="w" name="lpBuffer" nr="2" rep="hex">
+     <roles>
+       <role rt="ioc:process" rn="infox:memory-basic-information"/>
+       <role rt="ioc:memops" rn="dst-struct:memory-basic-information"/>
+     </roles>
+     <type><ptr>MEMORY_BASIC_INFORMATION</ptr></type>
+    </par>
+    <par loc="stack" io="r" name="dwLength" nr="3">
+      <type>SIZE_T</type>
+     <roles>
+      <role rt="size:memory" rn="VirtualQuery" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves information about a range of pages in the virtual address space">
+       </io-action>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>MEMORY_BASIC_INFORMATION</type>
+	 <ci>lpBuffer</ci>
+	 <ci>dwLength</ci>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <gt/>
+        <return-value/>
+        <cn>0</cn>
+       </apply>
+      </math>
+     </post>
+     <error-post>
+      <math>
+       <apply>
+        <eq/>
+        <return-value/>
+        <cn>0</cn>
+       </apply>
+      </math>
+     </error-post>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+        <btype tname="MEMORY_BASIC_INFORMATION" ttag="tnamed"/>
+        <ci>lpBuffer</ci>
+        <ci>dwLength</ci>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

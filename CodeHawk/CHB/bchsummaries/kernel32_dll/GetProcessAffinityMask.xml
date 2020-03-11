@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 14:43:44"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetProcessAffinityMask">
+   <documentation>
+    <desc>
+      retrieves the process affinity mask for the specified process and the
+      system affinity mask for the system
+   </desc>
+    <remarks>A process affinity mask is a bit vector in which each bit represents the
+     processors that a process is allowed to run on. A system affinity mask is
+     a bit vector in which each bit represents the processors that are configured
+     into a system.
+   </remarks>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetProcessAffinityMask(</ll>
+      <ld>_In_ HANDLE hProcess,</ld>
+      <ld>_Out_ PDWORD_PTR lpProcessAffinityMask,</ld>
+      <ld>_Out_ PDWORD_PTR lpSystemAffinityMask</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	nonzero; values are written to lpProcessAffinityMask and lpSystemAffinityMask
+      </rc>
+      <rc cond="failure">
+	zero; content of lpProcessAffinityMask and lpSystemAffinityMask are undefined
+      </rc>
+     </return>
+     <par name="hProcess">handle to the process whose affinity mask is desired
+    </par>
+     <par name="lpProcessAffinityMask">
+       pointer to a variable that receives the affinity mask for the specified process
+    </par>
+     <par name="lpSystemAffinityMask">
+       pointer to a variable that receives the affinity mask for the system
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetProcessAffinityMask">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="hProcess" nr="1">
+       <type>HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:process"/>
+       </roles>
+    </par>
+    <par loc="stack" io="w" name="lpProcessAffinityMask" nr="2">
+      <type>PDWORD_PTR</type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:process" rn="affinity mask"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpSystemAffinityMask" nr="3">
+      <type>PDWORD_PTR</type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:system" rn="affinity mask"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves process and system affinity mask"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

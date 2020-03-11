@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetWindowText">
+   <documentation>
+    <desc>copies the text of the specified window&apos;s title bar into a buffer</desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI GetWindowText (</ll>
+      <ld>__in  HWND hWnd,</ld>
+      <ld>__out LPTSTR lpString,</ld>
+      <ld>__in  int nMaxCount</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window or control containing the text</par>
+     <par name="lpString">
+       buffer that will receive the text. If the string is as long or longer than
+       the buffer, the string is truncated and terminated with a null character
+     </par>
+     <par name="nMaxCount">
+       the maximum number of characters to copy to the buffer, including the null
+       character
+     </par>
+     <return>
+      <rc cond="success">
+	length in characters of the copied string, not including the null terminator
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetWindowText">
+    <returntype>int</returntype>
+    <par loc="stack" name="hWnd" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpString" nr="2">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:memops" rn="dst-string:input text"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nMaxCount" nr="3">
+     <type>int</type>
+     <pre><non-negative/></pre>
+     <roles>
+         <role rt="size:buffersize" rn="GetWindowText"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="retrieves text from a window"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>TCHAR</type>
+	 <ci>lpString</ci>
+	 <apply><indexsize/><ci>nMaxCount</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+        <type>TCHAR</type>
+        <ci>lpString</ci>
+        <apply><indexsize/><ci>nMaxCount</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

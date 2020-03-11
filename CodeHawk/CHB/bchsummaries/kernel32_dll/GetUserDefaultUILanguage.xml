@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/13/2015 21:09:51"/>
+  <libfun lib="kernel32" name="GetUserDefaultUILanguage">
+   <documentation>
+    <desc>
+      Returns the language identifier for the user UI language for the 
+      current user. If the current user has not set a language, 
+      GetUserDefaultUILanguage returns the preferred language set for 
+      the system. If there is no preferred language set for the system,
+      then the system default UI language (also known as "install 
+      language") is returned
+    </desc>
+    <apidoc>
+     <pt>GetUserDefaultUILanguage (void)</pt>
+     <return>
+       the language identifier for the user UI language for the current user
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetUserDefaultUILanguage">
+    <returntype>LANGID</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

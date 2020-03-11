@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 16:59:21"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="DestroyIcon">
+   <documentation>
+    <desc>destroys an icon and frees any memory the icon occupied
+   </desc>
+    <apidoc>
+     <pt>BOOL WINAPI DestroyIcon (_In_ HICON hIcon)</pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hIcon">handle to the icon to be destroyed</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DestroyIcon">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="hIcon" nr="1">
+     <type>HICON</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:icon"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <external-effects>
+      <xeffect xtgt="system" xaction="destroy icon"/>
+    </external-effects>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

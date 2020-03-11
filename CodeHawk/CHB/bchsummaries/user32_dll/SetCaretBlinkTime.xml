@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/13/2015 16:33:06"/>
+  <libfun lib="user32" name="SetCaretBlinkTime">
+   <documentation>
+    <desc>
+      Sets the caret blink time to the specified number of milliseconds. 
+      The blink time is the elapsed time, in milliseconds, required to 
+      invert the caret's pixels
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI SetCaretBlinkTime (_In_  UINT uMSeconds)</pt>
+     <par name="uMSeconds">The new blink time, in milliseconds</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SetCaretBlinkTime">
+    <par loc="stack" name="uMSeconds" nr="1">
+     <type>UINT</type>
+     <roles>
+       <role rt="ioc:system" rn="caret blink time"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="sets the caret blink time"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

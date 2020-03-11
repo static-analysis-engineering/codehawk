@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 16:11:17"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="EnumDisplaySettings">
+   <documentation>
+    <desc>retrieves information about one of the graphics modes for a display device
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL EnumDisplaySettings(</ll>
+      <ld>_In_ LPCTSTR lpszDeviceName,</ld>
+      <ld>_In_ DWORD iModeNum,</ld>
+      <ld>_Out_ DEVMODE *lpDevMode</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpszDeviceName">
+       pointer to a null-terminated string that specifies the display device about
+       whose graphics mode to retrieve information
+    </par>
+     <par name="iModeNum">type of information to be retrieved
+    </par>
+     <par name="lpDevMode">
+       pointer to a DEVMODE structure into which the information is to be stored
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="EnumDisplaySettings">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="lpszDeviceName" io="r" rep="hex" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:system" rn="name:device"/>
+     </roles>
+    </par>
+    <par loc="stack" name="iModeNum" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpDevMode" io="w" rep="hex" nr="3">
+      <type><ptr>DEVMODE</ptr></type>
+      <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:system" rn="infox:device graphics mode"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves information about the graphics modes of a display device"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

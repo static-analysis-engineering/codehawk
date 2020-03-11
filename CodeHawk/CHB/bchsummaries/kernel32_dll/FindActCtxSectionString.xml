@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FindActCtxSectionString.xml" time="2016-03-06 11:05:40.042674"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="FindActCtxSectionString" lib="kernel32">
+    <documentation>
+      <desc>
+	retrieves information on a specific string in the current
+	activation context and returns a ACTCTX_SECTION_KEYED_DATA
+	structure.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL FindActCtxSectionString(</ll>
+          <ld>_In_        DWORD                      dwFlags</ld>
+          <ld>_In_  const GUID                       *lpExtensionGuid</ld>
+          <ld>_In_        ULONG                      ulSectionId</ld>
+          <ld>_In_        LPCTSTR                    lpStringToFind</ld>
+          <ld>_Out_       PACTCTX_SECTION_KEYED_DATA ReturnedData</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="dwFlags">
+	  Flags that determine how this function is to operate. Only one flag is
+	  currently defined
+	</par>
+        <par name="lpExtensionGuid">Reserved; must be null</par>
+        <par name="ulSectionId">
+	  Identifier of the string section of the activation context
+	  in which to search for the specific string
+	</par>
+        <par name="lpStringToFind">
+	  Pointer to a null-terminated string to be used as the search criteria
+	</par>
+        <par name="ReturnedData">
+	  Pointer to an ACTCTX_SECTION_KEYED_DATA structure to be
+	  filled out with the requested string information.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="20" name="FindActCtxSectionString">
+      <par loc="stack" io="r" nr="1" roles="none" name="dwFlags">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" io="r" nr="2" roles="none" name="lpExtensionGuid">
+        <type><ptr>GUID</ptr></type>
+      </par>
+      <par loc="stack" io="r" nr="3" roles="none" name="ulSectionId">
+        <type><ptr>ULONG</ptr></type>
+      </par>
+      <par loc="stack" io="r" nr="4" name="lpStringToFind">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:inputs" rn="string search"/>
+	</roles>
+      </par>
+      <par loc="stack" nr="5" io="w" rep="hex" name="ReturnedData">
+        <type><ptr>ACTCTX_SECTION_KEYED_DATA</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-struct:activation context keyed data"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" 
+		   desc="retrieves information on a string in the activation context"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

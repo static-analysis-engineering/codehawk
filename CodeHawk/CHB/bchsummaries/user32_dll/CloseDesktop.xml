@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/16/2015 20:58:41"/>
+  <libfun lib="user32" name="CloseDesktop">
+   <documentation>
+    <desc>Closes an open handle to a desktop object</desc>
+    <apidoc>
+     <pt>BOOL WINAPI CloseDesktop (_In_  HDESK hDesktop)</pt>
+     <par name="hDesktop">
+       A handle to the desktop to be closed. This can be a handle returned
+       by the CreateDesktop, OpenDesktop, or OpenInputDesktop functions. 
+       Do not specify the handle returned by the GetThreadDesktop function
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CloseDesktop">
+    <par loc="stack" io="r" name="hDesktop" nr="1">
+     <type>HDESK</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:desktop"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="closes a desktop"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

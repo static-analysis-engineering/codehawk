@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 08:14:14"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="FindResource">
+   <documentation>
+    <desc>
+    Determines the location of a resource with the specified type and name in 
+    the specified module.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HRSRC WINAPI FindResourceA(</ll>
+      <ld>_In_opt_  HMODULE hModule </ld>
+      <ld>_In_      LPCTSTR lpName </ld>
+      <ld>_In_      LPCTSTR lpType </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">handle to the specified resource's information block</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="hModule">
+       A handle to the module whose portable executable file or an accompanying 
+       MUI file contains the resource. If this parameter is NULL, the function 
+       searches the module used to create the current process.
+     </par>
+     <par name="lpName">
+       The name of the resource. Alternately, rather than a pointer, this 
+       parameter can be MAKEINTRESOURCE(ID), where ID is the integer identifier 
+       of the resource.
+     </par>
+     <par name="lpType">
+       The resource type. Alternately, rather than a pointer, this parameter 
+       can be MAKEINTRESOURCE(ID), where ID is the integer identifier of the 
+       given resource type. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="FindResource">
+    <returntype>HRSRC</returntype>
+    <par loc="stack" name="hModule" io="r" nr="1">
+      <type>HMODULE</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:module"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpName" io="r" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="name:resource"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpType" io="r" nr="3" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="type:resource"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="determines the location of a resource">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

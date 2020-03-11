@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="CreateCaret">
+   <documentation>
+    <desc>
+      creates a new shape for the system caret and assigns ownership of the caret
+      to the specified window
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CreateCaret (</ll>
+      <ld>__in     HWND hWnd,</ld>
+      <ld>__in_opt HBITMAP hBitMap,</ld>
+      <ld>__in     int nWidth,</ld>
+      <ld>__in     int nHeight</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">handle to the window that owns the caret</par>
+     <par name="hBitMap">handle to the bitmap that defines the caret shape, can be NULL</par>
+     <par name="nWidth">width of the caret (only used if hBitmap = NULL)</par>
+     <par name="nHeight">height of the caret (only used if hBitmap = NULL)</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CreateCaret">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hWnd" io="r" rep="hex" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+    </par>
+    <par loc="stack" name="hBitMap" io="r" rep="hex" nr="2">
+      <type>HBITMAP</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:bitmap"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nWidth" io="r" nr="3">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="caret width"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nHeight" io="r" nr="4">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="caret height"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="creates a new shape for the system caret"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

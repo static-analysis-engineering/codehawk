@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/13/2015 05:49:38"/>
+  <libfun lib="user32" name="GetScrollInfo">
+   <documentation>
+    <desc>
+      retrieves the parameters of a scroll bar, including the minimum and
+      maximum scrolling positions, the page size, and the position of the
+      scroll box (thumb)
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetScrollInfo(</ll>
+      <ld>_In_    HWND         hwnd</ld>
+      <ld>_In_    int          fnBar</ld>
+      <ld>_Inout_ LPSCROLLINFO lpsi</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hwnd">
+       Handle to a scroll bar control or a window with a standard scroll bar, 
+       depending on the value of the fnBar parameter
+     </par>
+     <par name="fnBar">
+       Specifies the type of scroll bar for which to retrieve parameters
+     </par>
+     <par name="lpsi">
+       Pointer to a SCROLLINFO structure. Before calling GetScrollInfo, set 
+       the cbSize member to sizeof(SCROLLINFO), and set the fMask member to 
+       specify the scroll bar parameters to retrieve. Before returning, the 
+       function copies the specified parameters to the appropriate members
+       of the structure
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetScrollInfo">
+    <par loc="stack" io="r" name="hwnd" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="fnBar" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" io="rw" name="lpsi" nr="3">
+     <type><ptr>SCROLLINFO</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:scroll info" />
+      <role rt="ioc:memops" rn="dst-struct:scroll info" />
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write xsrc="window" xdata="scroll information"/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="process" desc="retrieves information about the scrollbar"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

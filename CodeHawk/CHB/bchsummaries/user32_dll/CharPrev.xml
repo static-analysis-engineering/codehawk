@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/18/2015 16:08:02"/>
+  <libfun lib="user32" name="CharPrev">
+   <documentation>
+    <desc>
+      Retrieves a pointer to the preceding character in a string. This function
+      can handle strings consisting of either single- or multi-byte characters.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LPTSTR WINAPI CharPrev(</ll>
+      <ld>_In_ LPCTSTR lpszStart</ld>
+      <ld>_In_ LPCTSTR lpszCurrent</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszStart">The beginning of the string.</par>
+     <par name="lpszCurrent">A character in a null-terminated string</par>
+     <return>
+       a pointer to the preceding character in the string, or to the first 
+       character in the string if the lpszCurrent parameter equals the 
+       lpszStart parameter.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CharPrev">
+    <par loc="stack" name="lpszStart" io="r" rep="hex" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-string:search"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpszCurrent" io="r" rep="hex" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-string:search"/>
+     </roles>
+    </par>
+    <returntype>LPTSTR</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="inputs"
+		  desc="retrieves a pointer within a string"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

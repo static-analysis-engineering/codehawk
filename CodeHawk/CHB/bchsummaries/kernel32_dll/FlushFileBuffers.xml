@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="FlushFileBuffers">
+   <documentation>
+    <desc>
+      flushes the buffers of a specified file and causes all buffered 
+      data to be written to a file
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI FlushFileBuffers ( __in HANDLE hFile )</pt>
+     <par name="hFile">handle to the open file</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="FlushFileBuffers">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hFile" io="r" nr="1">
+      <type>HANDLE</type>
+      <pre><not-null/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="handle:file"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="flushes a file"/>
+     </io-actions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

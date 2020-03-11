@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="02/28/2016 16:40:31"/>
+  <libfun lib="kernel32" name="SwitchToThread">
+   <documentation>
+    <desc>
+       Causes the calling thread to yield execution to another thread
+       that is ready to run on the current processor. The operating
+       system selects the next thread to be executed
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI SwitchToThread (void)</pt>
+     <return>
+        If calling the SwitchToThread function causes the operating
+        system to switch execution to another thread, the return value
+        is nonzero.  If there are no other threads ready to execute,
+        the operating system does not switch execution to another
+        thread, and the return value is zero.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="SwitchToThread">
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

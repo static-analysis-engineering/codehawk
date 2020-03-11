@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/11/2015 17:56:45"/>
+  <libfun lib="kernel32" name="InitializeSListHead">
+   <documentation>
+    <desc>Initializes the head of a singly linked list.</desc>
+    <apidoc>
+     <pt>void WINAPI InitializeSListHead (_Inout_ PSLIST_HEADER ListHead)</pt>
+     <par name="ListHead">
+       A pointer to an SLIST_HEADER structure that represents the head of a
+       singly linked list. This structure is for system use only
+     </par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="InitializeSListHead">
+    <par loc="stack" io="rw" name="ListHead" nr="1" rep="hex">
+     <type><ptr>SLIST_HEADER</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:slist-header" />
+      <role rt="ioc:memops" rn="dst-struct:slist-header" />
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>VOID</returntype>
+   </api>
+   <semantics>
+     <io-actions/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

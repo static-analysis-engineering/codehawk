@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 23:39:28"/>
+  <libfun lib="advapi32" name="RegDeleteKeyTransacted">
+   <documentation>
+    <desc>
+      Deletes a subkey and its values from the specified platform-specific
+      view of the registry as a transacted operation
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegDeleteKeyTransacted(</ll>
+      <ld>_In_       HKEY    hKey</ld>
+      <ld>_In_       LPCTSTR lpSubKey</ld>
+      <ld>_In_       REGSAM  samDesired</ld>
+      <ld>_Reserved_ DWORD   Reserved</ld>
+      <ld>_In_       HANDLE  hTransaction</ld>
+      <ld>_Reserved_ PVOID   pExtendedParameter</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hKey">A handle to an open registry key</par>
+     <par name="lpSubKey">The name of the key to be deleted</par>
+     <par name="samDesired">
+       An access mask that specifies the platform-specific view of the registry 
+     </par>
+     <par name="Reserved">
+       This parameter is reserved and must be zero
+     </par>
+     <par name="hTransaction">
+       A handle to an active transaction
+     </par>
+     <par name="pExtendedParameter">
+       This parameter is reserved and must be NULL
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="RegDeleteKeyTransacted">
+    <par loc="stack" name="hKey" io="r" rep="hex" nr="1">
+      <rep type="enum" name="predefined_registry_key_constants"/>
+      <type>HKEY</type>
+      <pre>
+	<deref-read/>
+	<enum-value name="predefined_registry_key_constants"/>
+      </pre>
+      <roles>
+	<role rt="ioc:registry" rn="handle:key"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpSubKey" io="r" rep="hex" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:registry" rn="name:subkey"/>
+     </roles>
+    </par>
+    <par loc="stack" name="samDesired" io="r" roles="none" nr="3">
+      <rep type="enum" name="registry_key_security_access_rights_flags"/>
+      <type>REGSAM</type>
+      <pre><enum-value name="registry_key_security_access_rights_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" name="Reserved" io="r" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="hTransaction" nr="5">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:registry" rn="handle:transaction"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pExtendedParameter" io="r" roles="none" nr="6">
+     <type><ptr>VOID</ptr></type>
+    </par>
+    <returntype>LONG</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="registry" 
+		desc="deletes a subkey and its values as a transacted operation"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="HeapValidate">
+   <documentation>
+    <desc>validates the specified heap</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI HeapValidate (</ll>
+      <ld>__in     HANDLE hHeap,</ld>
+      <ld>__in     DWORD dwFlags,</ld>
+      <ld>__in_opt LPCVOID lpMem</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hHeap">handle to the heap to be validated</par>
+     <par name="dwFlags">heap access options</par>
+     <par name="lpMem">
+       pointer to a memory block within the specified heap; can be NULL.
+       If this parameter is NULL, the function attempts to validate the entire 
+       heap specified by hHeap.
+       If this parameter is not NULL, the function attempts to validate the 
+       memory block pointed to by lpMem. It does not attempt to validate the 
+       rest of the heap.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="HeapValidate">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hHeap" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:heap"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" nr="2">
+      <type>DWORD</type>
+      <roles>
+         <role rt="ioc:process" rn="heap access options"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpMem" nr="3">
+      <type>LPCVOID</type>
+      <pre><deref-read-null/><allocation-base/></pre>
+      <roles>
+         <role rt="ioc:process" rn="memory block"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="validates a heap region"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

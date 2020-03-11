@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="LockServiceDatabase.xml" time="2016-06-20 23:34:12.180375"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="LockServiceDatabase">
+    <documentation>
+      <desc>
+	Requests ownership of the service control manager (SCM)
+	database lock. Only one process can own the lock at any
+	specified time.
+
+	Note: As of Windows Vista, this function is provided for
+	application compatibility and has no effect on the database
+      </desc>
+      <apidoc>
+        <pt>SC_LOCK WINAPI LockServiceDatabase (_In_ SC_HANDLE hSCManager)</pt>
+        <par name="hSCManager">
+	  A handle to the SCM database. This handle is returned by the
+	  OpenSCManager function, and must have the SC_MANAGER_LOCK
+	  access right
+	</par>
+        <return>
+          <rc cond="success">a lock to the specified SCM database</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="LockServiceDatabase">
+      <par loc="stack" name="hSCManager" io="r" nr="1">
+        <type>SC_HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:services" rn="handle:SCM database"/>
+	</roles>
+      </par>
+      <returntype>SC_LOCK</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="services" 
+		   desc="requests ownership of the service control manager database lock"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

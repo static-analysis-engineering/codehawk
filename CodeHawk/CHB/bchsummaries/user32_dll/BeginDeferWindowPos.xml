@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/10/2015 02:57:42"/>
+  <libfun lib="user32" name="BeginDeferWindowPos">
+   <documentation>
+    <desc>
+      Allocates memory for a multiple-window- position structure and returns 
+      the handle to the structure
+    </desc>
+    <apidoc>
+     <pt>HDWP WINAPI BeginDeferWindowPos (_In_ int nNumWindows)</pt>
+     <par name="nNumWindows">
+       The initial number of windows for which to store position information. 
+       The DeferWindowPos function increases the size of the structure, if necessary
+     </par>
+     <return>
+      <rc cond="success">identifies the multiple-window-position structure</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="BeginDeferWindowPos">
+    <par loc="stack" name="nNumWindows" io="r" nr="1">
+     <type>int</type>
+     <roles>
+       <role rt="size:count" rn="number of windows"/>
+     </roles>
+    </par>
+    <returntype>HDWP</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops"
+		  desc="allocates memory for a multiple-window structure"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

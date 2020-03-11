@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="DrawEdge">
+   <documentation>
+    <desc>draws one or more edges of rectangle</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL DrawEdge (</ll>
+      <ld>_In_ HDC hdc,</ld>
+      <ld>_Inout_ LPRECT qrc,</ld>
+      <ld>_In_ UINT edge,</ld>
+      <ld>_In_ UINT grfFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">handle to the device context</par>
+     <par name="qrc">
+       pointer to a REC structure that contains the logical coordinates of the rectangle
+     </par>
+     <par name="edge">type of inner and oter edges to draw</par>
+     <par name="grfFlags">type of border</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="DrawEdge">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hdc" nr="1">
+      <type>HDC</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+    <par loc="stack" name="qrc" nr="2" rep="hex">
+      <type><ptr>RECT</ptr></type>
+      <pre><deref-read/></pre>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:RECT"/>
+      </roles>
+    </par>
+    <par loc="stack" name="edge" nr="3" roles="none">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="grfFlags" nr="4" roles="none">
+      <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="draws edges of a rectangle"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

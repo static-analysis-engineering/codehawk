@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/05/2015 21:50:46"/>
+  <libfun lib="kernel32" name="SetDefaultCommConfig">
+   <documentation>
+    <desc>Sets the default configuration for a communications device</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetDefaultCommConfig(</ll>
+      <ld>_In_  LPCTSTR lpszName</ld>
+      <ld>_In_  LPCOMMCONFIG lpCC</ld>
+      <ld>_In_  DWORD dwSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszName">
+       The name of the device. For example, COM1 through COM9 are serial ports 
+       and LPT1 through LPT9 are parallel ports
+     </par>
+     <par name="lpCC">A pointer to a COMMCONFIG structure</par>
+     <par name="dwSize">The size of the structure pointed to by lpCC, in bytes</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SetDefaultCommConfig">
+    <par loc="stack" io="rw" name="lpszName" nr="1">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:communications device" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpCC" nr="2" rep="hex">
+     <type><ptr>COMMCONFIG</ptr></type>
+     <roles>
+      <role rt="ioc:system" rn="src-struct:commconfig" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwSize" nr="3">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:COMMCONFIG" rn="structure size" />
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" 
+		  desc="sets the default configuration of a communications device"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>COMMCONFIG</type>
+	    <ci>lpCC</ci>
+	    <ci>dwSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

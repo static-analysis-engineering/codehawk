@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/02/2015 23:28:14"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="AdjustTokenPrivileges">
+   <documentation>
+    <desc>
+      enables or disables privileges in the specified access token.
+      Enabling or disabling privileges in an access token requires
+      TOKEN_ADJUST_PRIVILEGES.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI AdjustTokenPrivileges(</ll>
+      <ld>_In_  HANDLE TokenHandle,</ld>
+      <ld>_In_  BOOL DisableAllPrivileges,</ld>
+      <ld>_In_opt_ PTOKEN_PRIVILEGES NewState,</ld>
+      <ld>_In_ DWORD BufferLength,</ld>
+      <ld>_Out_opt_ PTOKEN_PRIVILEGES PreviousState,</ld>
+      <ld>_Out_opt_ PDWORD ReturnLength</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="TokenHandle">
+       handle to the access token that contains the privileges to be modified.
+       The handle must have TOKEN_ADJUST_PRIVILEGES access to the token. If
+       the PreviousState parameter is not NULL the handle must also have
+       TOKEN_QUERY access.
+    </par>
+     <par name="DisableAllPrivileges">
+       specifies whether the function disables all of the token&apos;s privileges.
+       If true, the function disables all privileges and ignores the NewState
+       parameter. If false, the function modifies privileges based on the
+       information pointed by the NewState parameter.
+     </par>
+     <par name="newState">
+       pointer to a TOKEN_PRIVILEGES structure that specifies an array of
+       privileges and their attributes. 
+     </par>
+     <par name="BufferLength">
+       specifies the size, in bytes of the buffer pointed to by the PreviousState
+       parameter. This parameter can be zero if PreviousState is NULL.
+     </par>
+     <par name="PreviousState">
+       pointer to a buffer that the function fills with a TOKEN_PRIVILEGES
+       structure that contains the previous state of any privileges that the
+       function modifies. Can be NULL.
+       If the buffer specified is too small to receive the complete list of
+       modified privileges, the function fails and does not adjust any privileges,
+       but sets the variable pointed to by ReturnLength to the number of bytes
+       required to hold the complete list of modified privileges.
+     </par>
+     <par name="ReturnLength">
+       pointer to a variable that receives the required size, in bytes, of the
+       buffer pointed to by PreviousState. Can be NULL if PreviousState is NULL.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="AdjustTokenPrivileges">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="TokenHandle" rep="hex" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:access token"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="DisableAllPrivileges" roles="none" nr="2">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" io="r" name="newState" roles="none" nr="3">
+      <type><ptr>TOKEN_PRIVILEGES</ptr></type>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="BufferLength" nr="4">
+     <type>DWORD</type>
+     <roles><role rt="size:structure" rn="TOKEN_PRIVILEGES"/></roles>
+    </par>
+    <par loc="stack" io="w" name="PreviousState" roles="none" nr="5">
+       <type><ptr>TOKEN_PRIVILEGES</ptr></type>
+    </par>
+    <par loc="stack" io="w" name="ReturnLength" nr="6">
+      <type><ptr>DWORD</ptr></type>
+      <roles><role rt="size:required" rn="AdjustTokenPrivileges"/></roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="enables or disables privileges in an access token"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>TOKEN_PRIVILEGES</type>
+	    <ci>PreviousState</ci>
+	    <ci>BufferLength</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write exsrc="process"/>
+	<type>TOKEN_PRIVILEGES</type>
+        <ci>PreviousState</ci>
+	<ci>BufferLength</ci>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun name="GetCurrentProcessId" lib="kernel32">
+   <documentation>
+    <desc>retrieves the process identifier of the calling process</desc>
+    <apidoc>
+     <pt>DWORD WINAPI GetCurrentProcessId (void)</pt>
+     <return>process identifier of the calling process</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetCurrentProcessId">
+    <returnbtype ikind="iuint" ttag="tint"/>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves the process id of the calling process">
+	 <args/>
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

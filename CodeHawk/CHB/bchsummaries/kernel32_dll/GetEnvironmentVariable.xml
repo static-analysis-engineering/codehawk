@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetEnvironmentVariable">
+   <documentation>
+    <desc>
+      retrieves the contents of the specified variable from the environment block
+      of the calling process
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetEnvironmentVariable (</ll>
+      <ld>__in_opt  LPCTSTR lpName</ld>
+      <ld>__out_opt LPTSTR lpBuffer</ld>
+      <ld>__in      DWORD nSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpName">name of the environment variable</par>
+     <par name="lpBuffer">
+       pointer to a buffer that receives the contents of the specified
+       environment variable as a null-terminated string
+     </par>
+     <par name="nSize">
+       size of the buffer pointed to by the lpBuffer parameter, including
+       the null-terminating character, in characters
+     </par>
+     <return>
+      <rc cond="success">
+	number of characters stored in lpBuffer, not including the terminating
+	null character; if lpBuffer is not large enough to hold the data, the
+	return value is the buffer size, in characters, required to hold the
+	string and its null-terminating null character
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetEnvironmentVariable">
+     <returntype>DWORD</returntype>
+     <par loc="stack" io="r" name="lpName" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:process" rn="name:environment variable"/>
+      </roles>
+    </par>
+    <par loc="stack" desc="buffer" io="w" name="lpBuffer" nr="2" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:process" rn="infox:environment variable value"/>
+      </roles>
+    </par>
+    <par loc="stack" desc="buffer size" io="r" name="nSize" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="GetEnvironmentVariable"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves the value of an environment variable"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+        <deref-read/>
+	<type>TCHAR</type>
+	<ci>lpBuffer</ci>
+	<apply><indexsize/><ci>nSize</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write xsrc="process" xdata="value of a given environment variable"/>
+	<type>TCHAR</type>
+	<ci>lpBuffer</ci>
+	<apply><indexsize/><ci>nSize</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

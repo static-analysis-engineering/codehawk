@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="05/07/2015 17:20:12"/>
+  <libfun lib="kernel32" name="GetTempFileNameW">
+   <refer-to char-type="unicode" name="GetTempFileName"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

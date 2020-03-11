@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/23/2014 12:25:00"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="OpenProcessToken">
+   <documentation>
+    <desc>opens the access token associated with a process</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI OpenProcessToken(</ll>
+      <ld>_In_   HANDLE ProcessHandle,</ld>
+      <ld>_In_   DWORD DesiredAccess,</ld>
+      <ld>_Out_  PHANDLE TokenHandle</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="ProcessHandle">
+       A handle to the process whose access token is opened. The process must 
+       have the PROCESS_QUERY_INFORMATION access permission.
+     </par>
+     <par name="DesiredAccess">
+       Specifies an access mask that specifies the requested types of access 
+       to the access token. These requested access types are compared with 
+       the discretionary access control list (DACL) of the token to determine 
+       which accesses are granted or denied.
+     </par>
+     <par name="TokenHandle">
+       A pointer to a handle that identifies the newly opened access token 
+       when the function returns.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OpenProcessToken">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="ProcessHandle" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:process"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="DesiredAccess" nr="2">
+      <type>DWORD</type>
+      <roles>
+	<role rt="enum:const" rn="access_token_access_rights"/>
+      </roles>
+      <pre><enum-value name="access_token_access_rights"/></pre>
+    </par>
+    <par loc="stack" desc="token handle" io="w" name="TokenHandle" nr="3">
+      <type><ptr>HANDLE</ptr></type>
+      <roles>
+	<role rt="ioc:process" rn="handle:access token"/>
+      </roles>
+      <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="opens the access token associated with a process"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

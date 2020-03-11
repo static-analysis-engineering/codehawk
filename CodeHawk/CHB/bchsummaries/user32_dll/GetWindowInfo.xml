@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/16/2015 20:27:36"/>
+  <libfun lib="user32" name="GetWindowInfo">
+   <documentation>
+    <desc>Retrieves information about the specified window</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetWindowInfo(</ll>
+      <ld>_In_     HWND hwnd</ld>
+      <ld>_Inout_  PWINDOWINFO pwi</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hwnd">A handle to the window whose information is to be retrieved</par>
+     <par name="pwi">
+       A pointer to a WINDOWINFO structure to receive the information. Note that you 
+       must set the cbSize member to sizeof(WINDOWINFO) before calling this function
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetWindowInfo">
+    <par loc="stack" name="hwnd" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pwi" nr="2">
+     <type><ptr>WINDOWINFO</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:memops" rn="dst-struct:window info"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="retrieves information about a window"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

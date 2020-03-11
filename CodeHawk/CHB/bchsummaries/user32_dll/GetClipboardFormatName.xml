@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/13/2015 16:16:14"/>
+  <libfun lib="user32" name="GetClipboardFormatName">
+   <documentation>
+    <desc>
+      Retrieves from the clipboard the name of the specified registered format.
+      The function copies the name to the specified buffer
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI GetClipboardFormatName(</ll>
+      <ld>_In_   UINT format</ld>
+      <ld>_Out_  LPTSTR lpszFormatName</ld>
+      <ld>_In_   int cchMaxCount</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="format">
+       The type of format to be retrieved. This parameter must not specify any of 
+       the predefined clipboard formats
+     </par>
+     <par name="lpszFormatName">The buffer that is to receive the format name</par>
+     <par name="cchMaxCount">
+       The maximum length, in characters, of the string to be copied to the buffer. 
+       If the name exceeds this limit, it is truncated
+     </par>
+     <return>
+      <rc cond="success">
+	the length, in characters, of the string copied to the buffer.
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetClipboardFormatName">
+    <par loc="stack" name="format" io="r" roles="none" nr="1">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" io="w" name="lpszFormatName" nr="2">
+     <type>LPSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="infox:clipboard format" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cchMaxCount" nr="3">
+     <type>int</type>
+     <roles>
+      <role rt="size:count" rn="GetClipboardFormatName" />
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves a clipboard format name"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszFormatName</ci>
+	    <apply><indexsize/><ci>cchMaxCount</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="clipboard" xdata="name of specified format"/>
+	    <type>TCHAR</type>
+	    <ci>lpszFormatName</ci>
+	    <apply><indexsize/><ci>cchMaxCount</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

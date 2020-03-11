@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 16:30:07"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="EnumDisplayDevices">
+   <documentation>
+    <desc>retrieves information about display devices in the current session</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL EnumDisplayDevicesA(</ll>
+      <ld>_In_ LPCTSTR lpDevice,</ld>
+      <ld>_In_ DWORD,</ld>
+      <ld>_Out_ PDISPLAY_DEVICE lpDisplayDevice,</ld>
+      <ld>_In_ DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpDevice">
+       pointer to the device name. If NULL, function returns information on display
+       adapters on the machine
+    </par>
+     <par name="iDevNum">index value that specifies the display device of interest
+    </par>
+     <par name="lpDisplayDevice">
+       pointer to a DISPLAY_DEVICE structure that receives information about the
+       display device specified by iDevNum. Before calling EnumDisplayDevices, the 
+       cb member of DISPLAY_DEVICE must be initialized to the size, in bytes,
+       of DISPLAY_DEVICE.
+     </par>
+     <par name="dwFlags">controls what is retrieved</par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="EnumDisplayDevices">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="lpDevice" io="r" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:system" rn="name:device"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="iDevNum" nr="2">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:index" rn="device index"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpDisplayDevice" io="w" nr="3">
+      <type><ptr>DISPLAY_DEVICE</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:memops" rn="dst-struct:display device"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="4">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="enumerates display devices"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

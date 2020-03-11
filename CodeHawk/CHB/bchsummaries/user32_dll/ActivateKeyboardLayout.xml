@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 17:18:17"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ActivateKeyboardLayout">
+   <documentation>
+    <desc>
+      Sets the input locale identifier (formerly called the keyboard layout
+      handle) for the calling thread or the current process. The input 
+      locale identifier specifies a locale as well as the physical layout 
+      of the keyboard.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HKL ActivateKeyboardLayout(</ll>
+      <ld>_In_ HKL hkl,</ld>
+      <ld>_In_ UINT Flags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">previous input locale identifier</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hkl">input locale identifier to be activated</par>
+     <par name="Flags">specifies how the input locale identifier is to be activated
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ActivateKeyboardLayout">
+    <returntype>HKL</returntype>
+    <par loc="stack" io="r" name="hkl" nr="1">
+     <type>HKL</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:keyboard layout"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="Flags" nr="2" roles="none">
+      <rep type="enum" name="keyboard_layout_format_constants"/>
+      <type>UINT</type>
+      <pre><enum-value name="keyboard_layout_format_constants"/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="sets input locale and keyboard layout"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

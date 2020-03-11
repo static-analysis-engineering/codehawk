@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 03:05:29"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="LookupAccountName">
+   <documentation>
+    <desc>
+      accepts the name of a system and an account as input. It retrieves 
+      a security identifier (SID) for the account and the name of the domain 
+      on which the account was found.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI LookUpAccountNameA(</ll>
+      <ld>_In_opt_   LPCTSTR lpSystemName</ld>
+      <ld>_In_       LPCTSTR lpAccountName</ld>
+      <ld>_Out_opt_  PSID Sid</ld>
+      <ld>_Inout_    LPDWORD cbSid</ld>
+      <ld>_Out_opt_  LPTSTR ReferencedDomainName</ld>
+      <ld>_Inout_    LPDWORD cchReferencedDomainName</ld>
+      <ld>_Out_      PSID_NAME_USE peUse</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpSystemName">
+       A pointer to a null-terminated character string that specifies the name of the system. 
+       This string can be the name of a remote computer. If this string is NULL, the 
+       account name translation begins on the local system. 
+       If the name cannot be resolved on the local system, this function will try to 
+       resolve the name using domain controllers trusted by the local system.
+    </par>
+     <par name="lpAccountName">
+     A pointer to a null-terminated string that specifies the account name.</par>
+     <par name="Sid">
+       A pointer to a buffer that receives the SID structure that corresponds to 
+       the account name pointed to by the lpAccountName parameter. 
+       If this parameter is NULL, cbSid must be zero.
+    </par>
+     <par name="cbSid">
+       A pointer to a variable. On input, this value specifies the size, in bytes, 
+       of the Sid buffer. 
+       If the function fails because the buffer is too small or if cbSid is zero, 
+       this variable receives the required buffer size.
+    </par>
+     <par name="ReferencedDomainName">
+       A pointer to a buffer that receives the name of the domain where the account
+       name is found. 
+       For computers that are not joined to a domain, this buffer receives the computer name. 
+       If this parameter is NULL, the function returns the required buffer size.
+     </par>
+     <par name="cchReferencedDomainName">
+       A pointer to a variable. On input, this value specifies the size, in TCHARs, 
+       of the ReferencedDomainName buffer. 
+       If the function fails because the buffer is too small, this variable receives 
+       the required buffer size, including the terminating null character. 
+       If the ReferencedDomainName parameter is NULL, this parameter must be zero. 
+    </par>
+     <par name="peUse">
+       A pointer to a SID_NAME_USE enumerated type that indicates the type of the
+       account when the function returns.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="LookupAccountName">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="lpSystemName" nr="1" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:system" rn="name:system"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpAccountName" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:system" rn="name:account"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="Sid" nr="3" rep="hex">
+     <type><ptr>SID</ptr></type>
+     <pre><deref-write-null/></pre>
+     <roles>
+        <role rt="ioc:system" rn="infox:security identifier"/>
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="cbSid" nr="4" rep="hex">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="size:buffersize" rn="LookupAccountName"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="ReferencedDomainName" nr="5" rep="hex">
+      <type>LPTSTR</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+         <role rt="ioc:system" rn="infox:reference domain name"/>
+      </roles>
+    </par>
+    <par loc="stack" io="rw" name="cchReferencedDomainName" nr="6" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="size:buffersize" rn="LookupAccountName"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="peUse" nr="7" rep="hex">
+       <type><ptr>SID_NAME_USER</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+       <roles>
+          <role rt="ioc:system" rn="infox:account type"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions> 
+       <io-action cat="system" desc="retrieves a security identifies"/>
+    </io-actions>
+    <preconditions>
+      <!-- if Sid is null *cbSid must be zero -->
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><null/><ci>Sid</ci></apply>
+	    <apply>
+	      <eq/>
+	      <apply><addressed-value/><ci>cbSid</ci><cn>0</cn></apply>
+	      <cn>0</cn>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <!-- if Sid is not null *cbSid contains the buffersize -->
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><not-null/><ci>Sid</ci></apply>
+	    <apply>
+	      <deref-write/>
+	      <type>SID</type>
+	      <ci>Sid</ci>
+	      <apply><addressed-value/><ci>cbSid</ci><cn>0</cn></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <!-- if ReferencedDomainName is null *cchReferencedDomainName must be zero -->
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><null/><ci>ReferencedDomainName</ci></apply>
+	    <apply>
+	      <eq/>
+	      <apply><addressed-value/><ci>cchReferencedDomainName</ci><cn>0</cn></apply>
+	      <cn>0</cn>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <!-- if ReferencedDomainName is not null *cchReferencedDomainName holds the buffersize -->
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><not-null/><ci>ReferencedDomainName</ci></apply>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>ReferencedDomainName</ci>
+	      <apply>
+		<indexsize/>
+		<apply><addressed-value/><ci>cchReferencedDomainName</ci><cn>0</cn></apply>
+	      </apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>SID</type>
+	    <ci>Sid</ci>
+	    <apply><addressed-value/><ci>cbSid</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	      <type>TCHAR</type>
+	      <ci>ReferencedDomainName</ci>
+	      <apply>
+		<indexsize/>
+		<apply><addressed-value/><ci>cchReferencedDomainName</ci><cn>0</cn></apply>
+	      </apply>
+	    </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

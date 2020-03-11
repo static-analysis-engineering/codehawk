@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="03/16/2015 21:09:06"/>
+  <libfun lib="user32" name="CharLowerBuffA">
+   <refer-to char-type="ansi" name="CharLowerBuff"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

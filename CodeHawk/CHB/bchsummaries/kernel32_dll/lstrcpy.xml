@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="lstrcpy">
+   <documentation>
+    <desc>copies a string to a buffer</desc>
+    <apidoc>
+     <pt>
+      <ll>LPTSTR WINAPI lstrcpy (</ll>
+      <ld>__out LPTSTR lpString1,</ld>
+      <ld>__in  LPTSTR lpString2</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpString1">
+       buffer to receive the contents of the string pointed to by lpString2
+     </par>
+     <par name="lpString2">null-terminated string to be copied</par>
+     <return>
+      <rc cond="success">pointer to String1</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="lstrcpy">
+     <returntype>LPTSTR</returntype>
+    <par loc="stack" desc="dest buffer" io="w" name="lpString1" nr="1" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-string:copy"/>
+      </roles>
+    </par>
+    <par loc="stack" desc="src buffer" ioc="r" name="lpString2" nr="2" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:memops" rn="src-string:copy"/>
+      </roles>
+      <pre><deref-read-null/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="copies a string"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>TCHAR</type>
+	 <ci>lpString1</ci>
+	 <apply><null-terminator-pos/><ci>lpString2</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <notnull-null/>
+      <post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return-value/>
+	    <ci>lpString1</ci>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	<type>TCHAR</type>
+        <ci>lpString1</ci>
+	 <apply><null-terminator-pos/><ci>lpString2</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

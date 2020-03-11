@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetSecurityDescriptorControl.xml" time="2016-09-09 19:23:03.787953"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="GetSecurityDescriptorControl">
+    <documentation>
+      <desc>retrieves a security descriptor control and revision information</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI GetSecurityDescriptorControl(</ll>
+          <ld>_In_  PSECURITY_DESCRIPTOR         pSecurityDescriptor</ld>
+          <ld>_Out_ PSECURITY_DESCRIPTOR_CONTROL pControl</ld>
+          <ld>_Out_ LPDWORD                      lpdwRevision</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pSecurityDescriptor">
+           A pointer to a SECURITY_DESCRIPTOR structure whose control
+           and revision information the function retrieves.
+	</par>
+        <par name="pControl">
+           A pointer to a SECURITY_DESCRIPTOR_CONTROL structure that
+           receives the security descriptor's control information.
+	</par>
+        <par name="lpdwRevision">
+           A pointer to a variable that receives the security
+           descriptor's revision value. This value is always set, even
+           when GetSecurityDescriptorControl returns an error.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="GetSecurityDescriptorControl">
+      <par loc="stack" name="pSecurityDescriptor" io="r" rep="hex" nr="1">
+        <type><ptr>SECURITY_DESCRIPTOR</ptr></type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="ioc:system" rn="security descriptor"/>
+        </roles>
+      </par>
+      <par loc="stack" name="pControl" io="w" rep="hex" nr="2">
+        <type><ptr>SECURITY_DESCRIPTOR_CONTROL</ptr></type>
+        <pre><deref-write/></pre>
+        <roles>
+           <role rt="ioc:system" rn="infox:security descriptor control"/>
+        </roles>
+      </par>
+      <par loc="stack" name="lpdwRevision" io="w" rep="hex" nr="3">
+        <type><ptr>DWORD</ptr></type>
+        <pre><deref-write/></pre>
+        <roles>
+           <role rt="ioc:system" rn="infox:security descriptor revision"/>
+        </roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="retrieves a security descriptor"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

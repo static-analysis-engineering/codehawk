@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-09-12 19:47:17"/>
+  <libfun lib="kernel32" name="RegisterWaitForSingleObject">
+    <documentation>
+      <desc>
+	Directs a wait thread in the thread pool to wait on the object. The
+	wait thread queues the specified callback function to the thread pool
+	when one of the following occurs: The specified object is in the
+	signaled state, or the time-out interval elapses.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL RegisterWaitForSingleObject(</ll>
+          <ld>PHANDLE phNewWaitObject</ld>
+          <ld>HANDLE  hObject</ld>
+          <ld>WAITFORTIMERCALLBACK Callback</ld>
+          <ld>PVOID Context</ld>
+          <ld>ULONG dwMilliseconds</ld>
+          <ld>ULONG dwFlags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="phNewWaitObject">
+	  A pointer to a variable that receives a wait handle on return. Note
+	  that a wait handle cannot be used in functions that require an object
+	  handle, such as CloseHandle.
+	</par>
+        <par name="hObject">
+	  A handle to the object. For a list of the object types whose handles
+	  can be specified, see the following Remarks section.  If this handle
+	  is closed while the wait is still pending, the function's behavior is
+	  undefined.  The handles must have the SYNCHRONIZE access right. For
+	  more information, see Standard Access Rights.
+	</par>
+        <par name="Callback">
+	  A pointer to the application-defined function of type
+	  WAITORTIMERCALLBACK to be executed when hObject is in the signaled
+	  state, or dwMilliseconds elapses.
+	</par>
+        <par name="Context">
+	  A single value that is passed to the callback function.
+	</par>
+        <par name="dwMilliseconds">
+	  The time-out interval, in milliseconds. The function returns if the
+	  interval elapses, even if the object's state is nonsignaled. If
+	  dwMilliseconds is zero, the function tests the object's state and
+	  returns immediately. If dwMilliseconds is INFINITE, the function's
+	  time-out interval never elapses.
+	</par>
+        <par name="dwFlags">flags</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="24" cc="stdcall" name="RegisterWaitForSingleObject">
+      <par loc="stack" name="phNewWaitObject" nr="1">
+        <type><ptr>HANDLE</ptr></type>
+	<pre><not-null/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:synchronization" rn="handle:synchronization
+					     object"/>
+	</roles>
+      </par>
+      <par loc="stack" name="hObject" nr="2">
+        <type>HANDLE</type>
+	<roles>
+	  <role rt="ioc:synchronization" rn="handle:synchronization
+					     object"/>
+	</roles>	
+      </par>
+      <par loc="stack" name="Callback" nr="3">
+        <type>WAITORTIMERCALLBACK</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="callbackf:timer callback"/>
+	</roles>
+      </par>
+      <par loc="stack" name="Context" roles="none" nr="4">
+        <type><ptr>VOID</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="dwMilliseconds" nr="5">
+        <type>ULONG</type>
+	<roles>
+	  <role rt="ioc:process" rn="timeout time"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwFlags" roles="none" nr="6">
+        <type>ULONG</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="directs a wait thread to wait"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:32:20"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetConsoleMode">
+   <documentation>
+    <desc>
+      Sets the input mode of a console&apos;s input buffer or the output mode 
+      of a console screen buffer.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetConsoleMode(</ll>
+      <ld>_In_  HANDLE hConsoleHandle</ld>
+      <ld>_In_  DWORD dwMode</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hConsoleHandle">
+       A handle to the console input buffer or a console screen buffer. 
+       The handle must have the GENERIC_READ access right.
+     </par>
+     <par name="dwMode">The input or output mode to be set.</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetConsoleMode">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hConsoleHandle" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:console" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwMode" nr="2" rep="hex" roles="none">
+     <type>DWORD</type>
+      <pre><enum-value name="console_input_flags" flags="true"/></pre>
+    </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 16:29:03"/>
+  <libfun lib="kernel32" name="ProcessIdToSessionId">
+   <documentation>
+    <desc>
+      Retrieves the Remote Desktop Services session associated with a specified process
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ProcessIdToSessionId(</ll>
+      <ld>_In_  DWORD dwProcessId</ld>
+      <ld>_Out_ DWORD *pSessionId</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwProcessId">
+       Specifies a process identifier. Use the GetCurrentProcessId function to 
+       retrieve the process identifier for the current process.
+     </par>
+     <par name="pSessionId">
+       Pointer to a variable that receives the identifier of the Remote Desktop Services
+       session under which the specified process is running. To retrieve the identifier
+       of the session currently attached to the console, use the WTSGetActiveConsoleSessionId
+       function.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ProcessIdToSessionId">
+    <par loc="stack" io="r" name="dwProcessId" nr="1">
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:process" rn="id:process"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="pSessionId" nr="2" rep="hex">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:process" rn="infox:session id"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves a remote desktop services id for a process id"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

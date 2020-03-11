@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/08/2015 22:15:30"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ToAscii">
+   <documentation>
+    <desc>
+      translates the specified virtual key code and keyboard state to the 
+      corresponding character or characters.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI ToAscii(</ll>
+      <ld>_In_ UINT uVirtKey,</ld>
+      <ld>_In_ UINT uScanCode,</ld>
+      <ld>_In_opt_ const BYTE *lpKeyState,</ld>
+      <ld>_Out_ LPWORD lpChar,</ld>
+      <ld>_In_ UINT uFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       if the specified key is a dead key, the return value is
+       negative, otherwise it is 0 if the specified virtual key has no
+       translation for the current state of the keyboard, 1 if one
+       charachter was copied to the buffer, 2 if two characters were
+       copied to the buffer
+    </return>
+     <par name="uVirtKey">virtual key code to be translated</par>
+     <par name="uScanCode">
+       hardware scan code of the key to be translated. The high-order bit of this
+       value is set if the key is up (not pressed)
+     </par>
+     <par name="lpKeyState">
+       pointer to a 256-byte array that contains the current keyboard state. Each
+       element (byte) contains the state of one key. If the high-order bit of a
+       byte is set, the key is down (pressed).
+     </par>
+     <par name="lpChar">buffer that receives the translated character or characters</par>
+     <par name="uFlags">must be 1 if a menu is active, 0 otherwise</par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="ToAscii">
+     <returntype>int</returntype>
+     <par loc="stack" name="uVirtKey" io="r" roles="none" nr="1">
+       <type>UINT</type>
+     </par>
+     <par loc="stack" name="uScanCode" io="r" roles="none" nr="2">
+       <type>UINT</type>
+    </par>
+    <par loc="stack" name="lpKeyState" io="r" rep="hex" nr="3">
+      <type><ptr>BYTE</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="src-bytes:keyboard state"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpChar" io="w" roles="none" nr="4">
+      <type><ptr>WORD</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="uFlags" io="r" roles="none" nr="5">
+      <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="translates a virtual key code and keyboard state"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <type>BYTE</type>
+	    <ci>lpKeyState</ci>
+	    <cn>256</cn>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

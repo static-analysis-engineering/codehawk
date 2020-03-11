@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetDC">
+   <documentation>
+    <desc>
+      retrieves a handle to a device context for the client area of
+      the specified window or for the entire screen. The device
+      context is an opaque data structure whose values are used
+      internally by GDI
+      </desc>
+    <apidoc>
+     <pt>HDC GetDC ( __in HWND hWnd );</pt>
+     <par name="hWnd">handle to the window whose DC is to be retrieved. If this value is NULL
+	  GetDC retrieves the DC for the entire screen
+	</par>
+     <return>
+      <rc cond="success">handle to the DC for the specified window&apos;s client area</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetDC">
+    <returntype>HDC</returntype>
+    <par loc="stack" io="r" name="hWnd" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves a handle to a screen device"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

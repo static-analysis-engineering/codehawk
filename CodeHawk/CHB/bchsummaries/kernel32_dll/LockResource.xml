@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:23:47"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="LockResource">
+   <documentation>
+    <desc>Retrieves a pointer to the specified resource in memory. </desc>
+    <apidoc>
+     <pt>
+      <ll>LPVOID WINAPI LockResource(</ll>
+      <ld>_In_  HGLOBAL hResData</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="hResData">
+       A handle to the resource to be accessed. The LoadResource function returns 
+       this handle. Note that this parameter is listed as an HGLOBAL variable 
+       only for backward compatibility.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="LockResource">
+    <returnbtype tname="LPVOID" ttag="tnamed"/>
+    <par loc="stack" name="hResData" nr="1">
+      <type>HGLOBAL</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:resource"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves a handle to a resource in memory">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

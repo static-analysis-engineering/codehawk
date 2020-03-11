@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:35:54"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SystemTimeToFileTime">
+   <documentation>
+    <desc>
+      Converts a system time to file time format. System time is based on 
+      Coordinated Universal Time (UTC).
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SystemTimeToFileTime(</ll>
+      <ld>_In_   const SYSTEMTIME *lpSystemTime</ld>
+      <ld>_Out_  LPFILETIME lpFileTime</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpSystemTime">
+       A pointer to a SYSTEMTIME structure that contains the system time to 
+       be converted from UTC to file time format.
+       
+       The wDayOfWeek member of the SYSTEMTIME structure is ignored.
+     </par>
+     <par name="lpFileTime">
+       A pointer to a FILETIME structure to receive the converted system time.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SystemTimeToFileTime">
+     <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="lpSystemTime" nr="1" rep="hex">
+     <type><ptr>SYSTEMTIME</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:SYSTEMTIME" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpFileTime" nr="2" rep="hex">
+     <type><ptr>FILETIME</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:FILETIME" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="converts a system time to a file time format">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

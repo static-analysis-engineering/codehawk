@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="03/12/2015 23:05:01"/>
+  <libfun lib="user32" name="MapVirtualKeyA">
+   <refer-to char-type="ansi" name="MapVirtualKey"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

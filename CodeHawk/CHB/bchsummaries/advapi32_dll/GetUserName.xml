@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="GetUserName">
+   <documentation>
+    <desc>retrieves the name of the user associated with the current thread</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetUserName (</ll>
+      <ld>__out   LPTSTR lpBuffer,</ld>
+      <ld>__inout LPDWORD lpnSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpBuffer">
+       Pointer to the buffer to receive the user&apos;s logon name
+     </par>
+     <par name="lpnSize">
+       specifies the size of lpBuffer buffer, in TCHARs. If lpBuffer is too small, the function 
+       fails and GetLastError returns ERROR_INSUFFICIENT_BUFFER. This parameter receives the 
+       required buffer size, including the terminating null character.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetUserName">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="w" name="lpBuffer" nr="1">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:system" rn="infox:username"/>
+      </roles>
+    </par>
+    <par loc="stack" io="rw" name="lpnSize" nr="2">
+       <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="size:buffersize" rn="GetUserName"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" 
+		  desc="retrieves the name of the user associated with the current thread"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>TCHAR</type>
+	 <ci>lpBuffer</ci>
+	 <apply>
+	   <indexsize/>
+	   <apply><addressed-value/><ci>lpnSize</ci><cn>0</cn></apply>
+	 </apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write xsrc="process"
+		     xdata="name of user associated with current thread"/>
+	 <type>TCHAR</type>
+	 <ci>lpBuffer</ci>
+	 <apply>
+	   <indexsize/>
+	   <apply><addressed-value/><ci>lpnSize</ci><cn>0</cn></apply>
+	 </apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

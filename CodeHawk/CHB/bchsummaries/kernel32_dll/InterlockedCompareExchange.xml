@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="InterlockedCompareExchange">
+   <documentation>
+    <desc>
+      performs an atomic compare-and-exchange operation on the
+      specified values. Compares two specified 32-bit values and
+      exchanges with another 32-bit value based on the outcome of the
+      comparison. The function compares the Destination value with the
+      Comparand value. If the Destination value is equal to the
+      Comparand value, the Exchange value is stored in the address
+      specified by Destination. Otherwise, no operation is
+      performed. The parameters for this function must be aligned on a
+      32-bit boundary, otherwise the function will behave
+      unpredictably on multiprocessor x86 systems and any non-x86
+      systems.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG __cdecl InterlockedCompareExchange (</ll>
+      <ld>_Inout_ LONG volatile *Destination,</ld>
+      <ld>_In_    LONG Exchange,</ld>
+      <ld>_In_    LONG Comparand</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Destination">pointer to the destination value</par>
+     <par name="Exchange">exchange value</par>
+     <par name="Comparand">value to compare to destination</par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="InterlockedCompareExchange">
+     <returntype>LONG</returntype>
+    <par loc="stack" io="rw" name="Destination" nr="1" rep="hex">
+     <roles>
+      <role rt="ioc:synchronization" rn="synchronized variable" />
+     </roles>
+     <type><ptr>LONG</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="Exchange" roles="none" nr="2">
+      <type>LONG</type>
+    </par>
+    <par loc="stack" io="r" name="Comparand" roles="none" nr="3">
+      <type>LONG</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization"
+		  desc="performs an atomic compare and exchange operation"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <implies/>
+        <pre>
+          <apply>
+           <neq/>
+           <apply>
+            <addressed-value/>
+            <ci>Destination</ci>
+	    <cn>0</cn>
+           </apply>
+           <ci>Comparand</ci>
+          </apply>
+        </pre>
+        <apply>
+         <block-write/>
+         <btype tname="int" ttag="tnamed"/>
+         <ci>Destination</ci>
+         <cn>4</cn>
+        </apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

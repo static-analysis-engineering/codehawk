@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="DestroyAcceleratorTable">
+   <documentation>
+    <desc>destroys an accelerator table</desc>
+    <apidoc>
+     <pt>BOOL WINAPI DestroyAcceleratorTable (_In_ HACCEL hAccel)</pt>
+     <par name="hAccel">handle to the accelerator table to be destroyed</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DestroyAcceleratorTable">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="hAccel" nr="1">
+       <type>HACCEL</type>
+       <roles>
+	 <role rt="ioc:process" rn="handle:accelerator table" />
+       </roles>
+       <pre><deref-read/></pre>
+       <sideeffects><invalidates/></sideeffects>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="destroys an accelerator table"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

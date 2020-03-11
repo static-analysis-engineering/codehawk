@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:24:47"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="CharNext">
+   <documentation>
+    <desc>
+      Retrieves a pointer to the next character in a string. This function can 
+      handle strings consisting of either single- or multi-byte characters.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>LPTSTR WINAPI CharNext(</ll>
+      <ld>_In_  LPCTSTR lpsz</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="lpsz">A character in a null-terminated string.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CharNext">
+     <returntype>LPTSTR</returntype>
+    <par loc="stack" name="lpsz" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-string:examine"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="inputs"
+		  desc="retrieves a pointer to the next character in a string"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SendDlgItemMessage">
+   <documentation>
+    <desc>sends a message to the specified control in a dialog box</desc>
+    <apidoc>
+     <pt>
+      <ll>LRESULT WINAPI SendDlgMessage (</ll>
+      <ld>__in HWND hDlg,</ld>
+      <ld>__in int nIDDlgItem,</ld>
+      <ld>__in UINT Msg,</ld>
+      <ld>__in WPARAM wParam,</ld>
+      <ld>__in LPARAM lParam</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDlg">handle to the dialog box that contains the control</par>
+     <par name="nIDDlgItem">identifier of the control that receives the message</par>
+     <par name="Msg">message to be sent</par>
+     <par name="wParam">additional message-specific information</par>
+     <par name="lParam">additional message-specific information</par>
+     <return>message-specific result</return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="SendDlgItemMessage">
+    <returntype>LRESULT</returntype>
+    <par loc="stack" name="hDlg" io="r" nr="1">
+      <type>HWND</type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nIDDlgItem" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="Msg" io="r" nr="3">
+      <type>UINT</type>
+      <roles>
+         <role rt="ioc:process" rn="id:message"/>
+      </roles>
+    </par>
+    <par loc="stack" name="wParam" nr="4">
+     <type>WPARAM</type>
+     <roles>
+        <role rt="ioc:process" rn="msg:wparam"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lParam" io="r" nr="5">
+     <type>LPARAM</type>
+     <roles>
+        <role rt="ioc:process" rn="msg:lparam"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="sends a message to a dialog box"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

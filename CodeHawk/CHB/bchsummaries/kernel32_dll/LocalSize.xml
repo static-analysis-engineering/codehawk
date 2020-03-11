@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="01/25/2016 15:51:52"/>
+  <libfun lib="kernel32" name="LocalSize">
+   <documentation>
+    <desc>
+      Retrieves the current size of the specified local memory object, in bytes
+    </desc>
+    <apidoc>
+     <pt>UINT LocalSize (_In_ HLOCAL hMem)</pt>
+     <par name="hMem">
+       A handle to the local memory object. This handle is returned by
+       the LocalAlloc, LocalReAlloc, or LocalHandle function.
+     </par>
+     <return>
+      <rc cond="success">the size of the specified local memory object, in bytes</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="LocalSize">
+    <par loc="stack" name="hMem" nr="1">
+     <type>HLOCAL</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:local memory"/>
+     </roles>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="memory" desc="retrieves the size of a memory object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 08:49:06"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="AllocateAndInitializeSid">
+   <documentation>
+    <desc>
+      allocates and initializes a security identifier (SID) with up to eight 
+      subauthorities. 
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPIAllocateAndInitializeSid(</ll>
+      <ld>_In_   PSID_IDENTIFIER_AUTHORITY pIdentifierAuthority </ld>
+      <ld>_In_   BYTE nSubAuthorityCount </ld>
+      <ld>_In_   DWORD dwSubAuthority0 </ld>
+      <ld>_In_   DWORD dwSubAuthority1 </ld>
+      <ld>_In_   DWORD dwSubAuthority2 </ld>
+      <ld>_In_   DWORD dwSubAuthority3 </ld>
+      <ld>_In_   DWORD dwSubAuthority4 </ld>
+      <ld>_In_   DWORD dwSubAuthority5 </ld>
+      <ld>_In_   DWORD dwSubAuthority6 </ld>
+      <ld>_In_   DWORD dwSubAuthority7 </ld>
+      <ld>_Out_  PSID *pSid </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">not-zero </rc>
+      <rc cond="failure">zero </rc>
+     </return>
+     <par name="pIdentifierAuthority">
+       A pointer to a SID_IDENTIFIER_AUTHORITY structure. 
+       This structure provides the top-level identifier authority value to set in the SID.
+     </par>
+     <par name="nSubAuthorityCount">
+       Specifies the number of subauthorities to place in the SID. 
+       This parameter also identifies how many of the subauthority parameters 
+       have meaningful values. 
+       This parameter must contain a value from 1 to 8. 
+    </par>
+     <par name="dwSubAuthority0">Subauthority value to place in the SID. </par>
+     <par name="dwSubAuthority1">Subauthority value to place in the SID. </par>
+     <par name="dwSubAuthority2">Subauthority value to place in the SID. </par>
+     <par name="dwSubAuthority3">Subauthority value to place in the SID. </par>
+     <par name="dwSubAuthority4">Subauthority value to place in the SID. </par>
+     <par name="dwSubAuthority5">Subauthority value to place in the SID. </par>
+     <par name="dwSubAuthority6">Subauthority value to place in the SID. </par>
+     <par name="dwSubAuthority7">Subauthority value to place in the SID. </par>
+     <par name="pSid">
+       A pointer to a variable that receives the pointer to the allocated and 
+       initialized SID structure. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="44" cc="stdcall" name="AllocateAndInitializeSid">
+    <returntype>BOOL</returntype>
+    <par loc="stack" desc="identifier authority" io="r" name="pIdentifierAuthority" nr="1">
+      <type><ptr>SID_IDENTIFIER_AUTHORITY</ptr></type>
+      <roles><role rt="ioc:process" rn="security identifier"/></roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="nSubAuthorityCount" io="r" roles="none" nr="2">
+     <btype tname="BYTE " ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="dwSubAuthority0" io="r" roles="none" nr="3">
+     <btype tname="DWORD " ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="dwSubAuthority1" io="r" roles="none" nr="4">
+     <btype tname="DWORD " ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="dwSubAuthority2" io="r" roles="none" nr="5">
+     <btype tname="DWORD " ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="dwSubAuthority3" io="r" roles="none" nr="6">
+     <btype tname="DWORD " ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="dwSubAuthority4" io="r" roles="none" nr="7">
+     <btype tname="DWORD " ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="dwSubAuthority5" io="r" roles="none" nr="8">
+     <btype tname="DWORD " ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="dwSubAuthority6" io="r" roles="none" nr="9">
+     <btype tname="DWORD " ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="dwSubAuthority7" io="r" roles="none" nr="10">
+     <btype tname="DWORD " ttag="tnamed"/>
+    </par>
+    <par loc="stack" io="w" name="pSid" rep="hex" nr="11">
+     <type><ptr>SID</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:SID security identifier" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="allocates and initializes a security identifier"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

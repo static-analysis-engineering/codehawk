@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/13/2015 12:18:12"/>
+  <libfun lib="user32" name="GetScrollRange">
+   <documentation>
+    <desc>
+      retrieves the current minimum and maximum scroll box (thumb) positions 
+      for the specified scroll bar
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetScrollRange(</ll>
+      <ld>_In_  HWND  hWnd</ld>
+      <ld>_In_  int   nBar</ld>
+      <ld>_Out_ LPINT lpMinPos</ld>
+      <ld>_Out_ LPINT lpMaxPos</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       Handle to a scroll bar control or a window with a standard scroll bar,
+       depending on the value of the nBar parameter
+     </par>
+     <par name="nBar">
+       Specifies the scroll bar from which the positions are retrieved
+     </par>
+     <par name="lpMinPos">
+       Pointer to the integer variable that receives the minimum position
+     </par>
+     <par name="lpMaxPos">
+       Pointer to the integer variable that receives the maximum position
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetScrollRange">
+    <par loc="stack" io="r" name="hWnd" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="nBar" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="lpMinPos" io="w" roles="none" nr="3">
+     <type><ptr>INT</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write xsrc="window" xdata="scroll range"/></sideeffects>
+    </par>
+    <par loc="stack" name="lpMaxPos" io="w" roles="none" nr="4">
+     <type><ptr>INT</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write xsrc="window" xdata="scroll range"/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="process" desc="retrieves minimum and maximum for the scrollbar"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

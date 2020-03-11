@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 07:32:27"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetDlgCtrlID">
+   <documentation>
+    <desc>Retrieves the identifier of the specified control. </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI GetDlgCtrlID(</ll>
+      <ld>_In_  HWND hwndCtl</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hwndCtl">A handle to the control. </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetDlgCtrlID">
+     <returntype>int</returntype>
+     <par loc="stack" io="r" name="hwndCtl" nr="1">
+       <type>HWND</type>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window" />
+       </roles>
+       <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves the identifier of a control"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="SetStdHandle">
+   <documentation>
+    <desc>sets the handle for the specified standard device</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetStdHandle (</ll>
+      <ld>__in DWORD nStdHandle,</ld>
+      <ld>__in HANDLE hHandle</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nStdHandle">standard device for which the handle is to be set</par>
+     <par name="hHandle">handle for the standard device</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetStdHandle">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="nStdHandle" nr="1">
+      <type>DWORD</type>
+      <rep type="enum" name="standard_device_constants"/>
+      <pre><enum-value name="standard_device_constants"/></pre>
+      <roles>
+        <role rt="ioc:filesystem" rn="id:standard device"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hHandle" nr="2">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="handle"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="sets the handle for a standard device"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

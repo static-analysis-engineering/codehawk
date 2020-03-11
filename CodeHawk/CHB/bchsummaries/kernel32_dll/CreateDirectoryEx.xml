@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/18/2015 22:30:52"/>
+  <libfun lib="kernel32" name="CreateDirectoryEx">
+   <documentation>
+    <desc>
+      Creates a new directory with the attributes of a specified template 
+      directory. If the underlying file system supports security on files 
+      and directories, the function applies a specified security descriptor
+      to the new directory. The new directory retains the other attributes 
+      of the specified template directory
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CreateDirectoryEx(</ll>
+      <ld>_In_      LPCTSTR lpTemplateDirectory</ld>
+      <ld>_In_      lpNewDirectory</ld>
+      <ld>_In_opt_  LPSECURITY_ATTRIBUTES lpSecurityAttributes</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpTemplateDirectory">
+       The path of the directory to use as a template when creating the new 
+       directory.
+       In the ANSI version of this function, the name is limited to MAX_PATH 
+       characters. To extend this limit to 32,767 wide characters, call the
+       Unicode version of the function and prepend "\\?\" to the pathThe 
+       path of the directory to use as a template when creating the new directory.
+     </par>
+     <par name="lpNewDirectory">
+       The path of the directory to be created.
+       In the ANSI version of this function, the name is limited to MAX_PATH 
+       characters. To extend this limit to 32,767 wide characters, call the 
+       Unicode version of the function and prepend "\\?\" to the path
+     </par>
+     <par name="lpSecurityAttributes">
+       A pointer to a SECURITY_ATTRIBUTES structure. The lpSecurityDescriptor 
+       member of the structure specifies a security descriptor for the new 
+       directory.
+       If lpSecurityAttributes is NULL, the directory gets a default security 
+       descriptor. The access control lists (ACL) in the default security 
+       descriptor for a directory are inherited from its parent directory.
+       The target file system must support security on files and directories 
+       for this parameter to have an effect. This is indicated when 
+       GetVolumeInformation returns FS_PERSISTENT_ACLS
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CreateDirectoryEx">
+    <par loc="stack" name="lpTemplateDirectory" io="r" rep="hex" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpNewDirectory" io="r" rep="hex" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpSecurityAttributes" io="r" roles="none" nr="3">
+     <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+     <pre><deref-read-null/></pre>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="creates a directory from a template directory"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

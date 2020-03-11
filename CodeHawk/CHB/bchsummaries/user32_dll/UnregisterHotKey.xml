@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="UnregisterHotKey.xml" time="2016-05-08 17:12:25.400141"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="UnregisterHotKey">
+    <documentation>
+      <desc>
+	Frees a hot key previously registered by the calling thread
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI UnregisterHotKey(</ll>
+          <ld>_In_opt_ HWND hWnd</ld>
+          <ld>_In_     int  id</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hWnd">
+	  A handle to the window associated with the hot key to be
+	  freed. This parameter should be NULL if the hot key is not
+	  associated with a window.
+	</par>
+        <par name="id">The identifier of the hot key to be freed</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="UnregisterHotKey">
+      <par loc="stack" name="hWnd" io="r" nr="1">
+        <type>HWND</type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <par loc="stack" name="id" io="r" nr="2">
+        <type>int</type>
+	<roles>
+	  <role rt="ioc:process" rn="id:hotkey"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="unregisters a hot key associated with the thread"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

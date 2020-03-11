@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="01/25/2016 15:55:39"/>
+  <libfun lib="kernel32" name="LocalReAlloc">
+   <documentation>
+    <desc>
+      Changes the size or the attributes of a specified local memory
+      object. The size can increase or decrease.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HLOCAL WINAPI LocalReAlloc(</ll>
+      <ld>_In_ HLOCAL hMem</ld>
+      <ld>_In_ SIZE_T uBytes</ld>
+      <ld>_In_ UINT   uFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hMem">
+       A handle to the local memory object to be reallocated. This
+       handle is returned by either the LocalAlloc or LocalReAlloc
+       function.
+     </par>
+     <par name="uBytes">
+       The new size of the memory block, in bytes. If uFlags specifies
+       LMEM_MODIFY, this parameter is ignored.
+     </par>
+     <par name="uFlags">
+       The reallocation options. If LMEM_MODIFY is specified, the
+       function modifies the attributes of the memory object only (the
+       uBytes parameter is ignored.) Otherwise, the function
+       reallocates the memory object.
+     </par>
+     <return>
+      <rc cond="success">a handle to the reallocated memory object</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="LocalReAlloc">
+    <par loc="stack" io="r" name="hMem" nr="1">
+     <type>HLOCAL</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="handle:local memory"/>
+     </roles>
+    </par>
+    <par loc="stack" name="uBytes" io="r" nr="2">
+     <type>SIZE_T</type>
+     <roles>
+       <role rt="size:allocationsize" rn="LocalReAlloc"/>
+     </roles>
+    </par>
+    <par loc="stack" name="uFlags" io="r" roles="none" nr="3">
+     <type>UINT</type>
+    </par>
+    <returntype>HLOCAL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="memory" desc="changes the size of a local memory object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+      <post><math><apply><new-memory-region/><return/><ci>uBytes</ci></apply></math></post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

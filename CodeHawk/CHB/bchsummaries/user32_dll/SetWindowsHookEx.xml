@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:24:26"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="SetWindowsHookEx">
+   <documentation>
+    <desc>
+      Installs an application-defined hook procedure into a hook chain. 
+      You would install a hook procedure to monitor the system for 
+      certain types of events.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HHOOK WINAPI SetWindowsHookEx(</ll>
+      <ld>_In_  int idHook </ld>
+      <ld>_In_  HOOKPROC lpfn </ld>
+      <ld>_In_  HINSTANCE hMod </ld>
+      <ld>_In_  DWORD dwThreadId </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="idHook">The type of hook procedure to be installed.</par>
+     <par name="lpfn">
+       A pointer to the hook procedure. If the dwThreadId parameter is zero or 
+       specifies the identifier of a thread created by a different process, the 
+       lpfn parameter must point to a hook procedure in a DLL. Otherwise, lpfn 
+       can point to a hook procedure in the code associated with the current process. 
+     </par>
+     <par name="hMod">
+       A handle to the DLL containing the hook procedure pointed to by the 
+       lpfn parameter. The hMod parameter must be set to NULL if the 
+       dwThreadId parameter specifies a thread created by the current 
+       process and if the hook procedure is within the code associated 
+       with the current process. 
+     </par>
+     <par name="dwThreadId">
+       The identifier of the thread with which the hook procedure is to 
+       be associated. For desktop apps, if this parameter is zero, the hook 
+       procedure is associated with all existing threads running in the 
+       same desktop as the calling thread.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SetWindowsHookEx">
+     <returntype>HHOOK</returntype>
+     <par loc="stack" name="idHook" nr="1" roles="none">
+       <rep type="enum" name="hook_procedure_constants"/>
+       <type>int</type>
+       <pre><enum-value name="hook_procedure_constants"/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="type:hook procedure"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpfn" nr="2" rep="hex">
+      <type>HOOKPROC</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="callbackf:hook procedure"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hMod" nr="3">
+      <type>HINSTANCE</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:module"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwThreadId" nr="4">
+      <type>DWORD</type>
+      <roles>
+	<role rt="ioc:process" rn="id:thread"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="installs a hook procedure"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

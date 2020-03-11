@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:19:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="GetLengthSid">
+   <documentation>
+    <desc>returns the length in bytes of valid security identifier</desc>
+    <apidoc>
+     <pt>DWORD WINAPI GetLengthSid ( __in PSID pSid )</pt>
+     <par name="pSid">pointer to the SID structure whose length is returned</par>
+     <return>
+      <rc cond="success">if SID is valid: length in bytes of the SID structure</rc>
+      <rc cond="failure">undefined</rc>
+     </return>
+     <remarks>
+       It is not possible to distinguish a good return value from a bad return value
+     </remarks>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetLengthSid">
+      <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="pSid" nr="1">
+      <type><ptr>SID</ptr></type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="system" rn="security identifier"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="retrieves the length of a security identifier"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

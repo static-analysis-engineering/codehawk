@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="02/04/2015 17:09:26"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="InterlockedPopEntrySList">
+   <documentation>
+    <desc>
+      Removes an item from the front of a singly linked list. Access to the list 
+     is synchronized on a multiprocessor system.
+   </desc>
+    <apidoc>
+     <pt>PSLIST_ENTRY WINAPI InterlockedPopEntrySList (_Inout_ PSLIST_HEADER ListHead)</pt>
+     <return>
+      <rc cond="success">pointer to the item removed from the list</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+     <par name="ListHead">
+       pointer to an SLIST_HEADER structure that represents the head of a singly-linked list
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="InterlockedPopEntrySList">
+     <returntype><ptr>SLIST_ENTRY</ptr></returntype>
+    <par loc="stack" io="rw" name="ListHead" nr="1" rep="hex">
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:SLIST_HEADER" />
+      <role rt="ioc:memops" rn="dst-struct:SLIST_HEADER" />
+      <role rt="ioc:synchronization" rn="synchronized list"/>
+     </roles>
+     <type><ptr>SLIST_HEADER</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="synchronization"
+		  desc="removes an item from a synchronized list"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

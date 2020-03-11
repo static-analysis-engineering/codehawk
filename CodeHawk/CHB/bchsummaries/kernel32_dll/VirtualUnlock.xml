@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/20/2015 04:40:53"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="VirtualUnlock">
+   <documentation>
+    <desc>
+      Unlocks a specified range of pages in the virtual address space of a process,
+      enabling the system to swap the pages out to the paging file if necessary.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI VirtualUnlock(</ll>
+      <ld>_In_  LPVOID lpAddress</ld>
+      <ld>_In_  SIZE_T dwSize</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpAddress">
+       A pointer to the base address of the region of pages to be unlocked.
+     </par>
+     <par name="dwSize">
+       The size of the region being unlocked, in bytes. The region of affected 
+       pages includes all pages containing one or more bytes in the range from 
+       the lpAddress parameter to (lpAddress+dwSize).
+	</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="VirtualUnlock">
+     <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="lpAddress" nr="1">
+     <type><ptr>void</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="address:memory" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwSize" nr="2">
+     <type>SIZE_T</type>
+     <roles>
+      <role rt="size:memory" rn="VirtualUnlock" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="unlocks a range of pages in the virtual address space"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpAddress</ci>
+	    <ci>dwSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

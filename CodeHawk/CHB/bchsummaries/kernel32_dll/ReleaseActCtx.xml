@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ReleaseActCtx.xml" time="2016-03-06 10:51:19.186575"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="ReleaseActCtx" lib="kernel32">
+    <documentation>
+      <desc>
+	decrements the reference count of the specified activation context
+      </desc>
+      <apidoc>
+        <pt>void ReleaseActCtx (_In_ HANDLE hActCtx)</pt>
+        <par name="hActCtx">
+	  Handle to the ACTCTX structure that contains information on
+	  the activation context for which the reference count is to
+	  be decremented.
+	</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="4" name="ReleaseActCtx">
+      <par loc="stack" io="r" nr="1" name="hActCtx">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="activation context"/>
+	</roles>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="releases an activation context"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

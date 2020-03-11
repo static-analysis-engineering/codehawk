@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 03:05:04"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="QueryServiceStatus">
+   <documentation>
+    <desc>Retrieves the current status of the specified service.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI QueryServiceStatus(</ll>
+      <ld>_In_   SC_HANDLE hService</ld>
+      <ld>_Out_  LPSERVICE_STATUS lpServiceStatus</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hService">
+       A handle to the service. This handle is returned by the OpenService 
+       or the CreateService function, and it must have the 
+       SERVICE_QUERY_STATUS access right.
+    </par>
+     <par name="lpServiceStatus">
+       A pointer to a SERVICE_STATUS structure that receives the status information.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="QueryServiceStatus">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hService" io="r" nr="1" rep="hex">
+      <type>SC_HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:services" rn="handle:service"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpServiceStatus" io="w" nr="2" rep="hex">
+      <type><ptr>SERVICE_STATUS</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:services" rn="infox:service status"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="services" desc="retrieves the service status"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

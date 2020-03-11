@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="CreatePipe">
+   <documentation>
+    <desc>
+      creates an anonymous pipe and returns handles to the read and write ends of the pipe
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CreatePipe (</ll>
+      <ld>__out    PHANDLE hReadPipe,</ld>
+      <ld>__out    PHANDLE hWritePipe,</ld>
+      <ld>__in_opt LPSECURITY_ATTRIBUTES lpPipeAttributes,</ld>
+      <ld>__in     DWORD nSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hReadPipe">
+       pointer to a variable that receives the read handle for the pipe
+     </par>
+     <par name="hWritePipe">
+     pointer to a variable that receives the write handle for the pipe</par>
+     <par name="lpPipeAttributes">pointer to a SECURITY_ATTRIBUTES structure</par>
+     <par name="nSize">
+       the size of the buffer for the pipe in bytes, the size is only
+       a suggestion; the system uses the value to calculate an appropriate
+       buffering mechanism; can be zero
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CreatePipe">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="w" name="hReadPipe" nr="1" rep="hex">
+      <type><ptr>HANDLE</ptr></type>
+      <pre><deref-write/></pre>
+      <roles>
+	<role rt="ioc:process" rn="ref:pipe handle"/>
+      </roles>
+      <sideeffects>
+	<block-write/>
+      </sideeffects>
+    </par>
+    <par loc="stack" io="w" name="hWritePipe" nr="2" rep="hex">
+      <type><ptr>HANDLE</ptr></type>
+      <roles>
+	<role rt="ioc:process" rn="ref:pipe handle"/>
+      </roles>
+      <pre><deref-write/></pre>
+      <sideeffects>
+	<block-write/>
+      </sideeffects>
+    </par>
+    <par loc="stack" io="r" name="lpPipeAttributes" roles="none" nr="3">
+     <btype ttag="tptr">
+      <typ tname="SECURITY_ATTRIBUTES" ttag="tnamed"/>
+     </btype>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="nSize" nr="4">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:pipe buffer" rn="pipe buffer size"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="creates an anonymous pipe"/>
+       <io-action cat="process" desc="creates an anonymous pipe"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

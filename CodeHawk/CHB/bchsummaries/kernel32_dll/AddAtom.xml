@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="AddAtom">
+   <documentation>
+    <desc>
+      adds a character string to the local atom table and returns a unique value
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>ATOM WINAPI AddAtom</ll>
+      <ld>__in LPCTSTR lpString</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpString">null-terminated string to be added</par>
+     <return>
+      <rc cond="success">newly created atom</rc>
+      <rc cond="failure">0</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="AddAtom">
+    <returntype>ATOM</returntype>
+    <par loc="stack" io="r" name="lpString" rep="hex" nr="1">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:system" rn="name:atom"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="adds a string to the atom table"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

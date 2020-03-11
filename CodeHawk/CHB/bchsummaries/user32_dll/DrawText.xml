@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 15:56:27"/>
+  <libfun lib="user32" name="DrawText">
+   <documentation>
+    <desc>
+      draws formatted text in the specified rectangle. It formats the text according
+      to the specified method (expanding tabs, justifying characters, breaking lines,
+      and so forth).
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int DrawText(</ll>
+      <ld>_In_    HDC     hDC</ld>
+      <ld>_Inout_ LPCTSTR lpchText</ld>
+      <ld>_In_    int     nCount</ld>
+      <ld>_Inout_ LPRECT  lpRect</ld>
+      <ld>_In_    UINT    uFormat</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDC">A handle to the device context</par>
+     <par name="lpchText">
+       A pointer to the string that specifies the text to be drawn. If the nCount
+       parameter is -1, the string must be null-terminated.
+       If uFormat includes DT_MODIFYSTRING, the function could add up to four 
+       additional characters to this string. The buffer containing the string 
+       should be large enough to accommodate these extra characters.
+     </par>
+     <par name="nCount">
+       The length, in characters, of the string. If nCount is -1, then the lpchText 
+       parameter is assumed to be a pointer to a null-terminated string and DrawText 
+       computes the character count automatically.
+     </par>
+     <par name="lpRect">
+       A pointer to a RECT structure that contains the rectangle (in logical 
+       coordinates) in which the text is to be formatted.
+     </par>
+     <par name="uFormat">
+       The method of formatting the text. This parameter can be one or more of the 
+       following values.
+     </par>
+     <return>
+      <rc cond="success">
+	the height of the text in logical units. If DT_VCENTER or DT_BOTTOM is 
+	specified, the return value is the offset from lpRect->top to the bottom 
+	of the drawn text
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="DrawText">
+    <par loc="stack" name="hDC" io="r" nr="1">
+     <type>HDC</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:device context"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpchText" io="rw" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:process" rn="text:output"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nCount" io="r" nr="3">
+     <type>int</type>
+     <roles>
+       <role rt="size:buffersize" rn="DrawText"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpRect" io="rw" nr="4" rep="hex">
+     <type><ptr>RECT</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:memops" rn="src-struct:RECT"/>
+     </roles>
+    </par>
+    <par loc="stack" name="uFormat" io="r" roles="none" nr="5">
+      <rep type="enum" name="formatting_method_constants"/>
+      <type>UINT</type>
+      <pre><enum-value name="formatting_method_constants"/></pre>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="draws formatted text in a rectangle"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

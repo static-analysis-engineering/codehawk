@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/12/2015 16:37:54"/>
+  <libfun lib="user32" name="GetMessagePos">
+   <documentation>
+    <desc>
+      Retrieves the cursor position for the last message retrieved by the 
+      GetMessage function
+    </desc>
+    <apidoc>
+     <pt>DWORD GetMessagePos (void)</pt>
+     <return>
+       the x- and y-coordinates of the cursor position. The x-coordinate is the 
+       low order short and the y-coordinate is the high-order short
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="GetMessagePos">
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="gui" desc="retrieves cursor position for the last message retrieved"/>
+     </io-actions>
+    <postconditions/>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

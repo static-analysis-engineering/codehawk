@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/26/2015 22:31:35"/>
+  <libfun lib="user32" name="RegisterRawInputDevices">
+   <documentation>
+    <desc>Registers the devices that supply the raw input data</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI RegisterRawInputDevices(</ll>
+      <ld>_In_ PCRAWINPUTDEVICE pRawInputDevices</ld>
+      <ld>_In_ UINT             uiNumDevices</ld>
+      <ld>_In_ UINT             cbSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pRawInputDevices">
+       An array of RAWINPUTDEVICE structures that represent the
+       devices that supply the raw input
+     </par>
+     <par name="uiNumDevices">
+       The number of RAWINPUTDEVICE structures pointed to by pRawInputDevices
+     </par>
+     <par name="cbSize">The size, in bytes, of a RAWINPUTDEVICE structure</par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="RegisterRawInputDevices">
+    <par loc="stack" desc="raw input devices" io="r" name="pRawInputDevices" nr="1">
+     <type><ptr>RAWINPUTDEVICE</ptr></type>
+     <roles>
+       <role rt="ioc:system" rn="raw input device list"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="raw input device count" io="r" name="uiNumDevices" nr="2">
+     <type>UINT</type>
+     <roles>
+       <role rt="size:count" rn="RegisterRawInputDevices"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="raw input device structure size" io="r" name="cbSize" nr="3">
+     <type>UINT</type>
+     <roles>
+       <role rt="size:struct" rn="RegisterRawInputDevices"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" desc="registers raw input devices"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>RAWINPUTDEVICE</type>
+	    <ci>pRawInputDevices</ci>
+	    <ci>cbSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

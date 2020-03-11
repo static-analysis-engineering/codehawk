@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CryptDeriveKey.xml" time="2016-05-08 22:07:50.353513"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="advapi32" name="CryptDeriveKey">
+    <documentation>
+      <desc>
+	The CryptDeriveKey function generates cryptographic session
+	keys derived from a base data value. This function guarantees
+	that when the same cryptographic service provider (CSP) and
+	algorithms are used, the keys generated from the same base
+	data are identical. The base data can be a password or any
+	other user data.
+
+	This function is the same as CryptGenKey, except that the
+	generated session keys are derived from base data instead of
+	being random. CryptDeriveKey can only be used to generate
+	session keys. It cannot generate public/private key pairs.
+	
+	A handle to the session key is returned in the phKey
+	parameter. This handle can be used with any CryptoAPI function
+	that requires a key handle.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI CryptDeriveKey(</ll>
+          <ld>_In_    HCRYPTPROV hProv</ld>
+          <ld>_In_    ALG_ID     Algid</ld>
+          <ld>_In_    HCRYPTHASH hBaseData</ld>
+          <ld>_In_    DWORD      dwFlags</ld>
+          <ld>_Inout_ HCRYPTKEY  *phKey</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hProv">
+	  A HCRYPTPROV handle of a CSP created by a call to CryptAcquireContext
+	</par>
+        <par name="Algid">
+	  An ALG_ID structure that identifies the symmetric encryption
+	  algorithm for which the key is to be generated. The
+	  algorithms available will most likely be different for each
+	  CSP. For more information about which algorithm identifier
+	  is used by the different providers for the key specs
+	  AT_KEYEXCHANGE and AT_SIGNATURE, see ALG_ID.  
+	</par>
+        <par name="hBaseData">
+	  A handle to a hash object that has been fed the exact base
+	  data.  To obtain this handle, an application must first
+	  create a hash object with CryptCreateHash and then add the
+	  base data to the hash object with CryptHashData.
+	</par>
+        <par name="dwFlags">
+	  Specifies the type of key generated.  The sizes of a session
+	  key can be set when the key is generated. The key size,
+	  representing the length of the key modulus in bits, is set
+	  with the upper 16 bits of this parameter. Thus, if a 128-bit
+	  RC4 session key is to be generated, the value 0x00800000 is
+	  combined with any other dwFlags predefined value with a
+	  bitwise-OR operation. Due to changing export control
+	  restrictions, the default CSP and default key length may
+	  change between operating system releases. It is important
+	  that both the encryption and decryption use the same CSP and
+	  that the key length be explicitly set using the dwFlags
+	  parameter to ensure interoperability on different operating
+	  system platforms.
+	</par>
+        <par name="phKey">
+	  A pointer to a HCRYPTKEY variable to receive the address of
+	  the handle of the newly generated key. When you have
+	  finished using the key, release the handle by calling the
+	  CryptDestroyKey function.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="CryptDeriveKey">
+      <par loc="stack" name="hProv" io="r" nr="1">
+        <type>HCRYPTPROV</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:crypto" rn="handle:CSP"/>
+	</roles>
+      </par>
+      <par loc="stack" name="Algid" io="r" nr="2">
+        <type>ALG_ID</type>
+	<roles>
+	  <role rt="ioc:crypto" rn="id:algorithm"/>
+	</roles>
+      </par>
+      <par loc="stack" name="hBaseData" io="r" rep="hex" nr="3">
+        <type>HCRYPTHASH</type>
+	<roles>
+	  <role rt="ioc:crypto" rn="handle:cryptographic hash"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwFlags" io="r" roles="none" nr="4">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="phKey" io="rw" rep="hex" nr="5">
+        <type><ptr>HCRYPTKEY</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:crypto" rn="infox:cryptographic key"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="crypto"
+		   desc="generates a cryptographic session key"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

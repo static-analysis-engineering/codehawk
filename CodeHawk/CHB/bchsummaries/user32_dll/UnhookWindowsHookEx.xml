@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:25:52"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="UnhookWindowsHookEx">
+   <documentation>
+    <desc>
+         Removes a hook procedure installed in a hook chain by the
+         SetWindowsHookEx function. 
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI UnhookWindowsHookEx(</ll>
+      <ld>_In_  HHOOK hhk </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hhk">A handle to the hook to be removed.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="UnhookWindowsHookEx">
+      <returntype>BOOL</returntype>
+      <par loc="stack" name="hhk" nr="1">
+        <type>HHOOK</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="ioc:process" rn="handle:windows hook"/>
+        </roles>
+    </par>
+   </api>
+   <semantics>
+      <io-actions>
+         <io-action cat="system" desc="removes a hook procedure from the hook chain"/>
+      </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

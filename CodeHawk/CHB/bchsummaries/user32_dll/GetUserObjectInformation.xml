@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/24/2014 23:00:48"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetUserObjectInformation">
+   <documentation>
+    <desc>Retrieves information about the specified window station or desktop object.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetUserObjectInformation(</ll>
+      <ld>_In_       HANDLE hObj,</ld>
+      <ld>_In_       int nIndex,</ld>
+      <ld>_Out_opt_  PVOID pvInfo,</ld>
+      <ld>_In_       DWORD nLength,</ld>
+      <ld>_Out_opt_  LPDWORD lpnLengthNeeded</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hObj">
+       A handle to the window station or desktop object. This handle is 
+       returned by the CreateWindowStation, OpenWindowStation, CreateDesktop, 
+       or OpenDesktop function.
+    </par>
+     <par name="nIndex">The information to be retrieved. 
+    </par>
+     <par name="pvInfo">A pointer to a buffer to receive the object information.
+    </par>
+     <par name="nLength">
+       The size of the buffer pointed to by the pvInfo parameter, in bytes.
+    </par>
+     <par name="lpnLengthNeeded">
+       A pointer to a variable receiving the number of bytes required to 
+       store the requested information. If this variable&apos;s value is greater 
+       than the value of the nLength parameter when the function returns, 
+       the function returns FALSE, and none of the information is copied 
+       to the pvInfo buffer. If the value of the variable pointed to by 
+       lpnLengthNeeded is less than or equal to the value of nLength, 
+       the entire information block is copied.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="GetUserObjectInformation">
+     <returntype>BOOL</returntype>
+     <par loc="stack" io="r" name="hObj" nr="1">
+       <type>HANDLE</type>
+       <pre><deref-read/></pre>
+       <roles>
+         <role rt="ioc:process" rn="handle:desktop"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nIndex" nr="2">
+      <rep type="enum" name="user_object_information_constants"/>
+      <type>int</type>
+      <pre><enum-value name="user_object_information_constants"/></pre>
+      <roles>
+        <role rt="ioc:system" rn="infox:desktop info request"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="pvInfo" nr="3">
+      <type><ptr>void</ptr></type>
+      <roles>
+         <role rt="ioc:system" rn="infox:desktop info"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nLength" nr="4">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetUserObjectInformation"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpnLengthNeeded" nr="5">
+       <type><ptr>DWORD</ptr></type>
+       <roles>
+          <role rt="size:needed" rn="GetUserObjectInformation"/>
+       </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="retrieves information about a desktop"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>byte</type>
+	 <ci>pvInfo</ci>
+	 <ci>nLength</ci>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+	 <block-write xsrc="window station" xdata="user information"/>
+	 <type>byte</type>
+	 <ci>pvInfo</ci>
+	 <ci>nLength</ci>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

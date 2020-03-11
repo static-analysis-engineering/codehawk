@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 03:20:24"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="RegEnumValue">
+   <documentation>
+     <desc>
+       Enumerates the values for the specified open registry key. 
+       The function copies one indexed value name and data block for the key
+       each time it is called. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG WINAPI RegEnumValueA(</ll>
+      <ld>_In_         HKEY hKey </ld>
+      <ld>_In_         DWORD dwIndex </ld>
+      <ld>_Out_        LPTSTR lpValueName </ld>
+      <ld>_Inout_      LPDWORD lpcchValueName </ld>
+      <ld>_Reserved_   LPDWORD lpReserved </ld>
+      <ld>_Out_opt_    LPDWORD lpType </ld>
+      <ld>_Out_opt_    LPBYTE lpData </ld>
+      <ld>_Inout_opt_  LPDWORD lpcbData </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">System Error Code</rc>
+     </return>
+     <par name="hKey">
+       A handle to an open registry key. The key must have been opened with the
+       KEY_QUERY_VALUE access right.  
+     </par>
+     <par name="dwIndex">
+       The index of the value to be retrieved. 
+       This parameter should be zero for the first call to the RegEnumValue 
+       function and then be incremented for subsequent calls. 
+    </par>
+     <par name="lpValueName">
+       A pointer to a buffer that receives the name of the value as a null-terminated string. 
+       This buffer must be large enough to include the terminating null character.  
+    </par>
+     <par name="lpcchValueName">
+       A pointer to a variable that specifies the size of the buffer pointed 
+       to by the lpValueName parameter, in characters. 
+       When the function returns, the variable receives the number of characters 
+       stored in the buffer, not including the terminating null character.
+       Registry value names are limited to 32,767 bytes. The ANSI version of this 
+       function treats this parameter as a SHORT value. Therefore, if you 
+       specify a value greater than 32,767 bytes, there is an overflow and 
+       the function may return ERROR_MORE_DATA.
+     </par>
+     <par name="lpReserved">This parameter is reserved and must be NULL.</par>
+     <par name="lpType">
+       A pointer to a variable that receives a code indicating the type of data 
+       stored in the specified value. 
+       The lpType parameter can be NULL if the type code is not required.
+     </par>
+     <par name="lpData">
+       A pointer to a buffer that receives the data for the value entry. This 
+       parameter can be NULL if the data is not required.
+       If lpData is NULL and lpcbData is non-NULL, the function stores the size 
+       of the data, in bytes, in the variable pointed to by lpcbData.    
+       This enables an application to determine the best way to allocate a 
+       buffer for the data.
+    </par>
+     <par name="lpcbData">
+       A pointer to a variable that specifies the size of the buffer pointed 
+       to by the lpData parameter, in bytes. 
+       When the function returns, the variable receives the number of bytes 
+       stored in the buffer.
+       This parameter can be NULL only if lpData is NULL. 
+       If the buffer specified by lpData is not large enough to hold the data, 
+       the function returns ERROR_MORE_DATA and stores the required buffer
+       size in the variable pointed to by lpcbData. In this case, the contents 
+       of lpData are undefined.
+   </par>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="RegEnumValue">
+     <returntype>LONG</returntype>
+     <par loc="stack" io="r" name="hKey" nr="1" rep="hex">
+       <rep type="enum" name="predefined_registry_key_constants"/>
+       <type>HKEY</type>
+       <pre>
+	 <deref-read/>
+	 <enum-value name="predefined_registry_key_constants"/>
+       </pre>
+       <roles>
+         <role rt="ioc:registry" rn="handle:key"/>
+       </roles>
+    </par>
+    <par loc="stack" io="r" name="dwIndex" nr="2">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:index" rn="RegEnumValue"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpValueName" nr="3" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:registry" rn="name:value"/>
+      </roles>
+    </par>
+    <par loc="stack" io="rw" name="lpcchValueName" nr="4">
+      <type><ptr>DWORD</ptr></type>
+      <roles>
+         <role rt="size:buffersize" rn="RegEnumValue"/>
+      </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="lpReserved" roles="none" nr="5">
+      <type><ptr>DWORD</ptr></type>
+      <pre><null/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpType" nr="6">
+       <type><ptr>DWORD</ptr></type>
+       <pre><deref-write-null/></pre>
+       <sideeffects><block-write/></sideeffects>
+       <roles>
+         <role rt="ioc:registry" rn="type:value"/>
+       </roles>
+    </par>
+    <par loc="stack" io="w" name="lpData" nr="7" rep="hex">
+      <type><ptr>BYTE</ptr></type>
+      <roles>
+         <role rt="ioc:registry" rn="infox:value data"/>
+      </roles> 
+    </par>
+    <par loc="stack" io="rw" name="lpcbData" nr="8">
+      <type><ptr>DWORD</ptr></type>
+      <roles>
+         <role rt="size:buffersize" rn="RegEnumValue"/>
+      </roles>
+     <pre><deref-read-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry" desc="enumerates the values of a key"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpValueName</ci>
+	    <apply>
+	      <indexsize/>
+	      <apply><addressed-value/><ci>lpcchValueName</ci><cn>0</cn></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>BYTE</type>
+	    <ci>lpType</ci>
+	    <apply><addressed-value/><ci>lpcbData</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <enum name="system_error_code_constants"/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpValueName</ci>
+	    <apply>
+	      <indexsize/>
+	      <apply><addressed-value/><ci>lpcchValueName</ci><cn>0</cn></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>BYTE</type>
+	    <ci>lpType</ci>
+	    <apply><addressed-value/><ci>lpcbData</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

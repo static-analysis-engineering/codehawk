@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="RemoveProp.xml" time="2016-05-16 21:49:36.113122"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="RemoveProp">
+    <documentation>
+      <desc>
+	Removes an entry from the property list of the specified
+	window. The specified character string identifies the entry to
+	be removed.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HANDLE WINAPI RemoveProp(</ll>
+          <ld>_In_ HWND    hWnd</ld>
+          <ld>_In_ LPCTSTR lpString</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hWnd">
+	  A handle to the window whose property list is to be changed
+	</par>
+        <par name="lpString">
+	  A null-terminated character string or an atom that
+	  identifies a string. If this parameter is an atom, it must
+	  have been created using the GlobalAddAtom function. The
+	  atom, a 16-bit value, must be placed in the low-order word
+	  of lpString; the high-order word must be zero.
+	</par>
+        <return>
+          <rc cond="success">the specified data</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="RemoveProp">
+      <par loc="stack" name="hWnd" io="r" nr="1">
+        <type>HWND</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpString" io="r" nr="2" rep="hex">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="name:window property"/>
+	</roles>
+      </par>
+      <returntype>HANDLE</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="removes a property entry from a window"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/26/2014 15:32:25"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="LogonUser">
+   <documentation>
+    <desc>
+      The LogonUser function attempts to log a user on to the local computer. 
+      The local computer is the computer from which LogonUser was called. 
+      You cannot use LogonUser to log on to a remote computer. You specify 
+      the user with a user name and domain and authenticate the user with 
+      a plaintext password. If the function succeeds, you receive a handle 
+      to a token that represents the logged-on user. You can then use this 
+      token handle to impersonate the specified user or, in most cases, 
+      to create a process that runs in the context of the specified user.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL LogonUserA(</ll>
+      <ld>_In_      LPTSTR lpszUsername,</ld>
+      <ld>_In_opt_  LPTSTR lpszDomain,</ld>
+      <ld>_In_opt_  LPTSTR lpszPassword,</ld>
+      <ld>_In_      DWORD dwLogonType,</ld>
+      <ld>_In_      DWORD dwLogonProvider,</ld>
+      <ld>_Out_     PHANDLE phToken</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpszUername">
+       A pointer to a null-terminated string that specifies the name of the 
+       user. This is the name of the user account to log on to. If you use 
+       the user principal name (UPN) format, User@DNSDomainName, the 
+       lpszDomain parameter must be NULL.
+     </par>
+     <par name="lpszDomain">
+       A pointer to a null-terminated string that specifies the name of the 
+       domain or server whose account database contains the lpszUsername 
+       account. If this parameter is NULL, the user name must be specified 
+       in UPN format. If this parameter is &quot;.&quot;, the function validates the
+       account by using only the local account database.
+     </par>
+     <par name="lpszPassword">
+       A pointer to a null-terminated string that specifies the plaintext 
+       password for the user account specified by lpszUsername. When you 
+       have finished using the password, clear the password from memory 
+       by calling the SecureZeroMemory function. 
+     </par>
+     <par name="dwLogonType">The type of logon operation to perform.</par>
+     <par name="dwLogonProvider">Specifies the logon provider.</par>
+     <par name="phToken">
+       A pointer to a handle variable that receives a handle to a token that 
+       represents the specified user.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="LogonUser">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" desc="username" io="r" name="lpszUsername" nr="1">
+      <type>LPTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:system" rn="name:username"/>
+      </roles>
+    </par>
+    <par loc="stack" desc="domain" io="r" name="lpszDomain" nr="2">
+      <type>LPTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:system" rn="domain"/>
+      </roles>
+    </par>
+    <par loc="stack" desc="password" io="r" name="lpszPassword" nr="3">
+      <type>LPTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:system" rn="password"/>
+      </roles>
+    </par>
+    <par loc="stack" desc="logon type" io="r" name="dwLogonType" nr="4">
+     <type>DWORD</type>
+     <roles>
+       <role rt="ioc:system" rn="logon type"/>
+       <role rt="enum:const" rn="logon_type"/>
+     </roles>
+     <pre><enum-value name="logon_type"/></pre>
+    </par>
+    <par loc="stack" desc="logon provider" io="r" name="dwLogonProvider" nr="5">
+     <type>DWORD</type>
+     <roles>
+       <role rt="ioc:system" rn="logon provider"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="token handle" io="r" name="phToken" nr="6">
+      <type><ptr>HANDLE</ptr></type>
+      <roles>
+	<role rt="ioc:system" rn="user token"/>
+      </roles>
+      <pre><deref-write/></pre>
+      <sideeffects>
+	<block-write/>
+      </sideeffects>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="attempts to log on a user on to the local computer"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

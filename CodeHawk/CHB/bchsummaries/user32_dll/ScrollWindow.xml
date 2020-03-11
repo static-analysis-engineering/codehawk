@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ScrollWindow.xml" time="2016-05-16 21:55:17.068719"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="user32" name="ScrollWindow">
+    <documentation>
+      <desc>scrolls the contents of the specified window's client area</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL ScrollWindow(</ll>
+          <ld>_In_       HWND hWnd</ld>
+          <ld>_In_       int  XAmount</ld>
+          <ld>_In_       int  YAmount</ld>
+          <ld>_In_ const RECT *lpRect</ld>
+          <ld>_In_ const RECT *lpClipRect</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hWnd">
+	  Handle to the window where the client area is to be scrolled
+	</par>
+        <par name="XAmount">
+	  Specifies the amount, in device units, of horizontal
+	  scrolling. If the window being scrolled has the CS_OWNDC or
+	  CS_CLASSDC style, then this parameter uses logical units
+	  rather than device units. This parameter must be a negative
+	  value to scroll the content of the window to the left.
+	</par>
+        <par name="YAmount">
+	  Specifies the amount, in device units, of vertical
+	  scrolling. If the window being scrolled has the CS_OWNDC or
+	  CS_CLASSDC style, then this parameter uses logical units
+	  rather than device units. This parameter must be a negative
+	  value to scroll the content of the window up.
+	</par>
+        <par name="lpRect">
+	  Pointer to the RECT structure specifying the portion of the
+	  client area to be scrolled. If this parameter is NULL, the
+	  entire client area is scrolled.
+	</par>
+        <par name="lpClipRect">
+	  Pointer to the RECT structure containing the coordinates of
+	  the clipping rectangle. Only device bits within the clipping
+	  rectangle are affected. Bits scrolled from the outside of
+	  the rectangle to the inside are painted; bits scrolled from
+	  the inside of the rectangle to the outside are not painted.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="ScrollWindow">
+      <par loc="stack" name="hWnd" io="r" nr="1">
+        <type>HWND</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <par loc="stack" name="XAmount" io="r" nr="2">
+        <type>int</type>
+	<roles>
+	  <role rt="size:distance" rn="SrollWindow"/>
+	</roles>
+      </par>
+      <par loc="stack" name="YAmount" io="r" nr="3">
+        <type>int</type>
+	<roles>
+	  <role rt="size:distance" rn="SrollWindow"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpRect" io="r" nr="4">
+        <type><ptr>RECT</ptr></type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-struct:RECT"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpClipRect" io="r" nr="5">
+        <type><ptr>RECT</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-struct:RECT"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="scrolls an area of a window"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

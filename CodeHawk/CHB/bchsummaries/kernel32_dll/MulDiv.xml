@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:30:59"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="MulDiv">
+   <documentation>
+    <desc>
+      Multiplies two 32-bit values and then divides the 64-bit result
+      by a third 32-bit value.  The final result is rounded to the
+      nearest integer.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int MulDiv(</ll>
+      <ld>_In_  int nNumber,</ld>
+      <ld>_In_  int nNumerator,</ld>
+      <ld>_In_  int nDenominator</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nNumber">The multiplicand.</par>
+     <par name="nNumerator">The multiplier.</par>
+     <par name="nDenominator">
+       The number by which the result of the multiplication operation is to be divided.
+     </par>
+     <return>
+      <rc cond="success">not negative one</rc>
+      <rc cond="failure">negative one</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="MulDiv">
+     <returntype>int</returntype>
+     <par loc="stack" name="nNumber" io="r" roles="none" nr="1">
+       <type>int</type>
+    </par>
+    <par loc="stack" name="nNumerator" io="r" roles="none" nr="2">
+      <type>int</type>
+    </par>
+    <par loc="stack" name="nDenominator" io="r" roles="none" nr="3">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="multiplies and divides"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+        <neq/>
+        <ci>nDenominator</ci>
+        <cn>0</cn>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

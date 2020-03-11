@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="RegisterClass">
+   <documentation>
+     <desc>
+       registers a window class for subsequent use in calls to the CreateWindow or
+       CreateWindowEx function
+     </desc>
+    <apidoc>
+     <pt>ATOM WINAPI RegisterClass (__in const WNDCLASS *lpWndClass )</pt>
+     <par name="lpWndClass">
+       pointer to a WNDCLASS structure. The structure must be filled with the
+       appropriate class attributes before being passed to the function
+     </par>
+     <return>
+      <rc cond="success">class atom that uniquely identifies the class being registered</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="RegisterClass">
+     <returntype>ATOM</returntype>
+     <par loc="stack" name="lpWndClass" nr="1" rep="hex">
+       <type><ptr>WNDCLASS</ptr></type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:memops" rn="src-struct:window class"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="registers a window class"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

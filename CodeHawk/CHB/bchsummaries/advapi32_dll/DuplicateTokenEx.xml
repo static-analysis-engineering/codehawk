@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/25/2015 14:12:16"/>
+  <libfun lib="advapi32" name="DuplicateTokenEx">
+   <documentation>
+    <desc>
+      creates a new access token that duplicates an existing token. This 
+      function can create either a primary token or an impersonation token
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI DuplicateTokenEx(</ll>
+      <ld>_In_     HANDLE                       hExistingToken</ld>
+      <ld>_In_     DWORD                        dwDesiredAccess</ld>
+      <ld>_In_opt_ LPSECURITY_ATTRIBUTES        lpTokenAttributes</ld>
+      <ld>_In_     SECURITY_IMPERSONATION_LEVEL ImpersonationLevel</ld>
+      <ld>_In_     TOKEN_TYPE                   TokenType</ld>
+      <ld>_Out_    PHANDLE                      phNewToken</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hExistingToken">
+       A handle to an access token opened with TOKEN_DUPLICATE access
+     </par>
+     <par name="dwDesiredAccess">
+       Specifies the requested access rights for the new token. The DuplicateTokenEx
+       function compares the requested access rights with the existing token's 
+       discretionary access control list (DACL) to determine which rights are 
+       granted or denied. To request the same access rights as the existing token, 
+       specify zero. To request all access rights that are valid for the caller,
+       specify MAXIMUM_ALLOWED
+     </par>
+     <par name="lpTokenAttributes">
+       A pointer to a SECURITY_ATTRIBUTES structure that specifies a security descriptor
+       for the new token and determines whether child processes can inherit the token. 
+       If lpTokenAttributes is NULL, the token gets a default security descriptor and 
+       the handle cannot be inherited. If the security descriptor contains a system 
+       access control list (SACL), the token gets ACCESS_SYSTEM_SECURITY access right, 
+       even if it was not requested in dwDesiredAccess.
+       To set the owner in the security descriptor for the new token, the caller's
+       process token must have the SE_RESTORE_NAME privilege set
+     </par>
+     <par name="ImpersonationLevel">
+       Specifies a value from the SECURITY_IMPERSONATION_LEVEL enumeration that 
+       indicates the impersonation level of the new token
+     </par>
+     <par name="TokenType">
+       Specifies one of the following values from the TOKEN_TYPE enumeration
+     </par>
+     <par name="phNewToken">
+       A pointer to a HANDLE variable that receives the new token
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="DuplicateTokenEx">
+    <par loc="stack" io="r" name="hExistingToken" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:access token"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwDesiredAccess" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="lpTokenAttributes" roles="none" nr="3">
+     <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="ImpersonationLevel" roles="none" nr="4">
+     <type>SECURITY_IMPERSONATION_LEVEL</type>
+    </par>
+    <par loc="stack" io="r" name="TokenType" roles="none" nr="5">
+     <type>TOKEN_TYPE</type>
+    </par>
+    <par loc="stack" io="w" name="phNewToken" nr="6">
+     <type><ptr>HANDLE</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:process" rn="ref:access token handle"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="duplicates an access token"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

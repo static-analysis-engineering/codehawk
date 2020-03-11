@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/15/2015 12:04:01"/>
+  <libfun lib="kernel32" name="FindFirstChangeNotification">
+   <documentation>
+    <desc>
+      Creates a change notification handle and sets up initial change 
+      notification filter conditions. A wait on a notification handle 
+      succeeds when a change matching the filter conditions occurs in
+      the specified directory or subtree. The function does not report 
+      changes to the specified directory itself.
+      This function does not indicate the change that satisfied the wait 
+      condition
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WINAPI FindFirstChangeNotification(</ll>
+      <ld>_In_  LPCTSTR lpPathName</ld>
+      <ld>_In_  BOOL bWatchSubtree</ld>
+      <ld>_In_  DWORD dwNotifyFilter</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpPathName">
+       The full path of the directory to be watched. This cannot be a relative 
+       path or an empty string.
+       In the ANSI version of this function, the name is limited to MAX_PATH 
+       characters. To extend this limit to 32,767 wide characters, call the 
+       Unicode version of the function and prepend "\\?\" to the path
+     </par>
+     <par name="bWatchSubtree">
+       If this parameter is TRUE, the function monitors the directory tree 
+       rooted at the specified directory; if it is FALSE, it monitors only 
+       the specified directory
+     </par>
+     <par name="dwNotifyFilter">
+       The filter conditions that satisfy a change notification wait. This 
+       parameter can be one or more of the following values
+     </par>
+     <return>
+      <rc cond="success">handle to a find change notification object</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="FindFirstChangeNotification">
+    <par loc="stack" name="lpPathName" io="r" rep="hex" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="bWatchSubtree" io="r" roles="none" nr="2">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" name="dwNotifyFilter" io="r" roles="none" nr="3">
+      <rep type="enum" name="file_notify_change_flags"/>
+     <type>DWORD</type>
+     <pre><enum-value name="file_notify_change_flags" flags="true"/></pre>
+    </par>
+    <returntype>HANDLE</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="creates a file change notification handle"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

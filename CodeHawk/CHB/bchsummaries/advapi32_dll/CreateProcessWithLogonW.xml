@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/19/2015 14:10:14"/>
+  <libfun lib="advapi32" name="CreateProcessWithLogonW">
+   <documentation>
+    <desc>
+      Creates a new process and its primary thread. Then the new process runs 
+      the specified executable file in the security context of the specified 
+      credentials (user, domain, and password). It can optionally load the user
+      profile for a specified user.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CreateProcessWithLogonW(</ll>
+      <ld>_In_        LPCWSTR               lpUsername</ld>
+      <ld>_In_opt_    LPCWSTR               lpDomain</ld>
+      <ld>_In_        LPCWSTR               lpPassword</ld>
+      <ld>_In_        DWORD                 dwLogonFlags</ld>
+      <ld>_In_opt_    LPCWSTR               lpApplicationName</ld>
+      <ld>_Inout_opt_ LPWSTR                lpCommandLine</ld>
+      <ld>_In_        DWORD                 dwCreationFlags</ld>
+      <ld>_In_opt_    LPVOID                lpEnvironment</ld>
+      <ld>_In_opt_    LPCWSTR               lpCurrentDirectory</ld>
+      <ld>_In_        LPSTARTUPINFOW        lpStartupInfo</ld>
+      <ld>_Out_       LPPROCESS_INFORMATION lpProcessInfo</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpUsername">
+       The name of the user. This is the name of the user account to log on to.
+       If you use the UPN format, user@DNS_domain_name, the lpDomain parameter
+       must be NULL.
+       The user account must have the Log On Locally permission on the local 
+       computer. This permission is granted to all users on workstations and 
+       servers, but only to administrators on domain controllers.
+     </par>
+     <par name="lpDomain">
+       The name of the domain or server whose account database contains the 
+       lpUsername account. If this parameter is NULL, the user name must be 
+       specified in UPN format.
+     </par>
+     <par name="lpPassword">The clear-text password for the lpUsername account</par>
+     <par name="dwLogonFlags">The logon option</par>
+     <par name="lpApplicationName">
+       The name of the module to be executed. This module can be a Windows-based 
+       application. It can be some other type of module (for example, MS-DOS or OS/2)
+       if the appropriate subsystem is available on the local computer.
+       The string can specify the full path and file name of the module to execute
+       or it can specify a partial name. If it is a partial name, the function uses
+       the current drive and current directory to complete the specification. The 
+       function does not use the search path. This parameter must include the file
+       name extension; no default extension is assumed.
+       The lpApplicationName parameter can be NULL, and the module name must be the
+       first white space-delimited token in the lpCommandLine string. If you are 
+       using a long file name that contains a space, use quoted strings to indicate
+       where the file name ends and the arguments begin; otherwise, the file name
+       is ambiguous.
+     </par>
+     <par name="lpCommandLine">
+       The command line to be executed. The maximum length of this string is 
+       1024 characters. If lpApplicationName is NULL, the module name portion
+       of lpCommandLine is limited to MAX_PATH characters.
+       The function can modify the contents of this string. Therefore, this 
+       parameter cannot be a pointer to read-only memory (such as a const 
+       variable or a literal string). If this parameter is a constant string,
+       the function may cause an access violation.
+       The lpCommandLine parameter can be NULL, and the function uses the 
+       string pointed to by lpApplicationName as the command line.
+       If both lpApplicationName and lpCommandLine are non-NULL, *lpApplicationName 
+       specifies the module to execute, and *lpCommandLine specifies the command 
+       line. The new process can use GetCommandLine to retrieve the entire command
+       line. Console processes written in C can use the argc and argv arguments to
+       parse the command line. Because argv[0] is the module name, C programmers 
+       typically repeat the module name as the first token in the command line.
+       If lpApplicationName is NULL, the first white space-delimited token of the 
+       command line specifies the module name. If you are using a long file name 
+       that contains a space, use quoted strings to indicate where the file name 
+       ends and the arguments begin (see the explanation for the lpApplicationName
+       parameter). If the file name does not contain an extension, .exe is appended.
+       Therefore, if the file name extension is .com, this parameter must include 
+       the .com extension. If the file name ends in a period with no extension, or
+       if the file name contains a path, .exe is not appended. If the file name 
+       does not contain a directory path, the system searches for the executable
+       file in the following sequence:
+       The directory from which the application loaded.
+       The current directory for the parent process.
+       The 32-bit Windows system directory. Use the GetSystemDirectory function 
+       to get the path of this directory.
+       The 16-bit Windows system directory. There is no function that obtains 
+       the path of this directory, but it is searched.
+       The Windows directory. Use the GetWindowsDirectory function to get the
+       path of this directory.
+       The directories that are listed in the PATH environment variable. Note 
+       that this function does not search the per-application path specified
+       by the App Paths registry key. To include this per-application path 
+       in the search sequence, use the ShellExecute function.
+       The system adds a null character to the command line string to separate
+       the file name from the arguments. This divides the original string into 
+       two strings for internal processing.
+     </par>
+     <par name="dwCreationFlags">
+       The flags that control how the process is created. The 
+       CREATE_DEFAULT_ERROR_MODE, CREATE_NEW_CONSOLE, and CREATE_NEW_PROCESS_GROUP 
+       flags are enabled by default- even if you do not set the flag, the system
+       functions as if it were set. You can specify additional flags as noted.
+     </par>
+     <par name="lpEnvironment">
+       A pointer to an environment block for the new process. If this parameter
+       is NULL, the new process uses an environment created from the profile of
+       the user specified by lpUsername.
+       An environment block consists of a null-terminated block of null-terminated
+       strings. Each string is in the following form:
+       name=value
+       Because the equal sign (=) is used as a separator, it must not be used in
+       the name of an environment variable.
+       An environment block can contain Unicode or ANSI characters. If the
+       environment block pointed to by lpEnvironment contains Unicode characters,
+       ensure that dwCreationFlags includes CREATE_UNICODE_ENVIRONMENT. If this 
+       parameter is NULL and the environment block of the parent process contains 
+       Unicode characters, you must also ensure that dwCreationFlags includes 
+       CREATE_UNICODE_ENVIRONMENT.
+       An ANSI environment block is terminated by two 0 (zero) bytes: one for the
+       last string and one more to terminate the block. A Unicode environment block
+       is terminated by four zero bytes: two for the last string and two more to
+       terminate the block.
+     </par>
+     <par name="lpCurrentDirectory">
+       The full path to the current directory for the process. The string can 
+       also specify a UNC path.
+       If this parameter is NULL, the new process has the same current drive and
+       directory as the calling process. This feature is provided primarily for 
+       shells that need to start an application, and specify its initial drive 
+       and working directory.
+     </par>
+     <par name="lpStartupInfo">
+       A pointer to a STARTUPINFO or STARTUPINFOEX structure. The application must
+       add permission for the specified user account to the specified window 
+       station and desktop, even for WinSta0\Default.
+       If the lpDesktop member is NULL or an empty string, the new process inherits
+       the desktop and window station of its parent process. The application must
+       add permission for the specified user account to the inherited window station
+       and desktop.
+     </par>
+     <par name="lpProcessInfo">
+       A pointer to a PROCESS_INFORMATION structure that receives identification 
+       information for the new process, including a handle to the process.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="44" cc="stdcall" name="CreateProcessWithLogonW">
+    <par loc="stack" io="r" name="lpUsername" nr="1" rep="hex">
+     <type>LPCWSTR</type>
+     <roles>
+        <role rt="ioc:system" rn="name:username"/>
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpDomain" nr="2" rep="hex">
+     <type>LPCWSTR</type>
+     <roles>
+        <role rt="ioc:network" rn="name:domain"/>
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpPassword" nr="3" rep="hex">
+      <type>LPCWSTR</type>
+      <roles>
+         <role rt="ioc:system" rn="password"/>
+      </roles>
+      <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwLogonFlags" nr="4">
+     <type>DWORD</type>
+     <roles>
+        <role rt="enum:const" rn="logon_flags"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpApplicationName" nr="5" rep="hex">
+     <type>LPCWSTR</type>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:application"/>
+        <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpCommandLine" nr="6" rep="hex">
+     <type>LPWSTR</type>
+     <roles>
+        <role rt="ioc:process" rn="commandline"/>
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwCreationFlags" nr="7">
+     <type>DWORD</type>
+     <roles>
+        <role rt="enum:flags" rn="process_creation_flags"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpEnvironment" nr="8" rep="hex">
+     <type><ptr>VOID</ptr></type>
+     <roles>
+        <role rt="ioc:process" rn="environment block"/>
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpCurrentDirectory" nr="9" rep="hex">
+     <type>LPCWSTR</type>
+     <roles>
+        <role rt="ioc:process" rn="name:current directory"/>
+        <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpStartupInfo" nr="10" rep="hex">
+     <type><ptr>STARTUPINFOW</ptr></type>
+     <roles>
+        <role rt="ioc:process" rn="startup info"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpProcessInfo" nr="11" rep="hex">
+     <type><ptr>PROCESS_INFORMATION</ptr></type>
+     <roles>
+        <role rt="ioc:process" rn="process info"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="process" 
+		desc="creates a new process and runs an executable">
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

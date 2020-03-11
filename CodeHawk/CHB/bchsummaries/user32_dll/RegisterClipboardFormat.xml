@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:31:54"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="RegisterClipboardFormat">
+   <documentation>
+     <desc>
+       Registers a new clipboard format. This format can then be used as a
+       valid clipboard format.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI RegisterClipboardFormat(</ll>
+      <ld>_In_  LPCTSTR lpszFormat</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszFormat">The name of the new format.</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="RegisterClipboardFormat">
+     <returntype>UINT</returntype>
+     <par loc="stack" io="r" name="lpszFormat" nr="1">
+       <type>LPCTSTR</type>
+       <roles>
+	 <role rt="ioc:system" rn="name:clipboard format" />
+       </roles>
+       <pre><deref-read-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="registers a new clipboard format"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

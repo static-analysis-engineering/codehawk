@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/22/2015 03:15:44"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="ModifyMenu">
+   <documentation>
+    <desc>
+      Changes an existing menu item. This function is used to specify the content,
+      appearance, and behavior of the menu item.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI ModifyMenu(</ll>
+      <ld>_In_      HMENU hMnu </ld>
+      <ld>_In_      UINT uPosition </ld>
+      <ld>_In_      UINT uFlags </ld>
+      <ld>_In_      UINT_PTR uIDNewItem </ld>
+      <ld>_In_opt_  LPCTSTR lpNewItem </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hMnu">A handle to the menu to be changed.  </par>
+     <par name="uPosition">
+       The menu item to be changed, as determined by the uFlags parameter. 
+     </par>
+     <par name="uFlags">
+       Controls the interpretation of the uPosition parameter and the content,
+       appearance, and behavior of the menu item.
+     </par>
+     <par name="uIDNewItem">
+       The identifier of the modified menu item or, if the uFlags parameter 
+       has the MF_POPUP flag set, a handle to the drop-down menu or submenu. 
+     </par>
+     <par name="lpNewItem">
+       The contents of the changed menu item. The interpretation of this
+       parameter depends on whether the uFlags parameter includes the MF_BITMAP,
+       MF_OWNERDRAW, or MF_STRING flag. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="ModifyMenu">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="hMnu" io="r" rep="hex" nr="1">
+      <type>HMENU</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:menu"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uPosition" nr="2">
+     <type>UINT</type>
+     <roles>
+        <role rt="size:position" rn="menu item"/>
+     </roles>
+    </par>
+    <par loc="stack" name="uFlags" roles="none" nr="3">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="uIDNewItem" io="r" nr="4">
+     <type>UINT_PTR</type>
+      <roles>
+         <role rt="size:index" rn="menu item"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpNewItem" io="r" nr="5" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:process" rn="name:menu item"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="changes a menu item"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

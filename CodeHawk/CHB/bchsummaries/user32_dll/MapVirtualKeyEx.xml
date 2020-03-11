@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 15:36:52"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="MapVirtualKeyEx">
+   <documentation>
+    <desc>maps a virtual key code into a scan code or character value or translates
+     a scan code into a virtual key code
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT WINAPI MapVirtualKeyEx(</ll>
+      <ld>_In_ UINT uCode,</ld>
+      <ld>_In_ UINT uMapType,</ld>
+      <ld>_Inout_opt_ HKL dwhkl</ld>
+      <ll>)</ll>
+     </pt>
+     <return>The return value is either a scan code, a virtual-key code, or a 
+      character value, depending on the value of uCode and uMapType. 
+      If there is no translation, the return value is zero.
+    </return>
+     <par name="uCode">virtual-key code or scan code for a key
+    </par>
+     <par name="uMapType">translation to be performed</par>
+     <par name="dwkl">input locale identifier</par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="MapVirtualKeyEx">
+     <returntype>UINT</returntype>
+     <par loc="stack" name="uCode" io="r" roles="none" nr="1">
+       <type>UINT</type>
+    </par>
+    <par loc="stack" name="uMapType" io="r" roles="none" nr="2">
+      <rep type="enum" name="map_virtual_key_type_constants"/>
+      <type>UINT</type>
+      <pre><enum-value name="map_virtual_key_type_constants"/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwkl" nr="3">
+     <type>HKL</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:keyboard layout" />
+     </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="maps a virtual key to a scan code"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

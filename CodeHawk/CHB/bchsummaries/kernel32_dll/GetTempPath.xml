@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetTempPath">
+   <documentation>
+    <desc>retrieves the path of the directory designated for temporary files</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetTempPath (</ll>
+      <ld>_In_ DWORD nBufferLength,</ld>
+      <ld>_Out_ LPTSTR lpBuffer</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nBufferLength">
+       size of the string buffer identified by lpBuffer, in TCHARs
+     </par>
+     <par name="lpBuffer">
+       pointer to a string buffer that receives the null-terminated string specifying
+       the temporary file path. The returned string ends with a backslash, for example,
+       &quot;C:\TEMP\&quot;
+     </par>
+     <return>
+      <rc cond="success">
+	length, in TCHARs, of the string copied to lpBuffer, not including the
+	terminating null character. If the return value is greater than nBufferLength,
+	the return value is the length, in TCHARs, of the buffer required to hold the
+	path
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetTempPath">
+    <returntype>DWORD</returntype>
+    <par loc="stack" name="nBufferLength" io="r" nr="1">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetTempPath"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpBuffer" io="w" nr="2" rep="hex">
+      <type>LPTSTR</type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-string:filename"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves path for temporary files"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>TCHAR</type>
+	 <ci>lpBuffer</ci>
+	 <apply><indexsize/><ci>nBufferLength</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <post><math><apply><geq/><return/><cn>0</cn></apply></math></post>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	 <type>TCHAR</type>
+	 <ci>lpBuffer</ci>
+	 <apply><indexsize/><ci>nBufferLength</ci></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

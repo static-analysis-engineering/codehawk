@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 21:55:41"/>
+  <libfun lib="advapi32" name="SetFileSecurity">
+   <documentation>
+    <desc>sets the security of a file or directory object</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetFileSecurity(</ll>
+      <ld>_In_ LPCTSTR              lpFileName</ld>
+      <ld>_In_ SECURITY_INFORMATION SecurityInformation</ld>
+      <ld>_In_ PSECURITY_DESCRIPTOR pSecurityDescriptor</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpFileName">
+       A pointer to a null-terminated string that specifies the file or directory
+       for which security is set. Note that security applied to a directory is not 
+       inherited by its children
+     </par>
+     <par name="SecurityInformation">
+       Specifies a SECURITY_INFORMATION structure that identifies the contents 
+       of the security descriptor pointed to by the pSecurityDescriptor parameter
+     </par>
+     <par name="pSecurityDescriptor">
+       A pointer to a SECURITY_DESCRIPTOR structure
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SetFileSecurity">
+    <par loc="stack" io="r" name="lpFileName" nr="1" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="SecurityInformation" roles="none" nr="2">
+     <type>SECURITY_INFORMATION</type>
+    </par>
+    <par loc="stack" io="r" name="pSecurityDescriptor" roles="none" nr="3">
+     <type><ptr>SECUTIRY_DESCRIPTOR</ptr></type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="sets the security of a file or directory object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

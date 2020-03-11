@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/11/2015 17:28:57"/>
+  <libfun lib="kernel32" name="FreeLibraryAndExitThread">
+   <documentation>
+    <desc>
+      Decrements the reference count of a loaded dynamic-link library (DLL) 
+      by one, then calls ExitThread to terminate the calling thread. The 
+      function does not return
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>VOID WINAPI FreeLibraryAndExitThread(</ll>
+      <ld>_In_ HMODULE hModule</ld>
+      <ld>_In_ DWORD   dwExitCode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hModule">
+       A handle to the DLL module whose reference count the function decrements.
+       The LoadLibrary or GetModuleHandleEx function returns this handle. Does not
+       work with a handle returned by GetModuleHandle (does not maintain a
+       reference count)
+     </par>
+     <par name="dwExitCode">The exit code for the calling thread</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="FreeLibraryAndExitThread">
+    <par loc="stack" name="hModule" io="r" nr="1">
+      <type>HMODULE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:module"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwExitCode" io="r" nr="2">
+     <type>DWORD</type>
+     <roles>
+       <role rt="ioc:process" rn="exit code"/>
+     </roles>
+    </par>
+    <returntype>VOID</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="frees a DLL and terminates the calling thread"/>
+     </io-actions>	 
+    <preconditions/>
+    <postconditions>
+      <non-returning/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

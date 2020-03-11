@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/29/2015 23:38:16"/>
+  <libfun lib="kernel32" name="Thread32Next">
+   <documentation>
+    <desc>
+      Retrieves information about the next thread of any process encountered
+      in the system memory snapshot.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI Thread32Next(</ll>
+      <ld>_In_  HANDLE          hSnapshot</ld>
+      <ld>_Out_ LPTHREADENTRY32 lpte</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hSnapshot">
+       A handle to the snapshot returned from a previous call to the 
+       CreateToolhelp32Snapshot function.
+     </par>
+     <par name="lpte">A pointer to a THREADENTRY32 structure.</par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="Thread32Next">
+    <par loc="stack" name="hSnapshot" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:snapshot"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpte" io="w" rep="hex" nr="2">
+     <type><ptr>THREADENTRY32</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:process" rn="ref:thread entry"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" 
+		  desc="retrieves information about a thread in a memory snapshot"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

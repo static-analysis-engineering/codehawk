@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-09-12 22:24:30"/>
+  <libfun lib="kernel32" name="ChangeTimerQueueTimer">
+    <documentation>
+      <desc>
+	Updates a timer-queue timer that was created by the
+	CreateTimerQueueTimer function.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL ChangeTimerQueueTimer(</ll>
+          <ld>HANDLE TimerQueue</ld>
+          <ld>HANDLE Timer</ld>
+          <ld>ULONG  DueTime</ld>
+          <ld>ULONG  Period</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="TimerQueue">
+	  A handle to the timer queue. This handle is returned by the
+	  CreateTimerQueue function. If this parameter is NULL, the
+	  timer is associated with the default timer queue.
+	</par>
+        <par name="Timer">
+	  A handle to the timer-queue timer. This handle is returned by the
+	  CreateTimerQueueTimer function.
+	</par>
+        <par name="DueTime">
+	  The time after which the timer should expire, in milliseconds.
+	</par>
+        <par name="Period">
+	  The period of the timer, in milliseconds. If this parameter is zero,
+	  the timer is signaled once. If this parameter is greater than zero,
+	  the timer is periodic. A periodic timer automatically reactivates each
+	  time the period elapses, until the timer is canceled using the
+	  DeleteTimerQueueTimer function or reset using ChangeTimerQueueTimer.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="16" cc="stdcall" name="ChangeTimerQueueTimer">
+      <par loc="stack" name="TimerQueue" nr="1">
+        <type>HANDLE</type>
+	<roles>
+	  <role rt="ioc:synchronization" rn="handle:timer queue"/>
+	</roles>
+      </par>
+      <par loc="stack" name="Timer" nr="2">
+        <type>HANDLE</type>
+	<roles>
+	  <role rt="ioc:synchronization" rn="handle:timer"/>
+	</roles>
+      </par>
+      <par loc="stack" name="DueTime" nr="3">
+        <type>ULONG</type>
+	<roles>
+	  <role rt="ioc:synchronization" rn="wait time"/>
+	</roles>
+      </par>
+      <par loc="stack" name="Period" nr="4">
+        <type>ULONG</type>
+	<roles>
+	  <role rt="ioc:synchronization" rn="timer period"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="Updates a timer-queue timer"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

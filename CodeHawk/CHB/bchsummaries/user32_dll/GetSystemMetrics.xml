@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="user32" name="GetSystemMetrics">
+   <documentation>
+    <desc>retrieves the specified system metric or system configuration setting</desc>
+    <apidoc>
+     <pt>int WINAPI GetSystemMetrics(__in int nIndex)</pt>
+     <par name="nIndex">system metric or configuration setting to be retrieved</par>
+     <return>
+      <rc cond="success">requested system metric or configuration setting</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetSystemMetrics">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="nIndex" nr="1">
+      <rep type="enum" name="system_metrics_request_constants"/>
+      <type>int</type>
+      <pre><enum-value name="system_metrics_request_constants"/></pre>
+      <roles>
+        <role rt="ioc:system" rn="infox:system metric"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves a system metric or system configuration setting"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

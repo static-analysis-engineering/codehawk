@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="GetLocaleInfo">
+   <documentation>
+    <desc>retrieves information about a locale specified by identifier</desc>
+    <apidoc>
+     <pt>
+      <ll>int GetLocaleInfo (</ll>
+      <ld>__in  LCID Locale,</ld>
+      <ld>__in  LCTYPE LCType,</ld>
+      <ld>__out LPTSTR lpLCData,</ld>
+      <ld>__in  int cchData</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Locale">Locale identifier</par>
+     <par name="LCType">locale informatiion to retrieve</par>
+     <par name="lpLCData">
+       pointer to a buffer in which the function retrieves the requested
+       information. This pointer is not used if cchData is set to 0
+     </par>
+     <par name="cchData">
+       size, in TCHARs, of the data buffer indicated by lpLCData. If set to
+       0, no data is written, and the function returns the required buffer
+       size, including the terminating null character
+     </par>
+     <return>
+      <rc cond="success">
+	the number of characters retrieved in the locale data buffer if cchData is
+	a nonzero vaue. If the function succeeds, cchData is nonzero, and
+	LOCALE_RETURN_NUMBER is specified, the return value is the size of the
+	integer retrieved in the data buffer, that is, 2 for the Unicode version of
+	the function or 4 for the ANSI version. If the function succeeds and the 
+	value of cchData is 0, the return value is the required size, in characters
+	including a null character, for the locale data buffer
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetLocaleInfo">
+    <returntype>int</returntype>
+    <par loc="stack" name="Locale" io="r" nr="1">
+     <type>LCID</type>
+     <roles>
+        <role rt="ioc:system" rn="id:locale"/>
+     </roles>
+    </par>
+    <par loc="stack" name="LCType" io="r" nr="2">
+      <type>LCTYPE</type>
+      <roles>
+         <role rt="ioc:system" rn="type:locale information"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpLCData" io="w" rep="hex" nr="3">
+      <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:system" rn="infox:locale infomation"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cchData" io="r" nr="4">
+      <type>int</type>
+     <pre><non-negative/></pre>
+      <roles>
+         <role rt="size:buffersize" rn="GetLocaleInfo"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves information about a locale"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+        <implies/>
+        <apply><gt/><ci>cchData</ci><cn>0</cn></apply>
+        <apply>
+	  <deref-write/>
+	  <type>TCHAR</type>
+	  <ci>lpLCData</ci>
+	  <apply><indexsize/><ci>cchData</ci></apply>
+	</apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+	 <implies/>
+	 <pre><apply><gt/><ci>cchData</ci><cn>0</cn></apply></pre>
+	 <apply>
+	   <block-write/>
+	   <type>TCHAR</type>
+	   <ci>lpLCData</ci>
+	   <apply><indexsize/><ci>cchData</ci></apply>
+	 </apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="EnumSystemLocales">
+   <documentation>
+    <desc>
+      enumerates the locales that are either installed on or supported by an operating system
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL EnumSystemLocales (</ll>
+      <ld>__in LOCALE_ENUMPROC lpLocaleEnumProc,</ld>
+      <ld>__in DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpLocaleEnumProc">pointer to an application-defined callback function</par>
+     <par name="dwFlags">flags specifying the locale identifiers to enumerate</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="EnumSystemLocales">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="lpLocaleEnumProc" io="r" rep="hex" nr="1">
+      <type>LOCALE_ENUMPROC</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="callbackf:system locale"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" 
+		  desc="enumerates the locales that are installed or supported"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

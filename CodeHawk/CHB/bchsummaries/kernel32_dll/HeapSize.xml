@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:30:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="HeapSize">
+   <documentation>
+    <desc>
+      retrieves the size of a memory block allocated from a heap by the HeapAlloc or
+      HeapReAlloc function
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>SIZE_T WINAPI HeapSize (</ll>
+      <ld>__in HANDLE hHeap,</ld>
+      <ld>__in DWORD dwFlags,</ld>
+      <ld>__in LPCVOID lpMem</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hHeap">handle to the heap in which the memory block resides; this handle is
+	  returned by HeapCreate or GetProcessHeap
+	</par>
+     <par name="dwFlags">heap size options</par>
+     <par name="lpMem">pointer to the memory block whose size the function will obtain</par>
+     <return>
+      <rc cond="success">requested size in bytes</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="HeapSize">
+    <returnbtype tname="SIZE_T" ttag="tnamed"/>
+    <par loc="stack" io="r"  name="hHeap" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:heap"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" nr="2">
+     <type>DWORD</type>
+     <roles>
+         <role rt="ioc:memops" rn="heap size option"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpMem" nr="3">
+      <type>LPCVOID</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:memops" rn="memory block"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="retrieves the size of a memory block"/>
+    </io-actions> 
+    <preconditions/>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

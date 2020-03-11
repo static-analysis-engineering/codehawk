@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/02/2015 23:53:42"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="kernel32" name="PeekNamedPipe">
+   <documentation>
+    <desc>
+      copies data from a named or anonymous pipe into a buffer without
+      removing it from the pipe. It also returns information about data
+      in the pipe.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI PeekNamedPipe(</ll>
+      <ld>_In_ HANDLE hNamedPipe,</ld>
+      <ld>_Out_opt_ LPVOID lpBuffer,</ld>
+      <ld>_In_ DWORD nBufferSize,</ld>
+      <ld>_Out_opt_ LPDWORD lpBytesRead,</ld>
+      <ld>_Out_opt_ LPDWORD lpTotalBytesAvail,</ld>
+      <ld>_Out_opt_ LPDWORD lpBytesLeftThisMessage</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       <rc cond="success">nonzero</rc>
+       <rc cond="failure">zero</rc>
+     </return>
+     <par name="hNamedPipe">
+       a handle to the pipe. Can be a handle to a named pipe instance, as
+       returned by the CreateNamedPipe or CreateFile function, or it can be
+       a handle to the read end of an anonymous pipe, as returned by 
+       CreatePipe. The handle must have GENERIC_READ access to the pipe.
+     </par>
+     <par name="lpBuffer">
+       pointer to a buffer that receives data read from the pipe. Can be NULL.
+    </par>
+     <par name="nBufferSize">
+       size of the buffer specified by lpBuffer, in bytes (ignored if lpBuffer
+       is NULL).
+    </par>
+     <par name="lpBytesRead">
+       pointer to a variable that receives the number of bytes read from the
+       pipe. Can be NULL.
+    </par>
+     <par name="lpTotalBytesAvail">
+       pointer to a variable that receives the total number of bytes available
+       to be read from the pipe. Can be NULL.
+    </par>
+     <par name="lpBytesLeftThisMessage">
+       pointer to a variable that receives the number of bytes remaining in
+       this message. Will be zero for byte-type named pipes or for anonymous
+       pipes. Can be NULL.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="PeekNamedPipe">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hNamedPipe" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:pipe"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpBuffer" nr="2" rep="hex">
+      <type><ptr>VOID</ptr></type>
+      <roles>
+         <role rt="ioc:memops" rn="dst-bytes:pipe input"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nBufferSize" nr="3">
+       <type>DWORD</type>
+       <roles>
+          <role rt="size:buffersize" rn="PeekNamedPipe"/>
+       </roles>
+    </par>
+    <par loc="stack" io="w" name="lpBytesRead" nr="4" rep="hex">
+       <type><ptr>DWORD</ptr></type>
+       <roles>
+          <role rt="size:returned" rn="PeekNamedPipe"/>
+       </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpTotalBytesAvail" nr="5">
+       <type><ptr>DWORD</ptr></type>
+       <roles>
+          <role rt="size:available" rn="PeekNamedPipe"/>
+       </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpBytesLeftThisMessage" nr="6">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+        <role rt="size:remaining" rn="PeekNamedPipe"/>
+      </roles>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="copies data from a named or anonymous pipe into a buffer"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>byte</type>
+	    <ci>lpBuffer</ci>
+	    <ci>nBufferSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions><nonzero-zero/></postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+	 <block-write/>
+	 <type>byte</type>
+	 <ci>lpBuffer</ci>
+	 <ci>nBufferSize</ci>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

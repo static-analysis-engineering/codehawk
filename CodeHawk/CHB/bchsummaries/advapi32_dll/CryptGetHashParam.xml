@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 09:36:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="CryptGetHashParam">
+   <documentation>
+    <desc>
+      retrieves data that governs the operations of a hash object. 
+      The actual hash value can be retrieved by using this function. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL CryptGetHashParam(</ll>
+      <ld>_In_     HCRYPTHASH hHash </ld>
+      <ld>_In_     DWORD dwParam </ld>
+      <ld>_Out_    BYTE *pbata </ld>
+      <ld>_Inout_  DWORD *pdwDataLen </ld>
+      <ld>_In_     DWORD dwFlags </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero </rc>
+      <rc cond="failure">zero </rc>
+     </return>
+     <par name="hHash">Handle of the hash object to be queried. </par>
+     <par name="dwParam">Query type. </par>
+     <par name="pbDdata">
+       A pointer to a buffer that receives the specified value data. The form 
+       of this data varies, depending on the value number. This parameter can 
+       be NULL to determine the memory size required. 
+     </par>
+     <par name="pdwDataLen">
+       A pointer to a DWORD value specifying the size, in bytes, of the pbData 
+       buffer. When the function returns, the DWORD value contains the number 
+       of bytes stored in the buffer. If pbData is NULL, set the value of 
+       pdwDataLen to zero. 
+     </par>
+     <par name="dwFlags">Reserved for future use and must be zero. </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="CryptGetHashParam">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hHash" rep="hex" nr="1">
+      <type>HCRYPTHASH</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:crypto" rn="handle:cryptographic hash"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwParam" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="pbData" rep="hex" nr="3">
+      <type><ptr>BYTE</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-bytes:misc"/>
+      </roles>
+    </par>
+    <par loc="stack" io="rw" name="pdwDataLen" rep="hex" nr="4">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-read/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="size:actual" rn="CryptGetHashParam"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwFlags" roles="none" nr="5">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="crypto" 
+		  desc="retrieves data that governs the operations of a hash object"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>DWORD</type>
+	    <ci>pbData</ci>
+	    <apply><addressed-value/><ci>pdwDataLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>DWORD</type>
+	    <ci>pbData</ci>
+	    <apply><addressed-value/><ci>pdwDataLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

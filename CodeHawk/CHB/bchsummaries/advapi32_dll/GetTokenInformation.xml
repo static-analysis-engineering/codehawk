@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/02/2015 23:07:43"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="advapi32" name="GetTokenInformation">
+   <documentation>
+    <desc>
+      retrieves a specified type of information about an access token. The
+      calling process must have appropriate access rights to obtain the
+      information
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetTokenInformation(</ll>
+      <ld>_In_      HANDLE TokenHandle,</ld>
+      <ld>_In_      TOKEN_INFORMATION_CLASS TokenInformationClass,</ld>
+      <ld>_Out_opt_ LPVOID TokenInformation,</ld>
+      <ld>_In_      DWORD TokenInformationLength,</ld>
+      <ld>_Out_     PDWORD ReturnLength</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="TokenHandle">
+       a handle to an access token from which information is retrieved.
+     </par>
+     <par name="TokenInformationClass">
+       specifies a value from the TOKEN_INFORMATION_CLASS enumeration tye
+       to identify the information the function retrieves. Any callers who
+       check the TokenIsAppContainer and have it return 0 should also 
+       verify that the caller token is not an identity level impersonation
+       token. If the current token is not an app container but is an
+       identity token, your should return AccessDinied.
+     </par>
+     <par name="TokenInformation">
+       a pointer to a buffer the function fills with the requested information.
+       The structure put into this buffer depends on the type of information
+       specified by the TomenInformationClass parameter.
+     </par>
+     <par name="TokenInformationLength">
+       specifies the size, in bytes, of the buffer pointed to by the TokenInformation
+       parameter. If TokenInformation is NULL, this parameter must be zero.
+     </par>
+     <par name="ReturnLength">
+       pointer to a variable that receives the number of bytes needed for the
+       buffer pointed by the TokenInformation parameter. If this value is larger
+       than the value specified in the TokenInformationLength parameter, the
+       function fails and stores no data in the buffer.
+       If the value of the TokenInformationClass parameter is TokenDefaultDacl
+       and the toekn has no default DACL, the function sets the variable pointed
+       to by ReturnLength to sizeof(TOKEN_DEFAULT_DACL) and sets the DefaultDacl
+       member of the TOKEN_DEFAULT_DACL structure to NULL.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="GetTokenInformation">
+    <returntype>BOOL</returntype>
+    <par loc="stack" name="TokenHandle" nr="1">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:access token"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="TokenInformationClass" nr="2">
+      <rep type="enum" name="token_information_class"/>
+      <type>TOKEN_INFORMATION_CLASS</type>
+      <pre><enum-value name="token_information_class"/></pre>
+      <roles>
+        <role rt="ioc:system" rn="access token information class"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="TokenInformation" nr="3">
+     <type><ptr>VOID</ptr></type>
+     <roles>
+        <role rt="ioc:system" rn="infox:access token information"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="TokenInformationLength" nr="4">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetTokenInformation"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="ReturnLength" nr="5">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="size:needed" rn="GetTokenInformation"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves information about an access token"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>BYTE</type>
+	    <ci>TokenInformation</ci>
+	    <ci>TokenInformationLength</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write xsrc="process" xdata="information associated with access token"/>
+	<type>BYTE</type>
+        <ci>TokenInformation</ci>
+	<ci>TokenInformationLength</ci>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>
