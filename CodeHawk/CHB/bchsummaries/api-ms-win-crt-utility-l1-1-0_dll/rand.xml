@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header time="2019-01-03 10:41:12.138985"/>
+  <libfun lib="api-ms-win-crt-utility-l1-1-0.dll" name="rand">
+    <refer-to lib="msvcrt" name="rand"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2018, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

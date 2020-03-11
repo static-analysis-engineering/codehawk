@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header time="2018-12-30 16:35:48.616945"/>
+  <libfun lib="api-ms-win-crt-runtime-l1-1-0.dll" name="_initterm">
+    <refer-to lib="msvcrt.dll" name="_initterm"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2018, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
