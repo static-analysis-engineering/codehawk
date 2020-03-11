@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 03:06:38"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="ExtEscape">
+   <documentation>
+    <desc>
+      enables an application to access device capabilities that are not 
+      available through GDI.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int ExtEscape(</ll>
+      <ld>_In_   HDC hdc </ld>
+      <ld>_In_   int nEscape </ld>
+      <ld>_In_   int cbInput </ld>
+      <ld>_In_   LPCSTR lpszInData </ld>
+      <ld>_In_   int cbOutput </ld>
+      <ld>_Out_  LPSTR lpszOutData </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context. </par>
+     <par name="nEscape">The escape function to be performed. </par>
+     <par name="cbInput">
+       The number of bytes of data pointed to by the lpszInData parameter. 
+     </par>
+     <par name="lpszInData">
+       A pointer to the input structure required for the specified escape. 
+     </par>
+     <par name="cbOutput">
+       The number of bytes of data pointed to by the lpszOutData parameter. 
+     </par>
+     <par name="lpszOutData">
+       A pointer to the structure that receives output from this escape. 
+       This parameter must not be NULL if ExtEscape is called as a query 
+       function. If no data is to be returned in this structure, set cbOutput 
+       to 0. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="ExtEscape">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="nEscape" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" io="r" name="cbInput" nr="3">
+     <type>int</type>
+     <roles>
+      <role rt="size:buffersize" rn="ExtEscape" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszInData" nr="4">
+     <type>LPCSTR</type>
+     <roles>
+      <role rt="ioc:memops" rn="src-string:device output" />
+     </roles>
+      <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="cbOutput" nr="5">
+     <roles>
+      <role rt="size:buffersiez" rn="ExtEscape" />
+     </roles>
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" io="w" name="lpszOutData" nr="6">
+     <type>LPSTR</type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:device input" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem"
+		  desc="access gdi-unsupported device capabilities"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpszOutData</ci>
+	    <ci>cbOutput</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>lpszOutData</ci>
+	    <ci>cbOutput</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-24T11:39:16.212727"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="174" name="SetObjectArrayElement">
+    <documentation>
+      <desc>Sets an element of an Object array</desc>
+      <apidoc>
+        <pt>
+          <ll>void SetObjectArrayElement(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jarray array</ld>
+          <ld>_in jsize  index</ld>
+          <ld>_in jobject value</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="array">a Java array</par>
+        <par name="index">array index</par>
+        <par name="value">the new value</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="174" adj="16" name="SetObjectArrayElement">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="java array" io="r" nr="2" name="array">
+        <type>jarray</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:array" rn="set array element"/>
+	</roles>
+      </par>
+      <par loc="stack" desc="array index" io="r" nr="3" name="index">
+        <type>jindex</type>
+	<roles>
+	  <role rt="jni:arrayindex" rn="set array element"/>
+	  <role rt="size:index" rn="set array element"/>
+	</roles>
+      </par>
+      <par loc="stack" desc="array element value" io="r" nr="4" name="value">
+        <type>jobject</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:object" rn="set array element"/>
+	</roles>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="sets the value of a java array element" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

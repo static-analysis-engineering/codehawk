@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/05/2015 21:41:31"/>
+  <libfun lib="gdi32" name="GetTextFace">
+   <documentation>
+    <desc>
+      retrieves the typeface name of the font that is selected into the specified 
+      device context.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int GetTextFace(</ll>
+      <ld>_In_  HDC    hdc</ld>
+      <ld>_In_  int    nCount</ld>
+      <ld>_Out_ LPTSTR lpFaceName</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the device context</par>
+     <par name="nCount">
+       The length of the buffer pointed to by lpFaceName. For the ANSI function it is a 
+       BYTE count and for the Unicode function it is a WORD count. Note that for the ANSI 
+       function, characters in SBCS code pages take one byte each, while most characters 
+       in DBCS code pages take two bytes; for the Unicode function, most currently defined
+       Unicode characters (those in the Basic Multilingual Plane (BMP)) are one WORD while
+       Unicode surrogates are two WORDs
+     </par>
+     <par name="lpFaceName">
+       A pointer to the buffer that receives the typeface name. If this parameter is NULL, 
+       the function returns the number of characters in the name, including the terminating
+       null character
+     </par>
+     <return>
+      <rc cond="success">the number of characters copied to the buffer</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetTextFace">
+    <par loc="stack" name="hdc" io="r" nr="1">
+     <type>HDC</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:device context"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nCount" io="r" nr="2">
+     <type>int</type>
+     <roles>
+       <role rt="size:buffersize" rn="GetTextFace"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpFaceName" io="w" nr="3">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:system" rn="infox:typeface name"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpFaceName</ci>
+	    <apply><indexsize/><ci>nCount</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="device" xdata="name of a given font"/>
+	    <type>TCHAR</type>
+	    <ci>lpFaceName</ci>
+	    <apply><indexsize/><ci>nCount</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

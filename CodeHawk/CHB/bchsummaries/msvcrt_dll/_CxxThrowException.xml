@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="05/02/2015 14:39:35"/>
+  <libfun lib="msvcrt" name="_CxxThrowException">
+   <documentation>
+    <desc>
+      Builds the exception record and calls the runtime environment to start 
+      processing the exception.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>extern "C" void __stdcall _CxxThrowException(</ll>
+      <ld>void *pExceptionObject</ld>
+      <ld>_ThrowInfo* pThrowInfo</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pExceptionObject">The object that generated the exception.</par>
+     <par name="pThrowInfo">The information that is required to process the exception.</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="_CxxThrowException">
+    <par loc="stack" io="r" name="pExceptionObject" roles="none" nr="1">
+     <type><ptr>void</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="pThrowInfo" rep="hex" nr="2">
+     <type><ptr>ThrowInfo</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:_ThrowInfo"/>
+     </roles>
+    </par>
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="throws an exception"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post><math><non-returning/></math></post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

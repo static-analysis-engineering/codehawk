@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="12/23/2015 12:21:56"/>
+  <jnifun name="CallStaticMethodV">
+   <documentation>
+    <desc>
+       A family of functions consisting of one function per call type.
+       Invokes a static method, specified using a method ID, on an
+       class. The method must be accessible in clazz, although it may be
+       defined in one of the super classes of clazz.
+       Arguments that are to be passed to the method are placed
+       in an args argument of type va_list.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>nativetype CallStaticMethodV(</ll>
+      <ld>_in JNIEnv *env</ld>
+      <ld>_in jclass clazz</ld>
+      <ld>_in jmethodID methodID</ld>
+      <ld>_in va_list   args</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="env">JNI interface pointer</par>
+     <par name="obj">reference to the class object on which the method is invoked</par>
+     <par name="methodID">ID of the method to be invoked</par>
+     <par name="args">arguments to be passed to the method</par>
+     <return>result of calling the method</return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CallStaticMethodV">
+    <par loc="stack" desc="jni interface pointer" io="r" name="env" nr="1">
+     <type><ptr>JNIEnv</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" desc="java class" io="r" name="clazz" nr="2">
+     <type>jobject</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="jni:class" rn="invoke class method"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="java mthod id" io="r" name="methodID" nr="3">
+     <type>jmethodID</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="jni:methodID" rn="invoke class method"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="method arguments" io="r" name="args" nr="4">
+      <type>va_list</type>
+      <roles>
+         <role rt="jni:methodargs" rn="arguments to invoked method"/>
+      </roles>
+    </par>
+    <returntype>ttype</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="jni" desc="invokes java class method"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

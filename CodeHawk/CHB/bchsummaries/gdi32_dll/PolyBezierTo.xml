@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:15:18"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="PolyBezierTo">
+   <documentation>
+    <desc>draws one or more Bezier curves.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL PolyBezierTo(</ll>
+      <ld>_In_  HDC hdc </ld>
+      <ld>_In_  const POINT *lppt </ld>
+      <ld>_In_  DWORD cCount </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to a device context.</par>
+     <par name="lppt">
+       A pointer to an array of POINT structures that contains the endpoints 
+       and control points, in logical units. 
+     </par>
+     <par name="cCount">
+       The number of points in the lppt array. This value must be three 
+       times the number of curves to be drawn because each Bezier curve 
+       requires two control points and an ending point.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="PolyBezierTo">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lppt" nr="2">
+     <type><ptr>POINT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-array:POINT" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cCount" nr="3">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:count" rn="number of points in array" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="gui" desc="draws Bezier curves"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>POINT</type>
+	    <ci>lppt</ci>
+	    <apply><indexsize/><ci>cCount</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

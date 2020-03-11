@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 09:18:49"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CloseEnhMetaFile">
+   <documentation>
+    <desc>
+      closes an enhanced-metafile device context and returns a handle that 
+      identifies an enhanced-format metafile.     
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HENHMETAFILE CloseEnhMetaFile(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="hdc">Handle to an enhanced-metafile device context.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CloseEnhMetaFile">
+     <returntype>HENHMETAFILE</returntype>
+     <par loc="stack" name="hdc" io="r" rep="hex" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="closes an enhanced-metafile device context"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

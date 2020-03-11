@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2016-01-02T22:16:56.158414"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="5" name="DefineClass">
+    <documentation>
+      <desc>
+	Loads a class from a buffer of raw class data. The buffer
+	containing the raw class data is not referenced by the VM
+	after the DefineClass call returns, and it may be discarded if
+	desired.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jclass DefineClass(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in const char *name</ld>
+          <ld>_in jobject loader</ld>
+          <ld>_in const jbyte *buf</ld>
+          <ld>_in jsize bufLen</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="name">
+	  the name of the class or interface to be defined. The string
+	  is encoded in modified UTF-8.
+	</par>
+        <par name="loader">a class loader assigned to the defined class</par>
+        <par name="buf">buffer containing the .class file data.</par>
+        <par name="bufLen">buffer length</par>
+        <return>
+          <rc cond="success">a Java class object</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="5" adj="20" name="DefineClass">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" name="name">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="jni:classname" rn="define class"/>
+	</roles>
+      </par>
+      <par loc="stack" nr="3" name="loader">
+        <type>jobject</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:classloader" rn="define class"/>
+	</roles>
+      </par>
+      <par loc="stack" nr="4" name="buf">
+        <type><ptr>jbyte</ptr></type>
+	<roles>
+	  <role rt="jni:classdata" rn="define class"/>
+	</roles>
+      </par>
+      <par loc="stack" nr="5" name="bufLen">
+        <type>jsize</type>
+	<roles>
+	  <role rt="size:buffersize" rn="DefineClass"/>
+	</roles>
+      </par>
+      <returntype>jclass</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="defines a new class from class data" cat="jni"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>jbyte</type>
+	      <ci>buf</ci>
+	      <ci>bufLen</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

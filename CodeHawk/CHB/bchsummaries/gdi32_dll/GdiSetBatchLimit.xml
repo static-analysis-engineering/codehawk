@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 03:08:07"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GdiSetBatchLimit">
+   <documentation>
+    <desc>
+      sets the maximum number of function calls that can be accumulated
+      in the calling thread&apos;s current batch. The system flushes the 
+      current batch whenever this limit is exceeded.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD GdiSetBatchLimit(</ll>
+      <ld>_In_  DWORD dwLimit</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="dwLimit">
+       Specifies the batch limit to be set. A value of 0 sets the default limit.
+       A value of 1 disables batching.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GdiSetBatchLimit">
+     <returntype>DWORD</returntype>
+    <par loc="stack" io="r" name="dwLimit" nr="1">
+     <type>DWORD</type>
+     <roles>
+      <role rt="ioc:process" rn="limit:thread batch maximum" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" 
+		  desc="sets the maximum number of function calls for the thread"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

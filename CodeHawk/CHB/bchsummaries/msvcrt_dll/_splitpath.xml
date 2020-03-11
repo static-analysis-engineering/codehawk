@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/18/2015 13:14:47"/>
+  <libfun lib="msvcrt" name="_splitpath">
+   <documentation>
+    <desc>Breaks a path name into components</desc>
+    <apidoc>
+     <pt>
+      <ll>void _splitpath(</ll>
+      <ld>const char *path</ld>
+      <ld>char *drive</ld>
+      <ld>char *dir</ld>
+      <ld>char *fname</ld>
+      <ld>char *ext</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="path">Full path</par>
+     <par name="drive">
+       Drive letter, followed by a colon (:). You can pass NULL for this parameter
+       if you do not need the drive letter.
+     </par>
+     <par name="dir">
+       Directory path, including trailing slash. Forward slashes ( / ), backslashes
+       ( \ ), or both may be used. You can pass NULL for this parameter if you do
+       not need the directory path.
+     </par>
+     <par name="fname">
+       Base filename (no extension). You can pass NULL for this parameter if you 
+       do not need the filename.
+     </par>
+     <par name="ext">
+       Filename extension, including leading period (.). You can pass NULL for
+       this parameter if you do not need the filename extension.
+     </par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_splitpath">
+    <par loc="stack" io="r" name="path" nr="1" rep="hex">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="drive" nr="2" rep="hex">
+     <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:filesystem" rn="infox:drive name"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="dir" nr="3" rep="hex">
+     <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:filesystem" rn="infox:filename"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="fname" nr="4" rep="hex">
+     <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:filesystem" rn="infox:filename"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="ext" nr="5" rep="hex">
+     <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:filesystem" rn="infox:file extension"/>
+     </roles>
+    </par>
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="breaks a path name into its components"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>drive</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>dir</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>fname</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>ext</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>drive</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>dir</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>fname</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>ext</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

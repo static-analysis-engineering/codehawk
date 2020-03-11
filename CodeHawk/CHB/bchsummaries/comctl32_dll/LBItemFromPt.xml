@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/04/2015 16:00:19"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="comctl32" name="LBItemFromPt">
+   <documentation>
+    <desc>retrieves the index of the item at the specified point in a list box
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int LBItemFromPt(</ll>
+      <ld>HWND hLB,</ld>
+      <ld>POINT pt,</ld>
+      <ld>BOOL bAutoScroll</ld>
+      <ld>int Reserved</ld><!-- not documented, but inferred from assembly code -->
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">item identifier</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+     <par name="hLB">handle to the list box to check</par>
+     <par name="pt">POINT structure that contains the screen coordinates to check</par>
+     <par name="bAutoScroll">scroll flag</par>
+     <par name="reserved">undocumented parameter</par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="LBItemFromPt">
+     <returntype>int</returntype>
+     <par loc="stack" name="hLB" io="r" rep="hex" nr="1">
+       <type>HWND</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+    </par>
+    <par loc="stack" name="pt" io="r" nr="2">
+      <type>POINT</type>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:POINT"/>
+      </roles>
+    </par>
+    <par loc="stack" name="bAutoScroll" io="r" roles="none" nr="3">
+      <type>BOOL</type>
+    </par>
+    <par loc="stack" name="Reserved" io="r" roles="none" nr="4">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves an item from a listbox"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

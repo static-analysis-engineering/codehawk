@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="12/23/2015 12:21:56"/>
+  <jnifun name="CallMethod">
+   <documentation>
+    <desc>
+       A family of functions consisting of one function per call type.
+       Invokes an instance method, specified using a method ID, on an
+       object. Arguments that are to be passed to the method are placed
+       immediately following the methodID argument. The Call[Type]Method
+       passes them to the method to be invoked.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>nativetype CallMethod(</ll>
+      <ld>_in JNIEnv *env</ld>
+      <ld>_in jobject obj</ld>
+      <ld>_in jmethodID methodID</ld>
+      <ld>_in varargs ...</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="env">JNI interface pointer</par>
+     <par name="obj">reference to the object on which the method is invoked</par>
+     <par name="methodID">ID of the method to be invoked</par>
+     <par name="varargs">arguments to be passed to the method</par>
+     <return>result of calling the method</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="CallMethod">   <!-- variable arguments -->
+    <par loc="stack" desc="jni interface pointer" io="r" name="env" nr="1">
+     <type><ptr>JNIEnv</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" desc="java object" io="r" name="obj" nr="2">
+     <type>jobject</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="jni:object" rn="invoke instance method"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="java mthod id" io="r" name="methodID" nr="3">
+     <type>jmethodID</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="jni:methodID" rn="invoke instance method"/>
+     </roles>
+    </par>
+    <returntype>ttype</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="jni" desc="invokes java instance method"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

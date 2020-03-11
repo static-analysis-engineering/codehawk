@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/22/2015 21:18:28"/>
+  <libfun lib="msvcrt" name="tanh">
+   <documentation>
+    <desc>calculates the hyperbolic tangent</desc>
+    <apidoc>
+     <pt>double tanh (double x)</pt>
+     <par name="x">angle in radians</par>
+     <return>the hyperbolic tangent of x</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="tanh">
+    <par loc="stack" name="x" io="r" roles="none" nr="1">
+     <type>double</type>
+    </par>
+    <returntype>double</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

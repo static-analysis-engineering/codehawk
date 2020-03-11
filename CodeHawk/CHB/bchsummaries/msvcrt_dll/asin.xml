@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/22/2015 21:09:26"/>
+  <libfun lib="msvcrt" name="asin">
+   <documentation>
+    <desc>Calculates the arcsine</desc>
+    <apidoc>
+     <pt>double asin (double x)</pt>
+     <par name="x">value whose arcsine is to be taken</par>
+     <return>
+       the arcsine (the inverse sine function) of x in the range -pi/2 to pi/2 radians
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="asin">
+    <par loc="stack" name="x" io="r" roles="none" nr="1">
+     <type>double</type>
+    </par>
+    <returntype>double</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

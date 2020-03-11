@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/03/2015 18:35:37"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="_atoi64">
+   <documentation>
+    <desc>converts a string to a 64-bit integer</desc>
+    <apidoc>
+     <pt>__int64 _atoi64 (const char *str)</pt>
+     <return>the produced by interpreting the input characters as a number. Returns 0
+      if the input cannot be converted to a value of __int64.
+    </return>
+     <par name="str">string to be converted</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_atoi64">
+     <returntype>__int64</returntype>
+     <par loc="stack" name="str" io="r" rep="hex" nr="1">
+       <type><ptr>char</ptr></type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:memops" rn="src-string:convert"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

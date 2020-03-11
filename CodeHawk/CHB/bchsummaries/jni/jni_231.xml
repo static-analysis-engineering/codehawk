@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-24T12:20:24.615620"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="231" name="GetDirectBufferCapacity">
+    <documentation>
+      <desc>
+	Fetches and returns the capacity of the memory region
+	referenced by the given direct java.nio.Buffer. The capacity
+	is the number of elements that the memory region contains.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jlong GetDirectBufferCapacity(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jobject buf</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="buf">a direct java.nio.Buffer object (must not be NULL)</par>
+        <return>
+	  Returns the capacity of the memory region associated with
+	  the buffer. Returns -1 if the given object is not a direct
+	  java.nio.Buffer, if the object is an unaligned view buffer
+	  and the processor architecture does not support unaligned
+	  access, or if JNI access to direct buffers is not supported
+	  by this virtual machine.
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="231" adj="8" name="GetDirectBufferCapacity">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="nio buffer" io="r" nr="2" name="buf">
+        <type>jobject</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:object" rn="java nio buffer"/>
+	</roles>
+      </par>
+      <returntype>jlong</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="retrieves the capacity of the memory region" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

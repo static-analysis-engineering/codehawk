@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/03/2015 19:07:17"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="wcstombs">
+   <documentation>
+     <desc>
+       converts a sequence of wide characters to a corresponding sequence of
+       multibyte characters
+     </desc>
+    <apidoc>
+     <pt>
+      <ll>size_t wcstombs(</ll>
+      <ld>char *mbstr,</ld>
+      <ld>const wchar_t *wcstr,</ld>
+      <ld>size_t count</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	number of bytes written to the multibyte output string or, if mbstr is NULL,
+	the required size in bytes of the destination string
+      </rc>
+      <rc cond="failure">-1</rc>
+     </return>
+     <par name="mbstr">address of a sequence of multibyte characters</par>
+     <par name="wcstr">address of a sequence of wide characters</par>
+     <par name="count">
+       maximum number of bytes that can be stored in the multibyte output string
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="wcstombs">
+    <returntype>size_t</returntype>
+    <par loc="stack" io="w" name="mbstr" rep="hex" nr="1">
+      <type><ptr>char</ptr></type>
+      <roles>
+         <role rt="ioc:memops" rn="dst-string:convert"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="wcstr" rep="hex" nr="2">
+      <type><ptr>wchar_t</ptr></type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:memops" rn="src-string:convert"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="count" roles="none" nr="3">
+      <type>size_t</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="maps a wide-character string to a character string"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <ci>char</ci>
+	    <ci>mbstr</ci>
+	    <ci>count</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-201t, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

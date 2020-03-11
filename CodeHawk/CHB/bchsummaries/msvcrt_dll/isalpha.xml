@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:38:58"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="isalpha">
+   <documentation>
+    <desc>tests for an alphabetic character</desc>
+    <apidoc>
+     <pt>int isalpha (int c)</pt>
+     <par name="c">
+       character to be tested. This argument is an int, the value of which must be
+       representable as an unsigned char or equal to the value of the macro EOF. If
+       the argument has any other value, the behavior is undefined
+     </par>
+     <return>
+       <rc cond="if c is an alphabetic character">nonzero</rc>
+       <rc cond="otherwise">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="isalpha">
+     <returntype>int</returntype>
+     <par loc="stack" name="c" io="r" roles="none" nr="1">
+       <type>int</type>
+    </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

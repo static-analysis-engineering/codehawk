@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/29/2015 21:47:33"/>
+  <libfun lib="msvcrt" name="_strdate">
+   <documentation>
+    <desc>Copies current system date to a buffer</desc>
+    <apidoc>
+     <pt>char *_strdate (char *datestr)</pt>
+     <par name="datestr">
+       A pointer to a buffer containing the formatted date string
+     </par>
+     <return>a pointer to the resulting character string datestr</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_strdate">
+    <par loc="stack" name="datestr" rep="hex" io="w" nr="1">
+      <type><ptr>char</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-string:formatted data"/>
+      </roles>
+    </par>
+    <returntype><ptr>char</ptr></returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="memops" desc="copies current system time to a buffer"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>datestr</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>datestr</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/18/2015 10:00:24"/>
+  <libfun lib="msvcrt" name="strftime">
+   <documentation>
+    <desc>Format a time string</desc>
+    <apidoc>
+     <pt>
+      <ll>size_t strftime(</ll>
+      <ld>char *strDest</ld>
+      <ld>size_t maxsize</ld>
+      <ld>const char *format</ld>
+      <ld>constr struct tm *timeptr</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="strDest">Output string</par>
+     <par name="maxsize">
+       Size of the strDest buffer, measured in characters (char or wchart_t).
+     </par>
+     <par name="format">Format-control string</par>
+     <par name="timeptr">tm data structure</par>
+     <return>
+      <rc cond="success">
+	the number of characters placed in strDest and wcsftime returns the 
+	corresponding number of wide characters
+      </rc>
+      <rc cond="failure">
+	If the total number of characters, including the terminating null, 
+	is more than maxsize, both strftime and wcsftime return 0 and the 
+	contents of strDest are indeterminate.
+      </rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="strftime">
+    <par loc="stack" io="w" name="strDest" nr="1" rep="hex">
+     <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="dst-string:formatted data"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="maxsize" roles="none" nr="2">
+     <type>size_t</type>
+    </par>
+    <par loc="stack" io="r" name="format" nr="3" rep="hex">
+     <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:outputs" rn="format string"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="timeptr" nr="4" rep="hex">
+     <type><ptr>tm</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:tm"/>
+     </roles>
+    </par>
+    <returntype>size_t</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="outputs" desc="formats a time string"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>char</type>
+	    <ci>strDest</ci>
+	    <ci>maxsize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/03/2015 12:16:07"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="isupper">
+   <documentation>
+    <apidoc>
+     <pt>int isupper (int c)</pt>
+     <return>
+      <rc cond="true">nonzero</rc>
+      <rc cond="false">zero</rc>
+     </return>
+     <par name="c">integer to test</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="isupper">
+     <returntype>int</returntype>
+     <par loc="stack" name="c" io="r" roles="none" nr="1">
+       <type>int</type>
+     </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

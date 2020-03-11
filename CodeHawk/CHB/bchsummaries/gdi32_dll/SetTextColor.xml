@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetTextColor">
+   <documentation>
+    <desc>
+      sets the text color for the specified device context to the specified color
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>COLORREF SetTextColor (</ll>
+      <ld>_In_ HDC hdc,</ld>
+      <ld>_In_ COLORREF crColor</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">handle to the device</par>
+     <par name="crColor">color of the text</par>
+     <return>
+      <rc cond="success">color reference for the previous text color as a COLORREF</rc>
+      <rc cond="failure">CLR_INVALID</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetTextColor">
+     <returntype>COLORREF</returntype>
+     <par loc="stack" name="hdc" io="r" nr="1">
+      <type>HDC</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+    <par loc="stack" name="crColor" roles="none" io="r" nr="2">
+      <type>COLORREF</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="sets text color on device"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

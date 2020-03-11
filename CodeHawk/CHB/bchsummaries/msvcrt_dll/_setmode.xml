@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:36"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="_setmode">
+   <documentation>
+    <desc>sets the file translation mode</desc>
+    <apidoc>
+     <pt>int _setmode (int handle, int mode)</pt>
+     <par name="handle">file handle</par>
+     <par name="mode">new translation mode</par>
+     <return>
+      <rc cond="success">previous translation mode</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_setmode">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="handle" nr="1">
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:file" />
+     </roles>
+     <type>int</type>
+    </par>
+    <par loc="stack" name="mode" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="filesystem" desc="sets the file translation mode"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <sets-errno/>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

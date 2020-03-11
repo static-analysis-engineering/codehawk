@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:33:28"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="TranslateCharsetInfo">
+   <documentation>
+    <desc>
+      Translates character set information and sets all members of a
+      destination structure to appropriate values.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL TranslateCharsetInfo(</ll>
+      <ld>_Inout_  DWORD FAR *lpSrc,</ld>
+      <ld>_Out_    LPCHARSETINFO lpCs,</ld>
+      <ld>_In_     DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpSrc">
+       Pointer to the fsCsb member of a FONTSIGNATURE structure if dwFlags 
+       is set to TCI_SRCFONTSIG. 
+       Otherwise, this parameter is set to a DWORD value indicating the source.
+	</par>
+     <par name="lpCs">
+       Pointer to a CHARSETINFO structure that receives the translated character 
+       set information.
+     </par>
+     <par name="dwFlags">Flags specifying how to perform the translation.</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="TranslateCharsetInfo">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="rw" name="lpSrc" nr="1" rep="hex">
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:misc" />
+      <role rt="ioc:memops" rn="dst-bytes:misc"/>
+     </roles>
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpCs" nr="2" rep="hex">
+     <type><ptr>CHARSETINFO</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:CHARSETINFO" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+        <io-action cat="system" desc="translates character set information"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

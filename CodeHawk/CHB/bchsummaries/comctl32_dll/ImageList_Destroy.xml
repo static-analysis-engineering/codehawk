@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 08:31:52"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="comctl32" name="ImageList_Destroy">
+   <documentation>
+    <desc>Destroys an image list.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ImageList_Destroy(</ll>
+      <ld>_In_opt_  HIMAGELIST himl</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero </rc>
+      <rc cond="failure">zero </rc>
+     </return>
+     <par name="himl">A handle to the image list to destroy. </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ImageList_Destroy">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="himl" io="r" rep="hex" nr="1">
+      <type>HIMAGELIST</type>
+      <pre><deref-read-null/></pre>
+      <sideeffects><invalidates/></sideeffects>
+      <roles>
+	<role rt="ioc:process" rn="handle:imagelist"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="destroys an image list"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

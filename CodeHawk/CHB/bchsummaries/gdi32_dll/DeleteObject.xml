@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="DeleteObject">
+   <documentation>
+    <desc>
+      deletes a logical pen, brush, font, bitmap, region, or palette, freeing all
+      system resources associated with the object. After the object is deleted, the
+      specified handle is no longer valid
+    </desc>
+    <apidoc>
+     <pt>BOOL DeleteObject (_In_ HGDIOBJ hObject)</pt>
+     <par name="hObject">
+       handle to a logical pen, brush, font, bitmap, region, or palette
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DeleteObject">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hObject" nr="1">
+     <type>HGDIOBJ</type>
+     <pre><deref-read/></pre>
+     <sideeffects><invalidates/></sideeffects>
+     <roles>
+        <role rt="ioc:process" rn="handle:graphical device object"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="system" desc="deletes a graphical logical device"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

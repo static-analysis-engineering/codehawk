@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/06/2015 22:14:54"/>
+  <libfun lib="comdlg32" name="PrintDlg">
+   <documentation>
+    <desc>
+      Displays a Print Dialog Box or a Print Setup dialog box. The Print 
+      dialog box enables the user to specify the properties of a particular 
+      print job
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI PrintDlg (_Inout_  LPPRINTDLG lppd)</pt>
+     <par name="lppd">
+       A pointer to a PRINTDLG structure that contains information used to initialize
+       the dialog box. When PrintDlg returns, this structure contains information 
+       about the user's selections
+     </par>
+     <return>
+      <rc cond="success">
+	If the user clicks the OK button, the return value is nonzero. The 
+	members of the PRINTDLG structure pointed to by the lppd parameter 
+	indicate the user's selections
+      </rc>
+      <rc cond="failure">
+	If the user canceled or closed the Print or Printer Setup dialog box 
+	or an error occurred, the return value is zero
+      </rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="PrintDlg">
+    <par loc="stack" io="rw" name="lppd" nr="1">
+     <type><ptr>PRINTDLG</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:PRINTDLG" />
+      <role rt="ioc:memops" rn="dst-struct:PRINTDLG" />
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects>
+       <block-write/>
+     </sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="creates a print setup dialog box">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

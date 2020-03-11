@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="fmod.xml" time="2016-05-07 18:32:13.601686"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="fmod">
+    <documentation>
+      <desc>Calculates the floating-point remainder</desc>
+      <apidoc>
+        <pt>
+          <ll>double fmod(</ll>
+          <ld>double x</ld>
+          <ld>double y</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="x">floating point value</par>
+        <par name="y">floating point value</par>
+        <return>
+          <rc cond="success">
+	    the floating-point remainder of x / y
+	  </rc>
+          <rc cond="failure">quiet NaN</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="fmod">
+      <par loc="stack" name="x" io="r" roles="none" nr="1">
+        <type>double</type>
+      </par>
+      <par loc="stack" name="y" io="r" roles="none" nr="2">
+        <type>double</type>
+      </par>
+      <returntype>double</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

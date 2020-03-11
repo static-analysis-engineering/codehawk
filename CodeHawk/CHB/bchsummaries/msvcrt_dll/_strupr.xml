@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/24/2015 16:02:55"/>
+  <libfun lib="msvcrt" name="_strupr">
+   <documentation>
+    <desc>Converts a string to uppercase</desc>
+    <apidoc>
+     <pt>char * _strupr (char *str)</pt>
+     <par name="str">string to be capitalized</par>
+     <return>capitalized string</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_strupr">
+    <par loc="stack" io="rw" name="str" nr="1">
+     <type><ptr>char</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-string:convert" />
+      <role rt="ioc:memops" rn="dst-string:convert" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <returntype><ptr>char</ptr></returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

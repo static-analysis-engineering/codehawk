@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 06:08:56"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetWinMetaFileBits">
+   <documentation>
+    <desc>
+      converts a metafile from the older Windows format to the new enhanced 
+      format and stores the new metafile in memory.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HENHMETAFILE SetWinMetaFileBits(</ll>
+      <ld>_In_  UINT cbBuffer </ld>
+      <ld>_In_  const BYTE *lpbBuffer </ld>
+      <ld>_In_  HDC hdcRef </ld>
+      <ld>_In_  const METAFILEPICT *lpmfp </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="cbBuffer">
+       The size, in bytes, of the buffer that contains the Windows-format metafile.
+     </par>
+     <par name="lpbBuffer">
+       A pointer to a buffer that contains the Windows-format metafile data.
+       (It is assumed that the data was obtained by using the GetMetaFileBitsEx 
+       or GetWinMetaFileBits function.)
+     </par>
+     <par name="hdcRef">A handle to a reference device context.</par>
+     <par name="lpmfp">
+       A pointer to a METAFILEPICT structure that contains the suggested size 
+       of the metafile picture and the mapping mode that was used when the 
+       picture was created.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SetWinMetaFileBits">
+    <returntype>HENHMETAFILE</returntype>
+    <par loc="stack" io="r" name="cbBuffer" nr="1">
+     <roles>
+      <role rt="size:buffersize" rn="number of bytes of data pointed to" />
+     </roles>
+     <type>UINT</type>
+    </par>
+    <par loc="stack" io="r" name="lpbBuffer" nr="2" rep="hex">
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:metafile data" />
+     </roles>
+     <type><ptr>BYTE</ptr></type>
+    </par>
+    <par loc="stack" io="r" name="hdcRef" nr="3">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpmfp" nr="4" rep="hex">
+     <type><ptr>METAFILEPICT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:METAFILEPICT" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="converts a metafile"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>lpbBuffer</ci>
+	    <ci>cbBuffer</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

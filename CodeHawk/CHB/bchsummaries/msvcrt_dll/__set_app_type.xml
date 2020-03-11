@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/31/2015 16:45:42"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="__set_app_type">
+   <documentation>
+    <desc>sets the current application type</desc>
+    <apidoc>
+     <pt>void __set_app_type (int at)</pt>
+     <return>void</return>
+     <par name="at">value that indicates the application type</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="__set_app_type">
+    <returntype>void</returntype>
+    <par loc="stack" name="at" nr="1">
+     <type>int</type>
+     <roles>
+        <role rt="ioc:process" rn="application type"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="sets application type"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

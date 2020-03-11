@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/13/2015 11:02:38"/>
+  <libfun lib="crypt32" name="CertFreeCertificateChain">
+   <documentation>
+    <desc>
+      frees a certificate chain by reducing its reference count. If the 
+      reference count becomes zero, memory allocated for the chain is released.
+      To free a context obtained by a get, duplicate, or create function, call
+      the appropriate free function. To free a context obtained by a find or 
+      enumerate function, either pass it in as the previous context parameter
+      to a subsequent invocation of the function, or call the appropriate 
+      free function
+    </desc>
+    <apidoc>
+     <pt>VOID WINAPI CertFreeCertificateChain (_In_ PCCERT_CHAIN_CONTEXT pChainContext)</pt>
+     <par name="pChainContext">
+       A pointer to a CERT_CHAIN_CONTEXT certificate chain context to be freed.
+       If the reference count on the context reaches zero, the storage allocated 
+       for the context is freed.
+     </par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CertFreeCertificateChain">
+    <par loc="stack" desc="chain context handle" io="r" name="pChainContext" nr="1">
+     <type><ptr>CERT_CHAIN_CONTEXT</ptr></type>
+     <roles>
+        <role rt="ioc:crypto" rn="certificate chain context"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>VOID</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="crypto" desc="frees a certificate chain"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

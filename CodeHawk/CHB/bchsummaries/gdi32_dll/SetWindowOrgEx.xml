@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 06:08:26"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetWindowOrgEx">
+   <documentation>
+    <desc>specifies which window point maps to the viewport origin (0,0).</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL SetWindowOrgEx(</ll>
+      <ld>_In_   HDC hdc </ld>
+      <ld>_In_   int X </ld>
+      <ld>_In_   int Y </ld>
+      <ld>_Out_  LPPOINT lpPoint </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context. </par>
+     <par name="X">The x-coordinate, in logical units, of the new window origin. </par>
+     <par name="Y">The y-coordinate, in logical units, of the new window origin. </par>
+     <par name="lpPoint">
+       A pointer to a POINT structure that receives the previous
+       origin of the window, in logical units. If lpPoint is NULL,
+       this parameter is not used.
+	</par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SetWindowOrgEx">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hdc" io="r" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+     </par>
+    <par loc="stack" name="X" io="r" nr="2">
+      <type>int</type>
+      <roles>
+	<role rt="size:position" rn="SetWindowOrgEx"/>
+      </roles>
+    </par>
+    <par loc="stack" name="Y" io="r" nr="3">
+      <type>int</type>
+      <roles>
+	<role rt="size:position" rn="SetWindowOrgEx"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpPoint" io="w" nr="4">
+      <type><ptr>POINT</ptr></type>
+      <pre><deref-write-null/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:memops" rn="dst-struct:POINT"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="maps a window point to the viewport origin"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

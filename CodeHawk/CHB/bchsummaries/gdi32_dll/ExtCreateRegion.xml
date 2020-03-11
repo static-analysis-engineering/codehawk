@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 03:06:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="ExtCreateRegion">
+   <documentation>
+    <desc>creates a region from the specified region and transformation data.</desc>
+    <apidoc>
+     <pt>
+      <ll>HRGN ExtCreateRegion(</ll>
+      <ld>_In_  const XFORM *lpXform </ld>
+      <ld>_In_  DWORD nCount </ld>
+      <ld>_In_  const RGNDATA *lpRgnData </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">the value of the region</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="lpXform">
+       A pointer to an XFORM structure that defines the transformation to
+       be performed on the region. If this pointer is NULL, the identity 
+       transformation is used.	
+     </par>
+     <par name="nCount">The number of bytes pointed to by lpRgnData. </par>
+     <par name="lpRgnData">
+       A pointer to a RGNDATA structure that contains the region data in logical units. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="ExtCreateRegion">
+    <returntype>HRGN</returntype>
+    <par loc="stack" io="r" name="lpXform" nr="1">
+     <type><ptr>XFORM</ptr></type>
+     <roles>
+      <role rt="ioc:process" rn="linear transformation" />
+     </roles>
+      <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="nCount" nr="2">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:count" rn="number of bytes of data pointed to" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpRgnData" nr="3" rep="hex">
+     <type><ptr>RGNDATA</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:RGNDATA" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="creates a transformed region"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>RGNDATA</type>
+	    <ci>lpRgnData</ci>
+	    <ci>nCount</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

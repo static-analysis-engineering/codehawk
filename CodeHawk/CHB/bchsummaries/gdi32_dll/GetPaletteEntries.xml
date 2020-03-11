@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:09:36"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetPaletteEntries">
+   <documentation>
+    <desc>
+      retrieves a specified range of palette entries from the given logical palette.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT GetPaletteEntries(</ll>
+      <ld>_In_   HPALETTE hpal</ld>
+      <ld>_In_   UINT iStartIndex</ld>
+      <ld>_In_   UINT nEntries</ld>
+      <ld>_Out_  LPPALETTEENTRY lppe</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	If the function succeeds and the handle to the logical palette is a valid 
+	pointer (not NULL), the return value is the number of entries retrieved 
+	from the logical palette. If the function succeeds and handle to the 
+	logical palette is NULL, the return value is the number of entries in 
+	the given palette.
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hpal">A handle to the logical palette.</par>
+     <par name="iStartIndex">The first entry in the logical palette to be retrieved.</par>
+     <par name="nEntries">
+       The number of entries in the logical palette to be retrieved.
+     </par>
+     <par name="lppe">
+       A pointer to an array of PALETTEENTRY structures to receive the palette 
+       entries. The array must contain at least as many structures as specified 
+       by the nEntries parameter.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetPaletteEntries">
+     <returntype>UINT</returntype>
+     <par loc="stack" name="hpal" io="r" nr="1">
+       <type>HPALETTE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:palette"/>
+       </roles>
+    </par>
+    <par loc="stack" name="iStartIndex" io="r" nr="2">
+      <type>UINT</type>
+      <roles>
+	<role rt="size:index" rn="GetPaletteEntries"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nEntries" io="r" nr="3">
+      <type>UINT</type>
+      <roles>
+	<role rt="size:count" rn="GetPaletteEntries"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lppe" io="w" nr="4" rep="hex">
+      <type><ptr>PALETTEENTRY</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-array:PALETTEENTRY"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui"
+		  desc="retrieves palette entries from a logical palette"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>PALETTEENTRY</type>
+	    <ci>lppe</ci>
+	    <apply><indexsize/><ci>nEntries</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>PALETTEENTRY</type>
+	    <ci>lppe</ci>
+	    <apply><indexsize/><ci>nEntries</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

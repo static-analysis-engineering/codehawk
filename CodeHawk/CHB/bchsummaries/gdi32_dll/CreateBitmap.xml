@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CreateBitmap">
+   <documentation>
+    <desc>
+      creates a bitmap with the specified width, height, and color format (color planes
+      and bits per pixel)
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HBITMAP CreateBitmap (</ll>
+      <ld>_In_ int nWidth,</ld>
+      <ld>_In_ int nHeigth,</ld>
+      <ld>_In_ UINT cPlanes,</ld>
+      <ld>_In_ UINT cBitsPerPixel,</ld>
+      <ld>_In_ const VOID *lpvBits</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nWidth">bitmap width, in pixels</par>
+     <par name="nHeight">bitmap height, in pixels</par>
+     <par name="cPlanes">number of color planes used by the device</par>
+     <par name="cBitsPerPixel">
+       number of bits required to identify the color of a single pixel
+     </par>
+     <par name="lpvBits">
+       pointer to an array of color data used to set the colors in a rectangle of pixels.
+       Each scan line in the rectangle must be word aligned (scan lines that are not word
+       aligned must be padded with zeros). If this parameter is NULL, the contents of the
+       new bitmap is undefined
+     </par>
+     <return>
+      <rc cond="success">handle to a bitmap</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="CreateBitmap">
+    <returntype>HBITMAP</returntype>
+    <par loc="stack" name="nWidth" io="r" nr="1">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="CreateBitmap"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nHeight" io="r" nr="2">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="CreateBitmap"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cPlanes" nr="3">
+      <type>UINT</type>
+      <roles>
+	<role rt="size:count" rn="CreateBitmap"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cBitsPerPixel" io="r" nr="4">
+      <type>UINT</type>
+      <roles>
+	<role rt="size:count" rn="CreateBitmap"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpvBits" nr="5">
+      <type><ptr>void</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-bytes:bitmap"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="creates a bitmap"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>byte</type>
+	 <ci>lpvBits</ci>
+	 <runtime-value/>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <notnull-null/>
+   </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

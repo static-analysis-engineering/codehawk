@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/24/2015 14:20:05"/>
+  <libfun lib="dwmapi" name="DwmEnableComposition">
+   <documentation>
+    <desc>Enables or disables Desktop Window Manager (DWM) composition</desc>
+    <apidoc>
+     <pt>DwmEnableComposition (UINT uCompositionAction)</pt>
+     <par name="uCompositionAction">
+       DWM_EC_ENABLECOMPOSITION to enable DWM composition; 
+       DWM_EC_DISABLECOMPOSITION to disable composition
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DwmEnableComposition">
+    <par loc="stack" name="uCompositionAction" io="r" roles="none" nr="1">
+     <type>UINT</type>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system"
+		  desc="enables or disables desktop window manager composition"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

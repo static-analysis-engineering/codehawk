@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="_ltoa.xml" time="2016-07-28 16:58:56.661546"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="_ltoa">
+    <documentation>
+      <desc>Converts a long integer to a string</desc>
+      <apidoc>
+        <pt>
+          <ll>char *_ltoa(</ll>
+          <ld>long value</ld>
+          <ld>char *str</ld>
+          <ld>int radix</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="value">Number to be converted</par>
+        <par name="str">string results</par>
+        <par name="radix">base of value</par>
+        <return>pointer to str</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="_ltoa">
+      <par loc="stack" io="r" name="value" roles="none" nr="1">
+        <type>long</type>
+      </par>
+      <par loc="stack" io="w" name="str" nr="2" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-string:convert"/>
+	</roles>
+      </par>
+      <par loc="stack" name="radix" io="r" roles="none" nr="3">
+        <type>int</type>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="converts a long to a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>str</ci>
+	      <runtime-value/>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>char</type>
+	      <ci>str</ci>
+	      <runtime-value/>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

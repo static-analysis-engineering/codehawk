@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetCharacterPlacement">
+   <documentation>
+    <desc>
+      retrieves information about a character string, such as character 
+      widths, caret positioning, ordering within the string, and glyph 
+      rendering. The type of information returned depends on the dwFlags 
+      parameter and is based on the currently selected font in the specified 
+      display context. The function copies the information to the specified
+      GCP_RESULTS structure or to one or more arrays specified by the structure.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD GetCharacterPlacement(</ll>
+      <ld>_In_     HDC hdc,</ld>
+      <ld>_In_     LPCTSTR lpString,</ld>
+      <ld>_In_     int nCount,</ld>
+      <ld>_In_     int nMaxExtent,</ld>
+      <ld>_Inout_  LPGCP_RESULTS lpResults,</ld>
+      <ld>_In_     DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="lpString">
+       A pointer to the character string to process. The string does not need 
+       to be zero-terminated, since nCount specifies the length of the string.
+     </par>
+     <par name="nCount">The length of the string pointed to by lpString.</par>
+     <par name="nMaxEvent">Specifies how to process the string into the required arrays.</par>
+     <par name="lpResults">
+       A pointer to a GCP_RESULTS structure that receives the results of the function.
+     </par>
+     <par name="dwFlags">Specifies how to process the string into the required arrays.</par>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="GetCharacterPlacement">
+    <returntype>DWORD</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpString" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:memops" rn="src-string:examine" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nCount" nr="3">
+     <type>int</type>
+     <roles>
+      <role rt="size:count" rn="length of string pointed to" />
+     </roles>
+     <pre><non-negative/></pre>
+    </par>
+    <par loc="stack" io="r" name="nMaxExtent" nr="4">
+     <type>int</type>
+     <roles>
+      <role rt="size:count" rn="maximum string extent" />
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="lpResults" nr="5" rep="hex">
+      <type><ptr>GCP_RESULTS</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:misc" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="6">
+     <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves information about a character string"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>TCHAR</type>
+	 <ci>lpString</ci>
+	 <apply><indexsize/><ci>nCount</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

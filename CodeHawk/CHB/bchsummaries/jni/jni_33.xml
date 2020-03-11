@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-22T15:54:02.730359"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="33" name="GetMethodID">
+    <documentation>
+      <desc>
+         Returns the method ID for an instance (nonstatic) method of a
+         class or interface. The method may be defined in one of the
+         clazz's superclasses and inherited by clazz. The method is
+         determined by its name and signature.
+         GetMethodID() causes an uninitialized class to be initialized.
+
+         To obtain the method ID of a constructor, supply (init) as the method
+         name and void (V) as the return type.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jmethodID GetMethodID(</ll>
+          <ld>_in  JNIEnv *env,</ld>
+          <ld>_in  jclass clazz,</ld>
+          <ld>_in  const char *name,</ld>
+          <ld>_in  const char *sig</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="clazz">a Java class object</par>
+        <par name="name">the method name in a 0-terminated modified UTF-8 string</par>
+        <par name="sig">the method signature in 0-terminated modified UTF-8 string</par>
+        <return>
+          <rc cond="success">method ID</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="33" adj="16" name="GetMethodID">
+      <par loc="stack" desc="jni interface pointer" io="r" nr="1" name="env">
+        <type><ptr>JNIEnv</ptr></type>
+        <pre><deref-read/></pre>
+      </par>
+      <par loc="stack" desc="class object" io="r" nr="2" name="clazz">
+        <type>jclass</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="jni:class" rn="retrieve method"/>
+        </roles>
+      </par>
+      <par loc="stack" desc="method name" io="r" nr="3" name="name">
+        <type><ptr>char</ptr></type>
+        <pre><deref-read-nt/></pre>
+        <roles>
+           <role rt="jni:methodname" rn="retrieve method"/>
+        </roles>
+      </par>
+      <par loc="stack" nr="4" name="sig">
+        <type><ptr>char</ptr></type>
+        <roles>
+           <role rt="jni:methodsignature" rn="retrieve method"/>
+        </roles>
+        <pre><deref-read-nt/></pre>
+      </par>
+      <returntype>jmethodID</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="retrieves a method id" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+         <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

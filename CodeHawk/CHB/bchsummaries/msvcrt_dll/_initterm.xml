@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/06/2015 11:43:44"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="_initterm">
+   <documentation>
+    <desc>
+      internal method that walks a table of function pointers and 
+      initializes them
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>void __cdecl_ _initterm(</ll>
+      <ld>PVFV *startloc,</ld>
+      <ld>PVFV *endloc</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="startloc">starting location in the table</par>
+     <par name="endloc">ending location in the table</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_initterm">
+    <returntype>void</returntype>
+    <par loc="stack" io="r" name="startloc" nr="1" rep="hex">
+      <type><ptr>PVFV</ptr></type>
+     <pre><deref-write/></pre>
+      <roles>
+         <role rt="ioc:process" rn="function pointer list"/>
+	 <role rt="ioc:memops" rn="src-array:function pointer"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="endloc" nr="2" roles="none" rep="hex">
+      <type><ptr>PVFV</ptr></type>
+     <pre><not-null/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="initializes a table of function pointers"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

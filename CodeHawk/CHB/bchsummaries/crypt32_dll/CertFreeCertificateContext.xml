@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/13/2015 11:07:02"/>
+  <libfun lib="crypt32" name="CertFreeCertificateContext">
+   <documentation>
+    <desc>
+      frees a certificate context by decrementing its reference count. When the 
+      reference count goes to zero, CertFreeCertificateContext frees the memory
+      used by a certificate context.
+      To free a context obtained by a get, duplicate, or create function, call 
+      the appropriate free function. To free a context obtained by a find or 
+      enumerate function, either pass it in as the previous context parameter
+      to a subsequent invocation of the function, or call the appropriate 
+      free function
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI CertFreeCertificateContext (_In_ PCCERT_CONTEXT pCertContext)</pt>
+     <par name="pCertContext">A pointer to the CERT_CONTEXT to be freed</par>
+     <return>
+       always returns nonzero
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CertFreeCertificateContext">
+    <par loc="stack" desc="certificate context" io="r" name="pCertContext" nr="1">
+     <type><ptr>CERT_CONTEXT</ptr></type>
+     <roles>
+        <role rt="ioc:crypto" rn="certificate context"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="registry" desc="frees a certificate context"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

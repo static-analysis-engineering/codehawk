@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2016-01-02T23:00:24.685182"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="226" name="NewWeakGlobalRef">
+    <documentation>
+      <desc>
+	Creates a new weak global reference. Returns NULL if obj
+	refers to null, or if the VM runs out of memory. If the VM
+	runs out of memory, an OutOfMemoryError will be thrown.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jweak NewWeakGlobalRef(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jobject obj</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="obj">object to create a global weak ref</par>
+        <return>
+          <rc cond="success">a weak global reference</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="226" adj="8" name="NewWeakGlobalRef">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" name="obj">
+        <type>jobject</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:object" rn="create weak global ref"/>
+	</roles>
+      </par>
+      <returntype>jweak</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="creates a global weak ref" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

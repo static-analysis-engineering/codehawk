@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 06:11:36"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="StretchDIBits">
+   <documentation>
+    <desc>
+      copies the color data for a rectangle of pixels in a DIB, JPEG, or 
+      PNG image to the specified destination rectangle. If the destination 
+      rectangle is larger than the source rectangle, this function stretches 
+      the rows and columns of color data to fit the destination rectangle. 
+      If the destination rectangle is smaller than the source rectangle, 
+      this function compresses the rows and columns by using the specified
+      raster operation.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int StretchDIBits(</ll>
+      <ld>_In_  HDC hdc </ld>
+      <ld>_In_  int XDest </ld>
+      <ld>_In_  int YDest </ld>
+      <ld>_In_  int nDestWidth </ld>
+      <ld>_In_  int nDestHeight </ld>
+      <ld>_In_  int XSrc </ld>
+      <ld>_In_  int YSrc </ld>
+      <ld>_In_  int nSrcWidth </ld>
+      <ld>_In_  int nSrcHeight </ld>
+      <ld>_In_  const VOID *lpBits </ld>
+      <ld>_In_  const BITMAPINFO *lpBitsInfo </ld>
+      <ld>_In_  UINT iUsage </ld>
+      <ld>_In_  DWORD dwRop </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the destination device context. </par>
+     <par name="XDest">
+       The x-coordinate, in logical units, of the upper-left corner of
+       the destination rectangle
+     </par>
+     <par name="YDest">
+       The y-coordinate, in logical units, of the upper-left corner of
+       the destination rectangle
+     </par>
+     <par name="nDestWidth">The width, in logical units, of the destination rectangle. </par>
+     <par name="nDestHeight">The height, in logical units, of the destination rectangle. </par>
+     <par name="XSrc">The x-coordinate, in pixels, of the source rectangle in the image. </par>
+     <par name="YSrc">The y-coordinate, in pixels, of the source rectangle in the image. </par>
+     <par name="nSrcWidth">The width, in pixels, of the source rectangle in the image. </par>
+     <par name="nSrcHeight">The height, in pixels, of the source rectangle in the image. </par>
+     <par name="lpBits">
+       A pointer to the image bits, which are stored as an array of bytes. 
+     </par>
+     <par name="lpBitsInfo">
+       pointer to a BITMAPINFO structure that contains information about the DIB.
+     </par>
+     <par name="iUsage">
+       Specifies whether the bmiColors member of the BITMAPINFO structure was 
+       provided and, if so, whether bmiColors contains explicit red, green, 
+       blue (RGB) values or indexes. The iUsage parameter must be one of the
+       following values.
+       DIB_PAL_COLORS : The array contains 16-bit indexes into the logical
+       palette of the source device context.
+       DIB_RGB_COLORS : The color table contains literal RGB values.
+     </par>
+     <par name="dwRop">
+       A raster-operation code that specifies how the source pixels, the
+       destination device context&apos;s current brush, and the destination
+       pixels are to be combined to form the new image.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="52" cc="stdcall" name="StretchDIBits">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <btype tname="HDC" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="XDest" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="YDest" io="r" roles="none" nr="3">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nDestWidth" io="r" roles="none" nr="4">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nDestHeight" io="r" roles="none" nr="5">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="XSrc" io="r" roles="none" nr="6">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="YSrc" io="r" roles="none" nr="7">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nSrcWidth" io="r" roles="none" nr="8">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nSrcHeight" io="r" roles="none" nr="9">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="lpBits" io="r" nr="10">
+     <type><ptr>BYTE</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:misc"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpBitsInfo" io="r" nr="11">
+      <type><ptr>BITMAPINFO</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:BITMAPINFO"/>
+      </roles>
+    </par>
+    <par loc="stack" name="iUsage" io="r" roles="none" nr="12">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="dwRop" io="r" roles="none" nr="13">
+      <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="copies color data for a picture"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>lpBits</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

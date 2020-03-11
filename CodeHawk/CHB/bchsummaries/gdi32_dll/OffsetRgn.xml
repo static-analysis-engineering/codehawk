@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:11:54"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="OffsetRgn">
+   <documentation>
+    <desc>moves a region by the specified offsets.</desc>
+    <apidoc>
+     <pt>
+      <ll>int OffsetRgn(</ll>
+      <ld>_In_  HRGN hrgn</ld>
+      <ld>_In_  int nXOffset</ld>
+      <ld>_In_  int nYOffset</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">Region Value</rc>
+      <rc cond="failure">Error</rc>
+     </return>
+     <par name="hrgn">Handle to the region to be moved.</par>
+     <par name="nXOffset">Specifies the number of logical units to move left or right.</par>
+     <par name="nYOffset">Specifies the number of logical units to move up or down.</par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OffsetRgn">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" io="rw" name="hrgn" nr="1">
+     <type>HRGN</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:region" />
+     </roles>
+    </par>
+    <par loc="stack" name="nXOffset" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nYOffset" io="r" roles="none" nr="3">
+     <type>int</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="moves a region"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

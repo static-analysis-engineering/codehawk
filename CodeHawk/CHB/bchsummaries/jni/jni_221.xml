@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2016-01-02T15:47:56.234430"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="221" name="GetStringUTFRegion">
+    <documentation>
+      <desc>
+	Translates len number of Unicode characters beginning at
+	offset start into modified UTF-8 encoding and place the result
+	in the given buffer buf.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>void GetStringUTFRegion(</ll>
+          <ld>_in JNIenv *env</ld>
+          <ld>_in jstring str</ld>
+          <ld>_in jsize start</ld>
+          <ld>_in jsize len</ld>
+          <ld>_in char *buf</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="str">a Java string object</par>
+        <par name="start">starting offset in the string</par>
+        <par name="len">number of characters to be copied</par>
+        <par name="buf">target buffer to copy the characters to</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="221" adj="20" name="GetStringUTFRegion">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" name="str">
+        <type>jstring</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:string" rn="string to be copied"/>
+	</roles>
+      </par>
+      <par loc="stack" nr="3" name="start">
+        <type>jsize</type>
+	<roles>
+	  <role rt="size:starting index" rn="GetStringUTFRegion"/>
+	</roles>
+      </par>
+      <par loc="stack" nr="4" name="len">
+        <type>jsize</type>
+	<roles>
+	  <role rt="size:element count" rn="GetStringUTFRegion"/>
+	</roles>
+      </par>
+      <par loc="stack" nr="5" name="buf">
+        <type><ptr>char</ptr></type>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="copies characters from a Java string to a C buffer" cat="jni"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>buf</ci>
+	      <ci>len</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>char</type>
+	      <ci>buf</ci>
+	      <ci>len</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

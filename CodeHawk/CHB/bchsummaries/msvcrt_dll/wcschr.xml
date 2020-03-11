@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/20/2015 23:50:43"/>
+  <libfun lib="msvcrt" name="wcschr">
+   <documentation>
+    <desc>
+      Finds a character in a string, by using the current locale or a
+      specified LC_CTYPE conversion-state category
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>wchar_t *wcschr(</ll>
+      <ld>const wchar_t *str</ld>
+      <ld>wchar_t c</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="str">Null-terminated source string</par>
+     <par name="c">Character to be located</par>
+     <return>
+      <rc cond="success">a pointer to the first occurrence of c in str</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="wcschr">
+    <par loc="stack" name="str" io="r" rep="hex" nr="1">
+     <type><ptr>wchar_t</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:inputs" rn="string search"/>
+     </roles>
+    </par>
+    <par loc="stack" name="c" io="r" roles="none" nr="2">
+     <type>wchar_t</type>
+    </par>
+    <returntype><ptr>wchar_t</ptr></returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="inputs" 
+		  desc="searches for a character in a string"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+      <post><math><apply><geq/><return/><ci>str</ci></apply></math></post>
+      <post>
+	<math>
+	  <apply>
+	    <leq/>
+	    <return/>
+	    <apply>
+	      <plus/>
+	      <ci>str</ci>
+	      <apply><null-terminator-pos/><ci>str</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

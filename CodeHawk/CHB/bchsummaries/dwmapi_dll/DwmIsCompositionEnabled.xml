@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/24/2015 13:54:52"/>
+  <libfun lib="dwmapi" name="DwmIsCompositionEnabled">
+   <documentation>
+    <desc>
+      Obtains a value that indicates whether Desktop Window Manager (DWM) 
+      composition is enabled
+    </desc>
+    <apidoc>
+     <pt>HRESULT DwmIsCompositionEnabled (_Out_ BOOL *pfEnabled)</pt>
+     <par name="pfEnabled">
+       A pointer to a value that, when this function returns successfully, 
+       receives TRUE if DWM composition is enabled; otherwise, FALSE.
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DwmIsCompositionEnabled">
+    <par loc="stack" name="pfEnabled" io="w" roles="none" rep="hex" nr="1">
+     <type><ptr>BOOL</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system"
+                  desc="determines if desktop window manager composition is enabled"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

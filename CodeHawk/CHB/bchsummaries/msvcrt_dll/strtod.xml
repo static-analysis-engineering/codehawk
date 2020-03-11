@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/10/2015 14:39:15"/>
+  <libfun lib="msvcrt" name="strtod">
+   <documentation>
+    <desc>Convert strings to a double-precision value</desc>
+    <apidoc>
+     <pt>
+      <ll>double strtod(</ll>
+      <ld>const char *nptr</ld>
+      <ld>char **endptr</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nptr">Null-terminated string to convert</par>
+     <par name="endptr">Pointer to character that stops scan</par>
+     <return>
+      <rc cond="success">the value of the floating-point number</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="strtod">
+    <par loc="stack" name="nptr" nr="1">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-string:convert"/>
+     </roles>
+    </par>
+    <par loc="stack" name="endptr" roles="none" nr="2">
+     <type><ptr><ptr>char</ptr></ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>double</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="inputs" 
+		desc="converts a string to double-precision value"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

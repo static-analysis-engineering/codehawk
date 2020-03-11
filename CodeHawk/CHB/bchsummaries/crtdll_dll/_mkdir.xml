@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="_mkdir.xml" time="2016-05-13 16:40:44.711459"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399"/>
+  <libfun lib="crtdll" name="_mkdir">
+    <refer-to lib="msvcrt" name="_mkdir"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

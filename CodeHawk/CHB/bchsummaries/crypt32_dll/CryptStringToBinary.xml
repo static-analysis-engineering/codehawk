@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-08-10 16:44:55"/>
+  <libfun lib="crypt32" name="CryptStringToBinary">
+    <documentation>
+      <desc>converts a formatted string into an array of bytes</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL CryptStringToBinary(</ll>
+          <ld>LPCSTR pszString</ld>
+          <ld>DWORD  cchString</ld>
+          <ld>DWORD  dwFlags</ld>
+          <ld>BYTE   pbBinary</ld>
+          <ld>DWORD  pcbBinary</ld>
+          <ld>DWORD  pdwSkip</ld>
+          <ld>DWORD  pdwFlags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pszString">
+	  A pointer to a string that contains the formatted string to be converted.
+	</par>
+        <par name="cchString">
+	  The number of characters of the formatted string to be
+	  converted, not including the terminating NULL character. If
+	  this parameter is zero, pszString is considered to be a
+	  null-terminated string.
+	</par>
+        <par name="dwFlags">
+	  Indicates the format of the string to be converted
+	</par>
+        <par name="pbBinary">
+	  A pointer to a buffer that receives the returned sequence of
+	  bytes. If this parameter is NULL, the function calculates
+	  the length of the buffer needed and returns the size, in
+	  bytes, of required memory in the DWORD pointed to by
+	  pcbBinary.
+	</par>
+        <par name="pcbBinary">
+	  A pointer to a DWORD variable that, on entry, contains the
+	  size, in bytes, of the pbBinary buffer. After the function
+	  returns, this variable contains the number of bytes copied
+	  to the buffer. If this value is not large enough to contain
+	  all of the data, the function fails and GetLastError returns
+	  ERROR_MORE_DATA.
+	  If pbBinary is NULL, the DWORD pointed to by pcbBinary is ignored.
+	</par>
+        <par name="pdwSkip">
+	  A pointer to a DWORD value that receives the number of
+	  characters skipped to reach the beginning of the actual
+	  base64 or hexadecimal strings. This parameter is optional
+	  and can be NULL if it is not needed.
+	</par>
+        <par name="pdwFlags">
+	  A pointer to a DWORD value that receives the flags actually
+	  used in the conversion. These are the same flags used for
+	  the dwFlags parameter. In many cases, these will be the same
+	  flags that were passed in the dwFlags parameter. If dwFlags
+	  contains one of the following flags, this value will receive
+	  a flag that indicates the actual format of the string. This
+	  parameter is optional and can be NULL if it is not needed.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="28" cc="stdcall" name="CryptStringToBinary">
+      <par loc="stack" name="pszString" nr="1" io="r" rep="hex">
+        <type>LPCSTR</type>
+	<roles>
+          <role rt="ioc:memops" rn="src-string:convert"/>
+	</roles>
+      </par>
+      <par loc="stack" name="cchString" nr="2">
+        <type>DWORD</type>
+	<roles>
+          <role rt="size:buffersize" rn="CryptStringToBinary"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwFlags" nr="3" roles="none">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="pbBinary" nr="4">
+        <type><ptr>BYTE</ptr></type>
+	<roles>
+          <role rt="ioc:memops" rn="dst-string:convert"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pcbBinary" nr="5">
+        <type><ptr>DWORD</ptr></type>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+          <role rt="size:buffersize" rn="CryptStringToBinary"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pdwSkip" nr="6" roles="none">
+        <type><ptr>DWORD</ptr></type>
+	<sideeffects><block-write/></sideeffects>	
+      </par>
+      <par loc="stack" name="pdwFlags" nr="7" roles="none">
+        <type><ptr>DWORD</ptr></type>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="memops"
+		   desc="maps a character string to an encrypted binary string"/>
+      </io-actions>
+      <preconditions>
+	<!-- TBD: add requirement that string be nullterminated if
+	     cchstring = 0 -->
+	<pre>
+	  <math>
+	    <apply>
+	      <implies/>
+	      <apply><geq/><ci>cchString</ci><cn>1</cn></apply>
+	      <apply>
+		<deref-read/>
+		<type>char</type>
+		<ci>pszString</ci>
+		<ci>cchString</ci>
+	      </apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>BYTE</type>
+	      <ci>pbBinary</ci>
+	      <apply><addressed-value/><ci>pcbBinary</ci><cn>0</cn></apply>
+	    </apply>
+	    </math>
+	  </sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

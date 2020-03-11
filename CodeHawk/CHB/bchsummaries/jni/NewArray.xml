@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="12/24/2015 13:03:38"/>
+  <jnifun name="NewArray">
+   <documentation>
+    <desc>
+      A family of operations used to construct a new primitive array
+      object. Table 4-8 describes the specific primitive array
+      constructors. You should replace New[PrimitiveType]Array with
+      one of the actual primitive array constructor routine names from
+      the following table, and replace ArrayType with the
+      corresponding array type for that routine.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>atype NewArray(</ll>
+      <ld>_in JNIEnv *env</ld>
+      <ld>_in jsize  length</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="env">JNI interface pointer</par>
+     <par name="length">the array length</par>
+     <return>
+      <rc cond="success">a Java array</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="NewArray">
+    <par loc="stack" desc="jni interface pointer" io="r" name="env" nr="1">
+     <type><ptr>JNIEnv</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" desc="array size" io="r" name="length" nr="2">
+     <type>jsize</type>
+     <roles>
+       <role rt="jni:size" rn="new array size"/>
+       <role rt="size:arraysize" rn="new array size"/>
+     </roles>
+    </par>
+    <returntype>atype</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="jni" desc="constructs a new java array"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

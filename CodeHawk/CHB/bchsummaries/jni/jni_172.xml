@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-24T13:12:03.281998"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="172" name="NewObjectArray">
+    <documentation>
+      <desc>
+	Constructs a new array holding objects in class
+	elementClass. All elements are initially set to
+	initialElement.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jobjectArray NewObjectArray(</ll>
+          <ld>_in JNIEnv  *env</ld>
+          <ld>_in jsize   length</ld>
+          <ld>_in jclass  elementClass</ld>
+          <ld>_in jobject initialElement</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="length">array size</par>
+        <par name="elementClass">array element class</par>
+        <par name="initialElement">initialization value</par>
+        <return>
+          <rc cond="success">Java array object</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="172" adj="16" name="NewObjectArray">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="array size" io="r" nr="2" name="length">
+        <type>jsize</type>
+	<roles>
+	  <role rt="jni:size" rn="new array size"/>
+	  <role rt="size:arraysize" rn="new array size"/>
+	</roles>
+      </par>
+      <par loc="stack" desc="element class" io="r" nr="3" name="elementClass">
+        <type>jclass</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:class" rn="array element class"/>
+	</roles>
+      </par>
+      <par loc="stack" desc="initial value" io="r" nr="4" name="initialElement">
+        <type>jobject</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:object" rn="initial element value"/>
+	</roles>
+      </par>
+      <returntype>jobjectArray</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="construct new object array" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

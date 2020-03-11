@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/20/2015 21:17:01"/>
+  <libfun lib="msvcrt" name="_kbhit">
+   <documentation>
+    <desc>Checks the console for keyboard input</desc>
+    <apidoc>
+     <pt>int _kbhit (void)</pt>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_kbhit">
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="inputs" desc="checks the console for keyboard inputs"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

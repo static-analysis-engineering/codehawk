@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:31:46"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="RealizePalette">
+   <documentation>
+    <desc>
+      maps palette entries from the current logical palette to the system palette.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT RealizePalette(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">
+       A handle to the device context into which a logical palette has been selected.
+     </par>
+     <return>
+      <rc cond="success">Number of entries in the Logical Palette</rc>
+      <rc cond="failure">GDI_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="RealizePalette">
+     <returntype>UINT</returntype>
+     <par loc="stack" name="hdc" io="r" nr="1">
+      <type>HDC</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui" desc="maps palette entries to the system palette"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

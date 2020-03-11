@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:20:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="imm32" name="ImmGetCompositionString">
+   <documentation>
+    <desc>Retrieves information about the composition string.</desc>
+    <remarks>
+      It is suggested by the API documentation that no characters are written to lpBuf
+      if dwBufLen is zero, but this is not explicitly stated
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>LONG ImmGetCompositionString(</ll>
+      <ld>_In_       HIMC hIMC,</ld>
+      <ld>_In_       DWORD dwIndex,</ld>
+      <ld>_Out_opt_  LPVOID lpBuf,</ld>
+      <ld>_In_       DWORD dwBufLen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hImc">Handle to the input context.</par>
+     <par name="dwIndex">
+       Index of the information to retrieve, which is one of the values specified 
+       in IME Composition String 
+       Values. For each value except GCS_CURSORPOS and GCS_DELTASTART, the function 
+       copies the requested information to the output buffer. The function returns 
+       the cursor and delta position values in the low 16 bits of the return value.
+     </par>
+     <par name="lpBuf">
+       Pointer to a buffer in which the function retrieves the composition string information.
+     </par>
+     <par name="dwBufLen">
+       Size, in bytes, of the output buffer, even if the output is a Unicode string. 
+       The application sets this parameter to 0 if the function is to return the 
+       size of the required output buffer.
+     </par>
+     <return>
+       Returns the number of bytes copied to the output buffer. If dwBufLen 
+       is set to 0, the function returns the buffer size, in bytes, required to 
+       receive all requested information, excluding the terminating null 
+       character. The return value is always the size, in bytes, even if the 
+       requested data is a Unicode string.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="ImmGetCompositionString">
+    <returntype>LONG</returntype>
+    <par loc="stack" io="r" name="hImc" nr="1">
+     <type>HIMC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:input context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="dwIndex" io="r" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="lpBuf" nr="3">
+     <type><ptr>void</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:composition string info" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwBufLen" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><gt/><ci>dwBufLen</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-write/>
+	      <type>byte</type>
+	      <ci>lpBuf</ci>
+	      <ci>dwBufLen</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <implies/>
+        <pre>
+          <apply>
+           <neq/>
+           <ci>dwBufLen</ci>
+           <cn>0</cn>
+          </apply>
+        </pre>
+        <apply>
+         <block-write/>
+	 <type>byte</type>
+	 <ci>lpBuf</ci>
+	 <ci>dwBufLen</ci>
+	</apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

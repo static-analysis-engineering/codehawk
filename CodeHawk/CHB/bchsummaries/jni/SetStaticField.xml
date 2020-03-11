@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/02/2016 17:41:16"/>
+  <jnifun name="SetStaticField">
+   <documentation>
+    <desc>
+      This family of accessor routines sets the value of a static
+      field of an object. The field to access is specified by a field
+      ID, which is obtained by calling GetStaticFieldID().
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>void SetStaticField(</ll>
+      <ld>_in JNIEnv *env</ld>
+      <ld>_in jclass clazz</ld>
+      <ld>_in jfieldID fieldID</ld>
+      <ld>_in type value</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="env">the JNI interface pointer</par>
+     <par name="clazz">a Java class object</par>
+     <par name="fieldID">a static field ID</par>
+     <par name="value">the new value of the field</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SetStaticField">
+    <par loc="stack" name="env" nr="1">
+     <type><ptr>JNIEnv</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="clazz" nr="2">
+     <type>jclass</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="jni:class" rn="class to set static field"/>
+     </roles>
+    </par>
+    <par loc="stack" name="fieldID" nr="3">
+     <type>jfieldID</type>
+     <roles>
+       <role rt="jni:fieldid" rn="static field id"/>
+     </roles>
+    </par>
+    <par loc="stack" name="value" nr="4">
+      <type>ttype</type>
+      <roles>
+	<role rt="jni:value" rn="set static field"/>
+      </roles>
+    </par>
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="jni" desc="sets a static Java field"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

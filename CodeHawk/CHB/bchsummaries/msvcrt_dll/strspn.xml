@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="strspn">
+   <documentation>
+    <desc>gets the length of a substring</desc>
+    <apidoc>
+     <pt>size_t strspn (const char *str1, const char *str2)</pt>
+     <par name="str1">
+       pointer to null-terminated string to be scanned for bytes in str2
+     </par>
+     <par name="str2">
+       pointer to null-terminated string that contains characters to be included
+     </par>
+     <return>
+       the length in bytes of the maximum initial segment of the string
+       pointed to by str1 which consists entirely of bytes from the string
+       pointed to by str2
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="strspn">
+    <returntype>size_t</returntype>
+    <par loc="stack" io="r" name="str1" nr="1">
+     <roles>
+      <role rt="ioc:memops" rn="src-string:search" />
+     </roles>
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="str2" nr="2">
+     <roles>
+      <role rt="ioc:memops" rn="src-string:search" />
+     </roles>
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="inputs" desc="gets the length of a substring"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post><math><apply><geq/><return/><cn>0</cn></apply></math></post>
+     <post>
+      <math>
+       <apply>
+        <leq/>
+        <return-value/>
+        <apply>
+         <null-terminator-pos/>
+         <ci>str1</ci>
+        </apply>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

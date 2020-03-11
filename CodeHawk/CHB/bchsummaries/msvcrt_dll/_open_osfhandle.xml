@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/21/2015 17:17:36"/>
+  <libfun lib="msvcrt" name="_open_osfhandle">
+   <documentation>
+    <desc>
+      Associates a C run-time file descriptor with an existing 
+      operating-system file handle
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int _open_osfhandle(</ll>
+      <ld>intptr_t osfhandle</ld>
+      <ld>int flags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="osfhandle">Operating-system file handle</par>
+     <par name="flags">Types of operations allowed</par>
+     <return>
+      <rc cond="success">a C run-time file descriptor</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_open_osfhandle">
+    <par loc="stack" io="r" name="osfhandle" nr="1">
+     <type>intptr_t</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:operating system file" />
+     </roles>
+    </par>
+    <par loc="stack" name="flags" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="filesystem"
+		 desc="associates a file descriptor with an operating system file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

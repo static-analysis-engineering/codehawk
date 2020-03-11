@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 06:06:44"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetPolyFillMode">
+   <documentation>
+    <desc>sets the polygon fill mode for functions that fill polygons.</desc>
+    <apidoc>
+     <pt>
+      <ll>int SetPolyFillMode(</ll>
+      <ld>_In_  HDC hdc </ld>
+      <ld>_In_  int iPolyFillMode </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context. </par>
+     <par name="iPolyFillMode">
+       The new fill mode. This parameter can be one of the following values:
+       ALTERNATE : Selects alternate mode (fills the area between odd-numbered 
+       and even-numbered polygon sides on each scan line).
+       WINDING : Selects winding mode (fills any region with a nonzero winding value).
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetPolyFillMode">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="iPolyFillMode" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="sets the polygon fill mode"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

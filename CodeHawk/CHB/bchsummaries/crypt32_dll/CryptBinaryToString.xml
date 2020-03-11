@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-08-10 21:49:05"/>
+  <libfun lib="crypt32" name="CryptBinaryToString">
+    <documentation>
+      <desc>converts an array of bytes into a formatted string</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL CryptBinaryToString(</ll>
+          <ld>const BYTE *pbBinary</ld>
+          <ld>DWORD cbBinary</ld>
+          <ld>DWORD dwFlags</ld>
+          <ld>LPSTR pszString</ld>
+          <ld>DWORD *pcchString</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pbBinary">
+	  A pointer to the array of bytes to be converted into a string
+	</par>
+        <par name="cbBinary">
+	  The number of elements in the pbBinary array
+	</par>
+        <par name="dwFlags">
+	  Specifies the format of the resulting formatted string
+	</par>
+        <par name="pszString">
+	  A pointer to a buffer that receives the converted string. To calculate
+	  the number of characters that must be allocated to hold the returned
+	  string, set this parameter to NULL. The function will place the
+	  required number of characters, including the terminating NULL
+	  character, in the value pointed to by pcchString
+	</par>
+        <par name="pcchString">
+	  A pointer to a DWORD variable that contains the size, in TCHARs, of
+	  the pszString buffer. If pszString is NULL, the function calculates
+	  the length of the return string (including the terminating null
+	  character) in TCHARs and returns it in this parameter. If pszString is
+	  not NULL and big enough, the function converts the binary data into a
+	  specified string format including the terminating null character, but
+	  pcchString receives the length in TCHARs, not including the
+	  terminating null character.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="CryptBinaryToString">
+      <par loc="stack" name="pbBinary" nr="1">
+        <type><ptr>BYTE</ptr></type>
+      </par>
+      <par loc="stack" name="cbBinary" nr="2">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:buffersize" rn="CryptBinaryToString"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwFlags" roles="none" nr="3">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="pszString" nr="4">
+        <type>LPSTR</type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-bytes:plaintext"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pcchString" nr="5">
+        <type><ptr>DWORD</ptr></type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="crypto" desc="converts data"/>
+      </io-actions>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply>
+	      <not-null/><ci>pszString</ci>
+	    </apply>
+	    <apply>
+	      <deref-write/>
+	      <type>tchar</type>
+	      <ci>pszString</ci>
+	      <apply><addressed-value/><ci>pcchString</ci><cn>0</cn></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <implies/>
+	      <pre><apply><not-null/><ci>pszString</ci></apply></pre>
+	      <apply>
+		<block-write/>
+		<type>tchar</type>
+		<ci>pszString</ci>
+		<apply><addressed-value/><ci>pcchString</ci><cn>0</cn></apply>
+	      </apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

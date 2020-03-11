@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="01/25/2016 16:05:04"/>
+  <libfun lib="avicap32" name="capGetDriverDescription">
+   <documentation>
+    <desc>
+      The capGetDriverDescription function retrieves the version
+      description of the capture driver.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL VFWAPI capGetDriverDescription(</ll>
+      <ld>WORD   wDriverIndex</ld>
+      <ld>LPTSTR lpszName</ld>
+      <ld>INT    cbName</ld>
+      <ld>LPTSTR lpszVer</ld>
+      <ld>INT    cbVer</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="wDriverIndex">
+       Index of the capture driver. The index can range from 0 through
+       9.  Plug-and-Play capture drivers are enumerated first,
+       followed by capture drivers listed in the registry, which are
+       then followed by capture drivers listed in SYSTEM.INI.
+     </par>
+     <par name="lpszName">
+       Pointer to a buffer containing a null-terminated string
+       corresponding to the capture driver name.
+     </par>
+     <par name="cbName">Length, in bytes, of the buffer pointed to by lpszName</par>
+     <par name="lpszVer">
+       Pointer to a buffer containing a null-terminated string
+       corresponding to the description of the capture driver.
+     </par>
+     <par name="cbVer">Length, in bytes, of the buffer pointed to by lpszVer</par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="capGetDriverDescription">
+    <par loc="stack" name="wDriverIndex" io="r" nr="1">
+     <type>WORD</type>
+     <roles>
+       <role rt="ioc:system" rn="driver index"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpszName" io="w" nr="2">
+     <type>LPTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:system" rn="capture driver name"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cbName" io="r" nr="3">
+     <type>INT</type>
+     <roles>
+       <role rt="size:buffersize" rn="capGetDriverDescription"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpszVer" io="w" nr="4">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:system" rn="capture driver desc"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cbVer" io="r" nr="5">
+     <type>INT</type>
+     <roles>
+       <role rt="size:buffersize" rn="capGetDriverDescription"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" 
+		desc="retrieves the version descriptor of the capture driver"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszName</ci>
+	    <apply><indexsize/><ci>cbName</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszVer</ci>
+	    <apply><indexsize/><ci>cbVer</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszName</ci>
+	    <apply><indexsize/><ci>cbName</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszVer</ci>
+	    <apply><indexsize/><ci>cbVer</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

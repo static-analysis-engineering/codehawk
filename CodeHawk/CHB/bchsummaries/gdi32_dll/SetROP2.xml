@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 06:07:19"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetROP2">
+   <documentation>
+    <desc>
+      sets the current foreground mix mode. GDI uses the foreground mix mode
+      to combine pens and interiors of filled objects with the colors already 
+      on the screen. The foreground mix mode defines how colors from the brush
+      or pen and the colors in the existing image are to be combined.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int SetROP2(</ll>
+      <ld>_In_  HDC hdc </ld>
+      <ld>_In_  int fnDrawMode </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context. </par>
+     <par name="fnDrawMode">The mix mode. This parameter can be one of the following values. 
+	R2_BLACK : Pixel is always 0.
+	R2_COPYPENPixel : is the pen color.
+	R2_MASKNOTPEN : Pixel is a combination of the colors common to both the screen and the inverse of the pen.
+	R2_MASKPEN : Pixel is a combination of the colors common to both the pen and the screen.
+	R2_MASKPENNOT : Pixel is a combination of the colors common to both the pen and the inverse of the screen.
+	R2_MERGENOTPEN : Pixel is a combination of the screen color and the inverse of the pen color.
+	R2_MERGEPEN : Pixel is a combination of the pen color and the screen color.
+	R2_MERGEPENNOT : Pixel is a combination of the pen color and the inverse of the screen color.
+	R2_NOP : Pixel remains unchanged.
+	R2_NOT : Pixel is the inverse of the screen color.
+	R2_NOTCOPYPEN : Pixel is the inverse of the pen color.
+	R2_NOTMASKPEN : Pixel is the inverse of the R2_MASKPEN color.
+	R2_NOTMERGEPEN : Pixel is the inverse of the R2_MERGEPEN color.
+	R2_NOTXORPEN : Pixel is the inverse of the R2_XORPEN color.
+	R2_WHITE : Pixel is always 1.
+	R2_XORPEN : Pixel is a combination of the colors in the pen and in the screen, but not in both.
+	</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetROP2">
+     <returntype>int</returntype>
+     <par loc="stack" name="hdc" io="r" nr="1">
+      <type>HDC</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+    <par loc="stack" name="fnDrawMode" io="r" roles="none" nr="2">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui" desc="sets the foreground mix mode"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

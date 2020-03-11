@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="strpbrk">
+   <documentation>
+    <desc>scans strings for characters in specified character sets</desc>
+    <apidoc>
+     <pt>char *strpbrk (const char *string, const char *strCharSet)</pt>
+     <par name="string">null-terminated searched string</par>
+     <par name="strCharSet">null-terminated character set</par>
+     <return>
+      <rc cond="success">
+      pointer to the first occurrence of any character from strCharSet in string</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="strpbrk">
+     <returntype><ptr>char</ptr></returntype>
+    <par loc="stack" io="r" name="string" nr="1">
+     <type><ptr>char</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-string:search" />
+     </roles>
+       <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="strCharSet" nr="2">
+     <type><ptr>char</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-string:search" />
+     </roles>
+      <pre><deref-read-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="inputs" desc="scans a string for characters in a set"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <geq/>
+        <return-value/>
+        <ci>string</ci>
+       </apply>
+      </math>
+     </post>
+     <post>
+      <math>
+       <apply>
+        <leq/>
+        <return-value/>
+        <apply>
+         <plus/>
+         <ci>string</ci>
+         <apply>
+          <null-terminator-pos/>
+          <ci>string</ci>
+         </apply>
+        </apply>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

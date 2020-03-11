@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 13:01:38"/>
+  <libfun lib="gdi32" name="PolyPolyline">
+   <documentation>
+    <desc>draws multiple series of connected line segments</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL PolyPolyline(</ll>
+      <ld>_In_       HDC   hdc</ld>
+      <ld>_In_ const POINT *lppt</ld>
+      <ld>_In_ const DWORD *lpdwPolyPoints</ld>
+      <ld>_In_       DWORD cCount</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the device context</par>
+     <par name="lppt">
+       A pointer to an array of POINT structures that contains the vertices
+       of the polylines, in logical units. The polylines are specified 
+       consecutively
+     </par>
+     <par name="lpdwPolyPoints">
+       A pointer to an array of variables specifying the number of points 
+       in the lppt array for the corresponding polyline. Each entry must
+       be greater than or equal to two
+     </par>
+     <par name="cCount">
+       The total number of entries in the lpdwPolyPoints array
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="PolyPolyline">
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lppt" nr="2" rep="hex">
+     <type><ptr>POINT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-array:POINT" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpdwPolyPoints" nr="3" rep="hex">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-array:DWORD" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="cCount" nr="4">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:count" rn="polyline count" />
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" desc="draws line segments">
+     </io-action>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>DWORD</type>
+	    <ci>lpdwPolyPoints</ci>
+	    <apply><indexsize/><ci>cCount</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T11:30:49.580528"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="22" name="DeleteGlobalRef">
+    <documentation>
+      <desc>
+         Deletes the global reference pointed to by gref. The gref argument
+         must be a global reference or NULL. The same non-NULL global reference
+         must not be deleted more than once. Deleting a NULL global reference
+         is a no-op.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>void DeleteGlobalRef(</ll>
+          <ld>_in JNIEnv *env,</ld>
+          <ld>_in jobject gref</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="gref">the global reference to be deleted</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="22" adj="8" name="DeleteGlobalRef">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="global reference" io="r" nr="2" name="gref">
+        <type>jobject</type>
+        <pre><deref-read/></pre>
+        <sideeffects><invalidates/></sideeffects>
+        <roles>
+           <role rt="jni:globalref" rn="delete global ref"/>
+        </roles>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="deletes a global ref" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

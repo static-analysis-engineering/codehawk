@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header info="export-ordinal-table" name="COMCTL32.dll" time="10/02/2015 22:51:00"/>
+  <export-ordinal-table size="4">
+   <entry name="MakeDragList" ordinal="13"/>
+   <entry name="LBItemFromPt" ordinal="14"/>
+   <entry name="DrawInsert" ordinal="15"/>
+   <entry name="InitCommonControls" ordinal="17"/>
+  </export-ordinal-table>
+ </codehawk-binary-analyzer>

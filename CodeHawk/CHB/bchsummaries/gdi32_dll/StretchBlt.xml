@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 06:10:30"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="StretchBlt">
+   <documentation>
+    <desc>
+      The StretchBlt function copies a bitmap from a source rectangle into a
+      destination rectangle, stretching or compressing the bitmap to fit the
+      dimensions of the destination rectangle, if necessary. The system stretches
+      or compresses the bitmap according to the stretching mode currently set 
+      in the destination device context.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL StretchBlt(</ll>
+      <ld>_In_  HDC hdcDest </ld>
+      <ld>_In_  int nXOriginDest </ld>
+      <ld>_In_  int nYOriginDest </ld>
+      <ld>_In_  int nWidthDest </ld>
+      <ld>_In_  int nHeightDest </ld>
+      <ld>_In_  HDC hdcSrc </ld>
+      <ld>_In_  int nXOriginSrc </ld>
+      <ld>_In_  int nYOriginSrc </ld>
+      <ld>_In_  int nWidthSrc </ld>
+      <ld>_In_  int nHeightSrc </ld>
+      <ld>_In_  DWORD dwRop </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdcDest">A handle to the destination device context. </par>
+     <par name="nXOriginDest">
+       The x-coordinate, in logical units, of the upper-left corner of
+       the destination rectangle.
+     </par>
+     <par name="nYOriginDest">The y-coordinate, in logical units, of the upper-left corner of the destination rectangle. </par>
+     <par name="nWidthDest">The width, in logical units, of the destination rectangle. </par>
+     <par name="nHeightDest">The height, in logical units, of the destination rectangle. </par>
+     <par name="hdcSrc">A handle to the source device context. </par>
+     <par name="nXOriginSrc">The x-coordinate, in logical units, of the upper-left corner of the source rectangle. </par>
+     <par name="nYOriginSrc">The y-coordinate, in logical units, of the upper-left corner of the source rectangle. </par>
+     <par name="nWidthSrc">The width, in logical units, of the source rectangle. </par>
+     <par name="nHeightSrc">The height, in logical units, of the source rectangle. </par>
+     <par name="dwRop">
+       The raster operation to be performed. Raster operation codes define how 
+       the system combines colors in output operations that involve a brush, a 
+       source bitmap, and a destination bitmap.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="44" cc="stdcall" name="StretchBlt">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hdcDest" io="r" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+    <par loc="stack" name="nXOriginDest" io="r" nr="2">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="StretchBlt"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nYOriginDest" io="r" nr="3">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="StretchBlt"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nWidthDest" io="r" nr="4">
+      <type>int</type>
+      <roles>
+	<role rt="size:width" rn="StretchBlt"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nHeightDest" io="r" nr="5">
+      <type>int</type>
+      <roles>
+	<role rt="size:height" rn="StretchBlt"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hdcSrc" io="r" nr="6">
+      <type>HDC</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nXOriginSrc" io="r" nr="7">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="StretchBlt"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nYOriginSrc" io="r" nr="8">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="StretchBlt"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nWidthSrc" io="r" nr="9">
+      <type>int</type>
+      <roles>
+	<role rt="size:width" rn="StretchBlt"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nHeightSrc" io="r" nr="10">
+      <type>int</type>
+      <roles>
+	<role rt="size:height" rn="StretchBlt"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwRop" io="r" nr="11">
+      <type>DWORD</type>
+      <pre><enum-value name="raster_operation_code_constants"/></pre>
+      <roles>
+	<role rt="ioc:process" rn="raster operation"/>
+	<role rt="rep:enum" rn="raster_operation_code_constants"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui" desc="copies a bitmap"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

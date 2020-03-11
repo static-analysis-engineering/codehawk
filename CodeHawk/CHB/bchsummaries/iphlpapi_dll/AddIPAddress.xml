@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="01/29/2016 13:24:05"/>
+  <libfun lib="iphlpapi" name="AddIPAddress">
+   <documentation>
+    <desc>adds the specified IPv4 address to the specified adapter</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD AddIPAddress(</ll>
+      <ld>_In_  IPAddr Address</ld>
+      <ld>_In_  IPMask IpMask</ld>
+      <ld>_In_  DWORD  IfIndex</ld>
+      <ld>_Out_ PULONG NTEContext</ld>
+      <ld>_Out_ PULONG NTEInstance</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Address">
+        The IPv4 address to add to the adapter, in the form of an IPAddr structure
+     </par>
+     <par name="IpMask">
+         The subnet mask for the IPv4 address specified in the Address
+         parameter. The IPMask parameter uses the same format as an
+         IPAddr structure.
+     </par>
+     <par name="IfIndex">The index of the adapter on which to add the IPv4 address</par>
+     <par name="NTEContext">
+        A pointer to a ULONG variable. On successful return, this
+        parameter points to the Net Table Entry (NTE) context for the
+        IPv4 address that was added. The caller can later use this
+        context in a call to the DeleteIPAddress function.
+     </par>
+     <par name="NTEInstance">
+         A pointer to a ULONG variable. On successful return, this
+         parameter points to the NTE instance for the IPv4 address
+         that was added.
+     </par>
+     <return>
+      <rc cond="success">NO_ERROR</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" io="r" name="AddIPAddress">
+    <par loc="stack" name="Address" nr="1">
+     <type>IPAddr</type>
+     <roles>
+        <role rt="ioc:network" rn="ip address"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="IpMask" nr="2">
+     <type>IPMask</type>
+     <roles>
+        <role rt="ioc:network" rn="ip mask"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="IfIndex" nr="3">
+     <type>DOWRD</type>
+     <roles>
+      <role rt="ioc:network" rn="interface adapter selector" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="NTEContext" nr="4">
+     <type><ptr>ULONG</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:network" rn="infox:net table entry context"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="NTEInstance" nr="5">
+     <type><ptr>ULONG</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:network" rn="infox:net table entry instance"/>
+     </roles>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" desc="adds an ip address to a network adapter"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

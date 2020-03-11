@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="11/10/2015 13:39:57"/>
+  <libfun lib="msvcrt" name="fgetwc">
+   <documentation>
+    <desc>get a wide-character code from a stream</desc>
+    <apidoc>
+     <pt>wint_t fgetwc (FILE *stream)</pt>
+     <par name="stream">stream to read from</par>
+     <return>
+      <rc cond="success">
+	the wide-character code of the character read from the input stream
+      </rc>
+      <rc cond="failure">WEOF</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="fgetwc">
+    <par loc="stack" name="stream" io="r" rep="hex" nr="1">
+     <type><ptr>FILE</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="file"/>
+     </roles>
+    </par>
+    <returntype>wint_t</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="gets a wide charger code from a stream"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

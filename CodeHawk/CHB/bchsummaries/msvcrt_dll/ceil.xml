@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/02/2015 11:32:57"/>
+  <libfun lib="msvcrt" name="ceil">
+   <documentation>
+    <desc>Calculates the ceiling of a value</desc>
+    <apidoc>
+     <pt>double ceil (double x)</pt>
+     <par name="x">Floating-point value</par>
+     <return>
+       a floating-point value that represents the smallest integer that is 
+       greater than or equal to x
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ceil">
+    <par loc="stack" name="x" io="r" roles="none" nr="1">
+     <type>double</type>
+    </par>
+    <returntype>double</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-201t, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

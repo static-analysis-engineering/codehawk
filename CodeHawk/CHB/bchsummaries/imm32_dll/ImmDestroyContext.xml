@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 06:49:14"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="imm32" name="ImmDestroyContext">
+   <documentation>
+    <desc>Releases the input context and frees associated memory.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ImmDestroyContext(</ll>
+      <ld>_In_  HIMC hIMC </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">not-zero </rc>
+      <rc cond="failure">zero </rc>
+     </return>
+     <par name="hIMC">Handle to the input context to free. </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ImmDestroyContext">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hIMC" nr="1">
+     <type>HIMC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:input context" />
+     </roles>
+      <pre><deref-read/></pre>
+      <sideeffects><invalidates/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

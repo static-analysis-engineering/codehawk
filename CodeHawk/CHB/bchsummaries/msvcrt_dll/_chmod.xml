@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/21/2015 17:24:29"/>
+  <libfun lib="msvcrt" name="_chmod">
+   <documentation>
+    <desc>Changes the file-permission settings</desc>
+    <apidoc>
+     <pt>
+      <ll>int _chmod(</ll>
+      <ld>const char *filename</ld>
+      <ld>int pmode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="filename">Name of the existing file</par>
+     <par name="pmode">Permission setting for the file</par>
+     <return>
+      <rc cond="success">0</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_chmod">
+    <par loc="stack" name="filename" rep="hex" io="r" nr="1">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pmode" io="r" roles="none" nr="2">
+      <type>int</type>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="changes file permission settings"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

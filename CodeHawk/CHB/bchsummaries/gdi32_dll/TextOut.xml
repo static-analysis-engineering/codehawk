@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="TextOut">
+   <documentation>
+    <desc>
+      writes a character string at the specified location, using the currently selected
+      font, background color and text color
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL TextOut (</ll>
+      <ld>_In_ HDC hdc,</ld>
+      <ld>_In_ int nXStart,</ld>
+      <ld>_In_ int nYStart,</ld>
+      <ld>_In_ LPCTSTR lpString,</ld>
+      <ld>_In_ int cchString</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">handle to the device context</par>
+     <par name="nXStart">
+       x-coordinate, in logical coordinates, of the reference point that the system uses
+       to align the string
+     </par>
+     <par name="nYStart">
+       y-coordinate, in logical coordinates, of the reference point that the system uses
+       to align the string
+     </par>
+     <par name="lpString">
+       pointer to the string to be drawn. The string does not need to be zero-terminated,
+       because cchString specifies the length of the string
+     </par>
+     <par name="cchString">
+       length of the string pointed to by lpString, in characters
+     </par>
+     <return>
+       <rc cond="success">nonzero</rc>
+       <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="TextOut">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="nXStart" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nYStart" io="r" roles="none" nr="3">
+     <type>int</type>
+    </par>
+    <par loc="stack" io="r" name="lpString" nr="4" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:memops" rn="src-string:device output" />
+      <role rt="ioc:outputs" rn="device output"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cchString" nr="5">
+     <roles>
+      <role rt="size:buffersize" rn="length of string pointed to" />
+     </roles>
+     <type>int</type>
+     <pre><non-negative/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="outputs" desc="writes a string to a device"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>TCHAR</type>
+	 <ci>lpString</ci>
+	 <apply><indexsize/><ci>cchString</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

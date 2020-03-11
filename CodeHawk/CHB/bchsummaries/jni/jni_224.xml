@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2016-01-02T16:35:03.709403"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="224" name="GetStringCritical">
+    <documentation>
+      <desc>
+	The semantics of this function is similar to GetStringChars.
+	If possible, the VM returns a pointer to string elements;
+	otherwise, a copy is made. However, there are significant
+	restrictions on how these functions can be used. In a code
+	segment enclosed by Get/ReleaseStringCritical calls, the
+	native code must not issue arbitrary JNI calls, or cause the
+	current thread to block.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>const jchar *GetStringCritical(</ll>
+          <ld>_in JINEnv *env</ld>
+          <ld>_in jstring string</ld>
+          <ld>_out jboolean *isCopy</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="string">a Java string object</par>
+        <par name="isCopy">is set to true if the JVM made a copy of the string</par>
+        <return>
+          <rc cond="success">a pointer to a Unicode string</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="224" adj="12" name="GetStringCritical">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" name="string">
+        <type>jstring</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:string" rn="string obtained"/>
+	</roles>
+      </par>
+      <par loc="stack" nr="3" name="isCopy">
+        <type><ptr>jboolean</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype><ptr>jchar</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="obtains the characters of a Java string in a critical region" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

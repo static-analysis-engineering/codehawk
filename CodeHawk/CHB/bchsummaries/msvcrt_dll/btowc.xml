@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/10/2015 22:28:30"/>
+  <libfun lib="msvcrt" name="btowc">
+   <documentation>
+    <desc>
+      Determine whether an integer represents a valid single-byte character 
+      in the initial shift state
+    </desc>
+    <apidoc>
+     <pt>wint_t btowc (int c)</pt>
+     <par name="c">Integer to test</par>
+     <return>
+      <rc cond="success">
+	the wide-character representation of the character if the integer 
+	represents a valid single-byte character in the initial shift state
+      </rc>
+      <rc cond="failure">WEOF</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="btowc">
+    <par loc="stack" name="c" io="r" roles="none" nr="1">
+     <type>int</type>
+    </par>
+    <returntype>wint_t</returntype>
+   </api>
+   <semantics>
+    <io-actions/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:16:20"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="Polygon">
+   <documentation>
+    <desc>
+      draws a polygon consisting of two or more vertices connected by 
+      straight lines. The polygon is outlined by using the current pen
+      and filled by using the current brush and polygon fill mode.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL Polygon(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ld>_In_  const POINT *lpPoints</ld>
+      <ld>_In_  int nCount</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="lpPoints">
+       A pointer to an array of POINT structures that specify the vertices of the 
+       polygon, in logical coordinates.
+     </par>
+     <par name="nCount">
+       The number of vertices in the array. This value must be greater 
+       than or equal to 2.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="Polygon">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpPoints" nr="2" rep="hex">
+     <type><ptr>POINT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-array:POINT" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nCount" nr="3">
+     <type>int</type>
+     <roles>
+      <role rt="size:count" rn="number of points in array" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="draws a polygon"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply><geq/><ci>nCount</ci><cn>2</cn></apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>POINT</type>
+	    <ci>lpPoints</ci>
+	    <apply><indexsize/><ci>nCount</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

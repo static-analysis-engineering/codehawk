@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="wcsnlen.xml" time="2016-11-02 10:02:40.667891"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="wcsnlen">
+    <documentation>
+      <desc>Gets the length of a string</desc>
+      <apidoc>
+        <pt>
+          <ll>size_t wcsnlen(</ll>
+          <ld>const wchar_t *str</ld>
+          <ld>size_t count</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="str">Null-terminated string</par>
+        <par name="count">The size of the string buffer</par>
+        <return>
+	  the number of characters in the string, not including the
+	  terminating null character
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="wcsnlen">
+      <par loc="stack" name="str" io="r" nr="1">
+        <type><ptr>wchar_t</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:length"/>
+	</roles>
+      </par>
+      <par loc="stack" name="count" io="r" nr="2">
+        <type>size_t</type>
+	<roles>
+	  <role rt="size:max count" rn="wcsnlen"/>
+	</roles>
+      </par>
+      <returntype>size_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply><leq/><return/><ci>count</ci></apply>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

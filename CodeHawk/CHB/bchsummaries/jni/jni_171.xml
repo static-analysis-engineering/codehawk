@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T13:21:46.070654"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="171" name="GetArrayLength">
+    <documentation>
+      <desc>
+         Returns the number of elements in a given array. The array may denote
+         an array of any element types.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jsize GetArrayLength(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jarray array</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="array">reference to Java array</par>
+        <return>the length of the array</return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="171" adj="8" name="GetArrayLength">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" desc="java array" io="r" name="array">
+        <type>jarray</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="jni:array" rn="array length measured"/>
+        </roles>
+      </par>
+      <returntype>jsize</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="determines the length of a java array" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:08:28"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetMetaFileBitsEx">
+   <documentation>
+    <desc>
+      retrieves the contents of a Windows-format metafile and copies them 
+      into the specified buffer.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT GetMetaFileBitsEx(</ll>
+      <ld>_In_   HMETAFILE hmf</ld>
+      <ld>_In_   UINT nSize</ld>
+      <ld>_Out_  LPVOID lpvData</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	If the function succeeds and the buffer pointer is NULL, the return value 
+	is the number of bytes required for the buffer; if the function succeeds 
+	and the buffer pointer is a valid pointer, the return value is the number
+	of bytes copied.
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hmf">A handle to a Windows-format metafile. </par>
+     <par name="nSize">The size, in bytes, of the buffer to receive the data. </par>
+     <par name="lpvData">
+       A pointer to a buffer that receives the metafile data. The buffer must 
+       be sufficiently large to contain the data. If lpvData is NULL, the function
+       returns the number of bytes required to hold the data.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetMetaFileBitsEx">
+    <returntype>UINT</returntype>
+    <par loc="stack" io="r" name="hmf" nr="1">
+     <type>HMETAFILE</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:enhanced metafile" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="nSize" nr="2">
+     <type>UINT</type>
+     <roles>
+      <role rt="size:buffersize" rn="GetMetaFileBitsEx" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpvData" nr="3" rep="hex">
+     <type><ptr>void</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:misc" />
+      <role rt="ioc:filesystem" rn="infox:file contents"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="retrieves the contents of an enhanced metafile"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpvData</ci>
+	    <ci>nSize</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>lpvData</ci>
+	    <ci>nSize</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

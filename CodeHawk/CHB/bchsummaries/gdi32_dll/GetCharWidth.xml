@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetCharWidth">
+   <documentation>
+     <desc>
+       retrieves the widths, in logical coordinates, of consecutive characters, in a
+       specified range from the the current font
+     </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetCharWidth (</ll>
+      <ld>_In_ HDC hdc,</ld>
+      <ld>_In_ UINT iFirstChar,</ld>
+      <ld>_In_ UINT iLastChar,</ld>
+      <ld>_Out_ LPINT lpBuffer</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">handle to the device context</par>
+     <par name="iFirstChar">first character in the group of consecutive characters</par>
+     <par name="iLastChar">
+       last character in the group of consecutive characters, which must not precede
+       the specified first character
+     </par>
+     <par name="lpBuffer">
+       pointer to a buffer that receives the character widths, in logical coordinates
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetCharWidth">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="iFirstChar" io="r" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="iLastChar" io="r" roles="none" nr="3">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" io="w" name="lpBuffer" nr="4">
+     <type><ptr>INT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:misc" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves character widths"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>INT</type>
+	    <ci>lpBuffer</ci>
+	    <apply>
+	      <indexsize/>
+	      <apply>
+		<plus/>
+		<apply><minus/><ci>iLastChar</ci><ci>iFirstChar</ci></apply>
+		<cn>1</cn>
+	      </apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <geq/>
+	    <ci>iLastChar</ci>
+	    <ci>iFirstChar</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+	 <block-write/>
+	 <type>INT</type>
+	 <ci>lpBuffer</ci>
+	 <apply>
+	   <indexsize/>
+	   <apply>
+	     <plus/>
+	     <apply><minus/><ci>iLastChar</ci><ci>iFirstChar</ci></apply>
+	     <cn>1</cn>
+	   </apply>
+	 </apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

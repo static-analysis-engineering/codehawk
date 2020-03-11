@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:10:58"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="LPtoDP">
+   <documentation>
+    <desc>
+      converts logical coordinates into device coordinates. The conversion 
+      depends on the mapping mode of the device context, the settings of 
+      the origins and extents for the window and viewport, and the world 
+      transformation.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>LPtoDP(</ll>
+      <ld>_In_     HDC hdc</ld>
+      <ld>_Inout_  LPPOINT lpPoints</ld>
+      <ld>_In_     int nCount</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="lpPoints">
+       A pointer to an array of POINT structures. The x-coordinates and 
+       y-coordinates contained in each of the POINT structures will be 
+       transformed.
+     </par>
+     <par name="nCount">The number of points in the array.</par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="LPtoDP">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="rw" name="lpPoints" nr="2" rep="hex">
+     <type><ptr>POINT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-array:POINT" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nCount" nr="3">
+     <type>int</type>
+     <roles>
+      <role rt="size:count" rn="number of points in array" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="process" 
+		 desc="converts logical coordinates to device coordinates"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>POINT</type>
+	    <ci>lpPoints</ci>
+	    <apply><indexsize/><ci>nCount</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>POINT</type>
+	    <ci>lpPoints</ci>
+	    <apply><indexsize/><ci>nCount</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

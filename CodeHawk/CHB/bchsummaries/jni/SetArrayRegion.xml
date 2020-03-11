@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="12/24/2015 12:29:15"/>
+  <jnifun name="SetArrayRegion">
+   <documentation>
+    <desc>
+      A family of functions that copies back a region of a primitive array from a buffer.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>void SetArrayRegion(</ll>
+      <ld>_in JNIEnv *env</ld>
+      <ld>_in atype array</ld>
+      <ld>_in jsize start</ld>
+      <ld>_in jsize len</ld>
+      <ld>-int ttype *buf</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="env">JNI interface pointer</par>
+     <par name="array">a Java array</par>
+     <par name="start">the starting index</par>
+     <par name="len">the number of elements to be copied</par>
+     <par name="buf">the source buffer</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="SetArrayRegion">
+    <par loc="stack" desc="jni interface pointer" io="r" name="env" nr="1">
+     <type><ptr>JNIEnv</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" desc="java array" io="r" name="array" nr="2">
+     <type>atype</type>
+     <roles>
+       <role rt="jni:array" rn="write back array"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="array index" io="r" name="start" nr="3">
+     <type>jsize</type>
+     <roles>
+       <role rt="jni:index" rn="write back array"/>
+       <role rt="size:index" rn="SetArrayRegion"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="count" io="r" name="len" nr="4">
+     <type>jsize</type>
+     <roles>
+       <role rt="jni:count" rn="write back array"/>
+       <role rt="size:count" rn="SetArrayRegion"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="src buffer" io="r" name="buf" nr="5">
+     <type><ptr>ttype</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="jni:carray" rn="write back array"/>
+       <role rt="ioc:memops" rn="source buffer"/>
+     </roles>
+    </par>
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="jni" desc="writes back a java array from a buffer"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

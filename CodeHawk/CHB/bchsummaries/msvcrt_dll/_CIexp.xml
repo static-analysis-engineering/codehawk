@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/31/2015 18:24:04"/>
+  <libfun lib="msvcrt" name="_CIexp">
+   <documentation>
+    <desc>
+      Calculates the exponential of the top value on the stack
+    </desc>
+    <apidoc>
+     <pt>_CIexp (void)</pt>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_CIexp">
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

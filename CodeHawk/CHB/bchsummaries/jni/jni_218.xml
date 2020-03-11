@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T13:47:46.290350"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="218" name="MonitorExit">
+    <documentation>
+      <desc>
+         Exits the monitor associated with the given object. The current thread
+         must be the owner of the monitor associated with the object referred to
+         by obj. The obj reference must not be NULL.
+
+         The thread decrements the counter indicating the number of times it has
+         entered this monitor. If the value of the counter becomes zero, the
+         current thread releases the monitor.
+
+         Native code must not use MonitorExit to exit a monitor entered through
+         a synchronized method or monitorenter Java virtual machine instruction
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jint MonitorExit(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jobject obj</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="obj">
+           reference to a an object whose associated monitor will be exited
+        </par>
+        <return>
+          <rc cond="success">zero</rc>
+          <rc cond="failure">
+              negative value, if an exception was thrown
+          </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="218" adj="8" name="MonitorExit">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="monitor object" io="r" nr="2" name="obj">
+        <type>jobject</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="jni:object" rn="exit monitor"/>
+           <role rt="ioc:synchronization" rn="exit java monitor"/>
+        </roles>
+      </par>
+      <returntype>jint</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="exits a java object monitor" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+         <zero-negative/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

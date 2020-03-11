@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/03/2015 15:12:38"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="_strtime">
+   <documentation>
+    <desc>copy the time to a buffer</desc>
+    <apidoc>
+     <pt>char *_strtime (char *timstr)</pt>
+     <return>pointer to the resulting character string</return>
+     <par name="timestr">time string</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_strtime">
+    <returnbtype ttag="tptr">
+     <typ tname="char" ttag="tnamed"/>
+    </returnbtype>
+    <par loc="stack" io="w" name="timestr" rep="hex" nr="1">
+     <roles>
+      <role rt="ioc:memops" rn="dst-string:formatted data" />
+     </roles>
+     <type><ptr>char</ptr></type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="retrieves the time"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>timestr</ci>
+	    <cn>9</cn>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <not-null/>
+        <return-value/>
+       </apply>
+      </math>
+     </post>
+     <post>
+       <math>
+	 <apply>
+	   <eq/>
+	   <ci>timestr</ci>
+	   <return/>
+	 </apply>
+       </math>
+     </post>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+        <btype tname="char" ttag="tnamed"/>
+        <ci>timestr</ci>
+        <cn>9</cn>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

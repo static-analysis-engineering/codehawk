@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ImageList_EndDrag.xml" time="2016-07-05 21:37:44.629204"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="comctl32" name="ImageList_EndDrag">
+    <documentation>
+      <desc>Ends a drag operation</desc>
+      <apidoc>
+        <pt>VOID ImageList_EndDrag (void)</pt>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="stdcall" name="ImageList_EndDrag">
+      <returntype>VOID</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="ends a drag operation"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

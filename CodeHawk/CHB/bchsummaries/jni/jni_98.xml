@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-25T15:38:06.378786"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="98">
+    <refer-to typename="Char" prefix="Get" suffix="Field">
+      <replace-type src="ttype" tgt="jchar"/>
+    </refer-to>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

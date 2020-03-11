@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="05/02/2015 15:39:58"/>
+  <libfun lib="gdi32" name="GetOutlineTextMetrics">
+   <documentation>
+    <desc>retrieves text metrics for TrueType fonts.</desc>
+    <apidoc>
+     <pt>
+      <ll>UINT GetOutlineTextMetrics(</ll>
+      <ld>_In_       HDC                 hdc</ld>
+      <ld>_In_       UINT                cbData</ld>
+      <ld>_Out_opt_  LPOUTLINETEXTMETRIC lpOTM</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="cbData">
+       The size, in bytes, of the array that receives the text metrics.
+     </par>
+     <par name="lpOTM">
+       A pointer to an OUTLINETEXTMETRIC structure. If this parameter is NULL, 
+       the function returns the size of the buffer required for the retrieved 
+       metric data.
+     </par>
+     <return>
+      <rc cond="success">nonzero or the size of the required buffer</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetOutlineTextMetrics">
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="cbData" nr="2">
+     <type>UINT</type>
+     <roles>
+      <role rt="size:buffersize" rn="GetOutlineTextMetrics" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpOTM" nr="3" rep="hex">
+     <type><ptr>OUTLINETEXTMETRIC</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:OUTLINETEXTMETRIC" />
+     </roles>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="process" desc="retrieves text metrics of a truetype font"/>
+     </io-actions>
+     <preconditions>
+       <pre>
+	 <math>
+	   <apply>
+	     <deref-write-null/>
+	     <type>OUTLINETEXTMETRIC</type>
+	     <ci>lpOTM</ci>
+	     <ci>cbData</ci>
+	   </apply>
+	 </math>
+       </pre>
+     </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	     <type>OUTLINETEXTMETRIC</type>
+	     <ci>lpOTM</ci>
+	     <ci>cbData</ci>
+	   </apply>
+	 </math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

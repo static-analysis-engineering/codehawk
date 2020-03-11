@@ -1,0 +1,104 @@
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CertGetCertificateContextProperty.xml" time="2017-04-27 10:05:39.362640"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="crypt32" name="CertGetCertificateContextProperty">
+    <documentation>
+      <desc>
+	retrieves the information contained in an extended property of
+	a certificate context.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI CertGetCertificateContextProperty(</ll>
+          <ld>_In_    PCCERT_CONTEXT pCertContext</ld>
+          <ld>_In_    DWORD          dwPropId</ld>
+          <ld>_Out_   void           *pvData</ld>
+          <ld>_Inout_ DWORD          *pcbData</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pCertContext">
+	  A pointer to the CERT_CONTEXT structure of the certificate
+	  that contains the property to be retrieved
+	</par>
+        <par name="dwPropId">The property to be retrieved</par>
+        <par name="pvData">
+	  A pointer to a buffer to receive the data as determined by
+	  dwPropId. Structures pointed to by members of a structure
+	  returned are also returned following the base
+	  structure. Therefore, the size contained in pcbData often
+	  exceeds the size of the base structure.  This parameter can
+	  be NULL to set the size of the information for memory
+	  allocation purposes
+	</par>
+        <par name="pcbData">
+	  A pointer to a DWORD value that specifies the size, in
+	  bytes, of the buffer pointed to by the pvData
+	  parameter. When the function returns, the DWORD value
+	  contains the number of bytes to be stored in the buffer.  To
+	  obtain the required size of a buffer at run time, pass NULL
+	  for the pvData parameter, and set the value pointed to by
+	  this parameter to zero. If the pvData parameter is not NULL
+	  and the size specified in pcbData is less than the number of
+	  bytes required to contain the data, the function fails,
+	  GetLastError returns ERROR_MORE_DATA, and the required size
+	  is placed in the variable pointed to by the pcbData
+	  parameter.
+
+	  Note When processing the data returned in the
+	  buffer, applications must use the actual size of the data
+	  returned. The actual size can be slightly smaller than the
+	  size of the buffer specified on input. (On input, buffer
+	  sizes are usually specified large enough to ensure that the
+	  largest possible output data fits in the buffer.) On output,
+	  the variable pointed to by this parameter is updated to
+	  reflect the actual size of the data copied to the buffer.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="16" cc="stdcall" name="CertGetCertificateContextProperty">
+      <par loc="stack" name="pCertContext" io="r" rep="hex" nr="1">
+        <type><ptr>PCCERT_CONTEXT</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:crypto" rn="certificate context"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwPropId" io="r" roles="none" nr="2">
+	<rep type="enum" name="cert_context_processing_constants"/>
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="pvData" io="rw" rep="hex" nr="3">
+        <type><ptr>VOID</ptr></type>
+	<pre><deref-write-null/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-bytes:misc"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pcbData" io="rw" rep="hex" nr="4">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="size:buffer" rn="required"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="crypto"
+		   desc="retrieves the information contained in an extended property of a certificate context"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

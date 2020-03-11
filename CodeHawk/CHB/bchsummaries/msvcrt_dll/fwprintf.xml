@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:36"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="fwprintf">
+   <documentation>
+    <desc>print formatted data on a stream</desc>
+    <apidoc>
+     <pt>
+      <ll>int fwprintf (</ll>
+      <ld>FILE *stream,</ld>
+      <ld>const wchar_t *format,</ld>
+      <ld>[. argument ]</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="stream">pointer to a FILE structure</par>
+     <par name="format">format-control string</par>
+     <par name="argument">optional arguments</par>
+     <return>
+      <rc cond="success">number of bytes written</rc>
+      <rc cond="failure">negative number</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="fwprintf">
+     <returntype>int</returntype>
+     <par loc="stack" io="r" name="stream" nr="1">
+      <type><ptr>FILE</ptr></type>
+      <roles>
+        <role rt="ioc:filesystem" rn="file"/>
+      </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="format" nr="2" rep="hex">
+      <type><ptr>wchar_t</ptr></type>
+      <roles>
+        <role rt="ioc:outputs" rn="format string"/>
+      </roles>
+     <pre><deref-read-nt/><format-string/></pre>
+    </par>
+    <par loc="stack" name="args" io="r" roles="none" nr="3">
+     <btype tname="var-arg" ttag="tnamed"/>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="outputs" desc="writes formatted data to stream"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <geq/>
+        <return-value/>
+        <cn>0</cn>
+       </apply>
+      </math>
+     </post>
+     <error-post>
+      <math>
+       <apply>
+        <lt/>
+        <return-value/>
+        <cn>0</cn>
+       </apply>
+      </math>
+     </error-post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

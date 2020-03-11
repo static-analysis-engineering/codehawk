@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2016-01-11T21:09:49.334901"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="227" name="DeleteWeakGlobalRef">
+    <documentation>
+      <desc>
+	Deletes the VM resources needed for the given weak global reference
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>void DeleteWeakGlobalRef(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jweak obj</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="obj">a weak global ref</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="227" adj="8" name="DeleteWeakGlobalRef">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" name="obj">
+        <type>jweak</type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="deletes a weak global ref" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

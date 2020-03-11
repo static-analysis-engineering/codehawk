@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/27/2015 00:29:18"/>
+  <jnifun name="SetField">
+   <documentation>
+    <desc>
+      This family of accessor routines sets the value of an instance
+      (nonstatic) field of an object. The field to access is specified
+      by a field ID obtained by calling GetFieldID().
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>void SetField(</ll>
+      <ld>_in JNIEnv *env</ld>
+      <ld>_in jobject obj</ld>
+      <ld>_in jfieldID fieldID</ld>
+      <ld>_in ttype value</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="env">the jni interface pointer</par>
+     <par name="obj">a Java object (must not be NULL)</par>
+     <par name="fieldID">a valid field ID</par>
+     <par name="value">the new value of the field</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SetField">
+    <par loc="stack" desc="jni interface pointer" io="r" name="env" nr="1">
+      <type><ptr>JNIEnv</ptr></type>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" desc="object" io="r" name="obj" nr="2">
+     <type>jobject</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="jni:object" rn="set field"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="field id" io="r" name="fieldID" nr="3">
+     <type>jfieldID</type>
+     <roles>
+       <role rt="jni:fieldid" rn="set field"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="value" io="r" name="value" nr="4">
+     <type>ttype</type>
+     <roles>
+       <role rt="jni:value" rn="set field"/>
+     </roles>
+    </par>
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="jni" desc="sets an object field"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

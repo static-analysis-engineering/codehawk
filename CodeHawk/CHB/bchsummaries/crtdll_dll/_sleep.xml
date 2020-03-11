@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="_sleep.xml" time="2016-07-17 16:07:25.372318"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="crtdll" name="_sleep">
+    <documentation>
+      <desc>suspends execution for the given amount of time</desc>
+      <apidoc>
+        <pt>void _sleep (int mssleep)</pt>
+        <par name="mssleep">time in milliseconds</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="_sleep">
+      <par loc="stack" name="mssleep" nr="1" io="r">
+        <type>int</type>
+	<roles>
+	  <role rt="ioc:process" rn="sleep time"/>
+	</roles>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="sleeps"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/19/2015 23:29:16"/>
+  <libfun lib="msvcrt" name="_controlfp">
+   <documentation>
+    <desc>Gets and sets the floating-point control word</desc>
+    <apidoc>
+     <pt>
+      <ll>unsigned int _controlfp(</ll>
+      <ld>unsigned int new</ld>
+      <ld>unsigned int mask</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="new">New control-word bit values</par>
+     <par name="mask">Mask for new control-word bits to set</par>
+     <return>
+       the bits in the value returned indicate the floating-point control state
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_controlfp">
+    <par loc="stack" name="new" nr="1">
+     <type>uint</type>
+     <roles/>
+    </par>
+    <par loc="stack" name="mask" nr="2">
+     <type>uint</type>
+     <roles/>
+    </par>
+    <returntype>uint</returntype>
+   </api>
+   <semantics>
+    <io-actions/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

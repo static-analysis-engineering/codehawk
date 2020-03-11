@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/22/2015 23:43:08"/>
+  <libfun lib="comctl32" name="ImageList_Draw">
+   <documentation>
+    <desc>Draws an image list item in the specified device context</desc>
+    <apidoc>
+     <pt>
+      <ll>ImageList_Draw(</ll>
+      <ld>HIMAGELIST himl</ld>
+      <ld>int i</ld>
+      <ld>HDC hdcDst</ld>
+      <ld>int x</ld>
+      <ld>int y</ld>
+      <ld>UINT fStyle</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="himl">A handle to the image list.</par>
+     <par name="i">The zero-based index of the image to draw</par>
+     <par name="hdcDst">A handle to the destination device context</par>
+     <par name="x">
+       The x-coordinate at which to draw within the specified device context
+     </par>
+     <par name="y">
+       The y-coordinate at which to draw within the specified device contex
+     </par>
+     <par name="fStyle">
+       The drawing style and, optionally, the overlay image. For information about
+       specifying an overlay image index, see the comments section at the end of
+       this topic
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="ImageList_Draw">
+    <par loc="stack" name="himl" io="r" nr="1">
+     <type>HIMAGELIST</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:imagelist"/>
+     </roles>
+    </par>
+    <par loc="stack" name="i" io="r" nr="2">
+     <type>int</type>
+     <roles>
+       <role rt="size:index" rn="ImageList_Draw"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hdcDst" io="r" nr="3">
+     <type>HDC</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:device context"/>
+     </roles>
+    </par>
+    <par loc="stack" name="x" io="r" nr="4">
+     <type>int</type>
+     <roles>
+       <role rt="size:distance" rn="ImageList_Draw"/>
+     </roles>
+    </par>
+    <par loc="stack" name="y" io="r" nr="5">
+     <type>int</type>
+     <roles>
+       <role rt="size:distance" rn="ImageList_Draw"/>
+     </roles>
+    </par>
+    <par loc="stack" name="fStyle" io="r" roles="none" nr="6">
+     <type>UINT</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="draws an image on a device"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

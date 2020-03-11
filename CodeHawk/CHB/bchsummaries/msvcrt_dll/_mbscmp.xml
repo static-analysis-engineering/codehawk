@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="_mbscmp.xml" time="2016-05-07 18:38:44.986619"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="_mbscmp">
+    <documentation>
+      <desc>compares two strings; applicable to multibyte characters</desc>
+      <apidoc>
+        <pt>
+          <ll>int _mbscmp(</ll>
+          <ld>const char *string1</ld>
+          <ld>const char *string2</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="string1">pointer to first string</par>
+        <par name="string2">pointer to second string</par>
+        <return>indicates the lexicographic relation of string1 to string2</return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="_mbscmp">
+      <par loc="stack" name="string1" io="r" nr="1" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:inputs" rn="string comparison"/>
+	</roles>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="string2" io="r" nr="2" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:inputs" rn="string comparison"/>
+	</roles>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="inputs" desc="compares two strings"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

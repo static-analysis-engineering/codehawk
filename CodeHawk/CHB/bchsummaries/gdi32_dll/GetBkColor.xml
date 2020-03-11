@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 12:52:11"/>
+  <libfun lib="gdi32" name="GetBkColor">
+   <documentation>
+    <desc>the current background color for the specified device context</desc>
+    <apidoc>
+     <pt>COLORREF GetBkColor (_In_ HDC hdc)</pt>
+     <par name="hdc">
+       Handle to the device context whose background color is to be returned
+     </par>
+     <return>
+      <rc cond="success">
+	a COLORREF value for the current background color
+      </rc>
+      <rc cond="failure">CLR_INVALID</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetBkColor">
+    <par loc="stack" name="hdc" io="r" nr="1">
+     <type>HDC</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:device context"/>
+     </roles>
+    </par>
+    <returntype>COLORREF</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" desc="retrieves the background color for a device">
+      <args>
+       <ci io="r" role="device handle">hdc</ci>
+      </args>
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

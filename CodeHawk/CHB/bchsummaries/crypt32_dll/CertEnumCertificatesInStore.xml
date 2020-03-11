@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/30/2015 00:01:46"/>
+  <libfun lib="crypt32" name="CertEnumCertificatesInStore">
+   <documentation>
+    <desc>
+      retrieves the first or next certificate in a certificate store. 
+      Used in a loop, this function can retrieve in sequence all 
+      certificates in a certificate store
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>PCCERT_CONTEXT WINAPI CertEnumCertificatesInStore(</ll>
+      <ld>_In_ HCERTSTORE     hCertStore</ld>
+      <ld>_In_ PCCERT_CONTEXT pPrevCertContext</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hCertStore">A handle of a certificate store</par>
+     <par name="pPrevCertContext">
+       A pointer to the CERT_CONTEXT of the previous certificate context found.
+       This parameter must be NULL to begin the enumeration and get the first 
+       certificate in the store. Successive certificates are enumerated by 
+       setting pPrevCertContext to the pointer returned by a previous call to
+       the function. This function frees the CERT_CONTEXT referenced by 
+       non-NULL values of this parameter.
+       For logical stores, including collection stores, a duplicate of the 
+       pCertContext returned by this function cannot be used to begin a new 
+       subsequence of enumerations because the duplicated certificate loses 
+       the initial enumeration state. The enumeration skips any certificate
+       previously deleted by CertDeleteCertificateFromStore.
+     </par>
+     <return>
+      <rc cond="success">
+	a pointer to the next CERT_CONTEXT in the store
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CertEnumCertificatesInStore">
+    <par loc="stack" io="r" name="hCertStore" rep="hex" nr="1">
+     <type>HCERTSTORE</type>
+     <roles>
+      <role rt="ioc:crypto" rn="handle:certificate store" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="pPrevCertContext" nr="2" rep="hex">
+     <type><ptr>CERT_CONTEXT</ptr></type>
+     <roles>
+      <role rt="ioc:crypto" rn="certificate context" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <returntype><ptr>CERT_CONTEXT</ptr></returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="crypto"
+		  desc="retrieves a certificate from a certificate store"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

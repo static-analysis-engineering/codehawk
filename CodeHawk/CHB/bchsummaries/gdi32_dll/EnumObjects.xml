@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/22/2015 15:27:39"/>
+  <libfun lib="gdi32" name="EnumObjects">
+   <documentation>
+    <desc>
+      enumerates the pens or brushes available for the specified device 
+      context (DC). This function calls the application-defined callback 
+      function once for each available object, supplying data describing 
+      that object. EnumObjects continues calling the callback function 
+      until the callback function returns zero or until all of the objects 
+      have been enumerated
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int EnumObjects(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ld>_In_  int nObjectType</ld>
+      <ld>_In_  GOBJENUMPROC lpObjectFunc</ld>
+      <ld>_In_  LPARAM lParam</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the DC</par>
+     <par name="nObjectType">
+       The object type. This parameter can be OBJ_BRUSH or OBJ_PEN 
+     </par>
+     <par name="lpObjectFunc">
+       A pointer to the application-defined callback function. For more 
+       information about the callback function, see the EnumObjectsProc 
+       function
+     </par>
+     <par name="lParam">
+       A pointer to the application-defined data. The data is passed to 
+       the callback function along with the object information
+     </par>
+     <return>
+      <rc cond="success">the last value returned by the callback function</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="EnumObjects">
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="nObjectType" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" io="r" name="lpObjectFunc" nr="3">
+     <type>EnumObjectsProc</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackf:graphical object" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lParam" nr="4">
+     <type>LPARAM</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackp:lparam" />
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

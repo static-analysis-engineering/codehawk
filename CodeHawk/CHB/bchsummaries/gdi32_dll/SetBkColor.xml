@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetBkColor">
+   <documentation>
+    <desc>
+      sets the current background color to the specified color value, or to the
+      nearest physical color if the device cannot represent the specified color
+      value
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>COLORREF SetBkColor (</ll>
+      <ld>_In_ HDC hdc,</ld>
+      <ld>_In_ COLORREF crColor</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">handle to the device context</par>
+     <par name="crColor">new background color</par>
+     <return>
+      <rc cond="success">the previous background color as a COLORREF value</rc>
+      <rc cond="failure">CLR_INVALID</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetBkColor">
+     <returntype>COLORREF</returntype>
+     <par loc="stack" name="hdc" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+    <par loc="stack" name="crColor" nr="2" rep="hex">
+      <type>COLORREF</type>
+      <roles>
+	<role rt="ioc:system" rn="color"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="sets device background color"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

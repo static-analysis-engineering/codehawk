@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="wcslen">
+   <documentation>
+    <desc>returns the length of the string</desc>
+    <apidoc>
+     <pt>size_t wcslen (const wchar_t *str)</pt>
+     <par name="str">pointer to the wchar string</par>
+     <return>number of characters in str excluding the null terminator character</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="wcslen">
+    <returntype>size_t</returntype>
+    <par loc="stack" name="str" io="r" nr="1" rep="hex">
+       <type><ptr>wchar_t</ptr></type>
+       <roles>
+          <role rt="ioc:memops" rn="src-string:length"/>
+       </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="none" desc="measures the length of a string"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <eq/>
+        <return-value/>
+        <apply>
+         <times/>
+         <cn>2</cn>
+         <apply>
+          <null-terminator-pos/>
+          <ci>str</ci>
+         </apply>
+        </apply>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

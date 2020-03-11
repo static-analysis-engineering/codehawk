@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/01/2015 17:52:37"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetPixelFormat">
+   <documentation>
+    <desc>
+      sets the pixel format of the specified device context to the
+      format specified by the iPixelFormat index.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetPixelFormat(</ll>
+      <ld>HDC hdc</ld>
+      <ld>int iPixelFormat</ld>
+      <ld>const PIXELFORMATDESCRIPTOR *ppfd</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+     <par name="hdc">
+       specifies the device context whose pixel format the function attemts to set
+    </par>
+     <par name="iPixelFormat">index that identifies the pixel format to set
+    </par>
+     <par name="ppfd">
+       pointer to a PIXELFORMATDESCRIPTOR structure that contains the
+       logical pixel format specification
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SetPixelFormat">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="iPixelFormat" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" io="rw" name="ppfd" nr="3">
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:PIXELFORMATDESCRIPTOR" />
+     </roles>
+     <type><ptr>PIXELFORMATDESCRIPTOR</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="sets the pixel format of a device"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

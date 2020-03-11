@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="07/09/2015 22:48:58"/>
+  <libfun lib="msvcrt" name="wcscmp">
+   <documentation>
+    <desc>Compare strings.</desc>
+    <apidoc>
+     <pt>
+      <ll>int wcscmp(</ll>
+      <ld>const wchar_t *string1</ld>
+      <ld>const wchar_t *string2</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="string1">Null-terminated string to compare.</par>
+     <par name="string2">Null-terminated string to compare.</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="wcscmp">
+    <par loc="stack" io="r" name="string1" nr="1" rep="hex">
+     <type><ptr>wchar_t</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:inputs" rn="string comparison"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="string2" nr="2" rep="hex">
+     <type><ptr>wchar_t</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:inputs" rn="string comparison"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="inputs" desc="compares two strings"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

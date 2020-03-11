@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <header date="12/22/2015 22:42:16"/>
+  <jnifun name="GetStaticField">
+   <documentation>
+    <desc>
+      This family of accessor routines returns the value of a static
+      field of an object. The field to access is specified by a field
+      ID, which is obtained by calling GetStaticFieldID().
+
+      The following table describes the family of get routine names and
+      result types. You should replace type in GetStatic[type]Field with the
+      Java type of the field, or one of the actual static field accessor
+      routine names from the table, and replace NativeType with the
+      corresponding native type for that routine.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>nativetype GetStaticField(</ll>
+      <ld>_in JNIEnv *env</ld>
+      <ld>_in jclass clazz</ld>
+      <ld>_in jfieldID fieldID</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="env">the JNI interface pointer</par>
+     <par name="clazz">a Java class object</par>
+     <par name="fieldID">a static field ID</par>
+     <return>the content of the static field</return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetStaticField">
+    <par loc="stack" desc="jni interface pointer" io="r" name="env" nr="1">
+     <type><ptr>JNIEnv</ptr></type>
+    </par>
+    <par loc="stack" desc="class object" io="r" name="clazz" nr="2">
+     <type>jclass</type>
+     <roles>
+       <role rt="jni:class" rn="retrieve static field"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" desc="field id" io="r" name="fieldID" nr="3">
+     <type>jfieldID</type>
+     <roles>
+       <role rt="jni:fieldid" rn="retrieve static field"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>ttype</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="jvm" desc="retrieves contents of a static field"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

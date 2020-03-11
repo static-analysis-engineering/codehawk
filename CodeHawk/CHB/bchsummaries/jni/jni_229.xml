@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T11:40:23.850517"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="229" name="NewDirectByteBuffer">
+    <documentation>
+      <desc>
+         Allocates and returns a direct java.nio.ByteBuffer referring
+         to the block of memory starting at the memory address address
+         and extending capacity bytes.
+
+         Native code that calls this function and returns the
+         resulting byte-buffer object to Java-level code should ensure
+         that the buffer refers to a valid region of memory that is
+         accessible for reading and, if appropriate, writing. An
+         attempt to access an invalid memory location from Java code
+         will either return an arbitrary value, have no visible
+         effect, or cause an unspecified exception to be thrown.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jobject NewDirectByteBuffer(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in void   *address</ld>
+          <ld>_in jlong  capacity</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="address">the starting address of the memory region (must not be NULL)</par>
+        <par name="capacity">the size in bytes of the memory region (must be positive)</par>
+        <return>
+          <rc cond="success">
+              a local reference to the newly-instantiated java.nio.ByteBuffer object
+          </rc>
+          <rc cond="failure">
+              NULL if an exception occurs, or if JNI access to direct
+              buffers is not supported by this virtual machine.
+          </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="229" adj="12" name="NewDirectByteBuffer">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" desc="buffer address" io="r" name="address">
+        <type><ptr>void</ptr></type>
+        <roles>
+           <role rt="jni:address" rn="allocate java.nio.ByteBuffer"/>
+           <role rt="ioc:memops" rn="allocate java.nio.ByteBuffer"/>
+        </roles>
+        <pre><deref-read/></pre>
+      </par>
+      <par loc="stack" nr="3" desc="buffer capacity" name="capacity">
+        <type>jlong</type>
+        <roles>
+           <role rt="jni:buffersize" rn="allocate java.nio.ByteBuffer"/>
+           <role rt="size:buffersize" rn="java.nio.ByteBuffer"/>
+        </roles>
+      </par>
+      <returntype>jobject</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="allocates a direct java.nio.ByteBuffer object" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+         <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

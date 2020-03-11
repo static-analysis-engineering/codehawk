@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 06:03:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SelectClipRgn">
+   <documentation>
+    <desc>
+      selects a region as the current clipping region for the specified device context.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int SelectClipRgn(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ld>_In_  HRGN hrgn</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">NULLREGION, SIMPLEREGION, or COMPLEXREGION</rc>
+      <rc cond="failure">ERROR</rc>
+     </return>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="hrgn">A handle to the region to be selected.</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SelectClipRgn">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="hrgn" nr="2">
+     <type>HRGN</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:region" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="clips a region"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

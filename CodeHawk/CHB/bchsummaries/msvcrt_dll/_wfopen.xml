@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/17/2015 19:10:48"/>
+  <libfun lib="msvcrt" name="_wfopen">
+   <documentation>
+    <desc>Opens a file</desc>
+    <apidoc>
+     <pt>
+      <ll>FILE *_wfopen(</ll>
+      <ld>const wchar_t *filename</ld>
+      <ld>const wchar_t *mode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="filename">ile name</par>
+     <par name="mode">Kind of access that's enabled</par>
+     <return>
+      <rc cond="success">a pointer to the open file</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="_wfopen">
+    <par loc="stack" io="r" name="filename" rep="hex" nr="1">
+     <type><ptr>wchar_t</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="mode" io="r" roles="none" rep="hex" nr="2">
+     <type><ptr>wchar_t</ptr></type>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <returntype><ptr>FILE</ptr></returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="opens a file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

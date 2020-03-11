@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 03:03:34"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="EndDoc">
+   <documentation>
+    <desc>The EndDoc function ends a print job.</desc>
+    <apidoc>
+     <pt>
+      <ll>int EndDoc(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">greater than zero</rc>
+      <rc cond="failure">less than or equal to zero</rc>
+     </return>
+     <par name="hdc">Handle to the device context for the print job.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="EndDoc">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="ends a print job"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <positive-nonpositive/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

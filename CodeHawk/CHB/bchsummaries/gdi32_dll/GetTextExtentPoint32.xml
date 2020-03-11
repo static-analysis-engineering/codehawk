@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetTextExtentPoint32">
+   <documentation>
+    <desc>
+      computes the width and height of the specified string of text.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetTextExtentPoint32(</ll>
+      <ld>_In_   HDC hdc,</ld>
+      <ld>_In_   LPCTSTR lpString,</ld>
+      <ld>_In_   int c,</ld>
+      <ld>_Out_  LPSIZE lpSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="lpString">
+       A pointer to a buffer that specifies the text string. The
+       string does not need to be null-terminated, because the c
+       parameter specifies the length of the string.
+     </par>
+     <par name="c">The length of the string pointed to by lpString.</par>
+     <par name="lpSize">
+       A pointer to a SIZE structure that receives the dimensions of the string, 
+       in logical units.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetTextExtentPoint32">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hdc" io="r" nr="1">
+       <type>HDC</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpString" io="r" nr="2">
+      <type>LPCTSTR</type>
+      <roles>
+	<role rt="ioc:outputs" rn="text string"/>
+      </roles>
+    </par>
+    <par loc="stack" name="c" io="r" nr="3">
+      <type>int</type>
+      <roles>
+	<role rt="size:buffersize" rn="GetTextExtentPoint32"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpSize" io="w" nr="4">
+      <type><ptr>SIZE</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="size:objectsize" rn="GetTextExtentPoint32"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui" desc="computes the extent of a text string"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>TCHAR</type>
+	 <ci>lpString</ci>
+	 <ci>c</ci>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

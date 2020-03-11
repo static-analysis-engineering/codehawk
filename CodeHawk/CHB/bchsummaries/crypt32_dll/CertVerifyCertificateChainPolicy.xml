@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/13/2015 11:12:14"/>
+  <libfun lib="crypt32" name="CertVerifyCertificateChainPolicy">
+   <documentation>
+    <desc>
+      checks a certificate chain to verify its validity, including its compliance 
+      with any specified validity policy criteria.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CertVerifyCertificateChainPolicy(</ll>
+      <ld>_In_    LPCSTR                    pszPolicyOID</ld>
+      <ld>_In_    PCCERT_CHAIN_CONTEXT      pChainContext</ld>
+      <ld>_In_    PCERT_CHAIN_POLICY_PARA   pPolicyPara</ld>
+      <ld>_Inout_ PCERT_CHAIN_POLICY_STATUS pPolicyStatus</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pszPolicyOID">predefined verify chain policy structure</par>
+     <par name="pChainContext">
+       A pointer to a CERT_CHAIN_CONTEXT structure that contains a chain to be verified
+     </par>
+     <par name="pPolicyPara">
+       A pointer to a CERT_CHAIN_POLICY_PARA structure that provides the policy 
+       verification criteria for the chain. The dwFlags member of that structure 
+       can be set to change the default policy checking behavior.
+       In addition, policy-specific parameters can also be passed in the 
+       pvExtraPolicyPara member of the structure
+     </par>
+     <par name="pPolicyStatus">
+       A pointer to a CERT_CHAIN_POLICY_STATUS structure where status information
+       on the chain is returned. OID-specific extra status can be returned in the
+       pvExtraPolicyStatus member of this structure
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CertVerifyCertificateChainPolicy">
+    <par loc="stack" io="r" name="pszPolicyOID" rep="hex" nr="1">
+     <type>LPCSTR</type>
+     <rep type="enum" name="certificate_chain_policy_oid_predefined_constants"/>
+     <roles>
+       <role rt="ioc:crypto" rn="name:chain policy"/>
+     </roles>
+     <pre><enum-value name="certificate_chain_policy_oid_predefined_constants"/></pre>
+    </par>
+    <par loc="stack" io="r" name="pChainContext" rep="hex" nr="2">
+     <type><ptr>CERT_CHAIN_CONTEXT</ptr></type>
+     <roles>
+        <role rt="ioc:crypto" rn="certificate chain context"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="pPolicyPara" roles="none" rep="hex" nr="3">
+     <type><ptr>CERT_CHAIN_POLICY_PARA</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="rw" name="pPolicyStatus" rep="hex" nr="4">
+     <type><ptr>CERT_CHAIN_POLICY_STATUS</ptr></type>
+     <roles>
+        <role rt="ioc:crypto" rn="certificate chain policy status"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="registry" 
+		desc="checks a certificate chain to verify its validity"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

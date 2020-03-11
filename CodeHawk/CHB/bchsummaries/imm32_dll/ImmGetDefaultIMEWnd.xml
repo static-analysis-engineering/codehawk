@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 06:50:52"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="imm32" name="ImmGetDefaultIMEWnd">
+   <documentation>
+    <desc>Retrieves the default window handle to the IME class. </desc>
+    <apidoc>
+     <pt>
+      <ll>HWND ImmGetDefaultIMEWnd(</ll>
+      <ld>_In_  HWND hWnd </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">Handle to Default Window of IME Class </rc>
+      <rc cond="failure">NULL </rc>
+     </return>
+     <par name="hWnd">Handle to the window. </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ImmGetDefaultIMEWnd">
+    <returntype>HWND</returntype>
+    <par loc="stack" io="r" name="hWnd" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

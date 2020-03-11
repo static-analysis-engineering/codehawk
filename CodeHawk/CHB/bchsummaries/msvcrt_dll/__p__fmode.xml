@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/31/2015 16:48:41"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="__p__fmode">
+   <documentation>
+    <desc>points to the _fmode global variable, which specifies the default file
+     translation mode for file I/O operations
+   </desc>
+    <remarks>the __p__fmode function is for internal use only, and should not be called
+     from user code.
+     File translation mode specifies either binary or text translation for _open
+     and _pipe I/O operations.
+   </remarks>
+    <apidoc>
+     <pt>int* __p__fmode ( )</pt>
+     <return>pointer to the _fmode global variable</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="__p__fmode">
+     <returntype><ptr>int</ptr></returntype>
+   </api>
+   <semantics>
+   <io-actions>
+     <io-action cat="filesystem" desc="retrieves the default file translation mode"/>
+   </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

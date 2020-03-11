@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/22/2015 15:17:54"/>
+  <libfun lib="gdi32" name="GetCurrentObject">
+   <documentation>
+    <desc>
+      retrieves a handle to an object of the specified type that has 
+      been selected into the specified device context (DC)
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HGDIOBJ GetCurrentObject(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ld>_In_  UINT uObjectType</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the DC</par>
+     <par name="uObjectType">The object type to be queried</par>
+     <return>
+      <rc cond="success">a handle to the specified object.</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetCurrentObject">
+    <par loc="stack" name="hdc" nr="1">
+     <type>HDC</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:device context"/>
+     </roles>
+    </par>
+    <par loc="stack" name="uObjectType" nr="2">
+     <type>UINT</type>
+     <roles>
+       <role rt="ioc:system" rn="type:object"/>
+     </roles>
+    </par>
+    <returntype>HGDIOBJ</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves a handle to an object"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

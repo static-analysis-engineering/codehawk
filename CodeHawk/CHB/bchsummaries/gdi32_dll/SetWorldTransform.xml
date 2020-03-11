@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/05/2015 22:05:47"/>
+  <libfun lib="gdi32" name="SetWorldTransform">
+   <documentation>
+    <desc>
+      sets a two-dimensional linear transformation between world space and page space 
+      for the specified device context. This transformation can be used to scale, 
+      rotate, shear, or translate graphics output
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL SetWorldTransform(</ll>
+      <ld>_In_       HDC   hdc</ld>
+      <ld>_In_ const XFORM *lpXform</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the device context</par>
+     <par name="lpXform">
+        pointer to an XFORM structure that contains the transformation data
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetWorldTransform">
+    <par loc="stack" name="hdc" io="r" rep="hex" nr="1">
+     <type>HDC</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:device context"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpXform" io="r" rep="hex" nr="2">
+     <type><ptr>XFORM</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="linear transformation"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" 
+		  desc="sets a transformation between world space and page space"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

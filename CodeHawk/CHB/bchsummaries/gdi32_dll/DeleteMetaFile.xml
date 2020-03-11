@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:06:13"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="DeleteMetaFile">
+   <documentation>
+    <desc>
+      deletes a Windows-format metafile or Windows-format metafile handle.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL DeleteMetaFile(</ll>
+      <ld>_In_  HMETAFILE hmf</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hmf">A handle to a Windows-format metafile.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DeleteMetaFile">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hmf" nr="1">
+     <type>HMETAFILE</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:windows format metafile" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="filesystem" desc="deletes a windows format metafile handle"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

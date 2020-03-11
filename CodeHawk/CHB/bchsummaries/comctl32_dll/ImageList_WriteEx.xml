@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ImageList_WriteEx.xml" time="2016-07-05 23:30:51.897990"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="comctl32" name="ImageList_WriteEx">
+    <documentation>
+      <desc>Writes an image list to a stream</desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT ImageList_WriteEx(</ll>
+          <ld>_In_ HIMAGELIST himl</ld>
+          <ld>_In_ DWORD      dwFlags</ld>
+          <ld>_In_ LPSTREAM   pstm</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="himl">A handle to the image list</par>
+        <par name="dwFlags">A flag that specifies how the stream is written</par>
+        <par name="pstm">The address of the stream</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="ImageList_WriteEx">
+      <par loc="stack" name="himl" io="r" nr="1">
+        <type>HIMAGELIST</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:imagelist"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwFlags" io="r" roles="none" nr="2">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="pstm" io="r" nr="3" rep="hex">
+        <type><ptr>STREAM</ptr></type>
+	<roles>
+	  <role rt="ioc:filesystem" rn="stream"/>
+	</roles>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="writes an image list to stream"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

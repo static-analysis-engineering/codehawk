@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="_beginthread.xml" time="2016-05-07 18:01:07.769973"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="_beginthread">
+    <documentation>
+      <desc>Creates a thread</desc>
+      <apidoc>
+        <pt>
+          <ll>_beginthread(</ll>
+          <ld>void( __cdecl *start_address )( void * )</ld>
+          <ld>unsigned stack_size</ld>
+          <ld>void *arglist</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="start_address">
+	  Start address of a routine that begins execution of a new
+	  thread. For _beginthread, the calling convention is either
+	  __cdecl (for native code) or __clrcall (for managed code);
+	  for _beginthreadex, it is either __stdcall (for native code)
+	  or __clrcall (for managed code).
+	</par>
+        <par name="stack_size">
+	  Stack size for a new thread, or 0
+	</par>
+        <par name="arglist">
+	  Argument list to be passed to a new thread, or NULL
+	</par>
+        <return>
+          <rc cond="success">
+	    a handle to the newly created thread
+	  </rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="_beginthread">
+      <par loc="stack" name="start_address" io="r" nr="1" rep="hex">
+        <type>unknownfunction</type>
+	<roles>
+	  <role rt="ioc:process" rn="callbackf:thread"/>
+	</roles>
+	<pre><deref-read/><function-pointer/></pre>
+      </par>
+      <par loc="stack" name="stack_size" nr="2">
+        <type>UINT</type>
+	<roles>
+	  <role rt="ioc:memops" rn="stack-size"/>
+	</roles>
+      </par>
+      <par loc="stack" name="arglist" nr="3" io="r" rep="hex">
+        <type><ptr>void</ptr></type>
+	<roles>
+	  <role rt="ioc:process" rn="callbackp:thread"/>
+	</roles>
+      </par>
+      <returntype>UINT_PTR</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="process" desc="creates a thread"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <starts-thread/>
+	      <ci>start_address</ci>
+	      <ci>arglist</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

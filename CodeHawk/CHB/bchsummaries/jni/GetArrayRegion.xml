@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="12/23/2015 22:15:51"/>
+  <jnifun name="GetArrayRegion">
+   <documentation>
+     <desc>
+       A family of functions that copies a region of a primitive array into a buffer
+     </desc>
+    <apidoc>
+     <pt>
+      <ll>void GetArrayRegion(</ll>
+      <ld>_in JNIEnv *env</ld>
+      <ld>_in atype  array</ld>
+      <ld>_in jsize  start</ld>
+      <ld>_in jsize  len</ld>
+      <ld>_out ttype *buf</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="env">the JNI interface pointer</par>
+     <par name="array">a Java array</par>
+     <par name="start">the starting index</par>
+     <par name="len">the number of elements to be copied</par>
+     <par name="buf">the destination buffer</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="GetArrayRegion">
+    <par loc="stack" desc="jni interface pointer" io="r" name="env" nr="1">
+     <type><ptr>JNIEnv</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" desc="java array" io="r" name="array" nr="2">
+     <type>atype</type>
+     <roles>
+       <role rt="jni:array" rn="get array region"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="array index" io="r" name="start" nr="3">
+     <type>jsize</type>
+     <roles>
+       <role rt="jni:arrayindex" rn="get array region"/>
+       <role rt="size:arrayindex" rn="GetArrayRegion"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="count" io="r" name="len" nr="4">
+     <type>jsize</type>
+     <roles>
+       <role rt="jni:count" rn="get array region"/>
+       <role rt="size:count" rn="GetArrayRegion"/>
+     </roles>
+    </par>
+    <par loc="stack" name="buf" nr="5">
+     <type><ptr>ttype</ptr></type>
+     <roles>
+       <role rt="jni:destination" rn="get array region"/>
+       <role rt="ioc:memops" rn="destination buffer"/>
+     </roles>
+    </par>
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="jni" desc="retrieves a primitive type array region"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>ttype</type>
+	    <ci>buf</ci>
+	    <apply><indexsize/><ci>len</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>ttype</type>
+	    <ci>buf</ci>
+	    <apply><indexsize/><ci>len</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

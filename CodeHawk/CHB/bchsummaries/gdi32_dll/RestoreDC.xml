@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:17:23"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="RestoreDC">
+   <documentation>
+    <desc>
+      restores a device context (DC) to the specified state. The DC is restored 
+      by popping state information off a stack created by earlier calls to the 
+      SaveDC function.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL RestoreDC(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ld>_In_  int nSavedDC</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the DC.</par>
+     <par name="nSavedDc">
+       The saved state to be restored. If this parameter is positive,
+       nSavedDC represents a specific instance of the state to be
+       restored. If this parameter is negative, nSavedDC represents an
+       instance relative to the current state. For example, -1
+       restores the most recently saved state.
+	</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="RestoreDC">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hdc" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+     </par>
+    <par loc="stack" name="nSavedDc" roles="none" nr="2">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="restores the device context to a given state"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

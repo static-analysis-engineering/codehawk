@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="07/09/2015 23:43:45"/>
+  <libfun lib="msvcrt" name="bsearch">
+   <documentation>
+    <desc>Performs a binary search of a sorted array</desc>
+    <apidoc>
+     <pt>
+      <ll>void *bsearch(</ll>
+      <ld>const void *key</ld>
+      <ld>const void *base</ld>
+      <ld>size_t num</ld>
+      <ld>size_t width</ld>
+      <ld>int ( __cdecl *compare ) (const void *key, const void *datum)</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="key">Object to search for</par>
+     <par name="base">Pointer to base of search data.</par>
+     <par name="num">Number of elements.</par>
+     <par name="width">Width of elements.</par>
+     <par name="compare">
+       Callback function that compares two elements. The first is a pointer to 
+       the key for the search and the second is a pointer to the array element 
+       to be compared with the key.
+     </par>
+     <return>
+       a pointer to an occurrence of key in the array pointed to by base. If 
+       key is not found, the function returns NULL. If the array is not in 
+       ascending sort order or contains duplicate records with identical keys,
+       the result is unpredictable.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="bsearch">
+    <par loc="stack" name="key" io="r" roles="none" rep="hex" nr="1">
+     <type><ptr>void</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:search"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="base" nr="2" rep="hex">
+     <type><ptr>void</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:search" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="num" roles="none" nr="3">
+     <type>size_t</type>
+    </par>
+    <par loc="stack" io="r" name="width" roles="none" nr="4">
+     <type>size_t</type>
+    </par>
+    <par loc="stack" io="r" name="compare" nr="5">
+     <type>unknownfunction</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackf:compare" />
+     </roles>
+     <pre><function-pointer/></pre>
+    </par>
+    <returntype><ptr>void</ptr></returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="inputs" desc="searches for a key in an array"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>base</ci>
+	    <apply><times/><ci>num</ci><ci>width</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

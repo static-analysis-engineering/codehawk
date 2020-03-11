@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="12/18/2015 10:30:10"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="27" name="AllocObject">
+    <documentation>
+      <desc>
+	Allocates a new Java object without invoking any of the constructors
+	for the object. Returns a reference to the object.
+	The clazz argument must not refer to an array class.
+      </desc>
+      <apidoc>
+	<pt>jobject AllocObject(JNIEnv *env, jclass clazz)</pt>
+	<par name="env">the JNI interface pointer</par>
+	<par name="clazz">a Java class object</par>
+	<return>
+	  <rc cond="success">a Java object</rc>
+	  <rc cond="failure">NULL</rc>
+	</return>	    
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="8" name="AllocObject" rv-role="jobject" jni="27">
+      <par loc="stack" nr="1" name="env" role="jnienv">
+	<type>JNIEnv</type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" nr="2" name="clazz" role="java class">
+	<type>jclass</type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype>jobject</returntype>
+    </api>
+    <semantics cat="memops" desc="allocates a new Java object">
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

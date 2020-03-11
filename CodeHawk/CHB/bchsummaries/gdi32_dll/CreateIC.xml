@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 13:21:14"/>
+  <libfun lib="gdi32" name="CreateIC">
+   <documentation>
+    <desc>
+      creates an information context for the specified device. The 
+      information context provides a fast way to get information about 
+      the device without creating a device context (DC). However, GDI
+      drawing functions cannot accept a handle to an information context
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HDC CreateIC(</ll>
+      <ld>_In_       LPCTSTR lpszDriver</ld>
+      <ld>_In_       LPCTSTR lpszDevice</ld>
+      <ld>           LPCTSTR lpszOutput</ld>
+      <ld>_In_ const DEVMODE *lpdvmInit</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszDriver">
+       A pointer to a null-terminated character string that specifies the 
+       name of the device driver (for example, Epson)
+     </par>
+     <par name="lpszDevice">
+       A pointer to a null-terminated character string that specifies the 
+       name of the specific output device being used, as shown by the Print 
+       Manager (for example, Epson FX-80). It is not the printer model name. 
+       The lpszDevice parameter must be used
+     </par>
+     <par name="lpszOutput">
+       This parameter is ignored and should be set to NULL. It is provided 
+       only for compatibility with 16-bit Windows
+     </par>
+     <par name="lpdvmInit">
+       A pointer to a DEVMODE structure containing device-specific initialization
+       data for the device driver. The DocumentProperties function retrieves 
+       this structure filled in for a specified device. The lpdvmInit parameter
+       must be NULL if the device driver is to use the default initialization
+       (if any) specified by the user
+     </par>
+     <return>
+      <rc cond="success">the handle to an information context</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CreateIC">
+    <par loc="stack" io="r" name="lpszDriver" nr="1">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:device driver" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpszDevice" nr="2">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:device" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="lpszOutput" io="r" nr="3">
+     <type>LPCTSTR</type>
+     <roles>
+       <role rt="ioc:outputs" rn="device output"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpdvmInit" nr="4">
+     <type><ptr>DEVMODE</ptr> </type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:device initialization data" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <returntype>HDC</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" 
+		desc="creates a context for a device driver">
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

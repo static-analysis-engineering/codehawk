@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-30T22:22:41.187147"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="3" name="DestroyJavaVM">
+    <documentation>
+      <desc>Unloads a Java VM and reclaims its resources</desc>
+      <apidoc>
+        <pt>
+          <ll>jint DestroyJavaVM(</ll>
+          <ld>_in JavaVM *vm</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="vm">the Java VM that will be destroyed</par>
+        <return>
+          <rc cond="success">JNI_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="3" adj="4" name="DestroyJavaVM">
+      <par loc="stack" nr="1" name="vm" io="r" desc="Java vm">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JavaVM</ptr>
+        </type>
+      </par>
+      <returntype>jint</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="unloads a Java VM" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

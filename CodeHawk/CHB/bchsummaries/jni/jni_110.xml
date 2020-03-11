@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-27T00:27:55.019216"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="110">
+    <refer-to typename="Long" prefix="Set" suffix="Field">
+      <replace-type src="ttype" tgt="jlong"/>
+    </refer-to>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

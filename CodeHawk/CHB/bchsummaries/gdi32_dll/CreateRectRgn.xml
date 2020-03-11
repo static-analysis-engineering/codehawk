@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:04:22"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CreateRectRgn">
+   <documentation>
+    <desc>creates a rectangular region.</desc>
+    <apidoc>
+     <pt>
+      <ll>HRGN CreateRectRgn(</ll>
+      <ld>_In_  int nLeftRect</ld>
+      <ld>_In_  int nTopRect</ld>
+      <ld>_In_  int nRightRect</ld>
+      <ld>_In_  int nBottomRect</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">the handle to the region</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="nLeftRect">
+       Specifies the x-coordinate of the upper-left corner of the region in logical units.
+     </par>
+     <par name="nTopRect">
+       Specifies the y-coordinate of the upper-left corner of the region in logical units.
+     </par>
+     <par name="nRightRect">
+       Specifies the x-coordinate of the lower-right corner of the region in logical units.
+     </par>
+     <par name="nBottomRect">
+       Specifies the y-coordinate of the lower-right corner of the region in logical units.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CreateRectRgn">
+     <returntype>HRGN</returntype>
+     <par loc="stack" name="nLeftRect" io="r" nr="1">
+       <type>int</type>
+       <roles>
+	 <role rt="size:coordinate" rn="CreateRectRgn"/>
+       </roles>
+    </par>
+    <par loc="stack" name="nTopRect" io="r" nr="2">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="CreateRectRgn"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nRightRect" nr="3">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="CreateRectRgn"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nBottomRect" nr="4">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="CreateRectRgn"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui" desc="creates a rectangulare region"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

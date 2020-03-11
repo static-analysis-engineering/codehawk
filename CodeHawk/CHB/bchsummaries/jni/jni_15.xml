@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T21:44:01.583397"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="15" name="ExceptionOccurred">
+    <documentation>
+      <desc>
+	Determines if an exception is being thrown. The exception
+	stays being thrown until either the native code calls
+	ExceptionClear(), or the Java code handles the exception.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jthrowable ExceptionOccurred(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <return>
+	  Returns the exception object that is currently in the
+	  process of being thrown, or NULL if no exception is
+	  currently being thrown.
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="15" adj="4" name="ExceptionOccurred">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <returntype>jthrowable</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="determines if an exception is being thrown" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

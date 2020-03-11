@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:36"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="_close">
+   <documentation>
+    <desc>closes a file</desc>
+    <apidoc>
+     <pt>int _close (int fd)</pt>
+     <par name="fd">file descriptor referring to the open file</par>
+     <return>
+      <rc cond="success">0</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_close">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="fd" nr="1">
+     <type>int</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="id:file descriptor" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="closes a file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

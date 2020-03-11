@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/04/2015 15:49:24"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="comctl32" name="DrawInsert">
+   <documentation>
+    <desc>
+      draws the insert icon in the parent window of the specified drag list box
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>void DrawInsert(</ll>
+      <ld>HWND handParent,</ld>
+      <ld>HWND hLB,</ld>
+      <ld>int nItem</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="handParent">handle to the parent window of the drag list box</par>
+     <par name="hLB">handle to the drag list box</par>
+     <par name="nItem">identifier of the icon item to be drawn</par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="DrawInsert">
+    <returnbtype tname="void" ttag="tnamed"/>
+    <par loc="stack" name="handParent" io="r" rep="hex" nr="1">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hLB" io="r" rep="hex" nr="2">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nItem" io="r" roles="none" nr="3">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="draws an insert icon"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

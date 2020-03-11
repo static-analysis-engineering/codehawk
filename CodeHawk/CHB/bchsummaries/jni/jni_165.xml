@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T21:19:31.286169"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="165" name="GetStringChars">
+    <documentation>
+      <desc>
+	Returns a pointer to the array of Unicode characters of the
+	string. This pointer is valid until ReleaseStringchars() is called.
+
+	If isCopy is not NULL, then *isCopy is set to JNI_TRUE if a
+	copy is made; or it is set to JNI_FALSE if no copy is made
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>const jchar *GetStringChars(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jstring string</ld>
+          <ld>_out jboolen *isCopy</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="string">a Java string object</par>
+        <par name="isCopy">a pointer to a boolean</par>
+        <return>
+          <rc cond="success">pointer to a Unicode string</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="165" adj="12" name="GetStringChars">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="java string" io="r" nr="2" name="string">
+        <type>jstring</type>
+	<pre><deref-read/></pre>
+        <roles>
+           <role rt="jni:string" rn="retrieve string"/>
+        </roles>
+      </par>
+      <par loc="stack" desc="isCopy?" io="w" nr="3" name="isCopy">
+        <type><ptr>jboolean</ptr></type>
+	<pre><deref-write-null/></pre>
+        <sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype><ptr>jchar</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="retrieves the characters from a java string" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

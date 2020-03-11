@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CreateFont">
+   <documentation>
+    <desc>
+      creates a logical font with the specified characteristics. The logical font
+      can subsequently be selected as the font for any device
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HFONT CreateFont (</ll>
+      <ld>_In_ int nHeight,</ld>
+      <ld>_In_ int nWidth,</ld>
+      <ld>_In_ int nEscapement,</ld>
+      <ld>_In_ int nOrientation,</ld>
+      <ld>_In_ int fnWeight,</ld>
+      <ld>_In_ DWORD fdwItalic,</ld>
+      <ld>_In_ DWORD fdwUnderline,</ld>
+      <ld>_In_ DWORD fdwStrikeOut,</ld>
+      <ld>_In_ DWORD fdwCharSet,</ld>
+      <ld>_In_ DWORD fdwOutputPrecision,</ld>
+      <ld>_In_ DWORD fdwClipPrecision,</ld>
+      <ld>_In_ DWORD fdwQuality,</ld>
+      <ld>_In_ DWORD fdwPitchAndFamily,</ld>
+      <ld>_In_ LPCTSTR lpszFace</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="nHeight">
+       height, in logical units, of the font&apos;s character cel or character
+     </par>
+     <par name="hWidth">
+       average width, in logical units, of the characters in the requested font
+     </par>
+     <par name="nEscapement">
+       angle, in tenths of degrees, between the escapement vector and the x-axis
+       of the device
+     </par>
+     <par name="nOrientation">
+       angle, in tenths of degrees, between each character&apos;s base line and 
+       the x-axis of the device
+     </par>
+     <par name="fnWeight">weight of the font in the range 0 through 1000</par>
+     <par name="fdwItalic">specifies an italic font if set to TRUE</par>
+     <par name="fdwUnderline">specifies an underlined font if set to TRUE</par>
+     <par name="fdwStrikeOut">strikeout font if set to TRUE</par>
+     <par name="fdwCharSet">character set</par>
+     <par name="fdwOutputPrecsion">
+       defines how closely the output must match the requested font&apos;s height, width,
+       character orientation, escapement, pitch, and font type
+     </par>
+     <par name="fdwClipPrecision">
+       defines how to clip characters that are partially outside the clipping region
+     </par>
+     <par name="fdwQuality">
+       defines how carefully GDI must attempt to match the logical font attributes to
+       those of an actual physical font
+     </par>
+     <par name="fdwPitchAndFamily">pitch and family of the font</par>
+     <par name="lpszFace">
+       pointer to a null-terminated string that specifies the typeface name of the 
+       font. The length of the string must not exceed 32 characters, including the
+       terminating null character. Can be NULL.
+     </par>
+     <return>
+       <rc cond="success">nonzero</rc>
+       <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="56" cc="stdcall" name="CreateFont">
+     <returntype>HFONT</returntype>
+     <par loc="stack" name="nHeight" io="r" roles="none" nr="1">
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="nWidth" io="r" roles="none" nr="2">
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="nEscapement" io="r" roles="none" nr="3">
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="nOrientation" io="r" roles="none" nr="4">
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="fnWeight" io="r" roles="none" nr="5">
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="fdwItalic" io="r" roles="none" nr="6">
+     <btype ikind="iuint" ttag="tint"/>
+    </par>
+    <par loc="stack" name="fdwUnderline" io="r" roles="none" nr="7">
+     <btype ikind="iuint" ttag="tint"/>
+    </par>
+    <par loc="stack" name="fdwStrikeOut" io="r" roles="none" nr="8">
+     <btype ikind="iuint" ttag="tint"/>
+    </par>
+    <par loc="stack" name="fdwCharSet" io="r" roles="none" nr="9">
+     <btype ikind="iuint" ttag="tint"/>
+    </par>
+    <par loc="stack" name="fdwOutputPrecision" io="r" roles="none" nr="10">
+     <btype ikind="iuint" ttag="tint"/>
+    </par>
+    <par loc="stack" name="fdwClipPrecision" io="r" roles="none" nr="11">
+     <btype ikind="iuint" ttag="tint"/>
+    </par>
+    <par loc="stack" name="fdwQuality" io="r" roles="none" nr="12">
+     <btype ikind="iuint" ttag="tint"/>
+    </par>
+    <par loc="stack" name="fdwPitchAndFamily" io="r" roles="none" nr="13">
+     <btype ikind="iuint" ttag="tint"/>
+    </par>
+    <par loc="stack" name="lpszFace" io="r" nr="14">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+	<role rt="ioc:system" rn="name:typeface"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="creates a logical font"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/10/2015 00:27:07"/>
+  <libfun lib="gdi32" name="CopyEnhMetaFile">
+   <documentation>
+    <desc>
+      copies the contents of an enhanced-format metafile to a specified file.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HENHMETAFILE CopyEnhMetaFile(</ll>
+      <ld>_In_ HENHMETAFILE hemfSrc</ld>
+      <ld>_In_ LPCTSTR      lpszFile</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hemfSrc">A handle to the enhanced metafile to be copied</par>
+     <par name="lpszFile">
+       A pointer to the name of the destination file. If this parameter is NULL, the 
+       source metafile is copied to memory
+     </par>
+     <return>
+      <rc cond="success">handle to the copy of the enhanced metafile</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CopyEnhMetaFile">
+    <par loc="stack" name="hemfSrc" nr="1">
+     <type>HENHMETAFILE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="handle:enhanced metafile"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpszFile" io="r" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>HENHMETAFILE</returntype>
+   </api>
+   <semantics>
+     <io-actions cat="filesystem" 
+		 desc="copies an enhanced-format metafile to a file"/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

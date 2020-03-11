@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:21:12"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="comdlg32" name="GetOpenFileName">
+   <documentation>
+    <desc>
+      creates an Open dialog box that lets the user specify the drive, directory, and
+      the name of a file or set of files to be opened
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI GetOpenFilename ( _InOut_ LPOPENFILENAME lpofn )</pt>
+     <par name="lpofn">
+       pointer to an OPENFILENAME structure that contains information used to initialize
+       the dialog box. When GetOpenFileName returns, this structure contains information
+       about the user&apos;s file selection
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetOpenFileName">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="rw" name="lpofn" nr="1">
+      <type><ptr>OPENFILENAME</ptr></type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="user:openfilename"/>
+      </roles>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="creates a dialog box to select a file to be opened"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

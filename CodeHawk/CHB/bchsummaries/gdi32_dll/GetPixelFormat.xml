@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 14:53:03"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetPixelFormat">
+   <documentation>
+    <desc>obtains the index of the currently selected pixel format of the
+     specified device context
+   </desc>
+    <apidoc>
+     <pt>int WINAPI GetPixelFormat (HDC hdc)</pt>
+     <return>
+      <rc cond="success">pixel format index (positive)</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">device context</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="GetPixelFormat">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="obtains the pixel format of a device context"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

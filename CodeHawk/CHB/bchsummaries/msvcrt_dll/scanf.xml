@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/18/2015 09:52:16"/>
+  <libfun lib="msvcrt" name="scanf">
+   <documentation>
+    <desc>
+      Reads formatted data from the standard input stream
+    </desc>
+    <notes>
+      TBD: properly deal with varargs, and the preconditions associated with them
+    </notes>
+    <remarks>
+      The scanf function reads data from the standard input stream stdin and 
+      writes the data into the location given by argument. Each argument must
+      be a pointer to a variable of a type that corresponds to a type specifier 
+      in format. If copying takes place between strings that overlap, the
+      behavior is undefined.
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>int scanf(</ll>
+      <ld>const char *format</ld>
+      <ld>varargs args</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="format">Format control string</par>
+     <par name="args">Optional arguments</par>
+     <return>
+       the number of fields successfully converted and assigned; the return 
+       value does not include fields that were read but not assigned. A return 
+       value of 0 indicates that no fields were assigned
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="scanf">
+    <par loc="stack" name="format" io="r" nr="1" rep="hex">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:inputs" rn="scanf format string"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="args" nr="2">
+     <type>varargs</type>
+     <roles/>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="inputs" desc="Reads formatted data from the stdin"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

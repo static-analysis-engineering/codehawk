@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:36"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="fputc">
+   <documentation>
+    <desc>puts a byte on a stream</desc>
+    <apidoc>
+     <pt>int fputc (int c, FILE *stream)</pt>
+     <par name="c">unsigned char to be written</par>
+     <par name="stream">output stream</par>
+     <return>
+      <rc cond="success">the value written</rc>
+      <rc cond="failure">EOF</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="fputc">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="c" nr="1">
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:file output" />
+     </roles>
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" io="r" name="stream" rep="hex" nr="2">
+     <roles>
+      <role rt="ioc:filesystem" rn="file" />
+     </roles>
+     <type><ptr>FILE</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="writes a byte to a file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <sets-errno/>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

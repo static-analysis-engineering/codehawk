@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/10/2015 16:50:40"/>
+  <libfun lib="msvcrt" name="isleadbyte">
+   <documentation>
+    <desc>
+      Determines whether a character is the lead byte of a multibyte character
+    </desc>
+    <apidoc>
+     <pt>int isleadbyte (int c)</pt>
+     <par name="c">Integer to test</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="isleadbyte">
+    <par loc="stack" name="c" io="r" roles="none" nr="1">
+     <type>int</type>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

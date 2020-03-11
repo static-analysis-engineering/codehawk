@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="BitBlt">
+   <documentation>
+    <desc>
+      performs a bit-block transfer of the color data corresponding to a rectangle
+      of pixels from the specified source device context into a destination device
+      context
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL BitBlt (</ll>
+      <ld>_In_ HDC hdcDest,</ld>
+      <ld>_In_ int nXDest,</ld>
+      <ld>_In_ int nYDest,</ld>
+      <ld>_In_ int nWidth,</ld>
+      <ld>_In_ int nHeight,</ld>
+      <ld>_In_ HDC hdcSrc,</ld>
+      <ld>_In_ int nXSrc,</ld>
+      <ld>_In_ int nYSrc,</ld>
+      <ld>_In_ DWORD dwRop</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdcDest">handle to the destination device context</par>
+     <par name="nXDest">
+       x-coordinate, in logical units, of the upper-left corner of the destination rectangle
+     </par>
+     <par name="nYDest">
+       y-coordinate, in logical units, of the upper-left corner of the destination rectangle
+     </par>
+     <par name="nWidth">
+       width, in logical units, of the source and destination rectangle
+     </par>
+     <par name="nHeight">
+       height, in logical units, of the source and destination rectangle
+     </par>
+     <par name="hdcSrc">
+       A handle to the source device context.
+     </par>
+     <par name="nXSrc">
+       x-coordinate, in logical units, of the upper-left corner of the source rectangle
+     </par>
+     <par name="nYSrc">
+       y-coordinate, in logical units, of the upper-left corner of the source rectangle
+     </par>
+     <par name="dwRop">
+       raster-operation code. These codes define how the color data for the source
+       rectangle is to be combined with the color data for the destination rectangle
+       to achieve the final color
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="36" cc="stdcall" name="BitBlt">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hdcDest" nr="1">
+      <type>HDC</type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nXDst" nr="2">
+     <type>int</type>
+     <roles/>
+    </par>
+    <par loc="stack" name="nYDst" nr="3">
+     <type>int</type>
+     <roles/>
+    </par>
+    <par loc="stack" name="nWidth" nr="4">
+     <type>int</type>
+     <roles/>
+    </par>
+    <par loc="stack" name="nHeight" nr="5">
+     <type>int</type>
+     <roles/>
+    </par>
+    <par loc="stack" name="hdcSrc" nr="6">
+      <type>HDC</type>
+     <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nXSrc" nr="7">
+     <type>int</type>
+     <roles/>
+    </par>
+    <par loc="stack" name="nYSrc" nr="8">
+     <type>int</type>
+     <roles/>
+    </par>
+    <par loc="stack" name="dwRop" nr="9">
+     <type>int</type>
+     <roles/>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" 
+		  desc="transfers a data block from device to device"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

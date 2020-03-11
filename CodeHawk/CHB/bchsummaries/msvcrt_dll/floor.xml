@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/02/2015 11:29:40"/>
+  <libfun lib="msvcrt" name="floor">
+   <documentation>
+    <desc>Calculates the floor of a value</desc>
+    <apidoc>
+     <pt>double floor (double x)</pt>
+     <par name="x">Floating-point value</par>
+     <return>
+       a floating-point value that represents the largest integer that is less 
+       than or equal to x
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="floor">
+    <par loc="stack" name="x" io="r" roles="none" nr="1">
+     <type>double</type>
+    </par>
+    <returntype>double</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:10:25"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetSystemPaletteEntries">
+   <documentation>
+    <desc>
+      retrieves a range of palette entries from the system palette that
+      is associated with the specified device context (DC).
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT GetSystemPaletteEntries(</ll>
+      <ld>_In_   HDC hdc </ld>
+      <ld>_In_   UINT iStartIndex </ld>
+      <ld>_In_   UINT nEntries </ld>
+      <ld>_Out_  LPPALETTEENTRY lppe </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="iStartIndex">The first entry to be retrieved from the system palette.</par>
+     <par name="nEntries">
+       The number of entries to be retrieved from the system palette.
+     </par>
+     <par name="lppe">
+       A pointer to an array of PALETTEENTRY structures to receive the palette
+       entries. The array must contain at least as many structures as specified
+       by the nEntries parameter. If this parameter is NULL, the function returns
+       the total number of entries in the palette.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetSystemPaletteEntries">
+     <returntype>UINT</returntype>
+     <par loc="stack" name="hdc" io="r" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+    <par loc="stack" name="iStartIndex" io="r" nr="2">
+      <type>UINT</type>
+      <roles>
+	<role rt="size:index" rn="GetSystemPaletteEntries"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nEntries" io="r" nr="3">
+      <type>UINT</type>
+      <roles>
+	<role rt="size:count" rn="GetSystemPaletteEntries"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lppe" io="w" nr="4" rep="hex">
+     <type><ptr>PALETTEENTRY</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:PALETTEENTRY" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" 
+		  desc="retrieves system palette entries associated with a device context"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>PALETTEENTRY</type>
+	    <ci>lppe</ci>
+	    <apply><indexsize/><ci>nEntries</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>PALETTEENTRY</type>
+	    <ci>lppe</ci>
+	    <apply><indexsize/><ci>nEntries</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ImageList_DragLeave.xml" time="2016-07-05 21:44:04.003641"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="comctl32" name="ImageList_DragLeave">
+    <documentation>
+      <desc>
+	Unlocks the specified window and hides the drag image,
+	allowing the window to be updated
+      </desc>
+      <apidoc>
+        <pt>BOOL ImageList_DragLeave (HWND hwndLock)</pt>
+        <par name="hwndLock">
+	  A handle to the window that owns the drag image
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="ImageList_DragLeave">
+      <par loc="stack" name="hwndLock" io="r" nr="1">
+        <type>HWND</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="unlocks a window and hides the drag image"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/06/2015 11:11:57"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="_unlock">
+   <documentation>
+    <desc>releases a multi-thread lock</desc>
+    <apidoc>
+     <pt>void __cdecl_ _unlock (int locknum)</pt>
+     <return/>
+     <par name="locknum">identifier of the lock to release</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_unlock">
+    <returntype>void</returntype>
+    <par loc="stack" io="r" name="locknum" nr="1">
+     <roles>
+      <role rt="ioc:synchronization" rn="id:lock" />
+     </roles>
+     <type>int</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="synchronization" desc="releases a multi-thread lock"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

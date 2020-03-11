@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="_mkdir.xml" time="2016-07-28 16:34:59.828582"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="_mkdir">
+    <documentation>
+      <desc>Creates a new directory.</desc>
+      <apidoc>
+        <pt>int _mkdir (const char *dirname)</pt>
+        <par name="dirname">Path for a new directory</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="_mkdir">
+      <par loc="stack" name="dirname" io="r" nr="1" rep="hex">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:file"/>
+	</roles>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="creates a new directory"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

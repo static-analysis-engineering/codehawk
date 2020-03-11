@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:36"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="fgets">
+   <documentation>
+    <desc>
+      reads characters from a stream and stores them as a C string into str
+      until (count-1) characters have been read or either a newline or a
+      EOF is reached; a null character is automatically appended in str
+      after the characters read
+    </desc>
+    <remarks>
+      reads characters from the current stream position to and including
+      the first newline character, to the end of the stream, or until the
+      number of characters read is equal to n-1, whichever comes first. The
+      result stored in str is appended with a null character
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>char *fgets(</ll>
+      <ld>char *str,</ld>
+      <ld>int count,</ld>
+      <ld>FILE *stream</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="str">pointer to an array of chars where the string is stored</par>
+     <par name="count">maximum number of characters to be read (including the null character
+	</par>
+     <par name="stream">
+       pointer to a FILE structure that identifies the stream where the characters
+       are read from
+     </par>
+     <return>
+      <rc cond="success">value of str</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="fgets">
+    <returntype><ptr>char</ptr></returntype>
+    <par loc="stack" io="w" name="str" nr="1">
+     <roles>
+      <role rt="ioc:memops" rn="dst-string:file input" />
+     </roles>
+     <type><ptr>char</ptr></type>
+    </par>
+    <par loc="stack" io="r" name="count" roles="none" nr="2">
+      <type>int</type>
+    </par>
+    <par loc="stack" io="r" name="stream" rep="hex" nr="3">
+     <roles>
+      <role rt="ioc:filesystem" rn="file" />
+     </roles>
+     <type><ptr>FILE</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="reads characters from a file"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>str</ci>
+	    <ci>count</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <null-terminated/>
+        <ci>str</ci>
+       </apply>
+      </math>
+     </post>
+     <post>
+      <math>
+       <apply>
+        <eq/>
+        <return-value/>
+        <ci>str</ci>
+       </apply>
+      </math>
+     </post>
+     <error-post>
+      <math>
+       <apply>
+        <null/>
+        <return-value/>
+       </apply>
+      </math>
+     </error-post>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+        <btype tname="char" ttag="tnamed"/>
+        <ci>str</ci>
+        <ci>count</ci>
+       </apply>
+      </math>
+     </sideeffect>
+     <sideeffect>
+      <math>
+       <sets-errno/>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

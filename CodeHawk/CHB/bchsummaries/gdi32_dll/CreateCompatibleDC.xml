@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CreateCompatibleDC">
+   <documentation>
+    <desc>creates a memory device context compatible with the specified device</desc>
+    <apidoc>
+     <pt>HDC CreateCompatibleDC (_In_ HDC hdc )</pt>
+     <par name="hdc">
+       handle to an existing DC. If this handle is NULL, the function creates a memory
+       DC compatible with the application&apos;s current screen
+     </par>
+     <return>
+      <rc cond="success">handle to a memory DC</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CreateCompatibleDC">
+    <returntype>HDC</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:device context"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" 
+		  desc="creates a compatible device context"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

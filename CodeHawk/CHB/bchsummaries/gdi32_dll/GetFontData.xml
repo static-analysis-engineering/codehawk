@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:07:00"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetFontData">
+   <documentation>
+    <desc>retrieves font metric data for a TrueType font.</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD GetFontData(</ll>
+      <ld>_In_   HDC hdc</ld>
+      <ld>_In_   DWORD dwTable</ld>
+      <ld>_In_   DWORD dwOffset</ld>
+      <ld>_Out_  LPVOID lpvBuffer</ld>
+      <ld>_In_   DWORD cbData</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">Number of Bytes Returned</rc>
+      <rc cond="failure">GDI_ERROR</rc>
+     </return>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="dwTable">
+       The name of a font metric table from which the font data is to be retrieved.
+       This parameter can identify one of the metric tables documented in the 
+       TrueType Font Files specification published by Microsoft Corporation. If 
+       this parameter is zero, the information is retrieved starting at the 
+       beginning of the file for TrueType font files or from the beginning 
+       of the data for the currently selected font for TrueType Collection 
+       files. To retrieve the data from the beginning of the file for 
+       TrueType Collection files specify &apos;ttcf&apos; (0x66637474).	  	 
+     </par>
+     <par name="dwOffset">
+       The offset from the beginning of the font metric table to the location 
+       where the function should begin retrieving information. If this parameter
+       is zero, the information is retrieved starting at the beginning of the 
+       table specified by the dwTable parameter. If this value is greater than 
+       or equal to the size of the table, an error occurs.
+     </par>
+     <par name="lpvBuffer">
+       A pointer to a buffer that receives the font information. If this 
+       parameter is NULL, the function returns the size of the buffer required 
+       for the font data.
+     </par>
+     <par name="cbData">
+       The length, in bytes, of the information to be retrieved. If this 
+       parameter is zero, GetFontData returns the size of the data specified 
+       in the dwTable parameter.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="GetFontData">
+    <returntype>DWORD</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwTable" nr="2">
+     <type>DWORD</type>
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:misc" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwOffset" nr="3">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:offset" rn="offset in metric table" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpvBuffer" nr="4" rep="hex">
+     <type><ptr>void</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:misc" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cbData" nr="5">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:buffersize" rn="number of bytes to copy" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="retrieves font metric data"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>byte</type>
+	    <ci>lpvBuffer</ci>
+	    <ci>cbData</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="device" xdata="font metric data"/>
+	    <type>byte</type>
+	    <ci>lpvBuffer</ci>
+	    <ci>cbData</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 03:03:14"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="Ellipse">
+   <documentation>
+    <desc>
+      draws an ellipse. The center of the ellipse is the center of the 
+      specified bounding rectangle. The ellipse is outlined by using the current 
+      pen and is filled by using the current brush.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL Ellipse(</ll>
+      <ld>_In_  HDC hdc </ld>
+      <ld>_In_  int nLeftRect </ld>
+      <ld>_In_  int nTopRect </ld>
+      <ld>_In_  int nRightRect </ld>
+      <ld>_In_  int nBottomRect </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="nLeftRect">
+       The x-coordinate, in logical coordinates, of the upper-left corner of 
+       the bounding rectangle. 
+     </par>
+     <par name="nTopRect">
+       The y-coordinate, in logical coordinates, of the upper-left corner of 
+       the bounding rectangle.
+     </par>
+     <par name="nRightRect">
+       The x-coordinate, in logical coordinates, of the lower-right corner of 
+       the bounding rectangle.
+     </par>
+     <par name="nBottomRect">
+       The y-coordinate, in logical coordinates, of the lower-right corner 
+       of the bounding rectangle.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="Ellipse">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="nLeftRect" io="r" roles="none" nr="2">
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="nTopRect" io="r" roles="none" nr="3">
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="nRightRect" io="r" roles="none" nr="4">
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="nBottomRect" io="r" roles="none" nr="5">
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="draws an ellipse"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 09:20:29"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CloseMetaFile">
+   <documentation>
+    <desc>
+      closes a metafile device context and returns a handle that identifies a 
+      Windows-format metafile.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HMETAFILE CloseMetaFile(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="hdc">
+       Handle to a metafile device context used to create a Windows-format metafile.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CloseMetaFile">
+     <returntype>HMETAFILE</returntype>
+     <par loc="stack" name="hdc" io="r" rep="hex" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="closes a metafile device context"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

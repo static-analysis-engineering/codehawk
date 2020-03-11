@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:36"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="vfprintf">
+   <documentation>
+    <desc>formatted output of a stdarg argument list</desc>
+    <apidoc>
+     <pt>
+      <ll>int vfprintf (</ll>
+      <ld>FILE *stream,</ld>
+      <ld>const char *format,</ld>
+      <ld>va_list ap</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="stream">stream on which the output is to be placed</par>
+     <par name="format">controls the formatting</par>
+     <par name="ap">argument list</par>
+     <return>
+      <rc cond="success">number of bytes output excluding the null-terminating byte</rc>
+      <rc cond="failure">nonpositive number</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="vfprintf">
+     <returntype>int</returntype>
+     <par loc="stack" desc="output stream" io="r" name="stream" nr="1">
+       <type><ptr>FILE</ptr></type>
+       <roles>
+	 <role rt="ioc:filesystem" rn="file"/>
+       </roles>
+       <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="format" nr="2" rep="hex">
+      <type><ptr>char</ptr></type>
+      <roles>
+        <role rt="ioc:outputs" rn="format string"/>
+      </roles>
+      <pre><deref-read-nt/><format-string/></pre>
+    </par>
+    <par loc="stack" name="args" roles="none" nr="3">
+     <btype ttag="tptr">
+      <typ tname="void" ttag="tnamed"/>
+     </btype>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="format" desc="writes formatted data to stream"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post><math><apply><geq/><return/><cn>0</cn></apply></math></post>
+      <error-post><math><apply><lt/><return/><cn>0</cn></apply></math></error-post>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <sets-errno/>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

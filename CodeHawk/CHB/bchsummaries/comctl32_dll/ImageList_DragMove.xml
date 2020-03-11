@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ImageList_DragMove.xml" time="2016-07-05 21:47:22.496768"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="comctl32" name="ImageList_DragMove">
+    <documentation>
+      <desc>
+	Moves the image that is being dragged during a drag-and-drop
+	operation. This function is typically called in response to a
+	WM_MOUSEMOVE message.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL ImageList_DragMove(</ll>
+          <ld>int x</ld>
+          <ld>int y</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="x">
+	  The x-coordinate at which to display the drag image. The
+	  coordinate is relative to the upper-left corner of the
+	  window, not the client area.
+	</par>
+        <par name="y">
+	  The y-coordinate at which to display the drag image. The
+	  coordinate is relative to the upper-left corner of the
+	  window, not the client area.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="ImageList_DragMove">
+      <par loc="stack" name="x" io="r" nr="1">
+        <type>int</type>
+	<roles>
+	  <role rt="size:distance" rn="ImageList_DragMove"/>
+	</roles>
+      </par>
+      <par loc="stack" name="y" io="r" nr="2">
+        <type>int</type>
+	<roles>
+	  <role rt="size:distance" rn="ImageList_DragMove"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="moves an image that is being dragged"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

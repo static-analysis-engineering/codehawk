@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T21:33:29.791534"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="32" name="IsInstanceOf">
+    <documentation>
+      <desc>Tests whether an object is an instance of a class</desc>
+      <apidoc>
+        <pt>
+          <ll>jboolean IsInstanceOf(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jobject obj</ld>
+          <ld>_in jclass clazz</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="obj">a Java object</par>
+        <par name="clazz">a Java class object</par>
+        <return>
+	  Returns JNI_TRUE if obj can be cast to clazz; otherwise,
+	  returns JNI_FALSE. A NULL object can be cast to any class
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="32" adj="12" name="IsInstanceOf">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="java object" io="r" nr="2" name="obj">
+        <type>jobject</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:object" rn="instanceof"/>
+	</roles>
+      </par>
+      <par loc="stack" desc="java class" io="r" nr="3" name="clazz">
+        <type>jclass</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:class" rn="instanceof"/>
+	</roles>
+      </par>
+      <returntype>jboolean</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="test whether object is an instance of class" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

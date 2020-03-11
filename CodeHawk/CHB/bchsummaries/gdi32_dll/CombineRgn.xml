@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 09:21:00"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CombineRgn">
+   <documentation>
+    <desc>
+      combines two regions and stores the result in a third region. The two 
+      regions are combined according to the specified mode. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int CombineRgn(</ll>
+      <ld>_In_  HRGN hrgnDest </ld>
+      <ld>_In_  HRGN hrgnSrc1 </ld>
+      <ld>_In_  HRGN hrgnSrc2 </ld>
+      <ld>_In_  int fnCombineMode </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">Region</rc>
+      <rc cond="failure">ERROR</rc>
+     </return>
+     <par name="hrgnDest">
+       A handle to a new region with dimensions defined by combining 
+       two other regions. (This region must exist before CombineRgn is called.) 
+    </par>
+     <par name="hrgnSrc1">A handle to the first of two regions to be combined. </par>
+     <par name="hrgnSrc2">A handle to the second of two regions to be combined. </par>
+     <par name="fnCombineMode">
+       A mode indicating how the two regions will be combined. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CombineRgn">
+     <returntype>int</returntype>
+     <par loc="stack" name="hrgnDest" io="r" nr="1">
+       <type>HRGN</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:region"/>
+       </roles>
+    </par>
+    <par loc="stack" name="hrgnSrc1" io="r" nr="2">
+      <type>HRGN</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:region"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hrgnSrc2" io="r" nr="3">
+      <type>HRGN</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:region"/>
+      </roles>
+    </par>
+    <par loc="stack" name="fnCombineMode" io="r" roles="none" nr="4">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="combines two regions on a device"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

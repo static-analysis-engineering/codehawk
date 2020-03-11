@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/02/2015 11:25:06"/>
+  <libfun lib="msvcrt" name="frexp">
+   <documentation>
+    <desc>Gets the mantissa and exponent of a floating-point number</desc>
+    <apidoc>
+     <pt>
+      <ll>double frexp(</ll>
+      <ld>double x</ld>
+      <ld>int *expptr</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="x">Floating-point value</par>
+     <par name="expptr">Pointer to stored integer exponent</par>
+     <return>the mantissa</return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="frexp">
+    <par loc="stack" name="x" io="r" roles="none" nr="1">
+     <type>double</type>
+    </par>
+    <par loc="stack" name="expptr" io="w" roles="none" nr="2">
+     <type><ptr>int</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>double</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

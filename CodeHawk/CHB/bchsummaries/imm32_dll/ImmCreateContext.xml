@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 06:48:39"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="imm32" name="ImmCreateContext">
+   <documentation>
+    <desc>
+      Creates a new input context, allocating memory for the context and 
+      initializing it. An application calls this function to prepare its 
+      own input context. 
+    </desc>
+    <apidoc>
+     <pt>ImmCreateContext ( )</pt>
+     <return>
+      <rc cond="success">Handle to new input context </rc>
+      <rc cond="failure">NULL </rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="ImmCreateContext">
+    <returntype>HIMC</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

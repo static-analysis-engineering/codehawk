@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 06:47:46"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="imm32" name="ImmAssociateContext">
+   <documentation>
+    <desc>Associates the specified input context with the specified window. </desc>
+    <apidoc>
+     <pt>
+      <ll>HIMC ImmAssociateContext(</ll>
+      <ld>_In_  HWND hWnd </ld>
+      <ld>_In_  HIMC hIMC </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       the handle to the input context previously associated with the window
+     </return>
+     <par name="hWnd">Handle to the window to associate with the input context. </par>
+     <par name="hImc">
+       Handle to the input context. If hIMC is NULL, the function removes any 
+       association the window has with an input context. Thus IME cannot be used
+       in the window. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ImmAssociateContext">
+    <returnbtype tname="HIMC " ttag="tnamed"/>
+    <par loc="stack" io="r" name="hWnd" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="hImc" nr="2">
+     <type>HIMC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:input context" />
+     </roles>
+      <pre><deref-read-null/></pre>
+    </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

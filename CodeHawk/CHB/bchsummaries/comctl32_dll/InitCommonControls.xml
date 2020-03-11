@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/04/2015 15:44:56"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="comctl32" name="InitCommonControls">
+   <documentation>
+    <desc>
+      registers and initializes certain common control window classes.
+      This function is obsolete; applications should use InitCommonControlsEx
+   </desc>
+    <apidoc>
+     <pt>void InitCommonControls (void)</pt>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="InitCommonControls">
+    <returnbtype tname="void" ttag="tnamed"/>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry"
+		  desc="registers and initializes common control window classes">
+	 <args/>
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

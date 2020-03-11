@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="putchar.xml" time="2016-05-15 16:15:27.275053"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="putchar">
+    <documentation>
+      <desc>Writes a character to stdout</desc>
+      <apidoc>
+        <pt>int putchar (int c)</pt>
+        <par name="c">character to be written</par>
+        <return>
+          <rc cond="success">c</rc>
+          <rc cond="failure">EOF</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="putchar">
+      <par loc="stack" name="c" io="r" nr="1">
+        <type>int</type>
+	<roles>
+	  <role rt="ioc:outputs" rn="stdout output"/>
+	</roles>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="outputs"
+		   desc="writes a character to stdout"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

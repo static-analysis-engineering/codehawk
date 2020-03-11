@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T13:31:08.730039"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="167" name="NewStringUTF">
+    <documentation>
+      <desc>
+         constructs a new java.lang.String object from an array of UTF-8 
+         characters. The UTF-8 characters pointed to by the bytes argument
+         must be null-terminated.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jstring NewStringUTF(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in const char *bytes</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="bytes">pointer to a sequence of UTF-8 characters</par>
+        <return>
+          <rc cond="success">local reference to a string object</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="167" adj="8" name="NewStringUTF">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="c string" io="r" nr="2" name="bytes">
+        <type><ptr>char</ptr></type>
+        <pre><deref-read-nt/></pre>
+        <roles>
+           <role rt="jni:cstring" rn="construct java string object"/>
+        </roles>
+      </par>
+      <returntype>jstring</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="constructs a java.lang.String object" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+          <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

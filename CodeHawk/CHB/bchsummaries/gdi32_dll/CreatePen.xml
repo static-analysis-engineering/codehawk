@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CreatePen">
+   <documentation>
+    <desc>
+      creates a logical pen that has the specified style, width, and color. The pen
+      can subsequently be selected into a device context and used to draw lines and
+      curves
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HPEN CreatePen (</ll>
+      <ld>_In_ int fnPenStyle,</ld>
+      <ld>_In_ int nWidth,</ld>
+      <ld>_In_ COLORREF crColor</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="fnPenStyle">pen style</par>
+     <par name="nWidth">width of the pen, in logical units</par>
+     <par name="crColor">color reference for the pen color</par>
+     <return>
+      <rc cond="success">handle that identifies a logical pen</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CreatePen">
+     <returntype>HPEN</returntype>
+     <par loc="stack" name="fnPenStyle" io="r" roles="none" nr="1">
+       <rep type="enum" name="pen_style_constants"/>
+       <type>int</type>
+       <pre><enum-value name="pen_style_constants"/></pre>
+    </par>
+    <par loc="stack" name="nWidth" io="r" nr="2">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="CreatePen"/>
+      </roles>
+    </par>
+    <par loc="stack" name="crColor" io="r" nr="3">
+      <type>COLORREF</type>
+      <roles>
+	<role rt="ioc:system" rn="color"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="creates a logical pen"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

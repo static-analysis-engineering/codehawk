@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="_strnset.xml" time="2016-05-15 10:26:42.330309"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="_strnset">
+    <documentation>
+      <desc>Initializes characters of a string to a given character</desc>
+      <apidoc>
+        <pt>
+          <ll>char *_strnset(</ll>
+          <ld>char *str</ld>
+          <ld>int c</ld>
+          <ld>size_t count</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="str">String to be altered</par>
+        <par name="c">Character setting</par>
+        <par name="count">Number of characters to be set</par>
+        <return>a pointer to the altered string</return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="_strnset">
+      <par loc="stack" name="str" io="w" nr="1">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:convert"/>
+	</roles>
+      </par>
+      <par loc="stack" name="c" io="r" roles="none" nr="2">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="count" io="r" roles="none" nr="3">
+        <type>size_t</type>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops"
+		   desc="initializes characters of a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>str</ci>
+	      <ci>count</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<post><math><apply><eq/><return/><ci>str</ci></apply></math></post>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>char</type>
+	      <ci>str</ci>
+	      <ci>count</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

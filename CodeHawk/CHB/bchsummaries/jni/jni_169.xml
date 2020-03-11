@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-21T13:43:28.290449"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="169" name="GetStringUTFChars">
+    <documentation>
+      <desc>
+	Returns a pointer to an array of bytes representing the string in
+	modified UTF-8 encoding. This array is valid until it is released by
+	ReleaseStringUTFChars()
+      </desc>
+      <apidoc>
+        <pt>
+	  <ll>const char *GetStringUTFChars(</ll>
+	  <ld>_in  JNIEnv   *env</ld>
+	  <ld>_in  jstring  string</ld>
+	  <ld>_out jboolean *isCopy</ld>
+	  <ll>)</ll>
+	</pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="string">a Java string object</par>
+        <par name="isCopy">a pointer to a boolean</par>
+        <return>
+          <rc cond="success">a pointer to a modified UTF-8 string</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="169" adj="12" name="GetStringUTFChars">
+      <par loc="stack" nr="1" name="env">
+        <type>JNIEnv</type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" nr="2" name="string">
+        <type>jstring</type>
+	<roles>
+	  <role rt="jni:string" rn="string retrieved"/>
+	</roles>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" nr="3" name="isCopy">
+        <type><ptr>jboolean</ptr></type>
+	<roles>
+	  <role rt="jni:boolean" rn="string is copied"/>
+	</roles>
+	<pre><deref-write-null/></pre>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="jni" desc="retrieves a string"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

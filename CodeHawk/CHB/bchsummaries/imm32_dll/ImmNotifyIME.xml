@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 07:04:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="imm32" name="ImmNotifyIME">
+   <documentation>
+    <desc>Notifies the IME about changes to the status of the input context. </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ImmNotifyIME(</ll>
+      <ld>_In_  HIMC hIMC </ld>
+      <ld>_In_  DWORD dwAction </ld>
+      <ld>_In_  DWORD dwIndex </ld>
+      <ld>_In_  DWORD dwValue </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">not-zero </rc>
+      <rc cond="failure">zero </rc>
+     </return>
+     <par name="hImc">Handle to the input context. </par>
+     <par name="dwAction">Notification code. </par>
+     <par name="dwIndex">Index of a candidate list. </par>
+     <par name="dwValue">Index of a candidate string. </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="ImmNotifyIME">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hImc" nr="1">
+     <type>HIMC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:input context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="dwAction" io="r" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="dwIndex" io="r" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="dwValue" io="r" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

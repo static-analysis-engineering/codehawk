@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="memset">
+   <documentation>
+    <desc>fills a buffer with a specified character</desc>
+    <apidoc>
+     <pt>
+      <ll>void *memset (</ll>
+      <ld>void *dest,</ld>
+      <ld>int c,</ld>
+      <ld>size_t count</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dest">pointer to destination buffer</par>
+     <par name="c">character to fill the buffer with</par>
+     <par name="count">number of characters to set</par>
+     <return>value of dest</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="memset">
+    <returntype><ptr>void</ptr></returntype>
+    <par loc="stack" io="w" name="dest" rep="hex" nr="1">
+      <type><ptr>void</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="dst-bytes:set"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" roles="none" name="c" nr="2">
+      <type>int</type>
+    </par>
+    <par loc="stack" desc="count" io="r" name="count" roles="none" nr="3">
+     <type>size_t</type>
+     <pre><non-negative/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="sets memory"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>byte</type>
+	 <ci>dest</ci>
+	 <ci>count</ci>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <notnull/>
+      <post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return-value/>
+	    <ci>dest</ci>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>dest</ci>
+	    <ci>count</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

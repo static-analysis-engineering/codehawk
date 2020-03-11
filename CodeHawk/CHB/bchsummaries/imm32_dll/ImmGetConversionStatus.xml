@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 06:50:00"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="imm32" name="ImmGetConversionStatus">
+   <documentation>
+    <desc>Retrieves the current conversion status. </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ImmGetConversionStatus(</ll>
+      <ld>_In_       HIMC hIMC </ld>
+      <ld>_Out_opt_  LPDWORD lpfdwConversion </ld>
+      <ld>_Out_opt_  LPDWORD lpfdwSentence </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">not-zero </rc>
+      <rc cond="failure">zero </rc>
+     </return>
+     <par name="hIMC">
+       Handle to the input context for which to retrieve status information. 
+     </par>
+     <par name="lpfdwConversion">
+       Pointer to a variable in which the function retrieves a combination of 
+       conversion mode values. 
+     </par>
+     <par name="lpfdwSentence">
+       Pointer to a variable in which the function retrieves a sentence mode value. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="ImmGetConversionStatus">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hIMC" nr="1">
+     <type>HIMC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:input context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpfdwConversion" nr="2">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:conversion mode info" />
+     </roles>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpfdwSentence" nr="3">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:sentence mode info" />
+     </roles>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

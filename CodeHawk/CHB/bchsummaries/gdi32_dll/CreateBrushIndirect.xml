@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/18/2015 16:12:12"/>
+  <libfun lib="gdi32" name="CreateBrushIndirect">
+   <documentation>
+    <desc>
+      creates a logical brush that has the specified style, color, and pattern.
+    </desc>
+    <apidoc>
+     <pt>HBRUSH CreateBrushIndirect (_In_ const LOGBRUSH *lplb)</pt>
+     <par name="lplb">
+       A pointer to a LOGBRUSH structure that contains information about the brush.
+     </par>
+     <return>
+      <rc cond="success">identifies a logical brush</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CreateBrushIndirect">
+    <par loc="stack" name="lplb" io="r" nr="1">
+     <type><ptr>LOGBRUSH</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-struct:LOGBRUSH"/>
+     </roles>
+    </par>
+    <returntype>HBRUSH</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="creates a logical brush"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

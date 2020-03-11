@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CreateDIBitmap">
+   <documentation>
+    <desc>
+      creates a compatible bitmap (DDB) from a DIB and, optionally, sets the bitmap bits
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HBITMAP CreateDIBitmap (</ll>
+      <ld>_In_ HDC hdc,</ld>
+      <ld>_In_ const BITMAPINFOHEADER *lpbmih,</ld>
+      <ld>_In_ DWORD fdwInit,</ld>
+      <ld>_In_ const VOID *lpbInit,</ld>
+      <ld>_In_ const BITMAPINFO *lpbmi,</ld>
+      <ld>_In_ UINT fuUsage</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">handle to a device context</par>
+     <par name="lpbmih">pointer to a bitmap information header structure</par>
+     <par name="fdwInit">specifies how the system initializes the bitmap bits</par>
+     <par name="lpbInit">
+       pointer to an array of bytes containing the initial bitmap data. The format of
+       the data depends on the biBitCount member of the BITMPINFO structure to which
+       the lpbmi parameter points
+     </par>
+     <par name="lpbmi">
+       pointer to a BITMAPINFO structure that describes the dimensions and color
+       format of the array pointed to by the lpbinit parameter
+     </par>
+     <par name="fuUsage">
+       specifies whether the bmiColors member of the BITMAPINFO structure was
+       initialized and, if so, whether bmiColors contains explicit red, green,
+       blue (RGB) values of palette indexes
+     </par>
+     <return>
+      <rc cond="success">handle to the compatible bitmap</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="CreateDIBitmap">
+     <returntype>HBITMAP</returntype>
+     <par loc="stack" name="hdc" rep="hex" nr="1">
+       <type>HDC</type>
+       <pre>deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpbmih" io="r" rep="hex" nr="2">
+      <type><ptr>BITMAPINFOHEADER</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:BITMAPINFOHEADER"/>
+      </roles>
+    </par>
+    <par loc="stack" name="fdwInit" io="r" roles="none" nr="3">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpbInit" io="r" rep="hex" nr="4">
+      <type><ptr>void</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="src-bytes:misc"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpbmi" io="r" rep="hex" nr="5">
+      <type><ptr>BITMAPINFO</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:BITMAPINFO"/>
+      </roles>
+    </par>
+    <par loc="stack" name="fuUsage" io="r" roles="none" nr="6">
+      <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui" desc="creates a bitmap"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>lpbInit</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

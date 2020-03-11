@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="wcscspn.xml" time="2017-01-01 13:37:28.734392"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="wcscspn">
+    <documentation>
+      <desc>
+	Returns the index of the first occurrence in a string, of a
+	character that belongs to a set of characters
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>wcscspn(</ll>
+          <ld>const wchar_t *str</ld>
+          <ld>const wchar_t *strCharSet</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="str">Null-terminated searched string</par>
+        <par name="strCharSet">Null-terminated character set</par>
+        <return>
+	  the index of the first character in str that is in
+	  strCharSet. If none of the characters in str is in
+	  strCharSet, then the return value is the length of str
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="wcscspn">
+      <par loc="stack" name="str" io="r" nr="1" rep="hex">
+        <type><ptr>wchar_t</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:search"/>
+	</roles>
+      </par>
+      <par loc="stack" name="strCharSet" io="r" rep="hex" nr="2">
+        <type><ptr>wchar_t</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:search"/>
+	</roles>
+      </par>
+      <returntype>size_t</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="inputs" 
+		   desc="returns the index of the first occurrence in a string of a set of characters"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

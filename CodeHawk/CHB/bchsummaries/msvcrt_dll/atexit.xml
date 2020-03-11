@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:44"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="atexit">
+   <documentation>
+    <desc>processes the specified function at exit</desc>
+    <apidoc>
+     <pt>int atexit (void (__cdecl *func)(void))</pt>
+     <par name="func">function to be called</par>
+     <return>
+      <rc cond="success">0</rc>
+      <rc cond="failure">nonzero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="atexit">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="func" nr="1">
+     <type>exitfunction</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackf:exit" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="process" desc="registers an exit function"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

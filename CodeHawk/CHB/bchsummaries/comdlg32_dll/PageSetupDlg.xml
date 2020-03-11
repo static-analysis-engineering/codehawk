@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/06/2015 22:42:59"/>
+  <libfun lib="comdlg32" name="PageSetupDlg">
+   <documentation>
+    <desc>
+      Creates a Page Setup dialog box that enables the user to specify the
+      attributes of a printed page. These attributes include the paper 
+      size and source, the page orientation (portrait or landscape), and the 
+      width of the page margins
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI PageSetupDlg (_Inout_  LPPAGESETUPDLG lppsd)</pt>
+     <par name="lppsd">
+       A pointer to a PAGESETUPDLG structure that contains information used to 
+       initialize the dialog box. The structure receives information about the 
+       user's selections when the function returns
+     </par>
+     <return>
+      <rc cond="success">
+	If the user clicks the OK button, the return value is nonzero. The members
+	of the PAGESETUPDLG structure pointed to by the lppsd parameter indicate 
+	the user's selections
+      </rc>
+      <rc cond="failure">
+	If the user cancels or closes the Page Setup dialog box or an error occurs,
+	the return value is zero
+      </rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="PageSetupDlg">
+    <par loc="stack" io="rw" name="lppsd" nr="1" rep="hex">
+     <type><ptr>PAGESETUPDLG</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:PAGESETUPDLG" />
+      <role rt="ioc:memops" rn="dst-struct:PAGESETUPDLG" />
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system"
+		  desc="creates a page set-up dialog box"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

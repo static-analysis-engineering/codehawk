@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-26T10:03:10.763776"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="13" name="Throw">
+    <documentation>
+      <desc>Causes a java.lang.Throwable object to be thrown</desc>
+      <apidoc>
+        <pt>
+          <ll>jint Throw(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jthrowable obj</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="obj">a java.lang.Throwable object</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">negative value</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="13" adj="8" name="Throw">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" name="obj">
+        <type>jthrowable</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:throwable" rn="exception thrown"/>
+	</roles>
+      </par>
+      <returntype>jint</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="throws a java exception" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<zero-negative/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

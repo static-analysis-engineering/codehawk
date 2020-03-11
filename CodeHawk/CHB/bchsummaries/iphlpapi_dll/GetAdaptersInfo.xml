@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/27/2015 23:40:36"/>
+  <libfun lib="iphlpapi" name="GetAdaptersInfo">
+   <documentation>
+    <desc>etrieves adapter information for the local computer.</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD GetAdaptersInfo(</ll>
+      <ld>_Out_   PIP_ADAPTER_INFO pAdapterInfo</ld>
+      <ld>_Inout_ PULONG           pOutBufLen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pAdapterInfo">
+       A pointer to a buffer that receives a linked list of 
+       IP_ADAPTER_INFO structures
+     </par>
+     <par name="pOutBufLen">
+       A pointer to a ULONG variable that specifies the size of the 
+       buffer pointed to by the pAdapterInfo parameter. If this size 
+       is insufficient to hold the adapter information, GetAdaptersInfo
+       fills in this variable with the required size, and returns an
+       error code of ERROR_BUFFER_OVERFLOW.
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetAdaptersInfo">
+    <par loc="stack" io="w" name="pAdapterInfo" rep="hex" nr="1">
+     <type><ptr>IP_ADAPTER_INFO</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:IP_ADAPTER_INFO" />
+      <role rt="ioc:network" rn="infox:local computer adapter info"/>
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="pOutBufLen" roles="none" nr="2">
+     <type><ptr>ULONG</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="network"
+		  desc="retrieves adapter info for the local computer"/>
+    </io-actions>
+    <preconditions>
+      <!-- documentation doesn't specify units of pOutBufLen;
+	   assume bytes -->
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>IP_ADAPTER_INFO</type>
+	    <ci>pAdapterInfo</ci>
+	    <apply><addressed-value/><ci>pOutBufLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="system" xdata="ip adapter information"/>
+	    <type>IP_ADAPTER_INFO</type>
+	    <ci>pAdapterInfo</ci>
+	    <apply><addressed-value/><ci>pOutBufLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="12/31/2014 23:51:40"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetDeviceGammaRamp">
+   <documentation>
+    <desc>
+      sets the gamma ramp on direct color display boards having
+      drivers that support downloadable gamma ramps in hardware.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI SetDeviceGammaRamp(</ll>
+      <ld>HDC hDC</ld>
+      <ld>LPVOID lpRamp</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       <rc cond="success">TRUE</rc>
+       <rc cond="failure">FALSE</rc>
+     </return>
+     <par name="hDC">
+       Specifies the device context of the direct color display board in question
+    </par>
+     <par name="lpRamp">
+       Pointer to a buffer containing the gamma ramp to be set. The
+       gamma ramp is specified in three arrays of 256 WORD elements
+       each, which contain the mapping between RGB values in the frame
+       buffer and digital-analog-converter (DAC) values. The sequence
+       of the arrays is red, green, blue.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetDeviceGammaRamp">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hDC" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpRamp" nr="2">
+     <type><ptr>VOID</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:misc" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="sets a device gamma ramp"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+        <deref-read/>
+        <type>BYTE</type>
+        <ci>lpRamp</ci>
+        <cn>3072</cn>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

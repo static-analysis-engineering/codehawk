@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="strlen">
+   <documentation>
+    <desc>returns the length of the string</desc>
+    <apidoc>
+     <pt>size_t strlen (const char *str)</pt>
+     <par name="str">pointer to the string</par>
+     <return>number of characters in str excluding the null terminator byte</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="strlen">
+     <returntype>size_t</returntype>
+     <par loc="stack" io="r" name="str" nr="1" rep="hex">
+      <type><ptr>char</ptr></type>
+      <roles>
+        <role rt="ioc:memops" rn="src-string:length"/>
+      </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="none" desc="measures the length of a string"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <eq/>
+        <return-value/>
+        <apply>
+         <null-terminator-pos/>
+         <ci>str</ci>
+        </apply>
+       </apply>
+      </math>
+     </post>
+     <post>
+       <math>
+	 <apply>
+	   <geq/>
+	   <return/>
+	   <cn>0</cn>
+	 </apply>
+       </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

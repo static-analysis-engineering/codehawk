@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetTextExtentExPoint">
+   <documentation>
+    <desc>
+      retrieves the number of characters in a specified string that 
+      will fit within a specified space and fills an array with the text extent for each of 
+      those characters.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetTextExtentExPoint(</ll>
+      <ld>_In_   HDC hdc,</ld>
+      <ld>_In_   LPCTSTR lpszStr,</ld>
+      <ld>_In_   int cchString,</ld>
+      <ld>_In_   int nMaxExtent,</ld>
+      <ld>_Out_  LPINT lpnFit,</ld>
+      <ld>_Out_  LPINT alpDx,</ld>
+      <ld>_Out_  LPSIZE lpSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="lpszStr">
+       A pointer to the null-terminated string for which extents are to be retrieved.
+     </par>
+     <par name="cchString">
+       The number of characters in the string pointed to by the lpszStr parameter. 
+     </par>
+     <par name="nMaxExtent">
+       The maximum allowable width, in logical units, of the formatted string.
+     </par>
+     <par name="lpnFit">
+       A pointer to an integer that receives a count of the maximum number of 
+       characters that will fit in the space specified by the nMaxExtent parameter.
+       When the lpnFit parameter is NULL, the nMaxExtent parameter is ignored.
+     </par>
+     <par name="alpDx">
+       A pointer to an array of integers that receives partial string extents.
+       Each element in the array  gives the distance, in logical units, between 
+       the beginning of the string and one of the characters that fits in the 
+       space specified by the nMaxExtent parameter.
+     </par>
+     <par name="lpSize">
+       A pointer to a SIZE structure that receives the dimensions of the 
+       string, in logical units. This parameter cannot be NULL.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="GetTextExtentExPoint">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszStr" nr="2">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:memops" rn="src-string:examine" />
+     </roles>
+      <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="cchString" nr="3">
+     <type>int</type>
+     <roles>
+      <role rt="size:buffersize" rn="number of bytes of data pointed to" />
+     </roles>
+     <pre><non-negative/></pre>
+    </par>
+    <par loc="stack" io="r" name="nMaxExtent" nr="4">
+      <type>int</type>
+     <roles>
+      <role rt="size:maximum" rn="maximum extent" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpnFit" nr="5" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="size:actual" rn="GetTextExtentExPoint" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="alpDx" nr="6" rep="hex">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="size:actual" rn="string extent array" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpSize" nr="7" rep="hex">
+     <type><ptr>SIZE</ptr></type>
+     <roles>
+      <role rt="size:actual" rn="GetTextExtentExPoint" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="fills an array with a text extent"/>
+    </io-actions>
+    <preconditions>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

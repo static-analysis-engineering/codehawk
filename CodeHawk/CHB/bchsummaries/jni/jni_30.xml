@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T22:49:01.180941"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="30" name="NewObjectA">
+    <documentation>
+      <desc>
+	Constructs a new Java object. The method ID indicates which
+	constructor method to invoke. This ID must be obtained by calling
+	GetMethodID() with (init) as the method name and void (V) as the
+	return type.
+	
+	The clazz argument must not refer to an array class.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jobject NewObjectA(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jclass clazz</ld>
+          <ld>_in jmethodID methodID</ld>
+          <ld>_in const jvalue *args</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="clazz">a Java class object</par>
+        <par name="methodID">the method ID of the constructor</par>
+        <par name="args">varargs of arguments to the constructor</par>
+        <return>
+          <rc cond="success">a Java object</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="29" adj="16" name="NewObjectA">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="java class" io="r" nr="2" name="clazz">
+        <type>jclass</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:class" rn="object construction"/>
+	</roles>
+      </par>
+      <par loc="stack" desc="method id" io="r" nr="3" name="methodID">
+        <type>jmethodID</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:methodid" rn="constructor"/>
+	</roles>
+      </par>
+      <par loc="stack" desc="method args" io="r" nr="4" name="args">
+        <type><ptr>jvalue</ptr></type>
+	<roles>
+	  <role rt="jni:methodargs" rn="constructor args"/>
+	</roles>
+      </par>
+      <returntype>jobject</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="constructs a new Java object" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="wprintf.xml" time="2016-09-27 23:28:55.183282"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="wprintf">
+    <documentation>
+      <desc>
+	Prints formatted output to the standard output stream
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>int wprintf(</ll>
+          <ld>const wchar_t *format</ld>
+          <ld>varargs args</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="format">Format control</par>
+        <par name="args">Optional arguments</par>
+        <return>
+          <rc cond="success">number of characters printed</rc>
+          <rc cond="failure">negative value</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="wprintf">
+      <par loc="stack" name="format" io="r" rep="hex" nr="1">
+        <type><ptr>wchar_t</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:outputs" rn="format string"/>
+	</roles>
+      </par>
+      <par loc="stack" name="args" io="r" roles="none" rep="hex" nr="2">
+        <type>varargs</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="outputs"
+		   desc="prints formatted output to standard out"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<nonnegative-negative/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

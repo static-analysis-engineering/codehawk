@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="04/15/2015 16:17:27"/>
+  <libfun lib="msvcrt" name="_assert">
+   <documentation>
+    <desc>assertion failed</desc>
+    <apidoc>
+     <pt>
+      <ll>void _assert(</ll>
+      <ld>char *msg</ld>
+      <ld>char *file</ld>
+      <ld>int line</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="msg">description of failure condition</par>
+     <par name="file">filename</par>
+     <par name="line">line number</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api cc="cdecl" adj="0" name="_assert">
+    <par loc="stack" name="msg" io="r" nr="1">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="text:assert message"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="file" nr="2">
+     <type><ptr>char</ptr></type>
+     <roles>
+      <role rt="ioc:filesystem" rn="name:file" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" name="line" io="r" roles="none" nr="3">
+     <type>int</type>
+    </par>
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="assertion failed"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post><math><apply><non-returning/></apply></math></post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

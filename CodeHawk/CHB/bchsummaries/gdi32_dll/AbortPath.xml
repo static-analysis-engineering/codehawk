@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 09:17:18"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="AbortPath">
+   <documentation>
+    <desc>closes and discards any paths in the specified device context.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL AbortPath(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">Handle to the device context from which a path will be discarded.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="AbortPath">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hdc" io="r" rep="hex" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" 
+		  desc="closes and discards paths in a device context"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

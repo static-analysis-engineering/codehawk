@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-25T16:00:11.994431"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="228" name="ExceptionCheck">
+    <documentation>
+      <desc>
+	a convenience function to check for pending exceptions without
+	creating a local reference to the exception object.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jboolean ExceptionCheck(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <return>
+	  Returns JNI_TRUE when there is a pending exception; otherwise, returns JNI_FALSE.
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="228" adj="4" name="ExceptionCheck">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <returntype>jboolean</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="checks is there is a pending exception" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T13:26:29.822274"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="173" name="GetObjectArrayElement">
+    <documentation>
+      <desc>Returns an element of an Object array</desc>
+      <apidoc>
+        <pt>
+          <ll>jobject GetObjectArrayElement(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jarray array</ld>
+          <ld>_in jsize  index</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="array">reference to a Java array</par>
+        <par name="index">array index</par>
+        <return>a Java object</return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="173" adj="12" name="GetObjectArrayElement">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="java array" io="r" nr="2" name="array">
+        <type>jarray</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="jni:array" rn="retrieve array element"/>
+        </roles>
+      </par>
+      <par loc="stack" desc="array index" io="r" nr="3" name="index">
+        <type>jsize</type>
+        <roles>
+           <role rt="jni:index" rn="retrieve array element"/>
+        </roles>
+      </par>
+      <returntype>jobject</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="retrieves a java array element" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T13:37:07.778107"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="166" name="ReleaseStringChars">
+    <documentation>
+      <desc>
+         Informs the VM that the native code no longer needs access to
+         chars. The chars argument is a pointer obtained from string
+         using GetStringChars()
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>void ReleaseStringChars(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jstring string</ld>
+          <ld>_in const jchar *chars</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="string">reference to a string object</par>
+        <par name="chars">pointer to a Unicode string</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="166" adj="12" name="ReleaseStringChars">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" dest="java string" io="r" name="string">
+        <type>jstring</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="jni:string" rn="release string"/>
+        </roles>
+      </par>
+      <par loc="stack" nr="3" desc="c string" io="r" name="chars">
+        <type><ptr>jchar</ptr></type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="jni:cstring" rn="release string"/>
+        </roles>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="releases a java string" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

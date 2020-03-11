@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SelectPalette">
+   <documentation>
+    <desc>selects the specified logical palette into a device context</desc>
+    <apidoc>
+     <pt>
+      <ll>HPALETTE SelectPalette (</ll>
+      <ld>_In_ HDC hdc,</ld>
+      <ld>_In_ HPALETTE hpal,</ld>
+      <ld>_In_ BOOL bForceBackground</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">handle to the device context</par>
+     <par name="hpal">handle to the logical palette to be selected</par>
+     <par name="bForceBackground">
+       specifies whether the logical palette is forced to be a background palette
+     </par>
+     <return>
+      <rc cond="success">handle to the device context&apos;s previous logical palette</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SelectPalette">
+     <returntype>HPALETTE</returntype>
+     <par loc="stack" name="hdc" io="r" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+    <par loc="stack" name="hpal" io="r" nr="2">
+      <type>HPALETTE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:palette"/>
+      </roles>
+    </par>
+    <par loc="stack" name="bForceBackground" io="r" roles="none" nr="3">
+      <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui" desc="selects a logical palette for a device context"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

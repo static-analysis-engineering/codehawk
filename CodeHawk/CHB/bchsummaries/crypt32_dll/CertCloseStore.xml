@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="04/15/2015 17:17:05"/>
+  <libfun lib="crypt32" name="CertCloseStore">
+   <documentation>
+    <desc>
+      closes a certificate store handle and reduces the reference count on the 
+      store. There needs to be a corresponding call to CertCloseStore for each 
+      successful call to the CertOpenStore or CertDuplicateStore functions.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CertCloseStore(</ll>
+      <ld>_In_  HCERTSTORE hCertStore</ld>
+      <ld>_In_  DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hCertStore">Handle of the certificate store to be closed.</par>
+     <par name="dwFlags">
+       Typically, this parameter uses the default value zero. The default is to 
+       close the store with memory remaining allocated for contexts that have 
+       not been freed. In this case, no check is made to determine whether 
+       memory for contexts remains allocated.
+       Set flags can force the freeing of memory for all of a store's certificate, 
+       certificate revocation list (CRL), and certificate trust list (CTL) contexts
+       when the store is closed. Flags can also be set that check whether all of 
+       the store's certificate, CRL, and CTL contexts have been freed. 
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CertCloseStore">
+    <par loc="stack" name="hCertStore" io="r" nr="1">
+     <type>HCERTSTORE</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:crypto" rn="handle:certificate store"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="crypto" desc="closes a certificate store handle"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="wcsrchr.xml" time="2016-12-13 22:22:52.742625"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="wcsrchr">
+    <documentation>
+      <desc>Scans a string for the last occurrence of a character</desc>
+      <apidoc>
+        <pt>
+          <ll>wchar_t *wcsrchr(</ll>
+          <ld>const wchar_t *str</ld>
+          <ld>wchar_t c</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="str">Null-terminated string to search</par>
+        <par name="c">Character to be located</par>
+        <return>
+          <rc cond="success">a pointer to the last occurrence of c in str</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="wcsrchr">
+      <par loc="stack" name="str" io="r" rep="hex" nr="1">
+        <type><ptr>wchar_t</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:search"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" roles="none" name="c" nr="2">
+        <type>wchar_t</type>
+      </par>
+      <returntype><ptr>wchar_t</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="inputs" desc="searches a string"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

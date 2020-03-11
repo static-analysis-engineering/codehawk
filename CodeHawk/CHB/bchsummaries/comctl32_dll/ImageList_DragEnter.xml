@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ImageList_DragEnter.xml" time="2016-07-05 21:40:07.935728"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="comctl32" name="ImageList_DragEnter">
+    <documentation>
+      <desc>Displays the drag image at the specified position within the window</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL ImageList_DragEnter(</ll>
+          <ld>HWND hwndLock</ld>
+          <ld>int  x</ld>
+          <ld>int  y</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hwndLock">A handle to the window that owns the drag image</par>
+        <par name="x">
+	  The x-coordinate at which to display the drag image. The
+	  coordinate is relative to the upper-left corner of the
+	  window, not the client area.
+	</par>
+        <par name="y">
+	  The y-coordinate at which to display the drag image. The
+	  coordinate is relative to the upper-left corner of the
+	  window, not the client area.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="ImageList_DragEnter">
+      <par loc="stack" name="hwndLock" io="r" nr="1">
+        <type>HWND</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <par loc="stack" name="x" io="r" nr="2">
+        <type>int</type>
+	<roles>
+	  <role rt="size:distance" rn="ImageList_DragEnter"/>
+	</roles>
+      </par>
+      <par loc="stack" name="y" io="r" nr="3">
+        <type>int</type>
+	<roles>
+	  <role rt="size:distance" rn="ImageList_DragEnter"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="displays a drag image"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:44"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="__dllonexit">
+   <documentation>
+    <desc>registers a routine to be called at exit time</desc>
+    <apidoc>
+     <pt>_onexit_t __dllonexit (onexit_t func, PVFV **pbegin, PVFV **pend)</pt>
+     <par name="func">pointer to a function to be executed upon exit</par>
+     <par name="pbegin">
+       pointer to a variable that points to the beginning of a list of functions
+       to execute on detach
+     </par>
+     <par name="pend">
+       pointer to a variable that points to the end of a list of functions to
+       execute on detach
+     </par>
+     <return>
+      <rc cond="success">pointer to the user&apos;s function</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="__dllonexit">
+     <returntype>unknownfunction</returntype>
+    <par loc="stack" io="r" name="func" nr="1" rep="hex">
+      <type>unknownfunction</type>
+     <pre><deref-read/><function-pointer/></pre>
+     <roles>
+        <role rt="ioc:process" rn="callbackf:exit"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="pbegin" nr="2" rep="hex">
+      <type><ptr>function-pointer</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="function pointer list"/>
+	<role rt="ioc:memops" rn="src-array:function pointer"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="pend" nr="3" roles="none" rep="hex">
+      <type><ptr>function-pointer</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="registers a function to be called at exit time"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <eq/>
+        <return-value/>
+        <ci>func</ci>
+       </apply>
+      </math>
+     </post>
+     <error-post>
+      <math>
+       <apply>
+        <null/>
+        <return-value/>
+       </apply>
+      </math>
+     </error-post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="wcsncat.xml" time="2016-12-13 21:43:31.687051"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="wcsncat">
+    <documentation>
+      <desc>
+	Appends up to the specified number of characters of a source
+	string to a destination string
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>wchar_t wcsncat(</ll>
+          <ld>wchar_t *strDest</ld>
+          <ld>const wchar_t *strSource</ld>
+          <ld>size_t count</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="strDest">Null-terminated destination string</par>
+        <par name="strSource">Null-terminated source string</par>
+        <par name="count">Maximum number of characters to append</par>
+        <return>pointer to the destination string</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="wcsncat">
+      <par loc="stack" io="rw" name="strDest" rep="hex" nr="1">
+        <type><ptr>wchar_t</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-string:concatenate"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" name="strSource" rep="hex" nr="2">
+        <type><ptr>wchar_t</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:copy"/>
+	</roles>
+      </par>
+      <par loc="stack" name="count" roles="none" nr="3">
+        <type>size_t</type>
+      </par>
+      <returntype><ptr>wchar_t</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="concatenates a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>wchar_t</type>
+	      <ci>strDest</ci>
+	      <apply>
+		<plus/>
+		<apply>
+		  <null-terminator-pos/><ci>strDest</ci>
+		</apply>
+		<apply>
+		  <times/>
+		  <cn>2</cn>
+		  <ci>count</ci>
+		</apply>
+	      </apply>
+	    </apply>
+	  </math>
+	</pre>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>wchar_t</type>
+	      <ci>strSource</ci>
+	      <apply><indexsize/><ci>count</ci></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<post><math><apply><eq/><return/><ci>strDest</ci></apply></math></post>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>wchar_t</type>
+	      <ci>strDest</ci>
+	      <apply>
+		<plus/>
+		<apply>
+		  <null-terminator-pos/><ci>strDest</ci>
+		</apply>
+		<apply>
+		  <times/>
+		  <cn>2</cn>
+		  <ci>count</ci>
+		</apply>
+	      </apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

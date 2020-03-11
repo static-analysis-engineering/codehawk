@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="strchr">
+   <documentation>
+    <desc>locates the first occurrence of c in the string pointed to by str</desc>
+    <apidoc>
+     <pt>char *strchr (const char *str, int c)</pt>
+     <par name="str">pointer to the string to be scanned</par>
+     <par name="c">character to be found</par>
+     <return>
+      <rc cond="success">pointer to the first occurrence of c in str</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="strchr">
+      <returntype><ptr>char</ptr></returntype>
+    <par loc="stack" io="r" name="str" nr="1">
+      <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:memops" rn="src-string:search"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="c" roles="none" nr="2">
+     <type>int</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="inputs" desc="searches a string"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+      <post>
+	<math>
+	  <apply>
+	    <geq/>
+	    <return-value/>
+	    <ci>str</ci>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <leq/>
+	    <return/>
+	    <apply>
+	      <plus/>
+	      <ci>str</ci>
+	      <apply><null-terminator-pos/><ci>str</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

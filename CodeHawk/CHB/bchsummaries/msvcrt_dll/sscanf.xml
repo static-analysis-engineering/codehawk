@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/03/2015 11:49:50"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="sscanf">
+   <documentation>
+    <desc>read formatted data from a string</desc>
+    <apidoc>
+     <pt>
+      <ll>int sscanf(</ll>
+      <ld>const char *buffer,</ld>
+      <ld>const char *format,</ld>
+      <ld>var-args</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">the number of fields successfully converted and assigned</rc>
+      <rc cond="failure">EOF</rc>
+     </return>
+     <par name="buffer">stored data</par>
+     <par name="format">format-control string</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="sscanf">
+    <returntype>int</returntype>
+    <par loc="stack" name="buffer" io="r" nr="1" rep="hex">
+       <type><ptr>char</ptr></type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:memops" rn="src-string:read by sscanf"/>
+       </roles>
+    </par>
+    <par loc="stack" name="format" io="r" nr="2" rep="hex">
+       <type><ptr>char</ptr></type>
+       <roles>
+          <role rt="ioc:inputs" rn="scanf format string"/>
+       </roles>
+     <pre><deref-read-nt/><format-string/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="inputs" desc="reads formatted data from string"/>
+     </io-actions>
+    <preconditions>
+      <!-- requires explicit specification of varargs -->
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>buffer</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>buffer</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

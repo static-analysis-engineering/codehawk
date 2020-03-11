@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:20:22"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="imm32" name="ImmReleaseContext">
+   <documentation>
+    <desc>
+      Releases the input context and unlocks the memory associated in the 
+      input context. An application must call this function for each call 
+      to the ImmGetContext function.
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ImmReleaseContext(</ll>
+      <ld>_In_  HWND hWnd,</ld>
+      <ld>_In_  HIMC hIMC</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+        Handle to the window for which the input context was previously retrieved.
+     </par>
+     <par name="hIMC">Handle to the input context.</par>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ImmReleaseContext">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hWnd" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="hIMC" nr="2">
+     <type>HIMC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:input context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

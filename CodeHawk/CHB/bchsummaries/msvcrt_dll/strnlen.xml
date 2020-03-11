@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="strnlen.xml" time="2016-12-13 23:35:34.741339"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="strnlen">
+    <documentation>
+      <desc>Gets the length of a string</desc>
+      <apidoc>
+        <pt>
+          <ll>size_t strnlen(</ll>
+          <ld>const char *str</ld>
+          <ld>size_t numberOfElements</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="str">Null-terminated string</par>
+        <par name="numberOfElements">The size of the string buffer</par>
+        <return>
+	  the number of characters in the string, not including the
+	  terminating null character
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="strnlen">
+      <par loc="stack" name="str" io="r" rep="hex" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:length"/>
+	</roles>
+      </par>
+      <par loc="stack" name="numberOfElements" roles="none" io="r" nr="2">
+        <type>size_t</type>
+      </par>
+      <returntype>size_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>char</type>
+	      <ci>str</ci>
+	      <ci>numberOfElements</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="LZOpenFile.xml" time="2016-06-22 07:38:46.943186"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="lz32" name="LZOpenFile">
+    <documentation>
+      <desc>Creates, opens, reopens, or deletes the specified file</desc>
+      <apidoc>
+        <pt>
+          <ll>INT WINAPI LZOpenFile(</ll>
+          <ld>_In_  LPTSTR     lpFileName</ld>
+          <ld>_Out_ LPOFSTRUCT lpReOpenBuf</ld>
+          <ld>_In_  WORD       wStyle</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpFileName">The name of the file</par>
+        <par name="lpReOpenBuf">
+	  A pointer to the OFSTRUCT structure that is to receive
+	  information about the file when the file is first
+	  opened. The structure can be used in subsequent calls to the
+	  LZOpenFile function to see the open file.  The szPathName
+	  member of this structure contains characters from the
+	  original equipment manufacturer (OEM) character set.
+	</par>
+        <par name="wStyle">The action to be taken</par>
+        <return>
+	  If the function succeeds and the value specified by the
+	  wStyle parameter is not OF_READ, the return value is a
+	  handle identifying the file. If the file is compressed and
+	  opened with wStyle set to OF_READ, the return value is a
+	  special file handle.  If the function fails, the return
+	  value is an LZERROR_* code. These codes have values less
+	  than zero. There is no extended error information for this
+	  function; do not call GetLastError. 
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="LZOpenFile">
+      <par loc="stack" name="lpFileName" io="r" nr="1">
+        <type>LPTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:file"/>
+	  <role rt="rep:hex" rn="name:file"/>
+        </roles>
+      </par>
+      <par loc="stack" name="lpReOpenBuf" io="w" nr="2">
+        <type><ptr>OFSTRUCT</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-struct:openfile"/>
+	  <role rt="rep:hex" rn="dst-struct:openfile"/>
+	</roles>
+      </par>
+      <par loc="stack" name="wStyle" io="r" nr="3">
+        <type>WORD</type>
+	<pre><enum-value name="open_file_action_flags" flags="true"/></pre>
+	<roles>
+	  <role rt="rep:enum" rn="open_file_action_flags"/>
+	</roles>
+      </par>
+      <returntype>INT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem"
+		   desc="creates, opens, reopens or deletes a file"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

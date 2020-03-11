@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/08/2015 23:39:18"/>
+  <libfun lib="gdi32" name="ResetDC">
+   <documentation>
+    <desc>
+      updates the specified printer or plotter device context (DC) using 
+      the specified information
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HDC ResetDC(</ll>
+      <ld>_In_  HDC hdc,</ld>
+      <ld>_In_  const DEVMODE *lpInitData</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the DC to update</par>
+     <par name="lpInitData">
+       A pointer to a DEVMODE structure containing information about the new DC
+     </par>
+     <return>
+      <rc cond="success">a handle to the original DC</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ResetDC">
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpInitData" nr="2">
+     <type><ptr>DEVMODE</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:DEVMODE" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>HDC</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="updates the context of a printer or plotter"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+      <post><math><apply><eq/><return/><ci>hdc</ci></apply></math></post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

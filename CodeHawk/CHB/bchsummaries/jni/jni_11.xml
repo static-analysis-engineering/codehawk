@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2016-01-02T17:56:18.115499"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="11" name="isAssignableFrom">
+    <documentation>
+      <desc>
+	Determines whether an object of clazz1 can be safely cast to clazz2.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jboolean isAssignableFrom(</ll>
+          <ld>_in JINEnv *env</ld>
+          <ld>_in jclass clazz1</ld>
+          <ld>_in jclass clazz2</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="clazz1">the first class argument</par>
+        <par name="clazz2">the second class argument</par>
+        <return>
+	  Returns JNI_TRUE if either of the following is true:
+
+	  The first and second class arguments refer to the same Java class.
+	  The first class is a subclass of the second class.
+	  The first class has the second class as one of its interfaces.
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="11" adj="12" name="isAssignableFrom">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" name="clazz1">
+        <type>jclass</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:class" rn="isAssignableFrom src"/>
+	</roles>
+      </par>
+      <par loc="stack" nr="3" name="clazz2">
+        <type>jclass</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:class" rn="isAssignableFrom tgt"/>
+	</roles>
+      </par>
+      <returntype>jboolean</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="determines if one object can be safelyassigned to another" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

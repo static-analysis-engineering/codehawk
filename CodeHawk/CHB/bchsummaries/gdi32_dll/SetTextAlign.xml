@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:32:31"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetTextAlign">
+   <documentation>
+    <desc>
+      sets the text-alignment flags for the specified device context.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT SetTextAlign(</ll>
+      <ld>_In_  HDC hdc,</ld>
+      <ld>_In_  UINT fMode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="fMode">
+       The text alignment by using a mask.
+     </par>
+     <return>
+      <rc cond="success">Previous text alignment setting</rc>
+      <rc cond="failure">GDI_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetTextAlign">
+    <returntype>UINT</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="fMode" io="r" roles="none" nr="2">
+      <rep typ="enum" name="tex_alignment_flags"/>
+      <type>UINT</type>
+      <pre><enum-value name="text_alignment_flags" flags="true"/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="sets text alignment for a device"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

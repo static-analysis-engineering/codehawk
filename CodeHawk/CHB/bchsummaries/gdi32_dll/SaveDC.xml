@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:18:03"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SaveDC">
+   <documentation>
+    <desc>
+      saves the current state of the specified device context (DC) by
+      copying data describing selected objects and graphic modes (such
+      as the bitmap, brush, palette, font, pen, region, drawing mode,
+      and mapping mode) to a context stack.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int SaveDC(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">the return value identifies the saved state</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the DC whose state is to be saved.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SaveDC">
+     <returntype>int</returntype>
+     <par loc="stack" name="hdc" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="saves the state of the device context"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

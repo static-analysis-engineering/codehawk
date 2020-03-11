@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ImageList_SetImageCount.xml" time="2016-07-05 20:50:16.595373"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="comctl32" name="ImageList_SetImageCount">
+    <documentation>
+      <desc>Resizes an existing image list</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL ImageList_SetImageCount(</ll>
+          <ld>_In_ HIMAGELIST himl</ld>
+          <ld>_In_ UINT       uNewCount</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="himl">A handle to the image list that will be resized</par>
+        <par name="uNewCount">A value specifying the new size of the image list</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="ImageList_SetImageCount">
+      <par loc="stack" name="himl" io="r" nr="1">
+        <type>HIMAGELIST</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:imagelist"/>
+	</roles>
+      </par>
+      <par loc="stack" name="uNewCount" io="r" nr="2">
+        <type>UINT</type>
+	<roles>
+	  <role rt="size:count" rn="ImageList_SetImageCount"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="resizes an image list"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

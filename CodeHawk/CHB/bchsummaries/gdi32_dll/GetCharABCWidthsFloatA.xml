@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="04/04/2015 16:33:24"/>
+  <libfun lib="gdi32" name="GetCharABCWidthsFloatA">
+   <refer-to char-type="ansi" name="GetCharABCWidthsFloat">
+     <replace-type src="ABCFLOAT" tgt="ABCFLOATA"/>
+   </refer-to>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/22/2015 23:40:40"/>
+  <libfun lib="comctl32" name="ImageList_GetBkColor">
+   <documentation>
+    <desc>Retrieves the current background color for an image list</desc>
+    <apidoc>
+     <pt>COLORREF ImageList_GetBkColor (_In_ HIMAGELIST  himl)</pt>
+     <par name="himl">A handle to the image list</par>
+     <return>the background color.</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ImageList_GetBkColor">
+    <par loc="stack" name="himl" io="r" rep="hex" nr="1">
+     <type>HIMAGELIST</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:imagelist"/>
+     </roles>
+    </par>
+    <returntype>COLORREF</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves the background color for an image list"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

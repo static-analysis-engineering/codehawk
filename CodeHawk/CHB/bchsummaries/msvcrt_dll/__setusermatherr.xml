@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/31/2015 18:39:01"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="__setusermatherr">
+   <documentation>
+    <desc>
+      specifies a user-supplied routine to handle math errors, instead of the
+      _matherr routine
+   </desc>
+    <apidoc>
+     <pt>void __setusermatherr (_HANDLE_MATH_ERROR pf)</pt>
+     <return>void</return>
+     <par name="pf">
+       pointer to an implementation of _matherr that is supplied by the user.
+      The type of the pf parameter is declared as typedef int (__cdecl *
+      _HANDLE_MATH_ERROR)(struct _exception *)
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="__setusermatherr">
+     <returntype>void</returntype>
+     <par loc="stack" io="r" name="pf" nr="1" rep="hex">
+       <type>unknownfunction</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="callbackf:math errors"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="specifies a function to handle math errors"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

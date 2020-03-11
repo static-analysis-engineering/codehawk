@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 13:13:03"/>
+  <libfun lib="gdi32" name="PolyPolygon">
+   <documentation>
+    <desc>
+      draws a series of closed polygons. Each polygon is outlined by using
+      the current pen and filled by using the current brush and polygon 
+      fill mode. The polygons drawn by this function can overlap
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL PolyPolygon(</ll>
+      <ld>_In_       HDC   hdc</ld>
+      <ld>_In_ const POINT *lppt</ld>
+      <ld>_In_ const INT   *lpdwPolyPoints</ld>
+      <ld>_In_       int   cCount</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the device context</par>
+     <par name="lppt">
+       A pointer to an array of POINT structures that define the vertices 
+       of the polygons, in logical coordinates. The polygons are specified 
+       consecutively. Each polygon is closed automatically by drawing a 
+       line from the last vertex to the first. Each vertex should be 
+       specified once.
+     </par>
+     <par name="lpdwPolyPoints">
+       A pointer to an array of integers, each of which specifies the number
+       of points in the corresponding polygon. Each integer must be greater
+       than or equal to 2
+     </par>
+     <par name="cCount">The total number of polygons</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="PolyPolygon">
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lppt" nr="2" rep="hex">
+     <type><ptr>POINT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-array:POINT" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpdwPolyPoints" nr="3" rep="hex">
+     <type><ptr>INT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-array:INT" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cCount" nr="4">
+     <type>int</type>
+     <roles>
+      <role rt="size:count" rn="polynomial count" />
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" 
+		desc="draws a series of closed polygons">
+     </io-action>
+    </io-actions>
+    <preconditions/>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>DWORD</type>
+	    <ci>lpdwPolyPoints</ci>
+	    <apply><indexsize/><ci>cCount</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

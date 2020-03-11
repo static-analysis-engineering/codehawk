@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="strncat">
+   <documentation>
+    <desc>
+      appends no more than count bytes from the string pointed to by src
+      to the end of the string pointed to by dest. The initial byte of
+      src overwrites the null byte at the end of dest. A terminating null
+      byte is always appended to the result
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>char *strncat (</ll>
+      <ld>char *dest,</ld>
+      <ld>const char *src,</ld>
+      <ld>size_t count</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dest">pointer to the destination string</par>
+     <par name="src">pointer to the source string</par>
+     <par name="count">maximum number of bytes to be copied</par>
+     <return>pointer to the destination string</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="strncat">
+    <returntype><ptr>char</ptr></returntype>
+    <par loc="stack" io="w" name="dest" nr="1" rep="hex">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="dst-string:concatenate"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="src" nr="2" rep="hex">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-string:copy"/>
+     </roles>
+    </par>
+    <par loc="stack" name="count" roles="none" nr="3">
+      <type>size_t</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="concatenates a string"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>dest</ci>
+	    <apply>
+	      <plus/>
+	      <apply><null-terminator-pos/><ci>dest</ci></apply>
+	      <ci>count</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <eq/>
+        <return-value/>
+        <ci>dest</ci>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+	<type>char</type>
+	<ci>dest</ci>
+	<apply>
+	  <plus/>
+	  <apply><null-terminator-pos/><ci>dest</ci></apply>
+	  <ci>count</ci>
+	</apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

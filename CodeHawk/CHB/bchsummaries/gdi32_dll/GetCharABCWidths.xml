@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/05/2015 21:28:26"/>
+  <libfun lib="gdi32" name="GetCharABCWidths">
+   <documentation>
+    <desc>
+      retrieves the widths, in logical units, of consecutive characters in a specified 
+      range from the current TrueType font. This function succeeds only with TrueType fonts
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetCharABCWidths(</ll>
+      <ld>_In_  HDC   hdc</ld>
+      <ld>_In_  UINT  uFirstChar</ld>
+      <ld>_In_  UINT  uLastChar</ld>
+      <ld>_Out_ LPABC lpabc</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the device context</par>
+     <par name="uFirstChar">
+       The first character in the group of consecutive characters from the current font
+     </par>
+     <par name="uLastChar">
+       The last character in the group of consecutive characters from the current font
+     </par>
+     <par name="lpabc">
+       A pointer to an array of ABC structures that receives the character widths, in 
+       logical units. This array must contain at least as many ABC structures as 
+       there are characters in the range specified by the uFirstChar and uLastChar 
+       parameters
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetCharABCWidths">
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="uFirstChar" io="r" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="uLastChar" io="r" roles="none" nr="3">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" io="w" name="lpabc" nr="4">
+     <type><ptr>ABC</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:ABC" />
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves character widths"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>ABC</type>
+	    <ci>lpabc</ci>
+	    <apply>
+	      <indexsize/>
+	      <apply>
+		<plus/>
+		<apply><minus/><ci>uLastChar</ci><ci>uFirstChar</ci></apply>
+		<cn>1</cn>
+	      </apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="device" xdata="font widths of characters"/>
+	    <type>ABC</type>
+	    <ci>lpabc</ci>
+	    <apply>
+	      <indexsize/>
+	      <apply>
+		<plus/>
+		<apply><minus/><ci>uLastChar</ci><ci>uFirstChar</ci></apply>
+		<cn>1</cn>
+	      </apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

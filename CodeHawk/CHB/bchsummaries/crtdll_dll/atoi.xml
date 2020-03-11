@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="atoi.xml" time="2016-05-13 16:41:59.231702"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399"/>
+  <libfun lib="crtdll" name="atoi">
+    <refer-to lib="msvcrt" name="atoi"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

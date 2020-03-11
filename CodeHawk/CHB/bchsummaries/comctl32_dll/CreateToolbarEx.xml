@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:20:25"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="comctl32" name="CreateToolbarEx">
+   <documentation>
+    <desc>creates a toolbar window and adds the specified buttons to the toolbar
+      </desc>
+    <apidoc>
+     <pt>
+      <ll>HWND CreateToolbarEx (</ll>
+      <ld>HWND hwnd,</ld>
+      <ld>DWORD ws,</ld>
+      <ld>UINT wID,</ld>
+      <ld>int nBitmaps,</ld>
+      <ld>HINSTANCE hBMInst,</ld>
+      <ld>UINT_PTR wBMID,</ld>
+      <ld>LPCTBBUTTON lpButtons,</ld>
+      <ld>int iNumButtons,</ld>
+      <ld>int dxButton,</ld>
+      <ld>int dyButton,</ld>
+      <ld>int dxBitmap,</ld>
+      <ld>int dyBitmap,</ld>
+      <ld>UINT uStructSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hwnd">handle to the parent window for the toolbar</par>
+     <par name="ws">window styles for the toolbar</par>
+     <par name="wID">control identifier for the toolbar</par>
+     <par name="nBitmaps">
+       number of button images contained in the bitmap specified by jBMInst and wBMID
+     </par>
+     <par name="hBMInst">
+       module instance with the executable file that contains the bitmap resource
+     </par>
+     <par name="wBMID">
+       resource identifier for the bitmap resource. If hBMInst is NULL, this parameter must
+       be a valid bitmap handle
+     </par>
+     <par name="lpButtons">
+       pointer to an array TBBUTTON structures that contain information about the buttons
+       to add to the toolbar
+     </par>
+     <par name="iNumButtons">number of buttons to add to the toolbar</par>
+     <par name="dxButton">width, in pixels, of the buttons to add to the toolbar</par>
+     <par name="dyButton">height, in pixels, of the buttons to add to the toolbar</par>
+     <par name="dxBitmap">
+       width, in pixels of the button images to add to the buttons in the toolbar
+     </par>
+     <par name="dyBitmap">
+       height, in pixels of the button images to add to the buttons in the toolbar
+     </par>
+     <par name="uStructSize">size of a TBBUTTON structure</par>
+     <return>
+      <rc cond="success">handle to the toolbar</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="52" cc="stdcall" name="CreateToolbarEx">
+    <returnbtype tname="HWND" ttag="tnamed"/>
+    <par loc="stack" name="hwnd" io="r" nr="1">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="ws" io="r" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" name="wID" io="r" roles="none" nr="3">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="nBitmaps" io="r" nr="4">
+      <type>int</type>
+      <roles>
+	<role rt="size:count" rn="number of bitmaps"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hBMInst" io="r" nr="5">
+      <type>HINSTANCE</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:module"/>
+      </roles>
+    </par>
+    <par loc="stack" name="wBMID" io="r" roles="none"  nr="6">
+      <type>UINT_PTR</type>
+    </par>
+    <par loc="stack" name="lpButtons" io="r" rep="hex" nr="7">
+      <type><ptr>TBBUTTON</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:button"/>
+      </roles>
+    </par>
+    <par loc="stack" name="iNumButtons" io="r" nr="8">
+      <type>int</type>
+      <roles>
+	<role rt="size:count" rn="number of buttons"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dxButton" io="r" nr="9">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="button"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dyButton" io="r" nr="10">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="button"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dxBitmap" io="r" nr="11">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="bitmap"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dyBitmap" io="r" nr="12">
+      <type>int</type>
+      <roles>
+	<role rt="size:dimension" rn="bitmap"/>
+      </roles>
+    </par>
+    <par loc="stack" name="uStructSize" io="r" nr="13">
+      <type>UINT</type>
+      <roles>
+	<role rt="size:buffersize" rn="CreateToolbarEx"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="creates a toolbar window"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>TBBUTTON</type>
+	 <ci>lpButtons</ci>
+	 <apply><times/><ci>iNumButtons</ci><ci>uStructSize</ci></apply>
+       </apply>
+     </math>
+   </pre>
+    </preconditions>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

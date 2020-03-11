@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="11/10/2015 13:32:07"/>
+  <libfun lib="msvcrt" name="ungetwc">
+   <documentation>
+    <desc>push wide-character code back into input stream</desc>
+    <apidoc>
+     <pt>
+      <ll>wint_t ungetwc(</ll>
+      <ld>wint_t wc</ld>
+      <ld>FILE *stream</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="wc">character to be pushed back</par>
+     <par name="stream">stream to push back on</par>
+     <return>
+      <rc cond="success">wide character pushed back</rc>
+      <rc cond="failure">WEOF</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="ungetwc">
+    <par loc="stack" name="wc" io="r" roles="none" nr="1">
+     <type>wint_t</type>
+    </par>
+    <par loc="stack" name="stream" io="r" nr="2">
+     <type><ptr>FILE</ptr></type>
+     <roles>
+       <role rt="ioc:filesystem" rn="file"/>
+     </roles>
+    </par>
+    <returntype>wint_t</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="pushes a wide-character code back to input stream"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

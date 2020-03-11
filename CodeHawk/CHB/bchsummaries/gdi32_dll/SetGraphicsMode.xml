@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 06:05:54"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetGraphicsMode">
+   <documentation>
+    <desc>
+      sets the graphics mode for the specified device context.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int SetGraphicsMode(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ld>_In_  int iMode</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">the old graphics mode</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="iMode">
+       The graphics mode. This parameter can be on of the following values : 
+       GM_COMPATIBLE, GM_ADVANCED
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetGraphicsMode">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="iMode" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="sets the graphics mode of a device"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

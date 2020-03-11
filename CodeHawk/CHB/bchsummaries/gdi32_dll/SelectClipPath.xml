@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 06:03:42"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SelectClipPath">
+   <documentation>
+    <desc>
+      selects the current path as a clipping region for a device context, 
+      combining the new region with any existing clipping region using 
+      the specified mode.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL SelectClipPath(</ll>
+      <ld>_In_  HDC hdc </ld>
+      <ld>_In_  int iMode </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context of the path.</par>
+     <par name="iMode">
+       The way to use the path. This can be one of the following values: 
+       RGN_AND, RGN_COPY, RGN_DIFF, RGN_OR, RGN_XOR.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SelectClipPath">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="iMode" io="r" roles="none" nr="2">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="clips a region"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

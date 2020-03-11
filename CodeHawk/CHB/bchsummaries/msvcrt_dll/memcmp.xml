@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="memcmp">
+   <documentation>
+    <desc>compares characters in two buffers</desc>
+    <apidoc>
+     <pt>
+      <ll>int memcmp (</ll>
+      <ld>const void *buf1,</ld>
+      <ld>const void *buf2,</ld>
+      <ld>size_t count</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="buf1">first buffer</par>
+     <par name="buf2">second buffer</par>
+     <par name="count">number of bytes</par>
+     <return>indicates the relationship between the buffers</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="memcmp">
+     <returntype>int</returntype>
+     <par loc="stack" name="buf1" io="r" nr="1" rep="hex">
+       <type><ptr>void</ptr></type>
+       <roles>
+	 <role rt="ioc:memops" rn="src-bytes:misc"/>
+       </roles>
+    </par>
+    <par loc="stack" name="buf2" io="r" nr="2" rep="hex">
+      <type><ptr>int</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="src-bytes:misc"/>
+      </roles>
+    </par>
+    <par loc="stack" name="count" roles="none" io="r" nr="3">
+      <type>size_t</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="inputs" desc="compares characters in memory"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>buf1</ci>
+	    <ci>count</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>buf2</ci>
+	    <ci>count</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

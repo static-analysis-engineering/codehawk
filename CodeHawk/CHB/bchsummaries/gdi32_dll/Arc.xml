@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 09:18:02"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="Arc">
+   <documentation>
+    <desc>draws an elliptical arc.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL Arc(</ll>
+      <ld>_In_  HDC hdc </ld>
+      <ld>_In_  int nLeftRect </ld>
+      <ld>_In_  int nTopRect </ld>
+      <ld>_In_  int nRightRect </ld>
+      <ld>_In_  int nBottomRect </ld>
+      <ld>_In_  int nXStartArc </ld>
+      <ld>_In_  int nYStartArc </ld>
+      <ld>_In_  int nXEndArc </ld>
+      <ld>_In_  int nYEndArc </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context where drawing takes place. </par>
+     <par name="nLeftRect">
+       The x-coordinate, in logical units, of the upper-left corner of the 
+       bounding rectangle. 
+     </par>
+     <par name="nTopRect">
+       The y-coordinate, in logical units, of the upper-left corner of the 
+       bounding rectangle. 
+     </par>
+     <par name="nRightRect">
+       The x-coordinate, in logical units, of the lower-right corner of the 
+       bounding rectangle. 
+     </par>
+     <par name="nBottomRect">
+       The y-coordinate, in logical units, of the lower-right corner of the 
+       bounding rectangle. 
+     </par>
+     <par name="nXStartArc">
+       The x-coordinate, in logical units, of the ending point of the 
+       radial line defining the starting point of the arc. 
+    </par>
+     <par name="nYStartArc">
+       The y-coordinate, in logical units, of the ending point of the radial 
+       line defining the starting point of the arc.
+    </par>
+     <par name="nXEndArc">
+       The x-coordinate, in logical units, of the ending point of the 
+       radial line defining the ending point of the arc.
+    </par>
+     <par name="nYEndArc">
+       The y-coordinate, in logical units, of the ending point of the 
+       radial line defining the ending point of the arc.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="36" cc="stdcall" name="Arc">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hdc" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+     </par>
+     <par loc="stack" name="nLeftRect" nr="2">
+       <type>int</type>
+       <roles>
+	 <role rt="size:distance" rn="Arc.xml"/>
+       </roles>
+     </par>
+     <par loc="stack" name="nTopRect" nr="3">
+       <type>int</type>
+       <roles>
+	 <role rt="size:distance" rn="Arc.xml"/>
+       </roles>
+     </par>
+     <par loc="stack" name="nRightRect" nr="4">
+       <type>int</type>
+       <roles>
+	 <role rt="size:distance" rn="Arc.xml"/>
+       </roles>
+     </par>
+     <par loc="stack" name="nBottomRect" nr="5">
+       <type>int</type>
+       <roles>
+	 <role rt="size:distance" rn="Arc.xml"/>
+       </roles>
+     </par>
+     <par loc="stack" name="nXStartArc" nr="6">
+       <type>int</type>
+       <roles>
+	 <role rt="size:distance" rn="Arc.xml"/>
+       </roles>
+     </par>
+     <par loc="stack" name="nYStartArc" nr="7">
+       <type>int</type>
+       <roles>
+	 <role rt="size:distance" rn="Arc.xml"/>
+       </roles>
+     </par>
+     <par loc="stack" name="nXEndArc" nr="8">
+       <type>int</type>
+       <roles>
+	 <role rt="size:distance" rn="Arc.xml"/>
+       </roles>
+     </par>
+     <par loc="stack" name="nYEndArc" nr="9">
+       <type>int</type>
+       <roles>
+	 <role rt="size:distance" rn="Arc.xml"/>
+       </roles>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="draws an arc"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

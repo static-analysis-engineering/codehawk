@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/10/2015 22:32:24"/>
+  <libfun lib="msvcrt" name="wctob">
+   <documentation>
+    <desc>
+      Determines if a wide character corresponds to a multibyte character 
+      and returns its multibyte character representation.
+    </desc>
+    <apidoc>
+     <pt>int wctob (wint_t wchar)</pt>
+     <par name="wchar">Value to translate</par>
+     <return>
+      <rc cond="success">multibyte character representation</rc>
+      <rc cond="failure">one</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="wctob">
+    <par loc="stack" name="wchar" io="r" roles="none" nr="1">
+     <type>wint_t</type>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

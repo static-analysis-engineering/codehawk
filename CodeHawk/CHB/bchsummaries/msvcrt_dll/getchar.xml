@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/18/2015 14:43:02"/>
+  <libfun lib="msvcrt" name="getchar">
+   <documentation>
+    <desc>Reads a character from standard input</desc>
+    <apidoc>
+     <pt>int getchar (void)</pt>
+     <return>
+      <rc cond="success">the character read</rc>
+      <rc cond="failure">EOF</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="getchar">
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="reads a character from standard input">
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

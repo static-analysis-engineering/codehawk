@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T16:25:02.016303"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="18" name="FatalError">
+    <documentation>
+      <desc>
+          Raises a fatal error and does not expect the VM to
+          recover. This function does not return.
+          Prints the message in a system debugging channel, such as stderr,
+          and terminates the virtual machine instance.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>void FatalError(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in const char *msg</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="msg">error message</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="18" adj="8" name="FatalError">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="error message" io="r" nr="2" name="msg">
+        <type><ptr>char</ptr></type>
+        <pre><deref-read-nt/></pre>
+        <roles>
+           <role rt="jni:errormsg" rn="fatal error"/>
+           <role rt="ioc:system" rn="fatal error"/>
+           <role rt="ioc:process" rn="fatal error"/>
+        </roles>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="terminates the java virtual machine" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+         <non-returning/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

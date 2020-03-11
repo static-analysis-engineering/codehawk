@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/11/2015 22:18:23"/>
+  <libfun lib="gdi32" name="CreateBitmapIndirect">
+   <documentation>
+    <desc>
+      creates a bitmap with the specified width, height, and color format 
+      (color planes and bits-per-pixel)
+    </desc>
+    <apidoc>
+     <pt>HBITMAP CreateBitmapIndirect (_In_  const BITMAP *lpbm)</pt>
+     <par name="lpbm">
+       A pointer to a BITMAP structure that contains information about the
+       bitmap. If an application sets the bmWidth or bmHeight members to zero, 
+       CreateBitmapIndirect returns the handle to a 1-by-1 pixel, monochrome 
+       bitmap
+     </par>
+     <return>
+      <rc cond="success">a handle to the bitmap</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CreateBitmapIndirect">
+    <par loc="stack" name="lpbm" io="r" nr="1">
+      <type><ptr>BITMAP</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-bytes:bitmap"/>
+      </roles>
+    </par>
+    <returntype>HBITMAP</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="creates a bitmap"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

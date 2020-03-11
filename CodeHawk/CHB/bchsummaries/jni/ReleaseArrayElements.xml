@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="12/24/2015 10:35:07"/>
+  <jnifun name="ReleaseArrayElements">
+   <documentation>
+    <desc>
+      A family of functions that informs the VM that the native code
+      no longer needs access to elems. The elems argument is a pointer
+      derived from array using the corresponding
+      Get[PrimitiveType]ArrayElements() function. If necessary, this
+      function copies back all changes made to elems to the original
+      array.
+
+      The mode argument provides information on how the array buffer
+      should be released. mode has no effect if elems is not a copy of
+      the elements in array. Otherwise, mode has the following impact:
+      0           copy back the content and free the elems buffer
+      JNI_COMMIT  copy back the content but do not free the elems buffer
+      JNI_ABORT   free the buffer without copying back the possible changes
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>void ReleaseArrayElements(</ll>
+      <ld>_in JNIEnv *env</ld>
+      <ld>_in atype array</ld>
+      <ld>_in atype *elems</ld>
+      <ld>_jint mode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="env">JNI interface pointer</par>
+     <par name="array">a Java array object</par>
+     <par name="elems">pointer to array elements</par>
+     <par name="mode">release mode</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="ReleaseArrayElements">
+    <par loc="stack" desc="jni interface pointer" io="r" name="env" nr="1">
+     <type><ptr>JNIEnv</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" desc="java array" io="r" name="array" nr="2">
+     <type>atype</type>
+     <roles>
+       <role rt="jni:array" rn="release array"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="c array" io="r" name="elems" nr="3">
+     <type><ptr>ttype</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="jni:carray" rn="release array"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="release mode" io="r" name="mode" nr="4">
+     <type>jint</type>
+    </par>
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="jni" desc="releases a java array"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

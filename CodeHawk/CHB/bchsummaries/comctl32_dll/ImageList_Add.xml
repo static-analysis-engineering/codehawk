@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/22/2015 23:29:37"/>
+  <libfun lib="comctl32" name="ImageList_Add">
+   <documentation>
+    <desc>Adds an image or images to an image list</desc>
+    <apidoc>
+     <pt>
+      <ll>int ImageList_Add(</ll>
+      <ld>_In_     HIMAGELIST himl</ld>
+      <ld>_In_     HBITMAP    hbmImage</ld>
+      <ld>_In_opt_ HBITMAP    hbmMask</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="himl">A handle to the image list</par>
+     <par name="hbmImage">
+       A handle to the bitmap that contains the image or images. The number of 
+       images is inferred from the width of the bitmap
+     </par>
+     <par name="hbmMask">
+       A handle to the bitmap that contains the mask. If no mask is used with the 
+       image list, this parameter is ignored. This parameter can be NULL.
+     </par>
+     <return>
+      <rc cond="success">the index of the first new image</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="ImageList_Add">
+    <par loc="stack" name="himl" io="r" rep="hex" nr="1">
+     <type>HIMAGELIST</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:imagelist"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hbmImage" io="r" rep="hex" nr="2">
+     <type>HBITMAP</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:bitmap"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hbmMask" io="r" rep="hex" nr="3">
+     <type>HBITMAP</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:bitmap"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="adds an image to an image list"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

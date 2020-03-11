@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetBkMode">
+   <documentation>
+    <desc>sets the background mix mode of the specified device context</desc>
+    <apidoc>
+     <pt>
+      <ll>int SetBkMode (</ll>
+      <ld>_In_ HDC hdc,</ld>
+      <ld>_In_ int iBkMode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">handle to the device context</par>
+     <par name="iBkMode">background mode</par>
+     <return>
+      <rc cond="success">previous background mode</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SetBkMode">
+     <returntype>int</returntype>
+     <par loc="stack" name="hdc" nr="1" io="r">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+    <par loc="stack" name="iBkMode" io="r" roles="none" nr="2">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="sets device background mode"/>
+     </io-actions>
+    <external-effects/>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

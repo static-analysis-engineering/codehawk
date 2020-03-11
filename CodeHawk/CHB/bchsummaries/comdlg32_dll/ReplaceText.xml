@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/06/2015 22:53:27"/>
+  <libfun lib="comdlg32" name="ReplaceText">
+   <documentation>
+    <desc>
+      Creates a system-defined modeless dialog box that lets the user specify a 
+      string to search for and a replacement string, as well as options to 
+      control the find and replace operations
+    </desc>
+    <apidoc>
+     <pt>HWND WINAPI ReplaceText (_Inout_  LPFINDREPLACE lpfr)</pt>
+     <par name="lpfr">
+       A pointer to a FINDREPLACE structure that contains information used to 
+       initialize the dialog box. The dialog box uses this structure to send 
+       information about the user's input to your application
+     </par>
+     <return>
+      <rc cond="success">
+	If the function succeeds, the return value is the window handle to the 
+	dialog box. You can use the window handle to communicate with the dialog 
+	box or close it.
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ReplaceText">
+    <par loc="stack" io="rw" name="lpfr" nr="1">
+     <type><ptr>FINDREPLACE</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:FINDREPLACE" />
+      <role rt="ioc:memops" rn="dst-struct:FINDREPLACE" />
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>HWND</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

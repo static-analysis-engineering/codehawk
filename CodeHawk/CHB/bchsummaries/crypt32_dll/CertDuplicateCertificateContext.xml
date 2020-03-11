@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="04/15/2015 17:12:32"/>
+  <libfun lib="crypt32" name="CertDuplicateCertificateContext">
+   <documentation>
+    <desc>duplicates a certificate context by incrementing its reference count.</desc>
+    <apidoc>
+     <pt>PCCERT_CONTEXT WINAPI  CertDuplicateCertificateContext (_In_  PCCERT_CONTEXT  pCertContext)</pt>
+     <par name="pCertContext">
+       A pointer to the CERT_CONTEXT structure for which the reference count is incremented.
+     </par>
+     <return>
+       Currently, a copy is not made of the context, and the returned pointer to 
+       a context has the same value as the pointer to a context that was input.
+       If the pointer passed into this function is NULL, NULL is returned.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CertDuplicateCertificateContext">
+    <par loc="stack" io="r" name="pCertContext" nr="1">
+     <type><ptr>CERT_CONTEXT</ptr></type>
+     <roles>
+      <role rt="ioc:crypto" rn="certificate context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype><ptr>CERT_CONTEXT</ptr></returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="crypto"
+		  desc="duplicates a certificate context"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply><eq/><return/><ci>pCertContext</ci></apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2016-01-11T20:37:30.983896"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="8" name="FromReflectedField">
+    <documentation>
+      <desc>Converts a java.lang.reflect.Field to a field ID</desc>
+      <apidoc>
+        <pt>
+          <ll>jfieldID FromReflectedField(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jobject field</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="field">a java.lang.reflect.Field</par>
+        <return>
+          <rc cond="success">a field ID</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="8" adj="8" name="FromReflectedField">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" name="field">
+        <type>jobject</type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype>jfieldID</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="converts a java.lang.reflect.Field to a field ID" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

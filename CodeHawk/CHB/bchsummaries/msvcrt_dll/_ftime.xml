@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/21/2015 10:27:49"/>
+  <libfun lib="msvcrt" name="_ftime">
+   <documentation>
+    <desc>Get the current time</desc>
+    <apidoc>
+     <pt>void _ftime (struct _timeb *timeptr)</pt>
+     <par name="timeptr">Pointer to a _timeb structure </par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_ftime">
+    <par loc="stack" io="w" name="timeptr" nr="1">
+     <type><ptr>_timeb</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:_timeb" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

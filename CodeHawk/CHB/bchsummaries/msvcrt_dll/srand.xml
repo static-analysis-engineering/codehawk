@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:44"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="srand">
+   <documentation>
+    <desc>pseudo-random number generator</desc>
+    <apidoc>
+     <pt>void srand (unsigned seed)</pt>
+     <par name="seed">seed for a new sequence of pseudo-random numbers</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="srand">
+    <returntype>void</returntype>
+    <par loc="stack" io="r" name="seed" nr="1">
+     <type>int</type>
+     <roles>
+        <role rt="ioc:process" rn="seed"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="process" desc="generates pseudo random number"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

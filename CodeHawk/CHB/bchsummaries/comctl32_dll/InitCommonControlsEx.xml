@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:20:25"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="comctl32" name="InitCommonControlsEx">
+   <documentation>
+    <desc>
+      ensures that the common control DLL (Comctl32.dll) is loaded, and registers specific
+      common control classes from the DLL. An application must call this function before
+      creating a common control
+    </desc>
+    <apidoc>
+     <pt>BOOL InitCommonControlsEx (_In_ const LPINITCOMMONCONTROLSEX lpInitCtrls)</pt>
+     <par name="lpInitCtrsl">
+       pointer to an INITCOMMONCONTROLSEX structure that contains information specifying
+       which control classes will be registered
+	</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="InitCommonControlsEx">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="lpInitCtrls" roles="none" nr="1">
+       <type><ptr>INITCOMMONCONTROLSEX</ptr></type>
+       <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry"
+		  desc="registers and initializes common control window classes"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

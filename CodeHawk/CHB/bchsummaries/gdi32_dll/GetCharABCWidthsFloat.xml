@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetCharABCWidthsFloat">
+   <documentation>
+    <desc>
+      retrieves the widths, in logical units, of consecutive characters 
+      in a specified range from the current font.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetCharABCWidthsFloat(</ll>
+      <ld>_In_   HDC hdc,</ld>
+      <ld>_In_   UINT iFirstChar,</ld>
+      <ld>_In_   UINT iLastChar,</ld>
+      <ld>_Out_  LPABCFLOAT lpABCF</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">Handle to the device context.</par>
+     <par name="iFirstChar">
+       Specifies the code point of the first character in the group of consecutive
+       characters where the ABC widths are seeked.
+     </par>
+     <par name="iLastChar">
+       Specifies the code point of the last character in the group of consecutive 
+       characters where the ABC widths are seeked. This range is inclusive. An 
+       error is returned if the specified last character 
+       precedes the specified first character.
+     </par>
+     <par name="lpABCF">
+       Pointer to an array of ABCFLOAT structures that receives the character widths, 
+       in logical units.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetCharABCWidthsFloat">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="iFirstChar" io="r" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="iLastChar" io="r" roles="none" nr="3">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" io="w" name="lpABCDF" nr="4">
+     <type>ABCFLOAT</type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:ABCFLOAT" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves character widths"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+        <geq/>
+        <ci>iLastChar</ci>
+        <ci>iFirstChar</ci>
+       </apply>
+      </math>
+     </pre>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>ABCFLOAT</type>
+	 <ci>lpABCDF</ci>
+	 <apply>
+	   <indexsize/>
+	   <apply>
+	     <plus/>
+	     <apply><minus/><ci>iLastChar</ci><ci>iFirstChar</ci></apply>
+	     <cn>1</cn>
+	   </apply>
+	 </apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>ABCFLOAT</type>
+	    <ci>lpABCDF</ci>
+	    <apply>
+	      <indexsize/>
+	      <apply>
+		<plus/>
+		<apply><minus/><ci>iLastChar</ci><ci>iFirstChar</ci></apply>
+		<cn>1</cn>
+	      </apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

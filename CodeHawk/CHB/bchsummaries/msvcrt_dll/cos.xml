@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="cos.xml" time="2016-05-07 18:29:20.275207"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="cos">
+    <documentation>
+      <desc>Calculates the cosine</desc>
+      <apidoc>
+        <pt>double cos (double x)</pt>
+        <par name="x">Angle in radians</par>
+        <return>the cosine</return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="cos">
+      <par loc="stack" name="x" io="r" roles="none" nr="1">
+        <type>double</type>
+      </par>
+      <returntype>double</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

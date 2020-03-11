@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="ExtTextOut">
+   <documentation>
+    <desc>
+      draws text using the currently selected font, background color, and text color
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ExtTextOut (</ll>
+      <ld>_In_ HDC hdc,</ld>
+      <ld>_In_ int X,</ld>
+      <ld>_In_ int Y,</ld>
+      <ld>_In_ UINT fuOptions,</ld>
+      <ld>_In_ const RECT *lprc,</ld>
+      <ld>_In_ LPCTSTR lpString,</ld>
+      <ld>_In_ UINT cbCount,</ld>
+      <ld>_In_ const INT *lpDx</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">handle to the device context</par>
+     <par name="X">
+       x-coordinate, in logical coordinates, of the reference point used to position
+       the string
+     </par>
+     <par name="Y">
+       y-coordinate, in logical coordinates, of the reference point used to position
+       the string
+     </par>
+     <par name="fuOptions">specifies how to use the application-defined rectangle</par>
+     <par name="lprc">
+       pointer ot an optional RECT structure that specifies the dimensions, in logical
+       coordinates, of a rectangle that is used for clipping, opaquing, or both
+     </par>
+     <par name="lpString">
+       pointer to a string that specifies the text to be drawn. The string does not
+       have to be zero-terminated, since cbCount specifies the length of the string
+     </par>
+     <par name="cbCount">length of the string pointed to by lpString</par>
+     <par name="lpDx">
+       pointer to an optional array of values that indicate the distance between
+       origins of adjacent character cells.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="ExtTextOut">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hdc" io="r" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+    <par loc="stack" name="X" io="r" nr="2">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="ExtTextOut"/>
+      </roles>
+    </par>
+    <par loc="stack" name="Y" io="r" nr="3">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="ExtTextOut"/>
+      </roles>
+    </par>
+    <par loc="stack" name="fuOptions" roles="none" nr="4">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="lprc" nr="5">
+      <type><ptr>RECT</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:RECT"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpString" io="r" nr="6" rep="hex">
+      <type>LPCTSTR</type>
+      <roles>
+	<role rt="ioc:outputs" rn="screen output"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cbCount" io="r" nr="7">
+      <type>UINT</type>
+      <roles>
+	<role rt="size:buffersize" rn="ExtTextOut"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpDx" io="w" nr="8">
+      <type><ptr>int</ptr></type>
+      <roles>
+	<role rt="ioc:memops" rn="dst-bytes:misc"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui" desc="draws text"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>TCHAR</type>
+	 <ci>lpString</ci>
+	 <ci>cbCount</ci>
+       </apply>
+      </math>
+     </pre>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read-null/>
+	 <type>INT</type>
+	 <ci>lpDx</ci>
+	 <apply><indexsize/><ci>cbCount</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

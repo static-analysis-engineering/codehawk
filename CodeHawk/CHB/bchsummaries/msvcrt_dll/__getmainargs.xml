@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/31/2015 18:46:46"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="__getmainargs">
+   <documentation>
+    <desc>
+      invokes command-line parsing and copies the arguments to main() back
+      through the passed pointers
+    </desc>
+    <apidoc>
+      <pt>
+	<ll>int __getmainargs(</ll>
+	<ld>int * _Argc,</ld>
+	<ld>char *** _Argv,</ld>
+	<ld>char *** _Env,</ld>
+	<ld>int _DoWildCard,</ld>
+	<ld>_startupinfo * _StartInfo</ld>
+	<ll>)</ll>
+      </pt>
+     <return>
+      <rc cond="success">0</rc>
+      <rc cond="failure">negative value</rc>
+     </return>
+     <par name="_Argc">
+       number of arguments that follow in argv; always greater than or equal to 1
+    </par>
+     <par name="_Argv">
+       array of null-terminated strings representing command-line arguments entered
+       by the user of the program. By convention, argv[0] is the command with which
+       the program is invoked, argv[1] is the first command-line argument and so on,
+       until argv[argc], which is always NULL. 
+     </par>
+     <par name="_Env">
+       array of strings that represent the variables set in the user&apos;s environment.
+       This array is terminated by a NULL entry.
+     </par>
+     <par name="_DoWildCard">
+       if set to 1, causes wildcards in the command-line arguments to be expanded
+     </par>
+     <par name="_StartInfo">other information to be passed to the CRT DLL</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="__getmainargs">
+     <returntype>int</returntype>
+     <par loc="stack" io="w" name="_Argc" nr="1" roles="none">
+       <type><ptr>int</ptr></type>
+       <pre><deref-write/></pre>
+       <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="_Argv" nr="2" rep="hex">
+      <type><ptr><ptr><ptr>char</ptr></ptr></ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:process" rn="ref:commandline arguments"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="_Env" nr="3" rep="hex">
+      <type><ptr><ptr><ptr>char</ptr></ptr></ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:process" rn="ref:process environment"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="_DoWildCard" roles="none" nr="4">
+       <type>int</type>
+    </par>
+    <par loc="stack" io="r" name="_StartInfo" nr="5" roles="none" ref="hex">
+      <type><ptr>_startupinfo</ptr></type>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="invokes command-line parsing and retrieves the arguments"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

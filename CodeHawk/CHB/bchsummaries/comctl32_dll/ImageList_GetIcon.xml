@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 08:31:48"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="comctl32" name="ImageList_GetIcon">
+   <documentation>
+    <desc>Creates an icon from an image and mask in an image list. </desc>
+    <apidoc>
+     <pt>
+      <ll>HICON ImageList_GetIcon(</ll>
+      <ld>HIMAGELIST himl</ld>
+      <ld>int i</ld>
+      <ld>UINT flags</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">the handle to the image list</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="himl">A handle to the image list. </par>
+     <par name="i">An index of the image. </par>
+     <par name="flags">
+       A combination of flags that specify the drawing style. For a list of
+       values, see the description of the fStyle parameter of the 
+       ImageList_Draw function.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="ImageList_GetIcon">
+    <returnbtype tname="HICON" ttag="tnamed"/>
+    <par loc="stack" name="himl" io="r" rep="hex" nr="1">
+      <type>HIMAGELIST</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:imagelist"/>
+      </roles>
+    </par>
+    <par loc="stack" name="i" io="r" nr="2">
+      <type>int</type>
+      <roles>
+	<role rt="size:index" rn="image"/>
+      </roles>
+    </par>
+    <par loc="stack" name="flags" io="r" roles="none" nr="3">
+      <rep type="enum" name="imagelist_creation_flags"/>
+      <type>UINT</type>
+      <pre><enum-value name="imagelist_creation_flags" flags="true"/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="creates an icon from an image"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

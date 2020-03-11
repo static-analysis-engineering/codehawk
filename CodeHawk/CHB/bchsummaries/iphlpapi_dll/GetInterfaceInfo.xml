@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="01/29/2016 13:14:49"/>
+  <libfun lib="iphlpapi" name="GetInterfaceInfo">
+   <documentation>
+    <desc>
+       obtains the list of the network interface adapters with IPv4
+       enabled on the local system
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD GetInterfaceInfo(</ll>
+      <ld>_Out_   PIP_INTERFACE_INFO pIfTable</ld>
+      <ld>_Inout_ PULONG             dwOutBufLen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pIfTable">
+        A pointer to a buffer that specifies an IP_INTERFACE_INFO
+        structure that receives the list of adapters. This buffer must
+        be allocated by the caller.
+     </par>
+     <par name="dwOutBufLen">
+        A pointer to a DWORD variable that specifies the size of the
+        buffer pointed to by pIfTable parameter to receive the
+        IP_INTERFACE_INFO structure. If this size is insufficient to
+        hold the IPv4 interface information, GetInterfaceInfo fills in
+        this variable with the required size, and returns an error
+        code of ERROR_INSUFFICIENT_BUFFER.
+     </par>
+     <return>
+      <rc cond="success">NO_ERROR</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetInterfaceInfo">
+    <par loc="stack" io="w" name="pIfTable" nr="1">
+     <type><ptr>IP_INTERFACE_INFO</ptr></type>
+     <roles>
+        <role rt="ioc:network" rn="network interface adapters"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwOutBufLen" nr="2">
+     <type>PULONG</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetInterfaceInfo"/>
+     </roles>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" desc="obtains network interface adapters"/>
+    </io-actions>
+    <preconditions>
+       <pre>
+         <math>
+            <apply>
+              <deref-write/>
+              <type>IP_INTERFACE_INFO</type>
+              <ci>pIfTable</ci>
+              <ci>dwOutBufLen</ci>
+            </apply>
+	 </math>
+       </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+         <math>
+            <apply>
+               <block-write/>
+              <type>IP_INTERFACE_INFO</type>
+              <ci>pIfTable</ci>
+              <ci>dwOutBufLen</ci>
+            </apply>
+	 </math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

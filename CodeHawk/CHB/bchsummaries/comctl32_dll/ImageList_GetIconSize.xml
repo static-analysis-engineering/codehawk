@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ImageList_GetIconSize.xml" time="2016-07-05 23:35:30.264150"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="comctl32" name="ImageList_GetIconSize">
+    <documentation>
+      <desc>
+	Retrieves the dimensions of images in an image list. All
+	images in an image list have the same dimensions.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL ImageList_GetIconSize(</ll>
+          <ld>HIMAGELIST himl</ld>
+          <ld>int        *cx</ld>
+          <ld>int        *cy</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="himl">A handle to the image list</par>
+        <par name="cx">
+	  A pointer to an integer variable that receives the width, in
+	  pixels, of each image
+	</par>
+        <par name="cy">
+	  A pointer to an integer variable that receives the height,
+	  in pixels, of each image.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="ImageList_GetIconSize">
+      <par loc="stack" name="himl" io="r" nr="1">
+        <type>HIMAGELIST</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:imagelist"/>
+	</roles>
+      </par>
+      <par loc="stack" name="cx" io="w" roles="none" nr="2">
+        <type><ptr>int</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <par loc="stack" name="cy" io="w" roles="none" nr="3">
+        <type><ptr>int</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="retrieves the dimensions of images in an image list"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

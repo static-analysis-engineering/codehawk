@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/15/2015 06:04:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetDIBitsToDevice">
+   <documentation>
+    <desc>
+      sets the pixels in the specified rectangle on the device that is
+      associated with the destination device context using color data 
+      from a DIB, JPEG, or PNG image.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>SetDIBitsToDevice(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ld>_In_  int XDest</ld>
+      <ld>_In_  int YDest</ld>
+      <ld>_In_  DWORD dwWidth</ld>
+      <ld>_In_  DWORD dwHeight</ld>
+      <ld>_In_  int XSrc</ld>
+      <ld>_In_  int YSrc</ld>
+      <ld>_In_  UINT uStartScan</ld>
+      <ld>_In_  UINT cScanLines</ld>
+      <ld>_In_  const VOID *lpvBits</ld>
+      <ld>_In_  const BITMAPINFO *lpbmi</ld>
+      <ld>_In_  UINT fuColorUse</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="XDest">
+       The x-coordinate, in logical units, of the upper-left corner of the 
+       destination rectangle.
+     </par>
+     <par name="YDest">
+       The y-coordinate, in logical units, of the upper-left corner of the 
+       destination rectangle. 
+     </par>
+     <par name="dwWidth">The width, in logical units, of the image. </par>
+     <par name="dwHeight">The height, in logical units, of the image. </par>
+     <par name="XSrc">
+       The x-coordinate, in logical units, of the lower-left corner of the image.
+     </par>
+     <par name="YSrc">
+       The y-coordinate, in logical units, of the lower-left corner of the image.
+     </par>
+     <par name="uStartScan">The starting scan line in the image. </par>
+     <par name="cScanLines">
+       The number of DIB scan lines contained in the array pointed to by the 
+       lpvBits parameter.
+     </par>
+     <par name="lpvBits">
+       A pointer to the color data stored as an array of bytes. For more
+       information, see the following Remarks section. 
+     </par>
+     <par name="lpbmi">
+       A pointer to a BITMAPINFO structure that contains information about the DIB. 
+     </par>
+     <par name="fuColorUse">
+       Indicates whether the bmiColors member of the BITMAPINFO structure 
+       contains explicit red, green, blue (RGB) values or indexes into a palette.
+       The fuColorUse paramters must be on of the following values: 
+       DIB_PAL_COLORS : The color table consists of an array of 16-bit indexes 
+       into the currently selected logical palette.	
+       DIB_RGB_COLORS : The color table contains literal RGB values.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="48" cc="stdcall" name="SetDIBitsToDevice">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="XDest" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="YDest" io="r" roles="none" nr="3">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="dwWidth" io="r" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="dwHeight" io="r" roles="none" nr="5">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="XSrc" io="r" roles="none" nr="6">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="YSrc" io="r" roles="none" nr="7">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="uStartScan" io="r" roles="none" nr="8">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="cScanLines" io="r" roles="none" nr="9">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="lpvBits" io="r" nr="10">
+     <type><ptr>VOID</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:misc"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpbmi" io="r" nr="11">
+      <type><ptr>BITMAPINFO</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:BITMAPINFO"/>
+      </roles>
+    </par>
+    <par loc="stack" name="fuColorUse" io="r" roles="none" nr="12">
+     <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="sets pixels on a device"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>lpvBits</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

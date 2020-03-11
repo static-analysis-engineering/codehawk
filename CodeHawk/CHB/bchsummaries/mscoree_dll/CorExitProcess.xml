@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 23:06:40"/>
+  <libfun lib="mscoree" name="CorExitProcess">
+   <documentation>
+    <desc>Shuts down the current unmanaged process</desc>
+    <apidoc>
+     <pt>void STDMETHODCALLTYPE CorExitProcess (int exitCode)</pt>
+     <par name="exitCode">An integer that specifies the process exit code</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CorExitProcess">
+    <par loc="stack" name="exitCode" nr="1">
+     <type>int</type>
+     <roles>
+       <role rt="ioc:process" rn="exit code"/>
+     </roles>
+    </par>
+    <returntype>VOID</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="process" 
+		desc="shuts down the current unmanaged process">
+      <args>
+       <ci io="r" role="exit code">exitCode</ci>
+      </args>
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

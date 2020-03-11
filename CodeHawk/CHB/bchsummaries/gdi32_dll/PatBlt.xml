@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:13:31"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="PatBlt">
+   <documentation>
+    <desc>
+      paints the specified rectangle using the brush that is currently 
+      selected into the specified device context. The brush color and 
+      the surface color or colors are combined by using the specified 
+      raster operation.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL PatBlt(</ll>
+      <ld>_In_  HDC hdc </ld>
+      <ld>_In_  int nXLeft </ld>
+      <ld>_In_  int nYLeft </ld>
+      <ld>_In_  int nWidth </ld>
+      <ld>_In_  int nHeight </ld>
+      <ld>_In_  DWORD dwRop </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context. </par>
+     <par name="nXLeft">
+       The x-coordinate, in logical units, of the upper-left corner of the 
+       rectangle to be filled.
+     </par>
+     <par name="nYLeft">
+       The y-coordinate, in logical units, of the upper-left corner of 
+       the rectangle to be filled.
+     </par>
+     <par name="nWidth">The width, in logical units, of the rectangle. </par>
+     <par name="nHeight">The height, in logical units, of the rectangle. </par>
+     <par name="dwRop">The raster operation code. </par>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="PatBlt">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hdc" io="r"  nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+     </par>
+    <par loc="stack" name="nXLeft" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nYLeft" io="r" roles="none" nr="3">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nWidth" io="r" roles="none" nr="4">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nHeight" io="r" roles="none" nr="5">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="dwRop" io="r" roles="none" nr="6">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui" desc="paints a rectangle"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

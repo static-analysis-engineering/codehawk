@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2016-01-02T23:05:26.708146"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="20" name="PopLocalFrame">
+    <documentation>
+      <desc>
+	Pops off the current local reference frame, frees all the
+	local references, and returns a local reference in the
+	previous local reference frame for the given result object.
+
+	Pass NULL as result if you do not need to return a reference to the
+	previous frame.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jint PopLocalFrame(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jobject result</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="result">local reference</par>
+        <return>
+          <rc cond="success">local reference</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="20" adj="8" name="PopLocalFrame">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" name="result">
+        <type>jobject</type>
+	<pre><deref-read-null/></pre>
+      </par>
+      <returntype>jobject</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="pops off the current local reference frame" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

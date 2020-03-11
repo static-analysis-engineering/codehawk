@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/21/2015 17:21:05"/>
+  <libfun lib="msvcrt" name="_get_osfhandle">
+   <documentation>
+    <desc>
+      Retrieves the operating-system file handle that is associated 
+      with the specified file descriptor
+    </desc>
+    <apidoc>
+     <pt>intptr_t _get_osfhandle (int fd)</pt>
+     <par name="fd">An existing file descriptor</par>
+     <return>
+      <rc cond="success">An operating-system file handle if fd is valid</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_get_osfhandle">
+    <par loc="stack" io="r" name="fd" nr="1">
+     <type>int</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="id:file descriptor" />
+     </roles>
+    </par>
+    <returntype>intptr_t</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem"
+		  desc="retrieves an operating-system file handle"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/21/2015 17:44:25"/>
+  <libfun lib="gdi32" name="GetBitmapBits">
+   <documentation>
+    <desc>
+      copies the bitmap bits of a specified device-dependent bitmap into a buffer
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG GetBitmapBits(</ll>
+      <ld>_In_ HBITMAP hbmp</ld>
+      <ld>_In_ LONG cbBuffer</ld>
+      <ld>_Out_ LPVOID lpvBits</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hbmp">A handle to the device-dependent bitmap</par>
+     <par name="cbBuffer">The number of bytes to copy from the bitmap into the buffer</par>
+     <par name="lpvBits">
+       A pointer to a buffer to receive the bitmap bits. The bits are stored as 
+       an array of byte values
+     </par>
+     <return>
+      <rc cond="success">the number of bytes copied to the buffer</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetBitmapBits">
+    <par loc="stack" io="r" name="hbmp" nr="1">
+     <type>HBITMAP</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:bitmap" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="cbBuffer" nr="2">
+     <type>LONG</type>
+     <roles>
+      <role rt="size:buffersize" rn="GetBitmapBits" />
+     </roles>
+     <pre><non-negative/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpvBits" nr="3">
+     <type><ptr>void</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:bitmap" />
+     </roles>
+    </par>
+    <returntype>LONG</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="process" desc="copies a bitmap into a buffer"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpvBits</ci>
+	    <ci>cbBuffer</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>lpvBits</ci>
+	    <ci>cbBuffer</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:44"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="_onexit">
+   <documentation>
+    <desc>registers a routine to be called at exit time</desc>
+    <apidoc>
+     <pt>_onexit_t _onexit (_onexit_t func)</pt>
+     <par name="func">pointer to a function to be called at exit</par>
+     <return>
+      <rc cond="success">pointer to the function</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_onexit">
+    <returntype>function-pointer</returntype>
+    <par loc="stack" io="r" name="func" nr="1">
+      <type><ptr>function-pointer</ptr></type>
+     <roles>
+        <role rt="ioc:process" rn="callbackf:exit"/>
+     </roles>
+     <pre><deref-read/><function-pointer/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="registers a function to be called at exit time"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+        <not-null/>
+        <ci>func</ci>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <eq/>
+        <return-value/>
+        <ci>func</ci>
+       </apply>
+      </math>
+     </post>
+     <error-post>
+      <math>
+       <apply>
+        <null/>
+        <return-value/>
+       </apply>
+      </math>
+     </error-post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

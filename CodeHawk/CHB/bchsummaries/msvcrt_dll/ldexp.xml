@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/22/2015 21:11:48"/>
+  <libfun lib="msvcrt" name="ldexp">
+   <documentation>
+    <desc>Multiplies a floating-point number by an integral power of two</desc>
+    <apidoc>
+     <pt>
+      <ll>double ldexp(</ll>
+      <ld>double x</ld>
+      <ld>int exp</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="x">floating point value</par>
+     <par name="exp">integer exponent</par>
+     <return>x times 2 to the power exp</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="ldexp">
+    <par loc="stack" name="x" io="r" roles="none" nr="1">
+     <type>double</type>
+    </par>
+    <par loc="stack" name="exp" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <returntype>double</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

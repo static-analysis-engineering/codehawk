@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T19:32:54.325425"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="113" name="GetStaticMethodID">
+    <documentation>
+      <desc>
+         Returns the method ID for a static method of a class. The
+         method is specified by its name and signature.
+
+         GetStaticMethodID() causes an uninitialized class to be initialized
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jmethodID GetStaticMethodID(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jclass clazz</ld>
+          <ld>_in const char *name</ld>
+          <ld>_in const char *sig</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="clazz">a Java class object</par>
+        <par name="name">the static method name in a 0-terminated modified UTF-8 string</par>
+        <par name="sig">the method signature in a 0-terminated modified UTF-8 string</par>
+        <return>
+          <rc cond="success">a method ID</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="113" adj="16" name="GetStaticMethodID">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="java class" io="r" nr="2" name="clazz">
+        <type>jclass</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="jni:class" rn="retrieve static method"/>
+        </roles>
+      </par>
+      <par loc="stack" desc="java method name" io="r" nr="3" name="name">
+        <type><ptr>char</ptr></type>
+        <pre><deref-read-nt/></pre>
+        <roles>
+           <role rt="jni:methodname" rn="retrieve method id"/>
+        </roles>
+      </par>
+      <par loc="stack" desc="java method signature" io="r" nr="4" name="sig">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+        <roles>
+           <role rt="jni:methodsignature" rn="retrieve method id"/>
+        </roles>
+      </par>
+      <returntype>jmethodID</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="retrieves a static method id" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

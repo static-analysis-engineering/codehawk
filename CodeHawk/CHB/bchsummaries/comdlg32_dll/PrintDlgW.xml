@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="03/06/2015 22:14:54"/>
+  <libfun lib="comdlg32" name="PrintDlgW">
+   <refer-to char-type="unicode" name="PrintDlg"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 07:04:29"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="imm32" name="ImmGetOpenStatus">
+   <documentation>
+    <desc>Determines whether the IME is open or closed. </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ImmGetOpenStatus(</ll>
+      <ld>_In_  HIMC hIMC </ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="hIMC">Handle to the input context. </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ImmGetOpenStatus">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hIMC" nr="1">
+     <type>HIMC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:input context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

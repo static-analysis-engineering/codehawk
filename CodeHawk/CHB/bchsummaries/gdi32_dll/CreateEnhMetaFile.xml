@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 09:22:34"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CreateEnhMetaFile">
+   <documentation>
+    <desc>
+      creates a device context for an enhanced-format metafile. This device 
+      context can be used to store a device-independent picture.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HDC CreateEnhMetaFileA(</ll>
+      <ld>_In_  HDC hdcRef </ld>
+      <ld>_In_  LPCTSTR lpFilename </ld>
+      <ld>_In_  const RECT *lpRect </ld>
+      <ld>_In_  LPCTSTR lpDescription </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="hdcRef">
+       A handle to a reference device for the enhanced metafile. This parameter 
+       can be NULL. 
+     </par>
+     <par name="lpFilename">
+       A pointer to the file name for the enhanced metafile to be created. 
+       If this parameter is NULL, the enhanced metafile is memory based and 
+       its contents are lost when it is deleted by using the DeleteEnhMetaFile
+       function.
+    </par>
+     <par name="lpRect">
+       A pointer to a RECT structure that specifies the dimensions (in
+       .01-millimeter units) of the picture to be stored in the enhanced metafile. 
+    </par>
+     <par name="lpDescription">
+       A pointer to a string that specifies the name of the application that 
+       created the picture, as well as the picture&apos;s title. 
+       This parameter can be NULL
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CreateEnhMetaFile">
+     <returntype>HDC</returntype>
+    <par loc="stack" io="r" name="hdcRef" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpFilename" rep="hex" nr="2">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="name:file" />
+     </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpRect" rep="hex" nr="3">
+     <type><ptr>RECT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:RECT" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpDescription" rep="hex" nr="4">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="name:application" />
+     </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="creates a device context"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

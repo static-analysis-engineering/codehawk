@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/02/2015 11:35:17"/>
+  <libfun lib="msvcrt" name="acos">
+   <documentation>
+    <desc>Calculates the arccosine</desc>
+    <apidoc>
+     <pt>double acos (double x)</pt>
+     <par name="x">
+       Value between -1 and 1, for which to calculate the arccosine (the inverse cosine). 
+     </par>
+     <return>the arccosine of x in the range 0 to pi radians</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="acos">
+    <par loc="stack" name="x" io="r" roles="none" nr="1">
+     <type>double</type>
+    </par>
+    <returntype>double</returntype>
+   </api>
+   <semantics>
+    <preconditions>
+      <pre><math><apply><geq/><ci>x</ci><cn>-1</cn></apply></math></pre>
+      <pre><math><apply><leq/><ci>x</ci><cn>1</cn></apply></math></pre>
+    </preconditions>	
+    <postconditions>
+      <post><math><apply><geq/><return/><cn>0</cn></apply></math></post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

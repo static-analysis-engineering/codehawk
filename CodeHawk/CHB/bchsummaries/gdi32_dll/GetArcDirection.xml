@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetArcDirection.xml" time="2016-08-11 12:37:57.142081"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="gdi32" name="GetArcDirection">
+    <documentation>
+      <desc>
+	retrieves the current arc direction for the specified device
+	context. Arc and rectangle functions use the arc direction.
+      </desc>
+      <apidoc>
+        <pt>int GetArcDirection (_In_ HDC hdc)</pt>
+        <par name="hdc">Handle to the device context</par>
+        <return>the current arc direction</return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="GetArcDirection">
+      <par loc="stack" name="hdc" io="r" nr="1">
+        <type>HDC</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:device context"/>
+	</roles>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="retrieves the current arc direction"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

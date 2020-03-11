@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/03/2015 15:01:25"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="wcsstr">
+   <documentation>
+    <desc>
+      returns a pointer to the first occurrence of a search string in a string
+    </desc>
+    <apidoc>
+      <pt>
+      <ll>char *wcsstr(</ll>
+      <ld>const wchar_t *str,</ld>
+      <ld>const wchar_t *strSearch</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">pointer to the first occurrence of str in strSearch</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+     <par name="str">null-terminated string to search</par>
+     <par name="strSearch">null-terminated string to search for</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="wcsstr">
+     <returntype><ptr>wchar_t</ptr></returntype>
+     <par loc="stack" name="str" io="r" rep="hex" nr="1">
+       <type><ptr>wchar_t</ptr></type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:memops" rn="src-string:search"/>
+       </roles>
+    </par>
+    <par loc="stack" name="strSearch" io="r" rep="hex" nr="2">
+      <type><ptr>wchar_t</ptr></type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-string:search"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" 
+		  desc="searches for a string in another string"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post><math><apply><geq/><return/><ci>strSearch</ci></apply></math></post>
+      <post>
+	<math>
+	  <apply>
+	    <leq/>
+	    <return/>
+	    <apply>
+	      <plus/>
+	      <ci>strSearch</ci>
+	      <apply><null-terminator-pos/><ci>strSearch</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

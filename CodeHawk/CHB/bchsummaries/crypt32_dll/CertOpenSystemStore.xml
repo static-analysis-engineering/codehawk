@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/20/2015 00:16:42"/>
+  <libfun lib="crypt32" name="CertOpenSystemStore">
+   <documentation>
+    <desc>opens the most common system certificate store</desc>
+    <apidoc>
+     <pt>
+      <ll>HCERTSTORE WINAPI CertOpenSystemStore(</ll>
+      <ld>_In_ HCRYPTPROV_LEGACY hprov</ld>
+      <ld>_In_ LPTCSTR           szSubsystemProtocol</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hprov">This parameter is not used and should be set to NULL</par>
+     <par name="szSubsystemProtocol">
+       A string that names a system store. If the system store name
+       provided in this parameter is not the name of an existing
+       system store, a new system store will be created and
+       used. CertEnumSystemStore can be used to list the names of
+       existing system stores
+     </par>
+     <return>
+      <rc cond="success">a handle to the certificate store</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CertOpenSystemStore">
+    <par loc="stack" name="hprov" io="r" roles="none" nr="1">
+     <type>HCRYPTPROV_LEGACY</type>
+    </par>
+    <par loc="stack" name="szSubsystemProtocol" io="r" nr="2">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:crypto" rn="name:system store"/>
+      </roles>
+    </par>
+    <returntype>HCERTSTORE</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="crypto" desc="opens system certificate store"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SelectObject">
+   <documentation>
+    <desc>
+      selects an object into the specified device context. The new object replaces
+      the previous object of the same type
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HGDIOBJ SelectObject (</ll>
+      <ld>_In_ HDC hdc,</ld>
+      <ld>_In_ HGDIOBJ hgdiobj</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">handle to the device context</par>
+     <par name="hgdiobj">handle to the object to be selected</par>
+     <return>
+      <rc cond="success">handle to the object being replaced</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SelectObject">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:device context"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="hgdiobj" nr="2">
+     <type>HGDIOBJ</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:graphical device object"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="selects an object in a device context"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

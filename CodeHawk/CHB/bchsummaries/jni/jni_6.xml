@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-21T13:08:33.259008"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="6" name="FindClass">
+    <documentation>
+      <desc>
+	loads a locally-defined class. It searches the directories and zip
+	files specified by the CLASSPATH environment variable for the class
+	with the specified name.
+
+	Since Java 2 SDK release 1.2, the Java security model allows
+	non-system classes to load and call native methods. FindClass
+	locates the class loader associated with the current native
+	method; that is, the class loader of the class that declared
+	the native method. If the native method belongs to a system
+	class, no class loader will be involved. Otherwise, the proper
+	class loader will be invoked to load and link the named class.
+
+	Since Java 2 SDK release 1.2, when FindClass is called through
+	the Invocation Interface, there is no current native method or
+	its associated class loader. In that case, the result of
+	ClassLoader.getSystemClassLoader is used. This is the class
+	loader the virtual machine creates for applications, and is
+	able to locate classes listed in the java.class.path property.
+
+	The name argument is a fully-qualified class name or an array type signature 
+      </desc>
+      <apidoc>
+        <pt>jclass FindClass(JNIEnv *env, const char *name)</pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="name">
+	  a fully-qualified class name (that is, a package name, delimited by
+	  "/", followed by the class name). If the name begins with "[" (the
+	  array signature character), it returns an array class. The string is
+	  encoded in modified UTF-8.
+	</par>
+        <return>
+          <rc cond="success">a class object from a fully-qualified name</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="6" adj="8" name="FindClass">
+      <par loc="stack" nr="1" name="env">
+        <type><ptr>JNIEnv</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" nr="2" name="name">
+        <type><ptr>char</ptr></type>
+        <roles>
+	  <role rt="jni:classname" rn="retrieve class"/>
+        </roles>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>jclass</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="jvm" desc="retrieves a class object from the jvm"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

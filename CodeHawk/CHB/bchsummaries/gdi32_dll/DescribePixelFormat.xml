@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/01/2015 15:56:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="DescribePixelFormat">
+   <documentation>
+    <apidoc>
+     <pt>
+      <ll>DescribePixelFormat(</ll>
+      <ld>HDC hdc</ld>
+      <ld>int iPixelFormat</ld>
+      <ld>UINT nBytes</ld>
+      <ld>LPPIXELFORMATDESCRIPTOR ppfd</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">maximum pixel format index of the device</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">device context</par>
+     <par name="iPixelFormat">
+       index that specifies the pixel format. The pixel formats that a
+       device context supports are identified by positive one-based
+       integer indices
+    </par>
+     <par name="nBytes">size, in bytes, of the structure pointed to by ppfd
+    </par>
+     <par name="ppfd">pointer to a PIXELFORMATDESCRIPTOR structure whose members the
+      function sets with pixel format data. The function stores the
+      number of bytes copied to the structure in the nSize member. If,
+      upon entry, ppfd is NULL, the function writes no data to the
+      structure. This is useful when you only want to obtain the
+      maximum pixel format index of a device context.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="DescribePixelFormat">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+    </par>
+    <par loc="stack" name="iPixelFormat" io="r" nr="2">
+     <type>int</type>
+     <roles>
+       <role rt="size:index" rn="pixel format"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nBytes" nr="3">
+     <type>UINT</type>
+     <roles>
+      <role rt="size:buffersize" rn="DescribePixelFormat" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="ppfd" rep="hex" nr="4">
+     <type><ptr>PIXELFORMATDESCRIPTOR</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:PIXELFORMATDESCRIPTOR" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+        <deref-write/>
+	  <type>PIXELFORMATDESCRIPTOR</type>
+	  <ci>ppfd</ci>
+	  <apply>
+	    <bytesize/>
+	    <ci>nBytes</ci>
+	  </apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+        <btype tname="PIXELFORMATDESCRIPTOR" ttag="tnamed"/>
+        <ci>ppfd</ci>
+        <ci>nBytes</ci>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/13/2015 09:21:53"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CreateDC">
+   <documentation>
+     <descr>
+       creates a device context (DC) for a device using the specified name
+     </descr>
+    <apidoc>
+     <pt>
+      <ll>HDC CreateDC(</ll>
+      <ld>LPCTSTR lpszDriver </ld>
+      <ld>_In_  LPCTSTR lpszDevice </ld>
+      <ld>LPCTSTR lpszOutput </ld>
+      <ld>_In_  const DEVMODE *lpInitData </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">handle to a DC for the specified device.</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="lpszDriver">
+       A pointer to a null-terminated character string that specifies either DISPLAY or
+       the name of a specific display device. 
+    </par>
+     <par name="lpszDevice">
+       A pointer to a null-terminated character string that specifies the name of the 
+       specific output device being used, as shown by the Print Manager (for example, 
+       Epson FX-80). It is not the printer model name. The lpszDevice parameter must 
+       be used.
+       To obtain valid names for displays, call EnumDisplayDevices.
+       If lpszDriver is DISPLAY or the device name of a specific display device, then 
+       lpszDevice must be NULL or that same device name. If lpszDevice is NULL, then 
+       a DC is created for the primary display device.
+     </par>
+     <par name="lpszOutput">This parameter is ignored and should be set to NULL</par>
+     <par name="lpInitData">
+       A pointer to a DEVMODE structure containing device-specific initialization data 
+       for the device driver. The DocumentProperties function retrieves this structure 
+       filled in for a specified device. The lpInitData parameter must be NULL if the 
+       device driver is to use the default initialization (if any) specified by the user.
+       If lpszDriver is DISPLAY, lpInitData must be NULL; GDI then uses the display 
+       device&apos;s current DEVMODE.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="CreateDC">
+    <returntype>HDC</returntype>
+    <par loc="stack" name="lpszDriver" io="r" nr="1" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:system" rn="name:display device"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpszDevice" io="r" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:system" rn="name:output device" re="hex"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpszOutput" roles="none" nr="3">
+     <type>LPCSTR</type>
+     <pre><null/></pre>
+    </par>
+    <par loc="stack" name="lpInitData" io="r" nr="4">
+      <type><ptr>DEVMODE</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:device initialization data"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="creates a device context"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

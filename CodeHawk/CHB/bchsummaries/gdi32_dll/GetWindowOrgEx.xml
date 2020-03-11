@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetWindowOrgEx.xml" time="2016-07-03 11:36:21.858094"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="gdi32" name="GetWindowOrgEx">
+    <documentation>
+      <desc>
+	retrieves the x-coordinates and y-coordinates of the window
+	origin for the specified device context.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL GetWindowOrgEx(</ll>
+          <ld>_In_  HDC     hdc</ld>
+          <ld>_Out_ LPPOINT lpPoint</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hdc">A handle to the device context</par>
+        <par name="lpPoint">
+	  A pointer to a POINT structure that receives the
+	  coordinates, in logical units, of the window origin
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="GetWindowOrgEx">
+      <par loc="stack" name="hdc" io="r" nr="1">
+        <type>HDC</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:device context"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpPoint" io="w" nr="2" rep="hex">
+        <type><ptr>POINT</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-struct:POINT"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="retrieves the coordinates of the window origin on a device"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

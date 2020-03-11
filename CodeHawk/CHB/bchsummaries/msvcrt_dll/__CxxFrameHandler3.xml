@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/10/2015 21:57:12"/>
+  <libfun lib="msvcrt" name="__CxxFrameHandler3">
+   <documentation>
+    <desc>
+      Internal CRT function. Used by the CRT to handle structured exception frames
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>EXCEPTION_DISPOSITION __CxxFrameHandler3(</ll>
+      <ld>EHExceptionRecord  *pExcept</ld>
+      <ld>EHRegistrationNode *pRN</ld>
+      <ld>void               *pContext</ld>
+      <ld>DispatcherContext  *pDC</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pExcept">
+       Exception record that is passed to the possible catch statements
+     </par>
+     <par name="pRN">
+       Dynamic information about the stack frame that is used to handle the exception
+     </par>
+     <par name="pContext">Context. (Not used on Intel processors.)</par>
+     <par name="pDC">
+       Additional information about the function entry and stack frame
+     </par>
+     <return>
+       One of the filter expression values used by the try-except Statement
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="__CxxFrameHandler3">
+    <par loc="stack" io="r" name="pExcept" roles="none" rep="hex" nr="1">
+     <type><ptr>EHExceptionRecord</ptr></type>
+    </par>
+    <par loc="stack" io="r" name="pRN" roles="none" rep="hex" nr="2">
+     <type><ptr>EHRegistrationNode</ptr></type>
+    </par>
+    <par loc="stack" name="pContext" io="r" roles="none" rep="hex" nr="3">
+     <type><ptr>void</ptr></type>
+    </par>
+    <par loc="stack" io="r" name="pDC" roles="none" nr="4">
+     <type><ptr>DispatcherContext</ptr></type>
+    </par>
+    <returntype>EXCEPTION_DISPOSITION</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="process" 
+		desc="handles structured exception frames">
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

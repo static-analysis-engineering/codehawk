@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 03:05:43"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="ExtCreatePen">
+   <documentation>
+    <desc>
+      creates a logical cosmetic or geometric pen that has the specified 
+      style, width, and brush attributes.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HPEN ExtCreatePen(</ll>
+      <ld>_In_  DWORD dwPenStyle </ld>
+      <ld>_In_  DWORD dwWidth </ld>
+      <ld>_In_  const LOGBRUSH *lplb </ld>
+      <ld>_In_  DWORD dwStyleCount </ld>
+      <ld>_In_  const DWORD *lpStyle </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">handle that identifies a logical pen</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="dwPenStyle">
+       A combination of type, style, end cap, and join attributes. 
+       The values from each category are combined by using the bitwise 
+       OR operator ( | ). 
+     </par>
+     <par name="dwWidth">
+       The width of the pen. If the dwPenStyle parameter is PS_GEOMETRIC, 
+       the width is given in logical units. If dwPenStyle is PS_COSMETIC, 
+       the width must be set to 1. 
+     </par>
+     <par name="lplb">
+       A pointer to a LOGBRUSH structure. If dwPenStyle is PS_COSMETIC,
+       the lbColor member specifies the color of the pen and the lpStyle 
+       member must be set to BS_SOLID. If dwPenStyle is PS_GEOMETRIC, 
+       all members must be used to specify the brush attributes of the pen.	
+     </par>
+     <par name="dwStyleCount">
+       The length, in DWORD units, of the lpStyle array. This value 
+       must be zero if dwPenStyle is not PS_USERSTYLE.
+       The style count is limited to 16.
+     </par>
+     <par name="lpStyle">
+       A pointer to an array. The first value specifies the length of 
+       the first dash in a user-defined style, the second value specifies 
+       the length of the first space, and so on. This pointer must be NULL 
+       if dwPenStyle is not PS_USERSTYLE.
+       If the lpStyle array is exceeded during line drawing, the pointer 
+       is reset to the beginning of the array. When this happens and 
+       dwStyleCount is an even number, the pattern of dashes and spaces 
+       repeats. However, if dwStyleCount is odd, the pattern reverses
+       when the pointer is reset -- the first element of lpStyle now 
+       refers to spaces, the second refers to dashes, and so forth.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="ExtCreatePen">
+    <returnbtype tname="HPEN" ttag="tnamed"/>
+    <par loc="stack" name="dwPenStyle" io="r" roles="none" nr="1">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" name="dwWidth" io="r" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="lplb" nr="3">
+     <type><ptr>LOGBRUSH</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:LOGBRUSH" />
+     </roles>
+    </par>
+    <par loc="stack" name="dwStyleCount" io="r" roles="none" nr="4">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpStyle" io="r" roles="none" nr="5">
+      <type><ptr>DWORD</ptr></type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="process" desc="creates a logical pen"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>DWORD</type>
+	    <ci>lpStyle</ci>
+	    <apply><indexsize/><ci>dwStyleCount</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

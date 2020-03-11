@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:30:47"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="MoveToEx">
+   <documentation>
+    <desc>
+      updates the current position to the specified point and optionally 
+      returns the previous position.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL MoveToEx(</ll>
+      <ld>_In_   HDC hdc,</ld>
+      <ld>_In_   int X,</ld>
+      <ld>_In_   int Y,</ld>
+      <ld>_Out_  LPPOINT lpPoint</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">Handle to a device context.</par>
+     <par name="X">
+       Specifies the x-coordinate, in logical units, of the new
+       position, in logical units.
+     </par>
+     <par name="Y">
+       Specifies the y-coordinate, in logical units, of the new
+       position, in logical units.
+     </par>
+     <par name="lpPoint">
+       Pointer to a POINT structure that receives the previous current position. If
+       this parameter is a NULL pointer, the previous position is not returned.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="MoveToEx">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hdc" io="r" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+    <par loc="stack" name="X" io="r" nr="2">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="MoveToEx"/>
+      </roles>
+    </par>
+    <par loc="stack" name="Y" io="r" nr="3">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="MoveToEx"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lpPoint" nr="4" rep="hex">
+     <type><ptr>POINT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:POINT" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui" desc="updates the cursor position"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

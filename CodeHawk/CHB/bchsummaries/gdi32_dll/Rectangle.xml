@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="Rectangle">
+   <documentation>
+    <desc>draws a rectangle</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL Rectangle (</ll>
+      <ld>_In_ HDC hdc,</ld>
+      <ld>_In_ int nLeftRect,</ld>
+      <ld>_In_ int nTopRect,</ld>
+      <ld>_In_ int nRightRect,</ld>
+      <ld>_In_ int nBottomRect</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">handle to the device context</par>
+     <par name="nLeftRect">
+       x-coordinate, in logical coordinates, of the upper-left corner of the rectangle
+     </par>
+     <par name="nTopRect">
+       y-coordinate, in logical coordinates, of the upper-left corner of the rectangle
+     </par>
+     <par name="nRightRect">
+       x-coordinate, in logical coordinates, of the lower-right corner of the rectangle
+     </par>
+     <par name="nBottomRect">
+       y-coordinate, in logical coordinates, of the lower-right corner of the rectangle
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="Rectangle">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" name="hdc" io="r" nr="1">
+      <type>HDC</type>
+      <roles>
+	<role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nLeftRec" io="r" nr="2">
+      <type>int</type>
+      <roles>
+	<role rt="size:position" rn="Rectangle"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nTopRec" io="r" nr="3">
+      <type>int</type>
+      <roles>
+	<role rt="size:position" rn="Rectangle"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nRightRec" io="r" nr="4">
+      <type>int</type>
+      <roles>
+	<role rt="size:position" rn="Rectangle"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nBottomRect" io="r" nr="5">
+      <type>int</type>
+      <roles>
+	<role rt="size:position" rn="Rectangle"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="draws a rectangle"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/22/2015 21:23:55"/>
+  <libfun lib="msvcrt" name="cosh">
+   <documentation>
+    <desc>calculates the hyperbolic cosine</desc>
+    <apidoc>
+     <pt>double cosh (double x)</pt>
+     <par name="x">angle in radians</par>
+     <return>hyperbolic cosine of x</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="cosh">
+    <par loc="stack" name="x" io="r" roles="none" nr="1">
+     <type>double</type>
+    </par>
+    <returntype>double</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

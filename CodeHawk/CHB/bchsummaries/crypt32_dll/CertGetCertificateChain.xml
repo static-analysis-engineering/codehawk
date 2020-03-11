@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/13/2015 09:51:09"/>
+  <libfun lib="crypt32" name="CertGetCertificateChain">
+   <documentation>
+    <desc>
+      builds a certificate chain context starting from an end certificate 
+      and going back, if possible, to a trusted root certificate.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI CertGetCertificateChain(</ll>
+      <ld>_In_opt_ HCERTCHAINENGINE     hChainEngine</ld>
+      <ld>_In_     PCCERT_CONTEXT       pCertContext</ld>
+      <ld>_In_opt_ LPFILETIME           pTime</ld>
+      <ld>_In_     HCERTSTORE           hAdditionalStore</ld>
+      <ld>_In_     PCERT_CHAIN_PARA     pChainPara</ld>
+      <ld>_In_     DWORD                dwFlags</ld>
+      <ld>_In_     LPVOID               pvReserved</ld>
+      <ld>_Out_    PCCERT_CHAIN_CONTEXT *ppChainContext</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hChainEngine">
+       A handle of the chain engine (namespace and cache) to be used. If 
+       hChainEngine is NULL, the default chain engine, HCCE_CURRENT_USER, 
+       is used. This parameter can be set to HCCE_LOCAL_MACHINE
+     </par>
+     <par name="pCertContext">
+       A pointer to the CERT_CONTEXT of the end certificate, the certificate 
+       for which a chain is being built. This certificate context will be the 
+       zero-index element in the first simple chain
+     </par>
+     <par name="pTime">
+       A pointer to a FILETIME variable that indicates the time for which the 
+       chain is to be validated. Note that the time does not affect trust list,
+       revocation, or root store checking. The current system time is used if 
+       NULL is passed to this parameter. Trust in a particular certificate 
+       being a trusted root is based on the current state of the root store 
+       and not the state of the root store at a time passed in by this parameter.
+       For revocation, a certificate revocation list (CRL), itself, must be valid 
+       at the current time. The value of this parameter is used to determine 
+       whether a certificate listed in a CRL has been revoked
+     </par>
+     <par name="hAdditionalStore">
+       A handle to any additional store to search for supporting certificates
+       and certificate trust lists (CTLs). This parameter can be NULL if no 
+       additional store is to be searched
+     </par>
+     <par name="pChainPara">
+       A pointer to a CERT_CHAIN_PARA structure that includes chain-building parameters
+     </par>
+     <par name="dwFlags">Flag values that indicate special processing</par>
+     <par name="pvReserved">This parameter is reserved and must be NULL</par>
+     <par name="ppChainContext">
+       The address of a pointer to the chain context created. When you have
+       finished using the chain context, release the chain by calling the 
+       CertFreeCertificateChain functionThe address of a pointer to the 
+       chain context created. When you have finished using the chain context,
+       release the chain by calling the CertFreeCertificateChain function
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="CertGetCertificateChain">
+    <par loc="stack" io="r" name="hChainEngine" nr="1">
+     <type>HCERTCHAINENGINE</type>
+     <roles>
+        <role rt="ioc:crypto" rn="handle:chain engine"/>
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="pCertContext" rep="hex" nr="2">
+     <type><ptr>CERT_CONTEXT</ptr></type>
+     <roles>
+        <role rt="ioc:crypto" rn="certificate context"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="pTime" roles="none" nr="3">
+     <type><ptr>FILETIME</ptr></type>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="hAdditionalStore" rep="hex" nr="4">
+     <type>HCERTSTORE</type>
+     <roles>
+        <role rt="ioc:crypto" rn="handle:certificate store"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="pChainPara" nr="5">
+     <type><ptr>CERT_CHAIN_PARA</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:chain-parameters"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="6">
+     <rep type="enum" name="cert_chain_processing_flags"/>
+     <type>DWORD</type>
+     <pre><enum-value name="cert_chain_processing_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" io="r" name="pvReserved" roles="none" nr="7">
+     <type><ptr>void</ptr></type>
+    </par>
+    <par loc="stack" io="w" name="ppChainContext" rep="hex" nr="8">
+     <type><ptr><ptr>CERT_CHAIN_CONTEXT</ptr></ptr></type>
+     <roles>
+        <role rt="ioc:crypto" rn="infox:certificate chain context"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="crypto" desc="creates a certificate chain context">
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

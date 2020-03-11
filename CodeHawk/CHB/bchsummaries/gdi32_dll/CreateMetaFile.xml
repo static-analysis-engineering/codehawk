@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 02:59:08"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CreateMetaFile">
+   <documentation>
+    <desc>creates a device context for a Windows-format metafile.</desc>
+    <apidoc>
+     <pt>
+      <ll>HDC CreateMetaFileA(</ll>
+      <ld>_In_  LPCTSTR lpszFile</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+	handle to the device context for the Windows-format metafile.
+      </rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="lpszFile">
+       A pointer to the file name for the Windows-format metafile to be created. 
+       If this parameter is NULL, the Windows-format metafile is memory based 
+       and its contents are lost when it is deleted by using the DeleteMetaFile
+       function.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CreateMetaFile">
+     <returntype>HDC</returntype>
+     <par loc="stack" io="r" name="lpszFile" rep="hex" nr="1">
+       <type>LPCTSTR</type>
+       <roles>
+	 <role rt="ioc:filesystem" rn="name:file" />
+       </roles>
+      <pre><deref-read-null-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="ioc:system" desc="creates a device context for a Windows metafile"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 03:09:12"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetCurrentPositionEx">
+   <documentation>
+    <desc>retrieves the current position in logical coordinates.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetCurrentPositionEx(</ll>
+      <ld>_In_   HDC hdc</ld>
+      <ld>_Out_  LPPOINT lpPoint</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="lpPoint">
+       A pointer to a POINT structure that receives the logical coordinates
+       of the current position.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetCurrentPositionEx">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hdc" io="r" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lpPoint" io="w" nr="2">
+      <type><ptr>POINT</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:memops" rn="dst-struct:POINT"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui" desc="retrieves the current position on the device"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

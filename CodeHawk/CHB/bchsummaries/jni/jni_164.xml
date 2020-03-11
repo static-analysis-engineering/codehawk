@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-21T15:10:44.930126"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="164" name="GetStringLength">
+    <documentation>
+      <desc>
+	Returns the length (the count of Unicode characters) of a Java string
+      </desc>
+      <apidoc>
+        <pt>jsize GetStringLength(JNIEnv *env, jstring string)</pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="string">a Java string object</par>
+        <return>the length of the Java string</return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="164" adj="8" name="GetStringLength">
+      <par loc="stack" nr="1" name="env">
+        <type><ptr>JNIEnv</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" nr="2" name="string">
+        <type>jstring</type>
+	<roles>
+	  <role rt="jni:string" rn="string to be measured"/>
+	</roles>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype>jsize</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="determines the length of a java string" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

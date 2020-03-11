@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/30/2015 00:08:30"/>
+  <libfun lib="crypt32" name="CertOpenStore">
+   <documentation>
+    <desc>
+      opens a certificate store by using a specified store provider type. 
+      While this function can open a certificate store for most purposes, 
+      CertOpenSystemStore is recommended to open the most common certificate
+      stores. CertOpenStore is required for more complex options and special 
+      cases.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HCERTSTORE WINAPI CertOpenStore(</ll>
+      <ld>_In_       LPCSTR            lpszStoreProvider</ld>
+      <ld>_In_       DWORD             dwMsgAndCertEncoding</ld>
+      <ld>_In_       HCRYPTPROV_LEGACY hCryptProv</ld>
+      <ld>_In_       DWORD             dwFlags</ld>
+      <ld>_In_ const void              *pvPara</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszStoreProvider">
+       A pointer to a null-terminated ANSI string that contains the store provider type
+     </par>
+     <par name="dwMsgAndCertEncoding">
+       Specifies the certificate encoding type and message encoding type. Encoding 
+       is used only when the dwSaveAs parameter of the CertSaveStore function 
+       contains CERT_STORE_SAVE_AS_PKCS7. Otherwise, the dwMsgAndCertEncodingType 
+       parameter is not used.
+       This parameter is only applicable when the CERT_STORE_PROV_MSG, 
+       CERT_STORE_PROV_PKCS7, or CERT_STORE_PROV_FILENAME provider type is specified
+       in the lpszStoreProvider parameter. For all other provider types, this 
+       parameter is unused and should be set to zero.
+     </par>
+     <par name="hCryptProv">This parameter is not used and should be set to NULL</par>
+     <par name="dwFlags">
+       These values consist of high-word and low-word values combined by using a 
+       bitwise-OR operation.
+     </par>
+     <par name="pvPara">
+       A 32-bit value that can contain additional information for this function.
+       The contents of this parameter depends on the value of the lpszStoreProvider 
+       and other parameters.
+     </par>
+     <return>
+      <rc cond="success">a handle to the certificate store</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="CertOpenStore">
+    <par loc="stack" io="r" name="lpszStoreProvider" nr="1" rep="hex">
+     <type>LPCSTR</type>
+     <roles>
+      <role rt="ioc:crypto" rn="name:certificate store provider" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwMsgAndCertEncoding" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="hCryptProv" roles="none" nr="3">
+     <type>HCRYPTPROV_LEGACY</type>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="pvPara" io="r" roles="none" nr="5">
+     <type><ptr>byte</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>HCERTSTORE</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="crypto"
+		  desc="opens a certificate store"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="memchr">
+   <documentation>
+    <desc>
+      locates the first occurrence of c in the initial n bytes of the object 
+      pointed to by buf
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>void *memchr (</ll>
+      <ld>const void *buf,</ld>
+      <ld>int c,</ld>
+      <ld>size_t count</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="buf">pointer to buffer</par>
+     <par name="c">character to look for</par>
+     <par name="count">number of characters to check</par>
+     <return>
+      <rc cond="success">pointer to the located byte</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="memchr">
+     <returntype><ptr>void</ptr></returntype>
+    <par loc="stack" io="r" name="buf" rep="hex" nr="1">
+      <type><ptr>void</ptr></type>
+      <roles>
+         <role rt="ioc:memops" rn="src-bytes:search"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="c" nr="2">
+       <type>int</type>
+       <roles/>
+    </par>
+    <par loc="stack" io="r" name="count" roles="none" nr="3">
+     <type>size_t</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="locates character in a buffer"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>byte</type>
+	 <ci>buf</ci>
+	 <ci>count</ci>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <notnull-null/>
+      <post><math><apply><geq/><return/><ci>buf</ci></apply></math></post>
+      <post>
+	<math>
+	  <apply>
+	    <lt/>
+	    <return/>
+	    <apply><plus/><ci>buf</ci><ci>count</ci></apply>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

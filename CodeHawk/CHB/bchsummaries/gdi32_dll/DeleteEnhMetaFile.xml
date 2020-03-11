@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:05:58"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="DeleteEnhMetaFile">
+   <documentation>
+    <desc>
+      deletes an enhanced-format metafile or an enhanced-format metafile handle.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL DeleteEnhMetaFile(</ll>
+      <ld>_In_  HENHMETAFILE hemf</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hemf">A handle to an enhanced metafile.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DeleteEnhMetaFile">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hemf" nr="1">
+       <type>HENHMETAFILE</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:filesystem" rn="handle:enhanced metafile"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="deletes an enhanced-format metafile"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

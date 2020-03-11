@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header info="exported-function-summary" name="msvcr100.dll" time="06/20/2015 16:23:01"/>
+  <libfun lib="msvcrt" name="_EH_prolog">
+   <documentation>
+    <apidoc/>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_EH_prolog">
+    <returnbtype ttag="tunknown"/>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+ </codehawk-binary-analyzer>

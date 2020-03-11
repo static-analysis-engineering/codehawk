@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-21T15:45:25.880910"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="230" name="GetDirectBufferAddress">
+    <documentation>
+      <desc>
+	Fetches and returns the starting address of the memory region
+	referenced by the given direct java.nio.Buffer.
+
+	This function allows native code to access the same memory
+	region that is accessible to Java code via the buffer object
+      </desc>
+      <apidoc>
+        <pt>GetDirectBufferAddress(JNIEnv *env, jobject buf)</pt>
+        <par name="env">the JNIEnv interface pointer</par>
+        <par name="buf">a direct java.nio.Buffer object (must not be NULL)</par>
+        <return>
+          <rc cond="success">
+	    the starting address of the memory region referenced by the buffer
+	  </rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="230" adj="8" name="GetDirectBufferAddress">
+      <par loc="stack" nr="1" name="env">
+        <type><ptr>JNIEnv</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" nr="2" name="buf">
+        <type>jobject</type>
+	<roles>
+	  <role rt="jni:buffer" rn="direct buffer access"/>
+	</roles>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype><ptr>void</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="retrieves the starting address of a java.nio.Buffer memory region" 
+		   cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ImageList_DrawEx.xml" time="2016-08-09 23:16:40.456673"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="comctl32" name="ImageList_DrawEx">
+    <documentation>
+      <desc>
+	Draws an image list item in the specified device context. The
+	function uses the specified drawing style and blends the image
+	with the specified color.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL ImageList_DrawEx(</ll>
+          <ld>HIMAGELIST himl</ld>
+          <ld>int        i</ld>
+          <ld>HDC        hdcDst</ld>
+          <ld>int        x</ld>
+          <ld>int        y</ld>
+          <ld>int        dx</ld>
+          <ld>int        dy</ld>
+          <ld>COLORREF   rgbBk</ld>
+          <ld>COLORREF   rgbFg</ld>
+          <ld>UINT       fStyle</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="himl">A handle to the image list</par>
+        <par name="i">The index of the image to draw</par>
+        <par name="hdcDst">A handle to the destination device context</par>
+        <par name="x">
+	  The x-coordinate at which to draw within the specified device context
+	</par>
+        <par name="y">
+	  The y-coordinate at which to draw within the specified device context.
+	</par>
+        <par name="dx">
+	  The width of the portion of the image to draw relative to
+	  the upper-left corner of the image. If dx and dy are zero,
+	  the function draws the entire image. The function does not
+	  ensure that the parameters are valid.
+	</par>
+        <par name="dy">
+	  The height of the portion of the image to draw, relative to
+	  the upper-left corner of the image. If dx and dy are zero,
+	  the function draws the entire image. The function does not
+	  ensure that the parameters are valid.
+	</par>
+        <par name="rgbBk">The background color of the image</par>
+        <par name="rgbFg">The foreground color of the image</par>
+        <par name="fStyle">
+	  The drawing style and, optionally, the overlay image. For
+	  information about specifying an overlay image index, see the
+	  comments section at the end of this topic
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="40" cc="stdcall" name="ImageList_DrawEx">
+      <par loc="stack" name="himl" io="r" nr="1">
+        <type>HIMAGELIST</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:imagelist"/>
+	</roles>
+      </par>
+      <par loc="stack" name="i" io="r" nr="2">
+        <type>int</type>
+	<roles>
+	  <role rt="size:index" rn="image"/>
+	</roles>
+      </par>
+      <par loc="stack" name="hdcDst" io="r" nr="3">
+        <type>HDC</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:device context"/>
+	</roles>
+      </par>
+      <par loc="stack" name="x" io="r" nr="4">
+        <type>int</type>
+	<roles>
+	  <role rt="size:coordinate" rn="screen"/>
+	</roles>
+      </par>
+      <par loc="stack" name="y" io="r" nr="5">
+        <type>int</type>
+	<roles>
+	  <role rt="size:coordinate" rn="screen"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dx" io="r" nr="6">
+        <type>int</type>
+	<roles>
+	  <role rt="size:dimension" rn="ImageList_DrawEx"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dy" io="r" nr="7">
+        <type>int</type>
+	<roles>
+	  <role rt="size:dimension" rn="ImageList_DrawEx"/>
+	</roles>
+      </par>
+      <par loc="stack" name="rgbBk" io="r" nr="8">
+        <type>COLORREF</type>
+	<roles>
+	  <role rt="ioc:system" rn="color"/>
+	</roles>
+      </par>
+      <par loc="stack" name="rgbFg" io="r" nr="9">
+        <type>COLORREF</type>
+	<roles>
+	  <role rt="ioc:system" rn="color"/>
+	</roles>
+      </par>
+      <par loc="stack" name="fStyle" io="r" roles="none" nr="10">
+	<rep type="flags" name="imagelist_drawstyle_flags"/>
+        <type>UINT</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="draws an image list item in a device context"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

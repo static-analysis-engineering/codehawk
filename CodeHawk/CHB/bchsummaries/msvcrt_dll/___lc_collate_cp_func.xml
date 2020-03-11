@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/10/2015 23:06:13"/>
+  <libfun lib="msvcrt" name="___lc_collate_cp_func">
+   <documentation>
+    <desc>
+      Internal CRT function. Retrieves the current collation code page of the thread
+    </desc>
+    <apidoc>
+     <pt>UINT ___lc_collate_cp_func (void)</pt>
+     <return>
+       The current collation code page of the thread
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="___lc_collate_cp_func">
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="process" 
+		desc="retrieves the collation code page of the thread">
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

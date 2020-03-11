@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-24T12:28:04.798164"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="209">
+    <refer-to typename="Char" prefix="Set" suffix="ArrayRegion">
+      <replace-type src="ttype" tgt="jchar"/>
+      <replace-type src="atype" tgt="jcharArray"/>
+    </refer-to>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

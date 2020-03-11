@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetDeviceCaps">
+   <documentation>
+    <desc>retrieves device-specific information for the specified device</desc>
+    <apidoc>
+     <pt>
+      <ll>int GetDeviceCaps (</ll>
+      <ld>_In_ HDC hdc,</ld>
+      <ld>_In_ int nIndex,</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">handle to the DC</par>
+     <par name="nIndex">item to be returned</par>
+     <return>specifies the value of the desired item</return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetDeviceCaps">
+    <returntype>int</returntype>
+    <par loc="stack" name="hdc" io="r" nr="1">
+     <type>HDC</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:device context"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nIndex" nr="2">
+     <rep type="enum" name="device_caps_request_constants"/>
+     <type>int</type>
+     <pre><enum-value name="device_caps_request_constants"/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="infox:device capability"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves device information"/>
+     </io-actions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

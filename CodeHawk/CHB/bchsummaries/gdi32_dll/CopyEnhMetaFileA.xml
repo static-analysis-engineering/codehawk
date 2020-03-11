@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="09/10/2015 00:27:07"/>
+  <libfun lib="gdi32" name="CopyEnhMetaFileA">
+   <refer-to char-type="ansi" name="CopyEnhMetaFile"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

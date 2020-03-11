@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/22/2015 23:37:24"/>
+  <libfun lib="comctl32" name="ImageList_SetBkColor">
+   <documentation>
+    <desc>
+      Sets the background color for an image list. This function only works if
+      you add an icon or use ImageList_AddMasked with a black and white bitmap.
+      Without a mask, the entire image is drawn; hence the background color
+      is not visible
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>COLORREF ImageList_SetBkColor(</ll>
+      <ld>_In_ HIMAGELIST himl</ld>
+      <ld>_In_ COLORREF   clrBk</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="himl">A handle to the image list.</par>
+     <par name="clrBk">
+       The background color to set. This parameter can be the CLR_NONE value; 
+       in that case, images are drawn transparently using the mask
+     </par>
+     <return>
+      <rc cond="success">the previous background color</rc>
+      <rc cond="failure">CLR_NONE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ImageList_SetBkColor">
+    <par loc="stack" name="himl" io="r" rep="hex" nr="1">
+     <type>HIMAGELIST</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:imagelist"/>
+     </roles>
+    </par>
+    <par loc="stack" name="clrBk" io="r" nr="2">
+     <type>COLORREF</type>
+     <roles>
+       <role rt="ioc:system" rn="color"/>
+     </roles>
+    </par>
+    <returntype>COLORREF</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="sets the background color of an image list"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

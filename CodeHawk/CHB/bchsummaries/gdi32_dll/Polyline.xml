@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:31:36"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="Polyline">
+   <documentation>
+    <desc>
+      draws a series of line segments by connecting the points 
+      in the specified array.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL Polyline(</ll>
+      <ld>_In_  HDC hdc,</ld>
+      <ld>_In_  const POINT *lppt,</ld>
+      <ld>_In_  int cPoints</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to a device context.</par>
+     <par name="lppt">A pointer to an array of POINT structures, in logical units.</par>
+     <par name="cPoints">
+       The number of points in the array. This number must be greater than or equal to two
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="Polyline">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lppt" nr="2" rep="hex">
+     <type><ptr>POINT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-array:POINT" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cPoints" nr="3">
+     <type>int</type>
+     <roles>
+      <role rt="size:count" rn="number of points in array" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="draws a series of line segments"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>POINT</type>
+	    <ci>lppt</ci>
+	    <apply><indexsize/><ci>cPoints</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply><geq/><ci>lppt</ci><cn>2</cn></apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

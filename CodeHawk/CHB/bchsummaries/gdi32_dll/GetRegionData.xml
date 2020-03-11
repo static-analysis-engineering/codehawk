@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:10:05"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetRegionData">
+   <documentation>
+    <desc>
+      fills the specified buffer with data describing a region. This 
+      data includes the dimensions of the rectangles that make up the region.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD GetRegionData(</ll>
+      <ld>_In_   HRGN hRgn</ld>
+      <ld>_In_   DWORD dwCount</ld>
+      <ld>_Out_  LPRGNDATA lpRgnData</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hRgn">A handle to the region.</par>
+     <par name="dwCount">The size, in bytes, of the lpRgnData buffer.</par>
+     <par name="lpRgnData">
+	A pointer to a RGNDATA structure that receives the information. The 
+	dimensions of the region are in logical units. If this parameter is 
+	NULL, the return value contains the number of bytes needed for the 
+	region data.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetRegionData">
+    <returnbtype ikind="iuint" ttag="tint"/>
+    <par loc="stack" io="rw" name="hRgn" nr="1">
+     <type>HRGN</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:region" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwCount" nr="2">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:buffersize" rn="GetRegionData" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpRgnData" nr="3" rep="hex">
+     <type><ptr>RGNDATA</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:RGNDATA" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="obtains data about a region"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>RGNDATA</type>
+	    <ci>lpRgnData</ci>
+	    <ci>dwCount</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>RGNDATA</type>
+	    <ci>lpRgnData</ci>
+	    <ci>dwCount</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

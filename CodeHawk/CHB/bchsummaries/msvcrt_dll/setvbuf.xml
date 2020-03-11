@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/19/2015 23:36:29"/>
+  <libfun lib="msvcrt" name="setvbuf">
+   <documentation>
+    <desc>Controls stream buffering and buffer size</desc>
+    <apidoc>
+     <pt>
+      <ll>int setvbuf(</ll>
+      <ld>FILE *stream</ld>
+      <ld>char *buffer</ld>
+      <ld>int mode</ld>
+      <ld>size_t size</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="stream">Pointer to FILE structure</par>
+     <par name="buffer">User-allocated buffer</par>
+     <par name="mode">Mode of buffering</par>
+     <par name="size">
+       Buffer size in bytes. Allowable range: (2, INT_MAX (2147483647). 
+       Internally, the value supplied for size is rounded down to the 
+       nearest multiple of 2
+     </par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="setvbuf">
+    <par loc="stack" io="r" name="stream" rep="hex" nr="1">
+     <type><ptr>FILE</ptr></type>
+     <roles>
+      <role rt="ioc:filesystem" rn="file" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="rw" name="buffer" nr="2">
+     <type><ptr>char</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:misc" />
+      <role rt="ioc:memops" rn="dst-bytes:misc" />
+     </roles>
+    </par>
+    <par loc="stack" name="mode" io="r" roles="none" nr="3">
+     <type>int</type>
+    </par>
+    <par loc="stack" io="r" name="size" roles="none" nr="4">
+     <type>size_t</type>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="controls stream buffering"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>buffer</ci>
+	    <ci>size</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

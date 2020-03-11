@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="wcscat">
+   <documentation>
+    <desc>appends a string</desc>
+    <apidoc>
+     <pt>wchar_t *wcscat ( wchar_t *dst, const wchar_t *src )</pt>
+     <par name="dst">pointer to destination string</par>
+     <par name="src">pointer to srouce string</par>
+     <return>pointer to destination string</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="wcscat">
+     <returntype><ptr>wchar_t</ptr></returntype>
+     <par loc="stack" io="rw" name="dst" nr="1" rep="hex">
+       <type><ptr>wchar_t/></ptr></type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+          <role rt="ioc:memops" rn="dst-string:concatenate"/>
+       </roles>
+     </par>
+    <par loc="stack" io="r" name="src" nr="2">
+      <type><ptr>wchar_t</ptr></type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:memops" rn="src-string:copy" rep="hex"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="concatenates a string"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>wchar_t</type>
+	 <ci>dst</ci>
+	 <runtime-value/>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <post><math><apply><not-null/><return/></apply></math></post>
+     <post>
+      <math>
+       <apply>
+        <eq/>
+        <return/>
+        <ci>dst</ci>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+        <type>wchar_t</type>
+        <ci>dst</ci>
+        <runtime-value/>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

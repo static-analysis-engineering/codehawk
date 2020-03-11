@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ImageList_SetIconSize.xml" time="2016-07-05 23:40:26.044226"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="comctl32" name="ImageList_SetIconSize">
+    <documentation>
+      <desc>
+	Sets the dimensions of images in an image list and removes all
+	images from the list
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL ImageList_SetIconSize(</ll>
+          <ld>HIMAGELIST himl</ld>
+          <ld>int        cx</ld>
+          <ld>int        cy</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="himl">A handle to the image list</par>
+        <par name="cx">
+	  The width, in pixels, of the images in the image list. All images in
+	  an image list have the same dimensions.
+	</par>
+        <par name="cy">
+	  The height, in pixels, of the images in the image list. All
+	  images in an image list have the same dimensions.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="ImageList_SetIconSize">
+      <par loc="stack" name="himl" io="r" nr="1">
+        <type>HIMAGELIST</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:imagelist"/>
+	</roles>
+      </par>
+      <par loc="stack" name="cx" io="r" nr="2">
+        <type>int</type>
+	<roles>
+	  <role rt="size:distance" rn="ImageList_SetIconSize"/>
+	</roles>
+      </par>
+      <par loc="stack" name="cy" io="r" nr="3">
+        <type>int</type>
+	<roles>
+	  <role rt="size:distance" rn="ImageList_SetIconSize"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="sets the dimensions of images in an image list and removes all images from the list"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

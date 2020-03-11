@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/22/2015 19:12:04"/>
+  <libfun lib="msvcrt" name="atan2">
+   <documentation>
+    <desc>
+      Calculates the arctangent of y/x
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>float atan2(</ll>
+      <ld>float y</ld>
+      <ld>float x</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="y">any number</par>
+     <par name="x">any number</par>
+     <return>the arctangent of y/x in the range -pi to pi radians</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="atan2">
+    <par loc="stack" name="y" io="r" roles="none" nr="1">
+     <type>float</type>
+    </par>
+    <par loc="stack" name="x" io="r" roles="none" nr="2">
+     <type>float</type>
+    </par>
+    <returntype>float</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

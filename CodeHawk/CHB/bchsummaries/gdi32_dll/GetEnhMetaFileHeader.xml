@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 03:11:27"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetEnhMetaFileHeader">
+   <documentation>
+    <desc>
+      retrieves the record containing the header for the specified 
+      enhanced-format metafile.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT GetEnhMetaFileHeader(</ll>
+      <ld>_In_   HENHMETAFILE hemf</ld>
+      <ld>_In_   UINT cbBuffer</ld>
+      <ld>_Out_  LPENHMETAHEADER lpemh</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hemf">
+       A handle to the enhanced metafile for which the header is to be retrieved.
+     </par>
+     <par name="cbBuffer">
+       The size, in bytes, of the buffer to receive the data. Only this many 
+       bytes will be copied.
+     </par>
+     <par name="lpemh">
+       A pointer to an ENHMETAHEADER structure that receives the header 
+       record. If this parameter is NULL, the function returns the size 
+       of the header record.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetEnhMetaFileHeader">
+    <returntype>UINT</returntype>
+    <par loc="stack" io="r" name="hemf" nr="1">
+     <type>HENHMETAFILE</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:enhanced metafile" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="cbBuffer" nr="2">
+     <type>UINT</type>
+     <roles>
+      <role rt="size:buffersize" rn="number of bytes to copy" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpemh" nr="3" rep="hex">
+     <type><ptr>ENHMETAHEADER</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:misc" />
+      <role rt="ioc:filesystem" rn="infox:file header"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="retrieves an enhanced metafile header"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>ENHMETAHEADER</type>
+	    <ci>lpemh</ci>
+	    <ci>cbBuffer</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>ENHMETAHEADER</type>
+	    <ci>lpemh</ci>
+	    <ci>cbBuffer</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

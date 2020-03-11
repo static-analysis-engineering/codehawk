@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/02/2015 23:21:42"/>
+  <libfun lib="comctl32" name="ImageList_AddMasked">
+   <documentation>
+    <desc>
+      Adds an image or images to an image list, generating a mask from the 
+      specified bitmap
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int ImageList_AddMasked(</ll>
+      <ld>HIMAGELIST himl</ld>
+      <ld>HBITMAP    hbmImage</ld>
+      <ld>COLORREF   crMask</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="himl">A handle to the image list.</par>
+     <par name="hbmImage">
+       A handle to the bitmap that contains one or more images. The number of
+       images is inferred from the width of the bitmap.
+     </par>
+     <par name="crMask">
+       The color used to generate the mask. Each pixel of this color in the 
+       specified bitmap is changed to black, and the corresponding bit in the
+       mask is set to 1.
+     </par>
+     <return>
+      <rc cond="success">the index of the first new image</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="ImageList_AddMasked">
+    <par loc="stack" name="himl" io="r" rep="hex" nr="1">
+     <type>HIMAGELIST</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:imagelist"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hbmImage" io="r" rep="hex" nr="2">
+     <type>HBITMAP</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:bitmap"/>
+     </roles>
+    </par>
+    <par loc="stack" name="crMask" io="r" nr="3">
+     <type>COLORREF</type>
+     <roles>
+       <role rt="ioc:system" rn="color"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="adds an image to the image list"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

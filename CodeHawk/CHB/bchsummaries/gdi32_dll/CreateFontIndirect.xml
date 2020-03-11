@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CreateFontIndirect">
+   <documentation>
+    <desc>creates a logical font that has the specified characteristics.
+	 </desc>
+    <apidoc>
+     <pt>HFONT CreateFontIndirect (_In_ const LOGFONT *lplf)</pt>
+     <par name="lplf">
+       pointer to a LOGFONT structure that defines the characteristics of the
+       logical font
+     </par>
+     <return>
+      <rc cond="success">handle to a logical font</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CreateFontIndirect">
+     <returntype>HFONT</returntype>
+     <par loc="stack" name="lplf" nr="1">
+       <type><ptr>LOGFONT</ptr></type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:memops" rn="src-struct:LOGFONT"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="creates a logical font"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

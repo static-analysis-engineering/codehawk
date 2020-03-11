@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-25T15:55:20.854688"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="31" name="GetObjectClass">
+    <documentation>
+      <desc>Returns the class of an object</desc>
+      <apidoc>
+        <pt>
+          <ll>jclass GetObjectClass(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jobject obj</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="obj">a Java object (must not be NULL)</par>
+        <return>Returns a Java class object</return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="31" adj="8" name="GetObjectClass">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" name="obj">
+        <type>jobject</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:object" rn="retrieve object class"/>
+	</roles>
+      </par>
+      <returntype>jclass</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="retrieves the class from an object" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

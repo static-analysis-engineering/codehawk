@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T10:43:35.723550"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="222" name="GetPrimitiveArrayCritical">
+    <documentation>
+      <desc>
+         The semantics of GetPrimitiveArrayCritical is similar to the
+         Get[primitivetype]ArrayElements functions. If possible, the
+         VM returns a pointer to the primitive array; otherwise, a
+         copy is made. However, there are significant restrictions on
+         how these functions can be used.
+
+         After calling GetPrimitiveArrayCritical, the native code
+         should not run for an extended period of time before it calls
+         ReleasePrimitiveArrayCritical. We must treat the code inside
+         this pair of functions as running in a "critical region."
+         Inside a critical region, native code must not call other JNI
+         functions, or any system call that may cause the current
+         thread to block and wait for another Java thread. (For
+         example, the current thread must not call read on a stream
+         being written by another Java thread.)
+
+         These restrictions make it more likely that the native code
+         will obtain an uncopied version of the array, even if the VM
+         does not support pinning. For example, a VM may temporarily
+         disable garbage collection when the native code is holding a
+         pointer to an array obtained via GetPrimitiveArrayCritical.
+
+         Multiple pairs of GetPrimtiveArrayCritical and
+         ReleasePrimitiveArrayCritical may be nested.
+
+         Note that GetPrimitiveArrayCritical might still make a copy
+         of the array if the VM internally represents arrays in a
+         different format. Therefore we need to check its return value
+         against NULL for possible out of memory situations.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>void *GetPrimitiveArrayCritical(</ll>
+          <ld>_in JNIEnv *env,</ld>
+          <ld>_in jarray array</ld>
+          <ld>_in jboolean *isCopy</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="array">a Java array</par>
+        <par name="isCopy">indicates whether a copy was made</par>
+        <return>
+          <rc cond="success">pointer to array elements</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="222" adj="12" name="GetPrimitiveArrayCritical">
+      <par loc="stack" nr="1" desc="jni interface pointer" io="r" name="env">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" desc="java array" io="r" name="array">
+        <type>jarray</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="jni:array" rn="read array elements"/>
+           <role rt="ioc:memops" rn="access java array"/>
+        </roles>
+      </par>
+      <par loc="stack" nr="3" desc="isCopy?" io="w" name="isCopy">
+        <type><ptr>jboolean</ptr></type>
+        <pre><deref-write-null/></pre>
+        <sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype><ptr>void</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="accesses an array in a critical region" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+         <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

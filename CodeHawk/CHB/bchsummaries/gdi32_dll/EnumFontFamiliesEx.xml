@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 03:04:55"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="EnumFontFamiliesEx">
+   <documentation>
+    <desc>
+      enumerates all uniquely-named fonts in the system that match the 
+      font characteristics specified by the LOGFONT structure. 
+      EnumFontFamiliesEx enumerates fonts based on typeface name, 
+      character set, or both.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int EnumFontFamiliesExA(</ll>
+      <ld>_In_  HDC hdc </ld>
+      <ld>_In_  LPLOGFONT lpLogfont </ld>
+      <ld>_In_  FONTENUMPROC lpEnumFontFamExProc </ld>
+      <ld>_In_  LPARAM lParam </ld>
+      <ld>DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="hdc">
+       A handle to the device context from which to enumerate the fonts.
+     </par>
+     <par name="lpLogFont">
+       A pointer to a LOGFONT structure that contains information about the fonts 
+       to enumerate. 
+     </par>
+     <par name="lpEnumFontFamExProc">
+       A pointer to the application defined callback function. For more 
+       information, see the EnumFontFamExProc function. 
+     </par>
+     <par name="lParam">
+       An application defined value. The function passes this value to 
+       the callback function along with font information. 
+     </par>
+     <par name="dwFlags">This parameters is not used and must be zero.</par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="EnumFontFamiliesEx">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpLogFont" nr="2">
+     <type><ptr>LOGFONT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:LOGFONT" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpEnumFontFamExProc" nr="3">
+     <type>FONTENUMPROC</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackf:font family" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lParam" nr="4">
+     <type>LPARAM</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackp:lparam" />
+     </roles>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="5">
+     <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="process" desc="enumerates font families"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

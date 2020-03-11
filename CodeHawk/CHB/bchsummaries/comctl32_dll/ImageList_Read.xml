@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ImageList_Read.xml" time="2016-07-05 21:51:21.629481"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="comctl32" name="ImageList_Read">
+    <documentation>
+      <desc>Reads an image list from a stream</desc>
+      <apidoc>
+        <pt>HIMAGELIST ImageList_Read (LPSTREAM pstm)</pt>
+        <par name="pstm">A pointer to the stream</par>
+        <return>
+          <rc cond="success">handle to the image list</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="ImageList_Read">
+      <par loc="stack" name="pstm" io="r" nr="1" rep="hex">
+        <type><ptr>STREAM</ptr></type>
+	<roles>
+	  <role rt="ioc:filesystem" rn="stream"/>
+	</roles>
+      </par>
+      <returntype>HIMAGELIST</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="reads an image list from a stream"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

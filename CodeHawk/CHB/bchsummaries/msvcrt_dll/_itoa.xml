@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/20/2015 21:06:28"/>
+  <libfun lib="msvcrt" name="_itoa">
+   <documentation>
+    <desc>Converts an integer to a string</desc>
+    <remarks>Up to 33 characters may be stored in str</remarks>
+    <apidoc>
+     <pt>
+      <ll>char *_itoa(</ll>
+      <ld>int value</ld>
+      <ld>char *str</ld>
+      <ld>int radix</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="value">Number to be converted</par>
+     <par name="str">String result</par>
+     <par name="radix">Base of value; which must be in the range 2-36</par>
+     <return>a pointer to str</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_itoa">
+    <par loc="stack" io="r" name="value" nr="1">
+     <type>int</type>
+     <roles/>
+    </par>
+    <par loc="stack" io="w" name="str" rep="hex" nr="2">
+     <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="dst-string:convert"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="radix" roles="none" nr="3">
+     <type>int</type>
+    </par>
+    <returntype><ptr>char</ptr></returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="converts integer to string"/>
+    </io-actions>
+    <preconditions>
+      <pre><math><apply><geq/><ci>radix</ci><cn>2</cn></apply></math></pre>
+      <pre><math><apply><leq/><ci>radix</ci><cn>36</cn></apply></math></pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>str</ci>
+	    <cn>34</cn>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post><math><apply><eq/><return/><ci>str</ci></apply></math></post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>str</ci>
+	    <cn>34</cn>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

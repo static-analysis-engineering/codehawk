@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:15"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="localeconv">
+   <documentation>
+    <desc>returns locale-specific information</desc>
+    <remarks>
+      The application shall not modify the structure pointed to by the return value
+      which may be overwritten by a subsequent call to localeconv(). In addition,
+      calls to setlocale() with the categories LC_ALL, LC_MONETARY, or LC_NUMERIC
+      may overwrite the contents of the structure.
+    </remarks>
+    <apidoc>
+     <pt>struct lconv *localeconv (void) </pt>
+     <return>pointer to the filled-in object</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="localeconv">
+     <returntype><ptr>lconv</ptr></returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves locale-specific information"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

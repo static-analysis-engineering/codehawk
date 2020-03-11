@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="ChoosePixelFormat">
+   <documentation>
+     <desc>
+       attempts to match an appropriate pixel format supported by a device context to a
+       given pixel format specification
+     </desc>
+    <apidoc>
+     <pt>
+      <ll>int WINAPI ChoosePixelFormat (</ll>
+      <ld>HDC hdc,</ld>
+      <ld>const PIXELFORMATDESCRIPTOR *ppfd</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">
+       specifies the device context that the function examines to determine the best
+       match for the pixel format descriptor pointed to by ppfd
+     </par>
+     <par name="ppfd">
+       pointer to a PIXELFORMATDESCRIPTOR structure that specifies the requested pixel format
+     </par>
+     <return>
+       <rc cond="success">
+	 pixel format index (one-based) that is the closest match to	
+	 the given pixel format descriptor
+       </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ChoosePixelFormat">
+     <returntype>int</returntype>
+     <par loc="stack" name="hdc" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+     </par>
+    <par loc="stack" name="ppfd" io="r" rep="hex" nr="2">
+      <type><ptr>PIXELFORMATDESCRIPTOR</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:PIXELFORMATDESCRIPTOR"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="matches a device context pixel format to a specification"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

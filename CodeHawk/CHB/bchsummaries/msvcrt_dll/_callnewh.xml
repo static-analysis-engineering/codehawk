@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/10/2015 17:15:43"/>
+  <libfun lib="msvcrt" name="_callnewh">
+   <documentation>
+    <desc>Calls the currently installed new handler.</desc>
+    <apidoc>
+     <pt>int _callnewh (size_t size)</pt>
+     <par name="size">
+       The amount of memory that the new operator tried to allocate
+     </par>
+     <return>
+      <rc cond="success">one</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_callnewh">
+    <par loc="stack" name="size" nr="1">
+     <type>size_t</type>
+     <roles>
+       <role rt="ioc:memops" rn="size:allocation"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="memops" desc="calls the new handler"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <one-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

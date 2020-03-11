@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ImageList_BeginDrag.xml" time="2016-07-05 21:31:47.673234"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="comctl32" name="ImageList_BeginDrag">
+    <documentation>
+      <desc>Begins dragging an image</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL ImageList_BeginDrag(</ll>
+          <ld>HIMAGELIST himlTrack</ld>
+          <ld>int        iTrack</ld>
+          <ld>int        dxHotspot</ld>
+          <ld>int        dyHotspot</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="himlTrack">A handle to the image list</par>
+        <par name="iTrack">The index of the image to drag</par>
+        <par name="dxHotspot">
+	  The x-coordinate of the location of the drag position
+	  relative to the upper-left corner of the image.
+	</par>
+        <par name="dyHotspot">
+	  The y-coordinate of the location of the drag position
+	  relative to the upper-left corner of the image.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="16" cc="stdcall" name="ImageList_BeginDrag">
+      <par loc="stack" name="himlTrack" io="r" nr="1">
+        <type>HIMAGELIST</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:imagelist"/>
+	</roles>
+      </par>
+      <par loc="stack" name="iTrack" io="r" nr="2">
+        <type>int</type>
+	<roles>
+	  <role rt="size:index" rn="ImageList_BeginDrag"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dxHotspot" io="r" nr="3">
+        <type>int</type>
+	<roles>
+	  <role rt="size:distance" rn="ImageList_BeginDrag"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dyHotspot" io="r" nr="4">
+        <type>int</type>
+	<roles>
+	  <role rt="size:distance" rn="ImageList_BeginDrag"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="begins dragging an image"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:20:38"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="imm32" name="ImmSetCompositionWindow">
+   <documentation>
+    <desc>Sets the position of the composition window.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ImmSetCompositionWindow(</ll>
+      <ld>_In_  HIMC hIMC,</ld>
+      <ld>_In_  LPCOMPOSITIONFORM lpCompForm</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hIMC">Handle to the input context.</par>
+     <par name="lpCOMPOFORM">
+       Pointer to a COMPOSITIONFORM structure that contains the new position and other related 
+       information about the composition window.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ImmSetCompositionWindow">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hIMC" nr="1">
+     <type>HIMC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:input context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpCompForm" nr="2">
+     <type><ptr>COMPOSITIONFORM</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:COMPOSITIONFORM" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T21:26:26.878480"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="163" name="NewString">
+    <documentation>
+      <desc>
+	Constructs a new java.lang.String object from an array of Unicode characters
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jstring NewString(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in const jchar *unicodeChars</ld>
+          <ld>_in jsize len</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="unicodeChars">pointer to a Unicode string</par>
+        <par name="len">length of Unicode string</par>
+        <return>
+          <rc cond="success">Java string object</rc>
+          <rc cond="failure">length of the Unicode string</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="163" adj="12" name="NewString">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="unicode string" io="r" nr="2" name="unicodeChars">
+        <type><ptr>jchar</ptr></type>
+	<roles>
+	  <role rt="jni:unicodestring" rn="convert into java string"/>
+        </roles>
+      </par>
+      <par loc="stack" desc="string length" io="r" nr="3" name="len">
+        <type>jsize</type>
+	<roles>
+           <role rt="jni:stringlength" rn="convert into java string"/>
+           <role rt="size:stringlength" rn="jniNewString"/>
+        </roles>
+      </par>
+      <returntype>jstring</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="converts a unicode string into a java string" cat="jni"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>jchar</type>
+	      <ci>unicodeChars</ci>
+	      <apply><indexsize/><ci>len</ci></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

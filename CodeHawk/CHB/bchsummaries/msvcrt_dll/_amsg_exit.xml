@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/06/2015 11:47:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="_amsg_exit">
+   <documentation>
+    <desc>emits a specified runtime error message and then exits the application
+     with error code 255
+   </desc>
+    <apidoc>
+     <pt>void _amsg_exit (int rterrnum)</pt>
+     <return/>
+     <par name="rterrnum">id of system-defined runtime error message</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_amsg_exit">
+    <returntype>void</returntype>
+    <par loc="stack" io="r" name="rterrnum" nr="1">
+     <roles>
+      <role rt="ioc:system" rn="id:runtime error message" />
+     </roles>
+     <type>int</type>
+    </par>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <non-returning/>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

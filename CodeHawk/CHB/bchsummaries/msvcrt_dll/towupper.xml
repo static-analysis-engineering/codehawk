@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/10/2015 23:14:10"/>
+  <libfun lib="msvcrt" name="towupper">
+   <documentation>
+    <desc>Convert character to uppercase</desc>
+    <apidoc>
+     <pt>int towupper (wint_t c)</pt>
+     <par name="c">Character to convert</par>
+     <return>
+       f c is a wide character for which iswlower is nonzero and there 
+       is a corresponding wide character for which iswupper is nonzero,
+       towupper returns the corresponding wide character; otherwise, 
+       towupper returns c unchanged.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="towupper">
+    <par loc="stack" name="c" io="r" roles="none" nr="1">
+     <type>wint_t</type>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

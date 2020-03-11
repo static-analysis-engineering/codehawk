@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/20/2015 21:34:29"/>
+  <libfun lib="msvcrt" name="_open">
+   <documentation>
+    <desc>Opens a file</desc>
+    <apidoc>
+     <pt>
+      <ll>int _open(</ll>
+      <ld>const char *filename</ld>
+      <ld>int oflag</ld>
+      <ld>int pmode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="filename">File name</par>
+     <par name="oflag">kind of operations allowed</par>
+     <par name="pmode">permission mode</par>
+     <return>
+      <rc cond="success">a file descriptor for the opened file</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_open">
+    <par loc="stack" name="filename" io="r" rep="hex" nr="1">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="oflag" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="pmode" io="r" roles="none" nr="3">
+     <type>int</type>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="opens a file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

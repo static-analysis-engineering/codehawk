@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/10/2015 01:39:43"/>
+  <libfun lib="iphlpapi" name="SendARP">
+   <documentation>
+    <desc>
+      sends an Address Resolution Protocol (ARP) request to obtain the physical address 
+      that corresponds to the specified destination IPv4 address
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD SendARP(</ll>
+      <ld>_In_    IPAddr DestIP</ld>
+      <ld>_In_    IPAddr SrcIP</ld>
+      <ld>_Out_   PULONG pMacAddr</ld>
+      <ld>_Inout_ PULONG PhyAddrLen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="DestIP">
+       The destination IPv4 address, in the form of an IPAddr structure. The ARP 
+       request attempts to obtain the physical address that corresponds to this 
+       IPv4 address
+     </par>
+     <par name="SrcIP">
+       The source IPv4 address of the sender, in the form of an IPAddr structure. 
+       This parameter is optional and is used to select the interface to send the
+       request on for the ARP entry. The caller may specify zero corresponding to
+       the INADDR_ANY IPv4 address for this parameter.
+     </par>
+     <par name="pMacAddr">
+       A pointer to an array of ULONG variables. This array must have at least two 
+       ULONG elements to hold an Ethernet or token ring physical address. The first 
+       six bytes of this array receive the physical address that corresponds to 
+       the IPv4 address specified by the DestIP parameter.
+     </par>
+     <par name="PhyAddrLen">
+       On input, a pointer to a ULONG value that specifies the maximum buffer size, 
+       in bytes, the application has set aside to receive the physical address or 
+       MAC address. The buffer size should be at least 6 bytes for an Ethernet or 
+       token ring physical address
+       The buffer to receive the physical address is pointed to by the pMacAddr
+       parameter.
+       On successful output, this parameter points to a value that specifies the 
+       number of bytes written to the buffer pointed to by the pMacAddr.
+     </par>
+     <return>
+      <rc cond="success">NO_ERROR</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SendARP">
+    <par loc="stack" io="r" name="DestIP" nr="1">
+     <type>IPAddr</type>
+     <roles>
+      <role rt="ioc:network" rn="ip address" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="SrcIP" nr="2">
+     <type>IPAddr</type>
+     <roles>
+      <role rt="ioc:network" rn="ip address" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="pMacAddr" rep="hex" nr="3">
+     <type><ptr>ULONG</ptr></type>
+     <roles>
+      <role rt="ioc:network" rn="infox:mac address" />
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="PhyAddrLen" roles="none" rep="hex" nr="4">
+     <type><ptr>ULONG</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="network"
+		  desc="request to obtain a physical address corresponding to an ip address"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>ULONG</type>
+	    <ci>pMacAddr</ci>
+	    <apply><addressed-value/><ci>PhyAddrLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>ULONG</type>
+	    <ci>pMacAddr</ci>
+	    <apply><addressed-value/><ci>PhyAddrLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

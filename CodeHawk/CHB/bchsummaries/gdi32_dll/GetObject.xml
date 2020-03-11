@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetObject">
+   <documentation>
+    <desc>retrieves information for the specified graphics object</desc>
+    <apidoc>
+     <pt>
+      <ll>int GetObject (</ll>
+      <ld>_In_ HGDIOBJ hgdiobj,</ld>
+      <ld>_In_ int cbBuffer,</ld>
+      <ld>_Out_ LPVOID lpvObject</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hgdiobj">handle to the graphics object of interest</par>
+     <par name="cbBuffer">number of bytes of information to be written to the buffer</par>
+     <par name="lpvObject">
+       pointer to a buffer that receives the information about the specified graphics object
+     </par>
+     <return>
+      <rc cond="success">
+	if lpvObject is a valid pointer, the return value is the number of bytes stored
+	into the buffer. If lpvObject is NULL, the return value is the number of bytes
+	required to hold the information the function would store into the buffer
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetObject">
+    <returntype>int</returntype>
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" name="hgdiobj" io="r" nr="1">
+     <type>HGDIOBJ</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:graphical device object"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cbBuffer" io="r" nr="2">
+     <type>int</type>
+     <roles>
+        <role rt="size:buffersize" rn="GetObject"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpvObject" io="w" nr="3">
+      <type>LPVOID</type>
+      <roles>
+         <role rt="ioc:memops" rn="dst-bytes:graphics object info"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves information about a graphics object"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <type>byte</type>
+	    <ci>lpvObject</ci>
+	    <ci>cbBuffer</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+	 <block-write/>
+	 <type>byte</type>
+	 <ci>lpvObject</ci>
+	 <ci>cbBuffer</ci>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

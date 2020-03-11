@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:07:41"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetGlyphOutline">
+   <documentation>
+    <desc>
+      retrieves the outline or bitmap for a character in the TrueType font 
+      that is selected into the specified device context.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD GetGlyphOutline(</ll>
+      <ld>_In_   HDC hdc</ld>
+      <ld>_In_   UINT uChar</ld>
+      <ld>_In_   UINT uFormat</ld>
+      <ld>_Out_  LPGLYPHMETRICS lpgm</ld>
+      <ld>_In_   DWORD cbBuffer</ld>
+      <ld>_Out_  LPVOID lpvBuffer</ld>
+      <ld>_In_   const MAT2 *lpmat2</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="failure">GDI_ERROR</rc>
+     </return>
+     <par name="hdc">A handle to the device context. </par>
+     <par name="uChar">The character for which data is to be returned. </par>
+     <par name="uFormat">The format of the data that the function retrieves. </par>
+     <par name="lpgm">
+       A pointer to the GLYPHMETRICS structure describing the placement of the glyph 
+       in the character cell. 
+     </par>
+     <par name="cbBuffer">
+       The size, in bytes, of the buffer (*lpvBuffer) where the function is
+       to copy information about the outline character. If this value is 
+       zero, the function returns the required size of the buffer.
+     </par>
+     <par name="lpvBuffer">
+       A pointer to the buffer that receives information about the outline
+       character. If this value is NULL, the function returns the required 
+       size of the buffer.
+     </par>
+     <par name="lpmat2">
+       A pointer to a MAT2 structure specifying a transformation matrix 
+       for the character.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="GetGlyphOutline">
+    <returntype>DWORD</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="uChar" roles="none" nr="2">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" name="uFormat" io="r" roles="none" nr="3">
+      <type>UINT</type>
+    </par>
+    <par loc="stack" io="w" name="lpgm" rep="hex" nr="4">
+     <type><ptr>GLYPHMETRICS</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:GLYPHMETRICS" />
+     </roles>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="cbBuffer" nr="5">
+     <type>UINT</type>
+     <roles>
+      <role rt="size:buffersize" rn="number of bytes to copy" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpvBuffer" nr="6" rep="hex">
+     <type><ptr>void</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:misc" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpmat2" nr="7">
+     <type><ptr>MAT2</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:MAT2" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" 
+		  desc="retrieves the outline or bitmap of a character"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>byte</type>
+	    <ci>lpvBuffer</ci>
+	    <ci>cbBuffer</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>lpvBuffer</ci>
+	    <ci>cbBuffer</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

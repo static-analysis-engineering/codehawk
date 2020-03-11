@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ImageList_Write.xml" time="2016-07-05 21:55:19.904087"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="comctl32" name="ImageList_Write">
+    <documentation>
+      <desc>Writes an image list to a stream</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL ImageList_Write(</ll>
+          <ld>HIMAGELIST himl</ld>
+          <ld>LPSTREAM   pstm</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="himl">A handle to the image list</par>
+        <par name="pstm">A pointer to the stream</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="ImageList_Write">
+      <par loc="stack" name="himl" io="r" nr="1">
+        <type>HIMAGELIST</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:imagelist"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pstm" io="r" nr="2" rep="hex">
+        <type><ptr>STREAM</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="stream"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="writes an image list to a stream"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

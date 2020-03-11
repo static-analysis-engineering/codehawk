@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/05/2015 21:54:37"/>
+  <libfun lib="gdi32" name="StartDoc">
+   <documentation>
+    <desc>starts a print job</desc>
+    <apidoc>
+     <pt>
+      <ll>int StartDoc(</ll>
+      <ld>_In_       HDC     hdc</ld>
+      <ld>_In_ const DOCINFO *lpdi</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the device context for the print job</par>
+     <par name="lpdi">
+       A pointer to a DOCINFO structure containing the name of the document file 
+       and the name of the output file
+     </par>
+     <return>
+      <rc cond="success">positive</rc>
+      <rc cond="failure">non-positive</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="StartDoc">
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpdi" nr="2">
+     <type><ptr>DOCINFO</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:DOCINFO" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="starts a print job"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

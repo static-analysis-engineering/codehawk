@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="_filelength.xml" time="2016-05-18 12:08:17.317477"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="_filelength">
+    <documentation>
+      <desc>Gets the length of a file</desc>
+      <apidoc>
+        <pt>long _filelength (int fd)</pt>
+        <par name="fd">Target the file descriptor</par>
+        <return>
+	  the file length, in bytes, of the target file associated with fd
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="_filelength">
+      <par loc="stack" name="fd" io="r" roles="none" nr="1">
+        <type>int</type>
+      </par>
+      <returntype>long</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem"
+		   desc="gets the length of a file"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T21:38:03.514660"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="26" name="EnsureLocalCapacity">
+    <documentation>
+      <desc>
+	Ensures that at least a given number of local references can
+	be created in the current thread. Returns 0 on success;
+	otherwise returns a negative number and throws an
+	OutOfMemoryError.
+
+	Before it enters a native method, the VM automatically ensures
+	that at least 16 local references can be created.
+
+	For backward compatibility, the VM allocates local references
+	beyond the ensured capacity. (As a debugging support, the VM
+	may give the user warnings that too many local references are
+	being created. In the JDK, the programmer can supply the
+	-verbose:jni command line option to turn on these messages.)
+	The VM calls FatalError if no more local references can be
+	created beyond the ensured capacity.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jint EnsureLocalCapacity(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_int jint capacity</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="capacity">capacity for local references</par>
+        <return>
+          <rc cond="success">zero</rc>
+          <rc cond="failure">negative number if an exception is thrown</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="26" adj="8" name="EnsureLocalCapacity">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="capacity" io="r" nr="2" name="capacity">
+        <type>jint</type>
+	<roles>
+	  <role rt="jni:capacity" rn="local references"/>
+          <role rt="size:capacity" rn="local references"/>
+        </roles>
+      </par>
+      <returntype>jint</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="ensures that at least this many local references can be created" 
+		   cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<zero-negative/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

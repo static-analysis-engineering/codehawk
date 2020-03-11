@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:30:20"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="IntersectClipRect">
+   <documentation>
+    <desc>
+      creates a new clipping region from the intersection of the current 
+      clipping region and the specified rectangle.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int IntersectClipRect(</ll>
+      <ld>_In_  HDC hdc,</ld>
+      <ld>_In_  int nLeftRect,</ld>
+      <ld>_In_  int nTopRect,</ld>
+      <ld>_In_  int nRightRect,</ld>
+      <ld>_In_  int nBottomRect</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to the device context.</par>
+     <par name="nLeftRect">
+       The x-coordinate, in logical units, of the upper-left corner of the rectangle.
+     </par>
+     <par name="nTopRect">
+       The y-coordinate, in logical units, of the upper-left corner of the rectangle.
+     </par>
+     <par name="nRightRect">
+       The x-coordinate, in logical units, of the lower-right corner of the rectangle.
+     </par>
+     <par name="nBottomRect">
+       The y-coordinate, in logical units, of the lower-right corner of the rectangle.
+     </par>
+     <return>Specifies the new clipping region&apos;s type</return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="IntersectClipRect">
+     <returntype>int</returntype>
+     <par loc="stack" name="hdc" io="r" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+    <par loc="stack" name="nLeftRect" io="r" nr="2">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="IntersectClipRect"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nTopRect" io="r" nr="3">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="IntersectClipRect"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nRightRect" io="r" nr="4">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="IntersectClipRect"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nBottomRect" io="r" nr="5">
+      <type>int</type>
+      <roles>
+	<role rt="size:coordinate" rn="IntersectClipRect"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="gui" desc="creates a new clipping region"/>
+     </io-actions>
+    <preconditions/>
+   <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

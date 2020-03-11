@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/24/2015 14:13:54"/>
+  <libfun lib="dwmapi" name="DwmEnableBlurBehindWindow">
+   <documentation>
+    <desc>Enables the blur effect on a specified window</desc>
+    <apidoc>
+     <pt>
+      <ll>DwmEnableBlurBehindWindow(</ll>
+      <ld>HWND hWnd</ld>
+      <ld>_In_ const DWM_BLURBEHIND *pBlurBehind</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       The handle to the window on which the blur behind data is applied
+     </par>
+     <par name="pBlurBehind">
+       A pointer to a DWM_BLURBEHIND structure that provides blur behind data
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="DwmEnableBlurBehindWindow">
+    <par loc="stack" io="r" name="hWnd" rep="hex" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="pBlurBehind" nr="2">
+     <type><ptr>DWM_BLURBEHIND</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:DWM_BLURBEHIND" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process"
+		  desc="enables the blur effect of a window"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

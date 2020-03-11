@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:14:57"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="PlayMetaFile">
+   <documentation>
+    <desc>
+      displays the picture stored in the given Windows-format metafile on 
+      the specified device.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL PlayMetaFile(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ld>_In_  HMETAFILE hmf</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">Handle to a device context.</par>
+     <par name="hmf">Handle to a Windows-format metafile.</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="PlayMetaFile">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="hmf" nr="2">
+     <type>HMETAFILE</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:windows format metafile" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="displays a picture from a metafile"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

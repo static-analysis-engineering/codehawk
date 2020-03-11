@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/04/2013 21:21:12"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="comdlg32" name="ChooseFont">
+   <documentation>
+    <desc>
+      creates a font dialog box that enables the user to choose attributes for a
+      logical font. These attributes include a font family and associated font style,
+      a point size, effects (underline, strikeout, and text color), and a script
+      (or character set)
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI ChooseFont (_Inout_ LPCHOOSEFONT lpcf</pt>
+     <par name="lpcf">
+       pointer to a CHOOSEFONT structure that contains information used to initialize
+       the dialog box. When ChooseFont returns, this structure contains information about
+       the user&apos;s font selection
+     </par>
+     <return>
+       if the user clicks the OK button of the dialog box, the return value is TRUE. The
+       members of the CHOOSEFONT structure indicate the user&apos;s selections. If the user
+       cancels or closes the Font dialog box or an error occurs, the return value is
+       FALSE.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ChooseFont">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="rw" name="lpcf" nr="1">
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:CHOOSEFONT" />
+      <role rt="ioc:memops" rn="dst-struct:CHOOSEFONT" />
+     </roles>
+     <type><ptr>CHOOSEFONT</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects>
+      <block-write/>
+     </sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="creates a font dialog box">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

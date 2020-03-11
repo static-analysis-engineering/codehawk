@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:32:20"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="SetPaletteEntries">
+   <documentation>
+    <desc>
+      sets RGB (red, green, blue) color values and flags in a range of entries 
+      in a logical palette.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT SetPaletteEntries(</ll>
+      <ld>_In_  HPALETTE hpal,</ld>
+      <ld>_In_  UINT iStart,</ld>
+      <ld>_In_  UINT cEntries,</ld>
+      <ld>_In_  const PALETTEENTRY *lppe</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hpal">A handle to the logical palette.</par>
+     <par name="iStart">The first logical-palette entry to be set.</par>
+     <par name="cEntries">The number of logical-palette entries to be set.</par>
+     <par name="lppe">
+       A pointer to the first member of an array of PALETTEENTRY structures containing 
+       the RGB values and flags.
+     </par>
+     <return>
+      <rc cond="success">number of entries set</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SetPaletteEntries">
+    <returntype>UINT</returntype>
+    <par loc="stack" name="hpal" nr="1">
+      <type>HPALETTE</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:palette"/>
+      </roles>
+    </par>
+    <par loc="stack" name="iStart" nr="2">
+     <type>UINT</type>
+     <roles>
+        <role rt="size:index" rn="first entry"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cEntries" io="r" nr="3">
+     <type>UINT</type>
+     <roles>
+        <role rt="size:count" rn="palette entries"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lppe" io="r" rep="hex" nr="4">
+     <type><ptr>PALETTEENTRY</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:palette entry"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="sets color entries in a palette"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>PALETTEENTRY</type>
+	 <ci>lppe</ci>
+	 <apply>
+	   <indexsize/>
+	   <apply><plus/><ci>iStart</ci><ci>cEntries</ci></apply>
+	 </apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

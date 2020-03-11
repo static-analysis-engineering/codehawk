@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-21T14:36:03.539892"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="170" name="ReleaseStringUTFChars">
+    <documentation>
+      <desc>
+	Informs the VM that the native code no longer needs access to
+	utf. The utf argument is a pointer derived from string using
+	GetStringUTFChars()
+      </desc>
+      <apidoc>
+        <pt>
+	  <ll>ReleaseStringUTFChars(</ll>
+	  <ld>_in  JNIEnv     env,</ld>
+	  <ld>_in  jstring    string,</ld>
+	  <ld>_in  const char *utf</ld>
+	  <ll>)</ll>
+	</pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="string">a Java string object</par>
+        <par name="utf">a pointer to a modified UTF-8 string</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="170" adj="12" name="ReleaseStringUTFChars">
+      <par loc="stack" nr="1" name="env">
+        <type>JNIEnv</type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" nr="2" name="string">
+        <type>jstring</type>
+	<roles>
+	  <role rt="jni:string" rn="string released"/>
+	</roles>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" nr="3" name="utf">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="jni" desc="releases a utf string"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

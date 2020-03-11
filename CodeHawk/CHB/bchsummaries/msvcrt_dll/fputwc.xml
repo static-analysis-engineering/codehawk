@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="11/10/2015 13:36:56"/>
+  <libfun lib="msvcrt" name="fputwc">
+   <documentation>
+    <desc>put a wide-character code on a stream</desc>
+    <apidoc>
+     <pt>
+      <ll>wint_t fputwc(</ll>
+      <ld>wint_t wc</ld>
+      <ld>FILE *stream</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="wc">character to be written to the stream</par>
+     <par name="stream">stream to write to</par>
+     <return>
+      <rc cond="success">character code written</rc>
+      <rc cond="failure">WEOF</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="fputwc">
+    <par loc="stack" io="r" name="wc" nr="1">
+     <type>wint_t</type>
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:file output" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="stream" rep="hex" nr="2">
+     <type><ptr>FILE</ptr></type>
+     <roles>
+      <role rt="ioc:filesystem" rn="file" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>wint_t</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="puts a wide character code on a stream">
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

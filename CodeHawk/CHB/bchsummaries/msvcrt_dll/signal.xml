@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:25"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="signal">
+   <documentation>
+    <desc>signal management</desc>
+    <apidoc>
+     <pt>void (*signal( int sig, void (__cdecl *func)(int sign [,int subcode]))) (int sig)</pt>
+     <par name="sig">signal value</par>
+     <par name="func">function to be executed</par>
+     <par name="subcode">optional subcode to the signal number</par>
+     <return>
+      <rc cond="success">previous value of func associated with the given signal</rc>
+      <rc cond="failure">SIG_ERR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="signal">
+     <returntype>signalfunction</returntype>
+    <par loc="stack" io="r" name="sig" nr="1">
+     <type>int</type>
+     <roles>
+      <role rt="ioc:process" rn="signal:interrupt" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="func" nr="2">
+     <type>signalfunction</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackf:signal" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="sets up signal handling"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <sets-errno/>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 06:51:48"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="imm32" name="ImmGetDescription">
+   <documentation>
+    <desc>Copies the description of the IME to the specified buffer. </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT ImmGetDescription(</ll>
+      <ld>_In_       HKL hKL </ld>
+      <ld>_Out_opt_  LPTSTR lpszDescription </ld>
+      <ld>_In_       UINT uBufLen </ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="hKl">Input locale identifier. </par>
+     <par name="lpszDescription">
+       Pointer to a buffer in which the function retrieves the null-terminated 
+       string describing the IME. 
+     </par>
+     <par name="uBufLen">
+       Size, in characters, of the output buffer. The application sets this 
+       parameter to 0 if the function is to return the buffer size needed 
+       for the complete description, excluding the terminating null character. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="ImmGetDescription">
+    <returntype>UINT</returntype>
+    <par loc="stack" io="r" name="hKl" nr="1">
+     <type>HKL</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:keyboard layout" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpszDescription" nr="2">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-string:IME description" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="uBufLen" roles="none" nr="3">
+      <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><gt/><ci>uBufLen</ci><cn>0</cn></apply>
+	    <apply>
+	      <deref-read/>
+	      <type>TCHAR</type>
+	      <ci>lpszDescription</ci>
+	      <apply><indexsize/><ci>uBufLen</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <implies/>
+	    <pre>
+	      <apply><gt/><ci>uBufLen</ci><cn>0</cn></apply>
+	    </pre>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>lpszDescription</ci>
+	      <apply><indexsize/><ci>uBufLen</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

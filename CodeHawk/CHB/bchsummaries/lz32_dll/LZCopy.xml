@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="LZCopy.xml" time="2016-06-22 07:48:46.760099"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="lz32" name="LZCopy">
+    <documentation>
+      <desc>
+	Copies a source file to a destination file. If the source file
+	has been compressed by the Lempel-Ziv algorithm, this function
+	creates a decompressed destination file. If the source file is
+	not compressed, this function duplicates the original file
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>LONG WINAPI LZCopy(</ll>
+          <ld>_In_ INT hfSource</ld>
+          <ld>_In_ INT hfDest</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hfSource">A handle to the source file</par>
+        <par name="hfDest">A handle to the destination file</par>
+        <return>
+          <rc cond="success">the size, in bytes, of the destination file</rc>
+          <rc cond="failure">LZERROR code (less than zero)</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="LZCopy">
+      <par loc="stack" name="hfSource" io="r" nr="1">
+        <type>INT</type>
+	<roles>
+	  <role rt="ioc:filesystem" rn="handle:file"/>
+        </roles>
+      </par>
+      <par loc="stack" name="hfDest" io="r" nr="2">
+        <type>INT</type>
+	<roles>
+	  <role rt="ioc:filesystem" rn="handle:file"/>
+	</roles>
+      </par>
+      <returntype>LONG</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem"
+		   desc="copies and possibly decompressesa file"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/22/2015 23:19:49"/>
+  <libfun lib="comctl32" name="ImageList_Create">
+   <documentation>
+    <desc>Creates a new image list</desc>
+    <apidoc>
+     <pt>
+      <ll>HIMAGELIST ImageList_Create(</ll>
+      <ld>int cx</ld>
+      <ld>int cy</ld>
+      <ld>UINT flags</ld>
+      <ld>int cInitial</ld>
+      <ld>int cGrow</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="cx">The width, in pixels, of each image</par>
+     <par name="cy">The height, in pixels, of each image</par>
+     <par name="flags">
+       A set of bit flags that specify the type of image list to create. This 
+       parameter can be a combination of the Image List Creation Flags
+     </par>
+     <par name="cInitial">The number of images that the image list initially contains</par>
+     <par name="cGrow">
+       The number of images by which the image list can grow when the system needs to
+       make room for new images. This parameter represents the number of new images
+       that the resized image list can contain.
+     </par>
+     <return>
+      <rc cond="success">the handle to the image list</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="ImageList_Create">
+    <par loc="stack" name="cx" io="r" nr="1">
+     <type>int</type>
+     <roles>
+       <role rt="size:dimension" rn="image list"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cy" io="r" nr="2">
+     <type>int</type>
+     <roles>
+       <role rt="size:dimension" rn="image list"/>
+     </roles>
+    </par>
+    <par loc="stack" name="flags" io="r" roles="none" nr="3">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="cInitial" io="r" nr="4">
+     <type>int</type>
+     <roles>
+       <role rt="size:count" rn="number of images"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cGrow" io="r" roles="none" nr="5">
+     <type>int</type>
+    </par>
+    <returntype>HIMAGELIST</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="creates a new image list"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

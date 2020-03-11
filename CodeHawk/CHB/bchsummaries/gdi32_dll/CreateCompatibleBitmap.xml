@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:25:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="CreateCompatibleBitmap">
+   <documentation>
+    <desc>
+      creates a bitmap compatible with the device that is 
+      associated with the specified device context.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HBITMAP CreateCompatibleBitmap(</ll>
+      <ld>_In_  HDC hdc,</ld>
+      <ld>_In_  int nWidth,</ld>
+      <ld>_In_  int nHeight</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">A handle to a device context.</par>
+     <par name="nWidth">The bitmap width, in pixels.</par>
+     <par name="nHeight">The bitmap height, in pixels.</par>
+     <return>
+      <rc cond="success">Handle to a compatible bitmap</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CreateCompatibleBitmap">
+    <returntype>HBITMAP</returntype>
+    <par loc="stack" io="r" name="hdc" nr="1">
+      <type>HDC</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+    <par loc="stack" name="nWidth" nr="2">
+     <type>int</type>
+     <roles>
+        <role rt="size:width" rn="CreateCompatibleBitmap"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nHeight" nr="3">
+     <type>int</type>
+     <roles>
+        <role rt="size:height" rn="CreateCompatibleBitmap"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="creates a device compatible bitmap"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

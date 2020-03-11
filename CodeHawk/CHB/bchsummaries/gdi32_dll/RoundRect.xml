@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:17:20"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="RoundRect">
+   <documentation>
+    <desc>
+      draws a rectangle with rounded corners. The rectangle is outlined 
+      by using the current pen and filled by using the current brush.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL RoundRect(</ll>
+      <ld>_In_  HDC hdc </ld>
+      <ld>_In_  int nLeftRect </ld>
+      <ld>_In_  int nTopRect </ld>
+      <ld>_In_  int nRightRect </ld>
+      <ld>_In_  int nBottomRect </ld>
+      <ld>_In_  int nWidth </ld>
+      <ld>_In_  int nHeight </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hdc">A handle to the device context. </par>
+     <par name="nLeftRect">
+       The x-coordinate, in logical coordinates, of the upper-left corner of the rectangle.
+     </par>
+     <par name="nTopRect">
+       The y-coordinate, in logical coordinates, of the upper-left corner of the rectangle.
+     </par>
+     <par name="nRightRect">
+       The x-coordinate, in logical coordinates, of the lower-right corner of the rectangle.
+     </par>
+     <par name="nBottomRect">
+       The y-coordinate, in logical coordinates, of the lower-right corner of the rectangle.
+     </par>
+     <par name="nWidth">
+       The width, in logical coordinates, of the ellipse used to draw the rounded corners.
+     </par>
+     <par name="nHeight">
+       The height, in logical coordinates, of the ellipse used to draw the rounded corners.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="RoundRect">
+     <returntype>BOOL</returntype>
+     <par loc="stack" name="hdc" nr="1">
+       <type>HDC</type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:process" rn="handle:device context"/>
+       </roles>
+    </par>
+    <par loc="stack" name="nLeftRect" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nTopRect" io="r" roles="none" nr="3">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nRightRect" io="r" roles="none" nr="4">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nBottomRect" io="r" roles="none" nr="5">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nWidth" io="r" roles="none" nr="6">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="nHeight" io="r" roles="none" nr="7">
+     <type>int</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="draws a rectangle"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

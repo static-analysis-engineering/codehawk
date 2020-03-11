@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="wcspbrk.xml" time="2016-12-13 22:11:06.129588"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="wcspbrk">
+    <documentation>
+      <desc>Scans strings for characters in specified character sets</desc>
+      <apidoc>
+        <pt>
+          <ll>wchar_t *wcspbrk(</ll>
+          <ld>const wchar_t *str</ld>
+          <ld>const wchar_t *strCharSet</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="str">Null-terminated, searched string</par>
+        <par name="strCharSet">Null-terminated character set</par>
+        <return>
+          <rc cond="success">
+	    pointer to the first occurrence of any character from strCharSet in str
+	  </rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="wcspbrk">
+      <par loc="stack" io="r" rep="hex" name="str" nr="1">
+        <type><ptr>wchar_t</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:search"/>
+	</roles>
+      </par>
+      <par loc="stack" name="strCharSet" io="r" rep="hex" nr="2">
+        <type><ptr>wchar_t</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:search"/>
+	</roles>
+      </par>
+      <returntype><ptr>wchar_t</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="inputs" desc="scans a string for characters in a set"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

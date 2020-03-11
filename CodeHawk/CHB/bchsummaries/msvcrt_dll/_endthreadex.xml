@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/13/2015 11:44:10"/>
+  <libfun lib="msvcrt" name="_endthreadex">
+   <documentation>
+    <desc>Terminates a thread</desc>
+    <apidoc>
+     <pt>void _endthreadex (unsigned retval)</pt>
+     <par name="retval">Thread exit code</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_endthreadex">
+    <par loc="stack" name="retval" nr="1">
+     <type>unsigned</type>
+     <roles>
+        <role rt="ioc:process" rn="exit code"/>
+     </roles>
+    </par>
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="process" desc="terminates a thread"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

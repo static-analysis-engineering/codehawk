@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:44"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="realloc">
+   <documentation>
+    <desc>reallocates a memory block</desc>
+    <apidoc>
+     <pt>void *realloc (void *ptr, size_t size)</pt>
+     <par name="ptr">pointer to a previously allocated memory block</par>
+     <par name="size">size of the new block to be allocated, in bytes</par>
+     <return>
+      <rc cond="success">pointer to the new memory block</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="realloc">
+    <returntype><ptr>void</ptr></returntype>
+    <par loc="stack" io="r"  name="ptr" nr="1">
+      <type><ptr>void</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="address:memory"/>
+     </roles>
+     <pre><deref-read/><allocation-base/></pre>
+     <sideeffects><invalidates/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="size" nr="2">
+      <type>size_t</type>
+      <roles>
+	<role rt="ioc:memops" rn="size:allocation"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="reallocates memory from the heap"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+     <post>
+      <math>
+       <apply>
+        <new-memory-region/>
+        <return-value/>
+        <ci>size</ci>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

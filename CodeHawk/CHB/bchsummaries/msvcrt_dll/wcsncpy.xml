@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/21/2015 14:13:44"/>
+  <libfun lib="msvcrt" name="wcsncpy">
+   <documentation>
+    <desc>Copy characters of one string to another</desc>
+    <apidoc>
+     <pt>
+      <ll>wchar_t *wcsncpy(</ll>
+      <ld>wchar_t *strDest</ld>
+      <ld>const wchar_t *strSource</ld>
+      <ld>size_t count</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="strDest">destination string</par>
+     <par name="strSource">source string</par>
+     <par name="count">number of characters to be copied</par>
+     <return>strDest</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="wcsncpy">
+    <par loc="stack" name="strDest" io="w" rep="hex" nr="1">
+     <type><ptr>wchar_t</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-string:copy"/>
+     </roles>
+    </par>
+    <par loc="stack" name="strSource" io="r" rep="hex" nr="2">
+     <type><ptr>wchar_t</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="src-string:copy"/>
+     </roles>
+    </par>
+    <par loc="stack" name="count" roles="none" io="r" nr="3">
+     <type>size_t</type>
+     <pre><non-negative/></pre>
+    </par>
+    <returntype><ptr>wchar_t</ptr></returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="copies a string"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>wchar_t</type>
+	    <ci>strDest</ci>
+	    <apply><indexsize/><ci>count</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>wchar_t</type>
+	    <ci>strSource</ci>
+	    <apply><indexsize/><ci>count</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>wchar_t</type>
+	    <ci>strDest</ci>
+	    <apply><indexsize/><ci>count</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T13:42:16.188507"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="217" name="MonitorEnter">
+    <documentation>
+      <desc>
+         Enters the monitor associated with the underlying Java object referred to by obj.
+
+         Enters the monitor associated with the object referred to by
+         obj. The obj reference must not be NULL.  Each Java object
+         has a monitor associated with it. If the current thread
+         already owns the monitor associated with obj, it increments a
+         counter in the monitor indicating the number of times this
+         thread has entered the monitor. If the monitor associated
+         with obj is not owned by any thread, the current thread
+         becomes the owner of the monitor, setting the entry count of
+         this monitor to 1. If another thread already owns the monitor
+         associated with obj, the current thread waits until the
+         monitor is released, then tries again to gain ownership.
+
+         A monitor entered through a MonitorEnter JNI function call
+         cannot be exited using the monitorexit Java virtual machine
+         instruction or a synchronized method return. A MonitorEnter
+         JNI function call and a monitorenter Java virtual machine
+         instruction may race to enter the monitor associated with the
+         same object.
+
+         To avoid deadlocks, a monitor entered through a MonitorEnter
+         JNI function call must be exited using the MonitorExit JNI
+         call, unless the DetachCurrentThread call is used to
+         implicitly release JNI monitors.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jint MonitorEnter(</ll>
+          <ld>_in JNIEnv  *env</ld>
+          <ld>_in jobject obj</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="obj">
+            reference to an object whose associated monitor will be entered
+        </par>
+        <return>
+          <rc cond="success">zero</rc>
+          <rc cond="failure">negative value if an exception was thrown</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="217" adj="8" name="MonitorEnter">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="monitor object" io="r" nr="2" name="obj">
+        <type>jobject</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="jni:object" rn="enter monitor"/>
+           <role rt="ioc:synchronization" rn="enter java monitor"/>
+        </roles>
+      </par>
+      <returntype>jint</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="enters a java object monitor" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+         <zero-negative/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:15"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="setlocale">
+   <documentation>
+    <desc>sets program locale</desc>
+    <remarks>
+      The string returned by setlocale() is such that a subsequent call with that string and
+      its associated category shall restore that part of the program&apos;s locale. 
+      The application shall not modify the string returned which may be overwritten
+      by a subsequent call to setlocale
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>char *setlocale (</ll>
+      <ld>int category,</ld>
+      <ld>const char *locale</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="category">category affected by the locale</par>
+     <par name="locale">Locale name</par>
+     <return>
+      <rc cond="success">
+	pointer to the string associated with the specified locale and category
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="setlocale">
+    <returntype><ptr>char</ptr></returntype>
+    <par loc="stack" name="category" io="r" roles="none" nr="1">
+     <type>int</type>
+    </par>
+    <par loc="stack" io="r" name="locale" nr="2">
+     <roles>
+      <role rt="ioc:system" rn="name:locale information" />
+     </roles>
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="sets the program locale"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+      <post>
+      <math>
+       <apply>
+        <null-terminated/>
+        <return-value/>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

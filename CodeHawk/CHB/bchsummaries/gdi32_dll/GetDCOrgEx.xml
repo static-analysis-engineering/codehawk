@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/22/2015 15:22:14"/>
+  <libfun lib="gdi32" name="GetDCOrgEx">
+   <documentation>
+    <desc>
+      retrieves the final translation origin for a specified device 
+      context (DC). The final translation origin specifies an offset 
+      that the system uses to translate device coordinates into client
+      coordinates (for coordinates in an application's window)
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetDCOrgEx(</ll>
+      <ld>_In_   HDC hdc</ld>
+      <ld>_Out_  LPPOINT lpPoint</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">
+       A handle to the DC whose final translation origin is to be retrieved
+     </par>
+     <par name="lpPoint">
+       A pointer to a POINT structure that receives the final translation 
+       origin, in device coordinates
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetDCOrgEx">
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpPoint" nr="2">
+     <type><ptr>POINT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:POINT" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves translation origin of a device context"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

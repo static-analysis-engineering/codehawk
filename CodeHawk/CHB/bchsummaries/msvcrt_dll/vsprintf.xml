@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="vsprintf.xml" time="2016-08-07 16:51:26.421603"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="msvcrt" name="vsprintf">
+    <documentation>
+      <desc>Write formatted output using a pointer to a list of arguments</desc>
+      <apidoc>
+        <pt>
+          <ll>int vsprintf(</ll>
+          <ld>char *buffer</ld>
+          <ld>const char *format</ld>
+          <ld>va_list argptr</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="buffer">Storage location for output</par>
+        <par name="format">Format specification</par>
+        <par name="argptr">Pointer to list of arguments</par>
+        <return>
+          <rc cond="success">number of characters written</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="vsprintf">
+      <par loc="stack" name="buffer" io="w" nr="1" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-string:formatted data"/>
+	</roles>
+      </par>
+      <par loc="stack" name="format" nr="2" io="r" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:outputs" rn="format string"/>
+	</roles>
+      </par>
+      <par loc="stack" name="argptr" io="r" nr="3" roles="none">
+        <type>va_list</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="outputs"
+		   desc="writes formatted output to a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>buffer</ci>
+	      <runtime-value/>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>char</type>
+	      <ci>buffer</ci>
+	      <runtime-value/>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

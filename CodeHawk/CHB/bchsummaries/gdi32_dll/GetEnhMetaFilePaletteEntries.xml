@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 03:12:05"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetEnhMetaFilePaletteEntries">
+   <documentation>
+    <desc>retrieves optional palette entries from the specified enhanced metafile.</desc>
+    <apidoc>
+     <pt>
+      <ll>UINT GetEnhMetaFilePaletteEntries(</ll>
+      <ld>_In_   HENHMETAFILE hemf</ld>
+      <ld>_In_   UINT cEntries</ld>
+      <ld>_Out_  LPPALETTEENTRY lppe</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       If the array pointer is NULL and the enhanced metafile contains an 
+       optional palette, the return value is the number of entries in the
+       enhanced metafile's palette; if the array pointer is a valid pointer
+       and the enhanced metafile contains an optional palette, the return 
+       value is the number of entries copied; if the metafile does not 
+       contain an optional palette, the return value is zero. Otherwise, 
+       the return value is GDI_ERROR.
+     </return>
+     <par name="hemf">A handle to the enhanced metafile.</par>
+     <par name="cEntries">
+       The number of entries to be retrieved from the optional palette.
+     </par>
+     <par name="lppe">
+       A pointer to an array of PALETTEENTRY structures that receives the
+       palette colors. The array must contain at least as many structures 
+       as there are entries specified by the cEntries parameter.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetEnhMetaFilePaletteEntries">
+    <returntype>UINT</returntype>
+    <par loc="stack" io="r" name="hemf" nr="1">
+     <type>HENHMETAFILE</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:enhanced metafile" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="cEntries" nr="2">
+     <type>UINT</type>
+     <roles>
+      <role rt="size:buffersize" rn="number of bytes to copy" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lppe" nr="3" rep="hex">
+     <type><ptr>PALETTEENTRY</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:misc" />
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <preconditions>
+      <io-actions>
+         <io-action cat="filesystem"
+		    desc="retrieves palette entries from an enhanced metafile"/>
+      </io-actions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>PALETTEENTRY</type>
+	    <ci>lppe</ci>
+	    <apply><indexsize/><ci>cEntries</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>PALETTEENTRY</type>
+	    <ci>lppe</ci>
+	    <apply><indexsize/><ci>cEntries</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

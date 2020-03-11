@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T11:55:27.502602"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="23" name="DeleteLocalRef">
+    <documentation>
+      <desc>
+         Deletes the local reference pointed to by localRef. The localRef
+         argument must be a local reference, or NULL. The same non-NULL
+         local reference must not be deleted more than once. Deleting a
+         NULL local reference is a no-op.
+
+         Deleting a local reference that does not belong to the topmost
+         local reference frame is a no-op. Each native method invocation
+         creates a new local reference frame. The PushLocalFrame function
+         also creates a new local reference frame.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>void DeleteLocalRef(</ll>
+          <ld>_in JNIEnv  *env</ld>
+          <ld>_in jobject localRef</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="localRef">the local reference to be deleted</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="23" adj="8" name="DeleteLocalRef">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" desc="local reference" io="r" name="localRef">
+        <type>jobject</type>
+        <roles>
+           <role rt="jni:localref" rn="local ref to be deleted"/>
+           <role rt="ioc:memops" rn="delete java local reference"/>
+        </roles>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="deletes a local reference" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

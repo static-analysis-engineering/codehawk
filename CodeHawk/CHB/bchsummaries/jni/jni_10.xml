@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2016-01-02T15:16:29.158631"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="10" name="GetSuperClass">
+    <documentation>
+      <desc>
+	If clazz represents any class other than the class Object,
+	then this function returns the object that represents the
+	superclass of the class specified by clazz.
+
+	If clazz specifies the class Object, or clazz represents an
+	interface, this function returns NULL.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jclass GetSuperClass(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_in jclass clazz</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="clazz">a Java class object</par>
+        <return>
+          <rc cond="success">the superclass</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="10" adj="8" name="GetSuperClass">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" nr="2" name="clazz">
+        <type>jclass</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="jni:class" rn="get superclass"/>
+	</roles>
+      </par>
+      <returntype>jclass</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="get superclass" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

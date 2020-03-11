@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/14/2015 08:08:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="gdi32" name="GetNearestColor">
+   <documentation>
+    <desc>
+      retrieves a color value identifying a color from the system palette
+      that will be displayed when the specified color value is used.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>COLORREF GetNearestColor(</ll>
+      <ld>_In_  HDC hdc</ld>
+      <ld>_In_  COLORREF crColor</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       <rc cond="success">
+	  identifies a color from the system palette that corresponds to the
+	  given color value.
+       </rc>
+      <rc cond="failure">CLR_INVALID</rc>
+     </return>
+     <par name="hdc">HDC</par>
+     <par name="crColor">COLORREF</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetNearestColor">
+    <returntype>COLORREF</returntype>
+    <par loc="stack" name="hdc" io="r" rep="hex" nr="1">
+      <type>HDC</type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:process" rn="handle:device context"/>
+      </roles>
+    </par>
+    <par loc="stack" name="crColor" roles="none" nr="2">
+     <type>COLORREF</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="retrieves a color value"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

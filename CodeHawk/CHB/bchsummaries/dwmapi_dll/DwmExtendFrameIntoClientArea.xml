@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/24/2015 14:05:46"/>
+  <libfun lib="dwmapi" name="DwmExtendFrameIntoClientArea">
+   <documentation>
+    <desc>Extends the window frame into the client area</desc>
+    <apidoc>
+     <pt>
+      <ll>DwmExtendFrameIntoClientArea(</ll>
+      <ld>HWND hWnd</ld>
+      <ld>_In_ const MARGINS *pMarInset</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       The handle to the window in which the frame will be extended into the 
+       client area
+     </par>
+     <par name="pMarInset">
+       A pointer to a MARGINS structure that describes the margins to use when 
+       extending the frame into the client area
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="DwmExtendFrameIntoClientArea">
+    <par loc="stack" io="r" name="hWnd" rep="hex" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="pMarInset" rep="hex" nr="2">
+     <type><ptr>MARGINS</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:MARGINS" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system"
+		  desc="extends a window frame into the client area"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

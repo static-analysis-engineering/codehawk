@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/03/2015 15:07:31"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="qsort">
+   <documentation>
+    <desc>performs a quick sort</desc>
+    <apidoc>
+     <pt>
+      <ll>void qsort(</ll>
+      <ld>void *base,</ld>
+      <ld>size_t num,</ld>
+      <ld>size_t width,</ld>
+      <ld>int (__cdecl *compare)(const void *, const void *)</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="base">start of target array</par>
+     <par name="num">array size in elements</par>
+     <par name="width">element size in bytes</par>
+     <par name="compare">
+       pointer to a user-supplied routine that compares two array elements and
+       returns a value that specifies their relationship
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="qsort">
+    <returntype>void</returntype>
+    <par loc="stack" io="r" name="base" nr="1">
+     <roles>
+      <role rt="ioc:memops" rn="dst-array:misc" />
+      <role rt="ioc:memops" rn="src-array:misc" />
+     </roles>
+     <type><ptr>void</ptr></type>
+    </par>
+    <par loc="stack" io="r" name="num" roles="none" nr="2">
+      <type>size_t</type>
+     <pre><non-negative/></pre>
+    </par>
+    <par loc="stack" io="r" name="width" roles="none" nr="3">
+      <type>size_t</type>
+     <pre><non-negative/></pre>
+    </par>
+    <par loc="stack" io="r" name="compare" nr="4">
+     <type>comparisonfunction</type>
+     <roles>
+      <role rt="ioc:process" rn="callbackf:compare" />
+     </roles>
+      <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="process" desc="performs quicksort"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>base</ci>
+	    <apply><times/><ci>num</ci><ci>width</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>base</ci>
+	    <apply><times/><ci>num</ci><ci>width</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

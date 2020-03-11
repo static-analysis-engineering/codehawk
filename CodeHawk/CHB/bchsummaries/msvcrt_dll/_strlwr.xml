@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/29/2015 21:38:50"/>
+  <libfun lib="msvcrt" name="_strlwr">
+   <documentation>
+    <desc>Converts a string to lowercase</desc>
+    <apidoc>
+     <pt>char *_strlwr (char *string)</pt>
+     <par name="string">
+       Null-terminated string to convert to lowercase
+     </par>
+     <return>
+       a pointer to the converted string
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_strlwr">
+    <par loc="stack" io="rw" name="string" nr="1">
+     <type><ptr>char</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-string:convert" />
+      <role rt="ioc:memops" rn="dst-string:convert" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <returntype><ptr>char</ptr></returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="inputs" desc="converts a string to lowercase">
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post><math><apply><eq/><return/><ci>string</ci></apply></math></post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

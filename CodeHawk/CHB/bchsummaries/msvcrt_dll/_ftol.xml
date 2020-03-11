@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/03/2015 19:03:36"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="_ftol">
+   <documentation>
+    <desc>
+      undocumented function that converts a float to an integer type, with
+      according to some Intel documentation, a very high performance cost
+   </desc>
+    <apidoc>
+     <pt>int _ftol (float f)</pt>
+     <return>converts float to int</return>
+     <par name="f">float to be converted</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_ftol">
+     <returntype>int</returntype>
+     <par loc="stack" name="f" io="r" roles="none" nr="1">
+       <type>float</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

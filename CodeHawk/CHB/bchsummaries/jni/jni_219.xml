@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2015-12-23T16:31:30.550333"/>
+  <reference href="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html/"/>
+  <jnifun index="219" name="GetJavaVM">
+    <documentation>
+      <desc>
+         Returns the Java VM interface (used in the Invocation API)
+         associated with the current thread. The result is placed at
+         the location pointed to by the second argument, vm.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>jint GetJavaVM(</ll>
+          <ld>_in JNIEnv *env</ld>
+          <ld>_out JavaVM **vm</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="env">the JNI interface pointer</par>
+        <par name="vm">a pointer to where the result should be placed</par>
+        <return>
+          <rc cond="success">zero</rc>
+          <rc cond="failure">negative number if an exception was thrown</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" jni="219" adj="8" name="GetJavaVM">
+      <par loc="stack" nr="1" name="env" io="r" desc="jni interface pointer">
+        <pre>
+          <deref-read/>
+        </pre>
+        <type>
+          <ptr>JNIEnv</ptr>
+        </type>
+      </par>
+      <par loc="stack" desc="java vm" io="w" nr="2" name="vm">
+        <type><ptr><ptr>JavaVM</ptr></ptr></type>
+        <roles>
+           <role rt="jni:javavm" rn="pointer to the JavaVM"/>
+        </roles>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>jint</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action desc="retrieves a pointer to the Java VM" cat="jni"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </jnifun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

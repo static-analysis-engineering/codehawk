@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/22/2015 21:16:55"/>
+  <libfun lib="msvcrt" name="tan">
+   <documentation>
+    <desc>calculates the tangent</desc>
+    <apidoc>
+     <pt>double tan (double x)</pt>
+     <par name="x">angle in radians</par>
+     <return>
+       the tangent of x. If x is greater than or equal to 263, or less than 
+       or equal to -263, a loss of significance in the result occurs
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="tan">
+    <par loc="stack" name="x" io="r" roles="none" nr="1">
+     <type>double</type>
+    </par>
+    <returntype>double</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>
