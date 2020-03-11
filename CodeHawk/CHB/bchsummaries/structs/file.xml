@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://www.rensselaer.org/dept/cis/software/g77-mingw32/include/stdio.h"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="file">
+   <fields>
+    <field name="_ptr" offset="0" size="4">
+     <type><ptr>char</ptr></type>
+    </field>
+    <field name="_cnt" offset="4" size="4">
+     <type>int</type>
+    </field>
+    <field name="_base" offset="8" size="4">
+     <type><ptr>char</ptr></type>
+    </field>
+    <field name="_flag" offset="12" size="4">
+     <type>int</type>
+    </field>
+    <field name="_file" offset="16" size="4">
+     <type>int</type>
+    </field>
+    <field name="_charbuf" offset="20" size="4">
+     <type>int</type>
+    </field>
+    <field name="_bufsiz" offset="24" size="4">
+     <type>int</type>
+    </field>
+    <field name="_tmpfname" offset="28" size="4">
+     <type><ptr>char</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

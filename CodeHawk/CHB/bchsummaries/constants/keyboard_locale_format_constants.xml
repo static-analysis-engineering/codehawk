@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms646305(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="keyboard_locale_format_constants">
+    <type>keyboard_locale_format_constants</type>
+    <values>
+      <symc name="KLF_ACTIVATE" value="0x00000001"
+            desc="Prior to Windows 8: If the specified input locale identifier is not already loaded, the function loads and activates the input locale identifier for the current thread.
+            Beginning in Windows 8: If the specified input locale identifier is not already loaded, the function loads and activates the input locale identifier for the system." />
+      <symc name="KLF_NOTELLSHELL" value="0x00000080"
+            desc="Prior to Windows 8: Prevents a ShellProc hook procedure from receiving an HSHELL_LANGUAGE hook code when the new input locale identifier is loaded. This value is typically used when an application loads multiple input locale identifiers one after another. Applying this value to all but the last input locale identifier delays the shell's processing until all input locale identifiers have been added.
+            Beginning in Windows 8: In this scenario, the last input locale identifier is set for the entire system." />
+      <symc name="KLF_REORDER" value="0x00000008"
+            desc="Prior to Windows 8: Moves the specified input locale identifier to the head of the input locale identifier list, making that locale identifier the active locale identifier for the current thread. This value reorders the input locale identifier list even if KLF_ACTIVATE is not provided.
+            Beginning in Windows 8: Moves the specified input locale identifier to the head of the input locale identifier list, making that locale identifier the active locale identifier for the system. This value reorders the input locale identifier list even if KLF_ACTIVATE is not provided." />
+      <symc name="KLF_REPLACELANG" value="0x00000010"
+            desc="If the new input locale identifier has the same language identifier as a current input locale identifier, the new input locale identifier replaces the current one as the input locale identifier for that language. If this value is not provided and the input locale identifiers have the same language identifiers, the current input locale identifier is not replaced and the function returns NULL." />
+      <symc name="KLF_SUBSTITUTE_OK" value="0x00000002"
+            desc="Substitutes the specified input locale identifier with another locale preferred by the user. The system starts with this flag set, and it is recommended that your application always use this flag. The substitution occurs only if the registry key HKEY_CURRENT_USER\Keyboard\Layout\Substitutes explicitly defines a substitution locale. For example, if the key includes the value name &quot;00000409&quot; with value &quot;00010409&quot;, loading the U.S. English layout (&quot;00000409&quot;) causes the Dvorak U.S. English layout (&quot;00010409&quot;) to be loaded instead. The system uses KLF_SUBSTITUTE_OK when booting, and it is recommended that all applications use this value when loading input locale identifiers to ensure that the user's preference is selected." />
+      <symc name="KLF_SETFORPROCESS" value="0x00000100"
+            desc="Prior to Windows 8: This flag is valid only with KLF_ACTIVATE. Activates the specified input locale identifier for the entire process and sends the WM_INPUTLANGCHANGE message to the current thread's Focus or Active window. Typically, LoadKeyboardLayout activates an input locale identifier only for the current thread.
+            Beginning in Windows 8: This flag is not used. LoadKeyboardLayout always activates an input locale identifier for the entire system if the current process owns the window with keyboard focus." />
+      <!-- <symc name="KLF_UNLOADPREVIOUS" value="SYMC_VALUE_CURRENTLY_UNAVAILABLE"
+            desc="This flag is unsupported. Use the UnloadKeyboardLayout function instead." /> -->
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

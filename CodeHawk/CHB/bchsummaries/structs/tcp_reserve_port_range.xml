@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa366383(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="tcp_reserve_port_range">
+   <fields>
+    <field name="UpperRange" offset="0" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="LowerRange" offset="2" size="2">
+     <type>USHORT</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb545682(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="kerb_smartcard_csp_info">
+   <fields>
+    <field name="dwCspInfoLen" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="MessageType" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="ContextInformation" offset="8" size="4">
+     <type>PVOID</type>
+    </field>
+    <field name="SpaceHolderForWow64" offset="8" size="8">
+     <type>ULONG64</type>
+    </field>
+    <field name="flags" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="KeySpec" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nCardNameOffset" offset="24" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="nReaderNameOffset" offset="28" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="nContainerNameOffset" offset="32" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="nCSPNameOffset" offset="36" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="bBuffer" offset="40" size="1">
+     <type>TCHAR</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

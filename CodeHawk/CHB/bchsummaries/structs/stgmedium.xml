@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms683812(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="stgmedium">
+   <fields>
+    <field name="tymed" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hBitmap" offset="4" size="4">
+     <type>HBITMAP</type>
+    </field>
+    <field name="hBitmap" offset="4" size="4">
+     <type>HBITMAP</type>
+    </field>
+    <field name="hMetaFilePict" offset="4" size="4">
+     <type>HMETAFILEPICT</type>
+    </field>
+    <field name="hEnhMetaFile" offset="4" size="4">
+     <type>HENHMETAFILE</type>
+    </field>
+    <field name="hGlobal" offset="4" size="4">
+     <type>HGLOBAL</type>
+    </field>
+    <field name="lpszFileName" offset="4" size="4">
+     <type>LPOLESTR</type>
+    </field>
+    <field name="pstm" offset="4" size="4">
+     <type><ptr>IStream</ptr></type>
+    </field>
+    <field name="pstg" offset="4" size="4">
+     <type><ptr>IStorage</ptr></type>
+    </field>
+    <field name="pUnkForRelease" offset="8" size="4">
+     <type><ptr>IUnknown</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

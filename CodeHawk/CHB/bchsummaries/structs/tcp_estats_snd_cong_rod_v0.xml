@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ee720201(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="tcp_estats_snd_cong_rod_v0">
+   <fields>
+    <field name="SndLimTransRwin" offset="0" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SndLimTimeRwin" offset="4" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SndLimBytesRwin" offset="8" size="4">
+     <type>SIZE_T</type>
+    </field>
+    <field name="SndLimTransCwnd" offset="12" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SndLimTimeCwnd" offset="16" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SndLimBytesCwnd" offset="20" size="4">
+     <type>SIZE_T</type>
+    </field>
+    <field name="SndLimTransSnd" offset="24" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SndLimTimeSnd" offset="28" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SndLimBytesSnd" offset="32" size="4">
+     <type>SIZE_T</type>
+    </field>
+    <field name="SlowStart" offset="36" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="CongAvoid" offset="40" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="OtherReductions" offset="44" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="CurCwnd" offset="48" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="MaxSsCwnd" offset="52" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="MaxCaCwnd" offset="56" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="CurSsthresh" offset="60" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="MaxSsthresh" offset="64" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="MinSsthresh" offset="68" size="4">
+     <type>ULONG</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

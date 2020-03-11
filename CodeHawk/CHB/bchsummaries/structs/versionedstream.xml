@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://searchcode.com/codesearch/view/20801602/"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="versionedstream">
+   <fields>
+    <field name="guidVersion" offset="0" size="16">
+     <type>GUID</type>
+    </field>
+    <field name="pStream" offset="16" size="4">
+     <type><ptr>IStream</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

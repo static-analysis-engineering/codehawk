@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa378147(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="kerb_ticket_profile">
+   <fields>
+    <field name="Profile" offset="0" size="112">
+     <type>KERB_INTERACTIVE_PROFILE</type>
+    </field>
+    <field name="SessionKey" offset="112" size="12">
+     <type>KERB_CRYPTO_KEY</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

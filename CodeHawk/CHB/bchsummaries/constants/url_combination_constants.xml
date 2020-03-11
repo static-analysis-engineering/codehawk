@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference
+	href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa384355(v=vs.85).aspx"/>
+    <refnotes>retieved from unofficial sources</refnotes>
+  </header>
+  <symbolic-constants type="url_combination_constants">
+    <type>url_combination_constants</type>
+    <values>
+      <symc name="ICU_BROWSER_MODE" value="0x02000000"
+            desc="Does not encode or decode characters after &quot;#&quot; or &quot;?&quot;, and does not remove trailing white space after &quot;?&quot;. If this value is not specified, the entire URL is encoded and trailing white space is removed." />
+      <symc name="ICU_DECODE" value="0x10000000"
+            desc="Converts all %XX sequences to characters, including escape sequences, before the URL is parsed." />
+      <symc name="ICU_ENCODE_PERCENT" value="0x00001000"
+            desc="Encodes any percent signs encountered. By default, percent signs are not encoded. This value is available in Microsoft Internet Explorer 5 and later." />
+      <symc name="ICU_ENCODE_SPACES_ONLY" value="0x04000000"
+            desc="Encodes spaces only." />
+      <symc name="ICU_NO_ENCODE" value="0x20000000"
+            desc="Does not convert unsafe characters to escape sequences." />
+      <symc name="ICU_NO_META" value="0x08000000"
+            desc="Does not remove meta sequences (such as &quot;.&quot; and &quot;..&quot;) from the URL." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

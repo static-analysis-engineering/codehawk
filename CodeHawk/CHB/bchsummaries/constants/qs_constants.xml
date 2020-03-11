@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms684245(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="qs_constants">
+    <type>qs_constants</type>
+    <values>
+      <symc name="QS_ALLEVENTS" value="0x04BF"
+            desc="An input, WM_TIMER, WM_PAINT, WM_HOTKEY, or posted message is in the queue.
+            This value is a combination of QS_INPUT, QS_POSTMESSAGE, QS_TIMER, QS_PAINT, and QS_HOTKEY." />
+      <symc name="QS_ALLINPUT" value="0x04FF"
+            desc="Any message is in the queue.
+            This value is a combination of QS_INPUT, QS_POSTMESSAGE, QS_TIMER, QS_PAINT, QS_HOTKEY, and QS_SENDMESSAGE." />
+      <symc name="QS_ALLPOSTMESSAGE" value="0x0100"
+            desc="A posted message is in the queue.
+            This value is cleared when you call GetMessage or PeekMessage without filtering messages." />
+      <symc name="QS_HOTKEY" value="0x0080"
+            desc="A WM_HOTKEY message is in the queue." />
+      <symc name="QS_INPUT" value="0x407"
+            desc="An input message is in the queue.
+            This value is a combination of QS_MOUSE, QS_KEY, and QS_RAWINPUT." />
+      <symc name="QS_KEY" value="0x0001"
+            desc="A WM_KEYUP, WM_KEYDOWN, WM_SYSKEYUP, or WM_SYSKEYDOWN message is in the queue." />
+      <symc name="QS_MOUSE" value="0x0006"
+            desc="A WM_MOUSEMOVE message or mouse-button message (WM_LBUTTONUP, WM_RBUTTONDOWN, and so on).
+            This value is a combination of QS_MOUSEMOVE and QS_MOUSEBUTTON." />
+      <symc name="QS_MOUSEBUTTON" value="0x0004"
+            desc="A mouse-button message (WM_LBUTTONUP, WM_RBUTTONDOWN, and so on)." />
+      <symc name="QS_MOUSEMOVE" value="0x0002"
+            desc="A WM_MOUSEMOVE message is in the queue." />
+      <symc name="QS_PAINT" value="0x0020"
+            desc="A WM_PAINT message is in the queue." />
+      <symc name="QS_POSTMESSAGE" value="0x0008"
+            desc="A posted message is in the queue.
+            This value is cleared when you call GetMessage or PeekMessage, whether or not you are filtering messages." />
+      <symc name="QS_RAWINPUT" value="0x0400"
+            desc="A raw input message is in the queue. For more information, see Raw Input." />
+      <symc name="QS_SENDMESSAGE" value="0x0040"
+            desc="A message sent by another thread or application is in the queue." />
+      <symc name="QS_TIMER" value="0x0010"
+            desc="A WM_TIMER message is in the queue." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa364417(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="file_notify_change_flags">
+    <type>file_notify_change_flags</type>
+    <values>
+      <symc name="FILE_NOTIFY_CHANGE_FILE_NAME" value="0x00000001"
+            desc="Any file name change in the watched directory or subtree causes a change notification wait operation to return. Changes include renaming, creating, or deleting a file name." />
+      <symc name="FILE_NOTIFY_CHANGE_DIR_NAME" value="0x00000002"
+            desc="Any directory-name change in the watched directory or subtree causes a change notification wait operation to return. Changes include creating or deleting a directory." />
+      <symc name="FILE_NOTIFY_CHANGE_ATTRIBUTES" value="0x00000004"
+            desc="Any attribute change in the watched directory or subtree causes a change notification wait operation to return." />
+      <symc name="FILE_NOTIFY_CHANGE_SIZE" value="0x00000008"
+            desc="Any file-size change in the watched directory or subtree causes a change notification wait operation to return. The operating system detects a change in file size only when the file is written to the disk. For operating systems that use extensive caching, detection occurs only when the cache is sufficiently flushed." />
+      <symc name="FILE_NOTIFY_CHANGE_LAST_WRITE" value="0x00000010"
+            desc="Any change to the last write-time of files in the watched directory or subtree causes a change notification wait operation to return. The operating system detects a change to the last write-time only when the file is written to the disk. For operating systems that use extensive caching, detection occurs only when the cache is sufficiently flushed." />
+      <symc name="FILE_NOTIFY_CHANGE_SECURITY" value="0x00000100"
+            desc="Any security-descriptor change in the watched directory or subtree causes a change notification wait operation to return." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

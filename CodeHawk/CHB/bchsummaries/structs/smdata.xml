@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb759812(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="smdata">
+   <fields>
+    <field name="dwMask" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwFlags" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hmenu" offset="8" size="4">
+     <type>HMENU</type>
+    </field>
+    <field name="hwnd" offset="12" size="4">
+     <type>HWND</type>
+    </field>
+    <field name="uId" offset="16" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="uIdParent" offset="20" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="uIdAncestor" offset="24" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="punk" offset="28" size="4">
+     <type><ptr>IUknown</ptr></type>
+    </field>
+    <field name="pidlFolder" offset="32" size="4">
+     <type>PIDLIST_ABSOLUTE</type>
+    </field>
+    <field name="pidlItem" offset="36" size="4">
+     <type>PUITEMID_CHILD</type>
+    </field>
+    <field name="psf" offset="40" size="4">
+     <type><ptr>IShellFolder</ptr></type>
+    </field>
+    <field name="pvUserData" offset="44" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

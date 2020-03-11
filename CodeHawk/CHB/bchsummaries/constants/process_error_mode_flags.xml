@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms680621(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="process_error_mode_flags">
+    <type>process_error_mode_flags</type>
+    <values>
+      <symc name="SEM_FAILCRITICALERRORS" value="0x0001"
+            desc="The system does not display the critical-error-handler message box. Instead, the system sends the error to the calling process.
+            Best practice is that all applications call the process-wide SetErrorMode function with a parameter of SEM_FAILCRITICALERRORS at startup. This is to prevent error mode dialogs from hanging the application." />
+      <symc name="SEM_NOALIGNMENTFAULTEXCEPT" value="0x0004"
+            desc="The system automatically fixes memory alignment faults and makes them invisible to the application. It does this for the calling process and any descendant processes. This feature is only supported by certain processor architectures. For more information, see the Remarks section.
+            After this value is set for a process, subsequent attempts to clear the value are ignored." />
+      <symc name="SEM_NOGPFAULTERRORBOX" value="0x0002"
+            desc="The system does not display the Windows Error Reporting dialog." />
+      <symc name="SEM_NOOPENFILEERRORBOX" value="0x8000"
+            desc="The OpenFile function does not display a message box when it fails to find a file. Instead, the error is returned to the caller. This error mode overrides the OF_PROMPT flag." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

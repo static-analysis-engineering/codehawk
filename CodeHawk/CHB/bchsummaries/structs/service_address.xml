@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms740456(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="service_address">
+   <fields>
+    <field name="dwAddressType" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwAddressFlags" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwAddressLength" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwPrincipalLength" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpAddress" offset="16" size="4">
+     <type><ptr>BYTE</ptr></type>
+    </field>
+    <field name="lpPrincipal" offset="20" size="4">
+     <type><ptr>BYTE</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

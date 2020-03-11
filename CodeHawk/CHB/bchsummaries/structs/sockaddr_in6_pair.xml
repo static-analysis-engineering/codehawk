@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb870792(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="sockaddr_in6_pair">
+   <fields>
+    <field name="SourceAddress" offset="0" size="4">
+     <type>PSOCKADDR_IN6</type>
+    </field>
+    <field name="DestinationAddress" offset="4" size="4">
+     <type>PSOCKADDR_IN6</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa380645(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cryptui_viewcertificate_struct">
+   <fields>
+    <field name="dwSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hwndParent" offset="4" size="4">
+     <type>HWND</type>
+    </field>
+    <field name="dwFlags" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="szTitle" offset="12" size="4">
+     <type>LPCTSTR</type>
+    </field>
+    <field name="pCertContext" offset="16" size="4">
+     <type>PCCERT_CONTEXT</type>
+    </field>
+    <field name="rgszPurposes" offset="20" size="4">
+     <type><ptr>LPCSTR</ptr></type>
+    </field>
+    <field name="cPurposes" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pCryptProviderData" offset="28" size="4">
+     <type><ptr>CRYPT_PROVIDER_DATA</ptr></type>
+    </field>
+    <field name="hWVTStateData" offset="28" size="4">
+     <type>HANDLE</type>
+    </field>
+    <field name="fpCryptProviderDataTrustedUsage" offset="32" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="idxSigner" offset="36" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="idxCert" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="fCounterSigner" offset="44" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="idxCounterSigner" offset="48" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="cStores" offset="52" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rghStores" offset="56" size="4">
+     <type><ptr>HCERTSTORE</ptr></type>
+    </field>
+    <field name="cPropSheetPages" offset="60" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rgPropSheetPages" offset="64" size="4">
+     <type>LPCPROPSHEETPAGE</type>
+    </field>
+    <field name="nStartPage" offset="68" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

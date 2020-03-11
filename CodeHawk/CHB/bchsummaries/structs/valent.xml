@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms725490(v=vs.85).aspx"/>
+  <header date="05/29/2017 00:00:00"/>
+  <struct name="valent">
+   <fields>
+    <field name="ve_valuename" offset="0" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="ve_valuelen" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="ve_valueptr" offset="8" size="4">
+     <type>DWORD_PTR</type>
+    </field>
+    <field name="ve_type" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

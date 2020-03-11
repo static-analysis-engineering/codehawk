@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/07/2015 22:36:08"/>
+  <symbolic-constants type="service_error_constants">
+    <type>service_error_constants</type>
+    <values>
+      <symc name="SERVICE_ERROR_CRITICAL" value="0x00000003">
+	<desc>
+	  The startup program logs the error in the event log, if possible. If 
+	  the last-known-good configuration is being started, the startup 
+	  operation fails. Otherwise, the system is restarted with the 
+	  last-known good configuration.
+	</desc>
+      </symc>
+      <symc name="SERVICE_ERROR_IGNORE" value="0x00000000">
+	<desc>
+	  The startup program ignores the error and continues the startup operation.
+	</desc>
+      </symc>
+      <symc name="SERVICE_ERROR_NORMAL" value="0x00000001">
+	<desc>
+	  The startup program logs the error in the event log but continues the 
+	  startup operation.
+	</desc>
+      </symc>
+      <symc name="SERVICE_ERROR_SEVERE" value="0x00000002">
+	<desc>
+	  The startup program logs the error in the event log. If the 
+	  last-known-good configuration is being started, the startup
+	  operation continues. Otherwise, the system is restarted with
+	  the last-known-good configuration.
+	</desc>
+      </symc>
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

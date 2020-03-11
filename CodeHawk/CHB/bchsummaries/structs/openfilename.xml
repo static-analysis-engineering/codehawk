@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms646839(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="openfilename">
+   <fields>
+    <field name="lStructSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hwndOwner" offset="4" size="4">
+     <type>HWND</type>
+    </field>
+    <field name="hInstance" offset="8" size="4">
+     <type>HINSTANCE</type>
+    </field>
+    <field name="lpstrFilter" offset="12" size="4">
+     <type>LPCTSTR</type>
+    </field>
+    <field name="lpstrCustomFilter" offset="16" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="nMaxCustFilter" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nFilterIndex" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpstrFile" offset="28" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="nMaxFile" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpstrFileTitle" offset="36" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="nMaxFileTitle" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpstrInitialDir" offset="44" size="4">
+     <type>LPCTSTR</type>
+    </field>
+    <field name="lpstrTitle" offset="48" size="4">
+     <type>LPCTSTR</type>
+    </field>
+    <field name="Flags" offset="52" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nFileOffset" offset="56" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="nFileExtension" offset="58" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="lpstrDefExt" offset="60" size="4">
+     <type>LPCTSTR</type>
+    </field>
+    <field name="lCustData" offset="64" size="4">
+     <type>LPARAM</type>
+    </field>
+    <field name="lpfnHook" offset="68" size="4">
+     <type>LPOFNHOOKPROC</type>
+    </field>
+    <field name="lpTemplateName" offset="72" size="4">
+     <type>LPCTSTR</type>
+    </field>
+    <field name="pvReserved" offset="76" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+    <field name="dwReserved" offset="80" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="FlagsEx" offset="84" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/03/2015 16:45:24"/>
+  <symbolic-constants type="image_types_to_load">
+   <values>
+    <symc name="IMAGE_BITMAP" value="0">
+     <desc>Loads a bitmap</desc>
+    </symc>
+    <symc name="IMAGE_ICON" value="1">
+     <desc>Loads an icon</desc>
+    </symc>
+    <symc name="IMAGE_CURSOR" value="2">
+     <desc>Loads a cursor</desc>
+    </symc>
+   </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

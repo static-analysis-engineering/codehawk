@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms740134(v=vs.85).aspx"/>
+  <header date="08/08/2017 00:00:00"/>
+  <struct name="rm_sender_stats">
+   <fields>
+    <field name="DataBytesSent" offset="0" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="TotalBytesSent" offset="8" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="NaksReceived" offset="16" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="NaksReceivedTooLate" offset="24" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="NumOutstandingNaks" offset="32" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="NumNaksAfterRData" offset="40" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="RepairPacketsSent" offset="48" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="BufferSpaceAvailable" offset="56" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="TrailingEdgeSeqId" offset="64" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="LeadingEdgeSeqId" offset="72" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="RateKBitsPerSecOverall" offset="80" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="RateKBitsPerSecLast" offset="88" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="TotalODataPacketsSent" offset="96" size="8">
+     <type>ULONGULONG</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

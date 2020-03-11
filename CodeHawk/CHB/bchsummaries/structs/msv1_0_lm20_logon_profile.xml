@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa378763(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="msv1_0_lm20_logon_profile">
+   <fields>
+    <field name="MessageType" offset="0" size="4">
+     <type>MSV1_0_PROFILE_BUFFER_TYPE</type>
+    </field>
+    <field name="KickOffTime" offset="8" size="8">
+     <type>LARGE_INTEGER</type>
+    </field>
+    <field name="LogoffTime" offset="16" size="8">
+     <type>LARGE_INTEGER</type>
+    </field>
+    <field name="UserFlags" offset="24" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="UserSessionKey" offset="28" size="16">
+     <type><array size="16">UCHAR</array></type>
+    </field>
+    <field name="LogonDomainName" offset="44" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="LanmanSessionKey" offset="52" size="8">
+     <type><array size="8">UCHAR</array></type>
+    </field>
+    <field name="LogonServer" offset="60" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="UserParameters" offset="68" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

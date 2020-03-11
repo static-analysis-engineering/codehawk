@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa380086(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="SecPkgContext_KeyInfo">
+   <fields>
+    <field name="sSignatureAlgorithmName" offset="0" size="4">
+     <type><ptr>SEC_CHAR</ptr></type>
+    </field>
+    <field name="sEncryptAlgorithmName" offset="4" size="4">
+     <type><ptr>SEC_CHAR</ptr></type>
+    </field>
+    <field name="KeySize" offset="8" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SignatureAlgorithm" offset="12" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="EncryptAlgorithm" offset="16" size="4">
+     <type>ULONG</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

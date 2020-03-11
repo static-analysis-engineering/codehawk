@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773383(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="pubappinfo">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwMask" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pszSource" offset="8" size="4">
+     <type>LPWSTR</type>
+    </field>
+    <field name="stAssigned" offset="12" size="16">
+     <type>SYSTEMTIME</type>
+    </field>
+    <field name="stPublished" offset="28" size="16">
+     <type>SYSTEMTIME</type>
+    </field>
+    <field name="stScheduled" offset="44" size="16">
+     <type>SYSTEMTIME</type>
+    </field>
+    <field name="stExpire" offset="60" size="16">
+     <type>SYSTEMTIME</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

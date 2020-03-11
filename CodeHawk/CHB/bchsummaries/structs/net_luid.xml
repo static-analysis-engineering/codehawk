@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa366320(v=vs.85).aspx"/>
+  <header date="08/08/2017 00:00:00"/>
+  <struct name="net_luid">
+   <fields>
+    <field name="Value" offset="0" size="8">
+     <type>ULONG64</type>
+     <!-- nb bit fields common with above ULONG64 Value
+          struct {
+            ULONG64 Reserved  :24;
+            ULONG64 NetLuidIndex  :24;
+            ULONG64 IfType  :16;
+          } Info;
+     -->
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

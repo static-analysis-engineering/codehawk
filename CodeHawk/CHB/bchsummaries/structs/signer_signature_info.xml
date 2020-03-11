@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa387753(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="signer_signature_info">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="algidHash" offset="4" size="4">
+     <type>ALG_ID</type>
+    </field>
+    <field name="dwAttrChoice" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pAttrAuthcode" offset="12" size="4">
+     <type><ptr>SIGNER_ATTR_AUTHCODE</ptr></type>
+    </field>
+    <field name="psAuthenticated" offset="16" size="4">
+     <type>PCRYPT_ATTRIBUTES</type>
+    </field>
+    <field name="psUnauthenticated" offset="20" size="4">
+     <type>PCRYPT_ATTRIBUTES</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

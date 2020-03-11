@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
+    <reference href="http://msdn.microsoft.com/"/>
+  </header>
+  <symbolic-constants type="std_handle_constants">
+    <type>std_handle_constants</type>
+    <values>
+      <symc name="STD_INPUT_HANDLE" value="-10">
+	<desc>
+	  The standard input device. Initially, this is the console input buffer, CONIN$
+	</desc>
+      </symc>
+      <symc name="STD_OUTPUT_HANDLE" value="-11">
+	<desc>
+	  The standard output device. Initially, this is the active console screen buffer, 
+	  CONOUT$.
+	</desc>
+      </symc>
+      <symc name="STD_ERROR_HANDLE" value="-12">
+	<desc>
+	  The standard error device. Initially, this is the active console screen buffer, 
+	  CONOUT$.
+	</desc>
+      </symc>
+    </values>
+  </symbolic-constants>
+</codehawk-binary-analyzer>

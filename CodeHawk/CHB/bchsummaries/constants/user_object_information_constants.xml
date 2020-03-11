@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms683238(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="user_object_information_constants">
+    <type>user_object_information_constants</type>
+    <values>
+      <symc name="UOI_FLAGS" value="1"
+            desc="The handle flags. The pvInfo parameter must point to a USEROBJECTFLAGS structure." />
+      <symc name="UOI_HEAPSIZE" value="5"
+            desc="The size of the desktop heap, in KB, as a ULONG value. The hObj parameter must be a handle to a desktop object, otherwise, the function fails.
+            Windows Server 2003 and Windows XP/2000:  This value is not supported." />
+      <symc name="UOI_IO" value="6"
+            desc="TRUE if the hObj parameter is a handle to the desktop object that is receiving input from the user. FALSE otherwise.
+            Windows Server 2003 and Windows XP/2000:  This value is not supported." />
+      <symc name="UOI_NAME" value="2"
+            desc="The name of the object, as a string." />
+      <symc name="UOI_TYPE" value="3"
+            desc="The type name of the object, as a string." />
+      <symc name="UOI_USER_SID" value="4"
+            desc="The SID structure that identifies the user that is currently associated with the specified object. If no user is associated with the object, the value returned in the buffer pointed to by lpnLengthNeeded is zero. Note that SID is a variable length structure. You will usually make a call to GetUserObjectInformation to determine the length of the SID before retrieving its value." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

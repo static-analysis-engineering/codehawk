@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773286(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="ext_button">
+   <fields>
+    <field name="idCommand" offset="0" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="idsHelp" offset="2" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="fsStyle" offset="4" size="2">
+     <type>WORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

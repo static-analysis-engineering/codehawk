@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa363679(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="eventlog_types">
+    <type>eventlog_types</type>
+    <values>
+      <symc name="EVENTLOG_SUCCESS" value="0x0000"
+            desc="Information event" />
+      <symc name="EVENTLOG_AUDIT_FAILURE" value="0x0010"
+            desc="Failure Audit event" />
+      <symc name="EVENTLOG_AUDIT_SUCCESS" value="0x0008"
+            desc="Success Audit event" />
+      <symc name="EVENTLOG_ERROR_TYPE" value="0x0001"
+            desc="Error event" />
+      <symc name="EVENTLOG_INFORMATION_TYPE" value="0x0004"
+            desc="Information event" />
+      <symc name="EVENTLOG_WARNING_TYPE" value="0x0002"
+            desc="Warning event" />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

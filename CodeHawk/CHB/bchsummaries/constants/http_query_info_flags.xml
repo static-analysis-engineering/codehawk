@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa385351(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="http_query_info_flags">
+    <type>http_query_info_flags</type>
+    <values>
+      <symc name="HTTP_QUERY_ACCEPT" value="24"
+            desc="Retrieves the acceptable media types for the response." />
+      <symc name="HTTP_QUERY_ACCEPT_CHARSET" value="25"
+            desc="Retrieves the acceptable character sets for the response." />
+      <symc name="HTTP_QUERY_ACCEPT_ENCODING" value="26"
+            desc="Retrieves the acceptable content-coding values for the response." />
+      <symc name="HTTP_QUERY_ACCEPT_LANGUAGE" value="27"
+            desc="Retrieves the acceptable natural languages for the response." />
+      <symc name="HTTP_QUERY_ACCEPT_RANGES" value="42"
+            desc="Retrieves the types of range requests that are accepted for a resource." />
+      <symc name="HTTP_QUERY_AGE" value="48"
+            desc="Retrieves the Age response-header field, which contains the sender's estimate of the amount of time since the response was generated at the origin server." />
+      <symc name="HTTP_QUERY_ALLOW" value="7"
+            desc="Receives the HTTP verbs supported by the server." />
+      <symc name="HTTP_QUERY_AUTHORIZATION" value="28"
+            desc="Retrieves the authorization credentials used for a request." />
+      <symc name="HTTP_QUERY_CACHE_CONTROL" value="49"
+            desc="Retrieves the cache control directives." />
+      <symc name="HTTP_QUERY_CONNECTION" value="23"
+            desc="Retrieves any options that are specified for a particular connection and must not be communicated by proxies over further connections." />
+      <symc name="HTTP_QUERY_CONTENT_BASE" value="50"
+            desc="Retrieves the base URI (Uniform Resource Identifier) for resolving relative URLs within the entity." />
+      <symc name="HTTP_QUERY_CONTENT_DESCRIPTION" value="4"
+            desc="Obsolete. Maintained for legacy application compatibility only." />
+      <symc name="HTTP_QUERY_CONTENT_DISPOSITION" value="47"
+            desc="Obsolete. Maintained for legacy application compatibility only." />
+      <symc name="HTTP_QUERY_CONTENT_ENCODING" value="29"
+            desc="Retrieves any additional content codings that have been applied to the entire resource." />
+      <symc name="HTTP_QUERY_CONTENT_ID" value="3"
+            desc="Retrieves the content identification." />
+      <symc name="HTTP_QUERY_CONTENT_LANGUAGE" value="6"
+            desc="Retrieves the language that the content is in." />
+      <symc name="HTTP_QUERY_CONTENT_LENGTH" value="5"
+            desc="Retrieves the size of the resource, in bytes." />
+      <symc name="HTTP_QUERY_CONTENT_LOCATION" value="51"
+            desc="Retrieves the resource location for the entity enclosed in the message." />
+      <symc name="HTTP_QUERY_CONTENT_MD5" value="52"
+            desc="Retrieves an MD5 digest of the entity-body for the purpose of providing an end-to-end message integrity check (MIC) for the entity-body. For more information, see RFC1864, The Content-MD5 Header Field, at http://ftp.isi.edu/in-notes/rfc1864.txt." />
+      <symc name="HTTP_QUERY_CONTENT_RANGE" value="53"
+            desc="Retrieves the location in the full entity-body where the partial entity-body should be inserted and the total size of the full entity-body." />
+      <symc name="HTTP_QUERY_CONTENT_TRANSFER_ENCODING" value="2"
+            desc="Receives the additional content coding that has been applied to the resource." />
+      <symc name="HTTP_QUERY_CONTENT_TYPE" value="1"
+            desc="Receives the content type of the resource (such as text/html)." />
+      <symc name="HTTP_QUERY_COOKIE" value="44"
+            desc="Retrieves any cookies associated with the request." />
+      <symc name="HTTP_QUERY_COST" value="15"
+            desc="No longer supported." />
+      <symc name="HTTP_QUERY_CUSTOM" value="65535"
+            desc="Causes HttpQueryInfo to search for the header name specified in lpvBuffer and store the header data in lpvBuffer." />
+      <symc name="HTTP_QUERY_DATE" value="9"
+            desc="Receives the date and time at which the message was originated." />
+      <symc name="HTTP_QUERY_DERIVED_FROM" value="14"
+            desc="No longer supported." />
+      <symc name="HTTP_QUERY_ECHO_HEADERS" value="73"
+            desc="Not currently implemented." />
+      <symc name="HTTP_QUERY_ECHO_HEADERS_CRLF" value="74"
+            desc="Not currently implemented." />
+      <symc name="HTTP_QUERY_ECHO_REPLY" value="72"
+            desc="Not currently implemented." />
+      <symc name="HTTP_QUERY_ECHO_REQUEST" value="71"
+            desc="Not currently implemented." />
+      <symc name="HTTP_QUERY_ETAG" value="54"
+            desc="Retrieves the entity tag for the associated entity." />
+      <symc name="HTTP_QUERY_EXPECT" value="68"
+            desc="Retrieves the Expect header, which indicates whether the client application should expect 100 series responses." />
+      <symc name="HTTP_QUERY_EXPIRES" value="10"
+            desc="Receives the date and time after which the resource should be considered outdated." />
+      <symc name="HTTP_QUERY_FORWARDED" value="30"
+            desc="Obsolete. Maintained for legacy application compatibility only." />
+      <symc name="HTTP_QUERY_FROM" value="31"
+            desc="Retrieves the email address for the human user who controls the requesting user agent if the From header is given." />
+      <symc name="HTTP_QUERY_HOST" value="55"
+            desc="Retrieves the Internet host and port number of the resource being requested." />
+      <symc name="HTTP_QUERY_IF_MATCH" value="56"
+            desc="Retrieves the contents of the If-Match request-header field." />
+      <symc name="HTTP_QUERY_IF_MODIFIED_SINCE" value="32"
+            desc="Retrieves the contents of the If-Modified-Since header." />
+      <symc name="HTTP_QUERY_IF_NONE_MATCH" value="57"
+            desc="Retrieves the contents of the If-None-Match request-header field." />
+      <symc name="HTTP_QUERY_IF_RANGE" value="58"
+            desc="Retrieves the contents of the If-Range request-header field. This header enables the client application to verify that the entity related to a partial copy of the entity in the client application cache has not been updated. If the entity has not been updated, send the parts that the client application is missing. If the entity has been updated, send the entire updated entity." />
+      <symc name="HTTP_QUERY_IF_UNMODIFIED_SINCE" value="59"
+            desc="Retrieves the contents of the If-Unmodified-Since request-header field." />
+      <symc name="HTTP_QUERY_LAST_MODIFIED" value="11"
+            desc="Receives the date and time at which the server believes the resource was last modified." />
+      <symc name="HTTP_QUERY_LINK" value="16"
+            desc="Obsolete. Maintained for legacy application compatibility only." />
+      <symc name="HTTP_QUERY_LOCATION" value="33"
+            desc="Retrieves the absolute Uniform Resource Identifier (URI) used in a Location response-header." />
+      <symc name="HTTP_QUERY_MAX" value="78"
+            desc="Not a query flag. Indicates the maximum value of an HTTP_QUERY_* value." />
+      <symc name="HTTP_QUERY_MAX_FORWARDS" value="60"
+            desc="Retrieves the number of proxies or gateways that can forward the request to the next inbound server." />
+      <symc name="HTTP_QUERY_MESSAGE_ID" value="12"
+            desc="No longer supported." />
+      <symc name="HTTP_QUERY_MIME_VERSION" value="0"
+            desc="Receives the version of the MIME protocol that was used to construct the message." />
+      <symc name="HTTP_QUERY_ORIG_URI" value="34"
+            desc="Obsolete. Maintained for legacy application compatibility only." />
+      <symc name="HTTP_QUERY_PRAGMA" value="17"
+            desc="Receives the implementation-specific directives that might apply to any recipient along the request/response chain." />
+      <symc name="HTTP_QUERY_PROXY_AUTHENTICATE" value="41"
+            desc="Retrieves the authentication scheme and realm returned by the proxy." />
+      <symc name="HTTP_QUERY_PROXY_AUTHORIZATION" value="61"
+            desc="Retrieves the header that is used to identify the user to a proxy that requires authentication. This header can only be retrieved before the request is sent to the server." />
+      <symc name="HTTP_QUERY_PROXY_CONNECTION" value="69"
+            desc="Retrieves the Proxy-Connection header." />
+      <symc name="HTTP_QUERY_PUBLIC" value="8"
+            desc="Receives methods available at this server." />
+      <symc name="HTTP_QUERY_RANGE" value="62"
+            desc="Retrieves the byte range of an entity." />
+      <symc name="HTTP_QUERY_RAW_HEADERS" value="21"
+            desc="Receives all the headers returned by the server. Each header is terminated by &quot;\0&quot;. An additional &quot;\0&quot; terminates the list of headers." />
+      <symc name="HTTP_QUERY_RAW_HEADERS_CRLF" value="22"
+            desc="Receives all the headers returned by the server. Each header is separated by a carriage return/line feed (CR/LF) sequence." />
+      <symc name="HTTP_QUERY_REFERER" value="35"
+            desc="Receives the Uniform Resource Identifier (URI) of the resource where the requested URI was obtained." />
+      <symc name="HTTP_QUERY_REFRESH" value="46"
+            desc="Obsolete. Maintained for legacy application compatibility only." />
+      <symc name="HTTP_QUERY_REQUEST_METHOD" value="45"
+            desc="Receives the HTTP verb that is being used in the request, typically GET or POST." />
+      <symc name="HTTP_QUERY_RETRY_AFTER" value="36"
+            desc="Retrieves the amount of time the service is expected to be unavailable." />
+      <symc name="HTTP_QUERY_SERVER" value="37"
+            desc="Retrieves data about the software used by the origin server to handle the request." />
+      <symc name="HTTP_QUERY_SET_COOKIE" value="43"
+            desc="Receives the value of the cookie set for the request." />
+      <symc name="HTTP_QUERY_STATUS_CODE" value="19"
+            desc="Receives the status code returned by the server. For more information and a list of possible values, see HTTP Status Codes." />
+      <symc name="HTTP_QUERY_STATUS_TEXT" value="20"
+            desc="Receives any additional text returned by the server on the response line." />
+      <symc name="HTTP_QUERY_TITLE" value="38"
+            desc="Obsolete. Maintained for legacy application compatibility only." />
+      <symc name="HTTP_QUERY_TRANSFER_ENCODING" value="63"
+            desc="Retrieves the type of transformation that has been applied to the message body so it can be safely transferred between the sender and recipient." />
+      <symc name="HTTP_QUERY_UNLESS_MODIFIED_SINCE" value="70"
+            desc="Retrieves the Unless-Modified-Since header." />
+      <symc name="HTTP_QUERY_UPGRADE" value="64"
+            desc="Retrieves the additional communication protocols that are supported by the server." />
+      <symc name="HTTP_QUERY_URI" value="13"
+            desc="Receives some or all of the Uniform Resource Identifiers (URIs) by which the Request-URI resource can be identified." />
+      <symc name="HTTP_QUERY_USER_AGENT" value="39"
+            desc="Retrieves data about the user agent that made the request." />
+      <symc name="HTTP_QUERY_VARY" value="65"
+            desc="Retrieves the header that indicates that the entity was selected from a number of available representations of the response using server-driven negotiation." />
+      <symc name="HTTP_QUERY_VERSION" value="18"
+            desc="Receives the last response code returned by the server." />
+      <symc name="HTTP_QUERY_VIA" value="66"
+            desc="Retrieves the intermediate protocols and recipients between the user agent and the server on requests, and between the origin server and the client on responses." />
+      <symc name="HTTP_QUERY_WARNING" value="67"
+            desc="Retrieves additional data about the status of a response that might not be reflected by the response status code." />
+      <symc name="HTTP_QUERY_WWW_AUTHENTICATE" value="40"
+            desc="Retrieves the authentication scheme and realm returned by the server." />
+      <symc name="HTTP_QUERY_X_CONTENT_TYPE_OPTIONS" value="79"
+            desc="Retrieves the X-Content-Type-Options header value." />
+      <symc name="HTTP_QUERY_P3P" value="80"
+            desc="Retrieves the P3P header value." />
+      <symc name="HTTP_QUERY_X_P2P_PEERDIST" value="81"
+            desc="Retrieves the X-P2P-PeerDist header value." />
+      <symc name="HTTP_QUERY_TRANSLATE" value="82"
+            desc="Retrieves the translate header value." />
+      <symc name="HTTP_QUERY_X_UA_COMPATIBLE" value="83"
+            desc="Retrieves the X-UA-Compatible header value." />
+      <symc name="HTTP_QUERY_DEFAULT_STYLE" value="84"
+            desc="Retrieves the Default-Style header value." />
+      <symc name="HTTP_QUERY_X_FRAME_OPTIONS" value="85"
+            desc="Retrieves the X-Frame-Options header value." />
+      <symc name="HTTP_QUERY_X_XSS_PROTECTION" value="86"
+            desc="Retrieves the X-XSS-Protection header value.
+            The modifier flags are used in conjunction with an attribute flag to modify the request. Modifier flags either modify the format of the data returned or indicate where HttpQueryInfo (or QueryInfo) should search for the data." />
+      <symc name="HTTP_QUERY_FLAG_COALESCE" value="0x10000000"
+            desc="Not implemented." />
+      <symc name="HTTP_QUERY_FLAG_NUMBER" value="0x20000000"
+            desc="Returns the data as a 32-bit number for headers whose value is a number, such as the status code." />
+      <symc name="HTTP_QUERY_FLAG_REQUEST_HEADERS" value="0x80000000"
+            desc="Queries request headers only." />
+      <symc name="HTTP_QUERY_FLAG_SYSTEMTIME" value="0x40000000"
+            desc="Returns the header value as a SYSTEMTIME structure, which does not require the application to parse the data. Use for headers whose value is a date/time string, such as &quot;Last-Modified-Time&quot;." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

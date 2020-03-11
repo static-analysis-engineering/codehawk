@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773274(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="exp_darwin_link">
+   <fields>
+    <field name="dbh" offset="0" size="8">
+     <type>DATABLOCK_HEADER</type>
+    </field>
+    <field name="szDarwinID" offset="8" size="520">
+     <type><array size="520">__wchar_t</array></type>
+    </field>
+    <field name="szwDarwinID" offset="528" size="520">
+     <type><array size="520">WCHAR</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

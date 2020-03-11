@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms644990(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="hook_procedure_constants">
+    <type>hook_procedure_constants</type>
+    <values>
+      <symc name="WH_CALLWNDPROC" value="4"
+            desc="Installs a hook procedure that monitors messages before the system sends them to the destination window procedure. For more information, see the CallWndProc hook procedure." />
+      <symc name="WH_CALLWNDPROCRET" value="12"
+            desc="Installs a hook procedure that monitors messages after they have been processed by the destination window procedure. For more information, see the CallWndRetProc hook procedure." />
+      <symc name="WH_CBT" value="5"
+            desc="Installs a hook procedure that receives notifications useful to a CBT application. For more information, see the CBTProc hook procedure." />
+      <symc name="WH_DEBUG" value="9"
+            desc="Installs a hook procedure useful for debugging other hook procedures. For more information, see the DebugProc hook procedure." />
+      <symc name="WH_FOREGROUNDIDLE" value="11"
+            desc="Installs a hook procedure that will be called when the application's foreground thread is about to become idle. This hook is useful for performing low priority tasks during idle time. For more information, see the ForegroundIdleProc hook procedure." />
+      <symc name="WH_GETMESSAGE" value="3"
+            desc="Installs a hook procedure that monitors messages posted to a message queue. For more information, see the GetMsgProc hook procedure." />
+      <symc name="WH_JOURNALPLAYBACK" value="1"
+            desc="Installs a hook procedure that posts messages previously recorded by a WH_JOURNALRECORD hook procedure. For more information, see the JournalPlaybackProc hook procedure." />
+      <symc name="WH_JOURNALRECORD" value="0"
+            desc="Installs a hook procedure that records input messages posted to the system message queue. This hook is useful for recording macros. For more information, see the JournalRecordProc hook procedure." />
+      <symc name="WH_KEYBOARD" value="2"
+            desc="Installs a hook procedure that monitors keystroke messages. For more information, see the KeyboardProc hook procedure." />
+      <symc name="WH_KEYBOARD_LL" value="13"
+            desc="Installs a hook procedure that monitors low-level keyboard input events. For more information, see the LowLevelKeyboardProc hook procedure." />
+      <symc name="WH_MOUSE" value="7"
+            desc="Installs a hook procedure that monitors mouse messages. For more information, see the MouseProc hook procedure." />
+      <symc name="WH_MOUSE_LL" value="14"
+            desc="Installs a hook procedure that monitors low-level mouse input events. For more information, see the LowLevelMouseProc hook procedure." />
+      <symc name="WH_MSGFILTER" value="-1"
+            desc="Installs a hook procedure that monitors messages generated as a result of an input event in a dialog box, message box, menu, or scroll bar. For more information, see the MessageProc hook procedure." />
+      <symc name="WH_SHELL" value="10"
+            desc="Installs a hook procedure that receives notifications useful to shell applications. For more information, see the ShellProc hook procedure." />
+      <symc name="WH_SYSMSGFILTER" value="6"
+            desc="Installs a hook procedure that monitors messages generated as a result of an input event in a dialog box, message box, menu, or scroll bar. The hook procedure monitors these messages for all applications in the same desktop as the calling thread. For more information, see the SysMsgProc hook procedure." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

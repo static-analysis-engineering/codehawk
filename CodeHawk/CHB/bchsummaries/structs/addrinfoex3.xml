@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/mt779163(v=vs.85).aspx"/>
+  <header date="08/08/2017 00:00:00"/>
+  <struct name="addrinfoex3">
+   <fields>
+    <field name="ai_flags" offset="0" size="4">
+     <type>int</type>
+    </field>
+    <field name="ai_family" offset="4" size="4">
+     <type>int</type>
+    </field>
+    <field name="ai_socktype" offset="8" size="4">
+     <type>int</type>
+    </field>
+    <field name="ai_protocol" offset="12" size="4">
+     <type>int</type>
+    </field>
+    <field name="ai_addrlen" offset="16" size="4">
+     <type>size_t</type>
+    </field>
+    <field name="ai_canonname" offset="20" size="4">
+     <type><ptr>char</ptr></type>
+    </field>
+    <field name="ai_addr" offset="24" size="4">
+     <type><ptr>struct sockaddr</ptr></type>
+    </field>
+    <field name="ai_blob" offset="28" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+    <field name="ai_bloblen" offset="32" size="4">
+     <type>size_t</type>
+    </field>
+    <field name="ai_provider" offset="36" size="4">
+     <type>LPGUID</type>
+    </field>
+    <field name="ai_next" offset="40" size="4">
+     <type><ptr>struct addrinfoex3</ptr></type>
+    </field>
+    <field name="ai_version" offset="44" size="4">
+     <type>int</type>
+    </field>
+    <field name="ai_fqdn" offset="48" size="4">
+     <type><ptr>char</ptr></type>
+    </field>
+    <field name="ai_interfaceindex" offset="52" size="4">
+     <type>int</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
+    <reference href="http://msdn.microsoft.com/"/>
+  </header>
+  <symbolic-constants type="address_type_constants">
+    <type>address_type_constants</type>
+    <values>
+    <symc name="AF_UNSPEC" value="0" desc="The address family is unspecified"/>
+    <symc name="AF_INET" value="2" 
+	  desc="The Internet Protocol version 4 (IPv4) address family"/>
+    <symc name="AF_IPX" value="6">
+      <desc>
+	The IPX/SPX address family. This address family is only supported if 
+	the NWLink IPX/SPX NetBIOS Compatible Transport protocol is installed.
+	This address family is not supported on Windows Vista and later
+      </desc>
+    </symc>
+    <symc name="AF_APPLETALK" value="16">
+      <desc>
+	The AppleTalk address family. This address family is only supported 
+	if the AppleTalk protocol is installed.
+	This address family is not supported on Windows Vista and later
+      </desc>
+    </symc>
+    <symc name="AF_NETBIOS" value="17">
+      <desc>
+	The NetBIOS address family. This address family is only supported if a
+	Windows Sockets provider for NetBIOS is installed
+      </desc>
+    </symc>
+    <symc name="AF_INET6" value="23"
+	  desc="The Internet Protocol version 6 (IPv6) address family"/>
+    <symc name="AF_IRDA" value="26">
+      <desc>
+	The Infrared Data Association (IrDA) address family.
+	This address family is only supported if the computer has an infrared 
+	port and driver installed.
+      </desc>
+    </symc>
+    <symc name="AF_BTH" value="32">
+      <desc>
+	The Bluetooth address family.
+	This address family is supported on Windows XP with SP2 or later if the
+	computer has a Bluetooth adapter and driver installed.
+      </desc>
+    </symc>
+    </values>
+  </symbolic-constants>
+</codehawk-binary-analyzer>

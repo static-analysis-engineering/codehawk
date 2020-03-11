@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms693368(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="eole_authentication_capability_constants">
+    <type>eole_authentication_capability_constants</type>
+    <values>
+      <symc name="EOAC_NONE" value="0"
+            desc="Indicates that no capability flags are set." />
+      <symc name="EOAC_MUTUAL_AUTH" value="0x1"
+            desc="If this flag is specified, it will be ignored. Support for mutual authentication is automatically provided by some authentication services. See COM and Security Packages for more information." />
+      <symc name="EOAC_STATIC_CLOAKING" value="0x20"
+            desc="Sets static cloaking. When this flag is set, DCOM uses the thread token (if present) when determining the client's identity. However, the client's identity is determined on the first call on each proxy (if SetBlanket is not called) and each time CoSetProxyBlanket is called on the proxy. For more information about static cloaking, see Cloaking.
+            CoInitializeSecurity and IClientSecurity::SetBlanket return errors if both cloaking flags are set or if either flag is set when Schannel is the authentication service." />
+      <symc name="EOAC_DYNAMIC_CLOAKING" value="0x40"
+            desc="Sets dynamic cloaking. When this flag is set, DCOM uses the thread token (if present) when determining the client's identity. On each call to a proxy, the current thread token is examined to determine whether the client's identity has changed (incurring an additional performance cost) and the client is authenticated again only if necessary. Dynamic cloaking can be set by clients only. For more information about dynamic cloaking, see Cloaking.
+            CoInitializeSecurity and IClientSecurity::SetBlanket return errors if both cloaking flags are set or if either flag is set when Schannel is the authentication service." />
+      <symc name="EOAC_ANY_AUTHORITY" value="0x80"
+            desc="This flag is obsolete." />
+      <symc name="EOAC_MAKE_FULLSIC" value="0x100"
+            desc="Causes DCOM to send Schannel server principal names in fullsic format to clients as part of the default security negotiation. The name is extracted from the server certificate. For more information about the fullsic form, see Principal Names." />
+      <symc name="EOAC_DEFAULT" value="0x800"
+            desc="Tells DCOM to use the valid capabilities from the call to CoInitializeSecurity. If CoInitializeSecurity was not called, EOAC_NONE will be used for the capabilities flag. This flag can be set only by clients in a call to IClientSecurity::SetBlanket or CoSetProxyBlanket." />
+      <symc name="EOAC_SECURE_REFS" value="0x2"
+            desc="Authenticates distributed reference count calls to prevent malicious users from releasing objects that are still being used. If this flag is set, which can be done only in a call to CoInitializeSecurity by the client, the authentication level (in dwAuthnLevel) cannot be set to none.
+            The server always authenticates Release calls. Setting this flag prevents an authenticated client from releasing the objects of another authenticated client. It is recommended that clients always set this flag, although performance is affected because of the overhead associated with the extra security." />
+      <symc name="EOAC_ACCESS_CONTROL" value="0x4"
+            desc="Indicates that the pSecDesc parameter to CoInitializeSecurity is a pointer to an IAccessControl interface on an access control object. When DCOM makes security checks, it calls IAccessControl::IsAccessAllowed. This flag is set only by the server.
+            CoInitializeSecurity returns an error if both the EOAC_APPID and EOAC_ACCESS_CONTROL flags are set." />
+      <symc name="EOAC_APPID" value="0x8"
+            desc="Indicates that the pSecDesc parameter to CoInitializeSecurity is a pointer to a GUID that is an AppID. The CoInitializeSecurity function looks up the AppID in the registry and reads the security settings from there. If this flag is set, all other parameters to CoInitializeSecurity are ignored and must be zero. Only the server can set this flag. For more information about this capability flag, see the Remarks section below.
+            CoInitializeSecurity returns an error if both the EOAC_APPID and EOAC_ACCESS_CONTROL flags are set." />
+      <symc name="EOAC_DYNAMIC" value="0x10"
+            desc="Reserved." />
+      <symc name="EOAC_REQUIRE_FULLSIC" value="0x200"
+            desc="Causes DCOM to fail CoSetProxyBlanket calls where an Schannel principal name is specified in any format other than fullsic. This flag is currently for clients only. For more information about the fullsic form, see Principal Names." />
+      <symc name="EOAC_AUTO_IMPERSONATE" value="0x400"
+            desc="Reserved." />
+      <symc name="EOAC_NO_CUSTOM_MARSHAL" value="0x2000"
+            desc="Specifying this flag helps protect server security when using DCOM or COM+. It reduces the chances of executing arbitrary DLLs because it allows the marshaling of only CLSIDs that are implemented in Ole32.dll, ComAdmin.dll, ComSvcs.dll, or Es.dll, or that implement the CATID_MARSHALER category ID. Any service that is critical to system operation should set this flag." />
+      <symc name="EOAC_DISABLE_AAA" value="0x1000"
+            desc="Causes any activation where a server process would be launched under the caller's identity (activate-as-activator) to fail with E_ACCESSDENIED. This value, which can be specified only in a call to CoInitializeSecurity by the client, allows an application that runs under a privileged account (such as LocalSystem) to help prevent its identity from being used to launch untrusted components.
+            An activation call that uses CLSCTX_ENABLE_AAA of the CLSCTX enumeration will allow activate-as-activator activations for that call." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa380125(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="securityfunctiontable">
+   <fields>
+    <field name="dwVersion" offset="0" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="EnumerateSecurityPackages" offset="4" size="4">
+     <type>ENUMERATE_SECURITY_PACKAGES_FN</type>
+    </field>
+    <field name="Reserved1" offset="8" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+    <field name="QueryCredentialsAttributes" offset="12" size="4">
+     <type>QUERY_CREDENTIAL_ATTRIBUTES_FN</type>
+    </field>
+    <field name="AcquireCredentialsHandle" offset="16" size="4">
+     <type>ACQUIRE_CREDENTIALS_HANDLE_FN</type>
+    </field>
+    <field name="FreeCredentialsHandle" offset="20" size="4">
+     <type>FREE_CREDENTIALS_HANDLE_FN</type>
+    </field>
+    <field name="Reserved2" offset="24" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+    <field name="InitializeSecurityContext" offset="28" size="4">
+     <type>INITIALIZE_SECURITY_CONTEXT_FN</type>
+    </field>
+    <field name="AcceptSecurityContext" offset="32" size="4">
+     <type>ACCEPT_SECURITY_CONTEXT_FN</type>
+    </field>
+    <field name="CompleteAuthToken" offset="36" size="4">
+     <type>COMPLETE_AUTH_TOKEN_FN</type>
+    </field>
+    <field name="DeleteSecurityContext" offset="40" size="4">
+     <type>DELETE_SECURITY_CONTEXT_FN</type>
+    </field>
+    <field name="ApplyControlToken" offset="44" size="4">
+     <type>APPLY_CONTROL_TOKEN_FN</type>
+    </field>
+    <field name="QueryContextAttributes" offset="48" size="4">
+     <type>QUERY_CONTEXT_ATTRIBUTES_FN</type>
+    </field>
+    <field name="ImpersonateSecurityContext" offset="52" size="4">
+     <type>IMPERSONATE_SECURITY_CONTEXT_FN</type>
+    </field>
+    <field name="RevertSecurityContext" offset="56" size="4">
+     <type>REVERT_SECURITY_CONTEXT_FN</type>
+    </field>
+    <field name="MakeSignature" offset="60" size="4">
+     <type>MAKE_SIGNATURE_FN</type>
+    </field>
+    <field name="VerifySignature" offset="64" size="4">
+     <type>VERIFY_SIGNATURE_FN</type>
+    </field>
+    <field name="FreeContextBuffer" offset="68" size="4">
+     <type>FREE_CONTEXT_BUFFER_FN</type>
+    </field>
+    <field name="QuerySecurityPackageInfo" offset="72" size="4">
+     <type>QUERY_SECURITY_PACKAGE_INFO_FN</type>
+    </field>
+    <field name="Reserved3" offset="76" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+    <field name="Reserved4" offset="80" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+    <field name="ExportSecurityContext" offset="84" size="4">
+     <type>EXPORT_SECURITY_CONTEXT_FN</type>
+    </field>
+    <field name="ImportSecurityContext" offset="88" size="4">
+     <type>IMPORT_SECURITY_CONTEXT_FN</type>
+    </field>
+    <field name="AddCredentials" offset="92" size="4">
+     <type>ADD_CREDENTIALS_FN</type>
+    </field>
+    <field name="Reserved8" offset="96" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+    <field name="QuerySecurityContextToken" offset="100" size="4">
+     <type>QUERY_SECURITY_CONTEXT_TOKEN_FN</type>
+    </field>
+    <field name="EncryptMessage" offset="104" size="4">
+     <type>ENCRYPT_MESSAGE_FN</type>
+    </field>
+    <field name="DecryptMessage" offset="108" size="4">
+     <type>DECRYPT_MESSAGE_FN</type>
+    </field>
+    <field name="SetContextAttributes" offset="112" size="4">
+     <type>SET_CONTEXT_ATTRIBUTES_FN</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa378721(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="lsa_token_information_v1">
+   <fields>
+    <field name="ExpirationTime" offset="0" size="8">
+     <type>LARGE_INTEGER</type>
+    </field>
+    <field name="User" offset="8" size="8">
+     <type>TOKEN_USER</type>
+    </field>
+    <field name="Groups" offset="16" size="4">
+     <type>PTOKEN_GROUPS</type>
+    </field>
+    <field name="PrimaryGroup" offset="20" size="4">
+     <type>TOKEN_PRIMARY_GROUP</type>
+    </field>
+    <field name="Privileges" offset="24" size="4">
+     <type>PTOKEN_PRIVILEGES</type>
+    </field>
+    <field name="Owner" offset="28" size="4">
+     <type>TOKEN_OWNER</type>
+    </field>
+    <field name="DefaultDacl" offset="32" size="4">
+     <type>TOKEN_DEFAULT_DACL</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

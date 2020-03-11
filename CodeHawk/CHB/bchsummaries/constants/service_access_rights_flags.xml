@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/21/2015 21:57:22"/>
+  <symbolic-flags type="service_access_rights_flags">
+    <values>
+      <symc name="SERVICE_ALL_ACCESS" value="0xF01FF">
+	<desc>
+	  Includes STANDARD_RIGHTS_REQUIRED in addition to all access rights in this table
+	</desc>
+      </symc>
+      <symf name="SERVICE_CHANGE_CONFIG" value="0x0002">
+	<desc>
+	  Required to call the ChangeServiceConfig or ChangeServiceConfig2 function to
+	  change the service configuration. Because this grants the caller the right 
+	  to change the executable file that the system runs, it should be granted
+	  only to administrators
+	</desc>
+      </symf>
+      <symf name="SERVICE_ENUMERATE_DEPENDENTS" value="0x0008">
+	<desc>
+	  Required to call the EnumDependentServices function to enumerate all the 
+	  services dependent on the service.
+	</desc>
+      </symf>
+      <symf name="SERVICE_INTERROGATE" value="0x0080">
+	<desc>
+	  Required to call the ControlService function to ask the service to report
+	  its status immediately
+	</desc>
+      </symf>
+      <symf name="SERVICE_PAUSE_CONTINUE" value="0x0040">
+	<desc>
+	  Required to call the ControlService function to pause or continue the service
+	</desc>
+      </symf>
+      <symf name="SERVICE_QUERY_CONFIG" value="0x0001">
+	<desc>
+	  Required to call the QueryServiceConfig and QueryServiceConfig2 functions to 
+	  query the service configuration
+	</desc>
+      </symf>
+      <symf name="SERVICE_QUERY_STATUS" value="0x0004">
+	<desc>
+	  Required to call the QueryServiceStatus or QueryServiceStatusEx function to 
+	  ask the service control manager about the status of the service.
+	  Required to call the NotifyServiceStatusChange function to receive notification 
+	  when a service changes status.
+	</desc>
+      </symf>
+      <symf name="SERVICE_START" value="0x0010">
+	<desc>
+	  Required to call the StartService function to start the service
+	</desc>
+      </symf>
+      <symf name="SERVICE_STOP" value="0x0020">
+	<desc>
+	  Required to call the ControlService function to stop the service
+	</desc>
+      </symf>
+      <symf name="SERVICE_USER_DEFINED_CONTROL" value="0x0100">
+	<desc>
+	  Required to call the ControlService function to specify a user-defined control code
+	</desc>
+      </symf>
+    </values>
+  </symbolic-flags>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

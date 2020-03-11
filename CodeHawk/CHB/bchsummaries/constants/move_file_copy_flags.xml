@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa365240(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="move_file_copy_flags">
+    <type>move_file_copy_flags</type>
+    <values>
+      <symc name="MOVEFILE_COPY_ALLOWED" value="0x2"
+            desc="If the file is to be moved to a different volume, the function simulates the move by using the CopyFile and DeleteFile functions.
+If the file is successfully copied to a different volume and the original file is unable to be deleted, the function succeeds leaving the source file intact.
+This value cannot be used with MOVEFILE_DELAY_UNTIL_REBOOT." />
+      <symc name="MOVEFILE_CREATE_HARDLINK" value="0x10"
+            desc="Reserved for future use." />
+      <symc name="MOVEFILE_DELAY_UNTIL_REBOOT" value="0x4"
+            desc="The system does not move the file until the operating system is restarted. The system moves the file immediately after AUTOCHK is executed, but before creating any paging files. Consequently, this parameter enables the function to delete paging files from previous startups.
+This value can be used only if the process is in the context of a user who belongs to the administrators group or the LocalSystem account.
+This value cannot be used with MOVEFILE_COPY_ALLOWED.
+Windows Server 2003 and Windows XP:  For information about special situations where this functionality can fail, and a suggested workaround solution, see Files are not exchanged when Windows Server 2003 restarts if you use the MoveFileEx function to schedule a replacement for some files in the Help and Support Knowledge Base." />
+      <symc name="MOVEFILE_FAIL_IF_NOT_TRACKABLE" value="0x20"
+            desc="The function fails if the source file is a link source, but the file cannot be tracked after the move. This situation can occur if the destination is a volume formatted with the FAT file system." />
+      <symc name="MOVEFILE_REPLACE_EXISTING" value="0x1"
+            desc="If a file named lpNewFileName exists, the function replaces its contents with the contents of the lpExistingFileName file, provided that security requirements regarding access control lists (ACLs) are met. For more information, see the Remarks section of this topic.
+            This value cannot be used if lpNewFileName or lpExistingFileName names a directory." />
+      <symc name="MOVEFILE_WRITE_THROUGH" value="0x8"
+            desc="The function does not return until the file is actually moved on the disk.
+Setting this value guarantees that a move performed as a copy and delete operation is flushed to disk before the function returns. The flush occurs at the end of the copy operation.
+This value has no effect if MOVEFILE_DELAY_UNTIL_REBOOT is set." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

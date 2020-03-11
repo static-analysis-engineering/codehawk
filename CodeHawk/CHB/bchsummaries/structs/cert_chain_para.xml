@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/15/2015 15:09:21"/>
+  <struct name="cert_chain_para">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="RequestedUsage" offset="4" size="12">
+     <type>CERT_USAGE_MATCH</type>
+    </field>
+<!--   structure is 16 bytes if extra fields are not defined 
+    <field name="RequestedIssuancePolicy" offset="12" size="8">
+     <type>CERT_USAGE_MATCH</type>
+    </field>
+    <field name="dwUrlRetrievalTimeout" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="fCheckRevocationFreshnessTime" offset="24" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="dwRevocationFreshnessTime" offset="28" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pftCacheResync" offset="32" size="4">
+     <type><ptr>FILETIME</ptr></type>
+    </field>
+    <field name="pStringSignPara" offset="36" size="4">
+     <type><ptr>CERT_STRONG_SIGN_PARA</ptr></type>
+    </field>
+    <field name="dwStringSignFlags" offset="40" size="4">
+     <type>DWORD</type>
+    </field> -->
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa363200(v=vs.85).aspx"/>
+  <header date="08/08/2017 00:00:00"/>
+  <struct name="comstat">
+   <fields>
+    <field name="bitfields__fCtsHold_through_fReserved" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+     <!-- nb bit fields for above DWORD represented via above non-member-name bitfields__fCtsHold_through_fReserved
+          DWORD fCtsHold  :1;
+          DWORD fDsrHold  :1;
+          DWORD fRlsdHold  :1;
+          DWORD fXoffHold  :1;
+          DWORD fXoffSent  :1;
+          DWORD fEof  :1;
+          DWORD fTxim  :1;
+          DWORD fReserved  :25;
+     -->
+    <field name="cbInQue" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="cbOutQue" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

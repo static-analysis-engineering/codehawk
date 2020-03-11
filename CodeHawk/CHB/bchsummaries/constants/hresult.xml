@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
+    <reference href="http://msdn.microsoft.com/"/>
+  </header>
+  <symbolic-constants type="HRESULT">
+    <type>HRESULT</type>
+    <values>
+    <symc name="S_OK" value="0x0" desc="Operation successful"/>
+    <symc name="E_ABORT" value="0x80004004" desc="Operation aborted"/>
+    <symc name="E_ACCESSDENIED" value="0x80070005" desc="General access denied error"/>
+    <symc name="E_FAIL" value="0x80004005" desc="Unspecified failure"/>
+    <symc name="E_HANDLE" value="0x80070006" desc="Handle that is not valid"/>
+    <symc name="E_INVALIDARG" value="0x80070057" desc="One or more arguments not valid"/>
+    <symc name="E_NONINTERFACE" value="0x80004002" desc="No such interface supported"/>
+    <symc name="E_NOTIMPL" value="0x80004001" desc="Not implemented"/>
+    <symc name="E_OUTOFMEMORY" value="0x8007000e" desc="Failed to allocate necessary memory"/>
+    <symc name="E_POINTER" value="0x80004003" desc="Pointer that is not valid"/>
+    <symc name="E_UNEXPECTED" value="0x8000ffff" desc="Unexpected failure"/>
+    </values>
+  </symbolic-constants>
+</codehawk-binary-analyzer>

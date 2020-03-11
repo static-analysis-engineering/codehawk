@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="04/05/2015 15:07:42"/>
+  <symbolic-constants type="logon_type">
+    <type>logon_type</type>
+    <values>
+      <symc name="LOGON32_LOGON_INTERACTIVE" value="2">
+	<desc>
+	  intended for users who will be interactively using the computer, such 
+	  as a user being logged on by a terminal server, remote shell, or similar 
+	  process. This logon type has the additional expense of caching logon 
+	  information for disconnected operations; therefore, it is inappropriate 
+	  for some client/server applications, such as a mail server.
+	</desc>
+      </symc>
+      <symc name="LOGON32_LOGON_NETWORK" value="3">
+	<desc>
+	  intended for high performance servers to authenticate plaintext passwords. 
+	  The LogonUserExExW function does not cache credentials for this logon type.
+	</desc>
+      </symc>
+      <symc name="LOGON32_LOGON_BATCH" value="4">
+	<desc>
+	  intended for batch servers, where processes may be executing on behalf of 
+	  a user without their direct intervention. This type is also for higher 
+	  performance servers that process many plaintext authentication attempts 
+	  at a time, such as mail or web servers
+	</desc>
+      </symc>
+      <symc name="LOGON32_LOGON_SERVICE" value="5">
+	<desc>
+	  Indicates a service-type logon. The account provided must have the service 
+	  privilege enabled.
+	</desc>
+      </symc>
+      <symc name="LOGON32_LOGON_UNLOCK" value="7">
+	<desc>
+	  for GINA DLLs that log on users who will be interactively using the computer. 
+	  This logon type can generate a unique audit record that shows when the 
+	  workstation was unlocked.
+	</desc>
+      </symc>
+      <symc name="LOGON32_LOGON_NETWORK_CLEARTEXT" value="8">
+	<desc>
+	  preserves the name and password in the authentication package, which allows 
+	  the server to make connections to other network servers while impersonating 
+	  the client. A server can accept plaintext credentials from a client, call
+	  LogonUserExExW, verify that the user can access the system across the 
+	  network, and still communicate with other servers.
+	</desc>
+      </symc>
+      <symc name="LOGON32_LOGON_NEW_CREDENTIALS" value="9">
+	<desc>
+	  allows the caller to clone its current token and specify new credentials 
+	  for outbound connections. The new logon session has the same local 
+	  identifier but uses different credentials for other network connections.
+	  This logon type is supported only by the LOGON32_PROVIDER_WINNT50 logon 
+	  provider.
+	</desc>
+      </symc>
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773373(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="persist_folder_target_info">
+   <fields>
+    <field name="pidlTargetFolder" offset="0" size="4">
+     <type>PIDLIST_ABSOLUTE</type>
+    </field>
+    <field name="szTargetParsingName" offset="4" size="520">
+     <type><array size="520">WCHAR</array></type>
+    </field>
+    <field name="szNetworkProvider" offset="524" size="520">
+     <type><array size="520">WCHAR</array></type>
+    </field>
+    <field name="dwAttributes" offset="1044" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="csidl" offset="1048" size="4">
+     <type>int</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

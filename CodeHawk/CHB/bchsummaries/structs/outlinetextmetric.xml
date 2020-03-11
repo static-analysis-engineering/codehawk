@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/dd162755(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="outlinetextmetric">
+   <fields>
+    <field name="otmSize" offset="0" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="otmTextMetrics" offset="4" size="56">
+     <type>TEXTMETRIC</type>
+    </field>
+    <field name="otmFiller" offset="60" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="otmPanoseNumber" offset="61" size="10">
+     <type>PANOSE</type>
+    </field>
+    <field name="otmfsSelection" offset="72" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="otmfsType" offset="76" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="otmsCharSlopeRise" offset="80" size="4">
+     <type>int</type>
+    </field>
+    <field name="otmsCharSlopeRun" offset="84" size="4">
+     <type>int</type>
+    </field>
+    <field name="otmItalicAngle" offset="88" size="4">
+     <type>int</type>
+    </field>
+    <field name="otmEMSquare" offset="92" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="otmAscent" offset="96" size="4">
+     <type>int</type>
+    </field>
+    <field name="otmDescent" offset="100" size="4">
+     <type>int</type>
+    </field>
+    <field name="otmLineGap" offset="104" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="otmsCapEmHeight" offset="108" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="otmsXHeight" offset="112" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="otmrcFontBox" offset="116" size="16">
+     <type>RECT</type>
+    </field>
+    <field name="otmMacAscent" offset="132" size="4">
+     <type>int</type>
+    </field>
+    <field name="otmMacDescent" offset="136" size="4">
+     <type>int</type>
+    </field>
+    <field name="otmMacLineGap" offset="140" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="otmusMinimumPPEM" offset="144" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="otmptSubscriptSize" offset="148" size="8">
+     <type>POINT</type>
+    </field>
+    <field name="otmptSubscriptOffset" offset="156" size="8">
+     <type>POINT</type>
+    </field>
+    <field name="otmptSuperscriptSize" offset="164" size="8">
+     <type>POINT</type>
+    </field>
+    <field name="otmptSuperscriptOffset" offset="172" size="8">
+     <type>POINT</type>
+    </field>
+    <field name="otmsStrikeoutSize" offset="180" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="otmsStrikeoutPosition" offset="184" size="4">
+     <type>int</type>
+    </field>
+    <field name="otmsUnderscoreSize" offset="188" size="4">
+     <type>int</type>
+    </field>
+    <field name="otmsUnderscorePosition" offset="192" size="4">
+     <type>int</type>
+    </field>
+    <field name="otmpFamilyName" offset="196" size="4">
+     <type>PSTR</type>
+    </field>
+    <field name="otmpFaceName" offset="200" size="4">
+     <type>PSTR</type>
+    </field>
+    <field name="otmpStyleName" offset="204" size="4">
+     <type>PSTR</type>
+    </field>
+    <field name="otmpFullName" offset="208" size="4">
+     <type>PSTR</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="2015-03-03" last-revision="2015-03-03">
+    <reference href="http://msdn.microsoft.com/"/>
+  </header>
+  <symbolic-constants type="system_error_code_constants">
+    <type>system_error_code_constants</type>
+    <values>
+      <symc name="ERROR_SUCCESS" value="0" desc="The operation completed successfully"/>
+      <symc name="ERROR_INVALID_FUNCTION" value="1" desc="Incorrect function"/>
+      <symc name="ERROR_FILE_NOT_FOUND" value="2" 
+	    desc="The system cannot find the file specified"/>
+      <symc name="ERROR_PATH_NOT_FOUND" value="3"
+	    desc="The system cannot find the path specified"/>
+      <symc name="ERROR_TOO_MANY_OPEN_FILES" value="4"
+	    desc="The system cannot open the file"/>
+      <symc name="ERROR_ACCESS_DENIED" value="5" desc="Access is denied"/>
+      <symc name="ERROR_INVALID_HANDLE" value="6" desc="The handle is invalid"/>
+    </values>
+  </symbolic-constants>
+</codehawk-binary-analyzer>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="token_user">
+   <fields>
+    <field name="User" offset="0" size="8">
+     <type>SID_AND_ATTRIBUTES</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

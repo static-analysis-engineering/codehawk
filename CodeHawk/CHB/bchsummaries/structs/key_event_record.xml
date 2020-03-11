@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms684166(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="key_event_record">
+   <fields>
+    <field name="bKeyDown" offset="0" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="wRepeatCount" offset="4" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="wVirtualKeyCode" offset="6" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="wVirtualScanCode" offset="8" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="UnicodeChar" offset="10" size="2">
+     <type>WCHAR</type>
+    </field>
+    <field name="AsciiChar" offset="10" size="1">
+     <type>CHAR</type>
+    </field>
+    <field name="dwControlKeyState" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

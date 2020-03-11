@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms741679(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="wsaqueryset">
+   <fields>
+    <field name="dwSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpszServiceInstanceName" offset="4" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="lpServiceClassId" offset="8" size="4">
+     <type>LPGUID</type>
+    </field>
+    <field name="lpVersion" offset="12" size="4">
+     <type>LPWSAVERSION</type>
+    </field>
+    <field name="lpszComment" offset="16" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="dwNameSpace" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpNSProviderId" offset="24" size="4">
+     <type>LPGUID</type>
+    </field>
+    <field name="lpszContext" offset="28" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="dwNumberOfProtocols" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpafpProtocols" offset="36" size="4">
+     <type>LPAFPROTOCOLS</type>
+    </field>
+    <field name="lpszQueryString" offset="40" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="dwNumberOfCsAddrs" offset="44" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpcsaBuffer" offset="48" size="4">
+     <type>LPCSADDR_INFO</type>
+    </field>
+    <field name="dwOutputFlags" offset="52" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpBlob" offset="56" size="4">
+     <type>LPBLOB</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/15/2015 13:38:07"/>
+  <struct name="cert_chain_policy_para">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwFlags" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pvExtraPolicyPara" offset="8" size="4">
+     <type><ptr>VOID</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

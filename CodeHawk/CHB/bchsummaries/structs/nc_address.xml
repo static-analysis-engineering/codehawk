@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773345(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="nc_address">
+   <fields>
+    <field name="pAddrInfo" offset="0" size="4">
+     <type><ptr>NET_ADDRESS_INFO</ptr></type>
+    </field>
+    <field name="PortNumber" offset="4" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="PrefixLength" offset="6" size="1">
+     <type>BYTE</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/15/2015 13:29:22"/>
+  <symbolic-constants type="certificate_chain_policy_oid_predefined_constants">
+   <values>
+    <symc name="CERT_CHAIN_POLICY_BASE" value="1">
+     <desc>
+       Implements the base chain policy verification checks. The dwFlags member
+       of the structure pointed to by pPolicyPara can be set to alter the default
+       policy checking behavior.
+     </desc>
+    </symc>
+    <symc name="CERT_CHAIN_POLICY_AUTHENTICODE" value="2">
+     <desc>
+       Implements the Authenticode chain policy verification checks. The 
+       pvExtraPolicyPara member of the structure pointed to by pPolicyPara 
+       can be set to point to an AUTHENTICODE_EXTRA_CERT_CHAIN_POLICY_PARA 
+       structure.
+       The pvExtraPolicyStatus member of the structure pointed to by 
+       pPolicyStatus can be set to point to an 
+       AUTHENTICODE_EXTRA_CERT_CHAIN_POLICY_STATUS structure.
+     </desc>
+    </symc>
+    <symc name="CERT_CHAIN_POLICY_AUTHENTICODE_TS" value="3">
+     <desc>
+       Implements Authenticode Time Stamp chain policy verification checks.
+       The pvExtraPolicyPara member of the data structure pointed to by
+       pPolicyPara can be set to point to an 
+       AUTHENTICODE_TS_EXTRA_CERT_CHAIN_POLICY_PARA structure.
+       The pvExtraPolicyStatus member of the data structure pointed to by
+       pPolicyStatus is not used and must be set to NULL
+     </desc>
+    </symc>
+    <symc name="CERT_CHAIN_POLICY_SSL" value="4">
+     <desc>
+       Implements the SSL client/server chain policy verification checks. 
+       The pvExtraPolicyPara member in the data structure pointed to by 
+       pPolicyPara can be set to point to an SSL_EXTRA_CERT_CHAIN_POLICY_PARA
+       structure initialized with additional policy criteria.
+       Note  To differentiate between server and client authorization 
+       certificates, the call to the CertGetCertificateChain function to get
+       the chain context should specify the certificate type by setting the 
+       expected usage. Set the expected usage by setting the RequestedUsage 
+       member of the CERT_CHAIN_PARA structure passed in the pChainPara input
+       parameter of the CertGetCertificateChain function.
+     </desc>
+    </symc>
+    <symc name="CERT_CHAIN_POLICY_BASIC_CONSTRAINTS" value="5">
+     <desc>
+       Implements the basic constraints chain policy. Iterates through all 
+       the certificates in the chain checking for either a szOID_BASIC_CONSTRAINTS 
+       or a szOID_BASIC_CONSTRAINTS2 extension. If neither extension is present, 
+       the certificate is assumed to have valid policy. Otherwise, for the first 
+       certificate element, checks if it matches the expected CA_FLAG or
+       END_ENTITY_FLAG specified in the dwFlags member of the CERT_CHAIN_POLICY_PARA
+       structure pointed to by the pPolicyPara parameter. If neither or both flags 
+       are set, then, the first element can be either a CA or END_ENTITY. All other 
+       elements must be a certification authority (CA). If the PathLenConstraint 
+       is present in the extension, it is checked.
+       The first elements in the remaining simple chains (that is, the certificates 
+       used to sign the CTL) are checked to be an END_ENTITY. If this verification
+       fails, dwError will be set to TRUST_E_BASIC_CONSTRAINTS.
+     </desc>
+    </symc>
+    <symc name="CERT_CHAIN_POLICY_NT_AUTH" value="6">
+     <desc>
+       Implements the Windows NT Authentication chain policy, which consists of 
+       three distinct chain verifications in the following order:
+       CERT_CHAIN_POLICY_BASE-Implements the base chain policy verification checks.
+       The LOWORD of dwFlags can be set in pPolicyPara to alter the default policy
+       checking behavior. For more information, see CERT_CHAIN_POLICY_BASE.
+       CERT_CHAIN_POLICY_BASIC_CONSTRAINTS-Implements the basic constraints chain
+       policy. The HIWORD of dwFlags can be set to specify if the first element 
+       must be either a CA or END_ENTITY.
+       Checks if the second element in the chain, the CA that issued the end 
+       certificate, is a trusted CA for Windows NT Authentication. A CA is 
+       considered to be trusted if it exists in the "NTAuth" system registry 
+       store found in the CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE store 
+       location. If this verification fails, the CA is untrusted, and dwError is 
+       set to CERT_E_UNTRUSTEDCA.
+       If CERT_PROT_ROOT_DISABLE_NT_AUTH_REQUIRED_FLAG is set in the Flags value
+       of the HKEY_LOCAL_MACHINE policy ProtectedRoots subkey, defined by 
+       CERT_PROT_ROOT_FLAGS_REGPATH and the above check fails, the chain is 
+       checked for CERT_TRUST_HAS_VALID_NAME_CONSTRAINTS set in dwInfoStatus.
+       This is set if there was a valid name constraint for all namespaces 
+       including UPN. If the chain does not have this info status set, dwError
+       is set to CERT_E_UNTRUSTEDCA.
+     </desc>
+    </symc>
+    <symc name="CERT_CHAIN_POLICY_MICROSOFT_ROOT" value="7">
+     <desc>
+       Checks the last element of the first simple chain for a Microsoft root
+       public key. If that element does not contain a Microsoft root public key,
+       the dwError member of the CERT_CHAIN_POLICY_STATUS structure pointed to
+       by the pPolicyStatus parameter is set to CERT_E_UNTRUSTEDROOT.
+       The dwFlags member of the CERT_CHAIN_POLICY_PARA structure pointed to 
+       by the pPolicyStatus parameter can contain the 
+       MICROSOFT_ROOT_CERT_CHAIN_POLICY_CHECK_APPLICATION_ROOT_FLAG flag, which
+       causes this function to also check for the Microsoft application root 
+       "Microsoft Root Certificate Authority 2011".
+       The dwFlags member of the CERT_CHAIN_POLICY_PARA structure pointed to 
+       by the pPolicyPara parameter can contain the 
+       MICROSOFT_ROOT_CERT_CHAIN_POLICY_ENABLE_TEST_ROOT_FLAG flag, which 
+       causes this function to also check for the Microsoft test roots.
+       Note  This policy object identifier (OID) does not perform any policy 
+       verification checks by itself, it is meant to be used in conjunction 
+       with other policies.
+     </desc>
+    </symc>
+    <symc name="CERT_CHAIN_POLICY_EV" value="8">
+     <desc>Specifies that extended validation of certificates is performed</desc>
+    </symc>
+   </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773311(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="fvshowinfo">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hwndOwner" offset="4" size="4">
+     <type>HWND</type>
+    </field>
+    <field name="iShow" offset="8" size="4">
+     <type>int</type>
+    </field>
+    <field name="dwFlags" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rect" offset="16" size="16">
+     <type>RECT</type>
+    </field>
+    <field name="punkRel" offset="32" size="4">
+     <type><ptr>IUnknown</ptr></type>
+    </field>
+    <field name="strNewFile" offset="36" size="520">
+     <type><array size="520">OLECHAR</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

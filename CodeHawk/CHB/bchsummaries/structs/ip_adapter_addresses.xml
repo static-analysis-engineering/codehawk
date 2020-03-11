@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa366058(v=vs.85).aspx"/>
+  <header date="08/08/2017 00:00:00"/>
+  <struct name="ip_adapter_addresses">
+   <fields>
+    <field name="Alignment" offset="0" size="8">
+     <type>ULONGLONG</type>
+    </field>
+    <field name="Length" offset="0" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="IfIndex" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Next" offset="8" size="4">
+     <type><ptr>struct _IP_ADAPTER_ADDRESSES</ptr></type>
+    </field>
+    <field name="AdapterName" offset="12" size="4">
+     <type>PCHAR</type>
+    </field>
+    <field name="FirstUnicastAddress" offset="16" size="4">
+     <type>PIP_ADAPTER_UNICAST_ADDRESS</type>
+    </field>
+    <field name="FirstAnycastAddress" offset="20" size="4">
+     <type>PIP_ADAPTER_ANYCAST_ADDRESS</type>
+    </field>
+    <field name="FirstMulticastAddress" offset="24" size="4">
+     <type>PIP_ADAPTER_MULTICAST_ADDRESS</type>
+    </field>
+    <field name="FirstDnsServerAddress" offset="28" size="4">
+     <type>PIP_ADAPTER_DNS_SERVER_ADDRESS</type>
+    </field>
+    <field name="DnsSuffix" offset="32" size="4">
+     <type>PWCHAR</type>
+    </field>
+    <field name="Description" offset="36" size="4">
+     <type>PWCHAR</type>
+    </field>
+    <field name="FriendlyName" offset="40" size="4">
+     <type>PWCHAR</type>
+    </field>
+    <field name="PhysicalAddress" offset="44" size="8">
+     <type><array size="8">BYTE</array></type>
+    </field>
+    <field name="PhysicalAddressLength" offset="52" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Flags" offset="56" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Mtu" offset="60" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="IfType" offset="64" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="OperStatus" offset="68" size="4">
+     <type>IF_OPER_STATUS</type>
+    </field>
+    <field name="Ipv6IfIndex" offset="72" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="ZoneIndices" offset="76" size="64">
+     <type><array size="64">DWORD</array></type>
+    </field>
+    <field name="FirstPrefix" offset="140" size="4">
+     <type>PIP_ADAPTER_PREFIX</type>
+    </field>
+    <field name="TransmitLinkSpeed" offset="144" size="8">
+     <type>ULONG64</type>
+    </field>
+    <field name="ReceiveLinkSpeed" offset="152" size="8">
+     <type>ULONG64</type>
+    </field>
+    <field name="FirstWinsServerAddress" offset="160" size="4">
+     <type>PIP_ADAPTER_WINS_SERVER_ADDRESS_LH</type>
+    </field>
+    <field name="FirstGatewayAddress" offset="164" size="4">
+     <type>PIP_ADAPTER_GATEWAY_ADDRESS_LH</type>
+    </field>
+    <field name="Ipv4Metric" offset="168" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="Ipv6Metric" offset="172" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="Luid" offset="176" size="8">
+     <type>IF_LUID</type>
+    </field>
+    <field name="Dhcpv4Server" offset="184" size="8">
+     <type>SOCKET_ADDRESS</type>
+    </field>
+    <field name="CompartmentId" offset="192" size="4">
+     <type>NET_IF_COMPARTMENT_ID</type>
+    </field>
+    <field name="NetworkGuid" offset="196" size="16">
+     <type>NET_IF_NETWORK_GUID</type>
+    </field>
+    <field name="ConnectionType" offset="212" size="4">
+     <type>NET_IF_CONNECTION_TYPE</type>
+    </field>
+    <field name="TunnelType" offset="216" size="4">
+     <type>TUNNEL_TYPE</type>
+    </field>
+    <field name="Dhcpv6Server" offset="220" size="8">
+     <type>SOCKET_ADDRESS</type>
+    </field>
+    <field name="Dhcpv6ClientDuid" offset="228" size="130">
+     <type><array size="130">BYTE</array></type>
+    </field>
+    <field name="Dhcpv6ClientDuidLength" offset="360" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="Dhcpv6Iaid" offset="364" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="FirstDnsSuffix" offset="368" size="4">
+     <type>PIP_ADAPTER_DNS_SUFFIX</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 17:39:36"/>
+  <symbolic-flags type="file_of_action_flags">
+   <values>
+    <symf name="OF_CANCEL" value="0x00000800">
+     <desc>Ignored.</desc>
+    </symf>
+    <symf name="OF_CREATE" value="0x00001000">
+     <desc>
+       Creates a new file.
+       If the file exists, it is truncated to zero (0) length.
+     </desc>
+    </symf>
+    <symf name="OF_DELETE" value="0x00000200">
+     <desc>Deletes a file.</desc>
+    </symf>
+    <symf name="OF_EXIST" value="0x00004000">
+     <desc>Opens a file and then closes it</desc>
+    </symf>
+    <symf name="OF_PARSE" value="0x00000100">
+     <desc>Fills the OFSTRUCT structure, but does not do anything else</desc>
+    </symf>
+    <symf name="OF_PROMPT" value="0x00002000">
+     <desc>
+       Displays a dialog box if a requested file does not exist.
+       A dialog box informs a user that the system cannot find a file, and it 
+       contains Retry and Cancel buttons. The Cancel button directs OpenFile 
+       to return a file-not-found error message.
+     </desc>
+    </symf>
+    <symc name="OF_READ" value="0x00000000">
+     <desc>Opens a file for reading only</desc>
+    </symc>
+    <symf name="OF_READWRITE" value="0x00000002">
+     <desc>Opens a file with read/write permissions</desc>
+    </symf>
+    <symf name="OF_REOPEN" value="0x00008000">
+     <desc>Opens a file by using information in the reopen buffer</desc>
+    </symf>
+    <symf name="OF_SHARE_DENY_NONE" value="0x00000040">
+     <desc>Opens a file without denying read or write access to other processes</desc>
+    </symf>
+    <symf name="OF_SHARE_DENY_WRITE" value="0x00000020">
+     <desc>Opens a file and denies write access to other processes</desc>
+    </symf>
+    <symf name="OF_SHARE_EXCLUSIVE" value="0x00000010">
+     <desc>
+       Opens a file with exclusive mode, and denies both read/write access 
+       to other processes. If a file has been opened in any other mode for 
+       read/write access, even by the current process, the function fails.
+     </desc>
+    </symf>
+    <symf name="OF_WRITE" value="0x00000001">
+     <desc>Opens a file for write access only</desc>
+    </symf>
+   </values>
+  </symbolic-flags>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

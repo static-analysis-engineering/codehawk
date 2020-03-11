@@ -1,0 +1,3090 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header creation-date="2015-08-25" last-revision="2015-08-25"/>
+  <type-definitions>
+    <type-info tname="CERT_CHAIN_PARA">
+      <type><struct name="cert_chain_para"/></type>
+    </type-info>
+    <type-info tname="CERT_CHAIN_POLICY_PARA">
+      <type><struct name="cert_chain_policy_para"/></type>
+    </type-info>
+    <type-info tname="DISPLAY_DEVICEA">
+      <type><struct name="display_deviceA"/></type>
+    </type-info>
+    <type-info tname="OSVERSIONINFOA">
+      <type><struct name="osversioninfoA"/></type>
+    </type-info>
+    <type-info tname="JNINativeMethod">
+      <type><struct name="jninativemethod"/></type>
+    </type-info>
+    <type-info tname="OSVERSIONINFOW">
+      <type><struct name="osversioninfoW"/></type>
+    </type-info>
+    <type-info tname="PROCESSENTRY32">
+      <type><struct name="processentry32"/></type>
+    </type-info>
+    <type-info tname="PROCESS_INFORMATION">
+      <type><struct name="process_information"/></type>
+    </type-info>
+    <type-info tname="SecBuffer">
+      <type><struct name="SecBuffer"/></type>
+    </type-info>
+    <type-info tname="SecBufferDesc">
+      <type><struct name="SecBufferDesc"/></type>
+    </type-info>
+    <type-info tname="SERVICE_STATUS">
+      <type><struct name="service_status"/></type>
+    </type-info>
+    <type-info tname="STARTUPINFOA">
+      <type><struct name="startupinfoA"/></type>
+    </type-info>
+    <type-info tname="STARTUPINFOW">
+      <type><struct name="startupinfoW"/></type>
+    </type-info>
+    <type-info tname="WIN32_FIND_DATA">
+      <type><struct name="win32_find_data"/></type>
+    </type-info>
+    <!-- %%%%%%%%%%%%%%%%%% -->
+    <!-- %%% Release 6  %%% -->
+    <!-- %%%%%%%%%%%%%%%%%% -->
+    <type-info tname="STARTUPINFO">
+      <type><struct name="_startupinfo"/></type>
+    </type-info>
+    <type-info tname="ABC">
+      <type><struct name="abc"/></type>
+    </type-info>
+    <type-info tname="ACCEL">
+      <type><struct name="accel"/></type>
+    </type-info>
+    <type-info tname="ACL">
+      <type><struct name="acl"/></type>
+    </type-info>
+    <type-info tname="ACTCTX">
+      <type><struct name="actctx"/></type>
+    </type-info>
+    <type-info tname="ACTCTX_SECTION_KEYED_DATA">
+      <type><struct name="actctx_section_keyed_data"/></type>
+    </type-info>
+    <type-info tname="BITMAP">
+      <type><struct name="bitmap"/></type>
+    </type-info>
+    <type-info tname="BITMAPINFOHEADER">
+      <type><struct name="bitmapinfoheader"/></type>
+    </type-info>
+    <type-info tname="CERT_CHAIN_POLICY_STATUS">
+      <type><struct name="cert_chain_policy_status"/></type>
+    </type-info>
+    <type-info tname="COMMTIMEOUTS">
+      <type><struct name="commtimeouts"/></type>
+    </type-info>
+    <type-info tname="CONSOLE_READCONSOLE_CONTROL">
+      <type><struct name="console_readconsole_control"/></type>
+    </type-info>
+    <type-info tname="CURRENCYFMT">
+      <type><struct name="currencyfmt"/></type>
+    </type-info>
+    <type-info tname="DLGTEMPLATE">
+      <type><struct name="dlgtemplate"/></type>
+    </type-info>
+    <type-info tname="DOC_INFO_1">
+      <type><struct name="doc_info_1"/></type>
+    </type-info>
+    <type-info tname="DOCINFO">
+      <type><struct name="docinfo"/></type>
+    </type-info>
+    <type-info tname="FILETIME">
+      <type><struct name="filetime"/></type>
+    </type-info>
+    <type-info tname="FLASHWINFO">
+      <type><struct name="flashwinfo"/></type>
+    </type-info>
+    <type-info tname="GCP_RESULTS">
+      <type><struct name="gcp_results"/></type>
+    </type-info>
+    <type-info tname="HEAPENTRY32">
+      <type><struct name="heapentry32"/></type>
+    </type-info>
+    <type-info tname="HEAPLIST32">
+      <type><struct name="heaplist32"/></type>
+    </type-info>
+    <type-info tname="INITCOMMONCONTROLSEX">
+      <type><struct name="initcommoncontrolsex"/></type>
+    </type-info>
+    <type-info tname="LASTINPUTINFO">
+      <type><struct name="lastinputinfo"/></type>
+    </type-info>
+    <type-info tname="LSA_STRING">
+      <type><struct name="lsa_string"/></type>
+    </type-info>
+    <type-info tname="LUID">
+      <type><struct name="luid"/></type>
+    </type-info>
+    <type-info tname="MARGINS">
+      <type><struct name="margins"/></type>
+    </type-info>
+    <type-info tname="MEMORYSTATUS">
+      <type><struct name="memorystatus"/></type>
+    </type-info>
+    <type-info tname="MEMORYSTATUSEX">
+      <type><struct name="memorystatusex"/></type>
+    </type-info>
+    <type-info tname="NUMBERFMT">
+      <type><struct name="numberfmt"/></type>
+    </type-info>
+    <type-info tname="OBJECTS_AND_SID">
+      <type><struct name="objects_and_sid"/></type>
+    </type-info>
+    <type-info tname="PALETTEENTRY">
+      <type><struct name="paletteentry"/></type>
+    </type-info>
+    <!-- <type-info tname="PIXELFORMATDESCRIPTOR">
+      <type><struct name="pixelformatdescriptor"/></type>
+    </type-info> -->
+    <type-info tname="PROCESS_MEMORY_COUNTERS">
+      <type><struct name="process_memory_counters"/></type>
+    </type-info>
+    <type-info tname="PROFILEINFO">
+      <type><struct name="profileinfo"/></type>
+    </type-info>
+    <type-info tname="QUERY_SERVICE_CONFIG">
+      <type><struct name="query_service_config"/></type>
+    </type-info>
+    <!-- <type-info tname="RAWINPUTDEVICE">
+      <type><struct name="rawinputdevice"/></type>
+    </type-info>
+    <type-info tname="RAWINPUTDEVICELIST">
+      <type><struct name="rawinputdevicelist"/></type>
+    </type-info> -->
+    <type-info tname="RECT">
+      <type><struct name="rect"/></type>
+    </type-info>
+    <type-info tname="RGBQUAD">
+      <type><struct name="rgbquad"/></type>
+    </type-info>
+    <type-info tname="SAFEARRAYBOUND">
+      <type><struct name="safearraybound"/></type>
+    </type-info>
+    <type-info tname="SCROLLINFO">
+      <type><struct name="scrollinfo"/></type>
+    </type-info>
+    <type-info tname="SECURITY_ATTRIBUTES">
+      <type><struct name="security_attributes"/></type>
+    </type-info>
+    <type-info tname="SHFILEOPSTRUCT">
+      <type><struct name="shfileopstruct"/></type>
+    </type-info>
+    <type-info tname="SIZE">
+      <type><struct name="size"/></type>
+    </type-info>
+    <type-info tname="SOLE_AUTHENTICATION_SERVICE">
+      <type><struct name="sole_authentication_service"/></type>
+    </type-info>
+    <type-info tname="SYSTEM_POWER_STATUS">
+      <type><struct name="system_power_status"/></type>
+    </type-info>
+    <type-info tname="SYSTEMTIME">
+      <type><struct name="systemtime"/></type>
+    </type-info>
+    <type-info tname="THREADENTRY32">
+      <type><struct name="threadentry32"/></type>
+    </type-info>
+    <type-info tname="TOUCHINPUT">
+      <type><struct name="touchinput"/></type>
+    </type-info>
+    <type-info tname="TRACKMOUSEEVENT">
+      <type><struct name="trackmouseevent"/></type>
+    </type-info>
+    <type-info tname="TRANSMIT_FILE_BUFFERS">
+      <type><struct name="transmit_file_buffers"/></type>
+    </type-info>
+    <type-info tname="UUID">
+      <type><struct name="uuid"/></type>
+    </type-info>
+    <type-info tname="VALENT">
+      <type><struct name="valent"/></type>
+    </type-info>
+    <type-info tname="WAVEFORMATEX">
+      <type><struct name="waveformatex"/></type>
+    </type-info>
+    <type-info tname="WIN32_FILE_ATTRIBUTE_DATA">
+      <type><struct name="win32_file_attribute_data"/></type>
+    </type-info>
+    <type-info tname="WINHTTP_AUTOPROXY_OPTIONS">
+      <type><struct name="winhttp_autoproxy_options"/></type>
+    </type-info>
+    <type-info tname="WINHTTP_CURRENT_USER_IE_PROXY_CONFIG">
+      <type><struct name="winhttp_current_user_ie_proxy_config"/></type>
+    </type-info>
+    <type-info tname="WINHTTP_PROXY_INFO">
+      <type><struct name="winhttp_proxy_info"/></type>
+    </type-info>
+    <type-info tname="XFORM">
+      <type><struct name="xform"/></type>
+    </type-info>
+    <type-info tname="timeval">
+      <type><struct name="timeval"/></type>
+    </type-info>
+    <type-info tname="tm">
+      <type><struct name="tm"/></type>
+    </type-info>
+    <!-- %%%%%%%%%%%%%%%%%% -->
+    <!-- %%% Release 7  %%% -->
+    <!-- %%%%%%%%%%%%%%%%%% -->
+    <type-info tname="AASHELLMENUFILENAME">
+      <type><struct name="aashellmenufilename"/></type>
+    </type-info>
+    <type-info tname="AASHELLMENUITEM">
+      <type><struct name="aashellmenuitem"/></type>
+    </type-info>
+    <type-info tname="ABCFLOAT">
+      <type><struct name="abcfloat"/></type>
+    </type-info>
+    <type-info tname="ADDRINFOA">
+      <type><struct name="addrinfoA"/></type>
+    </type-info>
+    <type-info tname="ADDRINFOEX">
+      <type><struct name="addrinfoex"/></type>
+    </type-info>
+    <type-info tname="AFPROTOCOLS">
+      <type><struct name="afprotocols"/></type>
+    </type-info>
+    <type-info tname="APPBARDATA">
+      <type><struct name="appbardata"/></type>
+    </type-info>
+    <type-info tname="APPCATEGORYINFO">
+      <type><struct name="appcategoryinfo"/></type>
+    </type-info>
+    <type-info tname="APPCATEGORYINFOLIST">
+      <type><struct name="appcategoryinfolist"/></type>
+    </type-info>
+    <type-info tname="APPINFODATA">
+      <type><struct name="appinfodata"/></type>
+    </type-info>
+    <type-info tname="ARP_SEND_REPLY">
+      <type><struct name="arp_send_reply"/></type>
+    </type-info>
+    <type-info tname="ASSOCIATIONELEMENT">
+      <type><struct name="associationelement"/></type>
+    </type-info>
+    <type-info tname="AUTHENTICODE_EXTRA_CERT_CHAIN_POLICY_PARA">
+      <type><struct name="authenticode_extra_cert_chain_policy_para"/></type>
+    </type-info>
+    <type-info tname="AUTHENTICODE_EXTRA_CERT_CHAIN_POLICY_STATUS">
+      <type><struct name="authenticode_extra_cert_chain_policy_status"/></type>
+    </type-info>
+    <type-info tname="AUTHENTICODE_TS_EXTRA_CERT_CHAIN_POLICY_PARA">
+      <type><struct name="authenticode_ts_extra_cert_chain_policy_para"/></type>
+    </type-info>
+    <type-info tname="BANDINFOSFB">
+      <type><struct name="bandinfosfb"/></type>
+    </type-info>
+    <type-info tname="BANDSITEINFO">
+      <type><struct name="bandsiteinfo"/></type>
+    </type-info>
+    <type-info tname="BASEBROWSERDATA">
+      <type><struct name="basebrowserdata"/></type>
+    </type-info>
+    <type-info tname="BITMAPCOREHEADER">
+      <type><struct name="bitmapcoreheader"/></type>
+    </type-info>
+    <type-info tname="BITMAPCOREINFO">
+      <type><struct name="bitmapcoreinfo"/></type>
+    </type-info>
+    <type-info tname="BITMAPFILEHEADER">
+      <type><struct name="bitmapfileheader"/></type>
+    </type-info>
+    <type-info tname="BITMAPINFO">
+      <type><struct name="bitmapinfo"/></type>
+    </type-info>
+    <type-info tname="BITMAPV4HEADER">
+      <type><struct name="bitmapv4header"/></type>
+    </type-info>
+    <type-info tname="BITMAPV5HEADER">
+      <type><struct name="bitmapv5header"/></type>
+    </type-info>
+    <type-info tname="BLENDFUNCTION">
+      <type><struct name="blendfunction"/></type>
+    </type-info>
+    <type-info tname="BLOB">
+      <type><struct name="blob"/></type>
+    </type-info>
+    <type-info tname="BLOBHEADER">
+      <type><struct name="blobheader"/></type>
+    </type-info>
+    <type-info tname="BORDERWIDTHS">
+      <type><struct name="borderwidths"/></type>
+    </type-info>
+    <type-info tname="BY_HANDLE_FILE_INFORMATION">
+      <type><struct name="by_handle_file_information"/></type>
+    </type-info>
+    <type-info tname="CANDIDATEFORM">
+      <type><struct name="candidateform"/></type>
+    </type-info>
+    <type-info tname="CATEGORY_INFO">
+      <type><struct name="category_info"/></type>
+    </type-info>
+    <type-info tname="CERT_ACCESS_DESCRIPTION">
+      <type><struct name="cert_access_description"/></type>
+    </type-info>
+    <type-info tname="CERT_ALT_NAME_ENTRY">
+      <type><struct name="cert_alt_name_entry"/></type>
+    </type-info>
+    <type-info tname="CERT_ALT_NAME_INFO">
+      <type><struct name="cert_alt_name_info"/></type>
+    </type-info>
+    <type-info tname="CERT_AUTHORITY_INFO_ACCESS">
+      <type><struct name="cert_authority_info_access"/></type>
+    </type-info>
+    <type-info tname="CERT_AUTHORITY_KEY_ID2_INFO">
+      <type><struct name="cert_authority_key_id2_info"/></type>
+    </type-info>
+    <type-info tname="CERT_AUTHORITY_KEY_ID_INFO">
+      <type><struct name="cert_authority_key_id_info"/></type>
+    </type-info>
+    <type-info tname="CERT_BASIC_CONSTRAINTS2_INFO">
+      <type><struct name="cert_basic_constraints2_info"/></type>
+    </type-info>
+    <type-info tname="CERT_BASIC_CONSTRAINTS_INFO">
+      <type><struct name="cert_basic_constraints_info"/></type>
+    </type-info>
+    <type-info tname="CERT_BIOMETRIC_DATA">
+      <type><struct name="cert_biometric_data"/></type>
+    </type-info>
+    <type-info tname="CERT_BIOMETRIC_EXT_INFO">
+      <type><struct name="cert_biometric_ext_info"/></type>
+    </type-info>
+    <type-info tname="CERT_BLOB">
+      <type><struct name="cert_blob"/></type>
+    </type-info>
+    <type-info tname="CERT_CHAIN_CONTEXT">
+      <type><struct name="cert_chain_context"/></type>
+    </type-info>
+    <type-info tname="CERT_CHAIN_ELEMENT">
+      <type><struct name="cert_chain_element"/></type>
+    </type-info>
+    <type-info tname="CERT_CHAIN_ENGINE_CONFIG">
+      <type><struct name="cert_chain_engine_config"/></type>
+    </type-info>
+    <type-info tname="CERT_CHAIN_FIND_BY_ISSUER_PARA">
+      <type><struct name="cert_chain_find_by_issuer_para"/></type>
+    </type-info>
+    <type-info tname="CERT_CONTEXT">
+      <type><struct name="cert_context"/></type>
+    </type-info>
+    <type-info tname="CERT_CREDENTIAL_INFO">
+      <type><struct name="cert_credential_info"/></type>
+    </type-info>
+    <type-info tname="CERT_CRL_CONTEXT_PAIR">
+      <type><struct name="cert_crl_context_pair"/></type>
+    </type-info>
+    <type-info tname="CERT_DSS_PARAMETERS">
+      <type><struct name="cert_dss_parameters"/></type>
+    </type-info>
+    <type-info tname="CERT_ECC_SIGNATURE">
+      <type><struct name="cert_ecc_signature"/></type>
+    </type-info>
+    <type-info tname="CERT_ENHKEY_USAGE">
+      <type><struct name="cert_enhkey_usage"/></type>
+    </type-info>
+    <type-info tname="CERT_EXTENSION">
+      <type><struct name="cert_extension"/></type>
+    </type-info>
+    <type-info tname="CERT_EXTENSIONS">
+      <type><struct name="cert_extensions"/></type>
+    </type-info>
+    <type-info tname="CERT_GENERAL_SUBTREE">
+      <type><struct name="cert_general_subtree"/></type>
+    </type-info>
+    <type-info tname="CERT_HASHED_URL">
+      <type><struct name="cert_hashed_url"/></type>
+    </type-info>
+    <type-info tname="CERT_ID">
+      <type><struct name="cert_id"/></type>
+    </type-info>
+    <type-info tname="CERT_INFO">
+      <type><struct name="cert_info"/></type>
+    </type-info>
+    <type-info tname="CERT_ISSUER_SERIAL_NUMBER">
+      <type><struct name="cert_issuer_serial_number"/></type>
+    </type-info>
+    <type-info tname="CERT_KEYGEN_REQUEST_INFO">
+      <type><struct name="cert_keygen_request_info"/></type>
+    </type-info>
+    <type-info tname="CERT_KEY_ATTRIBUTES_INFO">
+      <type><struct name="cert_key_attributes_info"/></type>
+    </type-info>
+    <type-info tname="CERT_KEY_CONTEXT">
+      <type><struct name="cert_key_context"/></type>
+    </type-info>
+    <type-info tname="CERT_KEY_USAGE_RESTRICTION_INFO">
+      <type><struct name="cert_key_usage_restriction_info"/></type>
+    </type-info>
+    <type-info tname="CERT_LDAP_STORE_OPENED_PARA">
+      <type><struct name="cert_ldap_store_opened_para"/></type>
+    </type-info>
+    <type-info tname="CERT_LOGOTYPE_AUDIO">
+      <type><struct name="cert_logotype_audio"/></type>
+    </type-info>
+    <type-info tname="CERT_LOGOTYPE_AUDIO_INFO">
+      <type><struct name="cert_logotype_audio_info"/></type>
+    </type-info>
+    <type-info tname="CERT_LOGOTYPE_DATA">
+      <type><struct name="cert_logotype_data"/></type>
+    </type-info>
+    <type-info tname="CERT_LOGOTYPE_DETAILS">
+      <type><struct name="cert_logotype_details"/></type>
+    </type-info>
+    <type-info tname="CERT_LOGOTYPE_EXT_INFO">
+      <type><struct name="cert_logotype_ext_info"/></type>
+    </type-info>
+    <type-info tname="CERT_LOGOTYPE_IMAGE">
+      <type><struct name="cert_logotype_image"/></type>
+    </type-info>
+    <type-info tname="CERT_LOGOTYPE_IMAGE_INFO">
+      <type><struct name="cert_logotype_image_info"/></type>
+    </type-info>
+    <type-info tname="CERT_LOGOTYPE_INFO">
+      <type><struct name="cert_logotype_info"/></type>
+    </type-info>
+    <type-info tname="CERT_LOGOTYPE_REFERENCE">
+      <type><struct name="cert_logotype_reference"/></type>
+    </type-info>
+    <type-info tname="CERT_NAME_BLOB">
+      <type><struct name="cert_name_blob"/></type>
+    </type-info>
+    <type-info tname="CERT_NAME_CONSTRAINTS_INFO">
+      <type><struct name="cert_name_constraints_info"/></type>
+    </type-info>
+    <type-info tname="CERT_NAME_INFO">
+      <type><struct name="cert_name_info"/></type>
+    </type-info>
+    <type-info tname="CERT_NAME_VALUE">
+      <type><struct name="cert_name_value"/></type>
+    </type-info>
+    <type-info tname="CERT_OTHER_LOGOTYPE_INFO">
+      <type><struct name="cert_other_logotype_info"/></type>
+    </type-info>
+    <type-info tname="CERT_OTHER_NAME">
+      <type><struct name="cert_other_name"/></type>
+    </type-info>
+    <type-info tname="CERT_PAIR">
+      <type><struct name="cert_pair"/></type>
+    </type-info>
+    <type-info tname="CERT_PHYSICAL_STORE_INFO">
+      <type><struct name="cert_physical_store_info"/></type>
+    </type-info>
+    <type-info tname="CERT_POLICIES_INFO">
+      <type><struct name="cert_policies_info"/></type>
+    </type-info>
+    <type-info tname="CERT_POLICY_CONSTRAINTS_INFO">
+      <type><struct name="cert_policy_constraints_info"/></type>
+    </type-info>
+    <type-info tname="CERT_POLICY_ID">
+      <type><struct name="cert_policy_id"/></type>
+    </type-info>
+    <type-info tname="CERT_POLICY_INFO">
+      <type><struct name="cert_policy_info"/></type>
+    </type-info>
+    <type-info tname="CERT_POLICY_MAPPING">
+      <type><struct name="cert_policy_mapping"/></type>
+    </type-info>
+    <type-info tname="CERT_POLICY_MAPPINGS_INFO">
+      <type><struct name="cert_policy_mappings_info"/></type>
+    </type-info>
+    <type-info tname="CERT_POLICY_QUALIFIER_INFO">
+      <type><struct name="cert_policy_qualifier_info"/></type>
+    </type-info>
+    <type-info tname="CERT_PRIVATE_KEY_VALIDITY">
+      <type><struct name="cert_private_key_validity"/></type>
+    </type-info>
+    <type-info tname="CERT_PUBLIC_KEY_INFO">
+      <type><struct name="cert_public_key_info"/></type>
+    </type-info>
+    <type-info tname="CERT_QC_STATEMENT">
+      <type><struct name="cert_qc_statement"/></type>
+    </type-info>
+    <type-info tname="CERT_QC_STATEMENTS_EXT_INFO">
+      <type><struct name="cert_qc_statements_ext_info"/></type>
+    </type-info>
+    <type-info tname="CERT_RDN">
+      <type><struct name="cert_rdn"/></type>
+    </type-info>
+    <type-info tname="CERT_RDN_ATTR">
+      <type><struct name="cert_rdn_attr"/></type>
+    </type-info>
+    <type-info tname="CERT_RDN_VALUE_BLOB">
+      <type><struct name="cert_rdn_value_blob"/></type>
+    </type-info>
+    <type-info tname="CERT_REQUEST_INFO">
+      <type><struct name="cert_request_info"/></type>
+    </type-info>
+    <type-info tname="CERT_REVOCATION_CRL_INFO">
+      <type><struct name="cert_revocation_crl_info"/></type>
+    </type-info>
+    <type-info tname="CERT_REVOCATION_INFO">
+      <type><struct name="cert_revocation_info"/></type>
+    </type-info>
+    <type-info tname="CERT_REVOCATION_PARA">
+      <type><struct name="cert_revocation_para"/></type>
+    </type-info>
+    <type-info tname="CERT_REVOCATION_STATUS">
+      <type><struct name="cert_revocation_status"/></type>
+    </type-info>
+    <type-info tname="CERT_SELECTUI_INPUT">
+      <type><struct name="cert_selectui_input"/></type>
+    </type-info>
+    <type-info tname="CERT_SELECT_CHAIN_PARA">
+      <type><struct name="cert_select_chain_para"/></type>
+    </type-info>
+    <type-info tname="CERT_SELECT_STRUCT">
+      <type><struct name="cert_select_struct"/></type>
+    </type-info>
+    <type-info tname="CERT_SIGNED_CONTENT_INFO">
+      <type><struct name="cert_signed_content_info"/></type>
+    </type-info>
+    <type-info tname="CERT_SIMPLE_CHAIN">
+      <type><struct name="cert_simple_chain"/></type>
+    </type-info>
+    <type-info tname="CERT_STORE_PROV_FIND_INFO">
+      <type><struct name="cert_store_prov_find_info"/></type>
+    </type-info>
+    <type-info tname="CERT_STORE_PROV_INFO">
+      <type><struct name="cert_store_prov_info"/></type>
+    </type-info>
+    <type-info tname="CERT_STRONG_SIGN_PARA">
+      <type><struct name="cert_strong_sign_para"/></type>
+    </type-info>
+    <type-info tname="CERT_STRONG_SIGN_SERIALIZED_INFO">
+      <type><struct name="cert_strong_sign_serialized_info"/></type>
+    </type-info>
+    <type-info tname="CERT_SUBJECT_INFO_ACCESS">
+      <type><struct name="cert_subject_info_access"/></type>
+    </type-info>
+    <type-info tname="CERT_SYSTEM_STORE_INFO">
+      <type><struct name="cert_system_store_info"/></type>
+    </type-info>
+    <type-info tname="CERT_SYSTEM_STORE_RELOCATE_PARA">
+      <type><struct name="cert_system_store_relocate_para"/></type>
+    </type-info>
+    <type-info tname="CERT_TRUST_LIST_INFO">
+      <type><struct name="cert_trust_list_info"/></type>
+    </type-info>
+    <type-info tname="CERT_TRUST_STATUS">
+      <type><struct name="cert_trust_status"/></type>
+    </type-info>
+    <type-info tname="CERT_USAGE_MATCH">
+      <type><struct name="cert_usage_match"/></type>
+    </type-info>
+    <type-info tname="CERT_X942_DH_PARAMETERS">
+      <type><struct name="cert_x942_dh_parameters"/></type>
+    </type-info>
+    <type-info tname="CERT_X942_DH_VALIDATION_PARAMS">
+      <type><struct name="cert_x942_dh_validation_params"/></type>
+    </type-info>
+    <type-info tname="CHARSETINFO">
+      <type><struct name="charsetinfo"/></type>
+    </type-info>
+    <type-info tname="CHOOSECOLOR">
+      <type><struct name="choosecolor"/></type>
+    </type-info>
+    <type-info tname="CHOOSEFONT">
+      <type><struct name="choosefont"/></type>
+    </type-info>
+    <type-info tname="CIDA">
+      <type><struct name="cida"/></type>
+    </type-info>
+    <type-info tname="CIECHROMA">
+      <type><struct name="ciechroma"/></type>
+    </type-info>
+    <type-info tname="CLSID">
+      <type><struct name="clsid"/></type>
+    </type-info>
+    <type-info tname="CMC_ADD_ATTRIBUTES_INFO">
+      <type><struct name="cmc_add_attributes_info"/></type>
+    </type-info>
+    <type-info tname="CMC_ADD_EXTENSIONS_INFO">
+      <type><struct name="cmc_add_extensions_info"/></type>
+    </type-info>
+    <type-info tname="CMC_DATA_INFO">
+      <type><struct name="cmc_data_info"/></type>
+    </type-info>
+    <type-info tname="CMC_PEND_INFO">
+      <type><struct name="cmc_pend_info"/></type>
+    </type-info>
+    <type-info tname="CMC_RESPONSE_INFO">
+      <type><struct name="cmc_response_info"/></type>
+    </type-info>
+    <type-info tname="CMC_STATUS_INFO">
+      <type><struct name="cmc_status_info"/></type>
+    </type-info>
+    <type-info tname="CMC_TAGGED_ATTRIBUTE">
+      <type><struct name="cmc_tagged_attribute"/></type>
+    </type-info>
+    <type-info tname="CMC_TAGGED_CERT_REQUEST">
+      <type><struct name="cmc_tagged_cert_request"/></type>
+    </type-info>
+    <type-info tname="CMC_TAGGED_CONTENT_INFO">
+      <type><struct name="cmc_tagged_content_info"/></type>
+    </type-info>
+    <type-info tname="CMC_TAGGED_OTHER_MSG">
+      <type><struct name="cmc_tagged_other_msg"/></type>
+    </type-info>
+    <type-info tname="CMC_TAGGED_REQUEST">
+      <type><struct name="cmc_tagged_request"/></type>
+    </type-info>
+    <type-info tname="CMINVOKECOMMANDINFO">
+      <type><struct name="cminvokecommandinfo"/></type>
+    </type-info>
+    <type-info tname="CMINVOKECOMMANDINFOEX">
+      <type><struct name="cminvokecommandinfoex"/></type>
+    </type-info>
+    <type-info tname="CMSG_CMS_RECIPIENT_INFO">
+      <type><struct name="cmsg_cms_recipient_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_CMS_SIGNER_INFO">
+      <type><struct name="cmsg_cms_signer_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_CNG_CONTENT_DECRYPT_INFO">
+      <type><struct name="cmsg_cng_content_decrypt_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_CONTENT_ENCRYPT_INFO">
+      <type><struct name="cmsg_content_encrypt_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_CTRL_ADD_SIGNER_UNAUTH_ATTR_PARA">
+      <type><struct name="cmsg_ctrl_add_signer_unauth_attr_para"/></type>
+    </type-info>
+    <type-info tname="CMSG_CTRL_DECRYPT_PARA">
+      <type><struct name="cmsg_ctrl_decrypt_para"/></type>
+    </type-info>
+    <type-info tname="CMSG_CTRL_DEL_SIGNER_UNAUTH_ATTR_PARA">
+      <type><struct name="cmsg_ctrl_del_signer_unauth_attr_para"/></type>
+    </type-info>
+    <type-info tname="CMSG_CTRL_KEY_AGREE_DECRYPT_PARA">
+      <type><struct name="cmsg_ctrl_key_agree_decrypt_para"/></type>
+    </type-info>
+    <type-info tname="CMSG_CTRL_KEY_TRANS_DECRYPT_PARA">
+      <type><struct name="cmsg_ctrl_key_trans_decrypt_para"/></type>
+    </type-info>
+    <type-info tname="CMSG_CTRL_MAIL_LIST_DECRYPT_PARA">
+      <type><struct name="cmsg_ctrl_mail_list_decrypt_para"/></type>
+    </type-info>
+    <type-info tname="CMSG_CTRL_VERIFY_SIGNATURE_EX_PARA">
+      <type><struct name="cmsg_ctrl_verify_signature_ex_para"/></type>
+    </type-info>
+    <type-info tname="CMSG_ENVELOPED_ENCODE_INFO">
+      <type><struct name="cmsg_enveloped_encode_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_ENVELOPED_HASHED_INFO">
+      <type><struct name="cmsg_enveloped_hashed_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_KEY_AGREE_ENCRYPT_INFO">
+      <type><struct name="cmsg_key_agree_encrypt_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_KEY_AGREE_KEY_ENCRYPT_INFO">
+      <type><struct name="cmsg_key_agree_key_encrypt_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_KEY_AGREE_RECIPIENT_ENCODE_INFO">
+      <type><struct name="cmsg_key_agree_recipient_encode_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_KEY_TRANS_ENCRYPT_INFO">
+      <type><struct name="cmsg_key_trans_encrypt_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_KEY_TRANS_RECIPIENT_ENCODE_INFO">
+      <type><struct name="cmsg_key_trans_recipient_encode_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_KEY_TRANS_RECIPIENT_INFO">
+      <type><struct name="cmsg_key_trans_recipient_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_MAIL_LIST_ENCRYPT_INFO">
+      <type><struct name="cmsg_mail_list_encrypt_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_MAIL_LIST_RECIPIENT_ENCODE_INFO">
+      <type><struct name="cmsg_mail_list_recipient_encode_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_MAIL_LIST_RECIPIENT_INFO">
+      <type><struct name="cmsg_mail_list_recipient_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_RC2_AUX_INFO">
+      <type><struct name="cmsg_rc2_aux_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_RC4_AUX_INFO">
+      <type><struct name="cmsg_rc4_aux_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_RECIPIENT_ENCODE_INFO">
+      <type><struct name="cmsg_recipient_encode_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_RECIPIENT_ENCRYPTED_KEY_ENCODE_INFO">
+      <type><struct name="cmsg_recipient_encrypted_key_encode_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_RECIPIENT_ENCRYPTED_KEY_INFO">
+      <type><struct name="cmsg_recipient_encrypted_key_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_SIGNED_ENCODE_INFO">
+      <type><struct name="cmsg_signed_encode_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_SIGNER_ENCODE_INFO">
+      <type><struct name="cmsg_signer_encode_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_SIGNER_INFO">
+      <type><struct name="cmsg_signer_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_SP3_COMPATIBLE_AUX_INFO">
+      <type><struct name="cmsg_sp3_compatible_aux_info"/></type>
+    </type-info>
+    <type-info tname="CMSG_STREAM_INFO">
+      <type><struct name="cmsg_stream_info"/></type>
+    </type-info>
+    <type-info tname="CMS_DH_KEY_INFO">
+      <type><struct name="cms_dh_key_info"/></type>
+    </type-info>
+    <type-info tname="CMS_KEY_INFO">
+      <type><struct name="cms_key_info"/></type>
+    </type-info>
+    <type-info tname="CM_COLUMNINFO">
+      <type><struct name="cm_columninfo"/></type>
+    </type-info>
+    <type-info tname="COLORADJUSTMENT">
+      <type><struct name="coloradjustment"/></type>
+    </type-info>
+    <type-info tname="COLORINFO">
+      <type><struct name="colorinfo"/></type>
+    </type-info>
+    <type-info tname="COMDLG_FILTERSPEC">
+      <type><struct name="comdlg_filterspec"/></type>
+    </type-info>
+    <type-info tname="COMMCONFIG">
+      <type><struct name="commconfig"/></type>
+    </type-info>
+    <type-info tname="COMPONENT">
+      <type><struct name="component"/></type>
+    </type-info>
+    <type-info tname="COMPONENTSOPT">
+      <type><struct name="componentsopt"/></type>
+    </type-info>
+    <type-info tname="COMPOSITIONFORM">
+      <type><struct name="compositionform"/></type>
+    </type-info>
+    <type-info tname="COMPPOS">
+      <type><struct name="comppos"/></type>
+    </type-info>
+    <type-info tname="COMPSTATEINFO">
+      <type><struct name="compstateinfo"/></type>
+    </type-info>
+    <type-info tname="CONFIRM_CONFLICT_ITEM">
+      <type><struct name="confirm_conflict_item"/></type>
+    </type-info>
+    <type-info tname="CONFIRM_CONFLICT_RESULT_INFO">
+      <type><struct name="confirm_conflict_result_info"/></type>
+    </type-info>
+    <type-info tname="CONTEXT">
+      <type><struct name="context"/></type>
+    </type-info>
+    <type-info tname="COORD">
+      <type><struct name="coord"/></type>
+    </type-info>
+    <type-info tname="COSERVERINFO">
+      <type><struct name="coserverinfo"/></type>
+    </type-info>
+    <type-info tname="CPINFO">
+      <type><struct name="cpinfo"/></type>
+    </type-info>
+    <type-info tname="CPLINFO">
+      <type><struct name="cplinfo"/></type>
+    </type-info>
+    <type-info tname="CREATEFILE2_EXTENDED_PARAMETERS">
+      <type><struct name="createfile2_extended_parameters"/></type>
+    </type-info>
+    <type-info tname="CREATE_PROCESS_DEBUG_INFO">
+      <type><struct name="create_process_debug_info"/></type>
+    </type-info>
+    <type-info tname="CREATE_THREAD_DEBUG_INFO">
+      <type><struct name="create_thread_debug_info"/></type>
+    </type-info>
+    <type-info tname="CREDENTIAL">
+      <type><struct name="credential"/></type>
+    </type-info>
+    <type-info tname="CREDENTIAL_ATTRIBUTE">
+      <type><struct name="credential_attribute"/></type>
+    </type-info>
+    <type-info tname="CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION">
+      <type><struct name="credential_provider_credential_serialization"/></type>
+    </type-info>
+    <type-info tname="CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR">
+      <type><struct name="credential_provider_field_descriptor"/></type>
+    </type-info>
+    <type-info tname="CREDENTIAL_TARGET_INFORMATION">
+      <type><struct name="credential_target_information"/></type>
+    </type-info>
+    <type-info tname="CREDSSP_CRED">
+      <type><struct name="credssp_cred"/></type>
+    </type-info>
+    <type-info tname="CREDUIWIN_MARSHALED_CONTEXT">
+      <type><struct name="creduiwin_marshaled_context"/></type>
+    </type-info>
+    <type-info tname="CREDUI_INFO">
+      <type><struct name="credui_info"/></type>
+    </type-info>
+    <type-info tname="CRL_CONTEXT">
+      <type><struct name="crl_context"/></type>
+    </type-info>
+    <type-info tname="CRL_DIST_POINT">
+      <type><struct name="crl_dist_point"/></type>
+    </type-info>
+    <type-info tname="CRL_DIST_POINTS_INFO">
+      <type><struct name="crl_dist_points_info"/></type>
+    </type-info>
+    <type-info tname="CRL_DIST_POINT_NAME">
+      <type><struct name="crl_dist_point_name"/></type>
+    </type-info>
+    <type-info tname="CRL_ENTRY">
+      <type><struct name="crl_entry"/></type>
+    </type-info>
+    <type-info tname="CRL_INFO">
+      <type><struct name="crl_info"/></type>
+    </type-info>
+    <type-info tname="CRL_ISSUING_DIST_POINT">
+      <type><struct name="crl_issuing_dist_point"/></type>
+    </type-info>
+    <type-info tname="CRYPTCATCDF">
+      <type><struct name="cryptcatcdf"/></type>
+    </type-info>
+    <type-info tname="CRYPTNET_URL_CACHE_FLUSH_INFO">
+      <type><struct name="cryptnet_url_cache_flush_info"/></type>
+    </type-info>
+    <type-info tname="CRYPTNET_URL_CACHE_PRE_FETCH_INFO">
+      <type><struct name="cryptnet_url_cache_pre_fetch_info"/></type>
+    </type-info>
+    <type-info tname="CRYPTNET_URL_CACHE_RESPONSE_INFO">
+      <type><struct name="cryptnet_url_cache_response_info"/></type>
+    </type-info>
+    <type-info tname="CRYPTPROTECT_PROMPTSTRUCT">
+      <type><struct name="cryptprotect_promptstruct"/></type>
+    </type-info>
+    <type-info tname="CRYPTUI_INITDIALOG_STRUCT">
+      <type><struct name="cryptui_initdialog_struct"/></type>
+    </type-info>
+    <type-info tname="CRYPTUI_SELECTCERTIFICATE_STRUCT">
+      <type><struct name="cryptui_selectcertificate_struct"/></type>
+    </type-info>
+    <type-info tname="CRYPTUI_VIEWCERTIFICATE_STRUCT">
+      <type><struct name="cryptui_viewcertificate_struct"/></type>
+    </type-info>
+    <type-info tname="CRYPTUI_VIEWSIGNERINFO_STRUCT">
+      <type><struct name="cryptui_viewsignerinfo_struct"/></type>
+    </type-info>
+    <type-info tname="CRYPTUI_WIZ_EXPORT_CERTCONTEXT_INFO">
+      <type><struct name="cryptui_wiz_export_certcontext_info"/></type>
+    </type-info>
+    <type-info tname="CRYPTUI_WIZ_EXPORT_INFO">
+      <type><struct name="cryptui_wiz_export_info"/></type>
+    </type-info>
+    <type-info tname="CRYPTUI_WIZ_IMPORT_SRC_INFO">
+      <type><struct name="cryptui_wiz_import_src_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_ALGORITHM_IDENTIFIER">
+      <type><struct name="crypt_algorithm_identifier"/></type>
+    </type-info>
+    <type-info tname="CRYPT_ATTRIBUTE">
+      <type><struct name="crypt_attribute"/></type>
+    </type-info>
+    <type-info tname="CRYPT_ATTRIBUTES">
+      <type><struct name="crypt_attributes"/></type>
+    </type-info>
+    <type-info tname="CRYPT_ATTRIBUTE_TYPE_VALUE">
+      <type><struct name="crypt_attribute_type_value"/></type>
+    </type-info>
+    <type-info tname="CRYPT_BIT_BLOB">
+      <type><struct name="crypt_bit_blob"/></type>
+    </type-info>
+    <type-info tname="CRYPT_BLOB_ARRAY">
+      <type><struct name="crypt_blob_array"/></type>
+    </type-info>
+    <type-info tname="CRYPT_CONTENT_INFO">
+      <type><struct name="crypt_content_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_CONTENT_INFO_SEQUENCE_OF_ANY">
+      <type><struct name="crypt_content_info_sequence_of_any"/></type>
+    </type-info>
+    <type-info tname="CRYPT_DATA_BLOB">
+      <type><struct name="crypt_data_blob"/></type>
+    </type-info>
+    <type-info tname="CRYPT_DECRYPT_MESSAGE_PARA">
+      <type><struct name="crypt_decrypt_message_para"/></type>
+    </type-info>
+    <type-info tname="CRYPT_DEFAULT_CONTEXT_MULTI_OID_PARA">
+      <type><struct name="crypt_default_context_multi_oid_para"/></type>
+    </type-info>
+    <type-info tname="CRYPT_DER_BLOB">
+      <type><struct name="crypt_der_blob"/></type>
+    </type-info>
+    <type-info tname="CRYPT_DIGEST_BLOB">
+      <type><struct name="crypt_digest_blob"/></type>
+    </type-info>
+    <type-info tname="CRYPT_ECC_CMS_SHARED_INFO">
+      <type><struct name="crypt_ecc_cms_shared_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_ENCRYPTED_PRIVATE_KEY_INFO">
+      <type><struct name="crypt_encrypted_private_key_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_ENCRYPT_MESSAGE_PARA">
+      <type><struct name="crypt_encrypt_message_para"/></type>
+    </type-info>
+    <type-info tname="CRYPT_ENROLLMENT_NAME_VALUE_PAIR">
+      <type><struct name="crypt_enrollment_name_value_pair"/></type>
+    </type-info>
+    <type-info tname="CRYPT_HASH_BLOB">
+      <type><struct name="crypt_hash_blob"/></type>
+    </type-info>
+    <type-info tname="CRYPT_HASH_MESSAGE_PARA">
+      <type><struct name="crypt_hash_message_para"/></type>
+    </type-info>
+    <type-info tname="CRYPT_INTEGER_BLOB">
+      <type><struct name="crypt_integer_blob"/></type>
+    </type-info>
+    <type-info tname="CRYPT_KEY_LIMITS">
+      <type><struct name="crypt_key_limits"/></type>
+    </type-info>
+    <type-info tname="CRYPT_KEY_PROV_INFO">
+      <type><struct name="crypt_key_prov_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_KEY_PROV_PARAM">
+      <type><struct name="crypt_key_prov_param"/></type>
+    </type-info>
+    <type-info tname="CRYPT_KEY_SIGN_MESSAGE_PARA">
+      <type><struct name="crypt_key_sign_message_para"/></type>
+    </type-info>
+    <type-info tname="CRYPT_KEY_VERIFY_MESSAGE_PARA">
+      <type><struct name="crypt_key_verify_message_para"/></type>
+    </type-info>
+    <type-info tname="CRYPT_MASK_GEN_ALGORITHM">
+      <type><struct name="crypt_mask_gen_algorithm"/></type>
+    </type-info>
+    <type-info tname="CRYPT_OBJECT_LOCATOR_PROVIDER_TABLE">
+      <type><struct name="crypt_object_locator_provider_table"/></type>
+    </type-info>
+    <type-info tname="CRYPT_OBJID_BLOB">
+      <type><struct name="crypt_objid_blob"/></type>
+    </type-info>
+    <type-info tname="CRYPT_OID_FUNC_ENTRY">
+      <type><struct name="crypt_oid_func_entry"/></type>
+    </type-info>
+    <type-info tname="CRYPT_OID_INFO">
+      <type><struct name="crypt_oid_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_PKCS12_PBE_PARAMS">
+      <type><struct name="crypt_pkcs12_pbe_params"/></type>
+    </type-info>
+    <type-info tname="CRYPT_PKCS8_EXPORT_PARAMS">
+      <type><struct name="crypt_pkcs8_export_params"/></type>
+    </type-info>
+    <type-info tname="CRYPT_PKCS8_IMPORT_PARAMS">
+      <type><struct name="crypt_pkcs8_import_params"/></type>
+    </type-info>
+    <type-info tname="CRYPT_PRIVATE_KEY_INFO">
+      <type><struct name="crypt_private_key_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_PROVIDER_CERT">
+      <type><struct name="crypt_provider_cert"/></type>
+    </type-info>
+    <type-info tname="CRYPT_PROVIDER_DATA">
+      <type><struct name="crypt_provider_data"/></type>
+    </type-info>
+    <type-info tname="CRYPT_PROVIDER_DEFUSAGE">
+      <type><struct name="crypt_provider_defusage"/></type>
+    </type-info>
+    <type-info tname="CRYPT_PROVIDER_PRIVDATA">
+      <type><struct name="crypt_provider_privdata"/></type>
+    </type-info>
+    <type-info tname="CRYPT_PROVIDER_REGDEFUSAGE">
+      <type><struct name="crypt_provider_regdefusage"/></type>
+    </type-info>
+    <type-info tname="CRYPT_PROVIDER_SGNR">
+      <type><struct name="crypt_provider_sgnr"/></type>
+    </type-info>
+    <type-info tname="CRYPT_PROVIDER_SIGSTATE">
+      <type><struct name="crypt_provider_sigstate"/></type>
+    </type-info>
+    <type-info tname="CRYPT_PSOURCE_ALGORITHM">
+      <type><struct name="crypt_psource_algorithm"/></type>
+    </type-info>
+    <type-info tname="CRYPT_RC2_CBC_PARAMETERS">
+      <type><struct name="crypt_rc2_cbc_parameters"/></type>
+    </type-info>
+    <type-info tname="CRYPT_RETRIEVE_AUX_INFO">
+      <type><struct name="crypt_retrieve_aux_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_RSAES_OAEP_PARAMETERS">
+      <type><struct name="crypt_rsaes_oaep_parameters"/></type>
+    </type-info>
+    <type-info tname="CRYPT_RSA_SSA_PSS_PARAMETERS">
+      <type><struct name="crypt_rsa_ssa_pss_parameters"/></type>
+    </type-info>
+    <type-info tname="CRYPT_SEQUENCE_OF_ANY">
+      <type><struct name="crypt_sequence_of_any"/></type>
+    </type-info>
+    <type-info tname="CRYPT_SIGN_MESSAGE_PARA">
+      <type><struct name="crypt_sign_message_para"/></type>
+    </type-info>
+    <type-info tname="CRYPT_SMART_CARD_ROOT_INFO">
+      <type><struct name="crypt_smart_card_root_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_SMIME_CAPABILITIES">
+      <type><struct name="crypt_smime_capabilities"/></type>
+    </type-info>
+    <type-info tname="CRYPT_SMIME_CAPABILITY">
+      <type><struct name="crypt_smime_capability"/></type>
+    </type-info>
+    <type-info tname="CRYPT_TIME_STAMP_REQUEST_INFO">
+      <type><struct name="crypt_time_stamp_request_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_UINT_BLOB">
+      <type><struct name="crypt_uint_blob"/></type>
+    </type-info>
+    <type-info tname="CRYPT_URL_INFO">
+      <type><struct name="crypt_url_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_VERIFY_MESSAGE_PARA">
+      <type><struct name="crypt_verify_message_para"/></type>
+    </type-info>
+    <type-info tname="CRYPT_X942_OTHER_INFO">
+      <type><struct name="crypt_x942_other_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_ALGORITHM">
+      <type><struct name="crypt_xml_algorithm"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_ALGORITHM_INFO">
+      <type><struct name="crypt_xml_algorithm_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_BLOB">
+      <type><struct name="crypt_xml_blob"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_CRYPTOGRAPHIC_INTERFACE">
+      <type><struct name="crypt_xml_cryptographic_interface"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_DATA_BLOB">
+      <type><struct name="crypt_xml_data_blob"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_DATA_PROVIDER">
+      <type><struct name="crypt_xml_data_provider"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_DOC_CTXT">
+      <type><struct name="crypt_xml_doc_ctxt"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_ISSUER_SERIAL">
+      <type><struct name="crypt_xml_issuer_serial"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_KEYINFO_PARAM">
+      <type><struct name="crypt_xml_keyinfo_param"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_KEY_DSA_KEY_VALUE">
+      <type><struct name="crypt_xml_key_dsa_key_value"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_KEY_ECDSA_KEY_VALUE">
+      <type><struct name="crypt_xml_key_ecdsa_key_value"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_KEY_INFO">
+      <type><struct name="crypt_xml_key_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_KEY_INFO_ITEM">
+      <type><struct name="crypt_xml_key_info_item"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_KEY_RSA_KEY_VALUE">
+      <type><struct name="crypt_xml_key_rsa_key_value"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_KEY_VALUE">
+      <type><struct name="crypt_xml_key_value"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_OBJECT">
+      <type><struct name="crypt_xml_object"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_PROPERTY">
+      <type><struct name="crypt_xml_property"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_REFERENCE">
+      <type><struct name="crypt_xml_reference"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_REFERENCES">
+      <type><struct name="crypt_xml_references"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_SIGNATURE">
+      <type><struct name="crypt_xml_signature"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_SIGNED_INFO">
+      <type><struct name="crypt_xml_signed_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_TRANSFORM_CHAIN_CONFIG">
+      <type><struct name="crypt_xml_transform_chain_config"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_TRANSFORM_INFO">
+      <type><struct name="crypt_xml_transform_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_X509DATA">
+      <type><struct name="crypt_xml_x509data"/></type>
+    </type-info>
+    <type-info tname="CRYPT_XML_X509DATA_ITEM">
+      <type><struct name="crypt_xml_x509data_item"/></type>
+    </type-info>
+    <type-info tname="CSADDR_INFO">
+      <type><struct name="csaddr_info"/></type>
+    </type-info>
+    <type-info tname="CSFV">
+      <type><struct name="csfv"/></type>
+    </type-info>
+    <type-info tname="CTL_ANY_SUBJECT_INFO">
+      <type><struct name="ctl_any_subject_info"/></type>
+    </type-info>
+    <type-info tname="CTL_CONTEXT">
+      <type><struct name="ctl_context"/></type>
+    </type-info>
+    <type-info tname="CTL_ENTRY">
+      <type><struct name="ctl_entry"/></type>
+    </type-info>
+    <type-info tname="CTL_FIND_SUBJECT_PARA">
+      <type><struct name="ctl_find_subject_para"/></type>
+    </type-info>
+    <type-info tname="CTL_FIND_USAGE_PARA">
+      <type><struct name="ctl_find_usage_para"/></type>
+    </type-info>
+    <type-info tname="CTL_INFO">
+      <type><struct name="ctl_info"/></type>
+    </type-info>
+    <type-info tname="CTL_MODIFY_REQUEST">
+      <type><struct name="ctl_modify_request"/></type>
+    </type-info>
+    <type-info tname="CTL_USAGE">
+      <type><struct name="ctl_usage"/></type>
+    </type-info>
+    <type-info tname="CTL_USAGE_MATCH">
+      <type><struct name="ctl_usage_match"/></type>
+    </type-info>
+    <type-info tname="CTL_VERIFY_USAGE_PARA">
+      <type><struct name="ctl_verify_usage_para"/></type>
+    </type-info>
+    <type-info tname="CTL_VERIFY_USAGE_STATUS">
+      <type><struct name="ctl_verify_usage_status"/></type>
+    </type-info>
+    <type-info tname="CURSORINFO">
+      <type><struct name="cursorinfo"/></type>
+    </type-info>
+    <type-info tname="CY">
+      <type><struct name="cy"/></type>
+    </type-info>
+    <type-info tname="CredHandle">
+      <type><struct name="CredHandle"/></type>
+    </type-info>
+    <type-info tname="CtxtHandle">
+      <type><struct name="CtxtHandle"/></type>
+    </type-info>
+    <type-info tname="D3DCOLORVALUE">
+      <type><struct name="d3dcolorvalue"/></type>
+    </type-info>
+    <type-info tname="DATABLOCK_HEADER">
+      <type><struct name="datablock_header"/></type>
+    </type-info>
+    <type-info tname="DEBUG_EVENT">
+      <type><struct name="debug_event"/></type>
+    </type-info>
+    <type-info tname="DECIMAL">
+      <type><struct name="decimal"/></type>
+    </type-info>
+    <type-info tname="DEFCONTEXTMENU">
+      <type><struct name="defcontextmenu"/></type>
+    </type-info>
+    <type-info tname="DELEGATEITEMID">
+      <type><struct name="delegateitemid"/></type>
+    </type-info>
+    <type-info tname="DETAILSINFO">
+      <type><struct name="detailsinfo"/></type>
+    </type-info>
+    <type-info tname="DEVMODE">
+      <type><struct name="devmode"/></type>
+    </type-info>
+    <type-info tname="DEVNAMES">
+      <type><struct name="devnames"/></type>
+    </type-info>
+    <type-info tname="DFMICS">
+      <type><struct name="dfmics"/></type>
+    </type-info>
+    <type-info tname="DHPRIVKEY_VER3">
+      <type><struct name="dhprivkey_ver3"/></type>
+    </type-info>
+    <type-info tname="DHPUBKEY">
+      <type><struct name="dhpubkey"/></type>
+    </type-info>
+    <type-info tname="DHPUBKEY_VER3">
+      <type><struct name="dhpubkey_ver3"/></type>
+    </type-info>
+    <type-info tname="DIBDATA">
+      <type><struct name="dibdata"/></type>
+    </type-info>
+    <type-info tname="DIBSECTION">
+      <type><struct name="dibsection"/></type>
+    </type-info>
+    <type-info tname="DISPLAY_DEVICE">
+      <type><struct name="display_device"/></type>
+    </type-info>
+    <type-info tname="DLLVERSIONINFO">
+      <type><struct name="dllversioninfo"/></type>
+    </type-info>
+    <type-info tname="DLLVERSIONINFO2">
+      <type><struct name="dllversioninfo2"/></type>
+    </type-info>
+    <type-info tname="DOMAIN_PASSWORD_INFORMATION">
+      <type><struct name="domain_password_information"/></type>
+    </type-info>
+    <type-info tname="DROPDESCRIPTION">
+      <type><struct name="dropdescription"/></type>
+    </type-info>
+    <type-info tname="DROPFILES">
+      <type><struct name="dropfiles"/></type>
+    </type-info>
+    <type-info tname="DSSPRIVKEY_VER3">
+      <type><struct name="dssprivkey_ver3"/></type>
+    </type-info>
+    <type-info tname="DSSPUBKEY">
+      <type><struct name="dsspubkey"/></type>
+    </type-info>
+    <type-info tname="DSSPUBKEY_VER3">
+      <type><struct name="dsspubkey_ver3"/></type>
+    </type-info>
+    <type-info tname="DSSSEED">
+      <type><struct name="dssseed"/></type>
+    </type-info>
+    <type-info tname="DWM_BLURBEHIND">
+      <type><struct name="dwm_blurbehind"/></type>
+    </type-info>
+    <type-info tname="DXGI_ADAPTER_DESC">
+      <type><struct name="dxgi_adapter_desc"/></type>
+    </type-info>
+    <type-info tname="DXGI_ADAPTER_DESC1">
+      <type><struct name="dxgi_adapter_desc1"/></type>
+    </type-info>
+    <type-info tname="DXGI_ADAPTER_DESC2">
+      <type><struct name="dxgi_adapter_desc2"/></type>
+    </type-info>
+    <type-info tname="DXGI_DECODE_SWAP_CHAIN_DESC">
+      <type><struct name="dxgi_decode_swap_chain_desc"/></type>
+    </type-info>
+    <type-info tname="DXGI_DISPLAY_COLOR_SPACE">
+      <type><struct name="dxgi_display_color_space"/></type>
+    </type-info>
+    <type-info tname="DXGI_FRAME_STATISTICS">
+      <type><struct name="dxgi_frame_statistics"/></type>
+    </type-info>
+    <type-info tname="DXGI_FRAME_STATISTICS_MEDIA">
+      <type><struct name="dxgi_frame_statistics_media"/></type>
+    </type-info>
+    <type-info tname="DXGI_GAMMA_CONTROL">
+      <type><struct name="dxgi_gamma_control"/></type>
+    </type-info>
+    <type-info tname="DXGI_HDR_METADATA_HDR10">
+      <type><struct name="dxgi_hdr_metadata_hdr10"/></type>
+    </type-info>
+    <type-info tname="DXGI_INFO_QUEUE_FILTER">
+      <type><struct name="dxgi_info_queue_filter"/></type>
+    </type-info>
+    <type-info tname="DXGI_INFO_QUEUE_FILTER_DESC">
+      <type><struct name="dxgi_info_queue_filter_desc"/></type>
+    </type-info>
+    <type-info tname="DXGI_INFO_QUEUE_MESSAGE">
+      <type><struct name="dxgi_info_queue_message"/></type>
+    </type-info>
+    <type-info tname="DXGI_JPEG_AC_HUFFMAN_TABLE">
+      <type><struct name="dxgi_jpeg_ac_huffman_table"/></type>
+    </type-info>
+    <type-info tname="DXGI_JPEG_DC_HUFFMAN_TABLE">
+      <type><struct name="dxgi_jpeg_dc_huffman_table"/></type>
+    </type-info>
+    <type-info tname="DXGI_JPEG_QUANTIZATION_TABLE">
+      <type><struct name="dxgi_jpeg_quantization_table"/></type>
+    </type-info>
+    <type-info tname="DXGI_MAPPED_RECT">
+      <type><struct name="dxgi_mapped_rect"/></type>
+    </type-info>
+    <type-info tname="DXGI_MATRIX_3X2_F">
+      <type><struct name="dxgi_matrix_3x2_f"/></type>
+    </type-info>
+    <type-info tname="DXGI_MODE_DESC">
+      <type><struct name="dxgi_mode_desc"/></type>
+    </type-info>
+    <type-info tname="DXGI_MODE_DESC1">
+      <type><struct name="dxgi_mode_desc1"/></type>
+    </type-info>
+    <type-info tname="DXGI_OUTDUPL_DESC">
+      <type><struct name="dxgi_outdupl_desc"/></type>
+    </type-info>
+    <type-info tname="DXGI_OUTDUPL_FRAME_INFO">
+      <type><struct name="dxgi_outdupl_frame_info"/></type>
+    </type-info>
+    <type-info tname="DXGI_OUTDUPL_MOVE_RECT">
+      <type><struct name="dxgi_outdupl_move_rect"/></type>
+    </type-info>
+    <type-info tname="DXGI_OUTDUPL_POINTER_POSITION">
+      <type><struct name="dxgi_outdupl_pointer_position"/></type>
+    </type-info>
+    <type-info tname="DXGI_OUTDUPL_POINTER_SHAPE_INFO">
+      <type><struct name="dxgi_outdupl_pointer_shape_info"/></type>
+    </type-info>
+    <type-info tname="DXGI_OUTPUT_DESC">
+      <type><struct name="dxgi_output_desc"/></type>
+    </type-info>
+    <type-info tname="DXGI_PRESENT_PARAMETERS">
+      <type><struct name="dxgi_present_parameters"/></type>
+    </type-info>
+    <type-info tname="DXGI_QUERY_VIDEO_MEMORY_INFO">
+      <type><struct name="dxgi_query_video_memory_info"/></type>
+    </type-info>
+    <type-info tname="DXGI_RATIONAL">
+      <type><struct name="dxgi_rational"/></type>
+    </type-info>
+    <type-info tname="DXGI_RGB">
+      <type><struct name="dxgi_rgb"/></type>
+    </type-info>
+    <type-info tname="DXGI_RGBA">
+      <type><struct name="dxgi_rgba"/></type>
+    </type-info>
+    <type-info tname="DXGI_SAMPLE_DESC">
+      <type><struct name="dxgi_sample_desc"/></type>
+    </type-info>
+    <type-info tname="DXGI_SHARED_RESOURCE">
+      <type><struct name="dxgi_shared_resource"/></type>
+    </type-info>
+    <type-info tname="DXGI_SURFACE_DESC">
+      <type><struct name="dxgi_surface_desc"/></type>
+    </type-info>
+    <type-info tname="DXGI_SWAP_CHAIN_DESC">
+      <type><struct name="dxgi_swap_chain_desc"/></type>
+    </type-info>
+    <type-info tname="DXGI_SWAP_CHAIN_DESC1">
+      <type><struct name="dxgi_swap_chain_desc1"/></type>
+    </type-info>
+    <type-info tname="DXGI_SWAP_CHAIN_FULLSCREEN_DESC">
+      <type><struct name="dxgi_swap_chain_fullscreen_desc"/></type>
+    </type-info>
+    <type-info tname="ENHMETAHEADER">
+      <type><struct name="enhmetaheader"/></type>
+    </type-info>
+    <type-info tname="ENUM_SERVICE_STATUS">
+      <type><struct name="enum_service_status"/></type>
+    </type-info>
+    <type-info tname="ENUM_SERVICE_STATUS_PROCESS">
+      <type><struct name="enum_service_status_process"/></type>
+    </type-info>
+    <type-info tname="EXCEPTION_DEBUG_INFO">
+      <type><struct name="exception_debug_info"/></type>
+    </type-info>
+    <type-info tname="EXCEPTION_POINTERS">
+      <type><struct name="exception_pointers"/></type>
+    </type-info>
+    <type-info tname="EXCEPTION_RECORD">
+      <type><struct name="exception_record"/></type>
+    </type-info>
+    <type-info tname="EXCEPTION_RECORD32">
+      <type><struct name="exception_record32"/></type>
+    </type-info>
+    <type-info tname="EXCEPTION_RECORD64">
+      <type><struct name="exception_record64"/></type>
+    </type-info>
+    <type-info tname="EXIT_PROCESS_DEBUG_INFO">
+      <type><struct name="exit_process_debug_info"/></type>
+    </type-info>
+    <type-info tname="EXIT_THREAD_DEBUG_INFO">
+      <type><struct name="exit_thread_debug_info"/></type>
+    </type-info>
+    <type-info tname="EXPLICIT_ACCESS">
+      <type><struct name="explicit_access"/></type>
+    </type-info>
+    <type-info tname="EXP_DARWIN_LINK">
+      <type><struct name="exp_darwin_link"/></type>
+    </type-info>
+    <type-info tname="EXP_PROPERTYSTORAGE">
+      <type><struct name="exp_propertystorage"/></type>
+    </type-info>
+    <type-info tname="EXP_SPECIAL_FOLDER">
+      <type><struct name="exp_special_folder"/></type>
+    </type-info>
+    <type-info tname="EXP_SZ_LINK">
+      <type><struct name="exp_sz_link"/></type>
+    </type-info>
+    <type-info tname="EXTRASEARCH">
+      <type><struct name="extrasearch"/></type>
+    </type-info>
+    <type-info tname="EXT_BUTTON">
+      <type><struct name="ext_button"/></type>
+    </type-info>
+    <type-info tname="FILE">
+      <type><struct name="file"/></type>
+    </type-info>
+    <type-info tname="FILEDESCRIPTOR">
+      <type><struct name="filedescriptor"/></type>
+    </type-info>
+    <type-info tname="FILEGROUPDESCRIPTOR">
+      <type><struct name="filegroupdescriptor"/></type>
+    </type-info>
+    <type-info tname="FILE_ATTRIBUTES_ARRAY">
+      <type><struct name="file_attributes_array"/></type>
+    </type-info>
+    <type-info tname="FINDREPLACE">
+      <type><struct name="findreplace"/></type>
+    </type-info>
+    <type-info tname="FIXED">
+      <type><struct name="fixed"/></type>
+    </type-info>
+    <type-info tname="FLOATING_SAVE_AREA">
+      <type><struct name="floating_save_area"/></type>
+    </type-info>
+    <type-info tname="FLOWSPEC">
+      <type><struct name="flowspec"/></type>
+    </type-info>
+    <type-info tname="FMS_GETDRIVEINFO">
+      <type><struct name="fms_getdriveinfo"/></type>
+    </type-info>
+    <type-info tname="FMS_GETFILESEL">
+      <type><struct name="fms_getfilesel"/></type>
+    </type-info>
+    <type-info tname="FMS_HELPSTRING">
+      <type><struct name="fms_helpstring"/></type>
+    </type-info>
+    <type-info tname="FMS_LOAD">
+      <type><struct name="fms_load"/></type>
+    </type-info>
+    <type-info tname="FMS_TOOLBARLOAD">
+      <type><struct name="fms_toolbarload"/></type>
+    </type-info>
+    <type-info tname="FOCUS_EVENT_RECORD">
+      <type><struct name="focus_event_record"/></type>
+    </type-info>
+    <type-info tname="FOLDERSETTINGS">
+      <type><struct name="foldersettings"/></type>
+    </type-info>
+    <type-info tname="FONTDESC">
+      <type><struct name="fontdesc"/></type>
+    </type-info>
+    <type-info tname="FONTSIGNATURE">
+      <type><struct name="fontsignature"/></type>
+    </type-info>
+    <type-info tname="FORMATETC">
+      <type><struct name="formatetc"/></type>
+    </type-info>
+    <type-info tname="FVSHOWINFO">
+      <type><struct name="fvshowinfo"/></type>
+    </type-info>
+    <type-info tname="GDIINFO">
+      <type><struct name="gdiinfo"/></type>
+    </type-info>
+    <type-info tname="GLYPHMETRICS">
+      <type><struct name="glyphmetrics"/></type>
+    </type-info>
+    <type-info tname="GRADIENT_RECT">
+      <type><struct name="gradient_rect"/></type>
+    </type-info>
+    <type-info tname="GRADIENT_TRIANGLE">
+      <type><struct name="gradient_triangle"/></type>
+    </type-info>
+    <type-info tname="GROUP_FILTER">
+      <type><struct name="group_filter"/></type>
+    </type-info>
+    <type-info tname="GROUP_REQ">
+      <type><struct name="group_req"/></type>
+    </type-info>
+    <type-info tname="GROUP_SOURCE_REQ">
+      <type><struct name="group_source_req"/></type>
+    </type-info>
+    <type-info tname="GUID">
+      <type><struct name="guid"/></type>
+    </type-info>
+    <type-info tname="GUITHREADINFO">
+      <type><struct name="guithreadinfo"/></type>
+    </type-info>
+    <type-info tname="HELPINFO">
+      <type><struct name="helpinfo"/></type>
+    </type-info>
+    <type-info tname="HELPWININFO">
+      <type><struct name="helpwininfo"/></type>
+    </type-info>
+    <type-info tname="HMAC_INFO">
+      <type><struct name="hmac_info"/></type>
+    </type-info>
+    <type-info tname="ICMPV6_ECHO_REPLY">
+      <type><struct name="icmpv6_echo_reply"/></type>
+    </type-info>
+    <type-info tname="ICMP_ECHO_REPLY">
+      <type><struct name="icmp_echo_reply"/></type>
+    </type-info>
+    <type-info tname="ICONINFO">
+      <type><struct name="iconinfo"/></type>
+    </type-info>
+    <type-info tname="IE4COMPONENT">
+      <type><struct name="ie4component"/></type>
+    </type-info>
+    <type-info tname="IID">
+      <type><struct name="iid"/></type>
+    </type-info>
+    <type-info tname="IMAGE_COFF_SYMBOLS_HEADER">
+      <type><struct name="image_coff_symbols_header"/></type>
+    </type-info>
+    <type-info tname="IMAGE_DATA_DIRECTORY">
+      <type><struct name="image_data_directory"/></type>
+    </type-info>
+    <type-info tname="IMAGE_DEBUG_DIRECTORY">
+      <type><struct name="image_debug_directory"/></type>
+    </type-info>
+    <type-info tname="IMAGE_FILE_HEADER">
+      <type><struct name="image_file_header"/></type>
+    </type-info>
+    <type-info tname="IMAGE_FUNCTION_ENTRY">
+      <type><struct name="image_function_entry"/></type>
+    </type-info>
+    <type-info tname="IMAGE_LOAD_CONFIG_DIRECTORY64">
+      <type><struct name="image_load_config_directory64"/></type>
+    </type-info>
+    <type-info tname="IMAGE_NT_HEADERS">
+      <type><struct name="image_nt_headers"/></type>
+    </type-info>
+    <type-info tname="IMAGE_OPTIONAL_HEADER">
+      <type><struct name="image_optional_header"/></type>
+    </type-info>
+    <type-info tname="IMAGE_SECTION_HEADER">
+      <type><struct name="image_section_header"/></type>
+    </type-info>
+    <type-info tname="IN6_ADDR">
+      <type><struct name="in6_addr"/></type>
+    </type-info>
+    <type-info tname="INET_PORT_RANGE">
+      <type><struct name="inet_port_range"/></type>
+    </type-info>
+    <type-info tname="INET_PORT_RESERVATION">
+      <type><struct name="inet_port_reservation"/></type>
+    </type-info>
+    <type-info tname="INET_PORT_RESERVATION_INSTANCE">
+      <type><struct name="inet_port_reservation_instance"/></type>
+    </type-info>
+    <type-info tname="INET_PORT_RESERVATION_TOKEN">
+      <type><struct name="inet_port_reservation_token"/></type>
+    </type-info>
+    <type-info tname="INPUT_RECORD">
+      <type><struct name="input_record"/></type>
+    </type-info>
+    <type-info tname="INTERNET_BUFFERS">
+      <type><struct name="internet_buffers"/></type>
+    </type-info>
+    <type-info tname="INTERNET_CACHE_ENTRY_INFO">
+      <type><struct name="internet_cache_entry_info"/></type>
+    </type-info>
+    <type-info tname="INTERNET_CACHE_TIMESTAMPS">
+      <type><struct name="internet_cache_timestamps"/></type>
+    </type-info>
+    <type-info tname="INTERNET_VERSION_INFO">
+      <type><struct name="internet_version_info"/></type>
+    </type-info>
+    <type-info tname="IPAddr">
+      <type><struct name="ipaddr"/></type>
+    </type-info>
+    <type-info tname="IP_ADAPTER_ANYCAST_ADDRESS">
+      <type><struct name="ip_adapter_anycast_address"/></type>
+    </type-info>
+    <type-info tname="IP_ADAPTER_DNS_SERVER_ADDRESS">
+      <type><struct name="ip_adapter_dns_server_address"/></type>
+    </type-info>
+    <type-info tname="IP_ADAPTER_DNS_SUFFIX">
+      <type><struct name="ip_adapter_dns_suffix"/></type>
+    </type-info>
+    <type-info tname="IP_ADAPTER_GATEWAY_ADDRESS">
+      <type><struct name="ip_adapter_gateway_address"/></type>
+    </type-info>
+    <type-info tname="IP_ADAPTER_INDEX_MAP">
+      <type><struct name="ip_adapter_index_map"/></type>
+    </type-info>
+    <type-info tname="IP_ADAPTER_INFO">
+      <type><struct name="ip_adapter_info"/></type>
+    </type-info>
+    <type-info tname="IP_ADAPTER_MULTICAST_ADDRESS">
+      <type><struct name="ip_adapter_multicast_address"/></type>
+    </type-info>
+    <type-info tname="IP_ADAPTER_ORDER_MAP">
+      <type><struct name="ip_adapter_order_map"/></type>
+    </type-info>
+    <type-info tname="IP_ADAPTER_PREFIX">
+      <type><struct name="ip_adapter_prefix"/></type>
+    </type-info>
+    <type-info tname="IP_ADAPTER_WINS_SERVER_ADDRESS">
+      <type><struct name="ip_adapter_wins_server_address"/></type>
+    </type-info>
+    <type-info tname="IP_ADDRESS_PREFIX">
+      <type><struct name="ip_address_prefix"/></type>
+    </type-info>
+    <type-info tname="IP_ADDRESS_STRING">
+      <type><struct name="ip_address_string"/></type>
+    </type-info>
+    <type-info tname="IP_ADDR_STRING">
+      <type><struct name="ip_addr_string"/></type>
+    </type-info>
+    <type-info tname="IP_INTERFACE_INFO">
+      <type><struct name="ip_interface_info"/></type>
+    </type-info>
+    <type-info tname="IP_MASK_STRING">
+      <type><struct name="ip_mask_string"/></type>
+    </type-info>
+    <type-info tname="IP_MCAST_COUNTER_INFO">
+      <type><struct name="ip_mcast_counter_info"/></type>
+    </type-info>
+    <type-info tname="IP_OPTION_INFORMATION">
+      <type><struct name="ip_option_information"/></type>
+    </type-info>
+    <type-info tname="IP_PER_ADAPTER_INFO">
+      <type><struct name="ip_per_adapter_info"/></type>
+    </type-info>
+    <type-info tname="IP_UNIDIRECTIONAL_ADAPTER_ADDRESS">
+      <type><struct name="ip_unidirectional_adapter_address"/></type>
+    </type-info>
+    <type-info tname="ITEMIDLIST">
+      <type><struct name="itemidlist"/></type>
+    </type-info>
+    <type-info tname="ITEMSPACING">
+      <type><struct name="itemspacing"/></type>
+    </type-info>
+    <type-info tname="KERB_ADD_CREDENTIALS_REQUEST">
+      <type><struct name="kerb_add_credentials_request"/></type>
+    </type-info>
+    <type-info tname="KERB_ADD_CREDENTIALS_REQUEST_EX">
+      <type><struct name="kerb_add_credentials_request_ex"/></type>
+    </type-info>
+    <type-info tname="KERB_CERTIFICATE_LOGON">
+      <type><struct name="kerb_certificate_logon"/></type>
+    </type-info>
+    <type-info tname="KERB_CERTIFICATE_UNLOCK_LOGON">
+      <type><struct name="kerb_certificate_unlock_logon"/></type>
+    </type-info>
+    <type-info tname="KERB_CHANGEPASSWORD_REQUEST">
+      <type><struct name="kerb_changepassword_request"/></type>
+    </type-info>
+    <type-info tname="KERB_CRYPTO_KEY">
+      <type><struct name="kerb_crypto_key"/></type>
+    </type-info>
+    <type-info tname="KERB_EXTERNAL_NAME">
+      <type><struct name="kerb_external_name"/></type>
+    </type-info>
+    <type-info tname="KERB_EXTERNAL_TICKET">
+      <type><struct name="kerb_external_ticket"/></type>
+    </type-info>
+    <type-info tname="KERB_INTERACTIVE_LOGON">
+      <type><struct name="kerb_interactive_logon"/></type>
+    </type-info>
+    <type-info tname="KERB_INTERACTIVE_PROFILE">
+      <type><struct name="kerb_interactive_profile"/></type>
+    </type-info>
+    <type-info tname="KERB_INTERACTIVE_UNLOCK_LOGON">
+      <type><struct name="kerb_interactive_unlock_logon"/></type>
+    </type-info>
+    <type-info tname="KERB_PURGE_TKT_CACHE_REQUEST">
+      <type><struct name="kerb_purge_tkt_cache_request"/></type>
+    </type-info>
+    <type-info tname="KERB_QUERY_TKT_CACHE_REQUEST">
+      <type><struct name="kerb_query_tkt_cache_request"/></type>
+    </type-info>
+    <type-info tname="KERB_QUERY_TKT_CACHE_RESPONSE">
+      <type><struct name="kerb_query_tkt_cache_response"/></type>
+    </type-info>
+    <type-info tname="KERB_RETRIEVE_TKT_REQUEST">
+      <type><struct name="kerb_retrieve_tkt_request"/></type>
+    </type-info>
+    <type-info tname="KERB_RETRIEVE_TKT_RESPONSE">
+      <type><struct name="kerb_retrieve_tkt_response"/></type>
+    </type-info>
+    <type-info tname="KERB_S4U_LOGON">
+      <type><struct name="kerb_s4u_logon"/></type>
+    </type-info>
+    <type-info tname="KERB_SMARTCARD_CSP_INFO">
+      <type><struct name="kerb_smartcard_csp_info"/></type>
+    </type-info>
+    <type-info tname="KERB_SMART_CARD_LOGON">
+      <type><struct name="kerb_smart_card_logon"/></type>
+    </type-info>
+    <type-info tname="KERB_SMART_CARD_UNLOCK_LOGON">
+      <type><struct name="kerb_smart_card_unlock_logon"/></type>
+    </type-info>
+    <type-info tname="KERB_TICKET_CACHE_INFO">
+      <type><struct name="kerb_ticket_cache_info"/></type>
+    </type-info>
+    <type-info tname="KERB_TICKET_LOGON">
+      <type><struct name="kerb_ticket_logon"/></type>
+    </type-info>
+    <type-info tname="KERB_TICKET_PROFILE">
+      <type><struct name="kerb_ticket_profile"/></type>
+    </type-info>
+    <type-info tname="KERB_TICKET_UNLOCK_LOGON">
+      <type><struct name="kerb_ticket_unlock_logon"/></type>
+    </type-info>
+    <type-info tname="KEYSVC_BLOB">
+      <type><struct name="keysvc_blob"/></type>
+    </type-info>
+    <type-info tname="KEYSVC_UNICODE_STRING">
+      <type><struct name="keysvc_unicode_string"/></type>
+    </type-info>
+    <type-info tname="KEY_EVENT_RECORD">
+      <type><struct name="key_event_record"/></type>
+    </type-info>
+    <type-info tname="KNOWNFOLDER_DEFINITION">
+      <type><struct name="knownfolder_definition"/></type>
+    </type-info>
+    <type-info tname="LARGE_INTEGER">
+      <type><struct name="large_integer"/></type>
+    </type-info>
+    <type-info tname="LIST_ENTRY">
+      <type><struct name="list_entry"/></type>
+    </type-info>
+    <type-info tname="LOADED_IMAGE">
+      <type><struct name="loaded_image"/></type>
+    </type-info>
+    <type-info tname="LOAD_DLL_DEBUG_INFO">
+      <type><struct name="load_dll_debug_info"/></type>
+    </type-info>
+    <type-info tname="LOGBRUSH">
+      <type><struct name="logbrush"/></type>
+    </type-info>
+    <type-info tname="LOGFONT">
+      <type><struct name="logfont"/></type>
+    </type-info>
+    <type-info tname="LOGON_HOURS">
+      <type><struct name="logon_hours"/></type>
+    </type-info>
+    <type-info tname="LOGPALETTE">
+      <type><struct name="logpalette"/></type>
+    </type-info>
+    <type-info tname="LOGPEN">
+      <type><struct name="logpen"/></type>
+    </type-info>
+    <type-info tname="LSA_DISPATCH_TABLE">
+      <type><struct name="lsa_dispatch_table"/></type>
+    </type-info>
+    <type-info tname="LSA_FOREST_TRUST_BINARY_DATA">
+      <type><struct name="lsa_forest_trust_binary_data"/></type>
+    </type-info>
+    <type-info tname="LSA_FOREST_TRUST_COLLISION_INFORMATION">
+      <type><struct name="lsa_forest_trust_collision_information"/></type>
+    </type-info>
+    <type-info tname="LSA_FOREST_TRUST_DOMAIN_INFO">
+      <type><struct name="lsa_forest_trust_domain_info"/></type>
+    </type-info>
+    <type-info tname="LSA_FOREST_TRUST_INFORMATION">
+      <type><struct name="lsa_forest_trust_information"/></type>
+    </type-info>
+    <type-info tname="LSA_FOREST_TRUST_RECORD">
+      <type><struct name="lsa_forest_trust_record"/></type>
+    </type-info>
+    <type-info tname="LSA_LAST_INTER_LOGON_INFO">
+      <type><struct name="lsa_last_inter_logon_info"/></type>
+    </type-info>
+    <type-info tname="LSA_SECPKG_FUNCTION_TABLE">
+      <type><struct name="lsa_secpkg_function_table"/></type>
+    </type-info>
+    <type-info tname="LSA_TOKEN_INFORMATION_NULL">
+      <type><struct name="lsa_token_information_null"/></type>
+    </type-info>
+    <type-info tname="LSA_TOKEN_INFORMATION_V1">
+      <type><struct name="lsa_token_information_v1"/></type>
+    </type-info>
+    <type-info tname="LSA_UNICODE_STRING">
+      <type><struct name="lsa_unicode_string"/></type>
+    </type-info>
+    <type-info tname="LUID_AND_ATTRIBUTES">
+      <type><struct name="luid_and_attributes"/></type>
+    </type-info>
+    <type-info tname="MAT2">
+      <type><struct name="mat2"/></type>
+    </type-info>
+    <type-info tname="MEMORY_BASIC_INFORMATION">
+      <type><struct name="memory_basic_information"/></type>
+    </type-info>
+    <type-info tname="MEMORY_BASIC_INFORMATION32">
+      <type><struct name="memory_basic_information32"/></type>
+    </type-info>
+    <type-info tname="MEMORY_BASIC_INFORMATION64">
+      <type><struct name="memory_basic_information64"/></type>
+    </type-info>
+    <type-info tname="MENUITEMINFO">
+      <type><struct name="menuiteminfo"/></type>
+    </type-info>
+    <type-info tname="MENU_EVENT_RECORD">
+      <type><struct name="menu_event_record"/></type>
+    </type-info>
+    <type-info tname="METAFILEPICT">
+      <type><struct name="metafilepict"/></type>
+    </type-info>
+    <type-info tname="MODULEENTRY32">
+      <type><struct name="moduleentry32"/></type>
+    </type-info>
+    <type-info tname="MONITORINFO">
+      <type><struct name="monitorinfo"/></type>
+    </type-info>
+    <type-info tname="MONITORINFOEX">
+      <type><struct name="monitorinfoex"/></type>
+    </type-info>
+    <type-info tname="MOUSE_EVENT_RECORD">
+      <type><struct name="mouse_event_record"/></type>
+    </type-info>
+    <type-info tname="MRUINFO">
+      <type><struct name="mruinfo"/></type>
+    </type-info>
+    <type-info tname="MSG">
+      <type><struct name="msg"/></type>
+    </type-info>
+    <type-info tname="MSGBOXPARAMS">
+      <type><struct name="msgboxparams"/></type>
+    </type-info>
+    <type-info tname="MSV1_0_INTERACTIVE_LOGON">
+      <type><struct name="msv1_0_interactive_logon"/></type>
+    </type-info>
+    <type-info tname="MSV1_0_INTERACTIVE_PROFILE">
+      <type><struct name="msv1_0_interactive_profile"/></type>
+    </type-info>
+    <type-info tname="MSV1_0_LM20_LOGON">
+      <type><struct name="msv1_0_lm20_logon"/></type>
+    </type-info>
+    <type-info tname="MSV1_0_LM20_LOGON_PROFILE">
+      <type><struct name="msv1_0_lm20_logon_profile"/></type>
+    </type-info>
+    <type-info tname="MSV1_0_SUBAUTH_LOGON">
+      <type><struct name="msv1_0_subauth_logon"/></type>
+    </type-info>
+    <type-info tname="MSV1_0_SUBAUTH_REQUEST">
+      <type><struct name="msv1_0_subauth_request"/></type>
+    </type-info>
+    <type-info tname="MSV1_0_SUBAUTH_RESPONSE">
+      <type><struct name="msv1_0_subauth_response"/></type>
+    </type-info>
+    <type-info tname="MSV1_0_SUPPLEMENTAL_CREDENTIAL">
+      <type><struct name="msv1_0_supplemental_credential"/></type>
+    </type-info>
+    <type-info tname="MS_ADDINFO_BLOB">
+      <type><struct name="ms_addinfo_blob"/></type>
+    </type-info>
+    <type-info tname="MS_ADDINFO_CATALOGMEMBER">
+      <type><struct name="ms_addinfo_catalogmember"/></type>
+    </type-info>
+    <type-info tname="MS_ADDINFO_FLAT">
+      <type><struct name="ms_addinfo_flat"/></type>
+    </type-info>
+    <type-info tname="MULTIKEYHELP">
+      <type><struct name="multikeyhelp"/></type>
+    </type-info>
+    <type-info tname="MULTI_QI">
+      <type><struct name="multi_qi"/></type>
+    </type-info>
+    <type-info tname="NAPI_DOMAIN_DESCRIPTION_BLOB">
+      <type><struct name="napi_domain_description_blob"/></type>
+    </type-info>
+    <type-info tname="NAPI_PROVIDER_INSTALLATION_BLOB">
+      <type><struct name="napi_provider_installation_blob"/></type>
+    </type-info>
+    <type-info tname="NCB">
+      <type><struct name="ncb"/></type>
+    </type-info>
+    <type-info tname="NC_ADDRESS">
+      <type><struct name="nc_address"/></type>
+    </type-info>
+    <type-info tname="NETCONNECTINFOSTRUCT">
+      <type><struct name="netconnectinfostruct"/></type>
+    </type-info>
+    <type-info tname="NETLOGON_LOGON_IDENTITY_INFO">
+      <type><struct name="netlogon_logon_identity_info"/></type>
+    </type-info>
+    <type-info tname="NETRESOURCE">
+      <type><struct name="netresource"/></type>
+    </type-info>
+    <type-info tname="NET_ADDRESS_INFO">
+      <type><struct name="net_address_info"/></type>
+    </type-info>
+    <type-info tname="NEWCPLINFO">
+      <type><struct name="newcplinfo"/></type>
+    </type-info>
+    <type-info tname="NMCUSTOMDRAW">
+      <type><struct name="nmcustomdraw"/></type>
+    </type-info>
+    <type-info tname="NMHDR">
+      <type><struct name="nmhdr"/></type>
+    </type-info>
+    <type-info tname="NMTREEVIEW">
+      <type><struct name="nmtreeview"/></type>
+    </type-info>
+    <type-info tname="NMTVASYNCDRAW">
+      <type><struct name="nmtvasyncdraw"/></type>
+    </type-info>
+    <type-info tname="NMTVCUSTOMDRAW">
+      <type><struct name="nmtvcustomdraw"/></type>
+    </type-info>
+    <type-info tname="NMTVDISPINFO">
+      <type><struct name="nmtvdispinfo"/></type>
+    </type-info>
+    <type-info tname="NMTVDISPINFOEX">
+      <type><struct name="nmtvdispinfoex"/></type>
+    </type-info>
+    <type-info tname="NMTVGETINFOTIP">
+      <type><struct name="nmtvgetinfotip"/></type>
+    </type-info>
+    <type-info tname="NMTVITEMCHANGE">
+      <type><struct name="nmtvitemchange"/></type>
+    </type-info>
+    <type-info tname="NMTVKEYDOWN">
+      <type><struct name="nmtvkeydown"/></type>
+    </type-info>
+    <type-info tname="NMTVSTATEIMAGECHANGING">
+      <type><struct name="nmtvstateimagechanging"/></type>
+    </type-info>
+    <type-info tname="NOTIFYADD">
+      <type><struct name="notifyadd"/></type>
+    </type-info>
+    <type-info tname="NOTIFYCANCEL">
+      <type><struct name="notifycancel"/></type>
+    </type-info>
+    <type-info tname="NOTIFYICONDATA">
+      <type><struct name="notifyicondata"/></type>
+    </type-info>
+    <type-info tname="NOTIFYICONIDENTIFIER">
+      <type><struct name="notifyiconidentifier"/></type>
+    </type-info>
+    <type-info tname="NOTIFYINFO">
+      <type><struct name="notifyinfo"/></type>
+    </type-info>
+    <type-info tname="NRESARRAY">
+      <type><struct name="nresarray"/></type>
+    </type-info>
+    <type-info tname="NSTCCUSTOMDRAW">
+      <type><struct name="nstccustomdraw"/></type>
+    </type-info>
+    <type-info tname="NS_SERVICE_INFO">
+      <type><struct name="ns_service_info"/></type>
+    </type-info>
+    <type-info tname="NT_CONSOLE_PROPS">
+      <type><struct name="nt_console_props"/></type>
+    </type-info>
+    <type-info tname="NT_FE_CONSOLE_PROPS">
+      <type><struct name="nt_fe_console_props"/></type>
+    </type-info>
+    <type-info tname="OBJECT_ATTRIBUTES">
+      <type><struct name="object_attributes"/></type>
+    </type-info>
+    <type-info tname="OCSP_BASIC_RESPONSE_ENTRY">
+      <type><struct name="ocsp_basic_response_entry"/></type>
+    </type-info>
+    <type-info tname="OCSP_BASIC_RESPONSE_INFO">
+      <type><struct name="ocsp_basic_response_info"/></type>
+    </type-info>
+    <type-info tname="OCSP_BASIC_REVOKED_INFO">
+      <type><struct name="ocsp_basic_revoked_info"/></type>
+    </type-info>
+    <type-info tname="OCSP_BASIC_SIGNED_RESPONSE_INFO">
+      <type><struct name="ocsp_basic_signed_response_info"/></type>
+    </type-info>
+    <type-info tname="OCSP_CERT_ID">
+      <type><struct name="ocsp_cert_id"/></type>
+    </type-info>
+    <type-info tname="OCSP_REQUEST_ENTRY">
+      <type><struct name="ocsp_request_entry"/></type>
+    </type-info>
+    <type-info tname="OCSP_REQUEST_INFO">
+      <type><struct name="ocsp_request_info"/></type>
+    </type-info>
+    <type-info tname="OCSP_RESPONSE_INFO">
+      <type><struct name="ocsp_response_info"/></type>
+    </type-info>
+    <type-info tname="OCSP_SIGNATURE_INFO">
+      <type><struct name="ocsp_signature_info"/></type>
+    </type-info>
+    <type-info tname="OCSP_SIGNED_REQUEST_INFO">
+      <type><struct name="ocsp_signed_request_info"/></type>
+    </type-info>
+    <type-info tname="OFNOTIFY">
+      <type><struct name="ofnotify"/></type>
+    </type-info>
+    <type-info tname="OFNOTIFYEX">
+      <type><struct name="ofnotifyex"/></type>
+    </type-info>
+    <type-info tname="OFSTRUCT">
+      <type><struct name="ofstruct"/></type>
+    </type-info>
+    <type-info tname="OLD_LARGE_INTEGER">
+      <type><struct name="old_large_integer"/></type>
+    </type-info>
+    <type-info tname="OLEINPLACEFRAMEINFO">
+      <type><struct name="oleinplaceframeinfo"/></type>
+    </type-info>
+    <type-info tname="OPENASINFO">
+      <type><struct name="openasinfo"/></type>
+    </type-info>
+    <type-info tname="OPENCARDNAME">
+      <type><struct name="opencardname"/></type>
+    </type-info>
+    <type-info tname="OPENCARDNAME_EX">
+      <type><struct name="opencardname_ex"/></type>
+    </type-info>
+    <type-info tname="OPENCARD_SEARCH_CRITERIA">
+      <type><struct name="opencard_search_criteria"/></type>
+    </type-info>
+    <type-info tname="OPENFILENAME">
+      <type><struct name="openfilename"/></type>
+    </type-info>
+    <type-info tname="OPEN_PRINTER_PROPS_INFO">
+      <type><struct name="open_printer_props_info"/></type>
+    </type-info>
+    <type-info tname="OSVERSIONINFO">
+      <type><struct name="osversioninfo"/></type>
+    </type-info>
+    <type-info tname="OSVERSIONINFOEX">
+      <type><struct name="osversioninfoex"/></type>
+    </type-info>
+    <type-info tname="OUTLINETEXTMETRIC">
+      <type><struct name="outlinetextmetric"/></type>
+    </type-info>
+    <type-info tname="OVERLAPPED">
+      <type><struct name="overlapped"/></type>
+    </type-info>
+    <type-info tname="PAGESETUPDLG">
+      <type><struct name="pagesetupdlg"/></type>
+    </type-info>
+    <type-info tname="PAINTSTRUCT">
+      <type><struct name="paintstruct"/></type>
+    </type-info>
+    <type-info tname="PANOSE">
+      <type><struct name="panose"/></type>
+    </type-info>
+    <type-info tname="PARSEDURL">
+      <type><struct name="parsedurl"/></type>
+    </type-info>
+    <type-info tname="PERSIST_FOLDER_TARGET_INFO">
+      <type><struct name="persist_folder_target_info"/></type>
+    </type-info>
+    <type-info tname="PLAINTEXTKEYBLOB">
+      <type><struct name="plaintextkeyblob"/></type>
+    </type-info>
+    <type-info tname="POINT">
+      <type><struct name="point"/></type>
+    </type-info>
+    <type-info tname="POINTL">
+      <type><struct name="pointl"/></type>
+    </type-info>
+    <type-info tname="PREVIEWHANDLERFRAMEINFO">
+      <type><struct name="previewhandlerframeinfo"/></type>
+    </type-info>
+    <type-info tname="PRINTDLG">
+      <type><struct name="printdlg"/></type>
+    </type-info>
+    <type-info tname="PRINTDLGEX">
+      <type><struct name="printdlgex"/></type>
+    </type-info>
+    <type-info tname="PRINTER_DEFAULTS">
+      <type><struct name="printer_defaults"/></type>
+    </type-info>
+    <type-info tname="PRINTER_NOTIFY_OPTIONS">
+      <type><struct name="printer_notify_options"/></type>
+    </type-info>
+    <type-info tname="PRINTER_NOTIFY_OPTIONS_TYPE">
+      <type><struct name="printer_notify_options_type"/></type>
+    </type-info>
+    <type-info tname="PRINTPAGERANGE">
+      <type><struct name="printpagerange"/></type>
+    </type-info>
+    <type-info tname="PROCESS_HEAP_ENTRY">
+      <type><struct name="process_heap_entry"/></type>
+    </type-info>
+    <type-info tname="PROCESS_MEMORY_COUNTERS_EX">
+      <type><struct name="process_memory_counters_ex"/></type>
+    </type-info>
+    <type-info tname="PROPERTYKEY">
+      <type><struct name="propertykey"/></type>
+    </type-info>
+    <type-info tname="PROTOCOL_INFO">
+      <type><struct name="protocol_info"/></type>
+    </type-info>
+    <type-info tname="PROV_ENUMALGS">
+      <type><struct name="prov_enumalgs"/></type>
+    </type-info>
+    <type-info tname="PROV_ENUMALGS_EX">
+      <type><struct name="prov_enumalgs_ex"/></type>
+    </type-info>
+    <type-info tname="PUBAPPINFO">
+      <type><struct name="pubappinfo"/></type>
+    </type-info>
+    <type-info tname="PUBLICKEYSTRUC">
+      <type><struct name="publickeystruc"/></type>
+    </type-info>
+    <type-info tname="PctPublicKey">
+      <type><struct name="PctPublicKey"/></type>
+    </type-info>
+    <type-info tname="QCMINFO">
+      <type><struct name="qcminfo"/></type>
+    </type-info>
+    <type-info tname="QITAB">
+      <type><struct name="qitab"/></type>
+    </type-info>
+    <type-info tname="QOS">
+      <type><struct name="qos"/></type>
+    </type-info>
+    <type-info tname="QUERY_SERVICE_LOCK_STATUS">
+      <type><struct name="query_service_lock_status"/></type>
+    </type-info>
+    <type-info tname="QUOTA_LIMITS">
+      <type><struct name="quota_limits"/></type>
+    </type-info>
+    <type-info tname="REAL_TIME_NOTIFICATION_SETTING_INPUT">
+      <type><struct name="real_time_notification_setting_input"/></type>
+    </type-info>
+    <type-info tname="REAL_TIME_NOTIFICATION_SETTING_OUTPUT">
+      <type><struct name="real_time_notification_setting_output"/></type>
+    </type-info>
+    <type-info tname="RECTL">
+      <type><struct name="rectl"/></type>
+    </type-info>
+    <type-info tname="REMOTE_NAME_INFO">
+      <type><struct name="remote_name_info"/></type>
+    </type-info>
+    <type-info tname="RGBTRIPLE">
+      <type><struct name="rgbtriple"/></type>
+    </type-info>
+    <type-info tname="RGNDATA">
+      <type><struct name="rgndata"/></type>
+    </type-info>
+    <type-info tname="RGNDATAHEADER">
+      <type><struct name="rgndataheader"/></type>
+    </type-info>
+    <type-info tname="RIORESULT">
+      <type><struct name="rioresult"/></type>
+    </type-info>
+    <type-info tname="RIO_EXTENSION_FUNCTION_TABLE">
+      <type><struct name="rio_extension_function_table"/></type>
+    </type-info>
+    <type-info tname="RIO_NOTIFICATION_COMPLETION">
+      <type><struct name="rio_notification_completion"/></type>
+    </type-info>
+    <type-info tname="RIP_INFO">
+      <type><struct name="rip_info"/></type>
+    </type-info>
+    <type-info tname="RM_FEC_INFO">
+      <type><struct name="rm_fec_info"/></type>
+    </type-info>
+    <type-info tname="RM_RECEIVER_STATS">
+      <type><struct name="rm_receiver_stats"/></type>
+    </type-info>
+    <type-info tname="RM_SENDER_STATS">
+      <type><struct name="rm_sender_stats"/></type>
+    </type-info>
+    <type-info tname="RM_SEND_WINDOW">
+      <type><struct name="rm_send_window"/></type>
+    </type-info>
+    <type-info tname="ROOT_INFO_LUID">
+      <type><struct name="root_info_luid"/></type>
+    </type-info>
+    <type-info tname="RSAPUBKEY">
+      <type><struct name="rsapubkey"/></type>
+    </type-info>
+    <type-info tname="SAFEARRAY">
+      <type><struct name="safearray"/></type>
+    </type-info>
+    <type-info tname="SCARD_ATRMASK">
+      <type><struct name="scard_atrmask"/></type>
+    </type-info>
+    <type-info tname="SCARD_IO_REQUEST">
+      <type><struct name="scard_io_request"/></type>
+    </type-info>
+    <type-info tname="SCARD_READERSTATE">
+      <type><struct name="scard_readerstate"/></type>
+    </type-info>
+    <type-info tname="SCHANNEL_ALERT_TOKEN">
+      <type><struct name="schannel_alert_token"/></type>
+    </type-info>
+    <type-info tname="SCHANNEL_ALG">
+      <type><struct name="schannel_alg"/></type>
+    </type-info>
+    <type-info tname="SCHANNEL_CERT_HASH">
+      <type><struct name="schannel_cert_hash"/></type>
+    </type-info>
+    <type-info tname="SCHANNEL_CERT_HASH_STORE">
+      <type><struct name="schannel_cert_hash_store"/></type>
+    </type-info>
+    <type-info tname="SCHANNEL_CLIENT_SIGNATURE">
+      <type><struct name="schannel_client_signature"/></type>
+    </type-info>
+    <type-info tname="SCHANNEL_CRED">
+      <type><struct name="schannel_cred"/></type>
+    </type-info>
+    <type-info tname="SCHANNEL_SESSION_TOKEN">
+      <type><struct name="schannel_session_token"/></type>
+    </type-info>
+    <type-info tname="SCH_CRED_PUBLIC_CERTCHAIN">
+      <type><struct name="sch_cred_public_certchain"/></type>
+    </type-info>
+    <type-info tname="SCH_CRED_SECRET_PRIVKEY">
+      <type><struct name="sch_cred_secret_privkey"/></type>
+    </type-info>
+    <type-info tname="SECPKG_CALL_INFO">
+      <type><struct name="secpkg_call_info"/></type>
+    </type-info>
+    <type-info tname="SECPKG_CLIENT_INFO">
+      <type><struct name="secpkg_client_info"/></type>
+    </type-info>
+    <type-info tname="SECPKG_CONTEXT_THUNKS">
+      <type><struct name="secpkg_context_thunks"/></type>
+    </type-info>
+    <type-info tname="SECPKG_DLL_FUNCTIONS">
+      <type><struct name="secpkg_dll_functions"/></type>
+    </type-info>
+    <type-info tname="SECPKG_EVENT_DOMAIN_CHANGE">
+      <type><struct name="secpkg_event_domain_change"/></type>
+    </type-info>
+    <type-info tname="SECPKG_EVENT_NOTIFY">
+      <type><struct name="secpkg_event_notify"/></type>
+    </type-info>
+    <type-info tname="SECPKG_EVENT_PACKAGE_CHANGE">
+      <type><struct name="secpkg_event_package_change"/></type>
+    </type-info>
+    <type-info tname="SECPKG_EXTENDED_INFORMATION">
+      <type><struct name="secpkg_extended_information"/></type>
+    </type-info>
+    <type-info tname="SECPKG_EXTRA_OIDS">
+      <type><struct name="secpkg_extra_oids"/></type>
+    </type-info>
+    <type-info tname="SECPKG_FUNCTION_TABLE">
+      <type><struct name="secpkg_function_table"/></type>
+    </type-info>
+    <type-info tname="SECPKG_GSS_INFO">
+      <type><struct name="secpkg_gss_info"/></type>
+    </type-info>
+    <type-info tname="SECPKG_MUTUAL_AUTH_LEVEL">
+      <type><struct name="secpkg_mutual_auth_level"/></type>
+    </type-info>
+    <type-info tname="SECPKG_NEGO2_INFO">
+      <type><struct name="secpkg_nego2_info"/></type>
+    </type-info>
+    <type-info tname="SECPKG_PARAMETERS">
+      <type><struct name="secpkg_parameters"/></type>
+    </type-info>
+    <type-info tname="SECPKG_PRIMARY_CRED">
+      <type><struct name="secpkg_primary_cred"/></type>
+    </type-info>
+    <type-info tname="SECPKG_SERIALIZED_OID">
+      <type><struct name="secpkg_serialized_oid"/></type>
+    </type-info>
+    <type-info tname="SECPKG_SUPPLEMENTAL_CRED">
+      <type><struct name="secpkg_supplemental_cred"/></type>
+    </type-info>
+    <type-info tname="SECPKG_SUPPLEMENTAL_CRED_ARRAY">
+      <type><struct name="secpkg_supplemental_cred_array"/></type>
+    </type-info>
+    <type-info tname="SECPKG_USER_FUNCTION_TABLE">
+      <type><struct name="secpkg_user_function_table"/></type>
+    </type-info>
+    <type-info tname="SECPKG_WOW_CLIENT_DLL">
+      <type><struct name="secpkg_wow_client_dll"/></type>
+    </type-info>
+    <type-info tname="SECPK_CONTEXT_THUNKS">
+      <type><struct name="secpk_context_thunks"/></type>
+    </type-info>
+    <type-info tname="SECURITY_DESCRIPTOR">
+      <type><struct name="security_descriptor"/></type>
+    </type-info>
+    <type-info tname="SECURITY_INTEGER">
+      <type><struct name="security_integer"/></type>
+    </type-info>
+    <type-info tname="SECURITY_LOGON_SESSION_DATA">
+      <type><struct name="security_logon_session_data"/></type>
+    </type-info>
+    <type-info tname="SECURITY_STRING">
+      <type><struct name="security_string"/></type>
+    </type-info>
+    <type-info tname="SEC_CHANNEL_BINDINGS">
+      <type><struct name="sec_channel_bindings"/></type>
+    </type-info>
+    <type-info tname="SEC_WINNT_AUTH_BYTE_VECTOR">
+      <type><struct name="sec_winnt_auth_byte_vector"/></type>
+    </type-info>
+    <type-info tname="SEC_WINNT_AUTH_DATA">
+      <type><struct name="sec_winnt_auth_data"/></type>
+    </type-info>
+    <type-info tname="SEC_WINNT_AUTH_IDENTITY">
+      <type><struct name="sec_winnt_auth_identity"/></type>
+    </type-info>
+    <type-info tname="SEC_WINNT_AUTH_IDENTITY_EX">
+      <type><struct name="sec_winnt_auth_identity_ex"/></type>
+    </type-info>
+    <type-info tname="SEC_WINNT_CREDUI_CONTEXT">
+      <type><struct name="sec_winnt_credui_context"/></type>
+    </type-info>
+    <type-info tname="SERIALIZEDPROPERTYVALUE">
+      <type><struct name="serializedpropertyvalue"/></type>
+    </type-info>
+    <type-info tname="SERVER_INFO_100">
+      <type><struct name="server_info_100"/></type>
+    </type-info>
+    <type-info tname="SERVICE_ADDRESS">
+      <type><struct name="service_address"/></type>
+    </type-info>
+    <type-info tname="SERVICE_ADDRESSES">
+      <type><struct name="service_addresses"/></type>
+    </type-info>
+    <type-info tname="SERVICE_DESCRIPTION">
+      <type><struct name="service_description"/></type>
+    </type-info>
+    <type-info tname="SERVICE_INFO">
+      <type><struct name="service_info"/></type>
+    </type-info>
+    <type-info tname="SERVICE_NOTIFY">
+      <type><struct name="service_notify"/></type>
+    </type-info>
+    <type-info tname="SERVICE_PRESHUTDOWN_INFO">
+      <type><struct name="service_preshutdown_info"/></type>
+    </type-info>
+    <type-info tname="SERVICE_SID_INFO">
+      <type><struct name="service_sid_info"/></type>
+    </type-info>
+    <type-info tname="SERVICE_STATUS_PROCESS">
+      <type><struct name="service_status_process"/></type>
+    </type-info>
+    <type-info tname="SERVICE_TABLE_ENTRY">
+      <type><struct name="service_table_entry"/></type>
+    </type-info>
+    <type-info tname="SERVICE_TYPE_INFO_ABS">
+      <type><struct name="service_type_info_abs"/></type>
+    </type-info>
+    <type-info tname="SERVICE_TYPE_VALUE_ABS">
+      <type><struct name="service_type_value_abs"/></type>
+    </type-info>
+    <type-info tname="SFVM_HELPTOPIC_DATA">
+      <type><struct name="sfvm_helptopic_data"/></type>
+    </type-info>
+    <type-info tname="SFVM_PROPPAGE_DATA">
+      <type><struct name="sfvm_proppage_data"/></type>
+    </type-info>
+    <type-info tname="SFV_CREATE">
+      <type><struct name="sfv_create"/></type>
+    </type-info>
+    <type-info tname="SFV_SETITEMPOS">
+      <type><struct name="sfv_setitempos"/></type>
+    </type-info>
+    <type-info tname="SHARDAPPIDINFO">
+      <type><struct name="shardappidinfo"/></type>
+    </type-info>
+    <type-info tname="SHARDAPPIDINFOIDLIST">
+      <type><struct name="shardappidinfoidlist"/></type>
+    </type-info>
+    <type-info tname="SHARDAPPIDINFOLINK">
+      <type><struct name="shardappidinfolink"/></type>
+    </type-info>
+    <type-info tname="SHCOLUMNDATA">
+      <type><struct name="shcolumndata"/></type>
+    </type-info>
+    <type-info tname="SHCOLUMNID">
+      <type><struct name="shcolumnid"/></type>
+    </type-info>
+    <type-info tname="SHCOLUMNINFO">
+      <type><struct name="shcolumninfo"/></type>
+    </type-info>
+    <type-info tname="SHCOLUMNINIT">
+      <type><struct name="shcolumninit"/></type>
+    </type-info>
+    <type-info tname="SHChangeNotifyEntry">
+      <type><struct name="shchangenotifyentry"/></type>
+    </type-info>
+    <type-info tname="SHDESCRIPTIONID">
+      <type><struct name="shdescriptionid"/></type>
+    </type-info>
+    <type-info tname="SHDRAGIMAGE">
+      <type><struct name="shdragimage"/></type>
+    </type-info>
+    <type-info tname="SHELLDETAILS">
+      <type><struct name="shelldetails"/></type>
+    </type-info>
+    <type-info tname="SHELLEXECUTEINFO">
+      <type><struct name="shellexecuteinfo"/></type>
+    </type-info>
+    <type-info tname="SHELLVIEWID">
+      <type><struct name="shellviewid"/></type>
+    </type-info>
+    <type-info tname="SHELL_ITEM_RESOURCE">
+      <type><struct name="shell_item_resource"/></type>
+    </type-info>
+    <type-info tname="SHFILEINFO">
+      <type><struct name="shfileinfo"/></type>
+    </type-info>
+    <type-info tname="SHFOLDERCUSTOMSETTINGS">
+      <type><struct name="shfoldercustomsettings"/></type>
+    </type-info>
+    <type-info tname="SHITEMID">
+      <type><struct name="shitemid"/></type>
+    </type-info>
+    <type-info tname="SHNAMEMAPPING">
+      <type><struct name="shnamemapping"/></type>
+    </type-info>
+    <type-info tname="SHQUERYRBINFO">
+      <type><struct name="shqueryrbinfo"/></type>
+    </type-info>
+    <type-info tname="SHSTOCKICONINFO">
+      <type><struct name="shstockiconinfo"/></type>
+    </type-info>
+    <type-info tname="SID_AND_ATTRIBUTES">
+      <type><struct name="sid_and_attributes"/></type>
+    </type-info>
+    <type-info tname="SID_IDENTIFIER_AUTHORITY">
+      <type><struct name="sid_identifier_authority"/></type>
+    </type-info>
+    <type-info tname="SID_INFO">
+      <type><struct name="sid_info"/></type>
+    </type-info>
+    <type-info tname="SIGNER_ATTR_AUTHCODE">
+      <type><struct name="signer_attr_authcode"/></type>
+    </type-info>
+    <type-info tname="SIGNER_BLOB_INFO">
+      <type><struct name="signer_blob_info"/></type>
+    </type-info>
+    <type-info tname="SIGNER_CERT">
+      <type><struct name="signer_cert"/></type>
+    </type-info>
+    <type-info tname="SIGNER_CERT_STORE_INFO">
+      <type><struct name="signer_cert_store_info"/></type>
+    </type-info>
+    <type-info tname="SIGNER_CONTEXT">
+      <type><struct name="signer_context"/></type>
+    </type-info>
+    <type-info tname="SIGNER_FILE_INFO">
+      <type><struct name="signer_file_info"/></type>
+    </type-info>
+    <type-info tname="SIGNER_PROVIDER_INFO">
+      <type><struct name="signer_provider_info"/></type>
+    </type-info>
+    <type-info tname="SIGNER_SIGNATURE_INFO">
+      <type><struct name="signer_signature_info"/></type>
+    </type-info>
+    <type-info tname="SIGNER_SPC_CHAIN_INFO">
+      <type><struct name="signer_spc_chain_info"/></type>
+    </type-info>
+    <type-info tname="SIGNER_SUBJECT_INFO">
+      <type><struct name="signer_subject_info"/></type>
+    </type-info>
+    <type-info tname="SIP_ADD_NEWPROVIDER">
+      <type><struct name="sip_add_newprovider"/></type>
+    </type-info>
+    <type-info tname="SIP_CAP_SET">
+      <type><struct name="sip_cap_set"/></type>
+    </type-info>
+    <type-info tname="SIP_DISPATCH_INFO">
+      <type><struct name="sip_dispatch_info"/></type>
+    </type-info>
+    <type-info tname="SIP_INDIRECT_DATA">
+      <type><struct name="sip_indirect_data"/></type>
+    </type-info>
+    <type-info tname="SIP_SUBJECTINFO">
+      <type><struct name="sip_subjectinfo"/></type>
+    </type-info>
+    <type-info tname="SIZEL">
+      <type><struct name="sizel"/></type>
+    </type-info>
+    <type-info tname="SLIST_ENTRY">
+      <type><struct name="slist_entry"/></type>
+    </type-info>
+    <type-info tname="SLIST_HEADER">
+      <type><struct name="slist_header"/></type>
+    </type-info>
+    <type-info tname="SLOWAPPINFO">
+      <type><struct name="slowappinfo"/></type>
+    </type-info>
+    <type-info tname="SMCSHCHANGENOTIFYSTRUCT">
+      <type><struct name="smcshchangenotifystruct"/></type>
+    </type-info>
+    <type-info tname="SMDATA">
+      <type><struct name="smdata"/></type>
+    </type-info>
+    <type-info tname="SMINFO">
+      <type><struct name="sminfo"/></type>
+    </type-info>
+    <type-info tname="SOCKADDR">
+      <type><struct name="sockaddr"/></type>
+    </type-info>
+    <type-info tname="SOCKADDR_IN">
+      <type><struct name="sockaddr_in"/></type>
+    </type-info>
+    <type-info tname="SOCKADDR_IN6">
+      <type><struct name="sockaddr_in6"/></type>
+    </type-info>
+    <type-info tname="SOCKADDR_IN6_PAIR">
+      <type><struct name="sockaddr_in6_pair"/></type>
+    </type-info>
+    <type-info tname="SOCKADDR_INET">
+      <type><struct name="sockaddr_inet"/></type>
+    </type-info>
+    <type-info tname="SOCKADDR_IRDA">
+      <type><struct name="sockaddr_irda"/></type>
+    </type-info>
+    <type-info tname="SOCKADDR_STORAGE">
+      <type><struct name="sockaddr_storage"/></type>
+    </type-info>
+    <type-info tname="SOCKET_ADDRESS">
+      <type><struct name="socket_address"/></type>
+    </type-info>
+    <type-info tname="SOCKET_ADDRESS_LIST">
+      <type><struct name="socket_address_list"/></type>
+    </type-info>
+    <type-info tname="SOCKET_PEER_TARGET_NAME">
+      <type><struct name="socket_peer_target_name"/></type>
+    </type-info>
+    <type-info tname="SOCKET_SECURITY_QUERY_INFO">
+      <type><struct name="socket_security_query_info"/></type>
+    </type-info>
+    <type-info tname="SOCKET_SECURITY_QUERY_TEMPLATE">
+      <type><struct name="socket_security_query_template"/></type>
+    </type-info>
+    <type-info tname="SOCKET_SECURITY_SETTINGS">
+      <type><struct name="socket_security_settings"/></type>
+    </type-info>
+    <type-info tname="SOCKET_SECURITY_SETTINGS_IPSEC">
+      <type><struct name="socket_security_settings_ipsec"/></type>
+    </type-info>
+    <type-info tname="SOFTDISTINFO">
+      <type><struct name="softdistinfo"/></type>
+    </type-info>
+    <type-info tname="SOLE_AUTHENTICATION_INFO">
+      <type><struct name="sole_authentication_info"/></type>
+    </type-info>
+    <type-info tname="SORTCOLUMN">
+      <type><struct name="sortcolumn"/></type>
+    </type-info>
+    <type-info tname="SPC_INDIRECT_DATA_CONTENT">
+      <type><struct name="spc_indirect_data_content"/></type>
+    </type-info>
+    <type-info tname="SR_SECURITY_DESCRIPTOR">
+      <type><struct name="sr_security_descriptor"/></type>
+    </type-info>
+    <type-info tname="SSL_EXTRA_CERT_CHAIN_POLICY_PARA">
+      <type><struct name="ssl_extra_cert_chain_policy_para"/></type>
+    </type-info>
+    <type-info tname="STARTUPINFOEX">
+      <type><struct name="startupinfoex"/></type>
+    </type-info>
+    <type-info tname="STGMEDIUM">
+      <type><struct name="stgmedium"/></type>
+    </type-info>
+    <type-info tname="STRING">
+      <type><struct name="string"/></type>
+    </type-info>
+    <type-info tname="STRRET">
+      <type><struct name="strret"/></type>
+    </type-info>
+    <type-info tname="SV2CVW2_PARAMS">
+      <type><struct name="sv2cvw2_params"/></type>
+    </type-info>
+    <type-info tname="SYNCMGRHANDLERINFO">
+      <type><struct name="syncmgrhandlerinfo"/></type>
+    </type-info>
+    <type-info tname="SYNCMGRITEM">
+      <type><struct name="syncmgritem"/></type>
+    </type-info>
+    <type-info tname="SYNCMGRLOGERRORINFO">
+      <type><struct name="syncmgrlogerrorinfo"/></type>
+    </type-info>
+    <type-info tname="SYNCMGRPROGRESSITEM">
+      <type><struct name="syncmgrprogressitem"/></type>
+    </type-info>
+    <type-info tname="SYNCMGR_CONFLICT_ID_INFO">
+      <type><struct name="syncmgr_conflict_id_info"/></type>
+    </type-info>
+    <type-info tname="SYNC_HANDLER_ITEM_INFO">
+      <type><struct name="sync_handler_item_info"/></type>
+    </type-info>
+    <type-info tname="SYSTEM_INFO">
+      <type><struct name="system_info"/></type>
+    </type-info>
+    <type-info tname="SecHandle">
+      <type><struct name="SecHandle"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_AccessToken">
+      <type><struct name="SecPkgContext_AccessToken"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_Authority">
+      <type><struct name="SecPkgContext_Authority"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_ClientCreds">
+      <type><struct name="SecPkgContext_ClientCreds"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_ConnectionInfo">
+      <type><struct name="SecPkgContext_ConnectionInfo"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_CredentialName">
+      <type><struct name="SecPkgContext_CredentialName"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_DceInfo">
+      <type><struct name="SecPkgContext_DceInfo"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_EapKeyBlock">
+      <type><struct name="SecPkgContext_EapKeyBlock"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_Flags">
+      <type><struct name="SecPkgContext_Flags"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_IssuerListInfoEx">
+      <type><struct name="SecPkgContext_IssuerListInfoEx"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_KeyInfo">
+      <type><struct name="SecPkgContext_KeyInfo"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_Lifespan">
+      <type><struct name="SecPkgContext_Lifespan"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_Names">
+      <type><struct name="SecPkgContext_Names"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_NativeNames">
+      <type><struct name="SecPkgContext_NativeNames"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_NegotiationInfo">
+      <type><struct name="SecPkgContext_NegotiationInfo"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_PackageInfo">
+      <type><struct name="SecPkgContext_PackageInfo"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_PasswordExpiry">
+      <type><struct name="SecPkgContext_PasswordExpiry"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_ProtoInfo">
+      <type><struct name="SecPkgContext_ProtoInfo"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_SessionAppData">
+      <type><struct name="SecPkgContext_SessionAppData"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_SessionKey">
+      <type><struct name="SecPkgContext_SessionKey"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_Sizes">
+      <type><struct name="SecPkgContext_Sizes"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_StreamSizes">
+      <type><struct name="SecPkgContext_StreamSizes"/></type>
+    </type-info>
+    <type-info tname="SecPkgContext_TargetInformation">
+      <type><struct name="SecPkgContext_TargetInformation"/></type>
+    </type-info>
+    <type-info tname="SecPkgCred_CipherStrengths">
+      <type><struct name="SecPkgCred_CipherStrengths"/></type>
+    </type-info>
+    <type-info tname="SecPkgCred_SupportedAlgs">
+      <type><struct name="SecPkgCred_SupportedAlgs"/></type>
+    </type-info>
+    <type-info tname="SecPkgCred_SupportedProtocols">
+      <type><struct name="SecPkgCred_SupportedProtocols"/></type>
+    </type-info>
+    <type-info tname="SecPkgCredentials_Names">
+      <type><struct name="SecPkgCredentials_Names"/></type>
+    </type-info>
+    <type-info tname="SecurityFunctionTable">
+      <type><struct name="securityfunctiontable"/></type>
+    </type-info>
+    <type-info tname="SecurityUserData">
+      <type><struct name="SecurityUserData"/></type>
+    </type-info>
+    <type-info tname="TBBUTTON">
+      <type><struct name="tbbutton"/></type>
+    </type-info>
+    <type-info tname="TBINFO">
+      <type><struct name="tbinfo"/></type>
+    </type-info>
+    <type-info tname="TCPIP_OWNER_MODULE_BASIC_INFO">
+      <type><struct name="tcpip_owner_module_basic_info"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_BANDWIDTH_ROD_v0">
+      <type><struct name="tcp_estats_bandwidth_rod_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_BANDWIDTH_RW_v0">
+      <type><struct name="tcp_estats_bandwidth_rw_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_DATA_ROD_v0">
+      <type><struct name="tcp_estats_data_rod_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_DATA_RW_v0">
+      <type><struct name="tcp_estats_data_rw_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_FINE_RTT_ROD_v0">
+      <type><struct name="tcp_estats_fine_rtt_rod_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_FINE_RTT_RW_v0">
+      <type><struct name="tcp_estats_fine_rtt_rw_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_OBS_REC_ROD_v0">
+      <type><struct name="tcp_estats_obs_rec_rod_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_OBS_REC_RW_v0">
+      <type><struct name="tcp_estats_obs_rec_rw_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_PATH_ROD_v0">
+      <type><struct name="tcp_estats_path_rod_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_PATH_RW_v0">
+      <type><struct name="tcp_estats_path_rw_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_REC_ROD_v0">
+      <type><struct name="tcp_estats_rec_rod_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_REC_RW_v0">
+      <type><struct name="tcp_estats_rec_rw_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_SEND_BUFF_ROD_v0">
+      <type><struct name="tcp_estats_send_buff_rod_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_SEND_BUFF_RW_v0">
+      <type><struct name="tcp_estats_send_buff_rw_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_SND_CONG_ROD_v0">
+      <type><struct name="tcp_estats_snd_cong_rod_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_SND_CONG_ROS_v0">
+      <type><struct name="tcp_estats_snd_cong_ros_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_SND_CONG_RW_v0">
+      <type><struct name="tcp_estats_snd_cong_rw_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_ESTATS_SYN_OPTS_ROS_v0">
+      <type><struct name="tcp_estats_syn_opts_ros_v0"/></type>
+    </type-info>
+    <type-info tname="TCP_RESERVE_PORT_RANGE">
+      <type><struct name="tcp_reserve_port_range"/></type>
+    </type-info>
+    <type-info tname="TEXTMETRIC">
+      <type><struct name="textmetric"/></type>
+    </type-info>
+    <type-info tname="THUMBBUTTON">
+      <type><struct name="thumbbutton"/></type>
+    </type-info>
+    <type-info tname="TIME_ZONE_INFORMATION">
+      <type><struct name="time_zone_information"/></type>
+    </type-info>
+    <type-info tname="TOKEN_DEFAULT_DACL">
+      <type><struct name="token_default_dacl"/></type>
+    </type-info>
+    <type-info tname="TOKEN_GROUPS">
+      <type><struct name="token_groups"/></type>
+    </type-info>
+    <type-info tname="TOKEN_OWNER">
+      <type><struct name="token_owner"/></type>
+    </type-info>
+    <type-info tname="TOKEN_PRIMARY_GROUP">
+      <type><struct name="token_primary_group"/></type>
+    </type-info>
+    <type-info tname="TOKEN_PRIVILEGES">
+      <type><struct name="token_privileges"/></type>
+    </type-info>
+    <type-info tname="TOKEN_USER">
+      <type><struct name="token_user"/></type>
+    </type-info>
+    <type-info tname="TPMPARAMS">
+      <type><struct name="tpmparams"/></type>
+    </type-info>
+    <type-info tname="TRANSMIT_PACKETS_ELEMENT">
+      <type><struct name="transmit_packets_element"/></type>
+    </type-info>
+    <type-info tname="TRANSPORT_SETTING_ID">
+      <type><struct name="transport_setting_id"/></type>
+    </type-info>
+    <type-info tname="TRIVERTEX">
+      <type><struct name="trivertex"/></type>
+    </type-info>
+    <type-info tname="TRUSTEE">
+      <type><struct name="trustee"/></type>
+    </type-info>
+    <type-info tname="TVGETITEMPARTRECTINFO">
+      <type><struct name="tvgetitempartrectinfo"/></type>
+    </type-info>
+    <type-info tname="TVHITTESTINFO">
+      <type><struct name="tvhittestinfo"/></type>
+    </type-info>
+    <type-info tname="TVINSERTSTRUCT">
+      <type><struct name="tvinsertstruct"/></type>
+    </type-info>
+    <type-info tname="TVITEM">
+      <type><struct name="tvitem"/></type>
+    </type-info>
+    <type-info tname="TVITEMEX">
+      <type><struct name="tvitemex"/></type>
+    </type-info>
+    <type-info tname="TVSORTCB">
+      <type><struct name="tvsortcb"/></type>
+    </type-info>
+    <type-info tname="TimeStamp">
+      <type><struct name="timestamp"/></type>
+    </type-info>
+    <type-info tname="ULARGE_INTEGER">
+      <type><struct name="ularge_integer"/></type>
+    </type-info>
+    <type-info tname="UNICODE_STRING">
+      <type><struct name="unicode_string"/></type>
+    </type-info>
+    <type-info tname="UNIVERSAL_NAME_INFO">
+      <type><struct name="universal_name_info"/></type>
+    </type-info>
+    <type-info tname="UNLOAD_DLL_DEBUG_INFO">
+      <type><struct name="unload_dll_debug_info"/></type>
+    </type-info>
+    <type-info tname="URL_COMPONENTS">
+      <type><struct name="url_components"/></type>
+    </type-info>
+    <type-info tname="USERNAME_TARGET_CREDENTIAL_INFO">
+      <type><struct name="username_target_credential_info"/></type>
+    </type-info>
+    <type-info tname="USER_ALL_INFORMATION">
+      <type><struct name="user_all_information"/></type>
+    </type-info>
+    <type-info tname="VERSIONEDSTREAM">
+      <type><struct name="versionedstream"/></type>
+    </type-info>
+    <type-info tname="VTableProvStruc">
+      <type><struct name="VTableProvStruc"/></type>
+    </type-info>
+    <type-info tname="WALLPAPEROPT">
+      <type><struct name="wallpaperopt"/></type>
+    </type-info>
+    <type-info tname="WAVEHDR">
+      <type><struct name="wavehdr"/></type>
+    </type-info>
+    <type-info tname="WAVEINCAPS">
+      <type><struct name="waveincaps"/></type>
+    </type-info>
+    <type-info tname="WINDOWDATA">
+      <type><struct name="windowdata"/></type>
+    </type-info>
+    <type-info tname="WINDOWINFO">
+      <type><struct name="windowinfo"/></type>
+    </type-info>
+    <type-info tname="WINDOWPLACEMENT">
+      <type><struct name="windowplacement"/></type>
+    </type-info>
+    <type-info tname="WINDOW_BUFFER_SIZE_RECORD">
+      <type><struct name="window_buffer_size_record"/></type>
+    </type-info>
+    <type-info tname="WINTRUST_BLOB_INFO">
+      <type><struct name="wintrust_blob_info"/></type>
+    </type-info>
+    <type-info tname="WINTRUST_CATALOG_INFO">
+      <type><struct name="wintrust_catalog_info"/></type>
+    </type-info>
+    <type-info tname="WINTRUST_CERT_INFO">
+      <type><struct name="wintrust_cert_info"/></type>
+    </type-info>
+    <type-info tname="WINTRUST_DATA">
+      <type><struct name="wintrust_data"/></type>
+    </type-info>
+    <type-info tname="WINTRUST_FILE_INFO">
+      <type><struct name="wintrust_file_info"/></type>
+    </type-info>
+    <type-info tname="WINTRUST_SGNR_INFO">
+      <type><struct name="wintrust_sgnr_info"/></type>
+    </type-info>
+    <type-info tname="WINTRUST_SIGNATURE_SETTINGS">
+      <type><struct name="wintrust_signature_settings"/></type>
+    </type-info>
+    <type-info tname="WLX_CLIENT_CREDENTIALS_INFO_V1_0">
+      <type><struct name="wlx_client_credentials_info_v1_0"/></type>
+    </type-info>
+    <type-info tname="WLX_CONSOLESWITCH_CREDENTIALS_INFO_V1_0">
+      <type><struct name="wlx_consoleswitch_credentials_info_v1_0"/></type>
+    </type-info>
+    <type-info tname="WLX_DESKTOP">
+      <type><struct name="wlx_desktop"/></type>
+    </type-info>
+    <type-info tname="WLX_DISPATCH_VERSION_1_0">
+      <type><struct name="wlx_dispatch_version_1_0"/></type>
+    </type-info>
+    <type-info tname="WLX_DISPATCH_VERSION_1_1">
+      <type><struct name="wlx_dispatch_version_1_1"/></type>
+    </type-info>
+    <type-info tname="WLX_DISPATCH_VERSION_1_2">
+      <type><struct name="wlx_dispatch_version_1_2"/></type>
+    </type-info>
+    <type-info tname="WLX_DISPATCH_VERSION_1_3">
+      <type><struct name="wlx_dispatch_version_1_3"/></type>
+    </type-info>
+    <type-info tname="WLX_DISPATCH_VERSION_1_4">
+      <type><struct name="wlx_dispatch_version_1_4"/></type>
+    </type-info>
+    <type-info tname="WLX_MPR_NOTIFY_INFO">
+      <type><struct name="wlx_mpr_notify_info"/></type>
+    </type-info>
+    <type-info tname="WLX_PROFILE_V1_0">
+      <type><struct name="wlx_profile_v1_0"/></type>
+    </type-info>
+    <type-info tname="WLX_PROFILE_V2_0">
+      <type><struct name="wlx_profile_v2_0"/></type>
+    </type-info>
+    <type-info tname="WLX_TERMINAL_SERVICES_DATA">
+      <type><struct name="wlx_terminal_services_data"/></type>
+    </type-info>
+    <type-info tname="WNDCLASS">
+      <type><struct name="wndclass"/></type>
+    </type-info>
+    <type-info tname="WNDCLASSEX">
+      <type><struct name="wndclassex"/></type>
+    </type-info>
+    <type-info tname="WSABUF">
+      <type><struct name="wsabuf"/></type>
+    </type-info>
+    <type-info tname="WSACOMPLETION">
+      <type><struct name="wsacompletion"/></type>
+    </type-info>
+    <type-info tname="WSADATA">
+      <type><struct name="wsadata"/></type>
+    </type-info>
+    <type-info tname="WSAMSG">
+      <type><struct name="wsamsg"/></type>
+    </type-info>
+    <type-info tname="WSANAMESPACE_INFO">
+      <type><struct name="wsanamespace_info"/></type>
+    </type-info>
+    <type-info tname="WSANAMESPACE_INFOEX">
+      <type><struct name="wsanamespace_infoex"/></type>
+    </type-info>
+    <type-info tname="WSANETWORKEVENTS">
+      <type><struct name="wsanetworkevents"/></type>
+    </type-info>
+    <type-info tname="WSANSCLASSINFO">
+      <type><struct name="wsansclassinfo"/></type>
+    </type-info>
+    <type-info tname="WSAOVERLAPPED">
+      <type><struct name="wsaoverlapped"/></type>
+    </type-info>
+    <type-info tname="WSAPOLLFD">
+      <type><struct name="wsapollfd"/></type>
+    </type-info>
+    <type-info tname="WSAPROTOCOLCHAIN">
+      <type><struct name="wsaprotocolchain"/></type>
+    </type-info>
+    <type-info tname="WSAPROTOCOL_INFO">
+      <type><struct name="wsaprotocol_info"/></type>
+    </type-info>
+    <type-info tname="WSAPROTOCOL_INFOW">
+      <type><struct name="wsaprotocol_infoW"/></type>
+    </type-info>
+    <type-info tname="WSAQUERYSET">
+      <type><struct name="wsaqueryset"/></type>
+    </type-info>
+    <type-info tname="WSAQUERYSET2">
+      <type><struct name="wsaqueryset2"/></type>
+    </type-info>
+    <type-info tname="WSASERVICECLASSINFO">
+      <type><struct name="wsaserviceclassinfo"/></type>
+    </type-info>
+    <type-info tname="WSAVERSION">
+      <type><struct name="wsaversion"/></type>
+    </type-info>
+    <type-info tname="WTS_THUMBNAILID">
+      <type><struct name="wts_thumbnailid"/></type>
+    </type-info>
+    <type-info tname="X509Certificate">
+      <type><struct name="X509Certificate"/></type>
+    </type-info>
+    <type-info tname="IPV6_ADDRESS_EX">
+      <type><struct name="ipv6_address_ex"/></type>
+    </type-info>
+    <type-info tname="_timeb">
+      <type><struct name="_timeb"/></type>
+    </type-info>
+    <type-info tname="fd_set">
+      <type><struct name="fd_set"/></type>
+    </type-info>
+    <type-info tname="hostent">
+      <type><struct name="hostent"/></type>
+    </type-info>
+    <type-info tname="in6_pktinfo">
+      <type><struct name="in6_pktinfo"/></type>
+    </type-info>
+    <type-info tname="in_addr">
+      <type><struct name="in_addr"/></type>
+    </type-info>
+    <type-info tname="in_pktinfo">
+      <type><struct name="in_pktinfo"/></type>
+    </type-info>
+    <type-info tname="ip_mreq">
+      <type><struct name="ip_mreq"/></type>
+    </type-info>
+    <type-info tname="linger">
+      <type><struct name="linger"/></type>
+    </type-info>
+    <type-info tname="protoent">
+      <type><struct name="protoent"/></type>
+    </type-info>
+    <type-info tname="SecPkgInfo">
+      <type><struct name="SecPkgInfo"/></type>
+    </type-info>
+    <type-info tname="servent">
+      <type><struct name="servent"/></type>
+    </type-info>
+    <!-- %%%%%%%%%%%%%%%%%% -->
+    <!-- %%% Release 7c %%% -->
+    <!-- %%%%%%%%%%%%%%%%%% -->
+    <type-info tname="ADDRINFOEX2">
+      <type><struct name="addrinfoex2"/></type>
+    </type-info>
+    <type-info tname="ADDRINFOW">
+      <type><struct name="addrinfoW"/></type>
+    </type-info>
+    <type-info tname="CERT_TEMPLATE_EXT">
+      <type><struct name="cert_template_ext"/></type>
+    </type-info>
+    <type-info tname="CROSS_CERT_DIST_POINTS_INFO">
+      <type><struct name="cross_cert_dist_points_info"/></type>
+    </type-info>
+    <type-info tname="CRYPT_AES_128_KEY_STATE">
+      <type><struct name="crypt_aes_128_key_state"/></type>
+    </type-info>
+    <type-info tname="CRYPT_AES_256_KEY_STATE">
+      <type><struct name="crypt_aes_256_key_state"/></type>
+    </type-info>
+    <type-info tname="DCB">
+      <type><struct name="dcb"/></type>
+    </type-info>
+    <type-info tname="FIXED_INFO">
+      <type><struct name="fixed_info"/></type>
+    </type-info>
+    <type-info tname="ICMP_ECHO_REPLY32">
+      <type><struct name="icmp_echo_reply32"/></type>
+    </type-info>
+    <type-info tname="IPV6_MREQ">
+      <type><struct name="ipv6_mreq"/></type>
+    </type-info>
+    <type-info tname="IP_ADAPTER_ADDRESSES">
+      <type><struct name="ip_adapter_addresses"/></type>
+    </type-info>
+    <type-info tname="IP_ADAPTER_UNICAST_ADDRESS">
+      <type><struct name="ip_adapter_unicast_address"/></type>
+    </type-info>
+    <type-info tname="IP_INTERFACE_NAME_INFO">
+      <type><struct name="ip_interface_name_info"/></type>
+    </type-info>
+    <type-info tname="IP_MREQ_SOURCE">
+      <type><struct name="ip_mreq_source"/></type>
+    </type-info>
+    <type-info tname="IP_MSFILTER">
+      <type><struct name="ip_msfilter"/></type>
+    </type-info>
+    <type-info tname="IP_OPTION_INFORMATION32">
+      <type><struct name="ip_option_information32"/></type>
+    </type-info>
+    <type-info tname="NET_LUID">
+      <type><struct name="net_luid"/></type>
+    </type-info>
+    <type-info tname="OUTPUT_DEBUG_STRING_INFO">
+      <type><struct name="output_debug_string_info"/></type>
+    </type-info>
+    <type-info tname="SHELLFLAGSTATE">
+      <type><struct name="shellflagstate"/></type>
+    </type-info>
+    <type-info tname="SHELLSTATE">
+      <type><struct name="shellstate"/></type>
+    </type-info>
+    <type-info tname="COMSTAT">
+      <type><struct name="comstat"/></type>
+    </type-info>
+    <type-info tname="addrinfoex3">
+      <type><struct name="addrinfoex3"/></type>
+    </type-info>
+    <type-info tname="addrinfoex4">
+      <type><struct name="addrinfoex4"/></type>
+    </type-info>
+    <!-- %%%%%%%%%%%%%%%%%% -->
+  </type-definitions>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+
+</codehawk-binary-analyzer>

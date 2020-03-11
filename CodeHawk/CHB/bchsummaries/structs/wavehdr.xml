@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/dd743837(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="wavehdr">
+   <fields>
+    <field name="lpData" offset="0" size="4">
+     <type>LPSTR</type>
+    </field>
+    <field name="dwBufferLength" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwBytesRecorded" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwUser" offset="12" size="4">
+     <type>DWORD_PTR</type>
+    </field>
+    <field name="dwFlags" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwLoops" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpNext" offset="24" size="4">
+     <type><ptr>struct wavehdr_tag</ptr></type>
+    </field>
+    <field name="reserved" offset="28" size="4">
+     <type>DWORD_PTR</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

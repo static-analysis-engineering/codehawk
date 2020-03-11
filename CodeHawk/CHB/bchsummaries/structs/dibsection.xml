@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/dd183567(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="dibsection">
+   <fields>
+    <field name="dsBm" offset="0" size="24">
+     <type>BITMAP</type>
+    </field>
+    <field name="dsBmih" offset="24" size="40">
+     <type>BITMAPINFOHEADER</type>
+    </field>
+    <field name="dsBitfields" offset="64" size="12">
+     <type><array size="12">DWORD</array></type>
+    </field>
+    <field name="dshSection" offset="76" size="4">
+     <type>HANDLE</type>
+    </field>
+    <field name="dsOffset" offset="80" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

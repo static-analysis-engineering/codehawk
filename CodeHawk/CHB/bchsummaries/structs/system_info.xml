@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms724958(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="system_info">
+   <fields>
+    <field name="dwOemId" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="wProcessorArchitecture" offset="0" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="wReserved" offset="2" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="dwPageSize" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpMinimumApplicationAddress" offset="8" size="4">
+     <type>LPVOID</type>
+    </field>
+    <field name="lpMaximumApplicationAddress" offset="12" size="4">
+     <type>LPVOID</type>
+    </field>
+    <field name="dwActiveProcessorMask" offset="16" size="4">
+     <type>DWORD_PTR</type>
+    </field>
+    <field name="dwNumberOfProcessors" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwProcessorType" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwAllocationGranularity" offset="28" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="wProcessorLevel" offset="32" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="wProcessorRevision" offset="34" size="2">
+     <type>WORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

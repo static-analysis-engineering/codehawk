@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd317780(v=vs.85).aspx"/>
+  <header date="05/29/2017 00:00:00"/>
+  <struct name="cpinfo">
+   <fields>
+    <field name="MaxCharSize" offset="0" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="DefaultChar" offset="4" size="2">
+     <type>
+       <array size="2">BYTE</array>
+     </type>
+    </field>
+    <field name="LeadByte" offset="6" size="1">
+     <type>
+       <array size="1">BYTE</array>
+     </type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

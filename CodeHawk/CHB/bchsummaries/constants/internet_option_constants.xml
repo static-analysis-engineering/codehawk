@@ -1,0 +1,601 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/19/2015 23:15:35"/>
+  <symbolic-constants type="internet_option_constants">
+   <values>
+    <symc name="INTERNET_OPTION_BYPASS_EDITED_ENTRY" value="64">
+     <desc>
+       Sets or retrieves the Boolean value that determines if the
+       system should check the network for newer content and overwrite
+       edited cache entries if a newer version is found. If set to
+       True, the system checks the network for newer content and
+       overwrites the edited cache entry with the newer version. The
+       default is False, which indicates that the edited cache entry
+       should be used without checking the network.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_CACHE_TIMESTAMPS" value="69">
+     <desc>
+       Retrieves an INTERNET_CACHE_TIMESTAMPS structure that contains
+       the LastModified time and Expires time from the resource stored
+       in the Internet cache. This value is used by
+       InternetQueryOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_CALLBACK" value="1">
+     <desc>
+       Sets or retrieves the address of the callback function defined
+       for this handle. This option can be used on all HINTERNET
+       handles. Used by InternetQueryOption and InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_CLIENT_CERT_CONTEXT" value="84">
+     <desc>
+       This flag is not supported by InternetQueryOption. The lpBuffer
+       parameter must be a pointer to a CERT_CONTEXT structure and not
+       a pointer to a CERT_CONTEXT pointer. If an application receives
+       ERROR_INTERNET_CLIENT_AUTH_CERT_NEEDED, it must call
+       InternetErrorDlg or use InternetSetOption to supply a
+       certificate before retrying the
+       request. CertDuplicateCertificateContext is then called so that
+       the certificate context passed can be independently released by
+       the application.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_CODEPAGE" value="68">
+     <desc>
+       By default, the host or authority portion of the Unicode URL is
+       encoded according to the IDN specification. Setting this option
+       on the request, or connection handle, when IDN is disabled,
+       specifies a code page encoding scheme for the host portion of
+       the URL. The lpBuffer parameter in the call to
+       InternetSetOption contains the desired DBCS code page. If no
+       code page is specified in lpBuffer, WinINet uses the default
+       system code page (CP_ACP). Note: This option is ignored if IDN
+       is not disabled. For more information about how to disable IDN,
+       see the INTERNET_OPTION_IDN option.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_CODEPAGE_PATH" value="100">
+     <desc>
+       By default, the path portion of the URL is UTF8 encoded. The
+       WinINet API performs escape character (%) encoding on the
+       high-bit characters. Setting this option on the request, or
+       connection handle, disables the UTF8 encoding and sets a
+       specific code page. The lpBuffer parameter in the call to
+       InternetSetOption contains the desired DBCS codepage for the
+       path. If no code page is specified in lpBuffer, WinINet uses
+       the default CP_UTF8.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_CODEPAGE_EXTRA" value="101">
+     <desc>
+       By default, the path portion of the URL is the default system
+       code page (CP_ACP). The escape character (%) conversions are
+       not performed on the extra portion. Setting this option on the
+       request, or connection handle disables the CP_ACP encoding. The
+       lpBuffer parameter in the call to InternetSetOption contains
+       the desired DBCS codepage for the extra portion of the URL. If
+       no code page is specified in lpBuffer, WinINet uses the default
+       system code page (CP_ACP).
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_COMPRESSED_CONTENT_LENGTH" value="147">
+     <desc>
+       Retrieves an unsigned long integer value that contains the
+       size, in bytes, of the compressed content length. This option
+       can only be queried by InternetQueryOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_CONNECT_RETRIES" value="3">
+     <desc>
+       Sets or retrieves an unsigned long integer value that contains
+       the number of times WinINet attempts to resolve and connect to
+       a host. It only attempts once per IP address. For example, if
+       you attempt to connect to a multihome host that has ten IP
+       addresses and INTERNET_OPTION_CONNECT_RETRIES is set to seven,
+       WinINet only attempts to resolve and connect to the first seven
+       IP addresses. Conversely, given the same set of ten IP
+       addresses, if INTERNET_OPTION_CONNECT_RETRIES is set to 20,
+       WinINet attempts each of the ten only once. If a host has only
+       one IP address and the first connection attempt fails, there
+       are no further attempts. If a connection attempt still fails
+       after the specified number of attempts, the request is
+       canceled. The default value for INTERNET_OPTION_CONNECT_RETRIES
+       is five attempts. This option can be used on any HINTERNET
+       handle, including a NULL handle. It is used by
+       InternetQueryOption and InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_CONNECT_TIMEOUT" value="2">
+     <desc>
+       Sets or retrieves an unsigned long integer value that contains
+       the time-out value, in milliseconds, to use for Internet
+       connection requests. Setting this option to infinite
+       (0xFFFFFFFF) will disable this timer.  If a connection request
+       takes longer than this time-out value, the request is
+       canceled. When attempting to connect to multiple IP addresses
+       for a single host (a multihome host), the timeout limit is
+       cumulative for all of the IP addresses. This option can be used
+       on any HINTERNET handle, including a NULL handle. It is used by
+       InternetQueryOption and InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_CONNECTED_STATE" value="50">
+     <desc>
+       Sets or retrieves an unsigned long integer value that contains
+       the connected state. This is used by InternetQueryOption and
+       InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_CONTEXT_VALUE" value="45">
+     <desc>
+       Sets or retrieves a DWORD_PTR that contains the address of the
+       context value associated with this HINTERNET handle. This
+       option can be used on any HINTERNET handle. This is used by
+       InternetQueryOption and InternetSetOption. Previously, this set
+       the context value to the address stored in the lpBuffer
+       pointer. This has been corrected so that the value stored in
+       the buffer is used and the INTERNET_OPTION_CONTEXT_VALUE flag
+       is assigned a new value. The old value, 10, has been preserved
+       so that applications written for the old behavior are still
+       supported.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_CONTROL_RECEIVE_TIMEOUT" value="6">
+     <desc>
+       Identical to INTERNET_OPTION_RECEIVE_TIMEOUT. This is used by
+       InternetQueryOption and InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_CONTROL_SEND_TIMEOUT" value="5">
+     <desc>
+       Identical to INTERNET_OPTION_SEND_TIMEOUT. This is used by
+       InternetQueryOption and InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_DATA_RECEIVE_TIMEOUT" value="8">
+     <desc>
+       Sets or retrieves an unsigned long integer value that contains
+       the time-out value, in milliseconds, to receive a response to a
+       request for the data channel of an FTP transaction. If the
+       response takes longer than this time-out value, the request is
+       canceled. This option can be used on any HINTERNET handle,
+       including a NULL handle. It is used by InternetQueryOption and
+       InternetSetOption.  This flag has no impact on HTTP
+       functionality.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_DATA_SEND_TIMEOUT" value="7">
+     <desc>
+       Sets or retrieves an unsigned long integer value, in
+       milliseconds, that contains the time-out value to send a
+       request for the data channel of an FTP transaction. If the send
+       takes longer than this time-out value, the send is
+       canceled. This option can be used on any HINTERNET handle,
+       including a NULL handle. It is used by InternetQueryOption and
+       InternetSetOption.  This flag has no impact on HTTP
+       functionality.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_DATAFILE_NAME" value="33">
+     <desc>
+       Retrieves a string value that contains the name of the file
+       backing a downloaded entity. This flag is valid after
+       InternetOpenUrl, FtpOpenFile, GopherOpenFile, or
+       HttpOpenRequest has completed. This option can only be queried
+       by InternetQueryOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_DATAFILE_EXT" value="96">
+     <desc>
+       Sets a string value that contains the extension of the file
+       backing a downloaded entity. This flag should be set before
+       calling InternetOpenUrl, FtpOpenFile, GopherOpenFile, or
+       HttpOpenRequest. This option can only be set by
+       InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_DIAGNOSTIC_SOCKET_INFO" value="67">
+     <desc>
+       Retrieves an INTERNET_DIAGNOSTIC_SOCKET_INFO structure that
+       contains data about a specified HTTP Request. This flag is used
+       by InternetQueryOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_DIGEST_AUTH_UNLOAD" value="76">
+     <desc>
+       Causes the system to log off the Digest authentication SSPI
+       package, purging all of the credentials created for the
+       process. No buffer is required for this option. It is used by
+       InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_END_BROWSER_SESSION" value="42">
+     <desc>
+       Flushes entries not in use from the password cache on the hard
+       disk drive. Also resets the cache time used when the
+       synchronization mode is once-per-session. No buffer is required
+       for this option. This is used by InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_ERROR_MASK" value="62">
+     <desc>
+       Sets an unsigned long integer value that contains the error
+       masks that can be handled by the client application
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_EXTENDED_ERROR" value="24">
+     <desc>
+       Retrieves an unsigned long integer value that contains a
+       Winsock error code mapped to the ERROR_INTERNET_ error messages
+       last returned in this thread context. This option is used on a
+       NULLHINTERNET handle by InternetQueryOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_FROM_CACHE_TIMEOUT" value="63">
+     <desc>
+       Sets or retrieves an unsigned long integer value that contains
+       the amount of time the system should wait for a response to a
+       network request before checking the cache for a copy of the
+       resource. If a network request takes longer than the time
+       specified and the requested resource is available in the cache,
+       the resource is retrieved from the cache. This is used by
+       InternetQueryOption and InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_HANDLE_TYPE" value="9">
+     <desc>
+       Retrieves an unsigned long integer value that contains the type
+       of the HINTERNET handles passed in. This is used by
+       InternetQueryOption on any HINTERNET handle
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_HTTP_DECODING" value="65">
+     <desc>
+       Enables WinINet to perform decoding for the gzip and deflate
+       encoding schemes. For more information, see Content Encoding.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_HTTP_VERSION" value="59">
+     <desc>
+       Sets or retrieves an HTTP_VERSION_INFO structure that contains
+       the supported HTTP version. This must be used on a NULL
+       handle. This is used by InternetQueryOption and
+       InternetSetOption.  On Windows 7, Windows Server 2008 R2, and
+       later, the value of the dwMinorVersion member in the
+       HTTP_VERSION_INFO structure is overridden by Internet Explorer
+       settings. EnableHttp1_1 is a registry value under
+       HKLM\Software\Microsoft\InternetExplorer\AdvacnedOptions\HTTP\GENABLE
+       controlled by Internet Options set in Internet Explorer for the
+       system. The EnableHttp1_1 value defaults to 1. The
+       HTTP_VERSION_INFO structure is ignored for any HTTP version
+       less than 1.1 if EnableHttp1_1 is set to 1.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_IDN" value="102">
+     <desc>
+       By default, the host or authority portion of the URL is encoded
+       according to the IDN specification for both direct and proxy
+       connections. This option can be used on the request, or
+       connection handle to enable or disable IDN. When IDN is
+       disabled, WinINet uses the system codepage to encode the host
+       or authority portion of the URL. To disable IDN host
+       conversion, set the lpBuffer parameter in the call to
+       InternetSetOption to zero. To enable IDN conversion on only the
+       direct connection, specify INTERNET_FLAG_IDN_DIRECT in the
+       lpBuffer parameter in the call to InternetSetOption. To enable
+       IDN conversion on only the proxy connection, specify
+       INTERNET_FLAG_IDN_PROXY in the lpBuffer parameter in the call
+       to InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_IGNORE_OFFLINE" value="77">
+     <desc>
+       Sets or retrieves whether the global offline flag should be
+       ignored for the specified request handle. No buffer is required
+       for this option. This is used by InternetQueryOption and
+       InternetSetOption with a request handle. This option is only
+       valid in Internet Explorer 5 and later.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_MAX_CONNS_PER_1_0_SERVER" value="74">
+     <desc>
+       Sets or retrieves an unsigned long integer value that contains
+       the maximum number of connections allowed per HTTP/1.0
+       server. This is used by InternetQueryOption and
+       InternetSetOption. This option is only valid in Internet
+       Explorer 5 and later.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_MAX_CONNS_PER_PROXY" value="103">
+     <desc>
+       Sets or retrieves an unsigned long integer value that contains
+       the maximum number of connections allowed per CERN proxy. When
+       this option is set or retrieved, the hInternet parameter must
+       set to a null handle value. A null handle value indicates that
+       the option should be set or queried for the current
+       process. When calling InternetSetOption with this option, all
+       existing proxy objects will receive the new value. This value
+       is limited to a range of 2 to 128, inclusive.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_MAX_CONNS_PER_SERVER" value="73">
+     <desc>
+       Sets or retrieves an unsigned long integer value that contains
+       the maximum number of connections allowed per server. This is
+       used by InternetQueryOption and InternetSetOption. This option
+       is only valid in Internet Explorer 5 and later.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_PARENT_HANDLE" value="21">
+     <desc>
+       Retrieves the parent handle to this handle. This option can be
+       used on any HINTERNET handle by InternetQueryOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_PASSWORD" value="29">
+     <desc>
+       Sets or retrieves a string value that contains the password
+       associated with a handle returned by InternetConnect. This is
+       used by InternetQueryOption and InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_PER_CONNECTION_OPTION" value="75">
+     <desc>
+       Sets or retrieves an INTERNET_PER_CONN_OPTION_LIST structure
+       that specifies a list of options for a particular
+       connection. This is used by InternetQueryOption and
+       InternetSetOption. This option is only valid in Internet
+       Explorer 5 and later.  Note
+       INTERNET_OPTION_PER_CONNECTION_OPTION causes the settings to be
+       changed on a system-wide basis when a NULL handle is used in
+       the call to InternetSetOption. To refresh the global proxy
+       settings, you must call InternetSetOption with the
+       INTERNET_OPTION_REFRESH option flag.  Note To change proxy
+       information for the entire process without affecting the global
+       settings in Internet Explorer 5 and later, use this option on
+       the handle that is returned from InternetOpen. The following
+       code example changes the proxy for the whole process even
+       though the HINTERNET handle is closed and is not used by any
+       requests.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_PROXY" value="38">
+     <desc>
+       Sets or retrieves an INTERNET_PROXY_INFO structure that
+       contains the proxy data for an existing InternetOpen handle
+       when the HINTERNET handle is not NULL. If the HINTERNET handle
+       is NULL, the function sets or queries the global proxy
+       data. This option can be used on the handle returned by
+       InternetOpen. It is used by InternetQueryOption and
+       InternetSetOption.  Note It is recommended that
+       INTERNET_OPTION_PER_CONNECTION_OPTION be used instead of
+       INTERNET_OPTION_PROXY
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_PROXY_PASSWORD" value="44">
+     <desc>
+       Sets or retrieves a string value that contains the password
+       used to access the proxy. This is used by InternetQueryOption
+       and InternetSetOption. This option can be set on the handle
+       returned by InternetConnect or HttpOpenRequest.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_PROXY_SETTINGS_CHANGED" value="95">
+     <desc>
+       Alerts the current WinInet instance that proxy settings have
+       changed and that they must update with the new settings. To
+       alert all available WinInet instances, set the Buffer parameter
+       of InternetSetOption to NULL and BufferLength to 0 when passing
+       this option. This option can be set on the handle returned by
+       InternetConnect or HttpOpenRequest.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_PROXY_USERNAME" value="43">
+     <desc>
+       Sets or retrieves a string value that contains the user name
+       used to access the proxy. This is used by InternetQueryOption
+       and InternetSetOption. This option can be set on the handle
+       returned by InternetConnect or HttpOpenRequest.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_READ_BUFFER_SIZE" value="12">
+     <desc>
+       Sets or retrieves an unsigned long integer value that contains
+       the size of the read buffer. This option can be used on
+       HINTERNET handles returned by FtpOpenFile, FtpFindFirstFile,
+       and InternetConnect (FTP session only). This option is used by
+       InternetQueryOption and InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_RECEIVE_TIMEOUT" value="6">
+     <desc>
+       Sets or retrieves an unsigned long integer value that contains
+       the time-out value, in milliseconds, to receive a response to a
+       request. If the response takes longer than this time-out value,
+       the request is canceled. This option can be used on any
+       HINTERNET handle, including a NULL handle. It is used by
+       InternetQueryOption and InternetSetOption.  When used in
+       reference to an FTP transaction, this option refers to the
+       control channel.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_REFRESH" value="37">
+     <desc>
+       Causes the proxy data to be reread from the registry for a
+       handle. No buffer is required. This option can be used on the
+       HINTERNET handle returned by InternetOpen. It is used by
+       InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_REQUEST_FLAGS" value="23">
+     <desc>
+       Retrieves an unsigned long integer value that contains the
+       special status flags that indicate the status of the download
+       in progress. This is used by InternetQueryOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_REQUEST_PRIORITY" value="58">
+     <desc>
+       Sets or retrieves an unsigned long integer value that contains
+       the priority of requests that compete for a connection on an
+       HTTP handle. This is used by InternetQueryOption and
+       InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_RESET_URLCACHE_SESSION" value="60">
+     <desc>
+       Starts a new cache session for the process. No buffer is
+       required. This is used by InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_SECONDARY_CACHE_KEY" value="53">
+     <desc>
+       Sets or retrieves a string value that contains the secondary
+       cache key. This is used by InternetQueryOption and
+       InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_SECURITY_CERTIFICATE" value="35">
+     <desc>
+       Retrieves the certificate for an SSL/PCT (Secure Sockets
+       Layer/Private Communications Technology) server into a
+       formatted string. This is used by InternetQueryOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_SECURITY_CERTIFICATE_STRUCT" value="32">
+     <desc>
+       Retrieves the certificate for an SSL/PCT server into the
+       INTERNET_CERTIFICATE_INFO structure. This is used by
+       InternetQueryOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_SECURITY_FLAGS" value="31">
+     <desc>
+       Retrieves an unsigned long integer value that contains the
+       security flags for a handle. This option is used by
+       InternetQueryOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_SECURITY_KEY_BITNESS" value="36">
+     <desc>
+       Retrieves an unsigned long integer value that contains the bit
+       size of the encryption key. The larger the number, the greater
+       the encryption strength used. This is used by
+       InternetQueryOption. Be aware that the data retrieved this way
+       relates to a transaction that has already occurred, whose
+       security level can no longer be changed.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_SEND_TIMEOUT" value="5">
+     <desc>
+       Sets or retrieves an unsigned long integer value, in
+       milliseconds, that contains the time-out value to send a
+       request. If the send takes longer than this time-out value, the
+       send is canceled. This option can be used on any HINTERNET
+       handle, including a NULL handle. It is used by
+       InternetQueryOption and InternetSetOption.  When used in
+       reference to an FTP transaction, this option refers to the
+       control channel.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_SERVER_CERT_CHAIN_CONTEXT" value="105">
+     <desc>
+       Retrieves the server's certificate-chain context as a
+       duplicated PCCERT_CHAIN_CONTEXT. You may pass this duplicated
+       context to any Crypto API function which takes a
+       PCCERT_CHAIN_CONTEXT. You must call CertFreeCertificateChain on
+       the returned PCCERT_CHAIN_CONTEXT when you are done with the
+       certificate-chain context.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_SETTINGS_CHANGED" value="39">
+     <desc>
+       Notifies the system that the registry settings have been
+       changed so that it verifies the settings on the next call to
+       InternetConnect. This is used by InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_SUPPRESS_SERVER_AUTH" value="104">
+     <desc>
+       Sets an HTTP request object such that it will not logon to
+       origin servers, but will perform automatic logon to HTTP proxy
+       servers. This option differs from the Request flag
+       INTERNET_FLAG_NO_AUTH, which prevents authentication to both
+       proxy servers and origin servers.  Setting this mode will
+       suppress the use of any credential material (either previously
+       provided username/password or client SSL certificate) when
+       communicating with an origin server. However, if the request
+       must transit via an authenticating proxy, WinINet will still
+       perform automatic authentication to the HTTP proxy per the
+       Intranet Zone settings for the user. The default Intranet Zone
+       setting is to permit automatic logon using the user's default
+       credentials.  To ensure suppression of all identifying
+       information, the caller should combine
+       INTERNET_OPTION_SUPPRESS_SERVER_AUTH with the
+       INTERNET_FLAG_NO_COOKIES request flag.  This option may only be
+       set on request objects before they have been sent. Attempts to
+       set this option after the request has been sent will return
+       ERROR_INTERNET_INCORRECT_HANDLE_STATE.  No buffer is required
+       for this option. This is used by InternetSetOption on handles
+       returned by HttpOpenRequest only.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_SUPPRESS_BEHAVIOR" value="81">
+     <desc>
+       A general purpose option that is used to suppress behaviors on
+       a process-wide basis. The lpBuffer parameter of the function
+       must be a pointer to a DWORD containing the specific behavior
+       to suppress. This option cannot be queried with
+       InternetQueryOption. The permitted values are:
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_URL" value="34">
+     <desc>
+       Retrieves a string value that contains the full URL of a
+       downloaded resource. If the original URL contained any extra
+       data, such as search strings or anchors, or if the call was
+       redirected, the URL returned differs from the original. This
+       option is valid on HINTERNET handles returned by
+       InternetOpenUrl, FtpOpenFile, GopherOpenFile, or
+       HttpOpenRequest. It is used by InternetQueryOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_USER_AGENT" value="41">
+     <desc>
+       Sets or retrieves the user agent string on handles supplied by
+       InternetOpen and used in subsequent HttpSendRequest functions,
+       as long as it is not overridden by a header added by
+       HttpAddRequestHeaders or HttpSendRequest. This is used by
+       InternetQueryOption and InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_USERNAME" value="28">
+     <desc>
+       Sets or retrieves a string that contains the user name
+       associated with a handle returned by InternetConnect. This is
+       used by InternetQueryOption and InternetSetOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_VERSION" value="40">
+     <desc>
+       Retrieves an INTERNET_VERSION_INFO structure that contains the
+       version number of Wininet.dll. This option can be used on a
+       NULLHINTERNET handle by InternetQueryOption.
+     </desc>
+    </symc>
+    <symc name="INTERNET_OPTION_WRITE_BUFFER_SIZE" value="13">
+     <desc>
+       Sets or retrieves an unsigned long integer value that contains
+       the size, in bytes, of the write buffer. This option can be
+       used on HINTERNET handles returned by FtpOpenFile and
+       InternetConnect (FTP session only). It is used by
+       InternetQueryOption and InternetSetOption.
+     </desc>
+    </symc>
+   </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

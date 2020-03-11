@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa379881(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="crl_issuing_dist_point">
+   <fields>
+    <field name="DistPointName" offset="0" size="12">
+     <type>CRL_DIST_POINT_NAME</type>
+    </field>
+    <field name="fOnlyContainsUserCerts" offset="12" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="fOnlyContainsCACerts" offset="16" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="OnlySomeReasonFlags" offset="20" size="12">
+     <type>CRYPT_BIT_BLOB</type>
+    </field>
+    <field name="fIndirectCRL" offset="32" size="4">
+     <type>BOOL</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

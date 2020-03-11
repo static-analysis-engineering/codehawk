@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa381464(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="crypt_retrieve_aux_info">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pLastSyncTime" offset="4" size="4">
+     <type><ptr>FILETIME</ptr></type>
+    </field>
+    <field name="dwMaxUrlRetrievalByteCount" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pPreFetchInfo" offset="12" size="4">
+     <type>PCRYPTNET_URL_CACHE_PRE_FETCH_INFO</type>
+    </field>
+    <field name="pFlushInfo" offset="16" size="4">
+     <type>PCRYPTNET_URL_CACHE_FLUSH_INFO</type>
+    </field>
+    <field name="ppResponseInfo" offset="20" size="4">
+     <type><ptr>PCRYPTNET_URL_CACHE_RESPONSE_INFO</ptr></type>
+    </field>
+    <field name="pwszCacheFileNamePrefix" offset="24" size="4">
+     <type>LPWSTR</type>
+    </field>
+    <field name="pftCacheResync" offset="28" size="4">
+     <type>LPFILETIME</type>
+    </field>
+    <field name="fProxyCacheRetrieval" offset="32" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="dwHttpStatusCode" offset="36" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

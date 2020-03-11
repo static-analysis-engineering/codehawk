@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms690318(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="dvaspect_enumeration_constants">
+    <type>dvaspect_enumeration_constants</type>
+    <values>
+      <symc name="DVASPECT_CONTENT" value="1"
+            desc="Provides a representation of an object so it can be displayed as an embedded object inside of a container. This value is typically specified for compound document objects. The presentation can be provided for the screen or printer." />
+      <symc name="DVASPECT_THUMBNAIL" value="2"
+            desc="Provides a thumbnail representation of an object so it can be displayed in a browsing tool. The thumbnail is approximately a 120 by 120 pixel, 16-color (recommended) device-independent bitmap potentially wrapped in a metafile." />
+      <symc name="DVASPECT_ICON" value="4"
+            desc="Provides an iconic representation of an object." />
+      <symc name="DVASPECT_DOCPRINT" value="8"
+            desc="Provides a representation of the object on the screen as though it were printed to a printer using the Print command from the File menu. The described data may represent a sequence of pages." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa377193(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cert_dss_parameters">
+   <fields>
+    <field name="p" offset="0" size="8">
+     <type>CRYPT_UINT_BLOB</type>
+    </field>
+    <field name="q" offset="8" size="8">
+     <type>CRYPT_UINT_BLOB</type>
+    </field>
+    <field name="g" offset="16" size="8">
+     <type>CRYPT_UINT_BLOB</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd433846(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="crypt_xml_cryptographic_interface">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>int</type>
+    </field>
+    <field name="fpCryptXmlEncodeAlgorithm" offset="4" size="4">
+     <type>CryptXmlDllEncodeAlgorithm</type>
+    </field>
+    <field name="fpCryptXmlCreateDigest" offset="8" size="4">
+     <type>CryptXmlDllCreateDigest</type>
+    </field>
+    <field name="fpCryptXmlDigestData" offset="12" size="4">
+     <type>CryptXmlDllDigestData</type>
+    </field>
+    <field name="fpCryptXmlFinalizeDigest" offset="16" size="4">
+     <type>CryptXmlDllFinalizeDigest</type>
+    </field>
+    <field name="fpCryptXmlCloseDigest" offset="20" size="4">
+     <type>CryptXmlDllCloseDigest</type>
+    </field>
+    <field name="fpCryptXmlSignData" offset="24" size="4">
+     <type>CryptXmlDllSignData</type>
+    </field>
+    <field name="fpCryptXmlVerifySignature" offset="28" size="4">
+     <type>CryptXmlDllVerifySignature</type>
+    </field>
+    <field name="fpCryptXmlGetAlgorithmInfo" offset="32" size="4">
+     <type>CryptXmlDllGetAlgorithmInfo</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

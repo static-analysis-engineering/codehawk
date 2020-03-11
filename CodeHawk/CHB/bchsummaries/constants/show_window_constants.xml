@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
+    <reference href="http://msdn.microsoft.com/"/>
+  </header>
+  <symbolic-constants type="show_window_constants">
+    <type>show_window_constants</type>
+    <values>
+    <symc name="SW_FORCEMINIMIZE" value="11"
+	  desc="Minimizes a window, even if the thread that owns the window is not responding. This flag should only be used when minimizing windows from a different thread."/>
+    <symc name="SW_HIDE" value="0">
+      <desc>Hides the window and activates another window</desc>
+    </symc>
+    <symc name="SW_MAXIMIZE" value="3">
+      <desc>Maximizes the specified window</desc>
+    </symc>
+    <symc name="SW_MINIMIZE" value="6">
+      <desc>Minimizes the specified window and activates the next top-level window in the Z order</desc>
+    </symc>
+    <symc name="SW_RESTORE" value="9">
+      <desc>Activates and displays the window</desc>
+    </symc>
+    <symc name="SW_SHOW" value="5">
+      <desc>Activates the window and displays it in its current size and position</desc>
+    </symc>
+    <symc name="SW_SHOWDEFAULT" value="10"
+	  desc="Sets the show state based on the SW_ value specified in the STARTUPINFO structure passed to the CreateProcess function by the program that started the application."/>
+    <symc name="SW_SHOWMAXIMIZED" value="3"
+	  desc="Activates the window and displays it as a maximized window."/>
+    <symc name="SW_SHOWMINIMIZED" value="2"
+	  desc="Activates the window and displays it as a minimized window."/>
+    <symc name="SW_SHOWMINNOACTIVE" value="7"
+	  desc="Displays the window as a minimized window. This value is similar to SW_SHOWMINIMIZED, except the window is not activated."/>
+    <symc name="SW_SHOWNA" value="8"
+	  desc="Displays the window in its current size and position. This value is similar to SW_SHOW, except that the window is not activated."/>
+    <symc name="SW_SHOWNOACTIVATE" value="4"
+	  desc="Displays a window in its most recent size and position. This value is similar to SW_SHOWNORMAL, except that the window is not activated."/>
+    <symc name="SW_SHOWNORMAL" value="1"
+	  desc="Activates and displays a window. If the window is minimized or maximized, the system restores it to its original size and position. An application should specify this flag when displaying the window for the first time."/>
+    </values>
+  </symbolic-constants>
+</codehawk-binary-analyzer>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/25/2015 22:03:46"/>
+  <symbolic-flags type="file_map_flags">
+    <values>
+   <symc name="FILE_MAP_ALL_ACCESS" value="0xf001f">
+    <desc>
+      A read/write view of the file is mapped. The file mapping object must have 
+      been created with PAGE_READWRITE or PAGE_EXECUTE_READWRITE protection.
+      When used with the MapViewOfFile function, FILE_MAP_ALL_ACCESS is equivalent 
+      to FILE_MAP_WRITE.
+    </desc>
+   </symc>
+   <symf name="FILE_MAP_COPY" value="0x0001">
+    <desc>
+      A copy-on-write view of the file is mapped. The file mapping object must have
+      been created with PAGE_READONLY, PAGE_READ_EXECUTE, PAGE_WRITECOPY, 
+      PAGE_EXECUTE_WRITECOPY, PAGE_READWRITE, or PAGE_EXECUTE_READWRITE protection.
+      When a process writes to a copy-on-write page, the system copies the original 
+      page to a new page that is private to the process. The new page is backed 
+      by the paging file. The protection of the new page changes from copy-on-write 
+      to read/write.
+      When copy-on-write access is specified, the system and process commit charge 
+      taken is for the entire view because the calling process can potentially write 
+      to every page in the view, making all pages private. The contents of the new
+      page are never written back to the original file and are lost when the view
+      is unmapped.
+    </desc>
+   </symf>
+   <symf name="FILE_MAP_READ" value="0x0004">
+    <desc>
+      A read-only view of the file is mapped. An attempt to write to the file view 
+      results in an access violation.
+      The file mapping object must have been created with PAGE_READONLY, 
+      PAGE_READWRITE, PAGE_EXECUTE_READ, or PAGE_EXECUTE_READWRITE protection.
+    </desc>
+   </symf>
+   <symf name="FILE_MAP_WRITE" value="0x0002">
+    <desc>
+      A read/write view of the file is mapped. The file mapping object must have
+      been created with PAGE_READWRITE or PAGE_EXECUTE_READWRITE protection.
+      When used with MapViewOfFile, (FILE_MAP_WRITE | FILE_MAP_READ) and 
+      FILE_MAP_ALL_ACCESS are equivalent to FILE_MAP_WRITE.
+    </desc>
+   </symf>
+   <symf name="FILE_MAP_EXECUTE" value="0x0020">
+     <desc>
+       An executable view of the file is mapped (mapped memory can be run as code).
+       The file mapping object must have been created with PAGE_EXECUTE_READ, 
+       PAGE_EXECUTE_WRITECOPY, or PAGE_EXECUTE_READWRITE protection.
+     </desc>
+   </symf>
+    </values>
+  </symbolic-flags>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

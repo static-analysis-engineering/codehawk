@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms741651(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="wsanamespace_info">
+   <fields>
+    <field name="NSProviderId" offset="0" size="16">
+     <type>GUID</type>
+    </field>
+    <field name="dwNameSpace" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="fActive" offset="20" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="dwVersion" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpszIdentifier" offset="28" size="4">
+     <type>LPTSTR</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

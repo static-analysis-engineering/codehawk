@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa381158(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="wlx_dispatch_version_1_2">
+   <fields>
+    <field name="WlxUseCtrlAltDel" offset="0" size="4">
+     <type>PWLX_USE_CTRL_ALT_DEL</type>
+    </field>
+    <field name="WlxSetContextPointer" offset="4" size="4">
+     <type>PWLX_SET_CONTEXT_POINTER</type>
+    </field>
+    <field name="WlxSasNotify" offset="8" size="4">
+     <type>PWLX_SAS_NOTIFY</type>
+    </field>
+    <field name="WlxSetTimeout" offset="12" size="4">
+     <type>PWLX_SET_TIMEOUT</type>
+    </field>
+    <field name="WlxAssignShellProtection" offset="16" size="4">
+     <type>PWLX_ASSIGN_SHELL_PROTECTION</type>
+    </field>
+    <field name="WlxMessageBox" offset="20" size="4">
+     <type>PWLX_MESSAGE_BOX</type>
+    </field>
+    <field name="WlxDialogBox" offset="24" size="4">
+     <type>PWLX_DIALOG_BOX</type>
+    </field>
+    <field name="WlxDialogBoxParam" offset="28" size="4">
+     <type>PWLX_DIALOG_BOX_PARAM</type>
+    </field>
+    <field name="WlxDialogBoxIndirect" offset="32" size="4">
+     <type>PWLX_DIALOG_BOX_INDIRECT</type>
+    </field>
+    <field name="WlxDialogBoxIndirectParam" offset="36" size="4">
+     <type>PWLX_DIALOG_BOX_INDIRECT_PARAM</type>
+    </field>
+    <field name="WlxSwitchDesktopToUser" offset="40" size="4">
+     <type>PWLX_SWITCH_DESKTOP_TO_USER</type>
+    </field>
+    <field name="WlxSwitchDesktopToWinlogon" offset="44" size="4">
+     <type>PWLX_SWITCH_DESKTOP_TO_WINLOGON</type>
+    </field>
+    <field name="WlxChangePasswordNotify" offset="48" size="4">
+     <type>PWLX_CHANGE_PASSWORD_NOTIFY</type>
+    </field>
+    <field name="WlxGetSourceDesktop" offset="52" size="4">
+     <type>PWLX_GET_SOURCE_DESKTOP</type>
+    </field>
+    <field name="WlxSetReturnDesktop" offset="56" size="4">
+     <type>PWLX_SET_RETURN_DESKTOP</type>
+    </field>
+    <field name="WlxCreateUserDesktop" offset="60" size="4">
+     <type>PWLX_CREATE_USER_DESKTOP</type>
+    </field>
+    <field name="WlxChangePasswordNotifyEx" offset="64" size="4">
+     <type>PWLX_CHANGE_PASSWORD_NOTIFY_EX</type>
+    </field>
+    <field name="WlxCloseUserDesktop" offset="68" size="4">
+     <type>PWLX_CLOSE_USER_DESKTOP</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

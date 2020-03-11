@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa379598(v=vs.85).aspx"/>
+  <header date="05/29/2017 00:00:00"/>
+  <struct name="sid_identifier_authority">
+   <fields>
+    <field name="Value" offset="0" size="6">
+     <type>
+       <array size="6">BYTE</array>
+     </type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

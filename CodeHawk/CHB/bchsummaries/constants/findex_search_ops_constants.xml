@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa364416(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="findex_search_ops_constants">
+    <type>findex_search_ops_constants</type>
+    <values>
+      <symc name="FindExSearchNameMatch" value="0"
+            desc="The search for a file that matches a specified file name.
+            The lpSearchFilter parameter of FindFirstFileEx must be NULL when this search operation is used." />
+      <symc name="FindExSearchLimitToDirectories" value="1"
+            desc="This is an advisory flag. If the file system supports directory filtering, the function searches for a file that matches the specified name and is also a directory. If the file system does not support directory filtering, this flag is silently ignored.
+The lpSearchFilter parameter of the FindFirstFileEx function must be NULL when this search value is used.
+If directory filtering is desired, this flag can be used on all file systems, but because it is an advisory flag and only affects file systems that support it, the application must examine the file attribute data stored in the lpFindFileData parameter of the FindFirstFileEx function to determine whether the function has returned a handle to a directory." />
+      <symc name="FindExSearchLimitToDevices" value="2"
+            desc="This filtering type is not available." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

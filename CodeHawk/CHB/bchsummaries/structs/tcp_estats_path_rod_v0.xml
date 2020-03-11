@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ee720198(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="tcp_estats_path_rod_v0">
+   <fields>
+    <field name="FastRetran" offset="0" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="Timeouts" offset="4" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SubsequentTimeouts" offset="8" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="CurTimeoutCount" offset="12" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="AbruptTimeouts" offset="16" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="PktsRetrans" offset="20" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="BytesRetrans" offset="24" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="DupAcksIn" offset="28" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SacksRcvd" offset="32" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SackBlocksRcvd" offset="36" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="CongSignals" offset="40" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="PreCongSumCwnd" offset="44" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="PreCongSumRtt" offset="48" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="PostCongSumRtt" offset="52" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="PostCongCountRtt" offset="56" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="EcnSignals" offset="60" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="EceRcvd" offset="64" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SendStall" offset="68" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="QuenchRcvd" offset="72" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="RetranThresh" offset="76" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SndDupAckEpisodes" offset="80" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SumBytesReordered" offset="84" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="NonRecovDa" offset="88" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="NonRecovDaEpisodes" offset="92" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="AckAfterFr" offset="96" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="DsackDups" offset="100" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SampleRtt" offset="104" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SmoothedRtt" offset="108" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="RttVar" offset="112" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="MaxRtt" offset="116" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="MinRtt" offset="120" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SumRtt" offset="124" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="CountRtt" offset="128" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="CurRto" offset="132" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="MaxRto" offset="136" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="MinRto" offset="140" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="CurMss" offset="144" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="MaxMss" offset="148" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="MinMss" offset="152" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SpuriousRtoDetections" offset="156" size="4">
+     <type>ULONG</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

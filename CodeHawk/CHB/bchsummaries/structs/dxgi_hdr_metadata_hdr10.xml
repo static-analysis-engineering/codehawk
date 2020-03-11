@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/mt732700(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="dxgi_hdr_metadata_hdr10">
+   <fields>
+    <field name="RedPrimary" offset="0" size="4">
+     <type><array size="4">UINT16</array></type>
+    </field>
+    <field name="GreenPrimary" offset="4" size="4">
+     <type><array size="4">UINT16</array></type>
+    </field>
+    <field name="BluePrimary" offset="8" size="4">
+     <type><array size="4">UINT16</array></type>
+    </field>
+    <field name="WhitePoint" offset="12" size="4">
+     <type><array size="4">UINT16</array></type>
+    </field>
+    <field name="MaxMasteringLuminance" offset="16" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="MinMasteringLuminance" offset="20" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="MaxContentLightLevel" offset="24" size="2">
+     <type>UINT16</type>
+    </field>
+    <field name="MaxFrameAverageLightLevel" offset="26" size="2">
+     <type>UINT16</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

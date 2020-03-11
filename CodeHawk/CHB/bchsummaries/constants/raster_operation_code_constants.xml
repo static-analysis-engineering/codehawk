@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference
+	href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd183370(v=vs.85).aspx"/>
+    <refnotes>retrieved from unofficial source</refnotes>
+  </header>
+  <symbolic-constants type="raster_operation_code_constants">
+    <type>raster_operation_code_constants</type>
+    <values>
+      <symc name="BLACKNESS" value="0x00000042"
+            desc="Fills the destination rectangle using the color associated with index 0 in the physical palette. (This color is black for the default physical palette.)" />
+      <symc name="CAPTUREBLT" value="0x40000000"
+            desc="Includes any windows that are layered on top of your window in the resulting image. By default, the image only contains your window. Note that this generally cannot be used for printing device contexts." />
+      <symc name="DSTINVERT" value="0x00550009"
+            desc="Inverts the destination rectangle." />
+      <symc name="MERGECOPY" value="0x00C000CA"
+            desc="Merges the colors of the source rectangle with the brush currently selected in hdcDest, by using the Boolean AND operator." />
+      <symc name="MERGEPAINT" value="0x00BB0226"
+            desc="Merges the colors of the inverted source rectangle with the colors of the destination rectangle by using the Boolean OR operator." />
+      <symc name="NOMIRRORBITMAP" value="0x80000000"
+            desc="Prevents the bitmap from being mirrored." />
+      <symc name="NOTSRCCOPY" value="0x00330008"
+            desc="Copies the inverted source rectangle to the destination." />
+      <symc name="NOTSRCERASE" value="0x001100A6"
+            desc="Combines the colors of the source and destination rectangles by using the Boolean OR operator and then inverts the resultant color." />
+      <symc name="PATCOPY" value="0x00F00021"
+            desc="Copies the brush currently selected in hdcDest, into the destination bitmap." />
+      <symc name="PATINVERT" value="0x005A0049"
+            desc="Combines the colors of the brush currently selected in hdcDest, with the colors of the destination rectangle by using the Boolean XOR operator." />
+      <symc name="PATPAINT" value="0x00FB0A09"
+            desc="Combines the colors of the brush currently selected in hdcDest, with the colors of the inverted source rectangle by using the Boolean OR operator. The result of this operation is combined with the colors of the destination rectangle by using the Boolean OR operator." />
+      <symc name="SRCAND" value="0x008800C6"
+            desc="Combines the colors of the source and destination rectangles by using the Boolean AND operator." />
+      <symc name="SRCCOPY" value="0x00CC0020"
+            desc="Copies the source rectangle directly to the destination rectangle." />
+      <symc name="SRCERASE" value="0x00440328"
+            desc="Combines the inverted colors of the destination rectangle with the colors of the source rectangle by using the Boolean AND operator." />
+      <symc name="SRCINVERT" value="0x00660046"
+            desc="Combines the colors of the source and destination rectangles by using the Boolean XOR operator." />
+      <symc name="SRCPAINT" value="0x00EE0086"
+            desc="Combines the colors of the source and destination rectangles by using the Boolean OR operator." />
+      <symc name="WHITENESS" value="0x00FF0062"
+            desc="Fills the destination rectangle using the color associated with index 1 in the physical palette. (This color is white for the default physical palette.)" />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

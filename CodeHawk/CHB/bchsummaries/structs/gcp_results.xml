@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/dd144842(v=vs.85).aspx"/>
+  <header date="05/29/2017 00:00:00"/>
+  <struct name="gcp_results">
+   <fields>
+    <field name="lStructSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpOutString" offset="4" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="lpOrder" offset="8" size="4">
+     <type><ptr>UINT</ptr></type>
+    </field>
+    <field name="lpDx" offset="12" size="4">
+     <type><ptr>int</ptr></type>
+    </field>
+    <field name="lpCaretPos" offset="16" size="4">
+     <type><ptr>int</ptr></type>
+    </field>
+    <field name="lpClass" offset="20" size="4">
+     <type>LPSTR</type>
+    </field>
+    <field name="lpGlyphs" offset="24" size="4">
+     <type>LPWSTR</type>
+    </field>
+    <field name="nGlyphs" offset="28" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="nMaxFit" offset="32" size="4">
+     <type>int</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

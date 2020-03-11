@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa381477(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="crypt_verify_message_para">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwMsgAndCertEncodingType" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hCryptProv" offset="8" size="4">
+     <type>HCRYPTPROV_LEGACY</type>
+    </field>
+    <field name="pfnGetSignerCertificate" offset="12" size="4">
+     <type>PFN_CRYPT_GET_SIGNER_CERTIFICATE</type>
+    </field>
+    <field name="pvGetArg" offset="16" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+    <field name="pStrongSignPara" offset="20" size="4">
+     <type>PCCERT_STRONG_SIGN_PARA</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

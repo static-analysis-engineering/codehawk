@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/bb870902(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="ncb">
+   <fields>
+    <field name="ncb_command" offset="0" size="1">
+     <type>UCHAR</type>
+    </field>
+    <field name="ncb_retcode" offset="1" size="1">
+     <type>UCHAR</type>
+    </field>
+    <field name="ncb_lsn" offset="2" size="1">
+     <type>UCHAR</type>
+    </field>
+    <field name="ncb_num" offset="3" size="1">
+     <type>UCHAR</type>
+    </field>
+    <field name="ncb_buffer" offset="4" size="4">
+     <type>PUCHAR</type>
+    </field>
+    <field name="ncb_length" offset="8" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="ncb_callname" offset="10" size="16">
+     <type><array size="16">UCHAR</array></type>
+    </field>
+    <field name="ncb_name" offset="26" size="16">
+     <type><array size="16">UCHAR</array></type>
+    </field>
+    <field name="ncb_rto" offset="42" size="1">
+     <type>UCHAR</type>
+    </field>
+    <field name="ncb_sto" offset="43" size="1">
+     <type>UCHAR</type>
+    </field>
+    <field name="ncb_post" offset="44" size="4">
+     <type><ptr>CALLBACK</ptr></type>
+    </field>
+    <field name="ncb_lana_num" offset="48" size="1">
+     <type>UCHAR</type>
+    </field>
+    <field name="ncb_cmd_cplt" offset="49" size="1">
+     <type>UCHAR</type>
+    </field>
+    <field name="ncb_reserve" offset="50" size="10">
+     <type><array size="10">UCHAR</array></type>
+    </field>
+    <field name="ncb_event" offset="60" size="4">
+     <type>HANDLE</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

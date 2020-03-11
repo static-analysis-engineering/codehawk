@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms741645(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="wsamsg">
+   <fields>
+    <field name="name" offset="0" size="4">
+     <type>LPSOCKADDR</type>
+    </field>
+    <field name="namelen" offset="4" size="4">
+     <type>INT</type>
+    </field>
+    <field name="lpBuffers" offset="8" size="4">
+     <type>LPWSABUF</type>
+    </field>
+    <field name="dwBufferCount" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Control" offset="16" size="8">
+     <type>WSABUF</type>
+    </field>
+    <field name="dwFlags" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

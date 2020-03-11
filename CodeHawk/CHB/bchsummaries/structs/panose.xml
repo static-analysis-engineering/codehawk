@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/dd162774(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="panose">
+   <fields>
+    <field name="bFamilyType" offset="0" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="bSerifStyle" offset="1" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="bWeight" offset="2" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="bProportion" offset="3" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="bContrast" offset="4" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="bStrokeVariation" offset="5" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="bArmStyle" offset="6" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="bLetterform" offset="7" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="bMidline" offset="8" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="bXHeight" offset="9" size="1">
+     <type>BYTE</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

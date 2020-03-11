@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference
+	href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd183509(v=vs.85).aspx"/>
+    <refnotes>retrieved from unofficial sources</refnotes>
+  </header>
+  <symbolic-constants type="pen_style_constants">
+    <type>pen_style_constants</type>
+    <values>
+      <symc name="PS_SOLID" value="0"
+            desc="The pen is solid." />
+      <symc name="PS_DASH" value="1"
+            desc="The pen is dashed. This style is valid only when the pen width is one or less in device units." />
+      <symc name="PS_DOT" value="2"
+            desc="The pen is dotted. This style is valid only when the pen width is one or less in device units." />
+      <symc name="PS_DASHDOT" value="3"
+            desc="The pen has alternating dashes and dots. This style is valid only when the pen width is one or less in device units." />
+      <symc name="PS_DASHDOTDOT" value="4"
+            desc="The pen has alternating dashes and double dots. This style is valid only when the pen width is one or less in device units." />
+      <symc name="PS_NULL" value="5"
+            desc="The pen is invisible." />
+      <symc name="PS_INSIDEFRAME" value="6"
+            desc="The pen is solid. When this pen is used in any GDI drawing function that takes a bounding rectangle, the dimensions of the figure are shrunk so that it fits entirely in the bounding rectangle, taking into account the width of the pen. This applies only to geometric pens." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

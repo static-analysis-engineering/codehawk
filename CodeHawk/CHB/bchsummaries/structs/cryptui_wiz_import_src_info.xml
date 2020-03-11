@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa380870(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cryptui_wiz_import_src_info">
+   <fields>
+    <field name="dwSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwSubjectChoice" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pwszFileName" offset="8" size="4">
+     <type>LPCWSTR</type>
+    </field>
+    <field name="pCertContext" offset="8" size="4">
+     <type>PCCERT_CONTEXT</type>
+    </field>
+    <field name="pCTLContext" offset="8" size="4">
+     <type>PCCTL_CONTEXT</type>
+    </field>
+    <field name="pCRLContext" offset="8" size="4">
+     <type>PCCRL_CONTEXT</type>
+    </field>
+    <field name="hCertStore" offset="8" size="4">
+     <type>HCERTSTORE</type>
+    </field>
+    <field name="dwFlags" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pwszPassword" offset="16" size="4">
+     <type>LPCWSTR</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

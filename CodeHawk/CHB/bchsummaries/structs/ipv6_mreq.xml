@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms738655(v=vs.85).aspx"/>
+  <header date="08/08/2017 00:00:00"/>
+  <struct name="ipv6_mreq">
+   <fields>
+    <field name="ipv6mr_multiaddr" offset="0" size="16">
+     <type>struct in6_addr</type>
+    </field>
+    <field name="ipv6mr_interface" offset="16" size="4">
+     <type>unsigned int</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

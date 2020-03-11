@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa387441(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="prov_enumalgs_ex">
+   <fields>
+    <field name="aiAlgid" offset="0" size="4">
+     <type>ALG_ID</type>
+    </field>
+    <field name="dwDefaultLen" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwMinLen" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwMaxLen" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwProtocols" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwNameLen" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="szName" offset="24" size="20">
+     <type><array size="20">CHAR</array></type>
+    </field>
+    <field name="dwLongNameLen" offset="44" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="szLongName" offset="48" size="40">
+     <type><array size="40">CHAR</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

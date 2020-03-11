@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ff729168(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="clipboard_formats_constants">
+    <type>clipboard_formats_constants</type>
+    <values>
+      <symc name="CF_BITMAP" value="2"
+            desc="A handle to a bitmap (HBITMAP)." />
+      <symc name="CF_DIB" value="8"
+            desc="A memory object containing a BITMAPINFO structure followed by the bitmap bits." />
+      <symc name="CF_DIBV5" value="17"
+            desc="A memory object containing a BITMAPV5HEADER structure followed by the bitmap color space information and the bitmap bits." />
+      <symc name="CF_DIF" value="5"
+            desc="Software Arts' Data Interchange Format." />
+      <symc name="CF_DSPBITMAP" value="0x0082"
+            desc="Bitmap display format associated with a private format. The hMem parameter must be a handle to data that can be displayed in bitmap format in lieu of the privately formatted data." />
+      <symc name="CF_DSPENHMETAFILE" value="0x008E"
+            desc="Enhanced metafile display format associated with a private format. The hMem parameter must be a handle to data that can be displayed in enhanced metafile format in lieu of the privately formatted data." />
+      <symc name="CF_DSPMETAFILEPICT" value="0x0083"
+            desc="Metafile-picture display format associated with a private format. The hMem parameter must be a handle to data that can be displayed in metafile-picture format in lieu of the privately formatted data." />
+      <symc name="CF_DSPTEXT" value="0x0081"
+            desc="Text display format associated with a private format. The hMem parameter must be a handle to data that can be displayed in text format in lieu of the privately formatted data." />
+      <symc name="CF_ENHMETAFILE" value="14"
+            desc="A handle to an enhanced metafile (HENHMETAFILE)." />
+      <symc name="CF_GDIOBJFIRST" value="0x0300"
+            desc="Start of a range of integer values for application-defined GDI object clipboard formats. The end of the range is CF_GDIOBJLAST.
+            Handles associated with clipboard formats in this range are not automatically deleted using the GlobalFree function when the clipboard is emptied. Also, when using values in this range, the hMem parameter is not a handle to a GDI object, but is a handle allocated by the GlobalAlloc function with the GMEM_MOVEABLE flag." />
+      <symc name="CF_GDIOBJLAST" value="0x03FF"
+            desc="See CF_GDIOBJFIRST." />
+      <symc name="CF_HDROP" value="15"
+            desc="A handle to type HDROP that identifies a list of files. An application can retrieve information about the files by passing the handle to the DragQueryFile function." />
+      <symc name="CF_LOCALE" value="16"
+            desc="The data is a handle to the locale identifier associated with text in the clipboard. When you close the clipboard, if it contains CF_TEXT data but no CF_LOCALE data, the system automatically sets the CF_LOCALE format to the current input language. You can use the CF_LOCALE format to associate a different locale with the clipboard text.
+An application that pastes text from the clipboard can retrieve this format to determine which character set was used to generate the text.
+Note that the clipboard does not support plain text in multiple character sets. To achieve this, use a formatted text data type such as RTF instead.
+The system uses the code page associated with CF_LOCALE to implicitly convert from CF_TEXT to CF_UNICODETEXT. Therefore, the correct code page table is used for the conversion." />
+      <symc name="CF_METAFILEPICT" value="3"
+            desc="Handle to a metafile picture format as defined by the METAFILEPICT structure. When passing a CF_METAFILEPICT handle by means of DDE, the application responsible for deleting hMem should also free the metafile referred to by the CF_METAFILEPICT handle." />
+      <symc name="CF_OEMTEXT" value="7"
+            desc="Text format containing characters in the OEM character set. Each line ends with a carriage return/linefeed (CR-LF) combination. A null character signals the end of the data." />
+      <symc name="CF_OWNERDISPLAY" value="0x0080"
+            desc="Owner-display format. The clipboard owner must display and update the clipboard viewer window, and receive the WM_ASKCBFORMATNAME, WM_HSCROLLCLIPBOARD, WM_PAINTCLIPBOARD, WM_SIZECLIPBOARD, and WM_VSCROLLCLIPBOARD messages. The hMem parameter must be NULL." />
+      <symc name="CF_PALETTE" value="9"
+            desc="Handle to a color palette. Whenever an application places data in the clipboard that depends on or assumes a color palette, it should place the palette on the clipboard as well.
+If the clipboard contains data in the CF_PALETTE (logical color palette) format, the application should use the SelectPalette and RealizePalette functions to realize (compare) any other data in the clipboard against that logical palette.
+When displaying clipboard data, the clipboard always uses as its current palette any object on the clipboard that is in the CF_PALETTE format." />
+      <symc name="CF_PENDATA" value="10"
+            desc="Data for the pen extensions to the Microsoft Windows for Pen Computing." />
+      <symc name="CF_PRIVATEFIRST" value="0x0200"
+            desc="Start of a range of integer values for private clipboard formats. The range ends with CF_PRIVATELAST. Handles associated with private clipboard formats are not freed automatically; the clipboard owner must free such handles, typically in response to the WM_DESTROYCLIPBOARD message." />
+      <symc name="CF_PRIVATELAST" value="0x02FF"
+            desc="See CF_PRIVATEFIRST." />
+      <symc name="CF_RIFF" value="11"
+            desc="Represents audio data more complex than can be represented in a CF_WAVE standard wave format." />
+      <symc name="CF_SYLK" value="4"
+            desc="Microsoft Symbolic Link (SYLK) format." />
+      <symc name="CF_TEXT" value="1"
+            desc="Text format. Each line ends with a carriage return/linefeed (CR-LF) combination. A null character signals the end of the data. Use this format for ANSI text." />
+      <symc name="CF_TIFF" value="6"
+            desc="Tagged-image file format." />
+      <symc name="CF_UNICODETEXT" value="13"
+            desc="Unicode text format. Each line ends with a carriage return/linefeed (CR-LF) combination. A null character signals the end of the data." />
+      <symc name="CF_WAVE" value="12"
+            desc="Represents audio data in one of the standard wave formats, such as 11 kHz or 22 kHz PCM." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

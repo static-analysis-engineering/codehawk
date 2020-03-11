@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa365282(v=vs.85).aspx"/>
+  <header date="05/29/2017 00:00:00"/>
+  <struct name="ofstruct">
+   <fields>
+    <field name="cBytes" offset="0" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="fFixedDisk" offset="1" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="nErrCode" offset="2" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="Reserved1" offset="4" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="Reserved2" offset="6" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="szPathName" offset="8" size="128">
+     <type>
+       <array size="128">CHAR</array>
+     </type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

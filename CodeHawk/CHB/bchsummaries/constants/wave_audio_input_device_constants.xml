@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference
+	href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd743847(v=vs.85).aspx"/>
+    <refnotes>retrieved from unofficial sources</refnotes>
+  </header>
+  <symbolic-constants type="wave_audio_input_device_constants">
+    <type>wave_audio_input_device_constants</type>
+    <values>
+      <symc name="CALLBACK_EVENT" value="0x00050000"
+            desc="The dwCallback parameter is an event handle." />
+      <symc name="CALLBACK_FUNCTION" value="0x00030000"
+            desc="The dwCallback parameter is a callback procedure address." />
+      <symc name="CALLBACK_NULL" value="0x00000000"
+            desc="No callback mechanism. This is the default setting." />
+      <symc name="CALLBACK_THREAD" value="0x00020000"
+            desc="The dwCallback parameter is a thread identifier." />
+      <symc name="CALLBACK_WINDOW" value="0x00010000"
+            desc="The dwCallback parameter is a window handle." />
+      <symc name="WAVE_MAPPED_DEFAULT_COMMUNICATION_DEVICE	" value="0x0010"
+            desc="If this flag is specified and the uDeviceID parameter is WAVE_MAPPER, the function opens the default communication device.
+This flag applies only when uDeviceID equals WAVE_MAPPER.
+Note  Requires Windows 7" />
+      <symc name="WAVE_FORMAT_DIRECT" value="0x0008"
+            desc="If this flag is specified, the ACM driver does not perform conversions on the audio data." />
+      <symc name="WAVE_FORMAT_QUERY" value="0x0001"
+            desc="The function queries the device to determine whether it supports the given format, but it does not open the device." />
+      <symc name="WAVE_MAPPED" value="0x0004"
+            desc="The uDeviceID parameter specifies a waveform-audio device to be mapped to by the wave mapper." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

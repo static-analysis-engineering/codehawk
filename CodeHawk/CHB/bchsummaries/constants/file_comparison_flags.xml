@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd317761(v=vs.85).aspx"/>
+    <refnotes>retrieved from unofficial source</refnotes>
+  </header>
+  <symbolic-constants type="file_comparison_flags">
+    <type>file_comparison_flags</type>
+    <values>
+      <symc name="LINGUISTIC_IGNORECASE" value="0x00000010"
+            desc="Ignore case, as linguistically appropriate." />
+      <symc name="LINGUISTIC_IGNOREDIACRITIC" value="0x00000020"
+            desc="Ignore nonspacing characters, as linguistically appropriate.
+            Note  This flag does not always produce predictable results when used with decomposed characters, that is, characters in which a base character and one or more nonspacing characters each have distinct code point values." />
+      <symc name="NORM_IGNORECASE" value="0x00000001"
+            desc="Ignore case. For many scripts (notably Latin scripts), NORM_IGNORECASE coincides with LINGUISTIC_IGNORECASE.
+Note  NORM_IGNORECASE ignores any tertiary distinction, whether it is actually linguistic case or not. For example, in Arabic and Indic scripts, this distinguishes alternate forms of a character, but the differences do not correspond to linguistic case. LINGUISTIC_IGNORECASE causes the function to ignore only actual linguistic casing, instead of ignoring the third sorting weight.
+Note  With this flag set, the function ignores the distinction between the wide and narrow forms of the CJK compatibility characters." />
+      <symc name="NORM_IGNOREKANATYPE" value="0x00010000"
+            desc="Do not differentiate between hiragana and katakana characters. Corresponding hiragana and katakana characters compare as equal." />
+      <symc name="NORM_IGNORENONSPACE" value="0x00000002"
+            desc="Ignore nonspacing characters. For many scripts (notably Latin scripts), NORM_IGNORENONSPACE coincides with LINGUISTIC_IGNOREDIACRITIC.
+Note  NORM_IGNORENONSPACE ignores any secondary distinction, whether it is a diacritic or not. Scripts for Korean, Japanese, Chinese, and Indic languages, among others, use this distinction for purposes other than diacritics. LINGUISTIC_IGNOREDIACRITIC causes the function to ignore only actual diacritics, instead of ignoring the second sorting weight.
+Note  NORM_IGNORENONSPACE only has an effect for locales in which accented characters are sorted in a second pass from main characters. Normally all characters in the string are first compared without regard to accents and, if the strings are equal, a second pass over the strings is performed to compare accents. This flag causes the second pass to not be performed. For locales that sort accented characters in the first pass, this flag has no effect." />
+      <symc name="NORM_IGNORESYMBOLS" value="0x00000004"
+            desc="Ignore symbols and punctuation." />
+      <symc name="NORM_IGNOREWIDTH" value="0x00020000"
+            desc="Ignore the difference between half-width and full-width characters, for example, C a t == cat. The full-width form is a formatting distinction used in Chinese and Japanese scripts." />
+      <symc name="NORM_LINGUISTIC_CASING" value="0x08000000"
+            desc="Use linguistic rules for casing, instead of file system rules (default)." />
+      <symc name="SORT_DIGITSASNUMBERS" value="0x00000008"
+            desc="Windows 7: Treat digits as numbers during sorting, for example, sort &quot;2&quot; before &quot;10&quot;." />
+      <symc name="SORT_STRINGSORT" value="0x00001000 "
+            desc="Treat punctuation the same as symbols." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms724224(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="computer_name_format_constants">
+    <type>computer_name_format_constants</type>
+    <values>
+      <symc name="ComputerNameNetBIOS" value="1"
+            desc="The NetBIOS name of the local computer or the cluster associated with the local computer. This name is limited to MAX_COMPUTERNAME_LENGTH + 1 characters and may be a truncated version of the DNS host name. For example, if the DNS host name is &quot;corporate-mail-server&quot;, the NetBIOS name would be &quot;corporate-mail-&quot;." />
+      <symc name="ComputerNameDnsHostname" value="2"
+            desc="The DNS name of the local computer or the cluster associated with the local computer." />
+      <symc name="ComputerNameDnsDomain" value="3"
+            desc="The name of the DNS domain assigned to the local computer or the cluster associated with the local computer." />
+      <symc name="ComputerNameDnsFullyQualified" value="4"
+            desc="The fully qualified DNS name that uniquely identifies the local computer or the cluster associated with the local computer.
+This name is a combination of the DNS host name and the DNS domain name, using the form HostName.DomainName. For example, if the DNS host name is &quot;corporate-mail-server&quot; and the DNS domain name is &quot;microsoft.com&quot;, the fully qualified DNS name is &quot;corporate-mail-server.microsoft.com&quot;." />
+      <symc name="ComputerNamePhysicalNetBIOS" value="5"
+            desc="The NetBIOS name of the local computer. On a cluster, this is the NetBIOS name of the local node on the cluster." />
+      <symc name="ComputerNamePhysicalDnsHostname" value="6"
+            desc="The DNS host name of the local computer. On a cluster, this is the DNS host name of the local node on the cluster." />
+      <symc name="ComputerNamePhysicalDnsDomain" value="7"
+            desc="The name of the DNS domain assigned to the local computer. On a cluster, this is the DNS domain of the local node on the cluster." />
+      <symc name="ComputerNamePhysicalDnsFullyQualified" value="8"
+            desc="The fully qualified DNS name that uniquely identifies the computer. On a cluster, this is the fully qualified DNS name of the local node on the cluster. The fully qualified DNS name is a combination of the DNS host name and the DNS domain name, using the form HostName.DomainName." />
+      <symc name="ComputerNameMax" value="9"
+            desc="Not used." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms740496(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="sockaddr_in6">
+   <fields>
+    <field name="sin6_family" offset="0" size="2">
+     <type>short</type>
+    </field>
+    <field name="sin6_port" offset="2" size="2">
+     <type>u_short</type>
+    </field>
+    <field name="sin6_flowinfo" offset="4" size="4">
+     <type>u_long</type>
+    </field>
+    <field name="sin6_addr" offset="8" size="16">
+     <type>struct in6_addr</type>
+    </field>
+    <field name="sin6_scope_id" offset="24" size="4">
+     <type>u_long</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

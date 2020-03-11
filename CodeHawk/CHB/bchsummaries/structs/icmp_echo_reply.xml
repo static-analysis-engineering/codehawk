@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa366053(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="icmp_echo_reply">
+   <fields>
+    <field name="Address" offset="0" size="4">
+     <type>IPAddr</type>
+    </field>
+    <field name="Status" offset="4" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="RoundTripTime" offset="8" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="DataSize" offset="12" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="Reserved" offset="14" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="Data" offset="16" size="4">
+     <type>PVOID</type>
+    </field>
+    <field name="Options" offset="20" size="8">
+     <type>struct ip_option_information</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

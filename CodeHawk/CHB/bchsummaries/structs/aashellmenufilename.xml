@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773180(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="aashellmenufilename">
+   <fields>
+    <field name="cbTotal" offset="0" size="2">
+     <type>SHORT</type>
+    </field>
+    <field name="rgbReserved" offset="2" size="12">
+     <type><array size="12">BYTE</array></type>
+    </field>
+    <field name="szFileName" offset="14" size="1">
+     <type><array size="1">TCHAR</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

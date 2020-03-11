@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
+    <reference href="http://msdn.microsoft.com/"/>
+  </header>
+  <symbolic-flags type="heap_allocation_flags">
+    <type>heap_allocation_flags</type>
+    <values>
+      <symf name="HEAP_GENERATE_EXCEPTIONS" value="0x00000004">
+	<desc>
+	  The system will raise an exception to indicate a function failure, 
+	  such as an out-of-memory condition, instead of returning NULL.
+	</desc>
+      </symf>
+      <symf name="HEAP_NO_SERIALIZE" value="0x00000001">
+	<desc>Serialized access will not be used for this allocation</desc>
+      </symf>
+      <symf name="HEAP_ZERO_MEMORY" value="0x00000008">
+	<desc>
+	  The allocated memory will be initialized to zero. Otherwise, the 
+	  memory is not initialized to zero.
+	</desc>
+      </symf>
+    </values>
+  </symbolic-flags>
+</codehawk-binary-analyzer>

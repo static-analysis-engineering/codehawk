@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa377185(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cert_chain_find_by_issuer_para">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pszUsageIdentifier" offset="4" size="4">
+     <type>LPCSTR</type>
+    </field>
+    <field name="dwKeySpec" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwAcquirePrivateKeyFlags" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="cIssuer" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rgIssuer" offset="20" size="4">
+     <type><ptr>CERT_NAME_BLOB</ptr></type>
+    </field>
+    <field name="pfnFindCallback" offset="24" size="4">
+     <type>PFN_CERT_CHAIN_FIND_BY_ISSUER_CALLBACK</type>
+    </field>
+    <field name="pvFindArg" offset="28" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+    <field name="pdwIssuerChainIndex" offset="32" size="4">
+     <type><ptr>DWORD</ptr></type>
+    </field>
+    <field name="pdwIssuerElementIndex" offset="36" size="4">
+     <type><ptr>DWORD</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

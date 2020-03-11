@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/hh437226(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="rio_extension_function_table">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="RIOReceive" offset="4" size="4">
+     <type>LPFN_RIORECEIVE</type>
+    </field>
+    <field name="RIOReceiveEx" offset="8" size="4">
+     <type>LPFN_RIORECEIVEEX</type>
+    </field>
+    <field name="RIOSend" offset="12" size="4">
+     <type>LPFN_RIOSEND</type>
+    </field>
+    <field name="RIOSendEx" offset="16" size="4">
+     <type>LPFN_RIOSENDEX</type>
+    </field>
+    <field name="RIOCloseCompletionQueue" offset="20" size="4">
+     <type>LPFN_RIOCLOSECOMPLETIONQUEUE</type>
+    </field>
+    <field name="RIOCreateCompletionQueue" offset="24" size="4">
+     <type>LPFN_RIOCREATECOMPLETIONQUEUE</type>
+    </field>
+    <field name="RIOCreateRequestQueue" offset="28" size="4">
+     <type>LPFN_RIOCREATEREQUESTQUEUE</type>
+    </field>
+    <field name="RIODequeueCompletion" offset="32" size="4">
+     <type>LPFN_RIODEQUEUECOMPLETION</type>
+    </field>
+    <field name="RIODeregisterBuffer" offset="36" size="4">
+     <type>LPFN_RIODEREGISTERBUFFER</type>
+    </field>
+    <field name="RIONotify" offset="40" size="4">
+     <type>LPFN_RIONOTIFY</type>
+    </field>
+    <field name="RIORegisterBuffer" offset="44" size="4">
+     <type>LPFN_RIOREGISTERBUFFER</type>
+    </field>
+    <field name="RIOResizeCompletionQueue" offset="48" size="4">
+     <type>LPFN_RIORESIZECOMPLETIONQUEUE</type>
+    </field>
+    <field name="RIOResizeRequestQueue" offset="52" size="4">
+     <type>LPFN_RIORESIZEREQUESTQUEUE</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/dd162607(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="enhmetaheader">
+   <fields>
+    <field name="iType" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nSize" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rclBounds" offset="8" size="16">
+     <type>RECTL</type>
+    </field>
+    <field name="rclFrame" offset="24" size="16">
+     <type>RECTL</type>
+    </field>
+    <field name="dSignature" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nVersion" offset="44" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nBytes" offset="48" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nRecords" offset="52" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nHandles" offset="56" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="sReserved" offset="58" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="nDescription" offset="60" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="offDescription" offset="64" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nPalEntries" offset="68" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="szlDevice" offset="72" size="8">
+     <type>SIZEL</type>
+    </field>
+    <field name="szlMillimeters" offset="80" size="8">
+     <type>SIZEL</type>
+    </field>
+    <field name="cbPixelFormat" offset="88" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="offPixelFormat" offset="92" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bOpenGL" offset="96" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="szlMicrometers" offset="100" size="8">
+     <type>SIZEL</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

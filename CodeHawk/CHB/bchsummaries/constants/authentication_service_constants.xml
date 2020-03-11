@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms692656(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="authentication_service_constants">
+    <type>authentication_service_constants</type>
+    <values>
+      <symc name="RPC_C_AUTHN_NONE" value="0"
+            desc="No authentication." />
+      <symc name="RPC_C_AUTHN_DCE_PRIVATE" value="1"
+            desc="DCE private key authentication." />
+      <symc name="RPC_C_AUTHN_DCE_PUBLIC" value="2"
+            desc="DCE public key authentication." />
+      <symc name="RPC_C_AUTHN_DEC_PUBLIC" value="4"
+            desc="DEC public key authentication. Reserved for future use." />
+      <symc name="RPC_C_AUTHN_GSS_NEGOTIATE" value="9"
+            desc="Snego security support provider." />
+      <symc name="RPC_C_AUTHN_WINNT" value="10"
+            desc="NTLMSSP" />
+      <symc name="RPC_C_AUTHN_GSS_SCHANNEL" value="14"
+            desc="Schannel security support provider. This authentication service supports SSL 2.0, SSL 3.0, TLS, and PCT." />
+      <symc name="RPC_C_AUTHN_GSS_KERBEROS" value="16"
+            desc="Kerberos security support provider." />
+      <symc name="RPC_C_AUTHN_DPA" value="17"
+            desc="DPA security support provider." />
+      <symc name="RPC_C_AUTHN_MSN" value="18"
+            desc="MSN security support provider." />
+      <symc name="RPC_C_AUTHN_KERNEL" value="20"
+            desc="Kernel security support provider." />
+      <symc name="RPC_C_AUTHN_DIGEST" value="21"
+            desc="Digest security support provider." />
+      <symc name="RPC_C_AUTHN_NEGO_EXTENDER" value="30"
+            desc="NEGO extender security support provider." />
+      <symc name="RPC_C_AUTHN_PKU2U" value="31"
+            desc="PKU2U security support provider." />
+      <symc name="RPC_C_AUTHN_MQ" value="100"
+            desc="MQ security support provider." />
+      <symc name="RPC_C_AUTHN_DEFAULT" value="0xFFFFFFFF"
+            desc="The system default authentication service. When this value is specified, COM uses its normal security blanket negotiation algorithm to pick an authentication service. For more information, see Security Blanket Negotiation." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

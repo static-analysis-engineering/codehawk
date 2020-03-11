@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa366894(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="memfree_constants">
+    <type>memfree_constants</type>
+    <values>
+      <symc name="MEM_DECOMMIT" value="0x4000"
+            desc="Decommits the specified region of committed pages. After the operation, the pages are in the reserved state.
+The function does not fail if you attempt to decommit an uncommitted page. This means that you can decommit a range of pages without first determining their current commitment state.
+Do not use this value with MEM_RELEASE.
+The MEM_DECOMMIT value is not supported when the lpAddress parameter provides the base address for an enclave." />
+      <symc name="MEM_RELEASE" value="0x8000"
+            desc="Releases the specified region of pages. After the operation, the pages are in the free state.
+If you specify this value, dwSize must be 0 (zero), and lpAddress must point to the base address returned by the VirtualAllocEx function when the region is reserved. The function fails if either of these conditions is not met.
+If any pages in the region are committed currently, the function first decommits, and then releases them.
+The function does not fail if you attempt to release pages that are in different states, some reserved and some committed. This means that you can release a range of pages without first determining the current commitment state.
+Do not use this value with MEM_DECOMMIT." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

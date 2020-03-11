@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
+    <reference href="http://msdn.microsoft.com/"/>
+  </header>
+  <symbolic-constants type="get_window_command_constants">
+    <type>get_window_command_constants</type>
+    <values>
+    <symc name="GW_HWNDFIRST" value="0">
+      <desc>
+	The retrieved handle identifies the window of the same type that is highest 
+	in the Z order.
+	If the specified window is a topmost window, the handle identifies a 
+	topmost window. If the specified window is a top-level window, the handle 
+	identifies a top-level window. If the specified window is a child window, 
+	the handle identifies a sibling window.
+      </desc>
+    </symc>
+    <symc name="GW_HWNDLAST" value="1">
+      <desc>
+	The retrieved handle identifies the window of the same type that is lowest 
+	in the Z order.
+	If the specified window is a topmost window, the handle identifies a topmost 
+	window. If the specified window is a top-level window, the handle identifies 
+	a top-level window. If the specified window is a child window, the handle 
+	identifies a sibling window.
+      </desc>
+    </symc>
+    <symc name="GW_HWNDNEXT" value="2">
+      <desc>
+	The retrieved handle identifies the window below the specified window in 
+	the Z order.
+	If the specified window is a topmost window, the handle identifies a topmost 
+	window. If the specified window is a top-level window, the handle identifies 
+	a top-level window. If the specified window is a child window, the handle 
+	identifies a sibling window.
+      </desc>
+    </symc>
+    <symc name="GW_HWNDPREV" value="3">
+      <desc>
+	The retrieved handle identifies the window above the specified window in 
+	the Z order.
+	If the specified window is a topmost window, the handle identifies a topmost 
+	window. If the specified window is a top-level window, the handle identifies 
+	a top-level window. If the specified window is a child window, the handle 
+	identifies a sibling window.
+      </desc>
+    </symc>
+    <symc name="GW_OWNER" value="4"
+	  desc="The retrieved handle identifies the specified window's owner window, if any."/>
+    <symc name="GW_CHILD" value="5">
+      <desc>
+	The retrieved handle identifies the child window at the top of the Z order, 
+	if the specified window is a parent window; otherwise, the retrieved handle 
+	is NULL. The function examines only child windows of the specified window. 
+	It does not examine descendant windows.
+      </desc>
+    </symc>
+    <symc name="GW_ENABLEDPOPUP" value="6">
+      <desc>
+	The retrieved handle identifies the enabled popup window owned by the 
+	specified window (the search uses the first such window found using GW_HWNDNEXT); 
+	otherwise, if there are no enabled popup windows, the retrieved handle is that 
+	of the specified window.
+      </desc>
+    </symc>
+    </values>
+  </symbolic-constants>
+</codehawk-binary-analyzer>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
+    <reference href="http://msdn.microsoft.com/"/>
+  </header>
+  <symbolic-constants type="file_type_constants">
+    <type>file_type_constants</type>
+    <values>
+      <symc name="FILE_TYPE_CHAR" value="2"
+	    desc="character file, typically an LPT device or a console"/>
+      <symc name="FILE_TYPE_DISK" value="1" desc="disk file"/>
+      <symc name="FILE_TYPE_PIPE" value="3" desc="socket, a named pipe, or an anonymous pipe"/>
+      <symc name="FILE_TYPE_REMOTE" value="0x8000" desc="unused"/>
+      <symc name="FILE_TYPE_UNKNOWN" value="0" desc="file is unknown, or the function failed"/>
+    </values>
+  </symbolic-constants>
+</codehawk-binary-analyzer>

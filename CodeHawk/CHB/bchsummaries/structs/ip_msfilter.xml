@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms738712(v=vs.85).aspx"/>
+  <header date="08/08/2017 00:00:00"/>
+  <struct name="ip_msfilter">
+   <fields>
+    <field name="imsf_multiaddr" offset="0" size="4">
+     <type>struct in_addr</type>
+    </field>
+    <field name="imsf_interface" offset="4" size="4">
+     <type>struct in_addr</type>
+    </field>
+    <field name="imsf_fmode" offset="8" size="4">
+     <type>u_long</type>
+    </field>
+    <field name="imsf_numsrc" offset="12" size="4">
+     <type>u_long</type>
+    </field>
+    <field name="imsf_slist" offset="16" size="4">
+     <type><array size="4">struct in_addr</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

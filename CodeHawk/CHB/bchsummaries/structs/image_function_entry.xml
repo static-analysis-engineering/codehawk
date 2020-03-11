@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms680316(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="image_function_entry">
+   <fields>
+    <field name="StartingAddress" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="EndingAddress" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="EndOfPrologue" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

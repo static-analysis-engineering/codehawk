@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/dd183448(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="coloradjustment">
+   <fields>
+    <field name="caSize" offset="0" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="caFlags" offset="2" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="caIlluminantIndex" offset="4" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="caRedGamma" offset="6" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="caGreenGamma" offset="8" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="caBlueGamma" offset="10" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="caReferenceBlack" offset="12" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="caReferenceWhite" offset="14" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="caContrast" offset="16" size="2">
+     <type>SHORT</type>
+    </field>
+    <field name="caBrightness" offset="18" size="2">
+     <type>SHORT</type>
+    </field>
+    <field name="caColorfulness" offset="20" size="2">
+     <type>SHORT</type>
+    </field>
+    <field name="caRedGreenTint" offset="22" size="2">
+     <type>SHORT</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

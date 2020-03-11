@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb427439(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="group_filter">
+   <fields>
+    <field name="gf_interface" offset="0" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="gf_group" offset="8" size="128">
+     <type>SOCKADDR_STORAGE</type>
+    </field>
+    <field name="gf_fmode" offset="136" size="4">
+     <type>MULTICAST_MODE_TYPE</type>
+    </field>
+    <field name="gf_numsrc" offset="140" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="gf_slist" offset="144" size="128">
+     <type><array size="128">SOCKADDR_STORAGE</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

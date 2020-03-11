@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms680349(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="loaded_image">
+   <fields>
+    <field name="ModuleName" offset="0" size="4">
+     <type>PSTR</type>
+    </field>
+    <field name="hFile" offset="4" size="4">
+     <type>HANDLE</type>
+    </field>
+    <field name="MappedAddress" offset="8" size="4">
+     <type>PUCHAR</type>
+    </field>
+    <field name="FileHeader" offset="12" size="4">
+     <type>PIMAGE_NT_HEADERS32</type>
+    </field>
+    <field name="LastRvaSection" offset="16" size="4">
+     <type>PIMAGE_SECTION_HEADER</type>
+    </field>
+    <field name="NumberOfSections" offset="20" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="Sections" offset="24" size="4">
+     <type>PIMAGE_SECTION_HEADER</type>
+    </field>
+    <field name="Characteristics" offset="28" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="fSystemImage" offset="32" size="1">
+     <type>BOOLEAN</type>
+    </field>
+    <field name="fDOSImage" offset="33" size="1">
+     <type>BOOLEAN</type>
+    </field>
+    <field name="fReadOnly" offset="34" size="1">
+     <type>BOOLEAN</type>
+    </field>
+    <field name="Version" offset="35" size="1">
+     <type>UCHAR</type>
+    </field>
+    <field name="Links" offset="36" size="8">
+     <type>LIST_ENTRY</type>
+    </field>
+    <field name="SizeOfImage" offset="44" size="4">
+     <type>ULONG</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

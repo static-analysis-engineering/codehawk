@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/jj553479(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="real_time_notification_setting_input">
+   <fields>
+    <field name="TransportSettingId" offset="0" size="16">
+     <type>TRANSPORT_SETTING_ID</type>
+    </field>
+    <field name="BrokerEventGuid" offset="16" size="16">
+     <type>GUID</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

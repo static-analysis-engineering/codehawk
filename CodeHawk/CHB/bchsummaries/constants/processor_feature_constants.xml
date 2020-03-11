@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms724482(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="processor_feature_constants">
+    <type>processor_feature_constants</type>
+    <values>
+      <symc name="PF_ARM_64BIT_LOADSTORE_ATOMIC" value="25"
+            desc="The 64-bit load/store atomic instructions are available." />
+      <symc name="PF_ARM_DIVIDE_INSTRUCTION_AVAILABLE" value="24"
+            desc="The divide instructions are available." />
+      <symc name="PF_ARM_EXTERNAL_CACHE_AVAILABLE" value="26"
+            desc="The external cache is available." />
+      <symc name="PF_ARM_FMAC_INSTRUCTIONS_AVAILABLE" value="27"
+            desc="The floating-point multiply-accumulate instruction is available." />
+      <symc name="PF_ARM_VFP_32_REGISTERS_AVAILABLE" value="18"
+            desc="The VFP/Neon: 32 x 64bit register bank is present. This flag has the same meaning as PF_ARM_VFP_EXTENDED_REGISTERS." />
+      <symc name="PF_3DNOW_INSTRUCTIONS_AVAILABLE" value="7"
+            desc="The 3D-Now instruction set is available." />
+      <symc name="PF_CHANNELS_ENABLED" value="16"
+            desc="The processor channels are enabled." />
+      <symc name="PF_COMPARE_EXCHANGE_DOUBLE" value="2"
+            desc="The atomic compare and exchange operation (cmpxchg) is available." />
+      <symc name="PF_COMPARE_EXCHANGE128" value="14"
+            desc="The atomic compare and exchange 128-bit operation (cmpxchg16b) is available.
+            Windows Server 2003 and Windows XP/2000:  This feature is not supported." />
+      <symc name="PF_COMPARE64_EXCHANGE128" value="15"
+            desc="The atomic compare 64 and exchange 128-bit operation (cmp8xchg16) is available.
+            Windows Server 2003 and Windows XP/2000:  This feature is not supported." />
+      <symc name="PF_FASTFAIL_AVAILABLE" value="23"
+            desc="_fastfail() is available." />
+      <symc name="PF_FLOATING_POINT_EMULATED" value="1"
+            desc="Floating-point operations are emulated using a software emulator.
+            This function returns a nonzero value if floating-point operations are emulated; otherwise, it returns zero." />
+      <symc name="PF_FLOATING_POINT_PRECISION_ERRATA" value="0"
+            desc="On a Pentium, a floating-point precision error can occur in rare circumstances." />
+      <symc name="PF_MMX_INSTRUCTIONS_AVAILABLE" value="3"
+            desc="The MMX instruction set is available." />
+      <symc name="PF_NX_ENABLED" value="12"
+            desc="Data execution prevention is enabled.
+            Windows XP/2000:  This feature is not supported until Windows XP with SP2 and Windows Server 2003 with SP1." />
+      <symc name="PF_PAE_ENABLED" value="9"
+            desc="The processor is PAE-enabled. For more information, see Physical Address Extension.
+            All x64 processors always return a nonzero value for this feature." />
+      <symc name="PF_RDTSC_INSTRUCTION_AVAILABLE" value="8"
+            desc="The RDTSC instruction is available." />
+      <symc name="PF_RDWRFSGSBASE_AVAILABLE" value="22"
+            desc="RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE instructions are available." />
+      <symc name="PF_SECOND_LEVEL_ADDRESS_TRANSLATION" value="20"
+            desc="Second Level Address Translation is supported by the hardware." />
+      <symc name="PF_SSE3_INSTRUCTIONS_AVAILABLE" value="13"
+            desc="The SSE3 instruction set is available.
+            Windows Server 2003 and Windows XP/2000:  This feature is not supported." />
+      <symc name="PF_VIRT_FIRMWARE_ENABLED" value="21"
+            desc="Virtualization is enabled in the firmware." />
+      <symc name="PF_XMMI_INSTRUCTIONS_AVAILABLE" value="6"
+            desc="The SSE instruction set is available." />
+      <symc name="PF_XMMI64_INSTRUCTIONS_AVAILABLE" value="10"
+            desc="The SSE2 instruction set is available.
+            Windows 2000:  This feature is not supported." />
+      <symc name="PF_XSAVE_ENABLED" value="17"
+            desc="The processor implements the XSAVE and XRSTOR instructions.
+            Windows Server 2008, Windows Vista, Windows Server 2003 and Windows XP/2000:  This feature is not supported until Windows 7 and Windows Server 2008 R2." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

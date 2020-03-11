@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/03/2015 10:03:50"/>
+  <symbolic-constants type="firmware_table_provider_identifiers">
+   <values>
+    <symc name="ACPI" value="0x41435049">
+     <desc>The ACPI firmware table provider.</desc>
+    </symc>
+    <symc name="FIRM" value="0x4649524d">
+     <desc>The raw firmware table provider.</desc>
+    </symc>
+    <symc name="RSMB" value="0x52534d42">
+     <desc>The raw SMBIOS firmware table provider.</desc>
+    </symc>
+   </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

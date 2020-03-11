@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb759788(v=vs.85).aspx"/>
+  <header date="08/08/2017 00:00:00"/>
+  <struct name="shellstate">
+   <fields>
+    <field name="bitfields__fShowAllObjects_through_fNoNetCrawling" offset="0" size="4">
+     <type>BOOL</type>
+    </field>
+    <!-- nb bit fields for above BOOL represented via above non-member-name bitfields__fShowAllObjects_through_fNoNetCrawling
+         BOOL  fShowAllObjects  :1;
+         BOOL  fShowExtensions  :1;
+         BOOL  fNoConfirmRecycle  :1;
+         BOOL  fShowSysFiles  :1;
+         BOOL  fShowCompColor  :1;
+         BOOL  fDoubleClickInWebView  :1;
+         BOOL  fDesktopHTML  :1;
+         BOOL  fWin95Classic  :1;
+         BOOL  fDontPrettyPath  :1;
+         BOOL  fShowAttribCol  :1;
+         BOOL  fMapNetDrvBtn  :1;
+         BOOL  fShowInfoTip  :1;
+         BOOL  fHideIcons  :1;
+         BOOL  fWebView  :1;
+         BOOL  fFilter  :1;
+         BOOL  fShowSuperHidden  :1;
+         BOOL  fNoNetCrawling  :1;
+    -->
+    <field name="dwWin95Unused" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="uWin95Unused" offset="8" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="lParamSort" offset="12" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="iSortDirection" offset="16" size="4">
+     <type>int</type>
+    </field>
+    <field name="version" offset="20" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="uNotUsed" offset="24" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="bitfields__fSepProcess_through_fSpareFlags" offset="28" size="4">
+     <type>BOOL</type>
+    </field>
+    <!-- nb bit fields for above represented via above non-member-name bitfields__fSepProcess_through_fSpareFlags
+         [note BOOL and UINT sizing]
+         BOOL  fSepProcess  :1;
+         BOOL  fStartPanelOn  :1;
+         BOOL  fShowStartPage  :1;
+         BOOL  fAutoCheckSelect  :1;
+         BOOL  fIconsOnly  :1;
+         BOOL  fShowTypeOverlay  :1;
+         BOOL  fShowStatusBar  :1;
+         UINT  fSpareFlags  :9;
+    -->
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

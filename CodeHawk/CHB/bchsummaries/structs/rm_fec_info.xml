@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms740132(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="rm_fec_info">
+   <fields>
+    <field name="FECBlockSize" offset="0" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="FECProActivePackets" offset="2" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="FECGroupSize" offset="4" size="1">
+     <type>UCHAR</type>
+    </field>
+    <field name="fFECOnDemandParityEnabled" offset="5" size="1">
+     <type>BOOLEAN</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa378091(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cmsg_recipient_encrypted_key_encode_info">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="RecipientPublicKey" offset="4" size="12">
+     <type>CRYPT_BIT_BLOB</type>
+    </field>
+    <field name="RecipientId" offset="16" size="20">
+     <type>CERT_ID</type>
+    </field>
+    <field name="Date" offset="36" size="8">
+     <type>FILETIME</type>
+    </field>
+    <field name="pOtherAttr" offset="44" size="4">
+     <type>PCRYPT_ATTRIBUTE_TYPE_VALUE</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa381453(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="crypt_provider_data">
+   <fields>
+    <field name="cbStruct" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pWintrustData" offset="4" size="4">
+     <type><ptr>WINTRUST_DATA</ptr></type>
+    </field>
+    <field name="fOpenedFile" offset="8" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="hWndParent" offset="12" size="4">
+     <type>HWND</type>
+    </field>
+    <field name="pgActionID" offset="16" size="4">
+     <type><ptr>GUID</ptr></type>
+    </field>
+    <field name="hProv" offset="20" size="4">
+     <type>HCRYPTPROV</type>
+    </field>
+    <field name="dwError" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwRegSecuritySettings" offset="28" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwRegPolicySettings" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="psPfns" offset="36" size="4">
+     <type><ptr>CRYPT_PROVIDER_FUNCTIONS</ptr></type>
+    </field>
+    <field name="cdwTrustStepErrors" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="padwTrustStepErrors" offset="44" size="4">
+     <type><ptr>DWORD</ptr></type>
+    </field>
+    <field name="chStores" offset="48" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pahStores" offset="52" size="4">
+     <type><ptr>HCERTSTORE</ptr></type>
+    </field>
+    <field name="dwEncoding" offset="56" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hMsg" offset="60" size="4">
+     <type>HCRYPTMSG</type>
+    </field>
+    <field name="csSigners" offset="64" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pasSigners" offset="68" size="4">
+     <type><ptr>CRYPT_PROVIDER_SGNR</ptr></type>
+    </field>
+    <field name="csProvPrivData" offset="72" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pasProvPrivData" offset="76" size="28">
+     <type>CRYPT_PROVIDER_PRIVDATA</type>
+    </field>
+    <field name="dwSubjectChoice" offset="104" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pPDSip" offset="108" size="4">
+     <type><ptr>_PROVDATA_SIP</ptr></type>
+    </field>
+    <field name="pszUsageOID" offset="112" size="4">
+     <type><ptr>char</ptr></type>
+    </field>
+    <field name="fRecallWithState" offset="116" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="sftSystemTime" offset="120" size="8">
+     <type>FILETIME</type>
+    </field>
+    <field name="pszCTLSignerUsageOID" offset="128" size="4">
+     <type><ptr>char</ptr></type>
+    </field>
+    <field name="dwProvFlags" offset="132" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwFinalError" offset="136" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pRequestUsage" offset="140" size="4">
+     <type>PCERT_USAGE_MATCH</type>
+    </field>
+    <field name="dwTrustPubSettings" offset="144" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwUIStateFlags" offset="148" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

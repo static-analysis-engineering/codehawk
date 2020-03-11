@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd401609(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="creduiwin_marshaled_context">
+   <fields>
+    <field name="StructureType" offset="0" size="16">
+     <type>GUID</type>
+    </field>
+    <field name="cbHeaderLength" offset="16" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="LogonId" offset="20" size="4">
+     <type>LUID</type>
+    </field>
+    <field name="MarshaledDataType" offset="24" size="16">
+     <type>GUID</type>
+    </field>
+    <field name="MarshaledDataOffset" offset="40" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="MarshaledDataLength" offset="44" size="2">
+     <type>USHORT</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

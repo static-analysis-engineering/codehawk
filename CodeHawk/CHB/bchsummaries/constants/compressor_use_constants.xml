@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="TEST-DATA UNOFFICIAL SOURCE"/>
+  </header>
+  <symbolic-constants type="compressor_use_constants">
+    <type>compressor_use_constants</type>
+    <values>
+      <symc name="ICMODE_COMPRESS" value="1"
+            desc="TEST-DATA UNOFFICIAL SOURCE" />
+      <symc name="ICMODE_DECOMPRESS" value="2"
+            desc="TEST-DATA UNOFFICIAL SOURCE" />
+      <symc name="ICMODE_QUERY" value="4"
+            desc="TEST-DATA UNOFFICIAL SOURCE" />
+      <symc name="ICMODE_DRAW" value="8"
+            desc="TEST-DATA UNOFFICIAL SOURCE" />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

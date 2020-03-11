@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/hh404516(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="dxgi_outdupl_pointer_position">
+   <fields>
+    <field name="Position" offset="0" size="8">
+     <type>POINT</type>
+    </field>
+    <field name="Visible" offset="8" size="4">
+     <type>BOOL</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

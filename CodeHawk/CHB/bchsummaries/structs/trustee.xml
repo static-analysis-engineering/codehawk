@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa379636(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="trustee">
+   <fields>
+    <field name="pMultipleTrustee" offset="0" size="4">
+     <type>PTRUSTEE</type>
+    </field>
+    <field name="MultipleTrusteeOperation" offset="4" size="4">
+     <type>MULTIPLE_TRUSTEE_OPERATION</type>
+    </field>
+    <field name="TrusteeForm" offset="8" size="4">
+     <type>TRUSTEE_FORM</type>
+    </field>
+    <field name="TrusteeType" offset="12" size="4">
+     <type>TRUSTEE_TYPE</type>
+    </field>
+    <field name="ptstrName" offset="16" size="4">
+     <type>LPTSTR</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

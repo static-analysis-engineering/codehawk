@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms648065(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="drawing_flags">
+    <type>drawing_flags</type>
+    <values>
+      <symc name="DI_COMPAT" value="0x0004"
+            desc="This flag is ignored." />
+      <symc name="DI_DEFAULTSIZE" value="0x0008"
+            desc="Draws the icon or cursor using the width and height specified by the system metric values for icons, if the cxWidth and cyWidth parameters are set to zero. If this flag is not specified and cxWidth and cyWidth are set to zero, the function uses the actual resource size." />
+      <symc name="DI_IMAGE" value="0x0002"
+            desc="Draws the icon or cursor using the image." />
+      <symc name="DI_MASK" value="0x0001"
+            desc="Draws the icon or cursor using the mask." />
+      <symc name="DI_NOMIRROR" value="0x0010"
+            desc="Draws the icon as an unmirrored icon. By default, the icon is drawn as a mirrored icon if hdc is mirrored." />
+      <symc name="DI_NORMAL" value="0x0003"
+            desc="Combination of DI_IMAGE and DI_MASK." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773315(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="helpwininfo">
+   <fields>
+    <field name="wStructSize" offset="0" size="4">
+     <type>int</type>
+    </field>
+    <field name="x" offset="4" size="4">
+     <type>int</type>
+    </field>
+    <field name="y" offset="8" size="4">
+     <type>int</type>
+    </field>
+    <field name="dx" offset="12" size="4">
+     <type>int</type>
+    </field>
+    <field name="dy" offset="16" size="4">
+     <type>int</type>
+    </field>
+    <field name="wMax" offset="20" size="4">
+     <type>int</type>
+    </field>
+    <field name="rgchMember" offset="24" size="2">
+     <type><array size="2">TCHAR</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

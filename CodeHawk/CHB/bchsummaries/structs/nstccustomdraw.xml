@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773357(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="nstccustomdraw">
+   <fields>
+    <field name="psi" offset="0" size="4">
+     <type><ptr>IShellItem</ptr></type>
+    </field>
+    <field name="uItemState" offset="4" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="nstcis" offset="8" size="4">
+     <type>NSTCITEMSTATE</type>
+    </field>
+    <field name="pszText" offset="12" size="4">
+     <type>LPCWSTR</type>
+    </field>
+    <field name="iImage" offset="16" size="4">
+     <type>int</type>
+    </field>
+    <field name="himl" offset="20" size="4">
+     <type>HIMAGELIST</type>
+    </field>
+    <field name="iLevel" offset="24" size="4">
+     <type>int</type>
+    </field>
+    <field name="iIndent" offset="28" size="4">
+     <type>int</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

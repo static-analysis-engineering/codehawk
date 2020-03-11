@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa376078(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="cert_chain_processing_flags">
+    <type>cert_chain_processing_flags</type>
+    <values>
+      <symc name="CERT_CHAIN_CACHE_END_CERT" value="0x00000001"
+            desc="When this flag is set, the end certificate is cached, which might speed up the chain-building process. By default, the end certificate is not cached, and it would need to be verified each time a chain is built for it." />
+      <symc name="CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY" value="0x80000000"
+            desc="Revocation checking only accesses cached URLs." />
+      <symc name="CERT_CHAIN_REVOCATION_CHECK_OCSP_CERT" value="0x04000000"
+            desc="This flag is used internally during chain building for an online certificate status protocol (OCSP) signer certificate to prevent cyclic revocation checks. During chain building, if the OCSP response is signed by an independent OCSP signer, then, in addition to the original chain build, there is a second chain built for the OCSP signer certificate itself. This flag is used during this second chain build to inhibit a recursive independent OCSP signer certificate. If the signer certificate contains the szOID_PKIX_OCSP_NOCHECK extension, revocation checking is skipped for the leaf signer certificate. Both OCSP and CRL checking are allowed.
+            Windows Server 2003 and Windows XP:  This value is not supported." />
+      <symc name="CERT_CHAIN_CACHE_ONLY_URL_RETRIEVAL" value="0x00000004"
+            desc="Uses only cached URLs in building a certificate chain. The Internet and intranet are not searched for URL-based objects.
+            Note  This flag is not applicable to revocation checking. Set CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY to use only cached URLs for revocation checking." />
+      <symc name="CERT_CHAIN_DISABLE_PASS1_QUALITY_FILTERING" value="0x00000040"
+            desc="For performance reasons, the second pass of chain building only considers potential chain paths that have quality greater than or equal to the highest quality determined during the first pass. The first pass only considers valid signature, complete chain, and trusted roots to calculate chain quality. This flag can be set to disable this optimization and consider all potential chain paths during the second pass." />
+      <symc name="CERT_CHAIN_DISABLE_MY_PEER_TRUST" value="0x00000800"
+            desc="This flag is not supported. Certificates in the &quot;My&quot; store are never considered for peer trust." />
+      <symc name="CERT_CHAIN_ENABLE_PEER_TRUST" value="0x00000400"
+            desc="End entity certificates in the &quot;TrustedPeople&quot; store are trusted without performing any chain building. This function does not set the CERT_TRUST_IS_PARTIAL_CHAIN or CERT_TRUST_IS_UNTRUSTED_ROOT dwErrorStatus member bits of the ppChainContext parameter.
+  Windows Server 2003 and Windows XP:  This flag is not supported." />
+      <symc name="CERT_CHAIN_OPT_IN_WEAK_SIGNATURE" value="0x00010000"
+            desc="Setting this flag indicates the caller wishes to opt into weak signature checks.
+This flag is available in the rollup update for each OS starting with Windows 7 and Windows Server 2008 R2." />
+      <symc name="CERT_CHAIN_RETURN_LOWER_QUALITY_CONTEXTS" value="0x00000080"
+            desc="The default is to return only the highest quality chain path. Setting this flag will return the lower quality chains. These are returned in the cLowerQualityChainContext and rgpLowerQualityChainContext fields of the chain context." />
+      <symc name="CERT_CHAIN_DISABLE_AUTH_ROOT_AUTO_UPDATE" value="0x00000100"
+            desc="Setting this flag inhibits the auto update of third-party roots from the Windows Update Web Server." />
+      <symc name="CERT_CHAIN_REVOCATION_ACCUMULATIVE_TIMEOUT" value="0x08000000"
+            desc="When you set CERT_CHAIN_REVOCATION_ACCUMULATIVE_TIMEOUT and you also specify a value for the dwUrlRetrievalTimeout member of the CERT_CHAIN_PARA structure, the value you specify in dwUrlRetrievalTimeout represents the cumulative timeout across all revocation URL retrievals.
+If you set CERT_CHAIN_REVOCATION_ACCUMULATIVE_TIMEOUT but do not specify a dwUrlRetrievalTimeout value, the maximum cumulative timeout is set, by default, to 20 seconds. Each URL tested will timeout after half of the remaining cumulative balance has passed. That is, the first URL times out after 10 seconds, the second after 5 seconds, the third after 2.5 seconds and so on until a URL succeeds, 20 seconds has passed, or there are no more URLs to test.
+If you do not set CERT_CHAIN_REVOCATION_ACCUMULATIVE_TIMEOUT, each revocation URL in the chain is assigned a maximum timeout equal to the value specified in dwUrlRetrievalTimeout. If you do not specify a value for the dwUrlRetrievalTimeout member, each revocation URL is assigned a maximum default timeout of 15 seconds. If no URL succeeds, the maximum cumulative timeout value is 15 seconds multiplied by the number of URLs in the chain.
+You can set the default values by using Group Policy." />
+      <symc name="CERT_CHAIN_TIMESTAMP_TIME" value="0x00000200"
+            desc="When this flag is set, pTime is used as the time stamp time to determine whether the end certificate was time valid. Current time can also be used to determine whether the end certificate remains time valid. All other certification authority (CA) and root certificates in the chain are checked by using current time and not pTime.
+ 
+You can also set the following revocation flags, but only one flag from this group may be set at a time.
+Value	Meaning" />
+      <symc name="CERT_CHAIN_REVOCATION_CHECK_END_CERT" value="0x10000000"
+            desc="Revocation checking is done on the end certificate and only the end certificate." />
+      <symc name="CERT_CHAIN_REVOCATION_CHECK_CHAIN" value="0x20000000"
+            desc="Revocation checking is done on all of the certificates in every chain." />
+      <symc name="CERT_CHAIN_REVOCATION_CHECK_CHAIN_EXCLUDE_ROOT" value="0x40000000"
+            desc="Revocation checking is done on all certificates in all of the chains except the root certificate." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

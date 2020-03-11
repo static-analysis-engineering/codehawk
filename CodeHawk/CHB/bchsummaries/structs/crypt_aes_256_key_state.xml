@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa381125(v=vs.85).aspx"/>
+  <header date="08/08/2017 00:00:00"/>
+  <struct name="crypt_aes_256_key_state">
+   <fields>
+    <field name="Key" offset="0" size="32">
+     <type><array size="32">unsigned char</array></type>
+    </field>
+    <field name="IV" offset="32" size="16">
+     <type><array size="16">unsigned char</array></type>
+    </field>
+    <field name="EncryptionState" offset="48" size="240">
+     <type><array size="240">unsigned char</array></type>
+    </field>
+    <field name="DecryptionState" offset="288" size="240">
+     <type><array size="240">unsigned char</array></type>
+    </field>
+    <field name="Feedback" offset="528" size="16">
+     <type><array size="16">unsigned char</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms693790(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="impersonation_level_constants">
+    <type>impersonation_level_constants</type>
+    <values>
+      <symc name="RPC_C_IMP_LEVEL_DEFAULT" value="0"
+            desc="DCOM can choose the impersonation level using its normal security blanket negotiation algorithm. For more information, see Security Blanket Negotiation." />
+      <symc name="RPC_C_IMP_LEVEL_ANONYMOUS" value="1"
+            desc="The client is anonymous to the server. The server process can impersonate the client, but the impersonation token will not contain any information and cannot be used." />
+      <symc name="RPC_C_IMP_LEVEL_IDENTIFY" value="2"
+            desc="The server can obtain the client's identity. The server can impersonate the client for ACL checking, but it cannot access system objects as the client." />
+      <symc name="RPC_C_IMP_LEVEL_IMPERSONATE" value="3"
+            desc="The server process can impersonate the client's security context while acting on behalf of the client. This level of impersonation can be used to access local resources such as files. When impersonating at this level, the impersonation token can only be passed across one machine boundary. The Schannel authentication service only supports this level of impersonation." />
+      <symc name="RPC_C_IMP_LEVEL_DELEGATE" value="4"
+            desc="The server process can impersonate the client's security context while acting on behalf of the client. The server process can also make outgoing calls to other servers while acting on behalf of the client, using cloaking. The server may use the client's security context on other machines to access local and remote resources as the client. When impersonating at this level, the impersonation token can be passed across any number of computer boundaries." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

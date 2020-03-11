@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa363858(v=vs.85).aspx"/>
+    <refnotes>retrieved from unofficial source</refnotes>
+  </header>
+  <symbolic-constants type="file_attributes_constants">
+    <type>file_attributes_constants</type>
+    <values>
+      <symc name="FILE_ATTRIBUTE_ARCHIVE" value="32 "
+            desc="A file or directory that is an archive file or directory. Applications typically use this attribute to mark files for backup or removal . " />
+      <symc name="FILE_ATTRIBUTE_COMPRESSED" value="2048 "
+            desc="A file or directory that is compressed. For a file, all of the data in the file is compressed. For a directory, compression is the default for newly created files and subdirectories." />
+      <symc name="FILE_ATTRIBUTE_DEVICE" value="64 "
+            desc="This value is reserved for system use." />
+      <symc name="FILE_ATTRIBUTE_DIRECTORY" value="16 "
+            desc="The handle that identifies a directory." />
+      <symc name="FILE_ATTRIBUTE_ENCRYPTED" value="16384 "
+            desc="A file or directory that is encrypted. For a file, all data streams in the file are encrypted. For a directory, encryption is the default for newly created files and subdirectories." />
+      <symc name="FILE_ATTRIBUTE_HIDDEN" value="2 "
+            desc="The file or directory is hidden. It is not included in an ordinary directory listing." />
+      <symc name="FILE_ATTRIBUTE_INTEGRITY_STREAM" value="32768 "
+            desc="The directory or user data stream is configured with integrity (only supported on ReFS volumes). It is not included in an ordinary directory listing. The integrity setting persists with the file if it's renamed. If a file is copied the destination file will have integrity set if either the source file or destination directory have integrity set.
+            Windows Server 2008 R2, Windows 7, Windows Server 2008, Windows Vista, Windows Server 2003 and Windows XP:  This flag is not supported until Windows Server 2012." />
+      <symc name="FILE_ATTRIBUTE_NORMAL" value="128 "
+            desc="A file that does not have other attributes set. This attribute is valid only when used alone." />
+      <symc name="FILE_ATTRIBUTE_NOT_CONTENT_INDEXED" value="8192 "
+            desc="The file or directory is not to be indexed by the content indexing service." />
+      <symc name="FILE_ATTRIBUTE_NO_SCRUB_DATA" value="131072 "
+            desc="The user data stream not to be read by the background data integrity scanner (AKA scrubber). When set on a directory it only provides inheritance. This flag is only supported on Storage Spaces and ReFS volumes. It is not included in an ordinary directory listing.
+            Windows Server 2008 R2, Windows 7, Windows Server 2008, Windows Vista, Windows Server 2003 and Windows XP:  This flag is not supported until Windows 8 and Windows Server 2012." />
+      <symc name="FILE_ATTRIBUTE_OFFLINE" value="4096 "
+            desc="The data of a file is not available immediately. This attribute indicates that the file data is physically moved to offline storage. This attribute is used by Remote Storage, which is the hierarchical storage management software. Applications should not arbitrarily change this attribute." />
+      <symc name="FILE_ATTRIBUTE_READONLY" value="1 "
+            desc="A file that is read-only. Applications can read the file, but cannot write to it or delete it. This attribute is not honored on directories. For more information, see You cannot view or change the Read-only or the System attributes of folders in Windows Server 2003, in Windows XP, in Windows Vista or in Windows 7." />
+      <symc name="FILE_ATTRIBUTE_REPARSE_POINT" value="1024 "
+            desc="A file or directory that has an associated reparse point, or a file that is a symbolic link." />
+      <symc name="FILE_ATTRIBUTE_SPARSE_FILE" value="512 "
+            desc="A file that is a sparse file." />
+      <symc name="FILE_ATTRIBUTE_SYSTEM" value="4 "
+            desc="A file or directory that the operating system uses a part of, or uses exclusively." />
+      <symc name="FILE_ATTRIBUTE_TEMPORARY" value="256 "
+            desc="A file that is being used for temporary storage. File systems avoid writing data back to mass storage if sufficient cache memory is available, because typically, an application deletes a temporary file after the handle is closed. In that scenario, the system can entirely avoid writing the data. Otherwise, the data is written after the handle is closed." />
+      <symc name="FILE_ATTRIBUTE_VIRTUAL" value="65536 "
+            desc="This value is reserved for system use." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

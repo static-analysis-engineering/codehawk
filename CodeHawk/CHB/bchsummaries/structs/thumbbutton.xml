@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd391559(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="thumbbutton">
+   <fields>
+    <field name="dwMask" offset="0" size="4">
+     <type>THUMBBUTTONMASK</type>
+    </field>
+    <field name="iId" offset="4" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="iBitmap" offset="8" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="hIcon" offset="12" size="4">
+     <type>HICON</type>
+    </field>
+    <field name="szTip" offset="16" size="520">
+     <type><array size="520">WCHAR</array></type>
+    </field>
+    <field name="dwFlags" offset="536" size="4">
+     <type>THUMBBUTTONFLAGS</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

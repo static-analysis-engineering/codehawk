@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms680339(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="image_optional_header">
+   <fields>
+    <field name="Magic" offset="0" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="MajorLinkerVersion" offset="2" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="MinorLinkerVersion" offset="3" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="SizeOfCode" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SizeOfInitializedData" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SizeOfUninitializedData" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="AddressOfEntryPoint" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="BaseOfCode" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="BaseOfData" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="ImageBase" offset="28" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SectionAlignment" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="FileAlignment" offset="36" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="MajorOperatingSystemVersion" offset="40" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="MinorOperatingSystemVersion" offset="42" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="MajorImageVersion" offset="44" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="MinorImageVersion" offset="46" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="MajorSubsystemVersion" offset="48" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="MinorSubsystemVersion" offset="50" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="Win32VersionValue" offset="52" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SizeOfImage" offset="56" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SizeOfHeaders" offset="60" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="CheckSum" offset="64" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Subsystem" offset="68" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="DllCharacteristics" offset="70" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="SizeOfStackReserve" offset="72" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SizeOfStackCommit" offset="76" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SizeOfHeapReserve" offset="80" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SizeOfHeapCommit" offset="84" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="LoaderFlags" offset="88" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="NumberOfRvaAndSizes" offset="92" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="DataDirectory" offset="96" size="128">
+     <type><array size="128">IMAGE_DATA_DIRECTORY</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/07/2015 22:19:21"/>
+  <symbolic-flags type="service_type_constants">
+    <type>service_type_constants</type>
+    <values>
+      <symf name="SERVICE_KERNEL_DRIVER" value="0x00000001">
+	<desc>Driver service</desc>
+      </symf>
+      <symf name="SERVICE_FILE_SYSTEM_DRIVER" value="0x00000002">
+	<desc>File system driver service</desc>
+      </symf>
+      <symf name="SERVICE_ADAPTER" value="0x00000004">
+	<desc>Reserved</desc>
+      </symf>
+      <symf name="SERVICE_RECOGNIZER_DRIVER" value="0x00000008">
+	<desc>Reserved</desc>
+      </symf>
+      <symf name="SERVICE_WIN32_OWN_PROCESS" value="0x00000010">
+	<desc>Service that runs in its own process</desc>
+      </symf>
+      <symf name="SERVICE_WIN32_SHARE_PROCESS" value="0x00000020">
+	<desc>Service that shares a process with other services</desc>
+      </symf>
+      <symf name="SERVICE_INTERACTIVE_PROCESS" value="0x00000100">
+	<desc>The service can interact with the desktop.</desc>
+      </symf>
+    </values>
+  </symbolic-flags>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

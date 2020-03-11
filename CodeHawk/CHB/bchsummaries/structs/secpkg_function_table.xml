@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa378510(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="lsa_secpkg_function_table">
+   <fields>
+    <field name="CreateLogonSession" offset="0" size="4">
+     <type>PLSA_CREATE_LOGON_SESSION</type>
+    </field>
+    <field name="DeleteLogonSession" offset="4" size="4">
+     <type>PLSA_DELETE_LOGON_SESSION</type>
+    </field>
+    <field name="AddCredential" offset="8" size="4">
+     <type>PLSA_ADD_CREDENTIAL</type>
+    </field>
+    <field name="GetCredentials" offset="12" size="4">
+     <type>PLSA_GET_CREDENTIALS</type>
+    </field>
+    <field name="DeleteCredential" offset="16" size="4">
+     <type>PLSA_DELETE_CREDENTIAL</type>
+    </field>
+    <field name="AllocateLsaHeap" offset="20" size="4">
+     <type>PLSA_ALLOCATE_LSA_HEAP</type>
+    </field>
+    <field name="FreeLsaHeap" offset="24" size="4">
+     <type>PLSA_FREE_LSA_HEAP</type>
+    </field>
+    <field name="AllocateClientBuffer" offset="28" size="4">
+     <type>PLSA_ALLOCATE_CLIENT_BUFFER</type>
+    </field>
+    <field name="FreeClientBuffer" offset="32" size="4">
+     <type>PLSA_FREE_CLIENT_BUFFER</type>
+    </field>
+    <field name="CopyToClientBuffer" offset="36" size="4">
+     <type>PLSA_COPY_TO_CLIENT_BUFFER</type>
+    </field>
+    <field name="CopyFromClientBuffer" offset="40" size="4">
+     <type>PLSA_COPY_FROM_CLIENT_BUFFER</type>
+    </field>
+    <field name="ImpersonateClient" offset="44" size="4">
+     <type>PLSA_IMPERSONATE_CLIENT</type>
+    </field>
+    <field name="UnloadPackage" offset="48" size="4">
+     <type>PLSA_UNLOAD_PACKAGE</type>
+    </field>
+    <field name="DuplicateHandle" offset="52" size="4">
+     <type>PLSA_DUPLICATE_HANDLE</type>
+    </field>
+    <field name="SaveSupplementalCredentials" offset="56" size="4">
+     <type>PLSA_SAVE_SUPPLEMENTAL_CREDENTIALS</type>
+    </field>
+    <field name="CreateThread" offset="60" size="4">
+     <type>PLSA_CREATE_THREAD</type>
+    </field>
+    <field name="GetClientInfo" offset="64" size="4">
+     <type>PLSA_GET_CLIENT_INFO</type>
+    </field>
+    <field name="RegisterNotification" offset="68" size="4">
+     <type>PLSA_REGISTER_NOTIFICATION</type>
+    </field>
+    <field name="CancelNotification" offset="72" size="4">
+     <type>PLSA_CANCEL_NOTIFICATION</type>
+    </field>
+    <field name="MapBuffer" offset="76" size="4">
+     <type>PLSA_MAP_BUFFER</type>
+    </field>
+    <field name="CreateToken" offset="80" size="4">
+     <type>PLSA_CREATE_TOKEN</type>
+    </field>
+    <field name="AuditLogon" offset="84" size="4">
+     <type>PLSA_AUDIT_LOGON</type>
+    </field>
+    <field name="CallPackage" offset="88" size="4">
+     <type>PLSA_CALL_PACKAGE</type>
+    </field>
+    <field name="FreeReturnBuffer" offset="92" size="4">
+     <type>PLSA_FREE_LSA_HEAP</type>
+    </field>
+    <field name="GetCallInfo" offset="96" size="4">
+     <type>PLSA_GET_CALL_INFO</type>
+    </field>
+    <field name="CallPackageEx" offset="100" size="4">
+     <type>PLSA_CALL_PACKAGEEX</type>
+    </field>
+    <field name="CreateSharedMemory" offset="104" size="4">
+     <type>PLSA_CREATE_SHARED_MEMORY</type>
+    </field>
+    <field name="AllocateSharedMemory" offset="108" size="4">
+     <type>PLSA_ALLOCATE_SHARED_MEMORY</type>
+    </field>
+    <field name="FreeSharedMemory" offset="112" size="4">
+     <type>PLSA_FREE_SHARED_MEMORY</type>
+    </field>
+    <field name="DeleteSharedMemory" offset="116" size="4">
+     <type>PLSA_DELETE_SHARED_MEMORY</type>
+    </field>
+    <field name="OpenSamUser" offset="120" size="4">
+     <type>PLSA_OPEN_SAM_USER</type>
+    </field>
+    <field name="GetUserCredentials" offset="124" size="4">
+     <type>PLSA_GET_USER_CREDENTIALS</type>
+    </field>
+    <field name="GetUserAuthData" offset="128" size="4">
+     <type>PLSA_GET_USER_AUTH_DATA</type>
+    </field>
+    <field name="CloseSamUser" offset="132" size="4">
+     <type>PLSA_CLOSE_SAM_USER</type>
+    </field>
+    <field name="ConvertAuthDataToToken" offset="136" size="4">
+     <type>PLSA_CONVERT_AUTH_DATA_TO_TOKEN</type>
+    </field>
+    <field name="ClientCallback" offset="140" size="4">
+     <type>PLSA_CLIENT_CALLBACK</type>
+    </field>
+    <field name="UpdateCredentials" offset="144" size="4">
+     <type>PLSA_UPDATE_PRIMARY_CREDENTIALS</type>
+    </field>
+    <field name="GetAuthDataForUser" offset="148" size="4">
+     <type>PLSA_GET_AUTH_DATA_FOR_USER</type>
+    </field>
+    <field name="CrackSingleName" offset="152" size="4">
+     <type>PLSA_CRACK_SINGLE_NAME</type>
+    </field>
+    <field name="AuditAccountLogon" offset="156" size="4">
+     <type>PLSA_AUDIT_ACCOUNT_LOGON</type>
+    </field>
+    <field name="CallPackagePassthrough" offset="160" size="4">
+     <type>PLSA_CALL_PACKAGE_PASSTHROUGH</type>
+    </field>
+    <field name="CrediRead" offset="164" size="4">
+     <type><ptr>CredReadFn</ptr></type>
+    </field>
+    <field name="CrediReadDomainCredentials" offset="168" size="4">
+     <type><ptr>CredReadDomainCredentialsFn</ptr></type>
+    </field>
+    <field name="CrediFreeCredentials" offset="172" size="4">
+     <type><ptr>CredFreeCredentialsFn</ptr></type>
+    </field>
+    <field name="LsaProtectMemory" offset="176" size="4">
+     <type>PLSA_PROTECT_MEMORY</type>
+    </field>
+    <field name="LsaUnprotectMemory" offset="180" size="4">
+     <type>PLSA_PROTECT_MEMORY</type>
+    </field>
+    <field name="OpenTokenByLogonId" offset="184" size="4">
+     <type>PLSA_OPEN_TOKEN_BY_LOGON_ID</type>
+    </field>
+    <field name="ExpandAuthDataForDomain" offset="188" size="4">
+     <type>PLSA_EXPAND_AUTH_DATA_FOR_DOMAIN</type>
+    </field>
+    <field name="AllocatePrivateHeap" offset="192" size="4">
+     <type>PLSA_ALLOCATE_PRIVATE_HEAP</type>
+    </field>
+    <field name="FreePrivateHeap" offset="196" size="4">
+     <type>PLSA_FREE_PRIVATE_HEAP</type>
+    </field>
+    <field name="CreateTokenEx" offset="200" size="4">
+     <type>PLSA_CREATE_TOKEN_EX</type>
+    </field>
+    <field name="CrediWrite" offset="204" size="4">
+     <type><ptr>CredWriteFn</ptr></type>
+    </field>
+    <field name="CrediUnmarshalandDecodeString" offset="208" size="4">
+     <type><ptr>CrediUnmarshalandDecodeStringFn</ptr></type>
+    </field>
+    <field name="DummyFunction6" offset="212" size="4">
+     <type>PLSA_PROTECT_MEMORY</type>
+    </field>
+    <field name="GetExtendedCallFlags" offset="216" size="4">
+     <type>PLSA_GET_EXTENDED_CALL_FLAGS</type>
+    </field>
+    <field name="DuplicateTokenHandle" offset="220" size="4">
+     <type>PLSA_DUPLICATE_HANDLE</type>
+    </field>
+    <field name="GetServiceAccountPassword" offset="224" size="4">
+     <type>PLSA_GET_SERVICE_ACCOUNT_PASSWORD</type>
+    </field>
+    <field name="DummyFunction7" offset="228" size="4">
+     <type>PLSA_PROTECT_MEMORY</type>
+    </field>
+    <field name="AuditLogonEx" offset="232" size="4">
+     <type>PLSA_AUDIT_LOGON_EX</type>
+    </field>
+    <field name="CheckProtectedUserByToken" offset="236" size="4">
+     <type>PLSA_CHECK_PROTECTED_USER_BY_TOKEN</type>
+    </field>
+    <field name="QueryClientRequest" offset="240" size="4">
+     <type>PLSA_QUERY_CLIENT_REQUEST</type>
+    </field>
+    <field name="GetAppModeInfo" offset="244" size="4">
+     <type>PLSA_GET_APP_MODE_INFO</type>
+    </field>
+    <field name="SetAppModeInfo" offset="248" size="4">
+     <type>PLSA_SET_APP_MODE_INFO</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

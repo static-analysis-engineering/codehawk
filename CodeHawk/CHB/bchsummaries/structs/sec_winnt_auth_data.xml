@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd759399(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="sec_winnt_auth_data">
+   <fields>
+    <field name="CredType" offset="0" size="16">
+     <type>GUID</type>
+    </field>
+    <field name="CredData" offset="16" size="8">
+     <type>SEC_WINNT_AUTH_BYTE_VECTOR</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

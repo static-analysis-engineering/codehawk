@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms740133(v=vs.85).aspx"/>
+  <header date="08/08/2017 00:00:00"/>
+  <struct name="rm_receiver_stats">
+   <fields>
+    <field name="NumODataPacketsReceived" offset="0" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="NumRDataPacketsReceived" offset="8" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="NumDuplicateDataPackets" offset="16" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="DataBytesReceived" offset="24" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="TotalBytesReceived" offset="32" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="RateKBitsPerSecOverall" offset="40" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="RateKBitsPerSecLast" offset="48" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="TrailingEdgeSeqId" offset="56" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="LeadingEdgeSeqId" offset="64" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="AverageSequencesInWindow" offset="72" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="MinSequencesInWindow" offset="80" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="MaxSequencesInWindow" offset="88" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="FirstNakSequenceNumber" offset="96" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="NumPendingNaks" offset="104" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="NumOutstandingNaks" offset="112" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="NumDataPacketsBuffered" offset="120" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="TotalSelectiveNaksSent" offset="128" size="8">
+     <type>ULONGULONG</type>
+    </field>
+    <field name="TotalParityNaksSent" offset="136" size="8">
+     <type>ULONGULONG</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

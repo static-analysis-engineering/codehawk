@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa385420(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="url_components">
+   <fields>
+    <field name="dwStructSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpszScheme" offset="4" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="dwSchemeLength" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nScheme" offset="12" size="4">
+     <type>INTERNET_SCHEME</type>
+    </field>
+    <field name="lpszHostName" offset="16" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="dwHostNameLength" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nPort" offset="24" size="2">
+     <type>INTERNET_PORT</type>
+    </field>
+    <field name="lpszUserName" offset="28" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="dwUserNameLength" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpszPassword" offset="36" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="dwPasswordLength" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpszUrlPath" offset="44" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="dwUrlPathLength" offset="48" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpszExtraInfo" offset="52" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="dwExtraInfoLength" offset="56" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

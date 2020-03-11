@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa387758(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="signer_subject_info">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pdwIndex" offset="4" size="4">
+     <type><ptr>DWORD</ptr></type>
+    </field>
+    <field name="dwSubjectChoice" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pSignerFileInfo" offset="12" size="4">
+     <type><ptr>SIGNER_FILE_INFO</ptr></type>
+    </field>
+    <field name="pSignerBlobInfo" offset="12" size="4">
+     <type><ptr>SIGNER_BLOB_INFO</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
+    <reference href="http://msdn.microsoft.com/"/>
+  </header>
+  <symbolic-flags type="registry_key_security_access_rights_flags">
+    <type>registry_key_security_access_rights_flags</type>
+    <values>
+      <symf name="KEY_CREATE_LINK" value="0x0020" 
+	    desc="Reserved for system use"/>
+      <symf name="KEY_CREATE_SUB_KEY" value="0x0004"
+	    desc="Required to create a subkey of a registry key"/>
+      <symf name="KEY_ENUMERATE_SUB_KEYS" value="0x0008"
+	    desc="Required to enumerate the subkeys of a registry key"/>
+      <symf name="KEY_NOTIFY" value="0x0010">
+	<desc>
+	  Required to request change notifications for a registry key or for 
+	  subkeys of a registry key
+	</desc>
+      </symf>
+      <symf name="KEY_QUERY_VALUE" value="0x0001"
+	    desc="Required to query the values of a registry key"/>
+      <symf name="KEY_SET_VALUE" value="0x0002"
+	    desc="Required to create, delete, or set a registry value"/>
+      <symf name="KEY_WOW64_32KEY" value="0x0200">
+	<desc>
+	  Indicates that an application on 64-bit Windows should operate 
+	  on the 32-bit registry view. This flag is ignored by 32-bit Windows
+	</desc>
+      </symf>
+      <symf name="KEY_WOW64_64KEY" value="0x0100">
+	<desc>
+	  Indicates that an application on 64-bit Windows should operate on 
+	  the 64-bit registry view. This flag is ignored by 32-bit Windows
+	</desc>
+      </symf>
+    </values>
+  </symbolic-flags>
+</codehawk-binary-analyzer>

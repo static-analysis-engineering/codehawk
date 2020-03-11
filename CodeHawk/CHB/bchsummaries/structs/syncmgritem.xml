@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb759828(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="syncmgritem">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwFlags" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="ItemID" offset="8" size="16">
+     <type>GUID</type>
+    </field>
+    <field name="dwItemState" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hIcon" offset="28" size="4">
+     <type>HICON</type>
+    </field>
+    <field name="wszItemName" offset="32" size="256">
+     <type><array size="256">WCHAR</array></type>
+    </field>
+    <field name="ftLastUpdate" offset="288" size="8">
+     <type>FILETIME</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

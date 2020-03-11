@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa377544(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cert_simple_chain">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="TrustStatus" offset="4" size="8">
+     <type>CERT_TRUST_STATUS</type>
+    </field>
+    <field name="cElement" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rgpElement" offset="16" size="4">
+     <type><ptr>PCERT_CHAIN_ELEMENT</ptr></type>
+    </field>
+    <field name="pTrustListInfo" offset="20" size="4">
+     <type>PCERT_TRUST_LIST_INFO</type>
+    </field>
+    <field name="fHasRevocationFreshnessTime" offset="24" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="dwRevocationFreshnessTime" offset="28" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference
+	href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb761533(v=vs.85).aspx"/>
+    <refnotes>retrieved from unofficial sources</refnotes>
+  </header>
+  <symbolic-constants type="imagelist_creation_flags">
+    <type>imagelist_creation_flags</type>
+    <values>
+      <symc name="ILD_BLEND" value="0x00000004"
+            desc="[no description provided]" />
+      <symc name="ILD_BLEND25" value="0x00000002"
+            desc="Draws the image, blending 25 percent with the system highlight color. This value has no effect if the image list does not contain a mask." />
+      <symc name="ILD_BLEND50" value="0x00000004"
+            desc="Draws the image, blending 50 percent with the system highlight color. This value has no effect if the image list does not contain a mask." />
+      <symc name="ILD_FOCUS" value="0x00000002"
+            desc="[no description provided]" />
+      <symc name="ILD_IMAGE" value="0x00000020"
+            desc="Set this flag if the overlay does not require a mask to be drawn. This flag causes ImageList_DrawEx to draw just the image, ignoring the mask." />
+      <symc name="ILD_MASK" value="0x00000010"
+            desc="Draws the mask." />
+      <symc name="ILD_NORMAL" value="0x00000000"
+            desc="Draws the image using the background color for the image list. If the background color is the CLR_NONE value, the image is drawn transparently using the mask." />
+      <symc name="ILD_SELECTED" value="0x00000004"
+            desc="[no description provided]" />
+      <symc name="ILD_TRANSPARENT" value="0x00000001"
+            desc="Draws the image transparently using the mask, regardless of the background color. This value has no effect if the image list does not contain a mask." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

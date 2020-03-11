@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms645394(v=vs.85).aspx"/>
+  <header date="05/29/2017 00:00:00"/>
+  <struct name="dlgtemplate">
+   <fields>
+    <field name="style" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwExtendedStyle" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="cdit" offset="8" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="x" offset="10" size="2">
+     <type>short</type>
+    </field>
+    <field name="y" offset="12" size="2">
+     <type>short</type>
+    </field>
+    <field name="cx" offset="14" size="2">
+     <type>short</type>
+    </field>
+    <field name="cy" offset="16" size="2">
+     <type>short</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

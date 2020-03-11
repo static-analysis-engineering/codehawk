@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb762118(v=vs.85).aspx TEST-DATA"/>
+    <refnotes>retrieved from unofficial sources</refnotes>
+  </header>
+  <symbolic-constants type="event_notification_flags">
+    <type>event_notification_flags</type>
+    <values>
+      <symc name="SHCNE_ALLEVENTS" value="0x7FFFFFFF"
+            desc="All events have occurred." />
+      <symc name="SHCNE_ASSOCCHANGED" value="0x08000000"
+            desc="A file type association has changed. SHCNF_IDLIST must be specified in the uFlags parameter. dwItem1 and dwItem2 are not used and must be NULL. This event should also be sent for registered protocols." />
+      <symc name="SHCNE_ATTRIBUTES" value="0x00000800"
+            desc="The attributes of an item or folder have changed. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the item or folder that has changed. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_CREATE" value="0x00000002"
+            desc="A nonfolder item has been created. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the item that was created. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_DELETE" value="0x00000004"
+            desc="A nonfolder item has been deleted. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the item that was deleted. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_DRIVEADD" value="0x00000100"
+            desc="A drive has been added. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the root of the drive that was added. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_DRIVEADDGUI" value="0x00010000"
+            desc="Windows XP and later: Not used." />
+      <symc name="SHCNE_DRIVEREMOVED" value="0x00000080"
+            desc="A drive has been removed. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the root of the drive that was removed. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_FREESPACE" value="0x00040000"
+            desc="The amount of free space on a drive has changed. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the root of the drive on which the free space changed. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_MEDIAINSERTED" value="0x00000020"
+            desc="Storage media has been inserted into a drive. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the root of the drive that contains the new media. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_MEDIAREMOVED" value="0x00000040"
+            desc="Storage media has been removed from a drive. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the root of the drive from which the media was removed. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_MKDIR" value="0x00000008"
+            desc="A folder has been created. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the folder that was created. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_NETSHARE" value="0x00000200"
+            desc="A folder on the local computer is being shared via the network. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the folder that is being shared. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_NETUNSHARE" value="0x00000400"
+            desc="A folder on the local computer is no longer being shared via the network. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the folder that is no longer being shared. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_RENAMEFOLDER" value="0x00020000"
+            desc="The name of a folder has changed. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the previous PIDL or name of the folder. dwItem2 contains the new PIDL or name of the folder." />
+      <symc name="SHCNE_RENAMEITEM" value="0x00000001"
+            desc="The name of a nonfolder item has changed. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the previous PIDL or name of the item. dwItem2 contains the new PIDL or name of the item." />
+      <symc name="SHCNE_RMDIR" value="0x00000010"
+            desc="A folder has been removed. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the folder that was removed. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_SERVERDISCONNECT" value="0x00004000"
+            desc="The computer has disconnected from a server. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the server from which the computer was disconnected. dwItem2 is not used and should be NULL." />
+      <symc name="SHCNE_UPDATEDIR" value="0x00001000"
+            desc="The contents of an existing folder have changed, but the folder still exists and has not been renamed. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the folder that has changed. dwItem2 is not used and should be NULL. If a folder has been created, deleted, or renamed, use SHCNE_MKDIR, SHCNE_RMDIR, or SHCNE_RENAMEFOLDER, respectively." />
+      <symc name="SHCNE_UPDATEIMAGE" value="0x00008000"
+            desc="An image in the system image list has changed. SHCNF_DWORD must be specified in uFlags.
+            dwItem2 contains the index in the system image list that has changed. dwItem1 is not used and should be NULL." />
+      <symc name="SHCNE_UPDATEITEM" value="0x00002000"
+            desc="An existing item (a folder or a nonfolder) has changed, but the item still exists and has not been renamed. SHCNF_IDLIST or SHCNF_PATH must be specified in uFlags. dwItem1 contains the item that has changed. dwItem2 is not used and should be NULL. If a nonfolder item has been created, deleted, or renamed, use SHCNE_CREATE, SHCNE_DELETE, or SHCNE_RENAMEITEM, respectively, instead." />
+      <symc name="SHCNE_DISKEVENTS" value="0x0002381F"
+            desc="Specifies a combination of all of the disk event identifiers." />
+      <symc name="SHCNE_GLOBALEVENTS" value="0x0C0581E0"
+            desc="Specifies a combination of all of the global event identifiers." />
+      <symc name="SHCNE_INTERRUPT" value="0x80000000"
+            desc="The specified event occurred as a result of a system interrupt. As this value modifies other event values, it cannot be used alone." />
+      <symc name="SHCNF_DWORD" value="0x0003"
+            desc="The dwItem1 and dwItem2 parameters are DWORD values." />
+      <symc name="SHCNF_IDLIST" value="0x0000"
+            desc="dwItem1 and dwItem2 are the addresses of ITEMIDLIST structures that represent the item(s) affected by the change. Each ITEMIDLIST must be relative to the desktop folder." />
+      <symc name="SHCNF_PATH_note_UNICODE_version" value="0x0005"
+            desc="dwItem1 and dwItem2 are the addresses of null-terminated strings of maximum length MAX_PATH that contain the full path names of the items affected by the change." />
+      <symc name="SHCNF_PATH_note_NON_UNICODE_version" value="0x0001"
+            desc="dwItem1 and dwItem2 are the addresses of null-terminated strings of maximum length MAX_PATH that contain the full path names of the items affected by the change." />
+      <symc name="SHCNF_PRINTER_note_UNICODE_version" value="0x0006"
+            desc="dwItem1 and dwItem2 are the addresses of null-terminated strings that represent the friendly names of the printer(s) affected by the change." />
+      <symc name="SHCNF_PRINTER_note_NON_UNICODE_version" value="0x0002"
+            desc="dwItem1 and dwItem2 are the addresses of null-terminated strings that represent the friendly names of the printer(s) affected by the change." />
+      <symc name="SHCNF_FLUSH" value="0x1000"
+            desc="The function should not return until the notification has been delivered to all affected components. As this flag modifies other data-type flags, it cannot be used by itself." />
+      <symc name="SHCNF_FLUSHNOWAIT" value="0x2000"
+            desc="The function should begin delivering notifications to all affected components but should return as soon as the notification process has begun. As this flag modifies other data-type flags, it cannot by used by itself. This flag includes SHCNF_FLUSH." />
+      <symc name="SHCNF_NOTIFYRECURSIVE" value="0x10000"
+            desc="Notify clients registered for all children." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

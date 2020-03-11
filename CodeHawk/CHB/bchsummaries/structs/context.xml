@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms679284(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="context">
+   <fields>
+    <field name="ContextFlags" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Dr0" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Dr1" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Dr2" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Dr3" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Dr6" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Dr7" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="FloatSave" offset="28" size="112">
+     <type>FLOATING_SAVE_AREA</type>
+    </field>
+    <field name="SegGs" offset="140" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SegFs" offset="144" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SegEs" offset="148" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SegDs" offset="152" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Edi" offset="156" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Esi" offset="160" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Ebx" offset="164" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Edx" offset="168" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Ecx" offset="172" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Eax" offset="176" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Ebp" offset="180" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Eip" offset="184" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SegCs" offset="188" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="EFlags" offset="192" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Esp" offset="196" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SegSs" offset="200" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

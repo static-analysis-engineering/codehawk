@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa377524(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cert_revocation_para">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pIssuerCert" offset="4" size="4">
+     <type>PCCERT_CONTEXT</type>
+    </field>
+    <field name="cCertStore" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rgCertStore" offset="12" size="4">
+     <type><ptr>HCERTSTORE</ptr></type>
+    </field>
+    <field name="hCrlStore" offset="16" size="4">
+     <type>HCERTSTORE</type>
+    </field>
+    <field name="pftTimeToUse" offset="20" size="4">
+     <type>LPFILETIME</type>
+    </field>
+    <field name="dwUrlRetrievalTimeout" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="fCheckFreshnessTime" offset="28" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="dwFreshnessTime" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pftCurrentTime" offset="36" size="4">
+     <type>LPFILETIME</type>
+    </field>
+    <field name="pCrlInfo" offset="40" size="4">
+     <type>PCERT_REVOCATION_CRL_INFO</type>
+    </field>
+    <field name="pftCacheResync" offset="44" size="4">
+     <type>LPFILETIME</type>
+    </field>
+    <field name="pChainPara" offset="48" size="4">
+     <type>PCERT_REVOCATION_CHAIN_PARA</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa380122(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="secpkg_user_function_table">
+   <fields>
+    <field name="InstanceInit" offset="0" size="4">
+     <type><ptr>SpInstanceInitFn</ptr></type>
+    </field>
+    <field name="InitUserModeContext" offset="4" size="4">
+     <type><ptr>SpInitUserModeContextFn</ptr></type>
+    </field>
+    <field name="MakeSignature" offset="8" size="4">
+     <type><ptr>SpMakeSignatureFn</ptr></type>
+    </field>
+    <field name="VerifySignature" offset="12" size="4">
+     <type><ptr>SpVerifySignatureFn</ptr></type>
+    </field>
+    <field name="SealMessage" offset="16" size="4">
+     <type><ptr>SpSealMessageFn</ptr></type>
+    </field>
+    <field name="UnsealMessage" offset="20" size="4">
+     <type><ptr>SpUnsealMessageFn</ptr></type>
+    </field>
+    <field name="GetContextToken" offset="24" size="4">
+     <type><ptr>SpGetContextTokenFn</ptr></type>
+    </field>
+    <field name="QueryContextAttributes" offset="28" size="4">
+     <type><ptr>SpQueryContextAttributesFn</ptr></type>
+    </field>
+    <field name="CompleteAuthToken" offset="32" size="4">
+     <type><ptr>SpCompleteAuthTokenFn</ptr></type>
+    </field>
+    <field name="DeleteUserModeContext" offset="36" size="4">
+     <type><ptr>SpDeleteContextFn</ptr></type>
+    </field>
+    <field name="FormatCredentials" offset="40" size="4">
+     <type><ptr>SpFormatCredentialsFn</ptr></type>
+    </field>
+    <field name="MarshallSupplementalCreds" offset="44" size="4">
+     <type><ptr>SpMarshallSupplementalCredsFn</ptr></type>
+    </field>
+    <field name="ExportContext" offset="48" size="4">
+     <type><ptr>SpExportSecurityContextFn</ptr></type>
+    </field>
+    <field name="ImportContext" offset="52" size="4">
+     <type><ptr>SpImportSecurityContextFn</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

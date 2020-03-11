@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa365542(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="findex_info_levels_constants">
+    <type>findex_info_levels_constants</type>
+    <values>
+      <symc name="FILE_BEGIN" value="0"
+            desc="The starting point is zero or the beginning of the file." />
+      <symc name="FILE_CURRENT" value="1"
+            desc="The starting point is the current value of the file pointer." />
+      <symc name="FILE_END" value="2"
+            desc="The starting point is the current end-of-file position." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

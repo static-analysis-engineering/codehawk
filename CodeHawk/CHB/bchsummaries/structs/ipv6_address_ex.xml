@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb451672(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="ipv6_address_ex">
+   <fields>
+    <field name="sin6_port" offset="0" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="sin6_flowinfo" offset="4" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="sin6_addr" offset="8" size="16">
+     <type><array size="16">USHORT</array></type>
+    </field>
+    <field name="sin6_scope_id" offset="24" size="4">
+     <type>ULONG</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

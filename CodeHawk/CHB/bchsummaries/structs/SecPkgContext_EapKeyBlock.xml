@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa379822(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="SecPkgContext_EapKeyBlock">
+   <fields>
+    <field name="rgbKeys" offset="0" size="128">
+     <type><array size="128">BYTE</array></type>
+    </field>
+    <field name="rgbIVs" offset="128" size="64">
+     <type><array size="64">BYTE</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

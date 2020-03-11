@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa377188(v=vs.85).aspx"/>
+  <header date="05/29/2017 00:00:00"/>
+  <struct name="cert_chain_policy_status">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwError" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lChainIndex" offset="8" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="lElementIndex" offset="12" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="pvExtraPolicyStatus" offset="16" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

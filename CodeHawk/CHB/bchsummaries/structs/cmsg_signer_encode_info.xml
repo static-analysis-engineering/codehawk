@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa378102(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cmsg_signer_encode_info">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pCertInfo" offset="4" size="4">
+     <type>PCERT_INFO</type>
+    </field>
+    <field name="hCryptProv" offset="8" size="4">
+     <type>HCRYPTPROV</type>
+    </field>
+    <field name="hNCryptKey" offset="8" size="4">
+     <type>NCRYPT_KEY_HANDLE</type>
+    </field>
+    <field name="dwKeySpec" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="HashAlgorithm" offset="16" size="12">
+     <type>CRYPT_ALGORITHM_IDENTIFIER</type>
+    </field>
+    <field name="pvHashAuxInfo" offset="28" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+    <field name="cAuthAttr" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rgAuthAttr" offset="36" size="4">
+     <type>PCRYPT_ATTRIBUTE</type>
+    </field>
+    <field name="cUnauthAttr" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rgUnauthAttr" offset="44" size="4">
+     <type>PCRYPT_ATTRIBUTE</type>
+    </field>
+    <field name="SignerId" offset="48" size="20">
+     <type>CERT_ID</type>
+    </field>
+    <field name="HashEncryptionAlgorithm" offset="68" size="12">
+     <type>CRYPT_ALGORITHM_IDENTIFIER</type>
+    </field>
+    <field name="pvHashEncryptionAuxInfo" offset="80" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms740094(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="wsapollfd">
+   <fields>
+    <field name="fd" offset="0" size="4">
+     <type>SOCKET</type>
+    </field>
+    <field name="events" offset="4" size="2">
+     <type>short</type>
+    </field>
+    <field name="revents" offset="6" size="2">
+     <type>short</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

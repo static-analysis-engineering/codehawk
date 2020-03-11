@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/dd183380(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="bitmapv4header">
+   <fields>
+    <field name="bV4Size" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV4Width" offset="4" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="bV4Height" offset="8" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="bV4Planes" offset="12" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="bV4BitCount" offset="14" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="bV4V4Compression" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV4SizeImage" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV4XPelsPerMeter" offset="24" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="bV4YPelsPerMeter" offset="28" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="bV4ClrUsed" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV4ClrImportant" offset="36" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV4RedMask" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV4GreenMask" offset="44" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV4BlueMask" offset="48" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV4AlphaMask" offset="52" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV4CSType" offset="56" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV4Endpoints" offset="60" size="36">
+     <type>CIEXYZTRIPLE</type>
+    </field>
+    <field name="bV4GammaRed" offset="96" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV4GammaGreen" offset="100" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV4GammaBlue" offset="104" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms646309(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="hotkey_modifier_flags">
+    <type>hotkey_modifier_flags</type>
+    <values>
+      <symc name="MOD_ALT" value="0x0001"
+            desc="Either ALT key must be held down." />
+      <symc name="MOD_CONTROL" value="0x0002"
+            desc="Either CTRL key must be held down." />
+      <symc name="MOD_NOREPEAT" value="0x4000"
+            desc="Changes the hotkey behavior so that the keyboard auto-repeat does not yield multiple hotkey notifications.
+            Windows Vista:  This flag is not supported." />
+      <symc name="MOD_SHIFT" value="0x0004"
+            desc="Either SHIFT key must be held down." />
+      <symc name="MOD_WIN" value="0x0008"
+            desc="Either WINDOWS key was held down. These keys are labeled with the Windows logo. Keyboard shortcuts that involve the WINDOWS key are reserved for use by the operating system." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

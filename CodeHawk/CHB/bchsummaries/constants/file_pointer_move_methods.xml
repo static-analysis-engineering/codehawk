@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/03/2015 14:43:09"/>
+  <symbolic-constants type="file_pointer_move_methods">
+   <values>
+    <symc name="FILE_BEGIN" value="0">
+     <desc>The starting point is zero or the beginning of the file</desc>
+    </symc>
+    <symc name="FILE_CURRENT" value="1">
+     <desc>The starting point is the current value of the file pointer</desc>
+    </symc>
+    <symc name="FILE_END" value="2">
+     <desc>The starting point is the current end-of-file position</desc>
+    </symc>
+   </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

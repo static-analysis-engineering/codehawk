@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/hardware/ff566484(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="gdiinfo">
+   <fields>
+    <field name="ulVersion" offset="0" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulTechnology" offset="4" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulHorzSize" offset="8" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulVertSize" offset="12" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulHorzRes" offset="16" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulVertRes" offset="20" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="cBitsPixel" offset="24" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="cPlanes" offset="28" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulNumColors" offset="32" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="flRaster" offset="36" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulLogPixelsX" offset="40" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulLogPixelsY" offset="44" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="flTextCaps" offset="48" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulDACRed" offset="52" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulDACGreen" offset="56" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulDACBlue" offset="60" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulAspectX" offset="64" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulAspectY" offset="68" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulAspectXY" offset="72" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="xStyleStep" offset="76" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="yStyleStep" offset="80" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="denStyleStep" offset="84" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="ptlPhysOffset" offset="88" size="8">
+     <type>POINTL</type>
+    </field>
+    <field name="szlPhysSize" offset="96" size="8">
+     <type>SIZEL</type>
+    </field>
+    <field name="ulNumPalReg" offset="104" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ciDevice" offset="108" size="120">
+     <type>COLORINFO</type>
+    </field>
+    <field name="ulDevicePelsDPI" offset="228" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulPrimaryOrder" offset="232" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulHTPatternSize" offset="236" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulHTOutputFormat" offset="240" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="flHTFlags" offset="244" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulVRefresh" offset="248" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulBltAlignment" offset="252" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulPanningHorzRes" offset="256" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulPanningVertRes" offset="260" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="xPanningAlignment" offset="264" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="yPanningAlignment" offset="268" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="cxHTPat" offset="272" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="cyHTPat" offset="276" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="pHTPatA" offset="280" size="4">
+     <type>LPBYTE</type>
+    </field>
+    <field name="pHTPatB" offset="284" size="4">
+     <type>LPBYTE</type>
+    </field>
+    <field name="pHTPatC" offset="288" size="4">
+     <type>LPBYTE</type>
+    </field>
+    <field name="flShadeBlend" offset="292" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulPhysicalPixelCharacteristics" offset="296" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ulPhysicalPixelGamma" offset="300" size="4">
+     <type>ULONG</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="TEST-DATA UNOFFICIAL SOURCE"/>
+  </header>
+  <symbolic-constants type="device_caps_request_constants">
+    <type>device_caps_request_constants</type>
+    <values>
+      <symc name="DRIVERVERSION" value="0"
+            desc="The device driver version." />
+      <symc name="TECHNOLOGY" value="2"
+            desc="Device technology. It can be any one of the following values.
+DT_PLOTTER	Vector plotter	DT_RASDISPLAY	Raster display	DT_RASPRINTER	Raster printer	DT_RASCAMERA	Raster camera	DT_CHARSTREAM	Character stream	DT_METAFILE	Metafile	DT_DISPFILE	Display file 
+ 
+ If the hdc parameter is a handle to the DC of an enhanced metafile, the device technology is that of the referenced device as specified to the CreateEnhMetaFile function. To determine whether it is an enhanced metafile DC, use the GetObjectType function." />
+      <symc name="HORZSIZE" value="4"
+            desc="Width, in millimeters, of the physical screen." />
+      <symc name="VERTSIZE" value="6"
+            desc="Height, in millimeters, of the physical screen." />
+      <symc name="HORZRES" value="8"
+            desc="Width, in pixels, of the screen; or for printers, the width, in pixels, of the printable area of the page." />
+      <symc name="VERTRES" value="10"
+            desc="Height, in raster lines, of the screen; or for printers, the height, in pixels, of the printable area of the page." />
+      <symc name="LOGPIXELSX" value="88"
+            desc="Number of pixels per logical inch along the screen width. In a system with multiple display monitors, this value is the same for all monitors." />
+      <symc name="LOGPIXELSY" value="90"
+            desc="Number of pixels per logical inch along the screen height. In a system with multiple display monitors, this value is the same for all monitors." />
+      <symc name="BITSPIXEL" value="12"
+            desc="Number of adjacent color bits for each pixel." />
+      <symc name="PLANES" value="14"
+            desc="Number of color planes." />
+      <symc name="NUMBRUSHES" value="16"
+            desc="Number of device-specific brushes." />
+      <symc name="NUMPENS" value="18"
+            desc="Number of device-specific pens." />
+      <symc name="NUMFONTS" value="22"
+            desc="Number of device-specific fonts." />
+      <symc name="NUMCOLORS" value="24"
+            desc="Number of entries in the device's color table, if the device has a color depth of no more than 8 bits per pixel. For devices with greater color depths, 1 is returned." />
+      <symc name="ASPECTX" value="40"
+            desc="Relative width of a device pixel used for line drawing." />
+      <symc name="ASPECTY" value="42"
+            desc="Relative height of a device pixel used for line drawing." />
+      <symc name="ASPECTXY" value="44"
+            desc="Diagonal width of the device pixel used for line drawing." />
+      <symc name="PDEVICESIZE" value="26"
+            desc="Reserved." />
+      <symc name="CLIPCAPS" value="36"
+            desc="Flag that indicates the clipping capabilities of the device. If the device can clip to a rectangle, it is 1. Otherwise, it is 0." />
+      <symc name="SIZEPALETTE" value="0x0139"
+            desc="Number of entries in the system palette. This index is valid only if the device driver sets the RC_PALETTE bit in the RASTERCAPS index and is available only if the driver is compatible with 16-bit Windows." />
+      <symc name="NUMRESERVED" value="106"
+            desc="Number of reserved entries in the system palette. This index is valid only if the device driver sets the RC_PALETTE bit in the RASTERCAPS index and is available only if the driver is compatible with 16-bit Windows." />
+      <symc name="COLORRES" value="108"
+            desc="Actual color resolution of the device, in bits per pixel. This index is valid only if the device driver sets the RC_PALETTE bit in the RASTERCAPS index and is available only if the driver is compatible with 16-bit Windows." />
+      <symc name="PHYSICALWIDTH" value="110"
+            desc="For printing devices: the width of the physical page, in device units. For example, a printer set to print at 600 dpi on 8.5-x11-inch paper has a physical width value of 5100 device units. Note that the physical page is almost always greater than the printable area of the page, and never smaller." />
+      <symc name="PHYSICALHEIGHT" value="111"
+            desc="For printing devices: the height of the physical page, in device units. For example, a printer set to print at 600 dpi on 8.5-by-11-inch paper has a physical height value of 6600 device units. Note that the physical page is almost always greater than the printable area of the page, and never smaller." />
+      <symc name="PHYSICALOFFSETX" value="112"
+            desc="For printing devices: the distance from the left edge of the physical page to the left edge of the printable area, in device units. For example, a printer set to print at 600 dpi on 8.5-by-11-inch paper, that cannot print on the leftmost 0.25-inch of paper, has a horizontal physical offset of 150 device units." />
+      <symc name="PHYSICALOFFSETY" value="113"
+            desc="For printing devices: the distance from the top edge of the physical page to the top edge of the printable area, in device units. For example, a printer set to print at 600 dpi on 8.5-by-11-inch paper, that cannot print on the topmost 0.5-inch of paper, has a vertical physical offset of 300 device units." />
+      <symc name="VREFRESH" value="116"
+            desc="For display devices: the current vertical refresh rate of the device, in cycles per second (Hz).
+            A vertical refresh rate value of 0 or 1 represents the display hardware's default refresh rate. This default rate is typically set by switches on a display card or computer motherboard, or by a configuration program that does not use display functions such as ChangeDisplaySettings." />
+      <symc name="SCALINGFACTORX" value="114"
+            desc="Scaling factor for the x-axis of the printer." />
+      <symc name="SCALINGFACTORY" value="115"
+            desc="Scaling factor for the y-axis of the printer." />
+      <symc name="BLTALIGNMENT" value="119"
+            desc="Preferred horizontal drawing alignment, expressed as a multiple of pixels. For best drawing performance, windows should be horizontally aligned to a multiple of this value. A value of zero indicates that the device is accelerated, and any alignment may be used." />
+      <symc name="SHADEBLENDCAPS" value="120"
+            desc="Value that indicates the shading and blending capabilities of the device. See Remarks for further comments.
+            SB_CONST_ALPHA	Handles the SourceConstantAlpha member of the BLENDFUNCTION structure, which is referenced by the blendFunction parameter of the AlphaBlend function.	SB_GRAD_RECT	Capable of doing GradientFill rectangles.	SB_GRAD_TRI	Capable of doing GradientFill triangles.	SB_NONE	Device does not support any of these capabilities.	SB_PIXEL_ALPHA	Capable of handling per-pixel alpha in AlphaBlend.	SB_PREMULT_ALPHA	Capable of handling premultiplied alpha in AlphaBlend. " />
+      <symc name="RASTERCAPS" value="38"
+            desc="Value that indicates the raster capabilities of the device, as shown in the following table.
+            RC_BANDING	Requires banding support.	RC_BITBLT	Capable of transferring bitmaps.	RC_BITMAP64	Capable of supporting bitmaps larger than 64 KB.	RC_DI_BITMAP	Capable of supporting the SetDIBits and GetDIBits functions.	RC_DIBTODEV	Capable of supporting the SetDIBitsToDevice function.	RC_FLOODFILL	Capable of performing flood fills.	RC_PALETTE	Specifies a palette-based device.	RC_SCALING	Capable of scaling.	RC_STRETCHBLT	Capable of performing the StretchBlt function.	RC_STRETCHDIB	Capable of performing the StretchDIBits function. " />
+      <symc name="CURVECAPS" value="28"
+            desc="Value that indicates the curve capabilities of the device, as shown in the following table.
+            CC_NONE	Device does not support curves.	CC_CHORD	Device can draw chord arcs.	CC_CIRCLES	Device can draw circles.	CC_ELLIPSES	Device can draw ellipses.	CC_INTERIORS	Device can draw interiors.	CC_PIE	Device can draw pie wedges.	CC_ROUNDRECT	Device can draw rounded rectangles.	CC_STYLED	Device can draw styled borders.	CC_WIDE	Device can draw wide borders.	CC_WIDESTYLED	Device can draw borders that are wide and styled. " />
+      <symc name="LINECAPS" value="30"
+            desc="Value that indicates the line capabilities of the device, as shown in the following table:
+            LC_NONE	Device does not support lines.	LC_INTERIORS	Device can draw interiors.	LC_MARKER	Device can draw a marker.	LC_POLYLINE	Device can draw a polyline.	LC_POLYMARKER	Device can draw multiple markers.	LC_STYLED	Device can draw styled lines.	LC_WIDE	Device can draw wide lines.	LC_WIDESTYLED	Device can draw lines that are wide and styled. " />
+      <symc name="POLYGONALCAPS" value="32"
+            desc="Value that indicates the polygon capabilities of the device, as shown in the following table.
+            PC_NONE	Device does not support polygons.	PC_INTERIORS	Device can draw interiors.	PC_POLYGON	Device can draw alternate-fill polygons.	PC_RECTANGLE	Device can draw rectangles.	PC_SCANLINE	Device can draw a single scanline.	PC_STYLED	Device can draw styled borders.	PC_WIDE	Device can draw wide borders.	PC_WIDESTYLED	Device can draw borders that are wide and styled.	PC_WINDPOLYGON	Device can draw winding-fill polygons. " />
+      <symc name="TEXTCAPS" value="34"
+            desc="Value that indicates the text capabilities of the device, as shown in the following table.
+            TC_OP_CHARACTER	Device is capable of character output precision.	TC_OP_STROKE	Device is capable of stroke output precision.	TC_CP_STROKE	Device is capable of stroke clip precision.	TC_CR_90	Device is capable of 90-degree character rotation.	TC_CR_ANY	Device is capable of any character rotation.	TC_SF_X_YINDEP	Device can scale independently in the x- and y-directions.	TC_SA_DOUBLE	Device is capable of doubled character for scaling.	TC_SA_INTEGER	Device uses integer multiples only for character scaling.	TC_SA_CONTIN	Device uses any multiples for exact character scaling.	TC_EA_DOUBLE	Device can draw double-weight characters.	TC_IA_ABLE	Device can italicize.	TC_UA_ABLE	Device can underline.	TC_SO_ABLE	Device can draw strikeouts.	TC_RA_ABLE	Device can draw raster fonts.	TC_VA_ABLE	Device can draw vector fonts.	TC_RESERVED	Reserved; must be zero.	TC_SCROLLBLT	Device cannot scroll using a bit-block transfer. Note that this meaning may be the opposite of what you expect. " />
+      <symc name="COLORMGMTCAPS" value="121"
+            desc="Value that indicates the color management capabilities of the device.
+            CM_CMYK_COLOR	Device can accept CMYK color space ICC color profile.	CM_DEVICE_ICM	Device can perform ICM on either the device driver or the device itself.	CM_GAMMA_RAMP	Device supports GetDeviceGammaRamp and SetDeviceGammaRamp	CM_NONE	Device does not support ICM. " />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms724251(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="duplicate_handle_option_flags">
+    <type>duplicate_handle_option_flags</type>
+    <values>
+      <symc name="DUPLICATE_CLOSE_SOURCE" value="0x00000001"
+            desc="Closes the source handle. This occurs regardless of any error status returned." />
+      <symc name="DUPLICATE_SAME_ACCESS" value="0x00000002"
+            desc="Ignores the dwDesiredAccess parameter. The duplicate handle has the same access as the source handle." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

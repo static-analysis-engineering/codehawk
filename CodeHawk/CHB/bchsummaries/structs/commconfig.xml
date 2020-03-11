@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa363188(v=vs.85).aspx"/>
+  <header date="08/08/2017 00:00:00"/>
+  <struct name="commconfig">
+   <fields>
+    <field name="dwSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="wVersion" offset="4" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="wReserved" offset="6" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="dcb" offset="8" size="28">
+     <type>DCB</type>
+    </field>
+    <field name="dwProviderSubType" offset="36" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwProviderOffset" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwProviderSize" offset="44" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="wcProviderData" offset="48" size="2">
+     <type><array size="2">WCHAR</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

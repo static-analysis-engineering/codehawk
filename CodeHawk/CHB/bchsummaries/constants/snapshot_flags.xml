@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/30/2015 10:06:36"/>
+  <symbolic-flags type="snapshot_flags">
+   <values>
+    <symf name="TH32CS_INHERIT" value="0x80000000">
+     <desc>the snapshot handle is to be inheritable</desc>
+    </symf>
+    <symc name="TH32CS_SNAPALL" value="0xf">
+     <desc>
+       Includes all processes and threads in the system, plus the heaps and 
+       modules of the process specified in th32ProcessID. Equivalent to 
+       specifying the TH32CS_SNAPHEAPLIST, TH32CS_SNAPMODULE, TH32CS_SNAPPROCESS,
+       and TH32CS_SNAPTHREAD values combined using an OR operation ('|').
+     </desc>
+    </symc>
+    <symf name="TH32CS_SNAPHEAPLIST" value="0x00000001">
+     <desc>
+       Includes all heaps of the process specified in th32ProcessID in the snapshot.
+     </desc>
+    </symf>
+    <symf name="TH32CS_SNAPMODULE" value="0x00000008">
+     <desc>
+       Includes all modules of the process specified in th32ProcessID in the snapshot
+     </desc>
+    </symf>
+    <symf name="TH32CS_SNAPMODULE32" value="0x00000010">
+     <desc>
+       Includes all 32-bit modules of the process specified in th32ProcessID in 
+       the snapshot when called from a 64-bit process.
+     </desc>
+    </symf>
+    <symf name="TH32CS_SNAPPROCESS" value="0x00000002">
+     <desc>Includes all processes in the system in the snapshot.</desc>
+    </symf>
+    <symf name="TH32CS_SNAPTHREAD" value="0x00000004">
+     <desc>Includes all threads in the system in the snapshot</desc>
+    </symf>
+   </values>
+  </symbolic-flags>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

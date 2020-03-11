@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa381457(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="crypt_provider_sgnr">
+   <fields>
+    <field name="cbStruct" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="sftVerifyAsOf" offset="4" size="8">
+     <type>FILETIME</type>
+    </field>
+    <field name="csCertChain" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pasCertChain" offset="16" size="4">
+     <type><ptr>CRYPT_PROVIDER_CERT</ptr></type>
+    </field>
+    <field name="dwSignerType" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="psSigner" offset="24" size="4">
+     <type><ptr>CMSG_SIGNER_INFO</ptr></type>
+    </field>
+    <field name="dwError" offset="28" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="csCounterSigners" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pasCounterSigners" offset="36" size="4">
+     <type><ptr>CRYPT_PROVIDER_SGNR</ptr></type>
+    </field>
+    <field name="pChainContext" offset="40" size="4">
+     <type>PCCERT_CHAIN_CONTEXT</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

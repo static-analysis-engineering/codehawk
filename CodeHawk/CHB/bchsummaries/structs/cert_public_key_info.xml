@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa377463(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cert_public_key_info">
+   <fields>
+    <field name="Algorithm" offset="0" size="12">
+     <type>CRYPT_ALGORITHM_IDENTIFIER</type>
+    </field>
+    <field name="PublicKey" offset="12" size="12">
+     <type>CRYPT_BIT_BLOB</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

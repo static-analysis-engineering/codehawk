@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms740504(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="sockaddr_storage">
+   <fields>
+    <field name="ss_family" offset="0" size="2">
+     <type>short</type>
+    </field>
+    <field name="__ss_pad1" offset="2" size="6">
+     <type><array size="6">char</array></type>
+    </field>
+    <field name="__ss_align" offset="8" size="8">
+     <type>__int64</type>
+    </field>
+    <field name="__ss_pad2" offset="16" size="112">
+     <type><array size="112">char</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

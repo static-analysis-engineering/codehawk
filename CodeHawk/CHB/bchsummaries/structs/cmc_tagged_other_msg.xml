@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa377693(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cmc_tagged_other_msg">
+   <fields>
+    <field name="dwBodyPartID" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pszObjId" offset="4" size="4">
+     <type>LPSTR</type>
+    </field>
+    <field name="Value" offset="8" size="8">
+     <type>CRYPT_OBJID_BLOB</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa388205(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="wintrust_data">
+   <fields>
+    <field name="cbStruct" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pPolicyCallbackData" offset="4" size="4">
+     <type>LPVOID</type>
+    </field>
+    <field name="pSIPClientData" offset="8" size="4">
+     <type>LPVOID</type>
+    </field>
+    <field name="dwUIChoice" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="fdwRevocationChecks" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwUnionChoice" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pFile" offset="24" size="4">
+     <type><ptr>struct WINTRUST_FILE_INFO_</ptr></type>
+    </field>
+    <field name="pCatalog" offset="24" size="4">
+     <type><ptr>struct WINTRUST_CATALOG_INFO_</ptr></type>
+    </field>
+    <field name="pBlob" offset="24" size="4">
+     <type><ptr>struct WINTRUST_BLOB_INFO_</ptr></type>
+    </field>
+    <field name="pSgnr" offset="24" size="4">
+     <type><ptr>struct WINTRUST_SGNR_INFO_</ptr></type>
+    </field>
+    <field name="pCert" offset="24" size="4">
+     <type><ptr>struct WINTRUST_CERT_INFO_</ptr></type>
+    </field>
+    <field name="dwStateAction" offset="28" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hWVTStateData" offset="32" size="4">
+     <type>HANDLE</type>
+    </field>
+    <field name="pwszURLReference" offset="36" size="4">
+     <type><ptr>WCHAR</ptr></type>
+    </field>
+    <field name="dwProvFlags" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwUIContext" offset="44" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pSignatureSettings" offset="48" size="4">
+     <type><ptr>WINTRUST_SIGNATURE_SETTINGS</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

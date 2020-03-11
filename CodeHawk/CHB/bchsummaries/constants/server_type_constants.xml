@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="04/05/2015 22:26:35"/>
+  <symbolic-flags type="server_type_constants">
+    <type>server_type_constants</type>
+    <values>
+   <symf name="SV_TYPE_WORKSTATION" value="0x00000001">
+    <desc>All workstations.</desc>
+   </symf>
+   <symf name="SV_TYPE_SERVER" value="0x00000002">
+    <desc>All computers that run the Server service</desc>
+   </symf>
+   <symf name="SV_TYPE_SQLSERVER" value="0x00000004">
+    <desc>Any server that runs an instance of Microsoft SQL Server</desc>
+   </symf>
+   <symf name="SV_TYPE_DOMAIN_CTRL" value="0x00000008">
+    <desc>A server that is primary domain controller</desc>
+   </symf>
+   <symf name="SV_TYPE_DOMAIN_BAKCTRL" value="0x00000010">
+    <desc>Any server that is a backup domain controller</desc>
+   </symf>
+   <symf name="SV_TYPE_TIME_SOURCE" value="0x00000020">
+    <desc>Any server that runs the Timesource service</desc>
+   </symf>
+   <symf name="SV_TYPE_AFP" value="0x00000040">
+    <desc>Any server that runs the Apple Filing Protocol (AFP) file service</desc>
+   </symf>
+   <symf name="SV_TYPE_NOVELL" value="0x00000080">
+    <desc>Any server that is a Novell server</desc>
+   </symf>
+   <symf name="SV_TYPE_DOMAIN_MEMBER" value="0x00000100">
+    <desc>Any computer that is LAN Manager 2.x domain member</desc>
+   </symf>
+   <symf name="SV_TYPE_PRINTQ_SERVER" value="0x00000200">
+    <desc>Any computer that shares a print queue</desc>
+   </symf>
+   <symf name="SV_TYPE_DIALIN_SERVER" value="0x00000400">
+    <desc>Any server that runs a dial-in service</desc>
+   </symf>
+   <symf name="SV_TYPE_XENIX/UNIX_SERVER" value="0x00000800">
+    <desc>Any server that is a Xenix or Unix server/</desc>
+   </symf>
+   <symf name="SV_TYPE_NT" value="0x00001000">
+    <desc>A workstation or server</desc>
+   </symf>
+   <symf name="SV_TYPE_WFW" value="0x00002000">
+    <desc>Any computer that runs Windows for Workgroups</desc>
+   </symf>
+   <symf name="SV_TYPE_SERVER_MFPN" value="0x00004000">
+    <desc>Any server that runs the Microsoft File and Print for NetWare service</desc>
+   </symf>
+   <symf name="SV_TYPE_SERVER_NT" value="0x00008000">
+    <desc>Any server that is not a domain controller</desc>
+   </symf>
+   <symf name="SV_TYPE_POTENTIAL_BROWSER" value="0x00010000">
+    <desc>Any computer that can run the browser service</desc>
+   </symf>
+   <symf name="SV_TYPE_BACKUP_BROWSER" value="0x00020000">
+    <desc>A computer that runs a browser service as backup</desc>
+   </symf>
+   <symf name="SV_TYPE_MASTER_BROWSER" value="0x00040000">
+    <desc>A computer that runs the master browser service</desc>
+   </symf>
+   <symf name="SV_TYPE_DOMAIN_MASTER" value="0x00080000">
+    <desc>A computer that runs the domain master browser</desc>
+   </symf>
+   <symf name="SV_TYPE_SERVER_OSF" value="0x00100000">
+    <desc>A computer that runs OSF/1</desc>
+   </symf>
+   <symf name="SV_TYPE_SERVER_VMS" value="0x00200000">
+    <desc>A computer that runs Open Virtual Memory System (VMS)</desc>
+   </symf>
+   <symf name="SV_TYPE_WINDOWS" value="0x00400000">
+    <desc>A computer that runs Windows</desc>
+   </symf>
+   <symf name="SV_TYPE_DFS" value="0x00800000">
+    <desc>A computer that is the root of Distributed File System (DFS) tree</desc>
+   </symf>
+   <symf name="SV_TYPE_CLUSTER_NT" value="0x01000000">
+    <desc>Server clusters available in the domain</desc>
+   </symf>
+   <symf name="SV_TYPE_TERMINALSERVER" value="0x02000000">
+    <desc>A server running the Terminal Server service</desc>
+   </symf>
+   <symf name="SV_TYPE_CLUSTER_VS_NT" value="0x04000000">
+    <desc>Cluster virtual servers available in the domain</desc>
+   </symf>
+   <symf name="SV_TYPE_DCE" value="0x10000000">
+    <desc>A computer that runs IBM Directory and Security Services (DSS) or equivalent</desc>
+   </symf>
+   <symf name="SV_TYPE_ALTERNATE_XPORT" value="0x20000000">
+    <desc>A computer that over an alternate transport</desc>
+   </symf>
+   <symf name="SV_TYPE_LOCAL_LIST_ONLY" value="0x40000000">
+    <desc>
+      Any computer maintained in a list by the browser. See the following Remarks section
+    </desc>
+   </symf>
+   <symf name="SV_TYPE_DOMAIN_ENUM" value="0x80000000">
+    <desc>The primary domain</desc>
+   </symf>
+ </values>
+  </symbolic-flags>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb485842(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="icmpv6_echo_reply">
+   <fields>
+    <field name="Address" offset="0" size="28">
+     <type>IPV6_ADDRESS_EX</type>
+    </field>
+    <field name="Status" offset="28" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="RoundTripTime" offset="32" size="4">
+     <type>unsigned int</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

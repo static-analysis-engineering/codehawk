@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa388202(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="wintrust_blob_info">
+   <fields>
+    <field name="cbStruct" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="gSubject" offset="4" size="16">
+     <type>GUID</type>
+    </field>
+    <field name="pcwszDisplayName" offset="20" size="4">
+     <type>LPCWSTR</type>
+    </field>
+    <field name="cbMemObject" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pbMemObject" offset="28" size="4">
+     <type><ptr>BYTE</ptr></type>
+    </field>
+    <field name="cbMemSignedMsg" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pbMemSignedMsg" offset="36" size="4">
+     <type><ptr>BYTE</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

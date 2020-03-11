@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms646289(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="keyboard_layout_format_constants">
+    <type>keyboard_layout_format_constants</type>
+    <values>
+      <symc name="KLF_REORDER" value="0x00000008"
+            desc="If this bit is set, the system's circular list of loaded locale identifiers is reordered by moving the locale identifier to the head of the list. If this bit is not set, the list is rotated without a change of order.
+For example, if a user had an English locale identifier active, as well as having French, German, and Spanish locale identifiers loaded (in that order), then activating the German locale identifier with the KLF_REORDER bit set would produce the following order: German, English, French, Spanish. Activating the German locale identifier without the KLF_REORDER bit set would produce the following order: German, Spanish, English, French.
+If less than three locale identifiers are loaded, the value of this flag is irrelevant." />
+      <symc name="KLF_RESET" value="0x40000000"
+            desc="If set but KLF_SHIFTLOCK is not set, the Caps Lock state is turned off by pressing the Caps Lock key again. If set and KLF_SHIFTLOCK is also set, the Caps Lock state is turned off by pressing either SHIFT key.
+            These two methods are mutually exclusive, and the setting persists as part of the User's profile in the registry." />
+      <symc name="KLF_SETFORPROCESS" value="0x00000100"
+            desc="Activates the specified locale identifier for the entire process and sends the WM_INPUTLANGCHANGE message to the current thread's focus or active window." />
+      <symc name="KLF_SHIFTLOCK" value="0x00010000"
+            desc="This is used with KLF_RESET. See KLF_RESET for an explanation." />
+      <!--<symc name="KLF_UNLOADPREVIOUS" value="[no "
+            desc="This flag is unsupported. Use the UnloadKeyboardLayout function instead." /> -->
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

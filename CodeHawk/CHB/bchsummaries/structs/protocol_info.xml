@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms740104(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="protocol_info">
+   <fields>
+    <field name="dwServiceFlags" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="iAddressFamily" offset="4" size="4">
+     <type>INT</type>
+    </field>
+    <field name="iMaxSockAddr" offset="8" size="4">
+     <type>INT</type>
+    </field>
+    <field name="iMinSockAddr" offset="12" size="4">
+     <type>INT</type>
+    </field>
+    <field name="iSocketType" offset="16" size="4">
+     <type>INT</type>
+    </field>
+    <field name="iProtocol" offset="20" size="4">
+     <type>INT</type>
+    </field>
+    <field name="dwMessageSize" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpProtocol" offset="28" size="4">
+     <type>LPTSTR</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

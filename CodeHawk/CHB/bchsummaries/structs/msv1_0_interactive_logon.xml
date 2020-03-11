@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa378760(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="msv1_0_interactive_logon">
+   <fields>
+    <field name="MessageType" offset="0" size="4">
+     <type>MSV1_0_LOGON_SUBMIT_TYPE</type>
+    </field>
+    <field name="LogonDomainName" offset="4" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="UserName" offset="12" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="Password" offset="20" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

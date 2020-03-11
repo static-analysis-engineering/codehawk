@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa380108(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="secpkg_dll_functions">
+   <fields>
+    <field name="AllocateHeap" offset="0" size="4">
+     <type>PLSA_ALLOCATE_LSA_HEAP</type>
+    </field>
+    <field name="FreeHeap" offset="4" size="4">
+     <type>PLSA_FREE_LSA_HEAP</type>
+    </field>
+    <field name="RegisterCallback" offset="8" size="4">
+     <type>PLSA_REGISTER_CALLBACK</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

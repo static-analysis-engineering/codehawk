@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb394807(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="socket_peer_target_name">
+   <fields>
+    <field name="SecurityProtocol" offset="0" size="4">
+     <type>SOCKET_SECURITY_PROTOCOL</type>
+    </field>
+    <field name="PeerAddress" offset="8" size="128">
+     <type>SOCKADDR_STORAGE</type>
+    </field>
+    <field name="PeerTargetNameStringLen" offset="136" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="AllStrings" offset="140" size="2">
+     <type><array size="2">wchar_t</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa365900(v=vs.85).aspx"/>
+  <header date="08/08/2017 00:00:00"/>
+  <struct name="fixed_info">
+   <fields>
+    <field name="HostName" offset="0" size="132">
+     <type><array size="132">char</array></type>
+    </field>
+    <field name="DomainName" offset="132" size="132">
+     <type><array size="132">char</array></type>
+    </field>
+    <field name="CurrentDnsServer" offset="264" size="4">
+     <type>PIP_ADDR_STRING</type>
+    </field>
+    <field name="DnsServerList" offset="268" size="40">
+     <type>IP_ADDR_STRING</type>
+    </field>
+    <field name="NodeType" offset="308" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="ScopeId" offset="312" size="260">
+     <type><array size="260">char</array></type>
+    </field>
+    <field name="EnableRouting" offset="572" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="EnableProxy" offset="576" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="EnableDns" offset="580" size="4">
+     <type>UINT</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

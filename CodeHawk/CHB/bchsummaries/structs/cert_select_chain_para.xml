@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd433800(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cert_select_chain_para">
+   <fields>
+    <field name="hChainEngine" offset="0" size="4">
+     <type>HCERTCHAINENGINE</type>
+    </field>
+    <field name="pTime" offset="4" size="4">
+     <type>PFILETIME</type>
+    </field>
+    <field name="hAdditionalStore" offset="8" size="4">
+     <type>HCERTSTORE</type>
+    </field>
+    <field name="pChainPara" offset="12" size="4">
+     <type>PCERT_CHAIN_PARA</type>
+    </field>
+    <field name="dwFlags" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

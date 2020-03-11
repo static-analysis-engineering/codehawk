@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/25/2015 22:59:07"/>
+  <symbolic-flags type="file_sharing_flags">
+   <values>
+    <symf name="FILE_SHARE_DELETE" value="0x00000004">
+     <desc>
+       Enables subsequent open operations on a file or device to request delete access.
+       Otherwise, other processes cannot open the file or device if they request delete 
+       access.
+       If this flag is not specified, but the file or device has been opened for delete 
+       access, the function fails.
+       Note  Delete access allows both delete and rename operations.
+     </desc>
+    </symf>
+    <symf name="FILE_SHARE_READ" value="0x00000001">
+     <desc>
+       Enables subsequent open operations on a file or device to request read access.
+       Otherwise, other processes cannot open the file or device if they request read 
+       access.
+       If this flag is not specified, but the file or device has been opened for read 
+       access, the function fails.
+     </desc>
+    </symf>
+    <symf name="FILE_SHARE_WRITE" value="0x00000002">
+     <desc>
+       Enables subsequent open operations on a file or device to request write access.
+       Otherwise, other processes cannot open the file or device if they request write
+       access.
+       If this flag is not specified, but the file or device has been opened for write 
+       access or has a file mapping with write access, the function fails.
+     </desc>
+    </symf>
+   </values>
+  </symbolic-flags>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

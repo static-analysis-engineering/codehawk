@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa378328(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="lsa_dispatch_table">
+   <fields>
+    <field name="CreateLogonSession" offset="0" size="4">
+     <type>PLSA_CREATE_LOGON_SESSION</type>
+    </field>
+    <field name="DeleteLogonSession" offset="4" size="4">
+     <type>PLSA_DELETE_LOGON_SESSION</type>
+    </field>
+    <field name="AddCredential" offset="8" size="4">
+     <type>PLSA_ADD_CREDENTIAL</type>
+    </field>
+    <field name="GetCredentials" offset="12" size="4">
+     <type>PLSA_GET_CREDENTIALS</type>
+    </field>
+    <field name="DeleteCredential" offset="16" size="4">
+     <type>PLSA_DELETE_CREDENTIAL</type>
+    </field>
+    <field name="AllocateLsaHeap" offset="20" size="4">
+     <type>PLSA_ALLOCATE_LSA_HEAP</type>
+    </field>
+    <field name="FreeLsaHeap" offset="24" size="4">
+     <type>PLSA_FREE_LSA_HEAP</type>
+    </field>
+    <field name="AllocateClientBuffer" offset="28" size="4">
+     <type>PLSA_ALLOCATE_CLIENT_BUFFER</type>
+    </field>
+    <field name="FreeClientBuffer" offset="32" size="4">
+     <type>PLSA_FREE_CLIENT_BUFFER</type>
+    </field>
+    <field name="CopyToClientBuffer" offset="36" size="4">
+     <type>PLSA_COPY_TO_CLIENT_BUFFER</type>
+    </field>
+    <field name="CopyFromClientBuffer" offset="40" size="4">
+     <type>PLSA_COPY_FROM_CLIENT_BUFFER</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

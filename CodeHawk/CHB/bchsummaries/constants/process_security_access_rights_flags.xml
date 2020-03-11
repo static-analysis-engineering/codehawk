@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="04/06/2015 22:06:38"/>
+  <symbolic-flags type="process_security_access_rights_flags">
+    <type>process_security_access_rights_flags</type>
+    <values>
+   <symf name="DELETE" value="0x00010000">
+    <desc>Required to delete the object</desc>
+   </symf>
+   <symf name="READ_CONTROL" value="0x00020000">
+    <desc>
+      Required to read information in the security descriptor for the object, 
+      not including the information in the SACL
+    </desc>
+   </symf>
+   <symf name="SYNCHRONIZE" value="0x00100000">
+    <desc>
+      The right to use the object for synchronization. This enables a thread to 
+      wait until the object is in the signaled state
+    </desc>
+   </symf>
+   <symf name="WRITE_DAC" value="0x00040000">
+    <desc>Required to modify the DACL in the security descriptor for the object</desc>
+   </symf>
+   <symf name="WRITE_OWNER" value="0x00080000">
+    <desc>Required to change the owner in the security descriptor for the object</desc>
+   </symf>
+   <symf name="PROCESS_CREATE_PROCESS" value="0x0080">
+    <desc>Required to create a process</desc>
+   </symf>
+   <symf name="PROCESS_CREATE_THREAD" value="0x0002">
+    <desc>Required to create a thread</desc>
+   </symf>
+   <symf name="PROCESS_DUP_HANDLE" value="0x0040">
+    <desc>Required to duplicate a handle using DuplicateHandle</desc>
+   </symf>
+   <symf name="PROCESS_QUERY_INFORMATION" value="0x0400">
+    <desc>
+      Required to retrieve certain information about a process, such as its token, 
+      exit code, and priority class
+    </desc>
+   </symf>
+   <symf name="PROCESS_QUERY_LIMITED_INFORMATION" value="0x1000">
+    <desc>Required to retrieve certain information about a process </desc>
+   </symf>
+   <symf name="PROCESS_SET_INFORMATION" value="0x0200">
+    <desc>
+      Required to set certain information about a process, such as its 
+      priority class
+    </desc>
+   </symf>
+   <symf name="PROCESS_SET_QUOTA" value="0x0100">
+    <desc>Required to set memory limits using SetProcessWorkingSetSize</desc>
+   </symf>
+   <symf name="PROCESS_SUSPEND_RESUME" value="0x0800">
+    <desc>Required to suspend or resume a process</desc>
+   </symf>
+   <symf name="PROCESS_TERMINATE" value="0x0001">
+    <desc>Required to terminate a process using TerminateProcess</desc>
+   </symf>
+   <symf name="PROCESS_VM_OPERATION" value="0x0008">
+    <desc>Required to perform an operation on the address space of a process</desc>
+   </symf>
+   <symf name="PROCESS_VM_READ" value="0x0010">
+    <desc>Required to read memory in a process using ReadProcessMemory</desc>
+   </symf>
+   <symf name="PROCESS_VM_WRITE" value="0x0020">
+    <desc>Required to write to memory in a process using WriteProcessMemory</desc>
+   </symf>
+    </values>
+  </symbolic-flags>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

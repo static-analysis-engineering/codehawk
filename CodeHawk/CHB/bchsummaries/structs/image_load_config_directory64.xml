@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms680328(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="image_load_config_directory64">
+   <fields>
+    <field name="Size" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="TimeDateStamp" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="MajorVersion" offset="8" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="MinorVersion" offset="10" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="GlobalFlagsClear" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="GlobalFlagsSet" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="CriticalSectionDefaultTimeout" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="DeCommitFreeBlockThreshold" offset="24" size="8">
+     <type>ULONGLONG</type>
+    </field>
+    <field name="DeCommitTotalFreeThreshold" offset="32" size="8">
+     <type>ULONGLONG</type>
+    </field>
+    <field name="LockPrefixTable" offset="40" size="8">
+     <type>ULONGLONG</type>
+    </field>
+    <field name="MaximumAllocationSize" offset="48" size="8">
+     <type>ULONGLONG</type>
+    </field>
+    <field name="VirtualMemoryThreshold" offset="56" size="8">
+     <type>ULONGLONG</type>
+    </field>
+    <field name="ProcessAffinityMask" offset="64" size="8">
+     <type>ULONGLONG</type>
+    </field>
+    <field name="ProcessHeapFlags" offset="72" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="CSDVersion" offset="76" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="Reserved1" offset="78" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="EditList" offset="80" size="8">
+     <type>ULONGLONG</type>
+    </field>
+    <field name="SecurityCookie" offset="88" size="8">
+     <type>ULONGLONG</type>
+    </field>
+    <field name="SEHandlerTable" offset="96" size="8">
+     <type>ULONGLONG</type>
+    </field>
+    <field name="SEHandlerCount" offset="104" size="8">
+     <type>ULONGLONG</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

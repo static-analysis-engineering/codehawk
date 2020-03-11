@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/25/2015 22:53:49"/>
+  <symbolic-constants type="file_creation_action_constants">
+   <values>
+    <symc name="CREATE_ALWAYS" value="2">
+     <desc>
+       Creates a new file, always.
+       If the specified file exists and is writable, the function overwrites the file,
+       the function succeeds, and last-error code is set to ERROR_ALREADY_EXISTS (183).
+       If the specified file does not exist and is a valid path, a new file is created, 
+       the function succeeds, and the last-error code is set to zero.
+     </desc>
+    </symc>
+    <symc name="CREATE_NEW" value="1">
+     <desc>
+       Creates a new file, only if it does not already exist.
+       If the specified file exists, the function fails and the last-error code is 
+       set to ERROR_FILE_EXISTS (80).
+       If the specified file does not exist and is a valid path to a writable location,
+       a new file is created.
+     </desc>
+    </symc>
+    <symc name="OPEN_ALWAYS" value="4">
+     <desc>
+       Opens a file, always.
+       If the specified file exists, the function succeeds and the last-error code is
+       set to ERROR_ALREADY_EXISTS (183).
+       If the specified file does not exist and is a valid path to a writable location,
+       the function creates a file and the last-error code is set to zero.
+     </desc>
+    </symc>
+    <symc name="OPEN_EXISTING" value="3">
+     <desc>
+       Opens a file or device, only if it exists.
+       If the specified file or device does not exist, the function fails and the 
+       last-error code is set to ERROR_FILE_NOT_FOUND (2).
+     </desc>
+    </symc>
+    <symc name="TRUNCATE_EXISTING" value="5">
+     <desc>
+       Opens a file and truncates it so that its size is zero bytes, only if it exists.
+       If the specified file does not exist, the function fails and the last-error code 
+       is set to ERROR_FILE_NOT_FOUND (2).
+     </desc>
+    </symc>
+   </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

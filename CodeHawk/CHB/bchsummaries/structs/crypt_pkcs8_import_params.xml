@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa381445(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="crypt_pkcs8_import_params">
+   <fields>
+    <field name="PrivateKey" offset="0" size="8">
+     <type>CRYPT_DIGEST_BLOB</type>
+    </field>
+    <field name="pResolvehCryptProvFunc" offset="8" size="4">
+     <type>PCRYPT_RESOLVE_HCRYPTPROV_FUNC</type>
+    </field>
+    <field name="pVoidResolveFunc" offset="12" size="4">
+     <type>LPVOID</type>
+    </field>
+    <field name="pDecryptPrivateKeyFunc" offset="16" size="4">
+     <type>PCRYPT_DECRYPT_PRIVATE_KEY_FUNC</type>
+    </field>
+    <field name="pVoidDecryptFunc" offset="20" size="4">
+     <type>LPVOID</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

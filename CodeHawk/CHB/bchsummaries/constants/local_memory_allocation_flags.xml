@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa366723(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="local_memory_allocation_flags">
+    <type>local_memory_allocation_flags</type>
+    <values>
+      <symc name="LHND" value="0x0042"
+            desc="Combines LMEM_MOVEABLE and LMEM_ZEROINIT." />
+      <symc name="LMEM_FIXED" value="0x0000"
+            desc="Allocates fixed memory. The return value is a pointer to the memory object." />
+      <symc name="LMEM_MOVEABLE" value="0x0002"
+            desc="Allocates movable memory. Memory blocks are never moved in physical memory, but they can be moved within the default heap.
+The return value is a handle to the memory object. To translate the handle to a pointer, use the LocalLock function.
+This value cannot be combined with LMEM_FIXED." />
+      <symc name="LMEM_ZEROINIT" value="0x0040"
+            desc="Initializes memory contents to zero." />
+      <symc name="LPTR" value="0x0040"
+            desc="Combines LMEM_FIXED and LMEM_ZEROINIT." />
+      <symc name="NONZEROLHND" value="0x0002"
+            desc="Same as LMEM_MOVEABLE." />
+      <symc name="NONZEROLPTR" value="0x0000"
+            desc="Same as LMEM_FIXED." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

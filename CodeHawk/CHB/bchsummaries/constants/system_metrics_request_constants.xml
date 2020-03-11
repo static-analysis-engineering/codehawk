@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
+    <reference href="http://msdn.microsoft.com/"/>
+  </header>
+  <symbolic-constants type="system_metrics_request_constants">
+    <type>system_metrics_request_constants</type>
+    <values>
+    <symc name="SM_CXSCREEN" value="0"
+	  desc="The width of the screen of the primary display monitor, in pixels."/>
+    <symc name="SM_CYSCREEN" value="1"
+	  desc="The height of the screen of the primary display monitor, in pixels."/>
+    <symc name="SM_CVXSCROLL" value="2"
+	  desc="The width of a vertical scroll bar, in pixels"/>
+    <symc name="SM_CYHSCROLL" value="3"
+	  desc="The height of a horizontal scroll bar, in pixels"/>
+    <symc name="SM_CYCAPTION" value="4"
+	  desc="The height of a caption area, in pixels."/>
+    <symc name="SM_CYBORDER" value="6"
+	  desc="The height of a window border, in pixels"/>
+    <symc name="SM_CYFIXEDFRAME" value="7"
+	  desc="The thickness of the frame around the perimeter of a window that has a caption but is not sizable, in pixels."/>
+    <symc name="SM_CYDLGFRAME" value="8"
+	    desc="The thickness of the frame around the perimeter of a window that has a caption but is not sizable, in pixels."/>
+    <symc name="SM_CXICON" value="11"
+	  desc="The default width of an icon, in pixels. The LoadIcon function can load only icons with the dimensions that SM_CXICON and SM_CYICON specifies."/>
+    <symc name="SM_CYICON" value="12"
+	  desc="The default height of an icon, in pixels. The LoadIcon function can load only icons with the dimensions SM_CXICON and SM_CYICON."/>
+    <symc name="SM_CYVSCROLL" value="20"
+	  desc="The height of the arrow bitmap on a vertical scroll bar, in pixels"/>
+    <symc name="SM_CXFRAME" value="32"
+	  desc="This value is the same as SM_CXSIZEFRAME."/>
+    <symc name="SM_DBCSENABLED" value="42"
+	  desc="Nonzero if User32.dll supports DBCS; otherwise, 0"/>
+    <symc name="SM_CXSMICON" value="49"
+	  desc="The recommended width of a small icon, in pixels"/>
+    <symc name="SM_CYSMICON" value="50"
+	  desc="The recommended height of a small icon, in pixels"/>
+    <symc name="SM_MIDEASTENABLED" value="74"
+	  desc="Nonzero if the system is enabled for Hebrew and Arabic languages, 0 if not"/>
+    <symc name="SM_XVIRTUALSCREEN" value="76">
+    <symc name="SM_SERVERR2" value="89"
+	  desc="The build number if the system is Windows Server 2003 R2; otherwise, 0"/>
+      <desc>
+	The coordinates for the left side of the virtual screen. The virtual screen 
+	is the bounding rectangle of all display monitors.
+      </desc>
+    </symc>
+    <symc name="SM_YVIRTUALSCREEN" value="77">
+      <desc>
+	The coordinates for the top of the virtual screen. The virtual screen is the 
+	bounding rectangle of all display monitors.
+      </desc>
+    </symc>
+    <symc name="SM_CXVIRTUALSCREEN" value="78">
+      <desc>
+	The width of the virtual screen, in pixels. The virtual screen is the bounding 
+	rectangle of all display monitors.
+      </desc>
+    </symc>
+    <symc name="SM_CYVIRTUALSCREEN" value="79">
+      <desc>
+	The height of the virtual screen, in pixels. The virtual screen is the bounding 
+	rectangle of all display monitors.
+      </desc>
+    </symc>
+    <symc name="SM_CMONITORS" value="80"
+	  desc="The number of display monitors on a desktop."/>
+    </values>
+  </symbolic-constants>
+</codehawk-binary-analyzer>

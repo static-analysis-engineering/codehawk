@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms684877(v=vs.85).aspx"/>
+  <header date="05/29/2017 00:00:00"/>
+  <struct name="process_memory_counters">
+   <fields>
+    <field name="cb" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="PageFaultCount" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="PeakWorkingSetSize" offset="8" size="4">
+     <type>SIZE_T</type>
+    </field>
+    <field name="WorkingSetSize" offset="12" size="4">
+     <type>SIZE_T</type>
+    </field>
+    <field name="QuotaPeakPagedPoolUsage" offset="16" size="4">
+     <type>SIZE_T</type>
+    </field>
+    <field name="QuotaPagedPoolUsage" offset="20" size="4">
+     <type>SIZE_T</type>
+    </field>
+    <field name="QuotaPeakNonPagedPoolUsage" offset="24" size="4">
+     <type>SIZE_T</type>
+    </field>
+    <field name="QuotaNonPagedPoolUsage" offset="28" size="4">
+     <type>SIZE_T</type>
+    </field>
+    <field name="PagefileUsage" offset="32" size="4">
+     <type>SIZE_T</type>
+    </field>
+    <field name="PeakPagefileUsage" offset="36" size="4">
+     <type>SIZE_T</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

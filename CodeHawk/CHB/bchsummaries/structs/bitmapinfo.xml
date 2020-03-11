@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/z5731wbz.aspx"/>
+  <header date="05/29/2017 00:00:00"/>
+  <struct name="bitmapinfo">
+   <fields>
+    <field name="bmiHeader" offset="0" size="40">
+     <type>BITMAPINFOHEADER</type>
+    </field>
+    <field name="bmiColors" offset="40" size="4">
+     <type>
+       <array size="4">RGBQUAD</array>
+     </type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa446627(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="explicit_access">
+   <fields>
+    <field name="grfAccessPermissions" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="grfAccessMode" offset="4" size="4">
+     <type>ACCESS_MODE</type>
+    </field>
+    <field name="grfInheritance" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Trustee" offset="12" size="20">
+     <type>TRUSTEE</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

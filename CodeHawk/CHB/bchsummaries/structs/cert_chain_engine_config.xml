@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa377184(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cert_chain_engine_config">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hRestrictedRoot" offset="4" size="4">
+     <type>HCERTSTORE</type>
+    </field>
+    <field name="hRestrictedTrust" offset="8" size="4">
+     <type>HCERTSTORE</type>
+    </field>
+    <field name="hRestrictedOther" offset="12" size="4">
+     <type>HCERTSTORE</type>
+    </field>
+    <field name="cAdditionalStore" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rghAdditionalStore" offset="20" size="4">
+     <type><ptr>HCERTSTORE</ptr></type>
+    </field>
+    <field name="dwFlags" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwUrlRetrievalTimeout" offset="28" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="MaximumCachedCertificates" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="CycleDetectionModulus" offset="36" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hExclusiveRoot" offset="40" size="4">
+     <type>HCERTSTORE</type>
+    </field>
+    <field name="hExclusiveTrustedPeople" offset="44" size="4">
+     <type>HCERTSTORE</type>
+    </field>
+    <field name="dwExclusiveFlags" offset="48" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

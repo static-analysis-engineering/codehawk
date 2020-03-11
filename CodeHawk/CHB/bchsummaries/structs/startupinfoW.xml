@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header creation-date="2015-08-27" last-revision="2015-08-27"/>
+  <struct name="startupinfoW">
+    <fields>
+      <field name="cb" offset="0" size="4">
+	<type>DWORD</type>
+      </field>
+      <field name="lpReserved" offset="4" size="4">
+	<type>LPWSTR</type>
+	<roles><role rtype="reserved" rname="used in C-runtime"/></roles>
+      </field>
+      <field name="lpDesktop" offset="8" size="4">
+	<type>LPWSTR</type>
+      </field>
+      <field name="lpTitle" offset="12" size="4">
+	<type>LPWSTR</type>
+      </field>
+      <field name="dwX" offset="16" size="4">
+	<type>DWORD</type>
+      </field>
+      <field name="dwY" offset="20" size="4">
+	<type>DWORD</type>
+      </field>
+      <field name="dwXSize" offset="24" size="4">
+	<type>DWORD</type>
+      </field>
+      <field name="dwYSize" offset="28" size="4">
+	<type>DWORD</type>
+      </field>
+      <field name="dwXCountChars" offset="32" size="4">
+	<type>DWORD</type>
+      </field>
+      <field name="dwYCountChars" offset="36" size="4">
+	<type>DWORD</type>
+      </field>
+      <field name="dwFillAttribute" offset="40" size="4">
+	<type>DWORD</type>
+      </field>
+      <field name="dwFlags" offset="44" size="4">
+	<type>DWORD</type>
+      </field>
+      <field name="wShowWindow" offset="48" size="2">
+	<type>WORD</type>
+	<enum name="show_window_constants"/>
+      </field>
+      <field name="cbReserved" offset="50" size="2">
+	<type>WORD</type>
+	<roles><role rtype="reserved" rname="used in C-runtime"/></roles>
+      </field>
+      <field name="lpReserved2" offset="52" size="4">
+	<type><ptr>BYTE</ptr></type>
+	<roles><role rtype="reserved" rname="used in C-runtime"/></roles>
+      </field>
+      <field name="hStdInput" offset="56" size="4">
+	<type>HANDLE</type>
+      </field>
+      <field name="hStdOutput" offset="60" size="4">
+	<type>HANDLE</type>
+      </field>
+      <field name="hStdError" offset="64" size="4">
+	<type>HANDLE</type>
+      </field>
+    </fields>
+  </struct>
+</codehawk-binary-analyzer>

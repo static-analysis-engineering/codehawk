@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms221482(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="safearray">
+   <fields>
+    <field name="cDims" offset="0" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="fFeatures" offset="2" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="cbElements" offset="4" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="cLocks" offset="8" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="pvData" offset="12" size="4">
+     <type>PVOID</type>
+    </field>
+    <field name="rgsabound" offset="16" size="8">
+     <type><array size="8">SAFEARRAYBOUND</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

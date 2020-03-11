@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa381470(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="crypt_smart_card_root_info">
+   <fields>
+    <field name="rgbCardID" offset="0" size="16">
+     <type><array size="16">BYTE</array></type>
+    </field>
+    <field name="luid" offset="16" size="8">
+     <type>ROOT_INFO_LUID</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

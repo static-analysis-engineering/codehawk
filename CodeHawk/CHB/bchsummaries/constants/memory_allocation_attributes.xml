@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/03/2015 13:48:29"/>
+  <symbolic-constants type="memory_allocation_attributes">
+   <values>
+    <symc name="GHND" value="0x0042">
+     <desc>Combines GMEM_MOVEABLE and GMEM_ZEROINIT.</desc>
+    </symc>
+    <symc name="GMEM_FIXED" value="0x0000">
+     <desc>Allocates fixed memory. The return value is a pointer</desc>
+    </symc>
+    <symc name="GMEM_MOVEABLE" value="0x0002">
+     <desc>Allocates movable memory</desc>
+    </symc>
+    <symc name="GMEM_ZEROINIT" value="0x0040">
+     <desc>Initializes memory contents to zero.</desc>
+    </symc>
+   </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

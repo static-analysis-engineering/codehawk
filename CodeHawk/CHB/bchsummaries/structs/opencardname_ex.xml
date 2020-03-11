@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa378815(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="opencardname_ex">
+   <fields>
+    <field name="dwStructSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hSCardContext" offset="4" size="4">
+     <type>SCARDCONTEXT</type>
+    </field>
+    <field name="hwndOwner" offset="8" size="4">
+     <type>HWND</type>
+    </field>
+    <field name="dwFlags" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpstrTitle" offset="16" size="4">
+     <type>LPCTSTR</type>
+    </field>
+    <field name="lpstrSearchDesc" offset="20" size="4">
+     <type>LPCTSTR</type>
+    </field>
+    <field name="hIcon" offset="24" size="4">
+     <type>HICON</type>
+    </field>
+    <field name="pOpenCardSearchCriteria" offset="28" size="4">
+     <type>POPENCARD_SEARCH_CRITERIA</type>
+    </field>
+    <field name="lpfnConnect" offset="32" size="4">
+     <type>LPOCNCONNPROC</type>
+    </field>
+    <field name="pvUserData" offset="36" size="4">
+     <type>LPVOID</type>
+    </field>
+    <field name="dwShareMode" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwPreferredProtocols" offset="44" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpstrRdr" offset="48" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="nMaxRdr" offset="52" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpstrCard" offset="56" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="nMaxCard" offset="60" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwActiveProtocol" offset="64" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hCardHandle" offset="68" size="4">
+     <type>SCARDHANDLE</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

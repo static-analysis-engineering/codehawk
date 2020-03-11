@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/dd183373(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="bitmapcoreinfo">
+   <fields>
+    <field name="bmciHeader" offset="0" size="12">
+     <type>BITMAPCOREHEADER</type>
+    </field>
+    <field name="bmciColors" offset="12" size="3">
+     <type><array size="3">RGBTRIPLE</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms678505(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="coinit_enumeration_constants">
+    <type>coinit_enumeration_constants</type>
+    <values>
+      <symc name="COINIT_APARTMENTTHREADED" value="0x2"
+            desc="Initializes the thread for apartment-threaded object concurrency (see Remarks)." />
+      <symc name="COINIT_MULTITHREADED" value="0x0"
+            desc="Initializes the thread for multithreaded object concurrency (see Remarks)." />
+      <symc name="COINIT_DISABLE_OLE1DDE" value="0x4"
+            desc="Disables DDE for OLE1 support." />
+      <symc name="COINIT_SPEED_OVER_MEMORY" value="0x8"
+            desc="Increase memory usage in an attempt to increase performance." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

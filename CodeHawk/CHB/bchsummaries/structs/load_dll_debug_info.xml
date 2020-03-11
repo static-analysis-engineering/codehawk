@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms681403(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="load_dll_debug_info">
+   <fields>
+    <field name="hFile" offset="0" size="4">
+     <type>HANDLE</type>
+    </field>
+    <field name="lpBaseOfDll" offset="4" size="4">
+     <type>LPVOID</type>
+    </field>
+    <field name="dwDebugInfoFileOffset" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nDebugInfoSize" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpImageName" offset="16" size="4">
+     <type>LPVOID</type>
+    </field>
+    <field name="fUnicode" offset="20" size="2">
+     <type>WORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

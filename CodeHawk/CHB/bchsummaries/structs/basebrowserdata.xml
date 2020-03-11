@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773202(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="basebrowserdata">
+   <fields>
+    <field name="_hwnd" offset="0" size="4">
+     <type>HWND</type>
+    </field>
+    <field name="_ptl" offset="4" size="4">
+     <type><ptr>ITravelLog</ptr></type>
+    </field>
+    <field name="_phlf" offset="8" size="4">
+     <type><ptr>IHlinkFrame</ptr></type>
+    </field>
+    <field name="_pautoWB2" offset="12" size="4">
+     <type><ptr>IWebBrowser2</ptr></type>
+    </field>
+    <field name="_pautoEDS" offset="16" size="4">
+     <type><ptr>IExpDispSupport</ptr></type>
+    </field>
+    <field name="_pautoSS" offset="20" size="4">
+     <type><ptr>IShellService</ptr></type>
+    </field>
+    <field name="_eSecureLockIcon" offset="24" size="4">
+     <type>int</type>
+    </field>
+    <field name="_fCreatingViewWindow" offset="28" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="_uActivateState" offset="32" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="_pidlNewShellView" offset="36" size="4">
+     <type>PCIDLIST_ABSOLUTE</type>
+    </field>
+    <field name="_pctView" offset="40" size="4">
+     <type><ptr>IOleCommandTarget</ptr></type>
+    </field>
+    <field name="_pidlCur" offset="44" size="4">
+     <type>PCIDLIST_ABSOLUTE</type>
+    </field>
+    <field name="_psv" offset="48" size="4">
+     <type><ptr>IShellView</ptr></type>
+    </field>
+    <field name="_psf" offset="52" size="4">
+     <type><ptr>IShellFolder</ptr></type>
+    </field>
+    <field name="_hwndView" offset="56" size="4">
+     <type>HWND</type>
+    </field>
+    <field name="_pszTitleCur" offset="60" size="4">
+     <type>LPWSTR</type>
+    </field>
+    <field name="_pidlPending" offset="64" size="4">
+     <type>PCIDLIST_ABSOLUTE</type>
+    </field>
+    <field name="_psvPending" offset="68" size="4">
+     <type><ptr>IShellView</ptr></type>
+    </field>
+    <field name="_psfPending" offset="72" size="4">
+     <type><ptr>IShellFolder</ptr></type>
+    </field>
+    <field name="_hwndViewPending" offset="76" size="4">
+     <type>HWND</type>
+    </field>
+    <field name="_pszTitlePending" offset="80" size="4">
+     <type>LPWSTR</type>
+    </field>
+    <field name="_fIsViewMSHTML" offset="84" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="_fPrivacyImpacted" offset="88" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="_clsidView" offset="92" size="16">
+     <type>CLSID</type>
+    </field>
+    <field name="_clsidViewPending" offset="108" size="16">
+     <type>CLSID</type>
+    </field>
+    <field name="_hwndFrame" offset="124" size="4">
+     <type>HWND</type>
+    </field>
+    <field name="_lPhishingFilterStatus" offset="128" size="4">
+     <type>LONG</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

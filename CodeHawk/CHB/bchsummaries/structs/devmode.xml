@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd183565(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="devmode">
+   <fields>
+    <field name="dmDeviceName" offset="0" size="32">
+     <type><array size="32">TCHAR</array></type>
+    </field>
+    <field name="dmSpecVersion" offset="32" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="dmDriverVersion" offset="34" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="dmSize" offset="36" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="dmDriverExtra" offset="38" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="dmFields" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+
+    <field name="dmOrientation" offset="44" size="2">
+     <type>short</type>
+    </field>
+    <field name="dmPaperSize" offset="46" size="2">
+     <type>short</type>
+    </field>
+    <field name="dmPaperLength" offset="48" size="2">
+     <type>short</type>
+    </field>
+    <field name="dmPaperWidth" offset="50" size="2">
+     <type>short</type>
+    </field>
+    <field name="dmScale" offset="52" size="2">
+     <type>short</type>
+    </field>
+    <field name="dmCopies" offset="54" size="2">
+     <type>short</type>
+    </field>
+    <field name="dmDefaultSource" offset="56" size="2">
+     <type>short</type>
+    </field>
+    <field name="dmPrintQuality" offset="58" size="2">
+     <type>short</type>
+    </field>
+
+    <field name="dmPosition" offset="44" size="8">
+     <type>POINTL</type>
+    </field>
+    <field name="dmDisplayOrientation" offset="52" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dmDisplayFixedOutput" offset="56" size="4">
+     <type>DWORD</type>
+    </field>
+
+    <field name="dmColor" offset="60" size="2">
+     <type>short</type>
+    </field>
+    <field name="dmDuplex" offset="62" size="2">
+     <type>short</type>
+    </field>
+    <field name="dmYResolution" offset="64" size="2">
+     <type>short</type>
+    </field>
+    <field name="dmTTOption" offset="66" size="2">
+     <type>short</type>
+    </field>
+    <field name="dmCollate" offset="68" size="2">
+     <type>short</type>
+    </field>
+    <field name="dmFormName" offset="70" size="32">
+     <type><array size="32">TCHAR</array></type>
+    </field>
+    <field name="dmLogPixels" offset="102" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="dmBitsPerPel" offset="104" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dmPelsWidth" offset="108" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dmPelsHeight" offset="112" size="4">
+     <type>DWORD</type>
+    </field>
+
+    <field name="dmDisplayFlags" offset="116" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dmNup" offset="116" size="4">
+     <type>DWORD</type>
+    </field>
+
+    <field name="dmDisplayFrequency" offset="120" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dmICMMethod" offset="124" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dmICMIntent" offset="128" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dmMediaType" offset="132" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dmDitherType" offset="136" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dmReserved1" offset="140" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dmReserved2" offset="144" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dmPanningWidth" offset="148" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dmPanningHeight" offset="152" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

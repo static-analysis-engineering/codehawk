@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms645402(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="msgboxparams">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="hwndOwner" offset="4" size="4">
+     <type>HWND</type>
+    </field>
+    <field name="hInstance" offset="8" size="4">
+     <type>HINSTANCE</type>
+    </field>
+    <field name="lpszText" offset="12" size="4">
+     <type>LPCTSTR</type>
+    </field>
+    <field name="lpszCaption" offset="16" size="4">
+     <type>LPCTSTR</type>
+    </field>
+    <field name="dwStyle" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpszIcon" offset="24" size="4">
+     <type>LPCTSTR</type>
+    </field>
+    <field name="dwContextHelpId" offset="28" size="4">
+     <type>DWORD_PTR</type>
+    </field>
+    <field name="lpfnMsgBoxCallback" offset="32" size="4">
+     <type>MSGBOXCALLBACK</type>
+    </field>
+    <field name="dwLanguageId" offset="36" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

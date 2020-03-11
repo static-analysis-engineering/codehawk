@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/15/2015 12:59:07"/>
+  <symbolic-constants type="system_information_class_constants">
+   <values>
+    <symc name="SystemBasicInformation" value="0">
+     <desc>
+       Returns the number of processors in the system in a SYSTEM_BASIC_INFORMATION 
+       structure
+     </desc>
+    </symc>
+    <symc name="SystemProcessorInformation" value="1">
+     <desc/>
+    </symc>
+    <symc name="SystemPerformanceInformation" value="2">
+     <desc>
+       Returns an opaque SYSTEM_PERFORMANCE_INFORMATION structure that can 
+       be used to generate an unpredictable seed for a random number generator
+     </desc>
+    </symc>
+    <symc name="SystemTimeOfDayInformation" value="3">
+     <desc>
+       Returns an opaque SYSTEM_TIMEOFDAY_INFORMATION structure that can be 
+       used to generate an unpredictable seed for a random number generator
+     </desc>
+    </symc>
+    <symc name="SystemPathInformation" value="4">
+     <desc/>
+    </symc>
+    <symc name="SystemProcessInformation" value="5">
+     <desc>
+       Returns an array of SYSTEM_PROCESS_INFORMATION structures, one for each
+       process running in the system.
+       These structures contain information about the resource usage of each
+       process, including the number of handles used by the process, the peak
+       page-file usage, and the number of memory pages that the process has
+       allocated.
+     </desc>
+    </symc>
+    <symc name="SystemCallCountInfoInformation" value="6">
+     <desc/>
+    </symc>
+    <symc name="SystemDeviceInformation" value="7">
+     <desc/>
+    </symc>
+    <symc name="SystemProcessorPerformanceInformation" value="8">
+     <desc>
+       Returns an array of SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION structures,
+       one for each processor installed in the system.
+     </desc>
+    </symc>
+    <symc name="SystemFlagsInformation" value="9">
+     <desc/>
+    </symc>
+    <symc name="SystemCallTimeInformation" value=" 10">
+     <desc/>
+    </symc>
+    <symc name="SystemModuleInformation" value="11">
+     <desc/>
+    </symc>
+    <symc name="SystemLocksInformation" value="12">
+     <desc/>
+    </symc>
+    <symc name="SystemStackTraceInformation" value="13">
+     <desc/>
+    </symc>
+    <symc name="SystemPagedPoolInformation" value="14">
+     <desc/>
+    </symc>
+    <symc name="SystemNonPagedPoolInformation" value="15">
+     <desc/>
+    </symc>
+    <symc name="SystemHandleInformation" value="16">
+     <desc/>
+    </symc>
+    <symc name="SystemObjectInformation" value="17">
+     <desc/>
+    </symc>
+    <symc name="SystemPageFileInformation" value="18">
+     <desc/>
+    </symc>
+    <symc name="SystemInstructionEmulationCounts" value="19">
+     <desc/>
+    </symc>
+    <symc name="SystemVdmBopInformation" value="20">
+     <desc/>
+    </symc>
+    <symc name="SystemFileCacheInformation" value="21">
+     <desc/>
+    </symc>
+    <symc name="SystemPoolTagInformation" value="22">
+     <desc/>
+    </symc>
+    <symc name="SystemInterruptInformation" value="23">
+     <desc>
+       Returns an opaque SYSTEM_INTERRUPT_INFORMATION structure that can be 
+       used to generate an unpredictable seed for a random number generator
+     </desc>
+    </symc>
+    <symc name="SystemDpcInformation" value="24">
+     <desc/>
+    </symc>
+    <symc name="SystemFullMemoryInforamtion" value="25">
+     <desc/>
+    </symc>
+    <symc name="SystemLoadImage" value="26">
+     <desc/>
+    </symc>
+    <symc name="SystemUnLoadImage" value="27">
+     <desc/>
+    </symc>
+    <symc name="SystemTimeAdjustmentInformation" value="28">
+     <desc/>
+    </symc>
+    <symc name="SystemSummaryMemoryInformation" value="29">
+     <desc/>
+    </symc>
+    <symc name="SystemNextEventIdInformation" value="30">
+     <desc/>
+    </symc>
+    <symc name="SystemEventIdsInformation" value="31">
+     <desc/>
+    </symc>
+    <symc name="SystemCrashDumpInformation" value="32">
+     <desc/>
+    </symc>
+    <symc name="SystemExceptionInformation" value="33">
+     <desc>
+       Returns an opaque SYSTEM_EXCEPTION_INFORMATION structure that can be 
+       used to generate an unpredictable seed for a random number generator
+     </desc>
+    </symc>
+    <symc name="SystemCrashDumpStateInformation" value="34">
+     <desc/>
+    </symc>
+    <symc name="SystemKernelDebuggerInformation" value="35">
+     <desc/>
+    </symc>
+    <symc name="SystemContextSwitchInformation" value="36">
+     <desc/>
+    </symc>
+    <symc name="SystemRegistryQuotaInformation" value="37">
+     <desc>Returns a SYSTEM_REGISTRY_QUOTA_INFORMATION structure</desc>
+    </symc>
+    <symc name="SystemLoadAndCallImage" value="38">
+     <desc/>
+    </symc>
+    <symc name="SystemPrioritySeparation" value="39">
+     <desc/>
+    </symc>
+    <symc name="SystemPlugPlayBusInformation" value="40">
+     <desc/>
+    </symc>
+    <symc name="SystemDockInformation" value="41">
+     <desc/>
+    </symc>
+    <symc name="SystemInvalidInfoClass2" value="42">
+     <desc/>
+    </symc>
+    <symc name="SystemProcessorSpeedInformation" value="43">
+     <desc/>
+    </symc>
+    <symc name="SystemCurrentTimeZoneInformation" value="44">
+     <desc/>
+    </symc>
+    <symc name="SystemLookasideInformation" value="45">
+     <desc>
+       Returns an opaque SYSTEM_LOOKASIDE_INFORMATION structure that can be 
+       used to generate an unpredictable seed for a random number generator
+     </desc>
+    </symc>
+    <symc name="SystemSetTimeSlipEvent" value="46">
+     <desc/>
+    </symc>
+    <symc name="SystemCreateSession" value="47">
+     <desc/>
+    </symc>
+    <symc name="SystemDeleteSession" value="48">
+     <desc/>
+    </symc>
+    <symc name="SysttemInvalidInfoClass4" value="49">
+     <desc/>
+    </symc>
+    <symc name="SystemRangeStartInformation" value="50">
+     <desc/>
+    </symc>
+    <symc name="SystemVerifierInformation" value="51">
+     <desc/>
+    </symc>
+    <symc name="SystemAddVerifier" value="52">
+     <desc/>
+    </symc>
+    <symc name="SystemSessionProcessesInformation" value="53">
+     <desc/>
+    </symc>
+    <symc name="SystemInformationClassMax" value="54">
+     <desc/>
+    </symc>
+   </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

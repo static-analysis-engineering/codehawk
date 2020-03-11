@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/07/2015 22:24:45"/>
+  <symbolic-constants type="service_start_constants">
+    <type>service_start_constants</type>
+    <values>
+      <symc name="SERVICE_AUTO_START" value="0x00000002">
+	<desc>
+	  A service started automatically by the service control manager during system startup.
+	</desc>
+      </symc>
+      <symc name="SERVICE_BOOT_START" value="0x00000000">
+	<desc>
+	  A device driver started by the system loader. This value is valid only for 
+	  driver services.
+	</desc>
+      </symc>
+      <symc name="SERVICE_DEMAND_START" value="0x00000003">
+	<desc>
+	  A service started by the service control manager when a process calls the 
+	  StartService function.
+	</desc>
+      </symc>
+      <symc name="SERVICE_DISABLED" value="0x00000004">
+	<desc>
+	  A service that cannot be started. Attempts to start the service result in 
+	  the error code ERROR_SERVICE_DISABLED.
+	</desc>
+      </symc>
+      <symc name="SERVICE_SYSTEM_START" value="0x00000001">
+	<desc>
+	  A device driver started by the IoInitSystem function. This value is
+	  valid only for driver services.
+	</desc>
+      </symc>
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/30/2015 11:53:22"/>
+  <symbolic-constants type="predefined_registry_key_constants">
+   <values>
+    <symc name="HKEY_CLASSES_ROOT" value="0x80000000">
+     <desc>
+       Registry entries subordinate to this key define types (or classes) of 
+       documents and the properties associated with those types. Shell and COM
+       applications use the information stored under this key.
+     </desc>
+    </symc>
+    <symc name="HKEY_CURRENT_USER" value="0x80000001">
+     <desc>
+       Contains information about the current hardware profile of the local computer 
+       system. The information under HKEY_CURRENT_CONFIG describes only the differences
+       between the current hardware configuration and the standard configuration.
+       Information about the standard hardware configuration is stored under the 
+       Software and System keys of HKEY_LOCAL_MACHINE.
+     </desc>
+    </symc>
+    <symc name="HKEY_LOCAL_MACHINE" value="0x80000002">
+     <desc>
+       Registry entries subordinate to this key define the physical state of the
+       computer, including data about the bus type, system memory, and installed 
+       hardware and software. It contains subkeys that hold current configuration
+       data, including Plug and Play information (the Enum branch, which includes 
+       a complete list of all hardware that has ever been on the system), network
+       logon preferences, network security information, software-related information 
+       (such as server names and the location of the server), and other system 
+       information.
+     </desc>
+    </symc>
+    <symc name="HKEY_USERS" value="0x80000003">
+     <desc>
+       Registry entries subordinate to this key define the default user configuration
+       for new users on the local computer and the user configuration for the current 
+       user.
+     </desc>
+    </symc>
+    <symc name="HKEY_PERFORMANCE_DATA" value="0x80000004">
+     <desc>
+       Registry entries subordinate to this key reference the text strings that
+       describe counters in US English. These entries are not available to 
+       Regedit.exe and Regedt32.exe.
+     </desc>
+    </symc>
+    <symc name="HKEY_CURRENT_CONFIG" value="0x80000005">
+     <desc>
+       Contains information about the current hardware profile of the local computer
+       system. The information under HKEY_CURRENT_CONFIG describes only the differences 
+       between the current hardware configuration and the standard configuration. 
+       Information about the standard hardware configuration is stored under the 
+       Software and System keys of HKEY_LOCAL_MACHINE.
+     </desc>
+    </symc>
+    <symc name="HKEY_DYN_DATA" value="0x80000006">
+     <desc>
+       ???Registry entries subordinate to this key define preferences of the current 
+       user that are local to the machine. These entries are not included in the 
+       per-user registry portion of a roaming user profile.???
+     </desc>
+    </symc>
+   </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

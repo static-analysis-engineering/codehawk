@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773352(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="notifyicondata">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="hWnd" offset="4" size="4">
+     <type>HWND</type>
+    </field>
+    <field name="uID" offset="8" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="uFlags" offset="12" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="uCallbackMessage" offset="16" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="hIcon" offset="20" size="4">
+     <type>HICON</type>
+    </field>
+    <field name="szTip" offset="24" size="64">
+     <type><array size="64">TCHAR</array></type>
+    </field>
+    <field name="dwState" offset="88" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwStateMask" offset="92" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="szInfo" offset="96" size="256">
+     <type><array size="256">TCHAR</array></type>
+    </field>
+    <field name="uTimeout" offset="352" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="uVersion" offset="352" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="szInfoTitle" offset="356" size="64">
+     <type><array size="64">TCHAR</array></type>
+    </field>
+    <field name="dwInfoFlags" offset="420" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="guidItem" offset="424" size="16">
+     <type>GUID</type>
+    </field>
+    <field name="hBalloonIcon" offset="440" size="4">
+     <type>HICON</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

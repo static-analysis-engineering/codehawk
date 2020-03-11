@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms686670(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="synchronization_object_security_access_rights_flags">
+    <type>synchronization_object_security_access_rights_flags</type>
+    <values>
+      <symc name="DELETE" value="0x00010000"
+            desc="Required to delete the object." />
+      <symc name="READ_CONTROL" value="0x00020000"
+            desc="Required to read information in the security descriptor for the object, not including the information in the SACL. To read or write the SACL, you must request the ACCESS_SYSTEM_SECURITY access right. For more information, see SACL Access Right." />
+      <symc name="SYNCHRONIZE" value="0x00100000"
+            desc="The right to use the object for synchronization. This enables a thread to wait until the object is in the signaled state." />
+      <symc name="WRITE_DAC" value="0x00040000"
+            desc="Required to modify the DACL in the security descriptor for the object." />
+      <symc name="WRITE_OWNER" value="0x00080000"
+            desc="Required to change the owner in the security descriptor for the object." />
+      <symc name="EVENT_ALL_ACCESS" value="0x1F0003"
+            desc="All possible access rights for an event object. Use this right only if your application requires access beyond that granted by the standard access rights and EVENT_MODIFY_STATE. Using this access right increases the possibility that your application must be run by an Administrator." />
+      <symc name="EVENT_MODIFY_STATE" value="0x0002"
+            desc="Modify state access, which is required for the SetEvent, ResetEvent and PulseEvent functions." />
+      <symc name="MUTEX_ALL_ACCESS" value="0x1F0001"
+            desc="All possible access rights for a mutex object. Use this right only if your application requires access beyond that granted by the standard access rights. Using this access right increases the possibility that your application must be run by an Administrator." />
+      <symc name="MUTEX_MODIFY_STATE" value="0x0001"
+            desc="Reserved for future use." />
+      <symc name="SEMAPHORE_ALL_ACCESS" value="0x1F0003"
+            desc="All possible access rights for a semaphore object. Use this right only if your application requires access beyond that granted by the standard access rights and SEMAPHORE_MODIFY_STATE. Using this access right increases the possibility that your application must be run by an Administrator." />
+      <symc name="SEMAPHORE_MODIFY_STATE" value="0x0002"
+            desc="Modify state access, which is required for the ReleaseSemaphore function." />
+      <symc name="TIMER_ALL_ACCESS" value="0x1F0003"
+            desc="All possible access rights for a waitable timer object. Use this right only if your application requires access beyond that granted by the standard access rights and TIMER_MODIFY_STATE. Using this access right increases the possibility that your application must be run by an Administrator." />
+      <symc name="TIMER_MODIFY_STATE" value="0x0002"
+            desc="Modify state access, which is required for the SetWaitableTimer and CancelWaitableTimer functions." />
+      <symc name="TIMER_QUERY_STATE" value="0x0001"
+            desc="Reserved for future use." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

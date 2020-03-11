@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb759751(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="shcolumninfo">
+   <fields>
+    <field name="scid" offset="0" size="20">
+     <type>SHCOLUMNID</type>
+    </field>
+    <field name="vt" offset="20" size="2">
+     <type>VARTYPE</type>
+    </field>
+    <field name="fmt" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="cChars" offset="28" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="csFlags" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="wszTitle" offset="36" size="160">
+     <type><array size="160">WCHAR</array></type>
+    </field>
+    <field name="wszDescription" offset="196" size="256">
+     <type><array size="256">WCHAR</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

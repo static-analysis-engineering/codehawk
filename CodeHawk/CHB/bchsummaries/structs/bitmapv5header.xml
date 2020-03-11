@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/dd183381(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="bitmapv5header">
+   <fields>
+    <field name="bV5Size" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5Width" offset="4" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="bV5Height" offset="8" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="bV5Planes" offset="12" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="bV5BitCount" offset="14" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="bV5Compression" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5SizeImage" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5XPelsPerMeter" offset="24" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="bV5YPelsPerMeter" offset="28" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="bV5ClrUsed" offset="32" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5ClrImportant" offset="36" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5RedMask" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5GreenMask" offset="44" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5BlueMask" offset="48" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5AlphaMask" offset="52" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5CSType" offset="56" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5Endpoints" offset="60" size="36">
+     <type>CIEXYZTRIPLE</type>
+    </field>
+    <field name="bV5GammaRed" offset="96" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5GammaGreen" offset="100" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5GammaBlue" offset="104" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5Intent" offset="108" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5ProfileData" offset="112" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5ProfileSize" offset="116" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="bV5Reserved" offset="120" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

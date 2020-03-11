@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa378116(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="kerb_query_tkt_cache_response">
+   <fields>
+    <field name="MessageType" offset="0" size="4">
+     <type>KERB_PROTOCOL_MESSAGE_TYPE</type>
+    </field>
+    <field name="CountOfTickets" offset="4" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="Tickets" offset="8" size="48">
+     <type><array size="48">KERB_TICKET_CACHE_INFO</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

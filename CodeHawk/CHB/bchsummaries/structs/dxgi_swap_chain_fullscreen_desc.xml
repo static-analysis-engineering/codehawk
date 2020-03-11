@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/hh404531(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="dxgi_swap_chain_fullscreen_desc">
+   <fields>
+    <field name="RefreshRate" offset="0" size="8">
+     <type>DXGI_RATIONAL</type>
+    </field>
+    <field name="ScanlineOrdering" offset="8" size="4">
+     <type>DXGI_MODE_SCANLINE_ORDER</type>
+    </field>
+    <field name="Scaling" offset="12" size="4">
+     <type>DXGI_MODE_SCALING</type>
+    </field>
+    <field name="Windowed" offset="16" size="4">
+     <type>BOOL</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

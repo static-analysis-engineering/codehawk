@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms741675(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="wsaprotocol_info">
+   <fields>
+    <field name="dwServiceFlags1" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwServiceFlags2" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwServiceFlags3" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwServiceFlags4" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwProviderFlags" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="ProviderId" offset="20" size="16">
+     <type>GUID</type>
+    </field>
+    <field name="dwCatalogEntryId" offset="36" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="ProtocolChain" offset="40" size="8">
+     <type>WSAPROTOCOLCHAIN</type>
+    </field>
+    <field name="iVersion" offset="48" size="4">
+     <type>int</type>
+    </field>
+    <field name="iAddressFamily" offset="52" size="4">
+     <type>int</type>
+    </field>
+    <field name="iMaxSockAddr" offset="56" size="4">
+     <type>int</type>
+    </field>
+    <field name="iMinSockAddr" offset="60" size="4">
+     <type>int</type>
+    </field>
+    <field name="iSocketType" offset="64" size="4">
+     <type>int</type>
+    </field>
+    <field name="iProtocol" offset="68" size="4">
+     <type>int</type>
+    </field>
+    <field name="iProtocolMaxOffset" offset="72" size="4">
+     <type>int</type>
+    </field>
+    <field name="iNetworkByteOrder" offset="76" size="4">
+     <type>int</type>
+    </field>
+    <field name="iSecurityScheme" offset="80" size="4">
+     <type>int</type>
+    </field>
+    <field name="dwMessageSize" offset="84" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwProviderReserved" offset="88" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="szProtocol" offset="92" size="256">
+     <type><array size="256">TCHAR</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

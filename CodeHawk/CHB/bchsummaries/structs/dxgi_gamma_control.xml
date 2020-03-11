@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb173061(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="dxgi_gamma_control">
+   <fields>
+    <field name="Scale" offset="0" size="12">
+     <type>DXGI_RGB</type>
+    </field>
+    <field name="Offset" offset="12" size="12">
+     <type>DXGI_RGB</type>
+    </field>
+    <field name="GammaCurve" offset="24" size="12300">
+     <type><array size="12300">DXGI_RGB</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms690276(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="authorization_constants">
+    <type>authorization_constants</type>
+    <values>
+      <symc name="RPC_C_AUTHZ_NONE" value="0"
+            desc="The server performs no authorization. Currently, RPC_C_AUTHN_WINNT, RPC_C_AUTHN_GSS_SCHANNEL, and RPC_C_AUTHN_GSS_KERBEROS all use only RPC_C_AUTHZ_NONE." />
+      <symc name="RPC_C_AUTHZ_NAME" value="1"
+            desc="The server performs authorization based on the client's principal name." />
+      <symc name="RPC_C_AUTHZ_DCE" value="2"
+            desc="The server performs authorization checking using the client's DCE privilege attribute certificate (PAC) information, which is sent to the server with each remote procedure call made using the binding handle. Generally, access is checked against DCE access control lists (ACLs)." />
+      <symc name="RPC_C_AUTHZ_DEFAULT" value="0xffffffff"
+            desc="DCOM can choose the authorization level using its normal security blanket negotiation algorithm. For more information, see Security Blanket Negotiation." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

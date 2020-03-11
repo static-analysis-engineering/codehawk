@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms632681(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="windowpos_flags">
+    <type>windowpos_flags</type>
+    <values>
+      <symc name="SWP_DRAWFRAME" value="0x0020"
+            desc="Draws a frame (defined in the window's class description) around the window. Same as the SWP_FRAMECHANGED flag." />
+      <symc name="SWP_FRAMECHANGED" value="0x0020"
+            desc="Sends a WM_NCCALCSIZE message to the window, even if the window's size is not being changed. If this flag is not specified, WM_NCCALCSIZE is sent only when the window's size is being changed." />
+      <symc name="SWP_HIDEWINDOW" value="0x0080"
+            desc="Hides the window." />
+      <symc name="SWP_NOACTIVATE" value="0x0010"
+            desc="Does not activate the window. If this flag is not set, the window is activated and moved to the top of either the topmost or non-topmost group (depending on the setting of the hwndInsertAfter member)." />
+      <symc name="SWP_NOCOPYBITS" value="0x0100"
+            desc="Discards the entire contents of the client area. If this flag is not specified, the valid contents of the client area are saved and copied back into the client area after the window is sized or repositioned." />
+      <symc name="SWP_NOMOVE" value="0x0002"
+            desc="Retains the current position (ignores the x and y members)." />
+      <symc name="SWP_ NOOWNERZORDER" value="0x0200"
+            desc="Does not change the owner window's position in the Z order." />
+      <symc name="SWP_NOREDRAW" value="0x0008"
+            desc="Does not redraw changes. If this flag is set, no repainting of any kind occurs. This applies to the client area, the nonclient area (including the title bar and scroll bars), and any part of the parent window uncovered as a result of the window being moved. When this flag is set, the application must explicitly invalidate or redraw any parts of the window and parent window that need redrawing." />
+      <symc name="SWP_NOREPOSITION" value="0x0200"
+            desc="Does not change the owner window's position in the Z order. Same as the SWP_NOOWNERZORDER flag." />
+      <symc name="SWP_NOSENDCHANGING" value="0x0400"
+            desc="Prevents the window from receiving the WM_WINDOWPOSCHANGING message." />
+      <symc name="SWP_NOSIZE" value="0x0001"
+            desc="Retains the current size (ignores the cx and cy members)." />
+      <symc name="SWP_NOZORDER" value="0x0004"
+            desc="Retains the current Z order (ignores the hwndInsertAfter member)." />
+      <symc name="SWP_SHOWWINDOW" value="0x0040"
+            desc="Displays the window." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

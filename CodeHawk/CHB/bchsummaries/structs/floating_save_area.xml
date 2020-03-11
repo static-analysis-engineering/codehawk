@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms679284(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="floating_save_area">
+   <fields>
+    <field name="ControlWord" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="StatusWord" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="TagWord" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="ErrorOffset" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="ErrorSelector" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="DataOffset" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="DataSelector" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="RegisterArea" offset="28" size="80">
+     <type><array size="80">BYTE</array></type>
+    </field>
+    <field name="Cr0NpxState" offset="108" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

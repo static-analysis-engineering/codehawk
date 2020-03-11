@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/dd145132(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="textmetric">
+   <fields>
+    <field name="tmHeight" offset="0" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="tmAscent" offset="4" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="tmDescent" offset="8" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="tmInternalLeading" offset="12" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="tmExternalLeading" offset="16" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="tmAveCharWidth" offset="20" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="tmMaxCharWidth" offset="24" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="tmWeight" offset="28" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="tmOverhang" offset="32" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="tmDigitizedAspectX" offset="36" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="tmDigitizedAspectY" offset="40" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="tmFirstChar" offset="44" size="1">
+     <type>TCHAR</type>
+    </field>
+    <field name="tmLastChar" offset="45" size="1">
+     <type>TCHAR</type>
+    </field>
+    <field name="tmDefaultChar" offset="46" size="1">
+     <type>TCHAR</type>
+    </field>
+    <field name="tmBreakChar" offset="47" size="1">
+     <type>TCHAR</type>
+    </field>
+    <field name="tmItalic" offset="48" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="tmUnderlined" offset="49" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="tmStruckOut" offset="50" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="tmPitchAndFamily" offset="51" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="tmCharSet" offset="52" size="1">
+     <type>BYTE</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

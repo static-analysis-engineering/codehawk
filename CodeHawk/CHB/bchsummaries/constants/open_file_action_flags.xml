@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa365225(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="open_file_action_flags">
+    <type>open_file_action_flags</type>
+    <values>
+      <symc name="OF_CANCEL" value="0x0800"
+            desc="Ignored. Provided only for compatibility with 16-bit Windows. Use the OF_PROMPT style to display a dialog box containing a Cancel button." />
+      <symc name="OF_CREATE" value="0x1000"
+            desc="Directs LZOpenFile to create a new file. If the file already exists, it is truncated to zero length." />
+      <symc name="OF_DELETE" value="0x0200"
+            desc="Deletes the file." />
+      <symc name="OF_EXIST" value="0x4000"
+            desc="Opens the file and then closes it to test for a file's existence." />
+      <symc name="OF_PARSE" value="0x0100"
+            desc="Fills the OFSTRUCT structure but carries out no other action." />
+      <symc name="OF_PROMPT" value="0x2000"
+            desc="Displays a dialog box if the requested file does not exist. The dialog box informs the user that the system cannot find the file, and it contains Retry and Cancel buttons. Clicking the Cancel button directs LZOpenFile to return a file not found error message." />
+      <symc name="OF_READ" value="0x0000"
+            desc="Opens the file for reading only." />
+      <symc name="OF_READWRITE" value="0x0002"
+            desc="Opens the file for reading and writing." />
+      <symc name="OF_REOPEN" value="0x8000"
+            desc="Opens the file using information in the reopen buffer." />
+      <symc name="OF_SHARE_DENY_NONE" value="0x0040"
+            desc="Opens the file without denying other processes read or write access to the file. LZOpenFile fails if the file has been opened in compatibility mode by any other process." />
+      <symc name="OF_SHARE_DENY_READ" value="0x0030"
+            desc="Opens the file and denies other processes read access to the file. LZOpenFile fails if the file has been opened in compatibility mode or has been opened for read access by any other process." />
+      <symc name="OF_SHARE_DENY_WRITE" value="0x0020"
+            desc="Opens the file and denies other processes write access to the file. LZOpenFile fails if the file has been opened in compatibility mode or has been opened for write access by any other process." />
+      <symc name="OF_SHARE_EXCLUSIVE" value="0x0010"
+            desc="Opens the file in exclusive mode, denying other processes both read and write access to the file. LZOpenFile fails if the file has been opened in any other mode for read or write access, even by the current process." />
+      <symc name="OF_WRITE" value="0x0001"
+            desc="Opens the file for writing only." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

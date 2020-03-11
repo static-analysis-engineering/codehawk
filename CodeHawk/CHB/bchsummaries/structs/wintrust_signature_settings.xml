@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/jj161044(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="wintrust_signature_settings">
+   <fields>
+    <field name="cbStruct" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwIndex" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwFlags" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="cSecondarySigs" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwVerifiedSigIndex" offset="16" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="pCryptoPolicy" offset="20" size="4">
+     <type>PCERT_STRONG_SIGN_PARA</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

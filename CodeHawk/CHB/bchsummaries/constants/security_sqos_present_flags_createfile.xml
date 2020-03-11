@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa363858(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="security_sqos_present_flags_createfile">
+    <type>security_sqos_present_flags_createfile</type>
+    <values>
+      <symc name="SECURITY_SQOS_PRESENT" value="0x00100000"
+            desc="For CreateFile, the dwFlagsAndAttributesparameter can specify SQOS information (see Impersonation Levels). When the calling application specifies the SECURITY_SQOS_PRESENT flag as part of dwFlagsAndAttributes, it can also contain one or more of the following values.
+SECURITY_ANONYMOUS
+SECURITY_CONTEXT_TRACKING
+SECURITY_DELEGATION
+SECURITY_EFFECTIVE_ONLY
+SECURITY_IDENTIFICATION
+SECURITY_IMPERSONATION" />
+      <symc name="SECURITY_ANONYMOUS" value="0x00000000"
+            desc="Impersonates a client at the Anonymous impersonation level." />
+      <symc name="SECURITY_IDENTIFICATION" value="0x00010000"
+            desc="Impersonates a client at the Identification impersonation level." />
+      <symc name="SECURITY_IMPERSONATION" value="0x00020000"
+            desc="Impersonate a client at the impersonation level. This is the default behavior if no other flags are specified along with the SECURITY_SQOS_PRESENT flag." />
+      <symc name="SECURITY_DELEGATION" value="0x00030000"
+            desc="Impersonates a client at the Delegation impersonation level." />
+      <symc name="SECURITY_CONTEXT_TRACKING" value="0x00040000"
+            desc="The security tracking mode is dynamic. If this flag is not specified, the security tracking mode is static." />
+      <symc name="SECURITY_EFFECTIVE_ONLY" value="0x00080000"
+            desc="Only the enabled aspects of the client's security context are available to the server. If you do not specify this flag, all aspects of the client's security context are available.
+            This allows the client to limit the groups and privileges that a server can use while impersonating the client." />
+      <symc name="SECURITY_VALID_SQOS_FLAGS" value="0x001F0000"
+            desc="[note included in this description field but not used by CreateFile]" />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

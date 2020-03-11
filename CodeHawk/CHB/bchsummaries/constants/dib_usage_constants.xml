@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/cc250414.aspx TESTING ONLY"/>
+  </header>
+  <symbolic-constants type="dib_usage_constants">
+    <type>dib_usage_constants</type>
+    <values>
+      <symc name="DIB_PAL_COLORS" value="0x0001"
+            desc="The bmiColors member is an array of 16-bit indexes into the logical palette of the device context specified by hdc." />
+      <symc name="DIB_RGB_COLORS" value="0x0000"
+            desc="The BITMAPINFO structure contains an array of literal RGB values." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

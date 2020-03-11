@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd145037(v=vs.85).aspx"/>
+  <header date="05/29/2017 00:00:00"/>
+  <struct name="logfont">
+   <fields>
+    <field name="lfHeight" offset="0" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="lfWidth" offset="4" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="lfEscapement" offset="8" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="lfOrientation" offset="12" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="lfWeight" offset="16" size="4">
+     <type>LONG</type>
+    </field>
+    <field name="lfItalic" offset="20" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="lfUnderline" offset="21" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="lfStrikeOut" offset="22" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="lfCharSet" offset="23" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="lfOutPrecision" offset="24" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="lfClipPrecision" offset="25" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="lfQuality" offset="26" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="lfPitchAndFamily" offset="27" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="lfFaceName" offset="28" size="32">
+     <type>
+       <array size="32">TCHAR</array>
+     </type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms741563(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="wsadata">
+   <fields>
+    <field name="wVersion" offset="0" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="wHighVersion" offset="2" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="szDescription" offset="4" size="257">
+     <type><array size="257">char</array></type>
+    </field>
+    <field name="szSystemStatus" offset="261" size="129">
+     <type><array size="129">char</array></type>
+    </field>
+    <field name="iMaxSockets" offset="390" size="2">
+     <type>unsigned short</type>
+    </field>
+    <field name="iMaxUdpDg" offset="392" size="2">
+     <type>unsigned short</type>
+    </field>
+    <field name="lpVendorInfo" offset="396" size="4">
+     <type><ptr>char FAR</ptr></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

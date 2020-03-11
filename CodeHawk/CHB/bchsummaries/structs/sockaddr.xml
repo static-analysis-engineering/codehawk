@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms740496(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="sockaddr">
+   <fields>
+    <field name="sa_family" offset="0" size="2">
+     <type>ADDRESS_FAMILY</type>
+    </field>
+    <field name="sa_data" offset="2" size="14">
+     <type><array size="14">CHAR</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

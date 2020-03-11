@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ee391627(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="tcp_estats_data_rod_v0">
+   <fields>
+    <field name="DataBytesOut" offset="0" size="8">
+     <type>ULONG64</type>
+    </field>
+    <field name="DataSegsOut" offset="8" size="8">
+     <type>ULONG64</type>
+    </field>
+    <field name="DataBytesIn" offset="16" size="8">
+     <type>ULONG64</type>
+    </field>
+    <field name="DataSegsIn" offset="24" size="8">
+     <type>ULONG64</type>
+    </field>
+    <field name="SegsOut" offset="32" size="8">
+     <type>ULONG64</type>
+    </field>
+    <field name="SegsIn" offset="40" size="8">
+     <type>ULONG64</type>
+    </field>
+    <field name="SoftErrors" offset="48" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SoftErrorReason" offset="52" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SndUna" offset="56" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SndNxt" offset="60" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="SndMax" offset="64" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ThruBytesAcked" offset="72" size="8">
+     <type>ULONG64</type>
+    </field>
+    <field name="RcvNxt" offset="80" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="ThruBytesReceived" offset="88" size="8">
+     <type>ULONG64</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

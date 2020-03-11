@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa381491(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="ctl_info">
+   <fields>
+    <field name="dwVersion" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SubjectUsage" offset="4" size="8">
+     <type>CTL_USAGE</type>
+    </field>
+    <field name="ListIdentifier" offset="12" size="8">
+     <type>CRYPT_DATA_BLOB</type>
+    </field>
+    <field name="SequenceNumber" offset="20" size="8">
+     <type>CRYPT_INTEGER_BLOB</type>
+    </field>
+    <field name="ThisUpdate" offset="28" size="8">
+     <type>FILETIME</type>
+    </field>
+    <field name="NextUpdate" offset="36" size="8">
+     <type>FILETIME</type>
+    </field>
+    <field name="SubjectAlgorithm" offset="44" size="12">
+     <type>CRYPT_ALGORITHM_IDENTIFIER</type>
+    </field>
+    <field name="cCTLEntry" offset="56" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rgCTLEntry" offset="60" size="4">
+     <type>PCTL_ENTRY</type>
+    </field>
+    <field name="cExtension" offset="64" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rgExtension" offset="68" size="4">
+     <type>PCERT_EXTENSION</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

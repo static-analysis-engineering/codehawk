@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773279(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="exp_special_folder">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwSignature" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="idSpecialFolder" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="cbOffset" offset="12" size="4">
+     <type>DWORD</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

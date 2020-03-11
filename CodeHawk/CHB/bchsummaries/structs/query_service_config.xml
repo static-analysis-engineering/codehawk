@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms684950(v=vs.85).aspx"/>
+  <header date="05/29/2017 00:00:00"/>
+  <struct name="query_service_config">
+   <fields>
+    <field name="dwServiceType" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwStartType" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwErrorControl" offset="8" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpBinaryPathName" offset="12" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="lpLoadOrderGroup" offset="16" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="dwTagId" offset="20" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="lpDependencies" offset="24" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="lpServiceStartName" offset="28" size="4">
+     <type>LPTSTR</type>
+    </field>
+    <field name="lpDisplayName" offset="32" size="4">
+     <type>LPTSTR</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

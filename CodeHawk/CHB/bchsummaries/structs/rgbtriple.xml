@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/dd162939(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="rgbtriple">
+   <fields>
+    <field name="rgbtBlue" offset="0" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="rgbtGreen" offset="1" size="1">
+     <type>BYTE</type>
+    </field>
+    <field name="rgbtRed" offset="2" size="1">
+     <type>BYTE</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

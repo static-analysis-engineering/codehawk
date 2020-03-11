@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa365535(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="file_attributes_flags">
+    <type>file_attributes_flags</type>
+    <values>
+      <symc name="FILE_ATTRIBUTE_ARCHIVE" value="0x20"
+            desc="A file or directory that is an archive file or directory. Applications typically use this attribute to mark files for backup or removal." />
+      <symc name="FILE_ATTRIBUTE_HIDDEN" value="0x2"
+            desc="The file or directory is hidden. It is not included in an ordinary directory listing." />
+      <symc name="FILE_ATTRIBUTE_NORMAL" value="0x80"
+            desc="A file that does not have other attributes set. This attribute is valid only when used alone." />
+      <symc name="FILE_ATTRIBUTE_NOT_CONTENT_INDEXED" value="0x2000"
+            desc="The file or directory is not to be indexed by the content indexing service." />
+      <symc name="FILE_ATTRIBUTE_OFFLINE" value="0x1000"
+            desc="The data of a file is not available immediately. This attribute indicates that the file data is physically moved to offline storage. This attribute is used by Remote Storage, which is the hierarchical storage management software. Applications should not arbitrarily change this attribute." />
+      <symc name="FILE_ATTRIBUTE_READONLY" value="0x1"
+            desc="A file that is read-only. Applications can read the file, but cannot write to it or delete it. This attribute is not honored on directories. For more information, see &quot;You cannot view or change the Read-only or the System attributes of folders in Windows Server 2003, in Windows XP, or in Windows Vista.&quot;" />
+      <symc name="FILE_ATTRIBUTE_SYSTEM" value="0x4"
+            desc="A file or directory that the operating system uses a part of, or uses exclusively." />
+      <symc name="FILE_ATTRIBUTE_TEMPORARY" value="0x100"
+            desc="A file that is being used for temporary storage. File systems avoid writing data back to mass storage if sufficient cache memory is available, because typically, an application deletes a temporary file after the handle is closed. In that scenario, the system can entirely avoid writing the data. Otherwise, the data is written after the handle is closed." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

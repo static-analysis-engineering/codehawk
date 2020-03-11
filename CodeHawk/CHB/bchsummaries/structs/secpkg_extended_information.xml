@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa380112(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="secpkg_extended_information">
+   <fields>
+    <field name="Class" offset="0" size="4">
+     <type>SECPKG_EXTENDED_INFORMATION_CLASS</type>
+    </field>
+    <field name="ExtraOids" offset="4" size="140">
+     <type>SECPKG_EXTRA_OIDS</type>
+    </field>
+    <field name="GssInfo" offset="4" size="8">
+     <type>SECPKG_GSS_INFO</type>
+    </field>
+    <field name="ContextThunks" offset="4" size="8">
+     <type>SECPKG_CONTEXT_THUNKS</type>
+    </field>
+    <field name="MutualAuthLevel" offset="4" size="4">
+     <type>SECPKG_MUTUAL_AUTH_LEVEL</type>
+    </field>
+    <field name="WowClientDll" offset="4" size="6">
+     <type>SECPKG_WOW_CLIENT_DLL</type>
+    </field>
+    <field name="Nego2Info" offset="4" size="20">
+     <type>SECPKG_NEGO2_INFO</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

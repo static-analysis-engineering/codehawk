@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa377540(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cert_signed_content_info">
+   <fields>
+    <field name="ToBeSigned" offset="0" size="8">
+     <type>CRYPT_DER_BLOB</type>
+    </field>
+    <field name="SignatureAlgorithm" offset="8" size="12">
+     <type>CRYPT_ALGORITHM_IDENTIFIER</type>
+    </field>
+    <field name="Signature" offset="20" size="12">
+     <type>CRYPT_BIT_BLOB</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

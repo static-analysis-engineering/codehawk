@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa379626(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="token_information_class">
+    <type>token_information_class</type>
+    <values>
+      <symc name="TokenUser" value="1"
+            desc="The buffer receives a TOKEN_USER structure that contains the user account of the token." />
+      <symc name="TokenGroups" value="2"
+            desc="The buffer receives a TOKEN_GROUPS structure that contains the group accounts associated with the token." />
+      <symc name="TokenPrivileges" value="3"
+            desc="The buffer receives a TOKEN_PRIVILEGES structure that contains the privileges of the token." />
+      <symc name="TokenOwner" value="4"
+            desc="The buffer receives a TOKEN_OWNER structure that contains the default owner security identifier (SID) for newly created objects." />
+      <symc name="TokenPrimaryGroup" value="5"
+            desc="The buffer receives a TOKEN_PRIMARY_GROUP structure that contains the default primary group SID for newly created objects." />
+      <symc name="TokenDefaultDacl" value="6"
+            desc="The buffer receives a TOKEN_DEFAULT_DACL structure that contains the default DACL for newly created objects." />
+      <symc name="TokenSource" value="7"
+            desc="The buffer receives a TOKEN_SOURCE structure that contains the source of the token. TOKEN_QUERY_SOURCE access is needed to retrieve this information." />
+      <symc name="TokenType" value="8"
+            desc="The buffer receives a TOKEN_TYPE value that indicates whether the token is a primary or impersonation token." />
+      <symc name="TokenImpersonationLevel" value="9"
+            desc="The buffer receives a SECURITY_IMPERSONATION_LEVEL value that indicates the impersonation level of the token. If the access token is not an impersonation token, the function fails." />
+      <symc name="TokenStatistics" value="10"
+            desc="The buffer receives a TOKEN_STATISTICS structure that contains various token statistics." />
+      <symc name="TokenRestrictedSids" value="11"
+            desc="The buffer receives a TOKEN_GROUPS structure that contains the list of restricting SIDs in a restricted token." />
+      <symc name="TokenSessionId" value="12"
+            desc="The buffer receives a DWORD value that indicates the Terminal Services session identifier that is associated with the token.
+If the token is associated with the terminal server client session, the session identifier is nonzero.
+Windows Server 2003 and Windows XP:  If the token is associated with the terminal server console session, the session identifier is zero.
+In a non-Terminal Services environment, the session identifier is zero.
+If TokenSessionId is set with SetTokenInformation, the application must have the Act As Part Of the Operating System privilege, and the application must be enabled to set the session ID in a token." />
+      <symc name="TokenGroupsAndPrivileges" value="13"
+            desc="The buffer receives a TOKEN_GROUPS_AND_PRIVILEGES structure that contains the user SID, the group accounts, the restricted SIDs, and the authentication ID associated with the token." />
+      <symc name="TokenSessionReference" value="14"
+            desc="Reserved." />
+      <symc name="TokenSandBoxInert" value="15"
+            desc="The buffer receives a DWORD value that is nonzero if the token includes the SANDBOX_INERT flag." />
+      <symc name="TokenAuditPolicy" value="16"
+            desc="Reserved." />
+      <symc name="TokenOrigin" value="17"
+            desc="The buffer receives a TOKEN_ORIGIN value.
+If the token resulted from a logon that used explicit credentials, such as passing a name, domain, and password to the LogonUser function, then the TOKEN_ORIGIN structure will contain the ID of the logon session that created it.
+If the token resulted from network authentication, such as a call to AcceptSecurityContext or a call to LogonUser with dwLogonType set to LOGON32_LOGON_NETWORK or LOGON32_LOGON_NETWORK_CLEARTEXT, then this value will be zero." />
+      <symc name="TokenElevationType" value="18"
+            desc="The buffer receives a TOKEN_ELEVATION_TYPE value that specifies the elevation level of the token." />
+      <symc name="TokenLinkedToken" value="19"
+            desc="The buffer receives a TOKEN_LINKED_TOKEN structure that contains a handle to another token that is linked to this token." />
+      <symc name="TokenElevation" value="20"
+            desc="The buffer receives a TOKEN_ELEVATION structure that specifies whether the token is elevated." />
+      <symc name="TokenHasRestrictions" value="21"
+            desc="The buffer receives a DWORD value that is nonzero if the token has ever been filtered." />
+      <symc name="TokenAccessInformation" value="22"
+            desc="The buffer receives a TOKEN_ACCESS_INFORMATION structure that specifies security information contained in the token." />
+      <symc name="TokenVirtualizationAllowed" value="23"
+            desc="The buffer receives a DWORD value that is nonzero if virtualization is allowed for the token." />
+      <symc name="TokenVirtualizationEnabled" value="24"
+            desc="The buffer receives a DWORD value that is nonzero if virtualization is enabled for the token." />
+      <symc name="TokenIntegrityLevel" value="25"
+            desc="The buffer receives a TOKEN_MANDATORY_LABEL structure that specifies the token's integrity level." />
+      <symc name="TokenUIAccess" value="26"
+            desc="The buffer receives a DWORD value that is nonzero if the token has the UIAccess flag set." />
+      <symc name="TokenMandatoryPolicy" value="27"
+            desc="The buffer receives a TOKEN_MANDATORY_POLICY structure that specifies the token's mandatory integrity policy." />
+      <symc name="TokenLogonSid" value="28"
+            desc="The buffer receives a TOKEN_GROUPS structure that specifies the token's logon SID." />
+      <symc name="TokenIsAppContainer" value="29"
+            desc="The buffer receives a DWORD value that is nonzero if the token is an app container token. Any callers who check the TokenIsAppContainer and have it return 0 should also verify that the caller token is not an identify level impersonation token. If the current token is not an app container but is an identity level token, you should return AccessDenied." />
+      <symc name="TokenCapabilities" value="30"
+            desc="The buffer receives a TOKEN_GROUPS structure that contains the capabilities associated with the token." />
+      <symc name="TokenAppContainerSid" value="31"
+            desc="The buffer receives a TOKEN_APPCONTAINER_INFORMATION structure that contains the AppContainerSid associated with the token. If the token is not associated with an app container, the TokenAppContainer member of the TOKEN_APPCONTAINER_INFORMATION structure points to NULL." />
+      <symc name="TokenAppContainerNumber" value="32"
+            desc="The buffer receives a DWORD value that includes the app container number for the token. For tokens that are not app container tokens, this value is zero." />
+      <symc name="TokenUserClaimAttributes" value="33"
+            desc="The buffer receives a CLAIM_SECURITY_ATTRIBUTES_INFORMATION structure that contains the user claims associated with the token." />
+      <symc name="TokenDeviceClaimAttributes" value="34"
+            desc="The buffer receives a CLAIM_SECURITY_ATTRIBUTES_INFORMATION structure that contains the device claims associated with the token." />
+      <symc name="TokenRestrictedUserClaimAttributes" value="35"
+            desc="This value is reserved." />
+      <symc name="TokenRestrictedDeviceClaimAttributes" value="36"
+            desc="This value is reserved." />
+      <symc name="TokenDeviceGroups" value="37"
+            desc="The buffer receives a TOKEN_GROUPS structure that contains the device groups that are associated with the token." />
+      <symc name="TokenRestrictedDeviceGroups" value="38"
+            desc="The buffer receives a TOKEN_GROUPS structure that contains the restricted device groups that are associated with the token." />
+      <symc name="TokenSecurityAttributes" value="39"
+            desc="This value is reserved." />
+      <symc name="TokenIsRestricted" value="40"
+            desc="This value is reserved." />
+      <symc name="MaxTokenInfoClass" value="41"
+            desc="The maximum value for this enumeration." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

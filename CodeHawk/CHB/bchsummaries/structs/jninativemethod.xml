@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header creation-date="2015-08-27" last-revision="2016-01-02"/>
+  <struct name="jninativemethod">
+    <fields>
+      <field name="name" offset="0" size="4">
+	<type><ptr>char</ptr></type>
+      </field>
+      <field name="signature" offset="4" size="4">
+	<type><ptr>char</ptr></type>
+      </field>
+      <field name="fnPtr" offset="8" size="4">
+	<type><ptr>void</ptr></type>
+      </field>
+    </fields>
+  </struct>
+</codehawk-binary-analyzer>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms648003(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="track_popup_menu_flags">
+    <type>track_popup_menu_flags</type>
+    <values>
+      <symc name="TPM_CENTERALIGN" value="0x0004"
+            desc="Centers the shortcut menu horizontally relative to the coordinate specified by the x parameter." />
+      <symc name="TPM_LEFTALIGN" value="0x0000"
+            desc="Positions the shortcut menu so that its left side is aligned with the coordinate specified by the x parameter." />
+      <symc name="TPM_RIGHTALIGN" value="0x0008"
+            desc="Positions the shortcut menu so that its right side is aligned with the coordinate specified by the x parameter." />
+      <symc name="TPM_BOTTOMALIGN" value="0x0020"
+            desc="Positions the shortcut menu so that its bottom side is aligned with the coordinate specified by the y parameter." />
+      <symc name="TPM_TOPALIGN" value="0x0000"
+            desc="Positions the shortcut menu so that its top side is aligned with the coordinate specified by the y parameter." />
+      <symc name="TPM_VCENTERALIGN" value="0x0010"
+            desc="Centers the shortcut menu vertically relative to the coordinate specified by the y parameter." />
+      <symc name="TPM_NONOTIFY" value="0x0080"
+            desc="The function does not send notification messages when the user clicks a menu item." />
+      <symc name="TPM_RETURNCMD" value="0x0100"
+            desc="[no description provided]" />
+      <symc name="TPM_LEFTBUTTON" value="0x0000"
+            desc="The user can select menu items with only the left mouse button." />
+      <symc name="TPM_RIGHTBUTTON" value="0x0002"
+            desc="The user can select menu items with both the left and right mouse buttons." />
+      <symc name="TPM_HORNEGANIMATION" value="0x0800"
+            desc="Animates the menu from right to left." />
+      <symc name="TPM_HORPOSANIMATION" value="0x0400"
+            desc="Animates the menu from left to right." />
+      <symc name="TPM_NOANIMATION" value="0x4000"
+            desc="Displays menu without animation." />
+      <symc name="TPM_VERNEGANIMATION" value="0x2000"
+            desc="Animates the menu from bottom to top." />
+      <symc name="TPM_VERPOSANIMATION" value="0x1000"
+            desc="Animates the menu from top to bottom.
+ 
+For any animation to occur, the SystemParametersInfo function must set SPI_SETMENUANIMATION. Also, all the TPM_*ANIMATION flags, except TPM_NOANIMATION, are ignored if menu fade animation is on. For more information, see the SPI_GETMENUFADE flag in SystemParametersInfo.
+Use the TPM_RECURSE flag to display a menu when another menu is already displayed. This is intended to support context menus within a menu." />
+      <symc name="TPM_HORIZONTAL" value="0x0000"
+            desc="If the menu cannot be shown at the specified location without overlapping the excluded rectangle, the system tries to accommodate the requested horizontal alignment before the requested vertical alignment." />
+      <symc name="TPM_VERTICAL" value="0x0040"
+            desc="If the menu cannot be shown at the specified location without overlapping the excluded rectangle, the system tries to accommodate the requested vertical alignment before the requested horizontal alignment.
+ 
+The excluded rectangle is a portion of the screen that the menu should not overlap; it is specified by the lptpm parameter.
+For right-to-left text layout, use TPM_LAYOUTRTL. By default, the text layout is left-to-right." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

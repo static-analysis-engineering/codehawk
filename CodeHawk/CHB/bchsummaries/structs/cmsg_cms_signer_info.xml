@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa377802(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="cmsg_cms_signer_info">
+   <fields>
+    <field name="dwVersion" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SignerId" offset="4" size="20">
+     <type>CERT_ID</type>
+    </field>
+    <field name="HashAlgorithm" offset="24" size="12">
+     <type>CRYPT_ALGORITHM_IDENTIFIER</type>
+    </field>
+    <field name="HashEncryptionAlgorithm" offset="36" size="12">
+     <type>CRYPT_ALGORITHM_IDENTIFIER</type>
+    </field>
+    <field name="EncryptedHash" offset="48" size="8">
+     <type>CRYPT_DATA_BLOB</type>
+    </field>
+    <field name="AuthAttrs" offset="56" size="8">
+     <type>CRYPT_ATTRIBUTES</type>
+    </field>
+    <field name="UnauthAttrs" offset="64" size="8">
+     <type>CRYPT_ATTRIBUTES</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

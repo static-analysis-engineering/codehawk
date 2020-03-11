@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa366062(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="ip_adapter_info">
+   <fields>
+    <field name="Next" offset="0" size="4">
+     <type><ptr>struct _IP_ADAPTER_INFO</ptr></type>
+    </field>
+    <field name="ComboIndex" offset="4" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="AdapterName" offset="8" size="260">
+     <type><array size="260">char</array></type>
+    </field>
+    <field name="Description" offset="268" size="132">
+     <type><array size="132">char</array></type>
+    </field>
+    <field name="AddressLength" offset="400" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="Address" offset="404" size="8">
+     <type><array size="8">BYTE</array></type>
+    </field>
+    <field name="Index" offset="412" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="Type" offset="416" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="DhcpEnabled" offset="420" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="CurrentIpAddress" offset="424" size="4">
+     <type>PIP_ADDR_STRING</type>
+    </field>
+    <field name="IpAddressList" offset="428" size="40">
+     <type>IP_ADDR_STRING</type>
+    </field>
+    <field name="GatewayList" offset="468" size="40">
+     <type>IP_ADDR_STRING</type>
+    </field>
+    <field name="DhcpServer" offset="508" size="40">
+     <type>IP_ADDR_STRING</type>
+    </field>
+    <field name="HaveWins" offset="548" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="PrimaryWinsServer" offset="552" size="40">
+     <type>IP_ADDR_STRING</type>
+    </field>
+    <field name="SecondaryWinsServer" offset="592" size="40">
+     <type>IP_ADDR_STRING</type>
+    </field>
+    <field name="LeaseObtained" offset="632" size="4">
+     <type>time_t</type>
+    </field>
+    <field name="LeaseExpires" offset="636" size="4">
+     <type>time_t</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

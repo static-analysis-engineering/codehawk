@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms684935(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="service_config_constants">
+    <type>service_config_constants</type>
+    <values>
+      <symc name="SERVICE_CONFIG_DELAYED_AUTO_START_INFO" value="3"
+            desc="The lpInfo parameter is a pointer to a SERVICE_DELAYED_AUTO_START_INFO structure.
+            Windows Server 2003 and Windows XP:  This value is not supported." />
+      <symc name="SERVICE_CONFIG_DESCRIPTION" value="1"
+            desc="The lpBuffer parameter is a pointer to a SERVICE_DESCRIPTION structure." />
+      <symc name="SERVICE_CONFIG_FAILURE_ACTIONS" value="2"
+            desc="The lpBuffer parameter is a pointer to a SERVICE_FAILURE_ACTIONS structure." />
+      <symc name="SERVICE_CONFIG_FAILURE_ACTIONS_FLAG" value="4"
+            desc="The lpInfo parameter is a pointer to a SERVICE_FAILURE_ACTIONS_FLAG structure.
+            Windows Server 2003 and Windows XP:  This value is not supported." />
+      <symc name="SERVICE_CONFIG_PREFERRED_NODE" value="9"
+            desc="The lpInfo parameter is a pointer to a SERVICE_PREFERRED_NODE_INFO structure.
+            Windows Server 2008, Windows Vista, Windows Server 2003 and Windows XP:  This value is not supported." />
+      <symc name="SERVICE_CONFIG_PRESHUTDOWN_INFO" value="7"
+            desc="The lpInfo parameter is a pointer to a SERVICE_PRESHUTDOWN_INFO structure.
+            Windows Server 2003 and Windows XP:  This value is not supported." />
+      <symc name="SERVICE_CONFIG_REQUIRED_PRIVILEGES_INFO" value="6"
+            desc="The lpInfo parameter is a pointer to a SERVICE_REQUIRED_PRIVILEGES_INFO structure.
+            Windows Server 2003 and Windows XP:  This value is not supported." />
+      <symc name="SERVICE_CONFIG_SERVICE_SID_INFO" value="5"
+            desc="The lpInfo parameter is a pointer to a SERVICE_SID_INFO structure.
+            Windows Server 2003 and Windows XP:  This value is not supported." />
+      <symc name="SERVICE_CONFIG_TRIGGER_INFO" value="8"
+            desc="The lpInfo parameter is a pointer to a SERVICE_TRIGGER_INFO structure.
+            Windows Server 2008, Windows Vista, Windows Server 2003 and Windows XP:  This value is not supported." />
+      <symc name="SERVICE_CONFIG_LAUNCH_PROTECTED" value="12"
+            desc="The lpInfo parameter is a pointer a SERVICE_LAUNCH_PROTECTED_INFO structure.
+            Note  This value is supported starting with Windows 8.1." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

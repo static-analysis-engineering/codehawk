@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/31/2015 17:52:25"/>
+  <symbolic-constants type="show_command_constants">
+   <values>
+    <symc name="SW_HIDE" value="0x0">
+     <desc>Hides the window and activates another window.</desc>
+    </symc>
+    <symc name="SW_MAXIMIZE" value="0x3">
+     <desc>Maximizes the specified window.</desc>
+    </symc>
+    <symc name="SW_MINIMIZE" value="0x6">
+     <desc>
+       Minimizes the specified window and activates the next top-level window in the z-order.
+     </desc>
+    </symc>
+    <symc name="SW_RESTORE" value="0x9">
+     <desc>
+       Activates and displays the window. If the window is minimized or maximized, 
+       Windows restores it to its original size and position. An application should 
+       specify this flag when restoring a minimized window.
+     </desc>
+    </symc>
+    <symc name="SW_SHOW" value="0x5">
+     <desc>Activates the window and displays it in its current size and position.</desc>
+    </symc>
+    <symc name="SW_SHOWDEFAULT" value="0xa">
+     <desc>
+       Sets the show state based on the SW_ flag specified in the STARTUPINFO structure 
+       passed to the CreateProcess function by the program that started the application. 
+       An application should call ShowWindow with this flag to set the initial show state 
+       of its main window.
+     </desc>
+    </symc>
+    <symc name="SW_SHOWMINIMIZED" value="0x2">
+     <desc>Activates the window and displays it as a minimized window</desc>
+    </symc>
+    <symc name="SW_SHOWMINNOACTIVE" value="0x7">
+     <desc>
+       Displays the window as a minimized window. The active window remains active
+     </desc>
+    </symc>
+    <symc name="SW_SHOWNA" value="0x8">
+     <desc>
+       Displays the window in its current state. The active window remains active
+     </desc>
+    </symc>
+    <symc name="SW_SHOWNOACTIVATE" value="0x4">
+     <desc>
+       Displays a window in its most recent size and position. The active window remains active.
+     </desc>
+    </symc>
+    <symc name="SW_SHOWNORMAL" value="0x1">
+     <desc>
+       Activates and displays a window. If the window is minimized or maximized, Windows 
+       restores it to its original size and position. An application should specify this 
+       flag when displaying the window for the first time.
+     </desc>
+    </symc>
+   </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/gg699718(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="inet_port_reservation_instance">
+   <fields>
+    <field name="Reservation" offset="0" size="4">
+     <type>INET_PORT_RESERVATION</type>
+    </field>
+    <field name="Token" offset="8" size="8">
+     <type>INET_PORT_RESERVATION_TOKEN</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

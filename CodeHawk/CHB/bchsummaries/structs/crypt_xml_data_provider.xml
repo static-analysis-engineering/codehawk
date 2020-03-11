@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd433848(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="crypt_xml_data_provider">
+   <fields>
+    <field name="pvCallbackState" offset="0" size="4">
+     <type><ptr>void</ptr></type>
+    </field>
+    <field name="cbBufferSize" offset="4" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="pfnRead" offset="8" size="4">
+     <type>PFN_CRYPT_XML_DATA_PROVIDER_READ</type>
+    </field>
+    <field name="pfnClose" offset="12" size="4">
+     <type>PFN_CRYPT_XML_DATA_PROVIDER_CLOSE</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

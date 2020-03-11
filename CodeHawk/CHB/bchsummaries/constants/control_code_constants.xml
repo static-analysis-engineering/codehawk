@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/21/2015 22:09:47"/>
+  <symbolic-constants type="control_code_constants">
+    <type>control_code_constants</type>
+    <values>
+   <symc name="SERVICE_CONTROL_CONTINUE" value="0x00000003">
+    <desc>
+      Notifies a paused service that it should resume. The hService handle must have 
+      the SERVICE_PAUSE_CONTINUE access right
+    </desc>
+   </symc>
+   <symc name="SERVICE_CONTROL_INTERROGATE" value="0x00000004">
+    <desc>
+      Notifies a service that it should report its current status information to 
+      the service control manager. The hService handle must have the SERVICE_INTERROGATE
+      access right.
+      Note that this control is not generally useful as the SCM is aware of the 
+      current state of the service.
+    </desc>
+   </symc>
+   <symc name="SERVICE_CONTROL_NETBINDADD" value="0x00000007">
+    <desc>
+      Notifies a network service that there is a new component for binding. The 
+      hService handle must have the SERVICE_PAUSE_CONTINUE access right. However, 
+      this control code has been deprecated; use Plug and Play functionality 
+      instead.    
+    </desc>
+   </symc>
+   <symc name="SERVICE_CONTROL_NETBINDDISABLE" value="0x0000000A">
+    <desc>
+      Notifies a network service that one of its bindings has been disabled. The 
+      hService handle must have the SERVICE_PAUSE_CONTINUE access right. However,
+      this control code has been deprecated; use Plug and Play functionality instead.
+    </desc>
+   </symc>
+   <symc name="SERVICE_CONTROL_NETBINDENABLE" value="0x00000009">
+    <desc>
+      Notifies a network service that a disabled binding has been enabled. The
+      hService handle must have the SERVICE_PAUSE_CONTINUE access right. However,
+      this control code has been deprecated; use Plug and Play functionality instead.
+    </desc>
+   </symc>
+   <symc name="SERVICE_CONTROL_NETBINDREMOVE" value="0x00000008">
+    <desc>
+      Notifies a network service that a component for binding has been removed. 
+      The hService handle must have the SERVICE_PAUSE_CONTINUE access right. 
+      However, this control code has been deprecated; use Plug and Play 
+      functionality instead.
+    </desc>
+   </symc>
+   <symc name="SERVICE_CONTROL_PARAMCHANGE" value="0x00000006">
+    <desc>
+      Notifies a service that its startup parameters have changed. The hService 
+      handle must have the SERVICE_PAUSE_CONTINUE access right.
+    </desc>
+   </symc>
+   <symc name="SERVICE_CONTROL_PAUSE" value="0x00000002">
+    <desc>
+      Notifies a service that it should pause. The hService handle must have the 
+      SERVICE_PAUSE_CONTINUE access right.
+    </desc>
+   </symc>
+   <symc name="SERVICE_CONTROL_STOP" value="0x00000001">
+    <desc>
+      Notifies a service that it should stop. The hService handle must have the 
+      SERVICE_STOP access right.
+      After sending the stop request to a service, you should not send other controls
+      to the service.
+    </desc>
+   </symc>
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

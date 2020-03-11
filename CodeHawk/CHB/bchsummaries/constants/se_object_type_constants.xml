@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa379593(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="se_object_type_constants">
+    <type>se_object_type_constants</type>
+    <values>
+      <symc name="SE_UNKNOWN_OBJECT_TYPE" value="0"
+            desc="Unknown object type." />
+      <symc name="SE_FILE_OBJECT" value="1"
+            desc="Indicates a file or directory. The name string that identifies a file or directory object can be in one of the following formats:
+A relative path, such as FileName.dat or ..\FileName
+An absolute path, such as FileName.dat, C:\DirectoryName\FileName.dat, or G:\RemoteDirectoryName\FileName.dat.
+A UNC name, such as \\ComputerName\ShareName\FileName.dat." />
+      <symc name="SE_SERVICE" value="2"
+            desc="Indicates a Windows service. A service object can be a local service, such as ServiceName, or a remote service, such as \\ComputerName\ServiceName." />
+      <symc name="SE_PRINTER" value="3"
+            desc="Indicates a printer. A printer object can be a local printer, such as PrinterName, or a remote printer, such as \\ComputerName\PrinterName." />
+      <symc name="SE_REGISTRY_KEY" value="4"
+            desc="Indicates a registry key. A registry key object can be in the local registry, such as CLASSES_ROOT\SomePath or in a remote registry, such as \\ComputerName\CLASSES_ROOT\SomePath.
+  The names of registry keys must use the following literal strings to identify the predefined registry keys: &quot;CLASSES_ROOT&quot;, &quot;CURRENT_USER&quot;, &quot;MACHINE&quot;, and &quot;USERS&quot;." />
+  <symc name="SE_LMSHARE" value="5"
+        desc="Indicates a network share. A share object can be local, such as ShareName, or remote, such as \\ComputerName\ShareName." />
+  <symc name="SE_KERNEL_OBJECT" value="6"
+        desc="Indicates a local kernel object.
+            The GetSecurityInfo and SetSecurityInfo functions support all types of kernel objects. The GetNamedSecurityInfo and SetNamedSecurityInfo functions work only with the following kernel objects: semaphore, event, mutex, waitable timer, and file mapping." />
+  <symc name="SE_WINDOW_OBJECT" value="7"
+        desc="Indicates a window station or desktop object on the local computer. You cannot use GetNamedSecurityInfo and SetNamedSecurityInfo with these objects because the names of window stations or desktops are not unique." />
+  <symc name="SE_DS_OBJECT" value="8"
+        desc="Indicates a directory service object or a property set or property of a directory service object. The name string for a directory service object must be in X.500 form, for example:
+            CN=SomeObject,OU=ou2,OU=ou1,DC=DomainName,DC=CompanyName,DC=com,O=internet" />
+  <symc name="SE_DS_OBJECT_ALL" value="9"
+        desc="Indicates a directory service object and all of its property sets and properties." />
+  <symc name="SE_PROVIDER_DEFINED_OBJECT" value="10"
+        desc="Indicates a provider-defined object." />
+  <symc name="SE_WMIGUID_OBJECT" value="11"
+        desc="Indicates a WMI object." />
+  <symc name="SE_REGISTRY_WOW64_32KEY" value="12"
+        desc="Indicates an object for a registry entry under WOW64." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa380523(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="user_all_information">
+   <fields>
+    <field name="LastLogon" offset="0" size="8">
+     <type>LARGE_INTEGER</type>
+    </field>
+    <field name="LastLogoff" offset="8" size="8">
+     <type>LARGE_INTEGER</type>
+    </field>
+    <field name="PasswordLastSet" offset="16" size="8">
+     <type>LARGE_INTEGER</type>
+    </field>
+    <field name="AccountExpires" offset="24" size="8">
+     <type>LARGE_INTEGER</type>
+    </field>
+    <field name="PasswordCanChange" offset="32" size="8">
+     <type>LARGE_INTEGER</type>
+    </field>
+    <field name="PasswordMustChange" offset="40" size="8">
+     <type>LARGE_INTEGER</type>
+    </field>
+    <field name="UserName" offset="48" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="FullName" offset="56" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="HomeDirectory" offset="64" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="HomeDirectoryDrive" offset="72" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="ScriptPath" offset="80" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="ProfilePath" offset="88" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="AdminComment" offset="96" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="WorkStations" offset="104" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="UserComment" offset="112" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="Parameters" offset="120" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="LmPassword" offset="128" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="NtPassword" offset="136" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="PrivateData" offset="144" size="8">
+     <type>UNICODE_STRING</type>
+    </field>
+    <field name="SecurityDescriptor" offset="152" size="8">
+     <type>SR_SECURITY_DESCRIPTOR</type>
+    </field>
+    <field name="UserId" offset="160" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="PrimaryGroupId" offset="164" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="UserAccountControl" offset="168" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="WhichFields" offset="172" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="LogonHours" offset="176" size="8">
+     <type>LOGON_HOURS</type>
+    </field>
+    <field name="BadPasswordCount" offset="184" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="LogonCount" offset="186" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="CountryCode" offset="188" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="CodePage" offset="190" size="2">
+     <type>USHORT</type>
+    </field>
+    <field name="LmPasswordPresent" offset="192" size="1">
+     <type>BOOLEAN</type>
+    </field>
+    <field name="NtPasswordPresent" offset="193" size="1">
+     <type>BOOLEAN</type>
+    </field>
+    <field name="PasswordExpired" offset="194" size="1">
+     <type>BOOLEAN</type>
+    </field>
+    <field name="PrivateDataSensitive" offset="195" size="1">
+     <type>BOOLEAN</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

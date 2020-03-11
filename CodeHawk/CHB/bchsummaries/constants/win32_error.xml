@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
+    <reference href="http://msdn.microsoft.com/"/>
+  </header>
+  <symbolic-constants type="WIN32_ERROR">
+    <symc name="ERROR_SUCCESS" value="0x0" desc="Operation completed successfully"/>
+    <symc name="ERROR_INVALID_FUNCTION" value="0x1" desc="Incorrect function"/>
+    <symc name="ERROR_FILE_NOT_FOUND" value="0x2" 
+	  desc="The system cannot find the file specified"/>
+  </symbolic-constants>
+</codehawk-binary-analyzer>

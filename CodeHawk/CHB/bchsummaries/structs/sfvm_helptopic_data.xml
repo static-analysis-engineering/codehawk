@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773394(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="sfvm_helptopic_data">
+   <fields>
+    <field name="wszHelpFile" offset="0" size="520">
+     <type><array size="520">WCHAR</array></type>
+    </field>
+    <field name="wszHelpTopic" offset="520" size="520">
+     <type><array size="520">WCHAR</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

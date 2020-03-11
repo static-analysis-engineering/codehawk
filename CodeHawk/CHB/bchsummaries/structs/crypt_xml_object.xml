@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd433859(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="crypt_xml_object">
+   <fields>
+    <field name="cbSize" offset="0" size="4">
+     <type>ULONG</type>
+    </field>
+    <field name="hObject" offset="4" size="4">
+     <type>HCRYPTXML</type>
+    </field>
+    <field name="wszId" offset="8" size="4">
+     <type>LPCWSTR</type>
+    </field>
+    <field name="wszMimeType" offset="12" size="4">
+     <type>LPCWSTR</type>
+    </field>
+    <field name="wszEncoding" offset="16" size="4">
+     <type>LPCWSTR</type>
+    </field>
+    <field name="Manifest" offset="20" size="8">
+     <type>CRYPT_XML_REFERENCES</type>
+    </field>
+    <field name="Encoded" offset="28" size="12">
+     <type>CRYPT_XML_BLOB</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

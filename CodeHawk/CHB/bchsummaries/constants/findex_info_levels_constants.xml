@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa364415(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="findex_info_levels_constants">
+    <type>findex_info_levels_constants</type>
+    <values>
+      <symc name="FindExInfoStandard" value="0"
+            desc="The FindFirstFileEx function retrieves a standard set of attribute information. The data is returned in a WIN32_FIND_DATA structure." />
+      <symc name="FindExInfoBasic" value="1"
+            desc="The FindFirstFileEx function does not query the short file name, improving overall enumeration speed. The data is returned in a WIN32_FIND_DATA structure, and the cAlternateFileName member is always a NULL string.
+            Windows Server 2008, Windows Vista, Windows Server 2003 and Windows XP:  This value is not supported until Windows Server 2008 R2 and Windows 7." />
+      <symc name="FindExInfoMaxInfoLevel" value="2"
+            desc="This value is used for validation. Supported values are less than this value." />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

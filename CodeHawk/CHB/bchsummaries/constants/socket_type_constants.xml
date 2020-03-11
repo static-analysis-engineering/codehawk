@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="2015-03-07" last-revision="2015-03-07">
+    <reference href="http://msdn.microsoft.com/"/>
+  </header>
+  <symbolic-constants type="socket_type_constants">
+    <type>socket_type_constants</type>
+    <values>
+    <symc name="SOCK_STREAM" value="1">
+      <desc>
+	A socket type that provides sequenced, reliable, two-way, connection-based 
+	byte streams with an OOB data transmission mechanism. This socket type uses 
+	the Transmission Control Protocol (TCP) for the Internet address family
+	(AF_INET or AF_INET6)
+      </desc>
+    </symc>
+    <symc name="SOCK_DGRAM" value="2">
+      <desc>
+	A socket type that supports datagrams, which are connectionless, unreliable 
+	buffers of a fixed (typically small) maximum length. This socket type uses 
+	the User Datagram Protocol (UDP) for the Internet address family (AF_INET 
+	or AF_INET6)
+      </desc>
+    </symc>
+    <symc name="SOCK_RAW" value="3">
+      <desc>
+	A socket type that provides a raw socket that allows an application to 
+	manipulate the next upper-layer protocol header. To manipulate the IPv4 
+	header, the IP_HDRINCL socket option must be set on the socket. To
+	manipulate the IPv6 header, the IPV6_HDRINCL socket option must be 
+	set on the socket.
+      </desc>
+    </symc>
+    <symc name="SOCK_RDM" value="4">
+      <desc>
+	A socket type that provides a reliable message datagram. An example of
+	this type is the Pragmatic General Multicast (PGM) multicast protocol 
+	implementation in Windows, often referred to as reliable multicast 
+	programming.
+	This type value is only supported if the Reliable Multicast Protocol 
+	is installed.
+      </desc>
+    </symc>
+    <symc name="SOCK_SEQPACKET" value="5">
+      <desc>
+	A socket type that provides a pseudo-stream packet based on datagrams.
+      </desc>
+    </symc>
+    </values>
+  </symbolic-constants>
+</codehawk-binary-analyzer>

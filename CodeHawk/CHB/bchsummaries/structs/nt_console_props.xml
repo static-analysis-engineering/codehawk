@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb773359(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="nt_console_props">
+   <fields>
+    <field name="dbh" offset="0" size="8">
+     <type>DATABLOCK_HEADER</type>
+    </field>
+    <field name="wFillAttribute" offset="8" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="wPopupFillAttribute" offset="10" size="2">
+     <type>WORD</type>
+    </field>
+    <field name="dwScreenBufferSize" offset="12" size="4">
+     <type>COORD</type>
+    </field>
+    <field name="dwWindowSize" offset="16" size="4">
+     <type>COORD</type>
+    </field>
+    <field name="dwWindowOrigin" offset="20" size="4">
+     <type>COORD</type>
+    </field>
+    <field name="nFont" offset="24" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="nInputBufferSize" offset="28" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="dwFontSize" offset="32" size="4">
+     <type>COORD</type>
+    </field>
+    <field name="uFontFamily" offset="36" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="uFontWeight" offset="40" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="FaceName" offset="44" size="64">
+     <type><array size="64">WCHAR</array></type>
+    </field>
+    <field name="uCursorSize" offset="108" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="bFullScreen" offset="112" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="bQuickEdit" offset="116" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="bInsertMode" offset="120" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="bAutoPosition" offset="124" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="uHistoryBufferSize" offset="128" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="uNumberOfHistoryBuffers" offset="132" size="4">
+     <type>UINT</type>
+    </field>
+    <field name="bHistoryNoDup" offset="136" size="4">
+     <type>BOOL</type>
+    </field>
+    <field name="ColorTable" offset="140" size="64">
+     <type><array size="64">COLORREF</array></type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

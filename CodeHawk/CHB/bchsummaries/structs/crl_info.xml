@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa379880(v=vs.85).aspx"/>
+  <header date="07/02/2017 00:00:00"/>
+  <struct name="crl_info">
+   <fields>
+    <field name="dwVersion" offset="0" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="SignatureAlgorithm" offset="4" size="12">
+     <type>CRYPT_ALGORITHM_IDENTIFIER</type>
+    </field>
+    <field name="Issuer" offset="16" size="8">
+     <type>CERT_NAME_BLOB</type>
+    </field>
+    <field name="ThisUpdate" offset="24" size="8">
+     <type>FILETIME</type>
+    </field>
+    <field name="NextUpdate" offset="32" size="8">
+     <type>FILETIME</type>
+    </field>
+    <field name="cCRLEntry" offset="40" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rgCRLEntry" offset="44" size="4">
+     <type>PCRL_ENTRY</type>
+    </field>
+    <field name="cExtension" offset="48" size="4">
+     <type>DWORD</type>
+    </field>
+    <field name="rgExtension" offset="52" size="4">
+     <type>PCERT_EXTENSION</type>
+    </field>
+   </fields>
+  </struct>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

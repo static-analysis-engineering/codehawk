@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa366559(v=vs.85).aspx"/>
+    <refnotes>retrieved from unofficial sources</refnotes>
+  </header>
+  <symbolic-constants type="map_file_constants">
+    <type>map_file_constants</type>
+    <values>
+      <symc name="FILE_MAP_ALL_ACCESS" value="0x000f001f"
+            desc="Includes all access rights to a file mapping object except FILE_MAP_EXECUTE. The MapViewOfFile and MapViewOfFileEx functions treat this the same as specifying FILE_MAP_WRITE." />
+      <symc name="FILE_MAP_EXECUTE" value="0x00000020"
+            desc="Allows mapping of executable views of the file mapping object. The object must have been created with page protection that allows execute access, such as PAGE_EXECUTE_READ, PAGE_EXECUTE_WRITECOPY, or PAGE_EXECUTE_READWRITE protection." />
+      <symc name="FILE_MAP_READ" value="0x00000004"
+            desc="Allows mapping of read-only or copy-on-write views of the file mapping object." />
+      <symc name="FILE_MAP_WRITE" value="0x00000002"
+            desc="Allows mapping of read-only, copy-on-write, or read/write views of a file mapping object. The object must have been created with page protection that allows write access, such as PAGE_READWRITE or PAGE_EXECUTE_READWRITE protection." />
+      <!-- <symc name="FILE_MAP_TARGETS_INVALID" value="[no "
+            desc="Sets all the locations in the mapped file as invalid targets for CFG. This flag is similar to PAGE_TARGETS_INVALID. It is used along with the execute access right FILE_MAP_EXECUTE. Any indirect call to locations in those pages will fail CFG checks and the process will be terminated. The default behavior for executable pages allocated is to be marked valid call targets for CFG." /> -->
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

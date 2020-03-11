@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header name="hresult" creation-date="03/31/2017 00:00:00" last-revision="03/31/2017 00:00:00">
+    <reference href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb759862(v=vs.85).aspx"/>
+  </header>
+  <symbolic-constants type="sh_autocomplete_flags">
+    <type>sh_autocomplete_flags</type>
+    <values>
+      <symc name="SHACF_AUTOAPPEND_FORCE_OFF" value="0x80000000"
+            desc="Ignore the registry default and force the AutoAppend feature off. This flag must be used in combination with one or more of the SHACF_FILESYS* or SHACF_URL* flags." />
+      <symc name="SHACF_AUTOAPPEND_FORCE_ON" value="0x40000000"
+            desc="Ignore the registry value and force the AutoAppend feature on. The completed string will be displayed in the edit box with the added characters highlighted. This flag must be used in combination with one or more of the SHACF_FILESYS* or SHACF_URL* flags." />
+      <symc name="SHACF_AUTOSUGGEST_FORCE_OFF" value="0x20000000"
+            desc="Ignore the registry default and force the AutoSuggest feature off. This flag must be used in combination with one or more of the SHACF_FILESYS* or SHACF_URL* flags." />
+      <symc name="SHACF_AUTOSUGGEST_FORCE_ON" value="0x10000000"
+            desc="Ignore the registry value and force the AutoSuggest feature on. A selection of possible completed strings will be displayed as a drop-down list, below the edit box. This flag must be used in combination with one or more of the SHACF_FILESYS* or SHACF_URL* flags." />
+      <symc name="SHACF_DEFAULT" value="0x00000000"
+            desc="The default setting, equivalent to SHACF_FILESYSTEM | SHACF_URLALL. SHACF_DEFAULT cannot be combined with any other flags." />
+      <symc name="SHACF_FILESYS_ONLY" value="0x00000010"
+            desc="Include the file system only." />
+      <symc name="SHACF_FILESYS_DIRS" value="0x00000020"
+            desc="Include the file system and directories, UNC servers, and UNC server shares." />
+      <symc name="SHACF_FILESYSTEM" value="0x00000001"
+            desc="Include the file system and the rest of the Shell (Desktop, Computer, and Control Panel, for example)." />
+      <symc name="SHACF_URLALL" value="0x00000006"
+            desc="Include the URLs in the users History and Recently Used lists. Equivalent to SHACF_URLHISTORY | SHACF_URLMRU." />
+      <symc name="SHACF_URLHISTORY" value="0x00000002"
+            desc="Include the URLs in the user's History list." />
+      <symc name="SHACF_URLMRU" value="0x00000004"
+            desc="Include the URLs in the user's Recently Used list." />
+      <symc name="SHACF_USETAB" value="0x00000008"
+            desc="Allow the user to select from the autosuggest list by pressing the TAB key. If this flag is not set, pressing the TAB key will shift focus to the next control and close the autosuggest list. If SHACF_USETAB is set, pressing the TAB key will select the first item in the list. Pressing TAB again will select the next item in the list, and so on. When the user reaches the end of the list, the next TAB key press will cycle the focus back to the edit control. This flag must be used in combination with one or more of the SHACF_FILESYS* or SHACF_URL* flags listed on this page." />
+      <symc name="SHACF_VIRTUAL_NAMESPACE" value="0x00000040"
+            desc="[no description provided]" />
+    </values>
+  </symbolic-constants>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
