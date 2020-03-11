@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/03/2015 10:47:35"/>
+  <libfun lib="ntdll" name="ZwOpenSection">
+   <documentation>
+    <desc>opens a handle for an existing section object</desc>
+    <apidoc>
+     <pt>
+      <ll>NTSTATUS ZwOpenSection(</ll>
+      <ld>_Out_ PHANDLE            SectionHandle</ld>
+      <ld>_In_  ACCESS_MASK        DesiredAccess</ld>
+      <ld>_In_  POBJECT_ATTRIBUTES ObjectAttributes</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="SectionHandle">
+       Pointer to a HANDLE variable that receives a handle to the section 
+       object.
+     </par>
+     <par name="DesiredAccess">
+       Specifies an ACCESS_MASK value that determines the requested access
+       to the object
+     </par>
+     <par name="ObjectAttributes">
+       Pointer to an OBJECT_ATTRIBUTES structure that specifies the object
+       name and other attributes. Use InitializeObjectAttributes to initialize
+       this structure. If the caller is not running in a system thread context,
+       it must set the OBJ_KERNEL_HANDLE attribute when it calls 
+       InitializeObjectAttributes.
+     </par>
+     <return>
+      <rc cond="success">STATUS_SUCCESS</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="ZwOpenSection">
+    <par loc="stack" io="w" name="SectionHandle" nr="1">
+     <type><ptr>HANDLE</ptr></type>
+     <roles>
+      <role rt="ioc:process" rn="handle:section" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="DesiredAccess" io="r" roles="none" nr="2">
+     <type>ACCESS_MASK</type>
+    </par>
+    <par loc="stack" io="r" name="ObjectAttributes" nr="3">
+     <type><ptr>OBJECT_ATTRIBUTES</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:OBJECT_ATTRIBUTES" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>NTSTATUS</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="opens a handle for a section object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

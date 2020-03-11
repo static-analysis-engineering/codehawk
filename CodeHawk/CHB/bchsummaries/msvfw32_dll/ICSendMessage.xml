@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 08:41:55"/>
+  <libfun lib="msvfw32" name="ICSendMessage">
+   <documentation>
+    <desc>sends a message to a compressor</desc>
+    <apidoc>
+     <pt>
+      <ll>LRESULT ICSendMessage(</ll>
+      <ld>HIC       hic</ld>
+      <ld>UINT      wMsg</ld>
+      <ld>DWORD_PTR dw1</ld>
+      <ld>DWORD_PTR dw2</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hic">Handle to the compressor to receive the message</par>
+     <par name="wMsg">Message to send</par>
+     <par name="dw1">Additional message-specific information</par>
+     <par name="dw2">Additional message-specific information</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="ICSendMessage">
+    <par loc="stack" io="r" name="hic" nr="1">
+     <type>HIC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:image compressor" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="wMsg" io="r" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" name="dw1" io="r" roles="none" nr="3">
+     <type>DWORD_PTR</type>
+    </par>
+    <par loc="stack" name="dw2" io="r" roles="none" nr="4">
+     <type>DWORD_PTR</type>
+    </par>
+    <returntype>LRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="sends a message to an image compressor"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

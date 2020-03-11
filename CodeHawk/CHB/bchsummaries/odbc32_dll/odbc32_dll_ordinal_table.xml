@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header info="export-ordinal-table" name="ODBC32.dll" time="10/02/2015 22:51:00"/>
+  <export-ordinal-table size="53">
+   <entry name="SQLAllocConnect" ordinal="1"/>
+   <entry name="SQLAllocEnv" ordinal="2"/>
+   <entry name="SQLAllocStmt" ordinal="3"/>
+   <entry name="SQLBindCol" ordinal="4"/>
+   <entry name="SQLCancel" ordinal="5"/>
+   <entry name="SQLColAttributes" ordinal="6"/>
+   <entry name="SQLConnect" ordinal="7"/>
+   <entry name="SQLDescribeCol" ordinal="8"/>
+   <entry name="SQLDisconnect" ordinal="9"/>
+   <entry name="SQLError" ordinal="10"/>
+   <entry name="SQLExecDirect" ordinal="11"/>
+   <entry name="SQLExecute" ordinal="12"/>
+   <entry name="SQLFetch" ordinal="13"/>
+   <entry name="SQLFreeConnect" ordinal="14"/>
+   <entry name="SQLFreeEnv" ordinal="15"/>
+   <entry name="SQLFreeStmt" ordinal="16"/>
+   <entry name="SQLGetCursorName" ordinal="17"/>
+   <entry name="SQLNumResultCols" ordinal="18"/>
+   <entry name="SQLPrepare" ordinal="19"/>
+   <entry name="SQLRowCount" ordinal="20"/>
+   <entry name="SQLSetCursorName" ordinal="21"/>
+   <entry name="SQLTransact" ordinal="23"/>
+   <entry name="SQLColAttribute" ordinal="27"/>
+   <entry name="SQLFetchScroll" ordinal="30"/>
+   <entry name="SQLGetStmtAttr" ordinal="38"/>
+   <entry name="SQLColumns" ordinal="40"/>
+   <entry name="SQLDriverConnect" ordinal="41"/>
+   <entry name="SQLGetConnectOption" ordinal="42"/>
+   <entry name="SQLGetData" ordinal="43"/>
+   <entry name="SQLGetInfo" ordinal="45"/>
+   <entry name="SQLGetStmtOption" ordinal="46"/>
+   <entry name="SQLGetTypeInfo" ordinal="47"/>
+   <entry name="SQLParamData" ordinal="48"/>
+   <entry name="SQLPutData" ordinal="49"/>
+   <entry name="SQLSetConnectOption" ordinal="50"/>
+   <entry name="SQLSetStmtOption" ordinal="51"/>
+   <entry name="SQLSpecialColumns" ordinal="52"/>
+   <entry name="SQLStatistics" ordinal="53"/>
+   <entry name="SQLTables" ordinal="54"/>
+   <entry name="SQLBrowseConnect" ordinal="55"/>
+   <entry name="SQLColumnPrivileges" ordinal="56"/>
+   <entry name="SQLDescribeParam" ordinal="58"/>
+   <entry name="SQLForeignKeys" ordinal="60"/>
+   <entry name="SQLMoreResults" ordinal="61"/>
+   <entry name="SQLNativeSql" ordinal="62"/>
+   <entry name="SQLNumParams" ordinal="63"/>
+   <entry name="SQLPrimaryKeys" ordinal="65"/>
+   <entry name="SQLProcedureColumns" ordinal="66"/>
+   <entry name="SQLProcedures" ordinal="67"/>
+   <entry name="SQLSetPos" ordinal="68"/>
+   <entry name="SQLTablePrivileges" ordinal="70"/>
+   <entry name="SQLBindParameter" ordinal="72"/>
+   <entry name="SQLSetStmtAttr" ordinal="76"/>
+  </export-ordinal-table>
+ </codehawk-binary-analyzer>

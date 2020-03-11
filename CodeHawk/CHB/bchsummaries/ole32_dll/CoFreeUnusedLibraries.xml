@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/27/2015 22:29:54"/>
+  <libfun lib="ole32" name="CoFreeUnusedLibraries">
+   <documentation>
+    <desc>
+      Unloads any DLLs that are no longer in use, probably because 
+      the DLL no longer has any instantiated COM objects outstanding
+    </desc>
+    <apidoc>
+     <pt>void CoFreeUnusedLibraries (void)</pt>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="CoFreeUnusedLibraries">
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+    <external-effects>
+      <xeffect xtgt="process" xaction="unload dlls"/>
+    </external-effects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 16:19:46"/>
+  <libfun lib="oleaut32" name="RegisterTypeLib">
+   <documentation>
+    <desc>Adds information about a type library to the system registry</desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT RegisterTypeLib(</ll>
+      <ld>         ITypeLib  *ptlib</ld>
+      <ld>_In_     LPCOLESTR szFullPath</ld>
+      <ld>_In_opt_ LPCOLESTR szHelpDir</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="ptlib">The type library</par>
+     <par name="szFullPath">
+       The fully qualified path specification for the type library
+     </par>
+     <par name="szHelpDir">
+       The directory in which the Help file for the library being registered
+       can be found. This parameter can be null.
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="RegisterTypeLib">
+    <par loc="stack" name="ptlib" io="r" roles="none" nr="1">
+     <type><ptr>ITypeLib</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="szFullPath" io="r" nr="2" rep="hex">
+     <type>LPCOLESTR</type>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="szHelpDir" io="r" nr="3" rep="hex">
+     <type>LPCOLESTR</type>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="registry" 
+		desc="adds information about a type library to the system registry"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

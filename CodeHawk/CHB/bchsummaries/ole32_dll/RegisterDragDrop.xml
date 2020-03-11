@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 05:28:00"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="RegisterDragDrop">
+   <documentation>
+    <desc>
+      Registers the specified window as one that can be the target of 
+      an OLE drag-and-drop operation and specifies the IDropTarget 
+      instance to use for drop operations. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT RegisterDragDrop(</ll>
+      <ld>_In_  HWND hwnd</ld>
+      <ld>_In_  LPDROPTARGET pDropTarget</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">
+	DRAGDROP_E_INVALIDHWND, DRAGDROP_E_ALREADYREGISTERED, E_OUTOFMEMORY
+      </rc>
+     </return>
+     <par name="hwnd">
+       Handle to a window that can be a target for an OLE drag-and-drop operation.
+     </par>
+     <par name="pDropTarget">
+       Pointer to the IDropTarget interface on the object that is to be the 
+       target of a drag-and-drop operation in a specified window. This interface 
+       is used to communicate OLE drag-and-drop information for that window.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="RegisterDragDrop">
+    <returntype>HRESULT</returntype>
+    <par loc="stack" name="hwnd" io="r" nr="1">
+      <type>HWND</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:process" rn="handle:window"/>
+      </roles>
+    </par>
+    <par loc="stack" name="pDropTarget" io="r" rep="hex" nr="2">
+      <type><ptr>DROPTARGET</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:com" rn="ifp:IDropTarget"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="com"
+		   desc="registers a window as target for drag and drop"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

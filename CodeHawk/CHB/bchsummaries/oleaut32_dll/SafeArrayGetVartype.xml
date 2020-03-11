@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SafeArrayGetVartype.xml" time="2016-08-10 11:09:27.255103"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="oleaut32" name="SafeArrayGetVartype">
+    <documentation>
+      <desc>Gets the VARTYPE stored in the specified safe array</desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT SafeArrayGetVartype(</ll>
+          <ld>_In_  SAFEARRAY *psa</ld>
+          <ld>_Out_ VARTYPE   *pvt</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="psa">An array descriptor created by SafeArrayCreate</par>
+        <par name="pvt">The VARTYPE</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error codes</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="SafeArrayGetVartype">
+      <par loc="stack" name="psa" io="r" nr="1" rep="hex">
+        <type><ptr>SAFEARRAY</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="safe array"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pvt" io="w" roles="none" nr="2">
+        <type><ptr>VARTYPE</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com" desc="retrieves the VARTYPE of a safe array"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

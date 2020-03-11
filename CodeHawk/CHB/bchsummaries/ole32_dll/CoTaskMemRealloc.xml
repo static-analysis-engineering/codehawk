@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 05:22:40"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="CoTaskMemRealloc">
+   <documentation>
+    <desc>Changes the size of a previously allocated block of task memory.</desc>
+    <apidoc>
+     <pt>
+      <ll>LPVOID CoTaskMemRealloc(</ll>
+      <ld>_In_opt_  LPVOID pv</ld>
+      <ld>_In_      SIZE_T cb</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">notnull</rc>
+      <rc cond="failure">null</rc>
+     </return>
+     <par name="pv">
+       A pointer to the memory block to be reallocated. This parameter can be NULL.
+     </par>
+     <par name="cb">
+       The size of the memory block to be reallocated, in bytes. This parameter can be 0.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CoTaskMemRealloc">
+    <returntype><ptr>VOID</ptr></returntype>
+    <par loc="stack" name="pv" io="r" nr="1">
+      <type>LPVOID</type>
+      <pre><deref-read-null/></pre>
+      <roles>
+          <role rt="ioc:memops" rn="address:memory"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cb" io="r" nr="2">
+      <type>SIZE_T</type>
+     <pre><non-negative/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="size:allocation"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="com"
+		  desc="changes the size of a previously allocated block of memory"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+      <post>
+	<math>
+	  <apply>
+	    <new-memory-region/>
+	    <return/>
+	    <ci>cb</ci>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

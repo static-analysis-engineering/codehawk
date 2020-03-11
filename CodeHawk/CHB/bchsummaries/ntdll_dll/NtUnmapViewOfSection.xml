@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="NtUnmapViewOfSection.xml" time="2016-07-15 14:08:19.117356"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ntdll" name="NtUnmapViewOfSection">
+    <documentation>
+      <desc>
+	unmaps a view of a section from the virtual address space of a subject process.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>NTSTATUS NtUnmapViewOfSection(</ll>
+          <ld>_In_     HANDLE ProcessHandle</ld>
+          <ld>_In_opt_ PVOID  BaseAddress</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="ProcessHandle">
+	  Handle to a process object that was previously passed to NtMapViewOfSection
+	</par>
+        <par name="BaseAddress">
+	  Pointer to the base virtual address of the view to
+	  unmap. This value can be any virtual address within the
+	  view.
+	</par>
+        <return>
+          <rc cond="success">STATUS_SUCCESS</rc>
+          <rc cond="failure">STATUS_ACCESS_DENIED</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="NtUnmapViewOfSection">
+      <par loc="stack" name="ProcessHandle" io="r" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:process"/>
+	</roles>
+      </par>
+      <par loc="stack" name="BaseAddress" io="r" nr="2" rep="hex">
+        <type><ptr>VOID</ptr></type>
+	<pre><deref-write/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="memory address"/>
+	</roles>
+      </par>
+      <returntype>NTSTATUS</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" 
+		   desc="unmaps a view of a section from the virtual address space"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

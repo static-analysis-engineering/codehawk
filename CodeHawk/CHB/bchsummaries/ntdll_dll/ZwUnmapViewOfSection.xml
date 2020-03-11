@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/03/2015 12:56:10"/>
+  <libfun lib="ntdll" name="ZwUnmapViewOfSection">
+   <documentation>
+    <desc>
+      unmaps a view of a section from the virtual address space of a subject process.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>NTSTATUS ZwUnmapViewOfSection(</ll>
+      <ld>_In_     HANDLE ProcessHandle</ld>
+      <ld>_In_opt_ PVOID  BaseAddress</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="ProcessHandle">
+       Handle to a process object that was previously passed to ZwMapViewOfSection.
+     </par>
+     <par name="BaseAddress">
+       Pointer to the base virtual address of the view to unmap. This value can be
+       any virtual address within the view.
+     </par>
+     <return>
+      <rc cond="success">STATUS_SUCCESS</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="ZwUnmapViewOfSection">
+    <par loc="stack" io="r" name="ProcessHandle" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:process" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="BaseAddress" nr="2">
+     <type><ptr>void</ptr></type>
+     <roles>
+      <role rt="ioc:process" rn="address:mapped memory"/>
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <returntype>NTSTATUS</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="unmaps mapped memory"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

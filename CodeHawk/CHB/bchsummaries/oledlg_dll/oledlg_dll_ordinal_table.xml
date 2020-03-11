@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header info="export-ordinal-table" name="oledlg.dll" time="10/02/2015 22:51:00"/>
+  <export-ordinal-table size="3">
+   <entry name="OleUIAddVerbMenua" ordinal="1"/>
+   <entry name="OleUIChangeIconA" ordinal="6"/>
+   <entry name="OleUIBusyA" ordinal="8"/>
+  </export-ordinal-table>
+ </codehawk-binary-analyzer>

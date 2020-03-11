@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="02/08/2015 15:58:59"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="oleaut32" name="SysAllocStringLen">
+   <documentation>
+    <desc>
+      allocates a new string, copies the specified number of characters from
+      the passed string, and appends a null-terminating character.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BSTR SysAllocStringLen(</ll>
+      <ld>_In_ const OLECHAR *strIn,</ld>
+      <ld>_In_ UINT ui</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">copy of the string</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+     <par name="strIn">input string</par>
+     <par name="ui">number of characters to copy. A null character is placed afterwards,
+      allocating a total of ui + 1 characters
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SysAllocStringLen">
+    <returntype>BSTR</returntype>
+    <par loc="stack" name="strIn" rep="hex" io="r" nr="1">
+     <type><ptr>OLECHAR</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="src-string:convert"/>
+     </roles>
+    </par>
+    <par loc="stack" name="ui" io="r" roles="none" nr="2">
+      <type>UINT</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="allocates a new string"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>OLECHAR</type>
+	    <ci>strIn</ci>
+	    <apply><indexsize/><ci>ui</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

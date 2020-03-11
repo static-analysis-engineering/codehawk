@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="OleSetContainedObject.xml" time="2016-07-12 10:47:10.597320"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ole32" name="OleSetContainedObject">
+    <documentation>
+      <desc>
+	Notifies an object that it is embedded in an OLE container,
+	which ensures that reference counting is done correctly for
+	containers that support links to embedded objects
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT OleSetContainedObject(</ll>
+          <ld>_In_ LPUNKNOWN pUnknown</ld>
+          <ld>_In_ BOOL      fContained</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pUnknown">Pointer to the IUnknown interface of the object</par>
+        <par name="fContained">
+	  TRUE if the object is an embedded object; FALSE otherwise
+	</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="OleSetContainedObject">
+      <par loc="stack" name="pUnknown" io="r" nr="1" rep="hex">
+        <type><ptr>UNKNOWN</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="ifp:IUnknown"/>
+	</roles>
+      </par>
+      <par loc="stack" name="fContained" io="r" roles="none" nr="2">
+        <type>BOOL</type>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com"
+		   desc="notifies an object that it is embedded in an OLE container"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

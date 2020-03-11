@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="isupper.xml" time="2016-05-13 15:11:18.642428"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ntdll" name="isupper">
+    <refer-to lib="msvcrt" name="isupper"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

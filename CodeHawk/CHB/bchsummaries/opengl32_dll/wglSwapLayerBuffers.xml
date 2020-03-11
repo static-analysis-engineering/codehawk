@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/06/2015 15:36:24"/>
+  <libfun lib="opengl32" name="wglSwapLayerBuffers">
+   <documentation>
+    <desc>
+      swaps the front and back buffers in the overlay, underlay, and main planes of 
+      the window referenced by a specified device context
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI wglSwapLayerBuffers(</ll>
+      <ld>HDC hdc</ld>
+      <ld>UINT fuPlanes</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">
+       Specifies the device context of a window whose layer plane palette is to be 
+       realized into the physical palette
+     </par>
+     <par name="fuPlanes">
+       Specifies the overlay, underlay, and main planes whose front and back buffers 
+       are to be swapped. The bReserved member of the PIXELFORMATDESCRIPTOR structure 
+       specifies the number of overlay and underlay planes. The fuPlanes parameter is 
+       a bitwise combination of different values
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="wglSwapLayerBuffers">
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="fuPlanes" io="r" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process"
+		  desc="swaps front and back buffer in a device context"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

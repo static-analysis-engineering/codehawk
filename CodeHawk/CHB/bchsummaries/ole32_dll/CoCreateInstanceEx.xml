@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CoCreateInstanceEx.xml" time="2016-06-26 21:49:31.818706"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ole32" name="CoCreateInstanceEx">
+    <documentation>
+      <desc>Creates an instance of a specific class on a specific computer</desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT CoCreateInstanceEx(</ll>
+          <ld>_In_    REFCLSID     rclsid</ld>
+          <ld>_In_    IUnknown     *punkOuter</ld>
+          <ld>_In_    DWORD        dwClsCtx</ld>
+          <ld>_In_    COSERVERINFO *pServerInfo</ld>
+          <ld>_In_    DWORD        dwCount</ld>
+          <ld>_Inout_ MULTI_QI     *pResults</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="rclsid">The CLSID of the object to be created</par>
+        <par name="punkOuter">
+	  If this parameter non-NULL, indicates the instance is being
+	  created as part of an aggregate, and punkOuter is to be used
+	  as the new instance's controlling IUnknown. Aggregation is
+	  currently not supported cross-process or
+	  cross-computer. When instantiating an object out of process,
+	  CLASS_E_NOAGGREGATION will be returned if punkOuter is
+	  non-NULL.
+	</par>
+        <par name="dwClsCtx">A value from the CLSCTX enumeration</par>
+        <par name="pServerInfo">
+	  Information about the computer on which to instantiate the
+	  object. See COSERVERINFO. This parameter can be NULL, in
+	  which case the object is instantiated on the local computer
+	  or at the computer specified in the registry under the
+	  class's RemoteServerName value, according to the
+	  interpretation of the dwClsCtx parameter.
+	</par>
+        <par name="dwCount">
+	  The number of structures in pResults. This value must be greater than 0
+	</par>
+        <par name="pResults">
+	  An array of MULTI_QI structures. Each structure has three
+	  members: the identifier for a requested interface (pIID),
+	  the location to return the interface pointer (pItf) and the
+	  return value of the call to QueryInterface (hr).
+	</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="24" cc="stdcall" name="CoCreateInstanceEx">
+      <par loc="stack" name="rclsid" io="r" nr="1">
+        <type>REFCLSID</type>
+	<roles>
+	  <role rt="ioc:com" rn="clsid"/>
+	</roles>
+      </par>
+      <par loc="stack" name="punkOuter" nr="2" rep="hex">
+        <type>IUnknown</type>
+	<roles>
+	  <role rt="ioc:com" rn="ifp:IUnknown"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwClsCtx" nr="3">
+        <type>DWORD</type>
+	<pre><enum-value name="clsctx_flags"/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="clsctx"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pServerInfo" nr="4" rep="hex">
+        <type><ptr>COSERVERINFO</ptr></type>
+	<roles>
+	  <role rt="ioc:com" rn="server info"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwCount" nr="5">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:buffersize" rn="CoCreateInstanceEx"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pResults" nr="6" re="hex">
+        <type><ptr>MULTI_QI</ptr></type>
+	<roles>
+	  <role rt="ioc:com" rn="ref:multiquery"/>
+	</roles>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com"
+		   desc="creates an instance of a class on a specific computer"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>MULTI_QI</type>
+	      <ci>pResults</ci>
+	      <apply><indexsize/><ci>dwCount</ci></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>MULTI_QI</type>
+	      <ci>pResults</ci>
+	      <apply><indexsize/><ci>dwCount</ci></apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="02/08/2015 15:49:50"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="oleaut32" name="SysAllocString">
+   <documentation>
+    <desc>allocates a new string and copies the passed string into it</desc>
+    <apidoc>
+     <pt>
+      <ll>BSTR SysAllocString(</ll>
+      <ld>_In_opt_ const OLECHAR *psz</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">string</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+     <par name="psz">string to copy</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SysAllocString">
+    <returntype>BSTR</returntype>
+    <par loc="stack" name="psz" rep="hex" io="r" nr="1">
+     <type><ptr>OLECHAR</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="src-string:convert"/>
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops"
+		  desc="copies a string"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/27/2015 21:47:12"/>
+  <libfun lib="ole32" name="CoSetProxyBlanket">
+   <documentation>
+    <desc>
+      Sets the authentication information that will be used to make 
+      calls on the specified proxy. This is a helper function for 
+      IClientSecurity::SetBlanket.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT CoSetProxyBlanket(</ll>
+      <ld>_In_     IUnknown                 *pProxy</ld>
+      <ld>_In_     DWORD                    dwAuthnSvc</ld>
+      <ld>_In_     DWORD                    dwAuthzSvc</ld>
+      <ld>_In_opt_ OLECHAR                  *pServerPrincName</ld>
+      <ld>_In_     DWORD                    dwAuthnLevel</ld>
+      <ld>_In_     DWORD                    dwImpLevel</ld>
+      <ld>_In_opt_ RPC_AUTH_IDENTITY_HANDLE pAuthInfo</ld>
+      <ld>_In_     DWORD                    dwCapabilities</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pProxy">The proxy to be set.</par>
+     <par name="dwAuthnSvc">
+       The authentication service to be used
+     </par>
+     <par name="dwAuthzSvc">
+       The authorization service to be used
+     </par>
+     <par name="pServerPrincName">
+       The server principal name to be used with the authentication service. 
+       If COLE_DEFAULT_PRINCIPAL is specified, DCOM will pick a principal 
+       name using its security blanket negotiation algorithm. If Kerberos
+       is used as the authentication service, this value must not be NULL.
+       It must be the correct principal name of the server or the call will
+       fail.
+       If Schannel is used as the authentication service, this value must
+       be one of the msstd or fullsic forms described in Principal Names, 
+       or NULL if you do not want mutual authentication.
+       Generally, specifying NULL will not reset the server principal name
+       on the proxy; rather, the previous setting will be retained. You 
+       must be careful when using NULL as pServerPrincName when selecting 
+       a different authentication service for the proxy, because there 
+       is no guarantee that the previously set principal name would be 
+       valid for the newly selected authentication service.
+     </par>
+     <par name="dwAuthnLevel">
+       The authentication level to be used
+     </par>
+     <par name="dwImpLevel">
+       The impersonation level to be used
+     </par>
+     <par name="pAuthInfo">
+       A pointer to an RPC_AUTH_IDENTITY_HANDLE value that establishes 
+       the identity of the client. The format of the structure referred
+       to by the handle depends on the provider of the authentication 
+       service.
+       For calls on the same computer, RPC logs on the user with the 
+       supplied credentials and uses the resulting token for the method 
+       call.
+       For NTLMSSP or Kerberos, the structure is a SEC_WINNT_AUTH_IDENTITY 
+       or SEC_WINNT_AUTH_IDENTITY_EX structure. The client can discard 
+       pAuthInfo after calling the API. RPC does not keep a copy of the
+       pAuthInfo pointer, and the client cannot retrieve it later in the
+       CoQueryProxyBlanket method.
+       If this parameter is NULL, DCOM uses the current proxy identity 
+       (which is either the process token or the impersonation token).
+       If the handle refers to a structure, that identity is used.
+       For Schannel, this parameter must be either a pointer to a 
+       CERT_CONTEXT structure that contains the client's X.509 certificate
+       or is NULL if the client wishes to make an anonymous connection to 
+       the server. If a certificate is specified, the caller must not free 
+       it as long as any proxy to the object exists in the current apartment.
+       For Snego, this member is either NULL, points to a 
+       SEC_WINNT_AUTH_IDENTITY structure, or points to a 
+       SEC_WINNT_AUTH_IDENTITY_EX structure. If it is NULL, Snego will pick
+       a list of authentication services based on those available on the 
+       client computer. If it points to a SEC_WINNT_AUTH_IDENTITY_EX 
+       structure, the structure's PackageList member must point to a 
+       string containing a comma-separated list of authentication service
+       names and the PackageListLength member must give the number of bytes
+       in the PackageList string. If PackageList is NULL, all calls using 
+       Snego will fail.
+       If COLE_DEFAULT_AUTHINFO is specified for this parameter, DCOM will
+       pick the authentication information following its normal security
+       blanket negotiation algorithm.
+       CoSetProxyBlanket will fail if pAuthInfo is set and one of the 
+       cloaking flags is set in the dwCapabilities parameter.
+     </par>
+     <par name="dwCapabilities">
+       The capabilities of this proxy
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">E_INVALIDARG</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="CoSetProxyBlanket">
+    <par loc="stack" name="pProxy" nr="1" io="r" rep="hex">
+     <type><ptr>IUnknown</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:com" rn="ifp:IUnknown"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwAuthnSvc" io="r" roles="none" nr="2">
+     <rep type="enum" name="authentication_service_constants"/>
+     <type>DWORD</type>
+     <pre><enum-value name="authentication_service_constants"/></pre>
+    </par>
+    <par loc="stack" name="dwAuthzSvc" io="r" roles="none" nr="3">
+     <rep type="enum" name="authorization_constants"/>
+     <type>DWORD</type>
+     <pre><enum-value name="authorization_constants"/></pre>
+    </par>
+    <par loc="stack" name="pServerPrincName" io="r" rep="hex" nr="4">
+     <type><ptr>OLECHAR</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:com" rn="name:server"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwAuthnLevel" io="r" roles="none" nr="5">
+     <rep type="enum" name="authentication_level_constants"/>
+     <type>DWORD</type>
+     <pre><enum-value name="authentication_level_constants"/></pre>
+    </par>
+    <par loc="stack" name="dwImpLevel" io="r" nr="6">
+     <rep type="enum" name="impersonation_level_constants"/>
+     <type>DWORD</type>
+     <pre><enum-value name="impersonation_level_constants"/></pre>
+     <roles>
+        <role rt="ioc:system" rn="impersonation level"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pAuthInfo" io="r" rep="hex" nr="7">
+     <type><ptr>RPC_AUTH_IDENTITY_HANDLE</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:RPC_AUTH_IDENTITY_HANDLE"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwCapabilities" roles="none" io="r" nr="8">
+     <rep type="enum" name="eole_authentication_capability_constants"/>
+     <type>DWORD</type>
+     <pre>
+       <enum-value name="eole_authentication_capability_constants"
+		   flags="true"/>
+     </pre>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+        <io-action cat="com"
+		   desc="sets authentication information"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

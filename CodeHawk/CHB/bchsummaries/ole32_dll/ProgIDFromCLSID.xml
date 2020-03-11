@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ProgIDFromCLSID.xml" time="2016-07-02 21:48:02.394305"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ole32" name="ProgIDFromCLSID">
+    <documentation>
+      <desc>Retrieves the ProgID for a given CLSID</desc>
+      <remarks>
+	Every OLE object class listed in the Insert Object dialog box
+	must have a programmatic identifier (ProgID), a string that
+	uniquely identifies a given class, stored in the registry. In
+	addition to determining the eligibility for the Insert Object
+	dialog box, the ProgID can be used as an identifier in a macro
+	programming language to identify a class. Finally, the ProgID
+	is also the class name used for an object of an OLE class that
+	is placed in an OLE 1 container.  ProgIDFromCLSID uses entries
+	in the registry to do the conversion. OLE application authors
+	are responsible for ensuring that the registry is configured
+	correctly in the application's setup program.  The ProgID
+	string must be different than the class name of any OLE 1
+	application, including the OLE 1 version of the same
+	application, if there is one. In addition, a ProgID string
+	must not contain more than 39 characters, start with a digit,
+	or, except for a single period, contain any punctuation
+	(including underscores).  The ProgID must never be shown to
+	the user in the user interface. If you need a short
+	displayable string for an object, call
+	IOleObject::GetUserType.  Call the CLSIDFromProgID function to
+	find the CLSID associated with a given ProgID. Be sure to free
+	the returned ProgID when you are finished with it by calling
+	the CoTaskMemFree function.
+      </remarks>
+      <apidoc>
+        <pt>
+          <ll>HRESULT ProgIDFromCLSID(</ll>
+          <ld>_In_  REFCLSID clsid</ld>
+          <ld>_Out_ LPOLESTR *lplpszProgID</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="clsid">
+	  The CLSID for which the ProgID is to be requested
+	</par>
+        <par name="lplpszProgID">
+	  The address of a pointer variable that receives the ProgID
+	  string. The string that represents clsid includes enclosing
+	  braces.
+	</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="ProgIDFromCLSID">
+      <par loc="stack" name="clsid" io="r" nr="1">
+        <type>REFCLSID</type>
+	<roles>
+	  <role rt="ioc:com" rn="clsid"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lplpszProgID" io="w" nr="2" rep="hex">
+        <type><ptr><ptr>OLESTR</ptr></ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:com" rn="infox:progid"/>
+	</roles>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com" desc="retrieves the programmatic identifier of an OLE class"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

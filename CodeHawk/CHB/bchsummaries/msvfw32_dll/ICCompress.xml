@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 13:11:14"/>
+  <libfun lib="msvfw32" name="ICCompress">
+   <documentation>
+    <desc>compresses a single video image</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD ICCompress(</ll>
+      <ld>HIC                hic</ld>
+      <ld>DWORD              dwFlags</ld>
+      <ld>LPBITMAPINFOHEADER lpbiOutput</ld>
+      <ld>LPVOID             lpData</ld>
+      <ld>LPBITMAPINFOHEADER lpbiInput</ld>
+      <ld>LPVOID             lpBits</ld>
+      <ld>LPDWORD            lpckid</ld>
+      <ld>LPDWORD            lpdwFlags</ld>
+      <ld>LONG               lFrameNum</ld>
+      <ld>DWORD              dwFrameSize</ld>
+      <ld>DWORD              dwQuality</ld>
+      <ld>LPBITMAPINFOHEADER lpbiPrev</ld>
+      <ld>LPVOID             lpPrev</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hic">Handle to the compressor to use</par>
+     <par name="dwFlags">Compression flag</par>
+     <par name="lpbiOutput">
+       Pointer to a BITMAPINFOHEADER structure containing the output format
+     </par>
+     <par name="lpData">
+       Pointer to an output buffer large enough to contain a compressed frame
+     </par>
+     <par name="lpbiInput">
+       Pointer to a BITMAPINFOHEADER structure containing the input format
+     </par>
+     <par name="lpBits">Pointer to the input buffer</par>
+     <par name="lpckid">Reserved; do not use</par>
+     <par name="lpdwFlags">
+       Pointer to the return flags used in the AVI index
+     </par>
+     <par name="lFrameNum">Frame number</par>
+     <par name="dwFrameSize">
+       Requested frame size, in bytes. Specify a nonzero value if the compressor 
+       supports a suggested frame size, as indicated by the presence of the 
+       VIDCF_CRUNCH flag returned by the ICGetInfo function. If this flag is not 
+       set or a data rate for the frame is not specified, specify zero for this parameter.
+       A compressor might have to sacrifice image quality or make some other trade-off 
+       to obtain the size goal specified in this parameter
+     </par>
+     <par name="dwQuality">
+       Requested quality value for the frame. Specify a nonzero value if the 
+       compressor supports a suggested quality value, as indicated by the presence 
+       of the VIDCF_QUALITY flag returned by ICGetInfo. Otherwise, specify zero 
+       for this parameter.
+     </par>
+     <par name="lpbiPrev">
+       Pointer to a BITMAPINFOHEADER structure containing the format of the previous frame
+     </par>
+     <par name="lpPrev">
+       Pointer to the uncompressed image of the previous frame. This parameter is not 
+       used for fast temporal compression. Specify NULL for this parameter when 
+       compressing a key frame, if the compressor does not support temporal compression, 
+       or if the compressor does not require an external buffer to store the format
+       and data of the previous image.
+     </par>
+     <return>
+      <rc cond="success">ICERR_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="ICCompress">
+    <par loc="stack" io="r" name="hic" nr="1">
+     <type>HIC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:image compressor" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="lpbiOutput" nr="3" rep="hex">
+     <type><ptr>BITMAPINFOHEADER</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:BITMAPINFOHEADER" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpData" nr="4" rep="hex">
+     <type><ptr>byte</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:compressed data" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpbiInput" nr="5" rep="hex">
+     <type><ptr>BITMAPINFOHEADER</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:BITMAPINFOHEADER" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpBits" nr="6">
+     <type><ptr>byte</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:compression input buffer" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpckid" roles="none" nr="7">
+     <type><ptr>DWORD</ptr></type>
+    </par>
+    <par loc="stack" name="lpdwFlags" io="r" roles="none" nr="8">
+     <type><ptr>DWORD</ptr></type>
+    </par>
+    <par loc="stack" name="lFrameNum" io="r" roles="none" nr="9">
+     <type>LONG</type>
+    </par>
+    <par loc="stack" name="dwFrameSize" io="r" roles="none" nr="10">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="dwQuality" io="r" roles="none" nr="11">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="lpbiPrev" nr="12">
+     <type><ptr>BITMAPINFOHEADER</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:BITMAPINFOHEADER" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpPrev" nr="13">
+     <type><ptr>byte</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:uncompressed image" />
+     </roles>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process"
+		  desc="compresses a video image"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="02/08/2015 16:19:58"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="oleaut32" name="LoadTypeLib">
+   <documentation>
+     <remarks>
+       The function LoadTypeLib loads a type library (usually created with MkTypLib) 
+       that is stored in the specified file. If szFile specifies only a file name 
+       without any path, LoadTypeLib searches for the file and proceeds as follows:
+       If the file is a stand-alone type library implemented by Typelib.dll, the 
+       library is loaded directly.
+       If the file is a DLL or an executable file, it is loaded. By default, the
+       type library is extracted from the first resource of type ITypeLib. To load 
+       a different type of library resource, append an integer index to szFile.
+       If the file is none of the above, the file name is parsed into a moniker 
+       (an object that represents a file-based link source), and then bound to 
+       the moniker. This approach allows LoadTypeLib to be used on foreign type 
+       libraries, including in-memory type libraries. Foreign type libraries 
+       cannot reside in a DLL or an executable file. For more information on 
+       monikers, see the COM Programmer's Reference.
+     </remarks>
+    <desc>loads and registers a type library</desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT LoadTypeLib(</ll>
+      <ld>LPCOLESTR szFile,</ld>
+      <ld>ITypeLib **pptlib</ld>
+      <ll>)</ll>
+     </pt>
+     <return>various HRESULT values
+    </return>
+     <par name="szFile">
+       name of the file from which the method should attempt to load a type library
+    </par>
+     <par name="pptlib">loaded type library</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="LoadTypeLib">
+    <returntype>HRESULT</returntype>
+    <returnbtype tname="HRESULT" ttag="tnamed"/>
+    <par loc="stack" name="szFile" io="r" nr="1">
+     <type>LPCOLESTR</type>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" name="pptlib" io="r" roles="none" nr="2">
+     <type><ptr><ptr>ITypeLib</ptr></ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="loads a type library"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SafeArrayGetLBound.xml" time="2016-08-10 10:16:17.759157"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="oleaut32" name="SafeArrayGetLBound">
+    <documentation>
+      <desc>Gets the lower bound for any dimension of the specified safe array</desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT SafeArrayGetLBound(</ll>
+          <ld>_In_  SAFEARRAY *psa</ld>
+          <ld>_In_  UINT      nDim</ld>
+          <ld>_Out_ LONG      *p1Lbound</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="psa">An array descriptor created by SafeArrayCreate</par>
+        <par name="nDim">The array dimension for which to get the lower bound</par>
+        <par name="p1Lbound">The lower bound</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="SafeArrayGetLBound">
+      <par loc="stack" name="psa" io="r" nr="1" rep="hex">
+        <type><ptr>SAFEARRAY</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="safe array"/>
+	</roles>
+      </par>
+      <par loc="stack" name="nDim" io="r" nr="2">
+        <type>UINT</type>
+	<roles>
+	  <role rt="size:index" rn="safe array dimension"/>
+	</roles>
+      </par>
+      <par loc="stack" name="p1Lbound" io="w" roles="none" nr="3" rep="hex">
+        <type><ptr>LONG</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com"
+		   desc="retrieves a lower bound for a dimension of a safe array"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

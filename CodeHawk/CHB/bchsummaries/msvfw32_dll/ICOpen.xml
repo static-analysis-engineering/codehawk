@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 08:32:56"/>
+  <libfun lib="msvfw32" name="ICOpen">
+   <documentation>
+    <desc>opens a compressor or decompressor</desc>
+    <apidoc>
+     <pt>
+      <ll>HIC ICOpen(</ll>
+      <ld>DWORD fccType</ld>
+      <ld>DWORD fccHandler</ld>
+      <ld>UINT  wMode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="fccType">
+       Four-character code indicating the type of compressor or decompressor to
+       open. For video streams, the value of this parameter is "VIDC".
+     </par>
+     <par name="fccHandler">
+       Preferred handler of the specified type. Typically, the handler type is 
+       stored in the stream header in an AVI file
+     </par>
+     <par name="wMode">
+       Flag defining the use of the compressor or decompressor
+     </par>
+     <return>
+      <rc cond="success">handle to a compressor or decompressor</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="ICOpen">
+    <par loc="stack" name="fccType" io="r" roles="none" nr="1">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="fccHandler" io="r" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="wMode" io="r" roles="none" nr="3">
+     <type>UINT</type>
+     <pre><enum-value name="compressor_use_constants"/></pre>
+    </par>
+    <returntype>HIC</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+        <io-action cat="process" desc="opens an image compressor/decompressor"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

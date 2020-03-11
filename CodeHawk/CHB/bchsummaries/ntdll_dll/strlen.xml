@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="strlen.xml" time="2016-05-13 15:05:44.010735"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399"/>
+  <libfun lib="ntdll" name="strlen">
+    <refer-to lib="msvcrt" name="strlen"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

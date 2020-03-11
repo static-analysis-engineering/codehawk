@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/26/2015 13:31:56"/>
+  <libfun lib="opengl32" name="wglGetCurrentContext">
+   <documentation>
+    <desc>
+      obtains a handle to the current OpenGL rendering context of the calling thread
+    </desc>
+    <apidoc>
+     <pt>HGLRC wglGetCurrentContext (void)</pt>
+     <return>
+       If the calling thread has a current OpenGL rendering context,
+       wglGetCurrentContext returns a handle to that rendering
+       context. Otherwise, the return value is NULL. 
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="wglGetCurrentContext">
+    <returntype>HGLRC</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" desc="obtains an opengl rendering context">
+      <args/>
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

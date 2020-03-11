@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="VariantCopy.xml" time="2016-07-03 15:23:52.271069"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="oleaut32" name="VariantCopy">
+    <documentation>
+      <desc>
+	Frees the destination variant and makes a copy of the source variant.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT VariantCopy(</ll>
+          <ld>_Out_       VARIANTARG *pvargDest</ld>
+          <ld>_In_  const VARIANTARG *pvargSrc</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pvargDest">The destination variant</par>
+        <par name="pvargSrc">The source variant</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="VariantCopy">
+      <par loc="stack" name="pvargDest" io="w" nr="1" rep="hex">
+        <type><ptr>VARIANTARG</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:com" rn="dst:variant"/>
+	  <role rt="ioc:memops" rn="dst-struct:variant"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pvargSrc" io="r" nr="2" rep="hex">
+        <type><ptr>VARIANTARG</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="src:variant"/>
+	  <role rt="ioc:memops" rn="src-struct:variant"/>
+	</roles>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com" desc="copies a variant"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

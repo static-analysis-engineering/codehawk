@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SafeArrayGetUBound.xml" time="2016-08-10 10:21:53.229377"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="oleaut32" name="SafeArrayGetUBound">
+    <documentation>
+      <desc>
+	Gets the upper bound for any dimension of the specified safe array
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT SafeArrayGetUBound(</ll>
+          <ld>_In_  SAFEARRAY *psa</ld>
+          <ld>_In_  UINT      nDim</ld>
+          <ld>_Out_ LONG      *plUbound</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="psa">An array descriptor created by SafeArrayCreate</par>
+        <par name="nDim">The array dimension for which to get the upper bound</par>
+        <par name="plUbound">The upper bound</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="SafeArrayGetUBound">
+      <par loc="stack" name="psa" io="r" nr="1" rep="hex">
+        <type><ptr>SAFEARRAY</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="safe array"/>
+	</roles>
+      </par>
+      <par loc="stack" name="nDim" io="r" nr="2">
+        <type>UINT</type>
+	<roles>
+	  <role rt="size:index" rn="array dimension"/>
+	</roles>
+      </par>
+      <par loc="stack" name="plUbound" io="w" roles="none" nr="3">
+        <type><ptr>LONG</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com"
+		   desc="retrieves a upper bound for a dimension of a safe array"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

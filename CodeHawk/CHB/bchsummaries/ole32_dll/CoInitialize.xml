@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:31:09"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="CoInitialize">
+   <documentation>
+    <desc>
+      Initializes the COM library on the current thread and identifies
+      the concurrency model as single-thread apartment (STA).
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT CoInitialize(</ll>
+      <ld>_In_opt_  LPVOID pvReserved</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pvReserved">This parameter is reserved and must be NULL.
+	</par>
+     <return>
+      <rc cond="success">S_OK or RPC_E_CHANGED_MODE</rc>
+      <rc cond="failure">Otherwise</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CoInitialize">
+     <returntype>HRESULT</returntype>
+     <par loc="stack" name="pvReserved" roles="none" nr="1">
+       <type>LPVOID</type>
+       <pre><null/></pre>
+     </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="com" desc="initializes the COM library"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

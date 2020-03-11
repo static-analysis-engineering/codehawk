@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="02/08/2015 16:25:29"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="oleaut32" name="LoadRegTypeLib">
+   <documentation>
+    <desc>uses registry information to load a type library</desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT LoadRegTypeLib(</ll>
+      <ld>REFGUID rguid,</ld>
+      <ld>WORD wVerMajor,</ld>
+      <ld>WORD wVerMinor,</ld>
+      <ld>LCID lcid,</ld>
+      <ld>ITypeLib **pptlib</ld>
+      <ll>)</ll>
+     </pt>
+     <return>various HRESULT values
+    </return>
+     <par name="rguid">the GUID of the library</par>
+     <par name="wVerMajor">major version of the library</par>
+     <par name="wVerMinor">minor version of the library</par>
+     <par name="lcid">national language code of the library</par>
+     <par name="pptlib">loaded type library</par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="LoadRegTypeLib">
+    <returntype>HRESULT</returntype>
+    <par loc="stack" name="rguid" nr="1">
+     <type>REFGUID</type>
+     <roles>
+       <role rt="ioc:com" rn="refguid"/>
+     </roles>
+    </par>
+    <par loc="stack" name="wVerMajor" io="r" roles="none" nr="2">
+     <type>WORD</type>
+    </par>
+    <par loc="stack" name="wVerMinor" io="r" roles="none" nr="3">
+      <type>WORD</type>
+    </par>
+    <par loc="stack" io="r" name="lcid" nr="4">
+     <type>LCID</type>
+     <roles>
+        <role rt="ioc:system" rn="id:locale"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pptlib" io="r" rep="hex" roles="none" nr="5">
+      <type><ptr><ptr>ITypeLib</ptr></ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="registry"
+                   desc="loads a type library"/>
+     </io-actions>
+     <preconditions/>
+     <postconditions/>
+     <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

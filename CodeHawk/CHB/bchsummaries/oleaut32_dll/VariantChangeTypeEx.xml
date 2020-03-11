@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="VariantChangeTypeEx.xml" time="2016-07-03 15:47:28.945358"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="oleaut32" name="VariantChangeTypeEx">
+    <documentation>
+      <desc>
+	Converts a variant from one type to another, using an LCID
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT VariantChangeTypeEx(</ll>
+          <ld>_Out_       VARIANTARG *pvargDest</ld>
+          <ld>_In_  const VARIANTARG *pvargSrc</ld>
+          <ld>_In_        LCID       lcid</ld>
+          <ld>_In_        USHORT     wFlags</ld>
+          <ld>vt_In_        VARTYPE    </ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pvargDest">
+	  The destination variant. If this is the same as pvarSrc, the
+	  variant will be converted in place
+	</par>
+        <par name="pvargSrc">The variant to convert</par>
+        <par name="lcid">
+	  The locale identifier. The LCID is useful when the type of
+	  the source or destination VARIANTARG is VT_BSTR,
+	  VT_DISPATCH, or VT_DATE.
+	</par>
+        <par name="wFlags">flags</par>
+        <par name="vt">The type to convert to</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="VariantChangeTypeEx">
+      <par loc="stack" name="pvargDest" io="w" nr="1" rep="hex">
+        <type><ptr>VARIANTARG</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:com" rn="dst:variant"/>
+	  <role rt="ioc:memops" rn="dst-struct:variant"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pvargSrc" io="r" nr="2" rep="hex">
+        <type><ptr>VARIANTARG</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="src:variant"/>
+	  <role rt="ioc:memops" rn="src-struct:variant"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lcid" io="r" nr="3">
+        <type>LCID</type>
+	<roles>
+	  <role rt="ioc:system" rn="id:locale"/>
+	</roles>
+      </par>
+      <par loc="stack" name="wFlags" io="r" roles="none" nr="4">
+        <type>USHORT</type>
+      </par>
+      <par loc="stack" name="vt" io="r" roles="none" nr="5">
+        <type>VARTYPE</type>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com" desc="changes the type of a variant"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

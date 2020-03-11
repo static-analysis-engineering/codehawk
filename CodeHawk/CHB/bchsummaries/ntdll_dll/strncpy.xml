@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="strncpy.xml" time="2016-05-13 15:04:36.777112"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ntdll" name="strncpy">
+    <refer-to lib="msvcrt" name="strncpy"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

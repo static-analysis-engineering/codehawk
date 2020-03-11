@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/29/2015 15:30:35"/>
+  <libfun lib="oleaut32" name="SysReAllocStringLen">
+   <documentation>
+    <desc>
+      Creates a new BSTR containing a specified number of characters from 
+      an old BSTR, and frees the old BSTR
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>INT SysReAllocStringLen(</ll>
+      <ld>_Inout_        BSTR         *pbstr</ld>
+      <ld>_In_opt_ const OLECHAR      *psz</ld>
+      <ld>_In_           unsigned int len</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pbstr">The previously allocated string</par>
+     <par name="psz">
+       The string from which to copy len characters, or NULL to keep the string 
+       uninitialized
+     </par>
+     <par name="len">
+       The number of characters to copy. A null character is placed afterward, 
+       allocating a total of len plus one characters
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SysReAllocStringLen">
+    <par loc="stack" name="pbstr" io="rw" rep="hex" nr="1">
+     <type><ptr>BSTR</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="dst-string:copy"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="psz" io="r" rep="hex" nr="2">
+     <type><ptr>OLECHAR</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-string:copy"/>
+     </roles>
+    </par>
+    <par loc="stack" name="len" io="r" roles="none" rep="hex" nr="3">
+      <type>uint</type>
+    </par>
+    <returntype>INT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="creates a new string"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="OleLoadPicture.xml" time="2016-08-10 11:34:37.240667"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="oleaut32" name="OleLoadPicture">
+    <documentation>
+      <desc>
+	Creates a new picture object and initializes it from the contents of a stream
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT OleLoadPicture(</ll>
+          <ld>_In_  LPSTREAM lpstream</ld>
+          <ld>_In_  LONG     lSize</ld>
+          <ld>_In_  BOOL     fRunmode</ld>
+          <ld>_In_  REFIID   riid</ld>
+          <ld>_Out_ LPVOID   *lplpvObj</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpstream">Pointer to the stream that contains the picture's data</par>
+        <par name="lSize">
+	  The number of bytes that should be read from the stream, or
+	  zero if the entire stream should be read.
+	</par>
+        <par name="fRunmode">
+	  The opposite of the initial value of the KeepOriginalFormat
+	  property. If TRUE, KeepOriginalFormat is set to FALSE and
+	  vice-versa.
+	</par>
+        <par name="riid">
+	  Reference to the identifier of the interface describing the
+	  type of interface pointer to return in ppvObj.
+	</par>
+        <par name="lplpvObj">
+	  Address of pointer variable that receives the interface
+	  pointer requested in riid. Upon successful return, *ppvObj
+	  contains the requested interface pointer on the storage of
+	  the object identified by the moniker. If *ppvObj is
+	  non-NULL, this function calls IUnknown::AddRef on the
+	  interface; it is the caller's responsibility to call
+	  IUnknown::Release. If an error occurs, *ppvObj is set to
+	  NULL.
+	</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error codes</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="OleLoadPicture">
+      <par loc="stack" name="lpstream" io="r" nr="1" rep="hex">
+        <type><ptr>STREAM</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="stream"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lSize" io="r"  nr="2">
+        <type>LONG</type>
+	<roles>
+	  <role rt="size:count" rn="items to be read"/>
+	</roles>
+      </par>
+      <par loc="stack" name="fRunmode" io="r" roles="none" nr="3">
+        <type>BOOL</type>
+      </par>
+      <par loc="stack" name="riid" io="r" nr="4">
+        <type>REFIID</type>
+	<roles>
+	  <role rt="ioc:com" rn="refiid"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lplpvObj" io="w" nr="5" rep="hex">
+        <type><ptr>void</ptr></type>
+	<roles>
+	  <role rt="ioc:com" rn="ref:interface pointer"/>
+	</roles>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com"
+		   desc="creates a new picture and initializes it from the contents of a stream"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write-null/>
+	      <type>IUnknown</type>
+	      <ci>lplpvObj</ci>
+	      <cn>4</cn>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

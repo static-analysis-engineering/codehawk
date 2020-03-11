@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/02/2015 23:56:44"/>
+  <libfun lib="ole32" name="IsEqualGUID">
+   <documentation>
+    <desc>Determines whether two GUIDs are equal</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL IsEqualGUID(</ll>
+      <ld>_In_ REFGUID rguid1</ld>
+      <ld>_In_ REFGUID rguid2</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="rguid1">The first GUID</par>
+     <par name="rguid2">The second GUID </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="IsEqualGUID">
+    <par loc="stack" name="rguid1" io="r" nr="1">
+     <type>REFGUID</type>
+     <roles>
+       <role rt="ioc:com" rn="refguid"/>
+     </roles>
+    </par>
+    <par loc="stack" name="rguid2" io="r" nr="2">
+      <roles>
+	<role rt="ioc:com" rn="refguid"/>
+      </roles>
+     <type>REFGUID</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="com" desc="determines whether two guids are equal"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

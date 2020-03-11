@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SafeArrayLock.xml" time="2016-08-10 11:26:39.762704"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="oleaut32" name="SafeArrayLock">
+    <documentation>
+      <desc>
+	Increments the lock count of an array, and places a pointer to
+	the array data in pvData of the array descriptor.
+      </desc>
+      <apidoc>
+        <pt>HRESULT SafeArrayLock (_In_ SAFEARRAY *psa)</pt>
+        <par name="psa">An array descriptor created by SafeArrayCreate</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error codes</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="SafeArrayLock">
+      <par loc="stack" name="psa" io="r" nr="1" rep="hex">
+        <type><ptr>SAFEARRAY</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="safe array"/>
+	</roles>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com" desc="increments the lock count of a safe array"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

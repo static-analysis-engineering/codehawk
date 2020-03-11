@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CoInitializeSecurity.xml" time="2016-07-12 10:52:54.261918"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ole32" name="CoInitializeSecurity">
+    <documentation>
+      <desc>
+	Registers security and sets the default security values for the process
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HRESUL CoInitializeSecurity(</ll>
+          <ld>_In_opt_ PSECURITY_DESCRIPTOR        pSecDesc</ld>
+          <ld>_In_     LONG                        cAuthSvc</ld>
+          <ld>_In_opt_ SOLE_AUTHENTICATION_SERVICE *asAuthSvc</ld>
+          <ld>_In_opt_ void                        *pReserved1</ld>
+          <ld>_In_     DWORD                       dwAuthnLevel</ld>
+          <ld>_In_     DWORD                       dwImpLevel</ld>
+          <ld>_In_opt_ void                        *pAuthList</ld>
+          <ld>_In_     DWORD                       dwCapabilities</ld>
+          <ld>_In_opt_ void                        *pReserved3</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pSecDesc">
+	  The access permissions that a server will use to receive
+	  calls. This parameter is used by COM only when a server
+	  calls CoInitializeSecurity. Its value is a pointer to one of
+	  three types: an AppID, an IAccessControl object, or a
+	  SECURITY_DESCRIPTOR, in absolute format. See the Remarks
+	  section for more information.
+	</par>
+        <par name="cAuthSvc">
+	  The count of entries in the asAuthSvc parameter. This
+	  parameter is used by COM only when a server calls
+	  CoInitializeSecurity. If this parameter is 0, no
+	  authentication services will be registered and the server
+	  cannot receive secure calls. A value of -1 tells COM to
+	  choose which authentication services to register, and if
+	  this is the case, the asAuthSvc parameter must be
+	  NULL. However, Schannel will never be chosen as an
+	  authentication service by the server if this parameter is
+	  -1.
+	</par>
+        <par name="asAuthSvc">
+	  An array of authentication services that a server is willing
+	  to use to receive a call. This parameter is used by COM only
+	  when a server calls CoInitializeSecurity. For more
+	  information, see SOLE_AUTHENTICATION_SERVICE.
+	</par>
+        <par name="pReserved1">This parameter is reserved and must be NULL.</par>
+        <par name="dwAuthnLevel">
+	  The default authentication level for the process. Both
+	  servers and clients use this parameter when they call
+	  CoInitializeSecurity. COM will fail calls that arrive with a
+	  lower authentication level. By default, all proxies will use
+	  at least this authentication level. This value should
+	  contain one of the authentication level constants. By
+	  default, all calls to IUnknown are made at this level.
+	</par>
+        <par name="dwImpLevel">
+	  The default impersonation level for proxies. The value of
+	  this parameter is used only when the process is a client. It
+	  should be a value from the impersonation level constants,
+	  except for RPC_C_IMP_LEVEL_DEFAULT, which is not for use
+	  with CoInitializeSecurity.  Outgoing calls from the client
+	  always use the impersonation level as specified. (It is not
+	  negotiated.) Incoming calls to the client can be at any
+	  impersonation level. By default, all IUnknown calls are made
+	  with this impersonation level, so even security-aware
+	  applications should set this level carefully. To determine
+	  which impersonation levels each authentication service
+	  supports, see the description of the authentication services
+	  in COM and Security Packages. For more information about
+	  impersonation levels, see Impersonation.
+	</par>
+        <par name="pAuthList">
+	  A pointer to SOLE_AUTHENTICATION_LIST, which is an array of
+	  SOLE_AUTHENTICATION_INFO structures. This list indicates the
+	  information for each authentication service that a client
+	  can use to call a server. This parameter is used by COM only
+	  when a client calls CoInitializeSecurity.
+	</par>
+        <par name="dwCapabilities">
+	  Additional capabilities of the client or server, specified
+	  by setting one or more SOLE_AUTHENTICATION_CAPABILITIES
+	  values. Some of these value cannot be used simultaneously,
+	  and some cannot be set when particular authentication
+	  services are being used. For more information about these
+	  flags, see the Remarks section.
+	</par>
+        <par name="pReserved3">This parameter is reserved and must be NULL</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="36" cc="stdcall" name="CoInitializeSecurity">
+      <par loc="stack" name="pSecDesc" io="r" nr="1" rep="hex">
+        <type><ptr>SECURITY_DESCRIPTOR</ptr></type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-struct:SECURITY_DESCRIPTOR"/>
+	</roles>
+      </par>
+      <par loc="stack" name="cAuthSvc" io="r" nr="2">
+        <type>LONG</type>
+	<roles>
+	  <role rt="size:buffersize" rn="CoInitializeSecurity"/>
+	</roles>
+      </par>
+      <par loc="stack" name="asAuthSvc" io="r" rep="hex" nr="3">
+        <type><ptr>SOLE_AUTHENTICATION_SERVICE</ptr></type>
+        <roles>
+           <role rt="ioc:memops" rn="src-struct:SOLE_AUTHENTICATION_SERVICES"/>
+        </roles>
+      </par>
+      <par loc="stack" name="pReserved1" io="r" roles="none" nr="4">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="stack" name="dwAuthnLevel" io="r" roles="none" nr="5">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="dwImpLevel" io="r" nr="6">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:system" rn="impersonation level"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pAuthList" io="r" rep="hex" nr="7">
+        <type><ptr>void</ptr></type>
+        <roles>
+           <role rt="ioc:memops" rn="src-struct:SOLE_AUTHENTICATION_LIST"/>
+        </roles>
+      </par>
+      <par loc="stack" name="dwCapabilities" io="r" rep="hex" nr="8">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:memops" rn="SOLE_AUTHENTICATION_CAPABILITIES"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pReserved3" io="r" roles="none" nr="9">
+        <type><ptr>void</ptr></type>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com"
+		   desc="registers security and sets the default security values"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

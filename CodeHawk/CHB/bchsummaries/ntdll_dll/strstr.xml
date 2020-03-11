@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="strstr.xml" time="2016-05-13 15:02:28.072955"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ntdll" name="strstr">
+    <refer-to lib="msvcrt" name="strstr"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

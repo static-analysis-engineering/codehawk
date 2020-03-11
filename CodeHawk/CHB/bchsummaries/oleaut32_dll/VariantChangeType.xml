@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="02/08/2015 16:13:59"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="oleaut32" name="VariantChangeType">
+   <documentation>
+    <desc>converts a variant from one type to another</desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT VariantChangeType(</ll>
+      <ld>_Out_ VARIANTARG *pvargDest,</ld>
+      <ld>_In_ const VARIANTARG *pvarSrc,</ld>
+      <ld>_In_ USHORT wFlags,</ld>
+      <ld>_In_ VARTYPE vt</ld>
+      <ll>)</ll>
+     </pt>
+     <return>various HRESULT values
+    </return>
+     <par name="pvargDest">
+       destination variant. If this is the same as pvarSrc, the variant will be
+       converted in place
+    </par>
+     <par name="pvarSrc">variant to convert</par>
+     <par name="wFlags">flags</par>
+     <par name="vt">type to convert to</par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="VariantChangeType">
+    <returntype>HRESULT</returntype>
+    <par loc="stack" name="pvargDest" io="w" nr="1" rep="hex">
+      <type><ptr>VARIANTARG</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:com" rn="dst:variant"/>
+	<role rt="ioc:memops" rn="dst-struct:variant"/>
+      </roles>
+    </par>
+    <par loc="stack" name="pvarSrc" io="r" nr="2" rep="hex">
+      <type><ptr>VARIANTARG</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:com" rn="src:variant"/>
+	<role rt="ioc:memops" rn="src-struct:variant"/>
+      </roles>
+    </par>
+    <par loc="stack" name="wFlags" io="r" roles="none" nr="3">
+      <type>USHORT</type>
+    </par>
+    <par loc="stack" name="vt" io="r" roles="none" nr="4">
+      <type>VARTYPE</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="changes the type of variant"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

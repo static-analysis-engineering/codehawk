@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/22/2015 18:56:21"/>
+  <libfun lib="ole32" name="PropVariantClear">
+   <documentation>
+    <desc>
+      frees all elements that can be freed in a given PROPVARIANT structure. 
+      For complex elements with known element pointers, the underlying elements
+      are freed prior to freeing the containing element
+    </desc>
+    <apidoc>
+     <pt>WINOLEAPI PropVariantClear (_In_  PROPVARIANT *pvar)</pt>
+     <par name="pvar">
+       A pointer to an initialized PROPVARIANT structure for which any 
+       deallocatable elements are to be freed. On return, all zeroes are 
+       written to the PROPVARIANT structure
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">STG_E_INVALID_PARAMETER</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="PropVariantClear">
+    <par loc="stack" name="pvar" io="r" roles="none" nr="1">
+     <type><ptr>PROPVARIANT</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="src-struct:PROPVARIANT"/>
+     </roles>
+    </par>
+    <returntype>WINOLEAPI</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="com" desc="frees the elements from a PROPVARIANT structure"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

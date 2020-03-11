@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/05/2015 18:03:55"/>
+  <libfun lib="ole32" name="OleFlushClipboard">
+   <documentation>
+    <desc>
+      Carries out the clipboard shutdown sequence. It also releases the IDataObject
+      pointer that was placed on the clipboard by the OleSetClipboard function
+    </desc>
+    <apidoc>
+     <pt>HRESULT OleFlushClipboard (void)</pt>
+     <return>
+      <rc cond="success">S-OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="OleFlushClipboard">
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+    <external-effects>
+      <xeffect xtgt="clipboard" xaction="flush"/>
+    </external-effects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

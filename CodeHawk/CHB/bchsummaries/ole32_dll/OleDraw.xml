@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="OleDraw.xml" time="2016-07-03 10:58:23.266802"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ole32" name="OleDraw">
+    <documentation>
+      <desc>
+	Enables drawing objects more easily. You can use it instead of
+	calling IViewObject::Draw directly
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT OleDraw(</ll>
+          <ld>_In_ LPUNKNOWN pUnknown</ld>
+          <ld>_In_ DWORD     dwAspect</ld>
+          <ld>_In_ HDC       hdcDraw</ld>
+          <ld>_In_ LPCRECT   lprcBounds</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pUnknown">
+	  Pointer to the IUnknown interface on the view object that is to be drawn
+	</par>
+        <par name="dwAspect">
+	  How the object is to be represented. Representations include
+	  content, an icon, a thumbnail, or a printed
+	  document. Possible values are taken from the DVASPECT
+	  enumeration.
+	</par>
+        <par name="hdcDraw">
+	  Device context on which to draw. Cannot be a metafile device context
+	</par>
+        <par name="lprcBounds">
+	  Pointer to a RECT structure specifying the rectangle in
+	  which the object should be drawn. This parameter is
+	  converted to a RECTL structure and passed to
+	  IViewObject::Draw.
+	</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="16" cc="stdcall" name="OleDraw">
+      <par loc="stack" name="pUnknown" io="r" nr="1" rep="hex">
+        <type><ptr>UNKNOWN</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="ifp:IUnknown"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwAspect" io="r" roles="none" nr="2">
+	<rep type="enum" name="dvaspect_enumeration_constants"/>
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="hdcDraw" io="r" nr="3">
+        <type>HDC</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:device context"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lprcBounds" io="r" nr="4" rep="hex">
+        <type><ptr>RECT</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-struct:RECT"/>
+	</roles>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com" desc="enables drawing objects via shortcut"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

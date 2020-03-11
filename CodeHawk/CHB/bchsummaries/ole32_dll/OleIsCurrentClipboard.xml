@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/05/2015 17:53:04"/>
+  <libfun lib="ole32" name="OleIsCurrentClipboard">
+   <documentation>
+    <desc>
+      Determines whether the data object pointer previously placed on the 
+      clipboard by the OleSetClipboard function is still on the clipboard
+    </desc>
+    <apidoc>
+     <pt>HRESULT OleIsCurrentClipboard (_In_ LPDATAOBJECT pDataObj)</pt>
+     <par name="pDataObj">
+       Pointer to the IDataObject interface on the data object containing clipboard 
+       data of interest, which the caller previously placed on the clipboard.
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">S_FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="OleIsCurrentClipboard">
+    <par loc="stack" name="pDataObj" io="r" rep="hex" nr="1">
+     <type><ptr>IDataObject</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:com" rn="ifp:IDataObject"/>
+     </roles>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="com" desc="determines whether an object is still on the clipboard"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

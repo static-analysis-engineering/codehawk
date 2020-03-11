@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 05:23:47"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="CreateStreamOnHGlobal">
+   <documentation>
+    <desc>
+      The CreateStreamOnHGlobalfunction creates a stream object that uses an
+      HGLOBAL memory handle to store the stream contents. This object is the 
+      OLE-provided implementation of the IStream interface.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT WINOLEAPI CreateStreamOnHGlobal(</ll>
+      <ld>_In_   HGLOBAL hGlobal</ld>
+      <ld>_In_   BOOL fDeleteOnRelease</ld>
+      <ld>_Out_  LPSTREAM *ppstm</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">E_INVALIDARG, E_OUTOFMEMORY</rc>
+     </return>
+     <par name="hGlobal">
+       A memory handle allocated by the GlobalAlloc function, or if NULL a new 
+       handle is to be allocated instead. The handle must be allocated as
+       moveable and nondiscardable.
+     </par>
+     <par name="fDeleteOnRelease">
+       A value that indicates whether the underlying handle for this stream 
+       object should be automatically freed when the stream object is released. 
+       If set to FALSE, the caller must free the hGlobal after the final release. 
+       If set to TRUE, the final release will automatically free the hGlobal parameter.
+     </par>
+     <par name="ppstm">
+       The address of IStream* pointer variable that receives the interface 
+       pointer to the new stream object. Its value cannot be NULL.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CreateStreamOnHGlobal">
+    <returntype>WINOLEAPI</returntype>
+    <par loc="stack" name="hGlobal" nr="1">
+     <type>HGLOBAL</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="handle:global memory"/>
+     </roles>
+    </par>
+    <par loc="stack" name="fDeleteOnRelease" roles="none" nr="2">
+      <type>BOOL</type>
+    </par>
+    <par loc="stack" name="ppstm" io="w" nr="3">
+      <type><ptr><ptr>IStream</ptr></ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:com" rn="ifp:IStream"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="com" 
+		  desc="creates a stream object on a global memory handle"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

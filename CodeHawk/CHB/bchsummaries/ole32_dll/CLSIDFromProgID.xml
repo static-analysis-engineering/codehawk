@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 05:18:16"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="CLSIDFromProgID">
+   <documentation>
+    <desc>Looks up a CLSID in the registry, given a ProgID.</desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT CLSIDFromProgID(</ll>
+      <ld>_In_   LPCOLESTR lpszProgID</ld>
+      <ld>_Out_  LPCLSID lpclsid</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="lpszProgID">A pointer to the ProgID whose CLSID is requested.</par>
+     <par name="lpclsid">Receives a pointer to the retrieved CLSID on return.</par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CLSIDFromProgID">
+    <returntype>HRESULT</returntype>
+    <par loc="stack" name="lpszProgID" io="r" rep="hex" nr="1">
+     <type>LPCOLESTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-string:convert"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpclsid" io="w" rep="hex" nr="2">
+     <type>LPCLSID</type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:com" rn="ref:clsid"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="registry"
+                  desc="looks up a class id in the registry"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

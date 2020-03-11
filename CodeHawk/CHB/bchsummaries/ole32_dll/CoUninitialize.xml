@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:31:09"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="CoUninitialize">
+   <documentation>
+    <desc>
+      Closes the COM library on the current thread, unloads all DLLs
+      loaded by the thread, frees any other resources that the thread
+      maintains, and forces all RPC connections on the thread to
+      close.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>void CoUninitialize(void)</ll>
+     </pt>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="CoUninitialize">
+     <returntype>void</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="com" desc="closes the COM library"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

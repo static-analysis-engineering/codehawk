@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SystemTimeToVariantTime.xml" time="2016-08-10 15:43:26.971185"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="oleaut32" name="SystemTimeToVariantTime">
+    <documentation>
+      <desc>Converts a system time to a variant representation</desc>
+      <apidoc>
+        <pt>
+          <ll>INT SystemTimeToVariantTime(</ll>
+          <ld>_In_  LPSYSTEMTIME lpSystemTime</ld>
+          <ld>_Out_ DOUBLE       *pvtime</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpSystemTime">The system time</par>
+        <par name="pvtime">The variant time</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="SystemTimeToVariantTime">
+      <par loc="stack" name="lpSystemTime" io="r" nr="1" rep="hex">
+        <type><ptr>SYSTEMTIME</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-struct:SYSTEMTIME"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pvtime" io="w" roles="none" nr="2" rep="hex">
+        <type><ptr>DOUBLE</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>INT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com"
+		   desc="converts a system time to a variant representation"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

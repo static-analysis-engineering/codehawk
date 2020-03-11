@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/03/2015 16:22:15"/>
+  <libfun lib="oleaut32" name="VarUI4FromStr">
+   <documentation>
+    <desc>
+      Converts an OLECHAR string to an unsigned long value
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT VarUI4FromStr(</ll>
+      <ld>_In_   LPCOLESTR strIn</ld>
+      <ld>_In_   LCID lcid</ld>
+      <ld>_In_   ULONG dwFlags</ld>
+      <ld>_Out_  ULONG *pulOut</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="strIn">The value to convert</par>
+     <par name="lcid">The locale identifier</par>
+     <par name="dwFlags">One or more flags </par>
+     <par name="pulOut">The resulting value</par>
+     <return>HRESULT</return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="VarUI4FromStr">
+    <par loc="stack" name="strIn" io="r" rep="hex" nr="1">
+     <type>LPCOLESTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-string:convert"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lcid" io="r" nr="2">
+     <type>LCID</type>
+     <roles>
+        <role rt="ioc:system" rn="id:locale"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none"  nr="3">
+     <type>ULONG</type>
+    </par>
+    <par loc="stack" name="pulOut" io="w" rep="hex" roles="none" nr="4">
+     <type><ptr>ULONG</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="converts a string to a long"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

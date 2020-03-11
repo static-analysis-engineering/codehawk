@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="IsAccelerator.xml" time="2016-07-03 11:06:41.242774"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ole32" name="IsAccelerator">
+    <documentation>
+      <desc>
+	Determines whether the specified keystroke maps to an
+	accelerator in the specified accelerator table
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL IsAccelerator(</ll>
+          <ld>_In_  HACCEL hAccel</ld>
+          <ld>_In_  int    cAccelEntries</ld>
+          <ld>_In_  LPMSG  lpMsg</ld>
+          <ld>_Out_ WORD   *lpwCmd</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hAccel">A handle to the accelerator table</par>
+        <par name="cAccelEntries">
+	  The number of entries in the accelerator table
+	</par>
+        <par name="lpMsg">
+	  A pointer to the keystroke message to be translated
+	</par>
+        <par name="lpwCmd">
+	  A pointer to a variable to receive the corresponding command
+	  identifier if there is an accelerator for the
+	  keystroke. This parameter may be NULL.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="16" cc="stdcall" name="IsAccelerator">
+      <par loc="stack" name="hAccel" io="r" nr="1">
+        <type>HACCEL</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:accelerator table"/>
+	</roles>
+      </par>
+      <par loc="stack" name="cAccelEntries" io="r" nr="2">
+        <type>int</type>
+	<roles>
+	  <role rt="size:count" rn="IsAccelerator"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpMsg" io="r" nr="3" rep="hex">
+        <type><ptr>MSG</ptr></type>
+	<roles>
+	  <role rt="ioc:process" rn="keystroke message"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpwCmd" io="w" nr="4" rep="hex">
+        <type><ptr>WORD</ptr></type>
+	<pre><deref-write-null/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:com" rn="infox:accelerator command"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com" desc="determines if a keystroke maps to an accelerator"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

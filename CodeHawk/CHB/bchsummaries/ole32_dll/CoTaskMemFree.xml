@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 05:22:30"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="CoTaskMemFree">
+   <documentation>
+    <desc>
+      Frees a block of task memory previously allocated through a call to the 
+      CoTaskMemAlloc or CoTaskMemRealloc function.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>void CoTaskMemFree(</ll>
+      <ld>_In_opt_  LPVOID pv</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="pv">
+       A pointer to the memory block to be freed. If this parameter is NULL, 
+       the function has no effect.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="CoTaskMemFree">
+     <returntype>VOID</returntype>
+     <par loc="stack" name="pv" io="r" nr="1" rep="hex">
+       <type><ptr>VOID</ptr></type>
+       <pre><allocation-base/><deref-read-null/></pre>
+       <sideeffects><invalidates/></sideeffects>
+       <roles>
+	 <role rt="ioc:memops" rn="address:memory block"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="frees a block of task memory"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

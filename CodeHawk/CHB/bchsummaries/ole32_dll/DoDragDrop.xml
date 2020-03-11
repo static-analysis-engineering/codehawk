@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 05:24:16"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="DoDragDrop">
+   <documentation>
+    <desc>Carries out an OLE drag and drop operation. </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT DoDragDrop(</ll>
+      <ld>_In_   LPDATAOBJECT pDataObj</ld>
+      <ld>_In_   LPDROPSOURCE pDropSource</ld>
+      <ld>_In_   DWORD dwOKEffects</ld>
+      <ld>_Out_  LPDWORD pdwEffect</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">DRAGDROP_S_DROP, DRAGDROP_S_CANCEL, E_UNSPEC</rc>
+     </return>
+     <par name="pDataObj">
+       Pointer to the IDataObject interface on a data object that contains the 
+       data being dragged.
+     </par>
+     <par name="pDropSource">
+       Pointer to an implementation of the IDropSource interface, which is 
+       used to communicate with the source during the drag operation.
+     </par>
+     <par name="dwOKEffects">
+       Effects the source allows in the OLE drag-and-drop operation. Most 
+       significant is whether it permits a move. The dwOKEffect and pdwEffect 
+       parameters obtain values from the DROPEFFECT enumeration.
+     </par>
+     <par name="pdwEffect">
+       Pointer to a value that indicates how the OLE drag-and-drop operation 
+       affected the source data. The pdwEffect parameter is set only if the 
+       operation is not canceled.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="DoDragDrop">
+    <returnbtype tname="HRESULT" ttag="tnamed"/>
+    <par loc="stack" name="pDataObj" io="r" rep="hex" nr="1">
+      <type><ptr>DATAOBJECT</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+         <role rt="ioc:com" rn="ifp:IDataObject"/>
+      </roles>
+    </par>
+    <par loc="stack" name="pDropSource" io="r" rep="hex" nr="2">
+      <type><ptr>DROPSOURCE</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:com" rn="ifp:IDropSource"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwOKEffects" io="r" roles="none" nr="3">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" name="pdwEffect" io="w" roles="none" nr="4">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+        <io-action cat="com"
+		   desc="carries out an OLE drag and drop operation"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

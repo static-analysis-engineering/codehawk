@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 05:20:36"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="CoGetClassObject">
+   <documentation>
+    <desc>
+      Provides a pointer to an interface on a class object associated with a 
+      specified CLSID. CoGetClassObject locates, and if necessary, dynamically 
+      loads the executable code required to do this. 
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT CoGetClassObject(</ll>
+      <ld>_In_      REFCLSID rclsid</ld>
+      <ld>_In_      DWORD dwClsContext</ld>
+      <ld>_In_opt_  COSERVERINFO *pServerInfo</ld>
+      <ld>_In_      REFIID riid</ld>
+      <ld>_Out_     LPVOID *ppv</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">Error Code</rc>
+     </return>
+     <par name="rclsid">
+       The CLSID associated with the data and code that you will use
+       to create the objects.
+     </par>
+     <par name="dwClsContext">
+       The context in which the executable code is to be run. To
+       enable a remote activation, include CLSCTX_REMOTE_SERVER.
+     </par>
+     <par name="pServerInfo">
+       A pointer to computer on which to instantiate the class
+       object. If this parameter is NULL, the class object is
+       instantiated on the current computer or at the computer
+       specified under the class&apos;s RemoteServerName key,
+       according to the interpretation of the dwClsCtx parameter.
+     </par>
+     <par name="riid">
+       Reference to the identifier of the interface, which will be
+       supplied in ppv on successful return. This interface will be
+       used to communicate with the class object.
+     </par>
+     <par name="ppv">
+       The address of pointer variable that receives the interface
+       pointer requested in riid. Upon successful return, *ppv
+       contains the requested interface pointer.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="CoGetClassObject">
+    <returntype>HRESULT</returntype>
+    <par loc="stack" io="r" name="rclsid" nr="1" rep="hex">
+      <type>REFCLSID</type>
+      <roles>
+        <role rt="ioc:com" rn="clsid"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwClsContext" nr="2">
+      <rep type="enum" name="clsctx_enumaration_constants"/>
+      <type>DWORD</type>
+      <roles>
+        <role rt="ioc:com" rn="clsctx"/>
+     </roles>
+     <pre><enum-value name="clsctx_enumeration_constants"/></pre>
+    </par>
+    <par loc="stack" io="r" name="pServerInfo" nr="3" rep="hex">
+      <type><ptr>COSERVERINFO</ptr></type>
+      <roles>
+        <role rt="ioc:com" rn="server info"/>
+        <role rt="ioc:network" rn="com server"/>
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="riid" nr="4" rep="hex">
+      <type>REFIID</type>
+      <roles>
+        <role rt="ioc:com" rn="refiid"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="ppv" nr="5" rep="hex">
+      <type><ptr><ptr>void</ptr></ptr></type>
+     <roles>
+        <role rt="ioc:com" rn="ref:interface pointer"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="com" desc="retrieves a pointer to an interface on a class object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

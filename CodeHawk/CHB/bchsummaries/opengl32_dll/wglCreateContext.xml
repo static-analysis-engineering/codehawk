@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/26/2015 10:45:08"/>
+  <libfun lib="opengl32" name="wglCreateContext">
+   <documentation>
+    <desc>
+      creates a new OpenGL rendering context, which is suitable for
+      drawing on the device referenced by hdc. The rendering context
+      has the same pixel format as the device context.
+    </desc>
+    <apidoc>
+     <pt>HGLRC wglCreateContext (HDC hdc)</pt>
+     <par name="hdc">
+       Handle to a device context for which the function creates a
+       suitable OpenGL rendering context.
+     </par>
+     <return>
+      <rc cond="success">a valid handle to an OpenGL rendering context</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="wglCreateContext">
+    <par loc="stack" desc="device context handle" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:system" rn="device context"/>
+     </roles>
+    </par>
+    <returntype>HGLRC</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="creates an opengl rendering context"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

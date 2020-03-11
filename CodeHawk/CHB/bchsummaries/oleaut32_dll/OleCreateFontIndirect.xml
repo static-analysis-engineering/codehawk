@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="02/04/2015 17:32:47"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="oleaut32" name="OleCreateFontIndirect">
+   <documentation>
+    <desc>Creates and initializes a standard font object using an initial description 
+     of the font&apos;s properties in a FONTDESC structure. The function returns an 
+     interface pointer to the new font object specified by caller in the riid
+     parameter. A QueryInterface call is part of this call. The caller is responsible 
+     for calling Release through the interface pointer returned.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT OleCreateFontIndirect(</ll>
+      <ld>_In_ LPFONTDESC lpFontDesc,</ld>
+      <ld>_In_ REFIID riid riid,</ld>
+      <ld>_Out_ LPVOID *lplpvObj</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">other values</rc>
+     </return>
+     <par name="lpFontDesc">
+       Address of a caller-allocated, FONTDESC structure containing the initial state 
+       of the font. This value must not be NULL.
+    </par>
+     <par name="riid">
+       Reference to the identifier of the interface describing the type of interface 
+       pointer to return in lplpvObj.
+    </par>
+     <par name="lppvObj">
+       Address of pointer variable that receives the interface pointer requested in 
+       riid. Upon successful return, this parameter contains the requested interface
+       pointer on the newly created font object. If successful, the caller is responsible
+       to call Release through this interface pointer when the new object is no longer 
+       needed. If unsuccessful, the value of is set to NULL.
+    </par>
+    <return>HRESULT codes</return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OleCreateFontIndirect">
+    <returntype>HRESULT</returntype>
+    <par loc="stack" name="lpFontDesc" io="r" rep="hex" nr="1">
+      <type><ptr>FONTDESC</ptr></type>
+      <roles>
+         <role rt="ioc:memops" rn="src-struct:FONTDESC"/>
+      </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="riid" nr="2">
+      <type>REFIID</type>
+      <roles>
+         <role rt="ioc:com" rn="refiid"/>
+      </roles>
+    </par>
+    <par loc="stack" io="w" name="lppvObj" rep="hex" nr="3">
+      <type><ptr><ptr>VOID</ptr></ptr></type>
+      <roles>
+         <role rt="ioc:com" rn="ref:interface pointer"/>
+      </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="creates and initializes a standard font object"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

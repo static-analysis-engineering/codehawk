@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 17:13:57"/>
+  <libfun lib="ole32" name="StringFromIID">
+   <documentation>
+    <desc>Converts an interface identifier into a string of printable characters</desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT StringFromIID(</ll>
+      <ld>_In_  REFIID   rclsid</ld>
+      <ld>_Out_ LPOLESTR *lplpsz</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="rclsid">The interface identifier to be converted</par>
+     <par name="lplpsz">
+       The address of a pointer variable that receives a pointer to the 
+       resulting string. The string that represents rclsid includes 
+       enclosing braces.
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="StringFromIID">
+    <par loc="stack" name="rclsid" io="r" nr="1">
+     <type>REFIID</type>
+     <roles>
+       <role rt="ioc:com" rn="refiid"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lplpsz" io="w" nr="2">
+     <type><ptr>OLESTR</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:com" rn="infox:iid"/>
+     </roles>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" 
+		desc="converts and interface id into a string of printable characters"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

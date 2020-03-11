@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="05/03/2015 13:16:38"/>
+  <libfun lib="ole32" name="CoGetMalloc">
+   <documentation>
+    <desc>
+      Retrieves a pointer to the default OLE task memory allocator (which 
+      supports the system implementation of the IMalloc interface) so 
+      applications can call its methods to manage memory.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT CoGetMalloc(</ll>
+      <ld>_In_  DWORD    dwMemContext</ld>
+      <ld>_Out_ LPMALLOC *ppMalloc</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwMemContext">This parameter must be 1.</par>
+     <par name="ppMalloc">
+       The address of an IMalloc* pointer variable that receives the interface 
+       pointer to the memory allocator.
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">E_INVALIDARG, and E_OUTOFMEMORY</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CoGetMalloc">
+    <par loc="stack" name="dwMemContext" io="r" roles="none" nr="1">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="ppMalloc" io="w" rep="hex" nr="2">
+     <type><ptr>LPMALLOC</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:com" rn="ref:interface pointer"/>
+     </roles>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="com"
+                  desc="retrieves a pointer to a task memory allocator"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

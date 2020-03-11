@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header info="export-ordinal-table" name="OLEAUT32.dll" time="10/02/2015 22:51:00"/>
+  <export-ordinal-table size="17">
+   <entry name="SysAllocString" ordinal="2"/>
+   <entry name="SysAllocStringLen" ordinal="4"/>
+   <entry name="SysFreeString" ordinal="6"/>
+   <entry name="SysStringLen" ordinal="7"/>
+   <entry name="VariantInit" ordinal="8"/>
+   <entry name="VariantClear" ordinal="9"/>
+   <entry name="VariantCopy" ordinal="10"/>
+   <entry name="VariantChangeType" ordinal="12"/>
+   <entry name="SafeArrayCreate" ordinal="15"/>
+   <entry name="SafeArrayDestroy" ordinal="16"/>
+   <entry name="SafeArrayGetUBound" ordinal="19"/>
+   <entry name="SafeArrayGetLBound" ordinal="20"/>
+   <entry name="SafeArrayLock" ordinal="21"/>
+   <entry name="SafeArrayUnlock" ordinal="22"/>
+   <entry name="SafeArrayAccessData" ordinal="23"/>
+   <entry name="SafeArrayUnaccessData" ordinal="24"/>
+   <entry name="SafeArrayCopy" ordinal="27"/>
+   <entry name="GetActiveObject" ordinal="35"/>
+   <entry name="SafeArrayAllocData" ordinal="37"/>
+   <entry name="SafeArrayDestroyDescriptor" ordinal="38"/>
+   <entry name="SafeArrayDestroyData" ordinal="39"/>
+   <entry name="SafeArrayRedim" ordinal="40"/>
+   <entry name="SafeArrayAllocDescriptorEx" ordinal="41"/>
+   <entry name="SafeArrayGetVartype" ordinal="77"/>
+   <entry name="VarDateFromStr" ordinal="94"/>
+   <entry name="DispCallFunc" ordinal="146"/>
+   <entry name="SysStringByteLen" ordinal="149"/>
+   <entry name="SysAllocStringByteLen" ordinal="150"/>
+   <entry name="LoadTypeLib" ordinal="161"/>
+   <entry name="LoadRegTypeLib" ordinal="162"/>
+   <entry name="RegisterTypeLib" ordinal="163"/>
+   <entry name="SystemTimeToVariantTime" ordinal="184"/>
+   <entry name="VariantTimeToSystemTime" ordinal="185"/>
+   <entry name="UnregisterTypeLib" ordinal="186"/>
+   <entry name="GetErrorInfo" ordinal="200"/>
+   <entry name="VarR4FromDec" ordinal="216"/>
+   <entry name="VarUI4FromStr" ordinal="277"/>
+   <entry name="VarUdataFromDate" ordinal="331"/>
+   <entry name="OleCreatePropertyFrame" ordinal="417"/>
+   <entry name="OleLoadPicture" ordinal="418"/>
+   <entry name="OleCreateFontIndirect" ordinal="420"/>
+  </export-ordinal-table>
+ </codehawk-binary-analyzer>

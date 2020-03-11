@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/26/2015 23:47:40"/>
+  <libfun lib="mswsock" name="TransmitFile">
+   <documentation>
+    <desc>
+      transmits file data over a connected socket handle. This function uses
+      the operating system's cache manager to retrieve the file data, and
+      provides high-performance file data transfer over sockets.
+      Note  This function is a Microsoft-specific extension to the Windows 
+      Sockets specification.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL PASCAL TransmitFile(</ll>
+      <ld>SOCKET                  hSocket</ld>
+      <ld>HANDLE                  hFile</ld>
+      <ld>DWORD                   nNumberOfBytesToWrite</ld>
+      <ld>DWORD                   nNumberOfBytesPerSend</ld>
+      <ld>LPOVERLAPPED            lpOverlapped</ld>
+      <ld>LPTRANSMIT_FILE_BUFFERS lpTransmitBuffers</ld>
+      <ld>DWORD                   dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hSocket">
+       A handle to a connected socket. The TransmitFile function will transmit
+       the file data over this socket. The socket specified by the hSocket 
+       parameter must be a connection-oriented socket of type SOCK_STREAM,
+       SOCK_SEQPACKET, or SOCK_RDM.
+     </par>
+     <par name="hFile">
+       A handle to the open file that the TransmitFile function transmits. 
+       Since the operating system reads the file data sequentially, you can 
+       improve caching performance by opening the handle with
+       FILE_FLAG_SEQUENTIAL_SCAN.
+       The hFile parameter is optional. If the hFile parameter is NULL, 
+       only data in the header and/or the tail buffer is transmitted.
+       Any additional action, such as socket disconnect or reuse, is 
+       performed as specified by the dwFlags parameter.
+     </par>
+     <par name="nNumberOfBytesToWrite">
+       The number of bytes in the file to transmit. The TransmitFile function 
+       completes when it has sent the specified number of bytes, or when an 
+       error occurs, whichever occurs first.
+       Set this parameter to zero in order to transmit the entire file.
+     </par>
+     <par name="nNumberOfBytesPerSend">
+       The size, in bytes, of each block of data sent in each send operation.
+       This parameter is used by Windows' sockets layer to determine the block
+       size for send operations. To select the default send size, set this
+       parameter to zero.
+       The nNumberOfBytesPerSend parameter is useful for protocols that have
+       limitations on the size of individual send requests.
+     </par>
+     <par name="lpOverlapped">
+       A pointer to an OVERLAPPED structure. If the socket handle has been 
+       opened as overlapped, specify this parameter in order to achieve an 
+       overlapped (asynchronous) I/O operation. By default, socket handles 
+       are opened as overlapped.
+       You can use the lpOverlapped parameter to specify a 64-bit offset 
+       within the file at which to start the file data transfer by setting 
+       the Offset and OffsetHigh member of the OVERLAPPED structure. If 
+       lpOverlapped is a NULL pointer, the transmission of data always 
+       starts at the current byte offset in the file.
+       When the lpOverlapped is not NULL, the overlapped I/O might not 
+       finish before TransmitFile returns. In that case, the TransmitFile
+       function returns FALSE, and WSAGetLastError returns ERROR_IO_PENDING 
+       or WSA_IO_PENDING. This enables the caller to continue processing
+       while the file transmission operation completes. Windows will set 
+       the event specified by the hEvent member of the OVERLAPPED structure,
+       or the socket specified by hSocket, to the signaled state upon 
+       completion of the data transmission request.
+     </par>
+     <par name="lpTransmitBuffers">
+       A pointer to a TRANSMIT_FILE_BUFFERS data structure that contains 
+       pointers to data to send before and after the file data is sent. 
+       This parameter should be set to a NULL pointer if you want to 
+       transmit only the file data.
+     </par>
+     <par name="dwFlags">
+       A set of flags used to modify the behavior of the TransmitFile 
+       function call. 
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="TransmitFile">
+    <par loc="stack" io="r" name="hSocket" nr="1">
+     <type>SOCKET</type>
+     <roles>
+      <role rt="ioc:network" rn="handle:socket" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="hFile" rep="hex" nr="2">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:file" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" name="nNumberOfBytesToWrite" io="r" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="nNumberOfBytesPerSend" io="r" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="lpOverlapped" nr="5" rep="hex">
+     <type><ptr>OVERLAPPED</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:OVERLAPPED" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpTransmitBuffers" nr="6" rep="hex">
+     <type><ptr>TRANSMIT_FILE_BUFFERS</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:TRANSMIT_FILE_BUFFERS" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="7">
+     <type>DWORD</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="network"
+		  desc="transmits file data over a socket"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

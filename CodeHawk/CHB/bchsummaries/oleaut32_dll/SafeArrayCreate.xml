@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SafeArrayCreate.xml" time="2016-08-10 15:02:39.829744"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="oleaut32" name="SafeArrayCreate">
+    <documentation>
+      <desc>
+	Creates a new array descriptor, allocates and initializes the
+	data for the array, and returns a pointer to the new array
+	descriptor
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>SAFEARRAY* SafeArrayCreate(</ll>
+          <ld>_In_ VARTYPE        vt</ld>
+          <ld>_In_ UINT           cDims</ld>
+          <ld>_In_ SAFEARRAYBOUND *rgsabound</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="vt">
+	  The base type of the array (the VARTYPE of each element of
+	  the array). The VARTYPE is restricted to a subset of the
+	  variant types. Neither the VT_ARRAY nor the VT_BYREF flag
+	  can be set. VT_EMPTY and VT_NULL are not valid base types
+	  for the array. All other types are legal.
+	</par>
+        <par name="cDims">
+	  The number of dimensions in the array. The number cannot be
+	  changed after the array is created.
+	</par>
+        <par name="rgsabound">
+	  A vector of bounds (one for each dimension) to allocate for the array
+	</par>
+        <return>
+          <rc cond="success">safe array descriptor</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="SafeArrayCreate">
+      <par loc="stack" name="vt" io="r" roles="none" nr="1">
+        <type>VARTYPE</type>
+      </par>
+      <par loc="stack" name="cDims" io="r" nr="2">
+        <type>UINT</type>
+	<roles>
+	  <role rt="size:count" rn="array dimensions"/>
+	</roles>
+      </par>
+      <par loc="stack" name="rgsabound" io="r" roles="none" nr="3" rep="hex">
+        <type><ptr>SAFEARRAYBOUND</ptr></type>
+      </par>
+      <returntype><ptr>SAFEARRAY</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com"
+		   desc="creates a new safe array descriptor"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 08:50:27"/>
+  <libfun lib="msvfw32" name="ICClose">
+   <documentation>
+    <desc>closes a compressor or decompressor</desc>
+    <apidoc>
+     <pt>LRESULT ICClose (HIC hic)</pt>
+     <par name="hic">Handle to a compressor or decompressor</par>
+     <return>
+      <rc cond="success">ICERR_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ICClose">
+    <par loc="stack" io="r" name="hic" nr="1">
+     <type>HIC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:image compressor" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>LRESULT</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

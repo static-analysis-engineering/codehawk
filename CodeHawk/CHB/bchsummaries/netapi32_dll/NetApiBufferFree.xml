@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/02/2015 16:27:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="netapi32" name="NetApiBufferFree">
+   <documentation>
+     <desc>
+       frees the memory that the NetApiBufferAllocate function
+       allocates. Applications should also call NetApiBufferFree to
+       free the memory that other network management functions use
+       internally to return information.
+     </desc>
+    <apidoc>
+     <pt>NET_API_STATUS NetApiBufferFree (_In_ LPVOID Buffer)</pt>
+     <return>
+      <rc cond="success">NERR_Success</rc>
+      <rc cond="failure">Error code</rc>
+     </return>
+     <par name="Buffer">
+       a pointer to a buffer returned previously by another network management
+       function or memory allocated by calling NetApiBufferAllocate.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="NetApiBufferFree">
+     <returntype>NET_API_STATUS</returntype>
+    <par loc="stack" io="r" name="Buffer" nr="1">
+      <type><ptr>VOID</ptr></type>
+      <roles>
+	<role rt="ioc:network" rn="netapi buffer"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="frees netpi buffer"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

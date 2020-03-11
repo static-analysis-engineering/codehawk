@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/10/2015 00:43:49"/>
+  <libfun lib="netapi32" name="Netbios">
+   <documentation>
+    <desc>
+      interprets and executes the specified network control block (NCB)
+      The Netbios function is provided primarily for applications that were 
+      written for the NetBIOS interface and need to be ported to Windows. 
+      Applications not requiring compatibility with NetBIOS should use other 
+      interfaces, such as Windows Sockets, mailslots, named pipes, RPC, or 
+      distributed COM to accomplish tasks similar to those supported by 
+      NetBIOS. These other interfaces are more flexible and portable.
+    </desc>
+    <apidoc>
+     <pt>UCHAR Netbios (PNCB pcnb)</pt>
+     <par name="pcnb">
+       A pointer to an NCB structure that describes the network control block
+     </par>
+     <return>
+       For synchronous requests, the return value is the return code in the NCB structure.
+       That value is also returned in the ncb_retcode member of the NCB structure.
+       For asynchronous requests, there are the following possibilities:
+       If the asynchronous command has already completed when Netbios returns to its 
+       caller, the return value is the return code of the NCB structure, just as if 
+       it were a synchronous NCB structure.
+       If the asynchronous command is still pending when Netbios returns to its caller, 
+       the return value is zero.
+       If the address specified by the pncb parameter is invalid, the return value is
+       NRC_BADNCB.
+       If the buffer length specified in the ncb_length member of the NCB structure is 
+       incorrect, or if the buffer specified by the ncb_retcode member is protected 
+       from write operations, the return value is NRC_BUFLEN.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="Netbios">
+    <par loc="stack" io="r" name="pcnb" nr="1">
+     <type><ptr>NCB</ptr></type>
+     <roles>
+       <role rt="ioc:network" rn="network control block"/>
+     </roles>
+    </par>
+    <returntype>UCHAR</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="interprets and executes the network control block"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

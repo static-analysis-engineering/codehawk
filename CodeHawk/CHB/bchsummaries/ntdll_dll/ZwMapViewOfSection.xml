@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/03/2015 11:07:13"/>
+  <libfun lib="ntdll" name="ZwMapViewOfSection">
+   <documentation>
+    <desc>
+      maps a view of a section into the virtual address space of a subject process.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>NTSTATUS ZwMapViewOfSection(</ll>
+      <ld>_In_        HANDLE          SectionHandle</ld>
+      <ld>_In_        HANDLE          ProcessHandle</ld>
+      <ld>_Inout_     PVOID           *BaseAddress</ld>
+      <ld>_In_        ULONG_PTR       ZeroBits</ld>
+      <ld>_In_        SIZE_T          CommitSize</ld>
+      <ld>_Inout_opt_ PLARGE_INTEGER  SectionOffset</ld>
+      <ld>_Inout_     PSIZE_T         ViewSize</ld>
+      <ld>_In_        SECTION_INHERIT InheritDisposition</ld>
+      <ld>_In_        ULONG           AllocationType</ld>
+      <ld>_In_        ULONG           Win32Protect</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="SectionHandle">
+       Handle to a section object. This handle is created by a successful call
+       to ZwCreateSection or ZwOpenSection.
+     </par>
+     <par name="ProcessHandle">
+       Handle to the object that represents the process that the view should be
+       mapped into. Use the ZwCurrentProcess macro to specify the current process. 
+       The handle must have been opened with PROCESS_VM_OPERATION access (described
+       in the Microsoft Windows SDK documentation).
+     </par>
+     <par name="BaseAddress">
+       Pointer to a variable that receives the base address of the view. If the value
+       of this parameter is not NULL, the view is allocated starting at the specified
+       virtual address rounded down to the next 64-kilobyte address boundary.
+     </par>
+     <par name="ZeroBits">
+       Specifies the number of high-order address bits that must be zero in the 
+       base address of the section view. The value of this parameter must be less 
+       than 21 and is used only if BaseAddress is NULL - in other words, when the 
+       caller allows the system to determine where to allocate the view.
+     </par>
+     <par name="CommitSize">
+       Specifies the size, in bytes, of the initially committed region of the 
+       view. CommitSize is meaningful only for page-file backed sections and is 
+       rounded up to the nearest multiple of PAGE_SIZE. (For sections that map
+       files, both the data and the image are committed at section-creation time.)
+     </par>
+     <par name="SectionOffset">
+       A pointer to a variable that receives the offset, in bytes, from the 
+       beginning of the section to the view. If this pointer is not NULL, 
+       the offset is rounded down to the next allocation-granularity size boundary.
+     </par>
+     <par name="ViewSize">
+       A pointer to a SIZE_T variable. If the initial value of this variable is
+       zero, ZwMapViewOfSection maps a view of the section that starts at 
+       SectionOffset and continues to the end of the section. Otherwise, the 
+       initial value specifies the view's size, in bytes. ZwMapViewOfSection
+       always rounds this value up to the nearest multiple of PAGE_SIZE before
+       mapping the view.
+       On return, the value receives the actual size, in bytes, of the view
+     </par>
+     <par name="InheritDisposition">
+       Specifies how the view is to be shared with child processes
+     </par>
+     <par name="AllocationType">
+       Specifies a set of flags that describes the type of allocation to be 
+       performed for the specified region of pages. The valid flags are 
+       MEM_LARGE_PAGES, MEM_RESERVE, and MEM_TOP_DOWN. Although MEM_COMMIT 
+       is not allowed, it is implied unless MEM_RESERVE is specified. 
+     </par>
+     <par name="Win32Protect">
+       Specifies the type of protection for the region of initially committed 
+       pages. Device and intermediate drivers should set this value to 
+       PAGE_READWRITE.
+     </par>
+     <return>
+      <rc cond="success">STATUS_SUCCESS</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="40" cc="stdcall" name="ZwMapViewOfSection">
+    <par loc="stack" io="r" name="SectionHandle" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:section" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="ProcessHandle" nr="2">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:process" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="rw" name="BaseAddress" nr="3">
+     <type><ptr><ptr>void</ptr></ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="address:memory" />
+      <role rt="ioc:process" rn="address:mapped memory"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="ZeroBits" roles="none" nr="4">
+     <type>ULONG_PTR</type>
+    </par>
+    <par loc="stack" io="r" name="CommitSize" nr="5">
+     <type>SIZE_T</type>
+     <roles>
+      <role rt="ioc:memops" rn="size:memory mapped object"/>
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="SectionOffset" rep="hex" roles="none" nr="6">
+     <type><ptr>LARGE_INTEGER</ptr></type>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="rw" name="ViewSize" nr="7">
+     <type><ptr>SIZE_T</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="address:memory"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="InheritDisposition" roles="none" nr="8">
+     <type>SECTION_INHERIT</type>
+    </par>
+    <par loc="stack" io="r" name="AllocationType" roles="none" nr="9">
+     <type>ULONG</type>
+    </par>
+    <par loc="stack" io="r" name="Win32Protect" roles="none" nr="10">
+     <type>ULONG</type>
+    </par>
+    <returntype>NTSTATUS</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process"
+		  desc="maps a view of a section into a process address space"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

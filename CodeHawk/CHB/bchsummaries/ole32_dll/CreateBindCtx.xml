@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CreateBindCtx.xml" time="2016-06-26 22:20:25.227896"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ole32" name="CreateBindCtx">
+    <documentation>
+      <desc>
+	Returns a pointer to an implementation of IBindCtx (a bind
+	context object). This object stores information about a
+	particular moniker-binding operation.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT CreateBindCtx(</ll>
+          <ld>_In_  DWORD reserved</ld>
+          <ld>_Out_ LPBC  *ppbc</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="reserved">This parameter is reserved and must be 0.</par>
+        <par name="ppbc">
+	  Address of an IBindCtx* pointer variable that receives the
+	  interface pointer to the new bind context object. When the
+	  function is successful, the caller is responsible for
+	  calling Release on the bind context. A NULL value for the
+	  bind context indicates that an error occurred.
+	</par>
+        <return>
+          <rc cond="success">S_OK </rc>
+          <rc cond="failure">E_OUTOFMEMORY</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="CreateBindCtx">
+      <par loc="stack" name="reserved" io="r" roles="none" nr="1">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="ppbc" nr="2" rep="hex">
+        <type><ptr><ptr>BC</ptr></ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="ref:interface pointer"/>
+	</roles>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com"
+		   desc="obtains a bind context implementation pointer"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

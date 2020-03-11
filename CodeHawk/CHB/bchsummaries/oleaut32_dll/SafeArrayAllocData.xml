@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SafeArrayAllocData.xml" time="2016-08-10 14:59:33.512415"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="oleaut32" name="SafeArrayAllocData">
+    <documentation>
+      <desc>
+	Allocates memory for a safe array, based on a descriptor
+	created with SafeArrayAllocDescriptor.
+      </desc>
+      <apidoc>
+        <pt>HRESULT SafeArrayAllocData (_In_ SAFEARRAY *psa)</pt>
+        <par name="psa">
+	  A safe array descriptor created by SafeArrayAllocDescriptor
+	</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error codes</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="SafeArrayAllocData">
+      <par loc="stack" name="psa" io="r" nr="1" rep="hex">
+        <type><ptr>SAFEARRAY</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="safe array"/>
+	</roles>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com" desc="allocates memory for a safe array"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

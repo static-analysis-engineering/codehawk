@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="OleSetMenuDescriptor.xml" time="2016-07-02 22:00:02.281740"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ole32" name="OleSetMenuDescriptor">
+    <documentation>
+      <desc>
+	Installs or removes OLE dispatching code from the container's frame window
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT OleSetMenuDescriptor(</ll>
+          <ld>_In_ HOLEMENU                 holemenu</ld>
+          <ld>_In_ HWND                     hwndFrame</ld>
+          <ld>_In_ HWND                     hwndActiveobject</ld>
+          <ld>_In_ LPOLEINPLACEFRAME        lpFrame</ld>
+          <ld>In_ LPOLEINPLACEACTIVEOBJECT lpActiveObject</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="holemenu">
+	  Handle to the composite menu descriptor returned by the
+	  OleCreateMenuDescriptor function. If NULL, the dispatching
+	  code is unhooked.
+	</par>
+        <par name="hwndFrame">
+	  Handle to the container's frame window where the in-place
+	  composite menu is to be installed
+	</par>
+        <par name="hwndActiveobject">
+	  Handle to the object's in-place activation window. OLE
+	  dispatches menu messages and commands to this window.
+	</par>
+        <par name="lpFrame">
+	  Pointer to the IOleInPlaceFrame interface on the container's
+	  frame window
+	</par>
+        <par name="lpActiveObject">
+	  Pointer to the IOleInPlaceActiveObject interface on the
+	  active in-place object.
+	</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="OleSetMenuDescriptor">
+      <par loc="stack" name="holemenu" io="r" nr="1">
+        <type>HOLEMENU</type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="handle:ole menu"/>
+	</roles>
+      </par>
+      <par loc="stack" name="hwndFrame" io="r" nr="2">
+        <type>HWND</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <par loc="stack" name="hwndActiveobject" io="r" nr="3">
+        <type>HWND</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpFrame" io="r" nr="4" rep="hex">
+        <type><ptr>OLEINPLACEFRAME</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="ifp:IOleInPlaceFrame"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpActiveObject" io="r" nr="5" rep="hex">
+        <type><ptr>LPOLEINPLACEACTIVEOBJECT</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="ifp:IOleInPlaceActiveObject"/>
+	</roles>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com"
+		   desc="installs or removes OLE dispatching code from a window"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

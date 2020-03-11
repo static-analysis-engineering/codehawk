@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 05:29:03"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="StringFromGUID2">
+   <documentation>
+    <desc>
+      Converts a globally unique identifier (GUID) into a string of printable characters. 
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int StringFromGUID2(</ll>
+      <ld>_In_   REFGUID rguid</ld>
+      <ld>_Out_  LPOLESTR lpsz</ld>
+      <ld>_In_   int cchMax</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="rguid">The GUID to be converted.</par>
+     <par name="lpsz">
+       A pointer to a caller-allocated string variable to receive the resulting string.
+       The string that represents rguid includes enclosing braces.
+     </par>
+     <par name="cchMax">The number of characters available in the lpsz buffer. </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="StringFromGUID2">
+    <returntype>int</returntype>
+    <par loc="stack" name="rguid" io="r" nr="1">
+     <type>REFGUID</type>
+     <roles>
+        <role rt="ioc:com" rn="refguid"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpsz" io="w" rep="hex"  nr="2">
+      <type><ptr>OLESTR</ptr></type>
+      <roles>
+	<role rt="ioc:com" rn="infox:guid"/>
+      </roles>
+    </par>
+    <par loc="stack" name="cchMax" io="r" roles="none" nr="3">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="com" desc="converts a guid into a string"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>wchar_t</type>
+	    <ci>lpsz</ci>
+	    <apply><indexsize/><ci>cchMax</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

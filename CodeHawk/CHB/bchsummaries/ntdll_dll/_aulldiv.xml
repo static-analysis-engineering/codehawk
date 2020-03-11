@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="_aulldiv.xml" time="2016-07-12 09:11:21.136564"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ntdll" name="_aulldiv">
+    <documentation>
+      <desc>no documentation</desc>
+      <apidoc>
+        <pt>void _aulldiv (void)</pt>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="stdcall" name="_aulldiv">
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process" desc="_aulldiv"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

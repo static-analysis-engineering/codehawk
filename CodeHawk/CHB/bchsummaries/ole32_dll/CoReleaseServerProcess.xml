@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CoReleaseServerProcess.xml" time="2016-06-26 22:17:37.848079"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ole32" name="CoReleaseServerProcess">
+    <documentation>
+      <desc>Decrements the global per-process reference count</desc>
+      <apidoc>
+        <pt>ULONG CoReleaseServerProcess (void)</pt>
+        <return>
+	  If the server application should initiate its cleanup, the
+	  function returns 0; otherwise, the function returns a
+	  nonzero value.
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="stdcall" name="CoReleaseServerProcess">
+      <returntype>ULONG</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com"
+		   desc="decrements the global per-process reference count"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

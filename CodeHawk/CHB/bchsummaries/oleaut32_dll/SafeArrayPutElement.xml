@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SafeArrayPutElement.xml" time="2016-08-10 11:13:01.650492"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="oleaut32" name="SafeArrayPutElement">
+    <documentation>
+      <desc>Stores the data element at the specified location in the array</desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT SafeArrayPutElement(</ll>
+          <ld>_In_ SAFEARRAY *psa</ld>
+          <ld>_In_ LONG      *rgIndices</ld>
+          <ld>_In_ void      *pv</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="psa">An array descriptor created by SafeArrayCreate</par>
+        <par name="rgIndices">
+	  A vector of indexes for each dimension of the array. The
+	  right-most (least significant) dimension is
+	  rgIndices[0]. The left-most dimension is stored at
+	  rgIndices[psa.cDims - 1].
+	</par>
+        <par name="pv">
+	  The data to assign to the array. The variant types
+	  VT_DISPATCH, VT_UNKNOWN, and VT_BSTR are pointers, and do
+	  not require another level of indirection.
+	</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error codes</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="SafeArrayPutElement">
+      <par loc="stack" name="psa" io="r" nr="1" rep="hex">
+        <type><ptr>SAFEARRAY</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="safe array"/>
+	</roles>
+      </par>
+      <par loc="stack" name="rgIndices" io="r" nr="2" rep="hex">
+        <type><ptr>LONG</ptr></type>
+	<roles>
+	  <role rt="size:index" rn="array dimensions"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pv" io="r" roles="none" nr="3" rep="hex">
+        <type><ptr>void</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com" desc="stores a data element in a safe array"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>LONG</type>
+	      <ci>rgIndices</ci>
+	      <runtime-value/>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

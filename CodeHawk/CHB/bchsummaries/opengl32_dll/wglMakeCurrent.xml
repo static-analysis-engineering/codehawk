@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/26/2015 10:35:35"/>
+  <libfun lib="opengl32" name="wglMakeCurrent">
+   <documentation>
+    <desc>
+      makes a specified OpenGL rendering context the calling thread's
+      current rendering context. All subsequent OpenGL calls made by
+      the thread are drawn on the device identified by hdc. You can
+      also use wglMakeCurrent to change the calling thread's current
+      rendering context so it's no longer current.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL wglMakeCurrent(</ll>
+      <ld>HDC hdc</ld>
+      <ld>HGLRC hglrc</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">
+       Handle to a device context. Subsequent OpenGL calls made by the
+       calling thread are drawn on the device identified by hdc.
+     </par>
+     <par name="hglrc">
+       Handle to an OpenGL rendering context that the function sets as
+       the calling thread's rendering context.  If hglrc is NULL, the
+       function makes the calling thread's current rendering context
+       no longer current, and releases the device context that is used
+       by the rendering context. In this case, hdc is ignored.
+
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="wglMakeCurrent">
+    <par loc="stack" desc="device context handle" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:system" rn="device context"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="rendering context handle" io="r" name="hglrc" nr="2">
+     <type>HGLRC</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:system" rn="rendering context"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system"  desc="creates an opengl rendering context"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="02/26/2015 13:57:16"/>
+  <libfun lib="ole32" name="CoInitializeEx">
+   <documentation>
+    <desc> 
+      Initializes the COM library for use by the calling thread, sets the thread's 
+      concurrency model, and creates a new apartment for the thread if one is required.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT CoInitializeEx(</ll>
+      <ld>_In_opt_  LPVOID pvReserved,</ld>
+      <ld>_In_      DWORD dwCoInit</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pvReserved">This parameter is reserved and must be NULL.</par>
+     <par name="dwCoInit">
+       The concurrency model and initialization options for the thread. Values for 
+       this parameter are taken from the COINIT enumeration. Any combination of 
+       values from COINIT can be used, except that the COINIT_APARTMENTTHREADED
+       and COINIT_MULTITHREADED flags cannot both be set. The default is 
+       COINIT_MULTITHREADED.
+     </par>
+     <return>HRESULT codes</return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CoInitializeEx">
+    <par loc="stack" name="pvReserved" io="r" roles="none" nr="1">
+     <type>LPVOID</type>
+     <pre><null/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwCoInit" roles="none" nr="2">
+     <rep type="enum" name="coinit_enumeration_constants"/>
+     <type>DWORD</type>
+     <pre><enum-value name="coinit_enumeration_constants"/></pre>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="com" desc="initializes the COM library"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-20167, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

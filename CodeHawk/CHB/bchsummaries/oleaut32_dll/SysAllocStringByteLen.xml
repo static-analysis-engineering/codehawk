@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SysAllocStringByteLen.xml" time="2016-08-10 15:37:59.260893"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="oleaut32" name="SysAllocStringByteLen">
+    <documentation>
+      <desc>
+	Takes an ANSI string as input, and returns a BSTR that
+	contains an ANSI string. Does not perform any ANSI-to-Unicode
+	translation.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BSTR SysAllocStringByteLen(</ll>
+          <ld>_In_opt_ LPCSTR psz</ld>
+          <ld>_In_     UINT   len</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="psz">The string to copy, or NULL to keep the string uninitialized</par>
+        <par name="len">
+	  The number of bytes to copy. A null character is placed
+	  afterwards, allocating a total of len plus the size of
+	  OLECHAR bytes.
+	</par>
+        <return>
+          <rc cond="success">A copy of the string</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="SysAllocStringByteLen">
+      <par loc="stack" name="psz" io="r" nr="1" rep="hex">
+        <type>LPCSTR</type>
+	<pre><deref-read-null-nt/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:convert"/>
+	</roles>
+      </par>
+      <par loc="stack" name="len" io="r" nr="2">
+        <type>UINT</type>
+	<roles>
+	  <role rt="size:count" rn="string allocation length"/>
+	</roles>
+      </par>
+      <returntype>BSTR</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="com"
+		   desc="converts an ANSI string to a COM BSTR"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

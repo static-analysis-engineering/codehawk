@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/14/2015 16:46:09"/>
+  <libfun lib="ntdll" name="NtQuerySystemInformation">
+   <documentation>
+    <desc>Retrieves the specified system information</desc>
+    <apidoc>
+     <pt>
+      <ll>NTSTATUS WINAPI NtQuerySystemInformation(</ll>
+      <ld>_In_      SYSTEM_INFORMATION_CLASS SystemInformationClass</ld>
+      <ld>_Inout_   PVOID                    SystemInformation</ld>
+      <ld>_In_      ULONG                    SystemInformationLength</ld>
+      <ld>_Out_opt_ PULONG                   ReturnLength</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="SystemInformationClass">
+       One of the values enumerated in SYSTEM_INFORMATION_CLASS, which indicate 
+       the kind of system information to be retrieved
+     </par>
+     <par name="SystemInformation">
+       A pointer to a buffer that receives the requested information. The size 
+       and structure of this information varies depending on the value of the
+       SystemInformationClass parameter
+     </par>
+     <par name="SystemInformationLength">
+       The size of the buffer pointed to by the SystemInformation parameter, 
+       in bytes
+     </par>
+     <par name="ReturnLength">
+       An optional pointer to a location where the function writes the actual 
+       size of the information requested. If that size is less than or equal 
+       to the SystemInformationLength parameter, the function copies the 
+       information into the SystemInformation buffer; otherwise, it returns an
+       NTSTATUS error code and returns in ReturnLength the size of buffer 
+       required to receive the requested information.
+     </par>
+     <return>
+      <rc cond="success">NTSTATUS success</rc>
+      <rc cond="failure">NTSTATUS error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="NtQuerySystemInformation">
+    <par loc="stack" desc="system information class" io="r" name="SystemInformationClass" nr="1">
+     <type>SYSTEM_INFORMATION_CLASS</type>
+     <roles>
+       <role rt="ioc:system" rn="system information class"/>
+       <role rt="enum:const" rn="system_information_class_constants"/>
+     </roles>
+     <pre><enum-value name="system_information_class_constants"/></pre>
+    </par>
+    <par loc="stack" desc="system information" io="rw" name="SystemInformation" nr="2">
+     <type><ptr>void</ptr></type>
+     <roles>
+       <role rt="ioc:system" rn="system information"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" desc="system information length" io="r" name="SystemInformationLength" nr="3">
+     <type>ULONG</type>
+     <roles>
+       <role rt="size:buffersize" rn="NtQuerySystemInformation"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="return length" io="w" name="ReturnLength" nr="4">
+     <type><ptr>ULONG</ptr></type>
+     <pre><deref-write/></pre>
+     <roles>
+       <role rt="size:actual" rn="NtQuerySystemInformation"/>
+     </roles>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>NTSTATUS</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" desc="retrieves system information"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

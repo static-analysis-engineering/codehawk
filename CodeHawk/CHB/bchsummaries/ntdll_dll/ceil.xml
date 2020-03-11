@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ceil.xml" time="2016-05-13 15:12:17.002359"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ntdll" name="ceil">
+    <refer-to lib="msvcrt" name="ceil"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

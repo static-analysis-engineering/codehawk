@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/03/2015 16:28:06"/>
+  <libfun lib="oleaut32" name="SysStringByteLen">
+   <documentation>
+    <desc>Returns the length (in bytes) of a BSTR</desc>
+    <apidoc>
+     <pt>UINT SysStringByteLen (_In_opt_  BSTR bstr)</pt>
+     <par name="bstr">A previously allocated string</par>
+     <return>
+       The number of bytes in bstr, not including the terminating null character. 
+       If bstr is null the return value is zero
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SysStringByteLen">
+    <par loc="stack" name="bstr" nr="1">
+     <type>BSTR</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-string:length"/>
+     </roles>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="returns the length of a string"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

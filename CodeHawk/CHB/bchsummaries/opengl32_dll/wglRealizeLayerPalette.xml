@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/06/2015 15:52:02"/>
+  <libfun lib="opengl32" name="wglRealizeLayerPalette">
+   <documentation>
+    <desc>
+      maps palette entries from a given color-index layer plane into the physical 
+      palette or initializes the palette of an RGBA layer plane
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI wglRealizeLayerPalette(</ll>
+      <ld>HDC hdc</ld>
+      <ld>int iLayerPlane</ld>
+      <ld>BOOL bRealize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">
+       Specifies the device context of a window whose layer plane palette is to be realized 
+       into the physical palette.
+     </par>
+     <par name="iLayerPlane">
+       Specifies the overlay or underlay plane. Positive values of iLayerPlane identify 
+       overlay planes, where 1 is the first overlay plane over the main plane, 2 is the 
+       second overlay plane over the first overlay plane, and so on. Negative values 
+       identify underlay planes, where 1 is the first underlay plane under the main plane,
+       2 is the second underlay plane under the first underlay plane, and so on. The 
+       number of overlay and underlay planes is given in the bReserved member of the
+       PIXELFORMATDESCRIPTOR structure.
+     </par>
+     <par name="bRealize">
+       Indicates whether the palette is to be realized into the physical palette. When 
+       bRealize is TRUE, the palette entries are mapped into the physical palette where 
+       available. When bRealize is FALSE, the palette entries for the layer plane of 
+       the window are no longer needed and might be released for use by another 
+       foreground window.
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="wglRealizeLayerPalette">
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="iLayerPlane" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="bRealize" io="r" roles="none" nr="3">
+     <type>BOOL</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process"
+		  desc="maps palette entries into the physical palette"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

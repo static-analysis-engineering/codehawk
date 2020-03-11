@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/06/2015 15:44:13"/>
+  <libfun lib="opengl32" name="wglSetLayerPaletteEntries">
+   <documentation>
+    <desc>
+      Sets the palette entries in a given color-index layer plane for a specified 
+      device context
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>INT WINAPI wglSetLayerPaletteEntries(</ll>
+      <ld>HDC hdc</ld>
+      <ld>int iLayerPlane</ld>
+      <ld>int iStart</ld>
+      <ld>int cEntries</ld>
+      <ld>const COLORREF *pcr</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hdc">
+       The device context of a window whose layer palette is to be set
+     </par>
+     <par name="iLayerPlane">
+       An overlay or underlay plane. Positive values of iLayerPlane identify overlay 
+       planes, where 1 is the first overlay plane over the main plane, 2 is the second 
+       overlay plane over the first overlay plane, and so on. Negative values identify 
+       underlay planes, where 1 is the first underlay plane under the main plane, 2 is 
+       the second underlay plane under the first underlay plane, and so on. The number
+       of overlay and underlay planes is given in the bReserved member of the
+       PIXELFORMATDESCRIPTOR structure.
+     </par>
+     <par name="iStart">The first palette entry to be set</par>
+     <par name="cEntries">The number of palette entries to be set</par>
+     <par name="pcr">
+       A pointer to the first member of an array of cEntries structures that contain
+       RGB color information
+     </par>
+     <return>
+      <rc cond="success">
+	the number of entries that were set in the palette in the specified layer plane
+	of the window
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="wglSetLayerPaletteEntries">
+    <par loc="stack" io="r" name="hdc" nr="1">
+     <type>HDC</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:device context" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="iLayerPlane" io="r" roles="none" nr="2">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="iStart" io="r" roles="none" nr="3">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="cEntries" io="r" roles="none" nr="4">
+     <type>int</type>
+    </par>
+    <par loc="stack" io="r" name="pcr" nr="5">
+     <type><ptr>COLORREF</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-array:COLORREF" />
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process" desc="sets palette entries for a device context"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>COLORREF</type>
+	    <ci>pcr</ci>
+	    <apply><indexsize/><ci>cEntries</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

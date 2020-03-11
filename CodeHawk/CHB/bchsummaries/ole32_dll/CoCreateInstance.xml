@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:31:09"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="CoCreateInstance">
+   <documentation>
+    <desc>
+      Creates a single uninitialized object of the class associated with a 
+    specified CLSID</desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT CoCreateInstance(</ll>
+      <ld>_In_   REFCLSID rclsid,</ld>
+      <ld>_In_   LPUNKNOWN pUnkOuter,</ld>
+      <ld>_In_   DWORD dwClsContext,</ld>
+      <ld>_In_   REFIID riid,</ld>
+      <ld>_Out_  LPVOID *ppv</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="rclsid">
+       The CLSID associated with the data and code that will be used
+       to create the object.
+     </par>
+     <par name="pUnkOuter">
+       If NULL, indicates that the object is not being created as part
+       of an aggregate.  If non-NULL, pointer to the aggregate
+       object&apos;s IUnknown interface (the controlling IUnknown).
+     </par>
+     <par name="dwClsContext">
+       Context in which the code that manages the newly created object
+       will run.  The values are taken from the enumeration CLSCTX.
+     </par>
+     <par name="riid">
+       A reference to the identifier of the interface to be used to
+       communicate with the object.
+     </par>
+     <par name="ppv">
+       Address of pointer variable that receives the interface pointer
+       requested in riid.  Upon successful return, *ppv contains the
+       requested interface pointer. Upon failure, *ppv contains NULL.
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">Error Code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="CoCreateInstance">
+    <returntype>HRESULT</returntype>
+    <par loc="stack" io="r" name="rclsid" nr="1" rep="hex">
+      <type>REFCLSID</type>
+      <roles>
+        <role rt="ioc:com" rn="clsid"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="pUnkOuter" nr="2" rep="hex">
+     <type>LPVOID</type>
+     <roles>
+        <role rt="ioc:com" rn="ifp:IUnknown"/>
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwClsContext" nr="3">
+      <rep type="enum" name="clsctx_enumaration_constants"/>
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:com" rn="clsctx"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="riid" nr="4" rep="hex">
+      <type>REFIID</type>
+      <roles>
+        <role rt="ioc:com" rn="refiid"/>
+      </roles>
+    </par>
+    <par loc="stack" desc="interface pointer" io="w" name="ppv" nr="5" rep="hex">
+      <type><ptr><ptr>void</ptr></ptr></type>
+      <roles>
+        <role rt="ioc:com" rn="ref:interface pointer"/>
+      </roles>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="com"
+		  desc="creates an uninitialized object for a class ID"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

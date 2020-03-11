@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="02/08/2015 16:10:35"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="oleaut32" name="VariantClear">
+   <documentation>
+    <desc>clears a variant</desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT VariantClear(</ll>
+      <ld>_Inout_ VARIANTARG *pvarg</ld>
+      <ll>)</ll>
+     </pt>
+     <return>various HRESULT values
+    </return>
+     <par name="pvarg">variant to clear</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="VariantClear">
+     <returntype>HRESULT</returntype>
+     <par loc="stack" name="pvarg" io="rw" nr="1">
+       <type><ptr>VARIANTARG</ptr></type>
+       <roles>
+	 <role rt="ioc:process" rn="variant"/>
+	 <role rt="rep:hex" rn="variant"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="clears a variant"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

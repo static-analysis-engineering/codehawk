@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 05:27:41"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="OleUninitialize">
+   <documentation>
+    <desc>
+      Closes the COM library on the apartment, releases any class factories, 
+      other COM objects, or servers held by the apartment, disables RPC on 
+      the apartment, and frees any resources the apartment maintains. 
+   </desc>
+    <apidoc>
+     <pt>OleUninitialize (void)</pt>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="OleUninitialize">
+    <returntype>VOID</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="com" desc="closes the COM library"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 16:43:34"/>
+  <libfun lib="oleaut32" name="UnRegisterTypeLib">
+   <documentation>
+    <desc>
+      Removes type library information from the system registry. Use this API 
+      to allow applications to properly uninstall themselves
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT UnRegisterTypeLib(</ll>
+      <ld>REFGUID libID</ld>
+      <ld>WORD    wVerMajor</ld>
+      <ld>WORD    wVerMinor</ld>
+      <ld>LCID    lcid</ld>
+      <ld>SYSKIND syskind</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="libID">The GUID of the type library</par>
+     <par name="wVerMajor">The major version of the type library</par>
+     <par name="wVerMinor">The minor version of the type library</par>
+     <par name="lcid">The locale identifier</par>
+     <par name="syskind">The target operating system</par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="UnRegisterTypeLib">
+    <par loc="stack" io="r" name="libID" nr="1">
+     <type>REFGUID</type>
+     <roles>
+        <role rt="ioc:com" rn="refguid"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" roles="none" name="wVerMajor" nr="2">
+     <type>WORD</type>
+    </par>
+    <par loc="stack" io="r" roles="none" name="wVerMinor" nr="3">
+     <type>WORD</type>
+    </par>
+    <par loc="stack" io="r" name="lcid" nr="4">
+     <type>LCID</type>
+     <roles>
+        <role rt="ioc:system" rn="id:locale"/>
+     </roles>
+    </par>
+    <par loc="stack" name="syskind" io="r" roles="none" nr="5">
+     <type>SYSKIND</type>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="registry" desc="removes type library information from the registry"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

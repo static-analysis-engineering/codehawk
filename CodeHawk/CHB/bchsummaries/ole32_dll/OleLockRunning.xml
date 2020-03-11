@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 05:25:29"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="OleLockRunning">
+   <documentation>
+    <desc>
+      Locks an already running object into its running state or
+      unlocks it from its running state.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT OleLockRunning(</ll>
+      <ld>_In_  LPUNKNOWN pUnknown</ld>
+      <ld>_In_  BOOL fLock</ld>
+      <ld>_In_  BOOL fLastUnlockCloses</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">E_OUTOFMEMORY, E_INVALIDARG, E_UNEXPECTED</rc>
+     </return>
+     <par name="pUnknown">
+       Pointer to the IUnknown interface on the object, which the function uses to 
+       query for a pointer to IRunnableObject.
+     </par>
+     <par name="fLock">
+       TRUE locks the object into its running state. FALSE unlocks 
+       the object from its running state.
+     </par>
+     <par name="fLastUnlockCloses">
+       TRUE specifies that if the connection being released is the last external lock 
+       on the object, the object should close. FALSE specifies that the object should 
+       remain open until closed by the user or another process.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OleLockRunning">
+    <returnbtype tname="HRESULT" ttag="tnamed"/>
+    <par loc="stack" name="pUnknown" io="r" rep="hex" nr="1">
+     <type>LPUNKNOWN</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:com" rn="ifp:IUnknown"/>
+     </roles>
+    </par>
+    <par loc="stack" name="fLock" io="r" roles="none" nr="2">
+      <type>BOOL</type>
+    </par>
+    <par loc="stack" name="fLastUnlockCloses" io="r" roles="none" nr="3">
+     <type>BOOL</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="com"
+		  desc="locks or unlocks a running object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

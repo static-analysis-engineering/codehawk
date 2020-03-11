@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/26/2015 17:37:34"/>
+  <libfun lib="opengl32" name="wglDeleteContext">
+   <documentation>
+    <desc>deletes a specified OpenGL rendering context</desc>
+    <apidoc>
+     <pt>BOOL wglDeleteContext (HGLRC hglrc)</pt>
+     <par name="hglrc">
+       Handle to an OpenGL rendering context that the function will delete
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="wglDeleteContext">
+    <par loc="stack" desc="rendering context handle" io="r" name="hglrc" nr="1">
+     <type>HGLRC</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="rendering context"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions/>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

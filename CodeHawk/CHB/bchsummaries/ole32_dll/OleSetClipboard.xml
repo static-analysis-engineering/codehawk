@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/05/2015 18:10:49"/>
+  <libfun lib="ole32" name="OleSetClipboard">
+   <documentation>
+    <desc>
+      Places a pointer to a specific data object onto the clipboard. This makes 
+      the data object accessible to the OleGetClipboard function
+    </desc>
+    <apidoc>
+     <pt>HRESULT OleSetClipboard (_In_ LPDATAOBJECT pDataObj)</pt>
+     <par name="pDataObj">
+       Pointer to the IDataObject interface on the data object from which the data 
+       to be placed on the clipboard can be obtained. This parameter can be NULL; 
+       in which case the clipboard is emptied.
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="OleSetClipboard">
+    <par loc="stack" name="pDataObj" io="r" rep="hex" nr="1">
+     <type><ptr>IDataObject</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+        <role rt="ioc:com" rn="ifp:IDataObject"/>
+     </roles>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="com"
+		  desc="places a pointer to an object on the clipboard"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

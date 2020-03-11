@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 05:24:41"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="OleInitialize">
+   <documentation>
+    <desc>
+      Initializes the COM library on the current apartment, identifies the 
+      concurrency model as single-thread apartment (STA), and enables additional 
+      functionality.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT OleInitialize(</ll>
+      <ld>_In_  LPVOID pvReserved</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">S_FALSE, OLE_E_WRONGCOMPOBJ, RPC_E_CHANGED_MODE</rc>
+     </return>
+     <par name="pvReserved">This parameter is reserved and must be NULL.</par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="OleInitialize">
+    <returntype>HRESULT</returntype>
+    <par loc="stack" name="pvReserved" io="r" roles="none" nr="1">
+     <type><ptr>VOID</ptr></type>
+     <pre><null/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="initializes the COM library">
+	 <args/>
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <enum name="hresult"/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

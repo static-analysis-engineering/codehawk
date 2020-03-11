@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/02/2015 15:56:52"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="netapi32" name="NetServerEnum">
+   <documentation>
+     <desc>
+       lists all servers of the specified type that are visible in a domain
+     </desc>
+    <apidoc>
+     <pt>
+      <ll>NET_API_STATUS NetServerEnum(</ll>
+      <ld>_In_opt_   LPCWSTR servername,</ld>
+      <ld>_In_       DWORD level,</ld>
+      <ld>_Out_      LPByte *bufptr,</ld>
+      <ld>_In_       DWORD prefmaxlen,</ld>
+      <ld>_Out_      LPDWORD entriesread,</ld>
+      <ld>_Out_      LPDWORD totalentries,</ld>
+      <ld>_In_       DWORD servertype,</ld>
+      <ld>_In_opt_   LPCWSTR domain,</ld>
+      <ld>_Inout_opt_ LPDWORD resume_handle</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">NERR_Success</rc>
+      <rc cond="failure">Error return code</rc>
+     </return>
+     <par name="servername">reserved; must be NULL</par>
+     <par name="level">
+       the information level of the data requested. This parameter can be one of
+       the following values:
+       100: return server names and platform information. The bufptr parameter
+       points to an array of SERVER_INFO_100 structures
+       101: return server names, types, and associated data. The bufptr parameter
+       points to an array of SERVER_INFO_101 structures
+    </par>
+     <par name="bufptr">
+       a pointer to the buffer that receives the data. The format of this data
+       depends on the value of the level parameter. This buffer is allocated by
+       the system and must be freed using the NetApiBufferFree function. 
+     </par>
+     <par name="prefmaxlen">
+       the preferred maximum length of returned data, in bytes. If
+       MAX_PREFERRED_LENGTH, the function allocates the amount of memory required
+       for the data. If another value, it can restrict the number of bytes that
+       the function returns. If the buffer size is insufficient to hold all entries,
+       the function returns ERROR_MORE_DATA.
+     </par>
+     <par name="entriesread">
+       a pointer to a value that receives the count of elements actually enumerated
+     </par>
+     <par name="totalentries">
+       a pointer to a value that receives the total number of visible servers and
+       workstations on the network.
+     </par>
+     <par name="servertype">
+       a value that filters the server entries to return from the enumeration. This
+       parameter can be a combination of the values defined in Lmserver.h .
+     </par>
+     <par name="domain">
+       a pointer to a constant string that specifies the name of the domain for
+       which a list of servers is to be returned. The domain must be a NetBIOS
+       domain name. Can be NULL.
+     </par>
+     <par name="resume_handle">reserved; must be set to zero</par>
+    </apidoc>
+   </documentation>
+   <api adj="36" cc="stdcall" name="NetServerEnum">
+    <returntype>NET_API_STATUS</returntype>
+    <par loc="stack" io="r" name="servername" roles="none" nr="1">
+     <!-- reserved; must be null -->
+     <type>LPCWSTR</type>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="level" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="bufptr" nr="3" rep="hex">
+     <roles>
+      <role rt="ioc:memops" rn="dst-bytes:network input" />
+      <role rt="ioc:network" rn="infox:servers visible in a domain"/>
+     </roles>
+     <type><ptr><ptr>BYTE</ptr></ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="prefmaxlen" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="entriesread" roles="none" rep="hex" nr="5">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="totalentries" rep="hex" nr="6">
+     <roles>
+      <role rt="ioc:network" rn="infox:server count visible in a domain"/>
+     </roles>
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="servertype" nr="7">
+     <roles>
+      <role rt="ioc:network" rn="server type filter" />
+     </roles>
+     <type>DWORD</type>
+     <pre><enum-value name="server_type_constants" flags="true"/></pre>
+    </par>
+    <par loc="stack" io="r" name="domain" nr="8">
+     <type>LPCWSTR</type>
+     <roles>
+      <role rt="ioc:network" rn="name:NetBIOS domain" />
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="rw" name="resume_handle" roles="none" nr="9">
+     <type><ptr>DWORD</ptr></type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="network"
+		  desc="lists all servers visible in a domain"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

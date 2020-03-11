@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/21/2015 05:28:45"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ole32" name="StringFromCLSID">
+   <documentation>
+    <desc>
+      Converts a CLSID into a string of printable characters. Different
+      CLSIDs always convert to different strings. 
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT StringFromCLSID(</ll>
+      <ld>_In_   REFCLSID rclsid</ld>
+      <ld>_Out_  LPOLESTR *lplpsz</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">E_OUTOFMEMORY</rc>
+     </return>
+     <par name="rclsid">The CLSID to be converted.</par>
+     <par name="lplpsz">
+       The address of a pointer variable that receives a pointer to the 
+       resulting string. The string that represents rclsid includes 
+       enclosing braces.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="StringFromCLSID">
+     <returntype>HRESULT</returntype>
+     <par loc="stack" name="rclsid" io="r" nr="1">
+       <type>REFCLSID</type>
+       <roles>
+	 <role rt="ioc:com" rn="clsid"/>
+       </roles>
+    </par>
+    <par loc="stack" name="lplpsz" io="w" nr="2">
+      <type><ptr><ptr>OLESTR</ptr></ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:com" rn="infox:clsid string"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="com"
+		  desc="converts a CLSID into a printable string"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>
