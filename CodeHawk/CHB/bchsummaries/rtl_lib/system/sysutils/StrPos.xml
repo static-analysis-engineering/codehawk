@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="StrPos.xml" time="2016-11-27 23:33:29.398246"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="StrPos" package="System::SysUtils">
+    <documentation>
+      <desc>Returns a pointer to the first occurrence of STR2 in STR1</desc>
+      <apidoc>
+        <pt>
+          <ll>StrPos(</ll>
+          <ld>const Str1:PAnsiChar</ld>
+          <ld>const Str2:PAnsiChar</ld>
+          <ll>):PAnsiChar</ll>
+        </pt>
+        <par name="Str1">string to be searched</par>
+        <par name="Str2">string to search for</par>
+        <return>
+          <rc cond="success">pointer to Str2 within Str1</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="StrPos">
+      <par loc="register" name="Str1" reg="eax" rep="hex">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:examine"/>
+	</roles>
+      </par>
+      <par loc="register" name="Str2" reg="edx" rep="hex">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:misc"/>
+	</roles>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="searches for a substring in a string"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

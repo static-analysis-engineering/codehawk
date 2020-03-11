@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SHDeleteValue.xml" time="2016-07-15 13:47:56.942377"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="SHDeleteValue">
+    <documentation>
+      <desc>Deletes a named value from the specified registry key</desc>
+      <apidoc>
+        <pt>
+          <ll>LSTATUS SHDeleteValue(</ll>
+          <ld>HKEY    hkey</ld>
+          <ld>LPCTSTR pszSubKey</ld>
+          <ld>LPCTSTR pszValue</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hkey">
+	  A handle to the currently open key, or any of the following predefined values.
+	</par>
+        <par name="pszSubKey">
+	  The address of a null-terminated string specifying the name
+	  of the subkey for which to change the value.
+	</par>
+        <par name="pszValue">The address of the value to be deleted</par>
+        <return>
+          <rc cond="success">ERROR_SUCCESS</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="SHDeleteValue">
+      <par loc="stack" name="hkey" io="r" nr="1">
+        <type>HKEY</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:registry" rn="handle:key"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pszSubKey" io="r" nr="2" rep="hex">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:registry" rn="name:subkey"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pszValue" io="r" nr="3" rep="hex">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:registry" rn="name:value"/>
+	</roles>
+      </par>
+      <returntype>LRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="registry" desc="deletes a value from a registry key"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

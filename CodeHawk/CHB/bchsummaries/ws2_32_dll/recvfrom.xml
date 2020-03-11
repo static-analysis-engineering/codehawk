@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/07/2015 19:18:31"/>
+  <libfun lib="ws2_32" name="recvfrom">
+   <documentation>
+    <desc>receives a datagram and stores the source address</desc>
+    <apidoc>
+     <pt>
+      <ll>int recvfrom(</ll>
+      <ld>_In_         SOCKET s</ld>
+      <ld>_Out_        char *buf</ld>
+      <ld>_In_         int len</ld>
+      <ld>_In_         int flags</ld>
+      <ld>_Out_        struct sockaddr *from</ld>
+      <ld>_Inout_opt_  int *fromlen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="s">A descriptor identifying a bound socket</par>
+     <par name="buf">A buffer for the incoming data</par>
+     <par name="len">
+         The length, in bytes, of the buffer pointed to by the buf parameter
+     </par>
+     <par name="flags">
+       A set of options that modify the behavior of the function call beyond the 
+       options specified for the associated socket. See the Remarks below for 
+       more details
+     </par>
+     <par name="from">
+       An optional pointer to a buffer in a sockaddr structure that will hold 
+       the source address upon return.
+     </par>
+     <par name="fromlen">
+       An optional pointer to the size, in bytes, of the buffer pointed to by 
+       the from parameter
+     </par>
+     <return>
+      <rc cond="success">the number of bytes received</rc>
+      <rc cond="failure">SOCKET_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="recvfrom">
+    <par loc="stack" name="s" io="r" nr="1">
+     <type>SOCKET</type>
+     <roles>
+       <role rt="ioc:network" rn="socket"/>
+     </roles>
+    </par>
+    <par loc="stack" name="buf" io="w" nr="2" rep="hex">
+     <type><ptr>char</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-bytes:network input"/>
+     </roles>
+    </par>
+    <par loc="stack" name="len" nr="3">
+     <type>int</type>
+     <roles>
+       <role rt="size:buffersize" rn="recvfrom"/>
+     </roles>
+    </par>
+    <par loc="stack" name="flags" roles="none" nr="4">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="from" io="w" nr="5" rep="hex">
+     <type><ptr>sockaddr</ptr></type>
+     <roles>
+       <role rt="ioc:network" rn="infox:socket address"/>
+     </roles>
+    </par>
+    <par loc="stack" name="fromlen" nr="6">
+     <type><ptr>int</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:buffersize" rn="recvfrom"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="receives data from the network">
+       </io-action>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>buf</ci>
+	    <ci>len</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>sockaddr</type>
+	    <ci>from</ci>
+	    <apply><addressed-value/><ci>fromlen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>buf</ci>
+	    <ci>len</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>sockaddr</type>
+	    <ci>from</ci>
+	    <apply><addressed-value/><ci>fromlen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

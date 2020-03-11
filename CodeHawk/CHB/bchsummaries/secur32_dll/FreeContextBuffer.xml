@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/16/2015 13:41:14"/>
+  <libfun lib="secur32" name="FreeContextBuffer">
+   <documentation>
+    <desc>
+      enables callers of security package functions to free memory buffers 
+      allocated by the security package.
+    </desc>
+    <apidoc>
+     <pt>SECURITY_STATUS SEC_Entry FreeContextBuffer (_In_ PVOID pvContextBuffer)</pt>
+     <par name="pvContextBuffer">A pointer to memory to be freed</par>
+     <return>
+      <rc cond="success">SEC_E_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="FreeContextBuffer">
+    <par loc="stack" io="r" name="pvContextBuffer" nr="1">
+     <type><ptr>VOID</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:misc"/>
+     </roles>
+    </par>
+    <returntype>SECURITY_STATUS SEC_Entry</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="crypto" 
+		desc="frees memory buffers allocated by the security package"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

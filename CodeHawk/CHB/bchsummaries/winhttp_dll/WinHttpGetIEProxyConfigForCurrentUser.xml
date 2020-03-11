@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/10/2015 16:17:24"/>
+  <libfun lib="winhttp" name="WinHttpGetIEProxyConfigForCurrentUser">
+   <documentation>
+    <desc>
+      retrieves the Internet Explorer proxy configuration for the current user.
+    </desc>
+    <apidoc>
+     <pt>BOOL WINAPI WinHttpGetIEProxyConfigForCurrentUser (_Inout_ WINHTTP_CURRENT_USER_IE_PROXY_CONFIG *pProxyConfig)</pt>
+     <par name="pProxyConfig">
+       A pointer, on input, to a WINHTTP_CURRENT_USER_IE_PROXY_CONFIG
+       structure. On output, the structure contains the Internet
+       Explorer proxy settings for the current active network
+       connection (for example, LAN, dial-up, or VPN connection).
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="WinHttpGetIEProxyConfigForCurrentUser">
+    <par loc="stack" io="rw" name="pProxyConfig" nr="1">
+     <type><ptr>WINHTTP_CURRENT_USER_IE_PROXY_CONFIG</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:WINHTTP_CURRENT_USER_IE_PROXY_CONFIG" />
+      <role rt="ioc:network" rn="infox:IE proxy settings"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" 
+		desc="retrieves the Internet Explorer proxy configuration for the current user">
+     </io-action>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

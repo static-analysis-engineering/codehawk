@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/27/2015 23:24:08"/>
+  <libfun lib="rpcrt4" name="UuidCreateSequential">
+   <documentation>
+    <desc>creates a new UUID</desc>
+    <apidoc>
+     <pt>RPC_STATUS RPC_ENTRY UuidCreateSequential (UUID __RPC_FAR *Uuid)</pt>
+     <par name="Uuid">Returns a pointer to the created UUID.</par>
+     <return>
+      <rc cond="success">RPC_S_OK</rc>
+      <rc cond="failure">RPC_S_UUID_NO_ADDRESS</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="UuidCreateSequential">
+    <par loc="stack" name="Uuid" nr="1">
+     <type><ptr>UUID</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:system" rn="infox:UUID with MAC address"/>
+     </roles>
+    </par>
+    <returntype>RPC_ENTRY</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="creates a new UUID (with MAC address)"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

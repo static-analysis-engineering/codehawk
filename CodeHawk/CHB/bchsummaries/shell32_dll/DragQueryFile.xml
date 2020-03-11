@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 15:40:11"/>
+  <libfun lib="shell32" name="DragQueryFile">
+   <documentation>
+    <desc>
+      Retrieves the names of dropped files that result from a successful
+      drag-and-drop operation
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>UINT DragQueryFile(</ll>
+      <ld>_In_  HDROP  hDrop</ld>
+      <ld>_In_  UINT   iFile</ld>
+      <ld>_Out_ LPTSTR lpszFile</ld>
+      <ld>      UINT   cch</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hDrop">
+       Identifier of the structure that contains the file names of the dropped files
+     </par>
+     <par name="iFile">
+       Index of the file to query. If the value of this parameter is 0xFFFFFFFF,
+       DragQueryFile returns a count of the files dropped. If the value of this 
+       parameter is between zero and the total number of files dropped, 
+       DragQueryFile copies the file name with the corresponding value to the 
+       buffer pointed to by the lpszFile parameter.
+     </par>
+     <par name="lpszFile">
+       The address of a buffer that receives the file name of a dropped file 
+       when the function returns. This file name is a null-terminated string.
+       If this parameter is NULL, DragQueryFile returns the required size, in 
+       characters, of this buffer
+     </par>
+     <par name="cch">The size, in characters, of the lpszFile buffer</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="DragQueryFile">
+    <par loc="stack" io="r" name="hDrop" nr="1">
+     <type>HDROP</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:drop" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="iFile" roles="none" nr="2">
+     <type>UINT</type>
+    </par>
+    <par loc="stack" io="w" name="lpszFile" nr="3" rep="hex">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="infox:filename" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="cch" nr="4">
+     <type>UINT</type>
+     <roles>
+      <role rt="size:buffer" rn="size:actual" />
+     </roles>
+    </par>
+    <returntype>UINT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="retrieves the names of dropped files from a drag operation"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszFile</ci>
+	    <apply><indexsize/><ci>cch</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszFile</ci>
+	    <apply><indexsize/><ci>cch</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

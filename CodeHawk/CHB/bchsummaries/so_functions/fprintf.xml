@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:36"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="fprintf">
+   <documentation>
+    <desc>print formatted data on a stream</desc>
+    <apidoc>
+     <pt>
+      <ll>int fprintf (</ll>
+      <ld>FILE *stream,</ld>
+      <ld>const char *format,</ld>
+      <ld>[. argument ]</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="stream">pointer to a FILE structure</par>
+     <par name="format">format-control string</par>
+     <par name="argument">optional arguments</par>
+     <return>
+      <rc cond="success">number of bytes written</rc>
+      <rc cond="failure">negative number</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="fprintf">
+     <returntype>int</returntype>
+     <par loc="stack" name="stream" io="r" nr="1">
+       <type><ptr>FILE</ptr></type>
+       <pre><deref-read/></pre>
+       <roles>
+	 <role rt="ioc:filesystem" rn="file"/>
+       </roles>
+    </par>
+    <par loc="stack" desc="format" io="r" name="format" nr="2">
+      <type><ptr>char</ptr></type>
+      <pre><deref-read-nt/><format-string/></pre>
+     <roles>
+        <role rt="ioc:outputs" rn="format string"/>
+     </roles>
+    </par>
+    <par loc="stack" name="args" io="r" roles="none" nr="3">
+      <type>var-arg</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="format" desc="prints formatted data to a stream"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonnegative-negative/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

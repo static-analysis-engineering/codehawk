@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/19/2015 13:57:54"/>
+  <libfun lib="wininet" name="DeleteUrlCacheEntry">
+   <documentation>
+    <desc>
+      Removes the file associated with the source name from the cache, 
+      if the file exists
+    </desc>
+    <apidoc>
+     <pt>BOOLAPI DeleteUrlCacheEntry (_In_ LPCTSTR lpszUrlName)</pt>
+     <par name="lpszUrlName">
+       Pointer to a string that contains the name of the source that corresponds
+       to the cache entry
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DeleteUrlCacheEntry">
+    <par loc="stack" name="lpszUrlName" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="url"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" 
+		desc="removes the file associated with a URL from the cache"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

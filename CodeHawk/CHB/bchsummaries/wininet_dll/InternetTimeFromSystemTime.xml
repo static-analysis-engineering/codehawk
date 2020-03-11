@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/04/2015 12:24:04"/>
+  <libfun lib="wininet" name="InternetTimeFromSystemTime">
+   <documentation>
+    <desc>
+      Formats a date and time according to the HTTP version 1.0 specification.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL InternetTimeFromSystemTime(</ll>
+      <ld>_In_   const SYSTEMTIME *pst</ld>
+      <ld>_In_   DWORD dwRFC</ld>
+      <ld>_Out_  LPTSTR lpszTime</ld>
+      <ld>_In_   DWORD cbTime</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pst">
+       Pointer to a SYSTEMTIME structure that contains the date and time to format
+     </par>
+     <par name="dwRFC">
+       RFC format used. Currently, the only valid format is INTERNET_RFC1123_FORMAT
+     </par>
+     <par name="lpszTime">
+       Pointer to a string buffer that receives the formatted date and time. The 
+       buffer should be of size INTERNET_RFC1123_BUFSIZE
+     </par>
+     <par name="cbTime">Size of the lpszTime buffer, in bytes</par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="InternetTimeFromSystemTime">
+    <par loc="stack" io="r" name="pst" nr="1">
+     <type><ptr>SYSTEMTIME</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:SYSTEMTIME" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwRFC" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" rep="hex" io="w" name="lpszTime" nr="3">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-string:formatted data" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cbTime" nr="4">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:buffer" rn="InternetTimeFromSystemTime" />
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <preconditions>
+      <io-actions>
+         <io-action cat="network"
+		    desc="formats date and time for Http"/>
+      </io-actions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszTime</ci>
+	    <ci>cbTime</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszTime</ci>
+	    <ci>cbTime</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

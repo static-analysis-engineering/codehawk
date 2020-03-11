@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:44"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="free">
+   <documentation>
+    <desc>deallocates or frees memory</desc>
+    <apidoc>
+     <pt>void free (void *ptr)</pt>
+     <par name="ptr">previously allocated memory block to be freed</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="free">
+    <returntype>void</returntype>
+    <par loc="stack" io="r" name="ptr" nr="1">
+      <type><ptr>void</ptr></type>
+     <pre><allocation-base/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="address:memory"/>
+     </roles>
+     <sideeffects><invalidates/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="frees heap memory"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/18/2015 13:02:59"/>
+  <libfun lib="wininet" name="InternetSetCookie">
+   <documentation>
+    <desc>Creates a cookie associated with the specified URL</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL InternetSetCookie(</ll>
+      <ld>_In_ LPCTSTR lpszUrl</ld>
+      <ld>_In_ LPCTSTR lpszCookieName</ld>
+      <ld>_In_ LPCTSTR lpszCookieData</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszUrl">
+       Pointer to a null-terminated string that specifies the URL for which 
+       the cookie should be set
+     </par>
+     <par name="lpszCookieName">
+       Pointer to a null-terminated string that specifies the name to be 
+       associated with the cookie data. If this parameter is NULL, no name 
+       is associated with the cookie
+     </par>
+     <par name="lpszCookieData">
+       Pointer to the actual data to be associated with the URL
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="InternetSetCookie">
+    <par loc="stack" io="r" name="lpszUrl" nr="1" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="url"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpszCookieName" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:cookie"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszCookieData" nr="3" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="cookie data"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" 
+		desc="creates a cookie associated with a URL"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

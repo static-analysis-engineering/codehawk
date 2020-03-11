@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/31/2015 23:43:14"/>
+  <libfun lib="wininet" name="InternetQueryOption">
+   <documentation>
+    <desc>Queries an Internet option on the specified handle</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL InternetQueryOption(</ll>
+      <ld>_In_    HINTERNET hInternet</ld>
+      <ld>_In_    DWORD     dwOption</ld>
+      <ld>_Out_   LPVOID    lpBuffer</ld>
+      <ld>_Inout_ LPDWORD   lpdwBufferLength</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hInternet">Handle on which to query information</par>
+     <par name="dwOption">
+       Internet option to be queried. This can be one of the Option Flags values.
+     </par>
+     <par name="lpBuffer">
+       Pointer to a buffer that receives the option setting. Strings returned by 
+       InternetQueryOption are globally allocated, so the calling application must
+       free them when it is finished using them.
+     </par>
+     <par name="lpdwBufferLength">
+       Pointer to a variable that contains the size of lpBuffer, in bytes. When 
+       InternetQueryOption returns, lpdwBufferLength specifies the size of the data 
+       placed into lpBuffer. If GetLastError returns ERROR_INSUFFICIENT_BUFFER, 
+       this parameter points to the number of bytes required to hold the requested
+       information.
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="InternetQueryOption">
+    <par loc="stack" io="r" name="hInternet" nr="1">
+     <type>HINTERNET</type>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwOption" nr="2">
+      <rep type="enum" name="internet_option_constants"/>
+      <type>DWORD</type>
+      <roles>
+	<role rt="ioc:network" rn="internet option"/>
+      </roles>
+      <pre><enum-value name="internet_option_constants"/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpBuffer" nr="3">
+     <type><ptr>void</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-string:internet option setting"/>
+       <role rt="rep:hex" rn="dst-string"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="bufferlength" io="rw" name="lpdwBufferLength" nr="4">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+       <role rt="size:buffersize" rn="InternetQueryOption"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="queries an internet option"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpBuffer</ci>
+	    <apply><addressed-value/><ci>lpdwBufferLength</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="internet" xdata="internet option"/>
+	    <type>byte</type>
+	    <ci>lpBuffer</ci>
+	    <apply><addressed-value/><ci>lpdwBufferLength</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

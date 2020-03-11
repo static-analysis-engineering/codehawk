@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/01/2015 23:28:48"/>
+  <libfun lib="wininet" name="HttpEndRequest">
+   <documentation>
+    <desc>Ends an HTTP request that was initiated by HttpSendRequestEx.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL HttpEndRequest(</ll>
+      <ld>_In_      HINTERNET          hRequest</ld>
+      <ld>_Out_opt_ LPINTERNET_BUFFERS lpBuffersOut</ld>
+      <ld>_In_      DWORD              dwFlags</ld>
+      <ld>_In_opt_  DWORD_PTR          dwContext</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hRequest">
+       Handle returned by HttpOpenRequest and sent by HttpSendRequestEx
+     </par>
+     <par name="lpBuffersOut">
+       This parameter is reserved and must be NULL
+     </par>
+     <par name="dwFlags">This parameter is reserved and must be set to 0.</par>
+     <par name="dwContext">This parameter is reserved and must be set to 0.</par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="HttpEndRequest">
+    <par loc="stack" desc="http request handle" io="r" name="hRequest" nr="1">
+     <type>HINTERNET</type>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+       <role rt="rep:hex" rn="internet handle"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpBuffersOut" roles="none" nr="2">
+     <type><ptr>INTERNET_BUFFERS</ptr></type>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwContext" nr="4">
+     <type>DWORD_PTR</type>
+     <roles>
+        <role rt="ioc:network" rn="application context"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="ends an HTTP request"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

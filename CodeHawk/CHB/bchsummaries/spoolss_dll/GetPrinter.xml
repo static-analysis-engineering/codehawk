@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/05/2015 21:11:56"/>
+  <libfun lib="spoolss" name="GetPrinter">
+   <documentation>
+    <desc>retrieves information about a specified printer</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetPrinter(</ll>
+      <ld>_In_  HANDLE  hPrinter</ld>
+      <ld>_In_  DWORD   Level</ld>
+      <ld>_Out_ LPBYTE  pPrinter</ld>
+      <ld>_In_  DWORD   cbBuf</ld>
+      <ld>Out_ LPDWORD pcbNeeded</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hPrinter">
+       A handle to the printer for which the function retrieves information. Use the 
+       OpenPrinter or AddPrinter function to retrieve a printer handle
+     </par>
+     <par name="Level">
+       The level or type of structure that the function stores into the buffer pointed 
+       to by pPrinter. This value can be 1, 2, 3, 4, 5, 6, 7, 8 or 9.
+     </par>
+     <par name="pPrinter">
+       A pointer to a buffer that receives a structure containing information about the 
+       specified printer. The buffer must be large enough to receive the structure and 
+       any strings or other data to which the structure members point. If the buffer is 
+       too small, the pcbNeeded parameter returns the required buffer size.
+       The type of structure is determined by the value of Level.
+     </par>
+     <par name="cbBuf">The size, in bytes, of the buffer pointed to by pPrinter</par>
+     <par name="pcbNeeded">
+       A pointer to a variable that the function sets to the size, in bytes, of the printer 
+       information. If cbBuf is smaller than this value, GetPrinter fails, and the value 
+       represents the required buffer size. If cbBuf is equal to or greater than this 
+       value, GetPrinter succeeds, and the value represents the number of bytes stored 
+       in the buffer.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="GetPrinter">
+    <par loc="stack" io="r" name="hPrinter" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:system" rn="handle:printer" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" roles="none" name="Level" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="pPrinter" nr="3">
+     <type><ptr>BYTE</ptr></type>
+     <roles>
+      <role rt="ioc:system" rn="infox:printer info" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cbBuf" nr="4">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:buffer" rn="GetPrinter" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="pcbNeeded" rep="hex" nr="5">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="size:buffer" rn="actual" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects>
+       <block-write/>
+     </sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves information about a printer">
+       </io-action>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>BYTE</type>
+	    <ci>pPrinter</ci>
+	    <ci>cbBuf</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre><math><apply><geq/><ci>Level</ci><cn>1</cn></apply></math></pre>
+      <pre><math><apply><leq/><ci>Level</ci><cn>9</cn></apply></math></pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>BYTE</type>
+	    <ci>pPrinter</ci>
+	    <ci>cbBuf</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

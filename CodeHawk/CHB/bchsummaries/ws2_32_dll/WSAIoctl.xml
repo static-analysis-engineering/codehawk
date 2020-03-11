@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/06/2015 23:53:08"/>
+  <libfun lib="ws2_32" name="WSAIoctl">
+   <documentation>
+    <desc>controls the mode of a socket</desc>
+    <apidoc>
+     <pt>
+      <ll>int WSAIoctl(</ll>
+      <ld>_In_   SOCKET s</ld>
+      <ld>_In_   DWORD dwIoControlCode</ld>
+      <ld>_In_   LPVOID lpvInBuffer</ld>
+      <ld>_In_   DWORD cbInBuffer</ld>
+      <ld>_Out_  LPVOID lpvOutBuffer</ld>
+      <ld>_In_   DWORD cbOutBuffer</ld>
+      <ld>_Out_  LPDWORD lpcbBytesReturned</ld>
+      <ld>_In_   LPWSAOVERLAPPED lpOverlapped</ld>
+      <ld>_In_   LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="s">A descriptor identifying a socket</par>
+     <par name="dwIoControlCode">The control code of operation to perform</par>
+     <par name="lpvInBuffer">A pointer to the input buffer</par>
+     <par name="cbInBuffer">The size, in bytes, of the input buffer</par>
+     <par name="lpvOutBuffer">A pointer to the output buffer</par>
+     <par name="cbOutBuffer">The size, in bytes, of the output buffer</par>
+     <par name="lpcbBytesReturned">A pointer to actual number of bytes of output</par>
+     <par name="lpOverlapped">
+       A pointer to a WSAOVERLAPPED structure (ignored for non-overlapped sockets).
+     </par>
+     <par name="lpCompletionRoutine">
+       Note  A pointer to the completion routine called when the operation has 
+       been completed (ignored for non-overlapped sockets)
+     </par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">SOCKET_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="36" cc="stdcall" name="WSAIoctl">
+    <par loc="stack" io="r" name="s" nr="1">
+     <type>SOCKET</type>
+     <roles>
+        <role rt="ioc:network" rn="socket"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwIoControlCode" nr="2">
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:network" rn="io control code"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpvInBuffer" nr="3">
+     <type>LPVOID</type>
+     <roles>
+        <role rt="ioc:network" rn="io input data"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cbInBuffer" nr="4">
+     <type>DWORD</type>
+     <pre><non-negative/></pre>
+     <roles>
+        <role rt="size:buffersize" rn="WSAIoctl"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpvOutBuffer" nr="5">
+     <type>LPVOID</type>
+     <roles>
+        <role rt="ioc:network" rn="io output data"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cbOutBuffer" nr="6">
+     <type>DWORD</type>
+     <pre><non-negative/></pre>
+     <roles>
+        <role rt="size:buffersize" rn="WSAIoctl"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpcbBytesReturned" nr="7">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="size:returned" rn="WSAIoctl"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpOverlapped" nr="8">
+     <type><ptr>WSOVERLAPPED</ptr></type>
+     <pre><deref-read/></pre>
+     <roles/>
+    </par>
+    <par loc="stack" name="lpCompletionRoutine" nr="9">
+     <type><ptr>WSOVERLAPPED_COMPLETION_ROUTINE</ptr></type>
+     <pre><deref-read/></pre>
+     <roles/>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="network" desc="controls the mode of a socket"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>lpvInBuffer</ci>
+	    <ci>cbInBuffer</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpvOutBuffer</ci>
+	    <ci>cbOutBuffer</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>lpvOutBuffer</ci>
+	    <ci>cbOutBuffer</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

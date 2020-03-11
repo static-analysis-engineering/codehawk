@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="03/04/2015 13:02:49"/>
+  <libfun lib="wininet" name="HttpQueryInfoW">
+   <refer-to char-type="unicode" name="HttpQueryInfo"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

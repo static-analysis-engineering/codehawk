@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="UrlEscape.xml" time="2016-06-18 21:45:07.620736"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="UrlEscape">
+    <documentation>
+      <desc>
+         Converts characters or surrogate pairs in a URL that might be
+         altered during transport across the Internet ("unsafe"
+         characters) into their corresponding escape
+         sequences. Surrogate pairs are characters between U+10000 to
+         U+10FFFF (in UTF-32) or between DC00 to DFFF (in UTF-16).
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT UrlEscape(</ll>
+          <ld>_In_    PCTSTR pszURL</ld>
+          <ld>_Out_   PTSTR  pszEscaped</ld>
+          <ld>_Inout_ DWORD  *pcchEscaped</ld>
+          <ld>        DWORD  dwFlags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pszURL">
+	   A null-terminated string of maximum length
+	   INTERNET_MAX_URL_LENGTH that contains a full or partial
+	   URL, as appropriate for the value in dwFlags.
+	</par>
+        <par name="pszEscaped">
+           The buffer that receives the converted string, with the
+           unsafe characters converted to their escape sequences.
+	</par>
+        <par name="pcchEscaped">
+           A pointer to a DWORD value that, on entry, contains the
+           number of characters in the pszEscaped buffer. Before
+           calling UrlEscape, the calling application must set the
+           value referenced by pcchEscaped to the size of the
+           buffer. When this function returns successfully, the value
+           receives the number of characters written to the buffer,
+           not including the terminating NULL character. 
+
+           If an E_POINTER error code is returned, the buffer was too
+           small to hold the result, and the value referenced by
+           pcchEscaped is set to the required number of characters in
+           the buffer. If any other errors are returned, the value
+           referenced by pcchEscaped is undefined.
+	</par>
+        <par name="dwFlags">
+           The flags that indicate which portion of the URL is being
+           provided in pszURL and which characters in that string
+           should be converted to their escape sequences.
+	</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">
+             If the pcchEscaped buffer was too small to contain the
+             result, E_POINTER is returned, and the value pointed to
+             by pcchEscaped is set to the required buffer
+             size. Otherwise, a standard error value is returned.
+	  </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="16" cc="stdcall" name="UrlEscape">
+      <par loc="stack" name="pszURL" io="r" nr="1">
+        <type><ptr>TCHAR</ptr></type>
+        <pre><deref-read-nt/></pre>
+        <roles>
+           <role rt="ioc:network" rn="url"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pszEscaped" io="w" nr="2">
+        <type><ptr>TCHAR</ptr></type>
+        <roles>
+           <role rt="ioc:network" rn="url"/>
+           <role rt="rep:hex" rn="URL"/>
+        </roles>
+      </par>
+      <par loc="stack" name="pcchEscaped" io="rw" nr="3">
+        <type><ptr>DWORD</ptr></type>
+        <pre><deref-read/></pre>
+        <sideeffects><block-write/></sideeffects>
+        <roles>
+           <role rt="size:buffersize" rn="UrlEscape"/>
+        </roles>
+      </par>
+      <par loc="stack" name="dwFlags" io="r" nr="4">
+        <type>DWORD</type>
+        <roles>
+           <role rt="rep:enum" rn="url_escape_constants"/>
+        </roles>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network"
+		   desc="converts unsafe url characters into escape sequences"/>
+      </io-actions>
+      <preconditions>
+         <pre>
+            <math>
+               <apply>
+                  <deref-read/>
+                  <type>TCHAR</type>
+                  <ci>pszEscaped</ci>
+                  <apply>
+                     <indexsize/>
+                     <apply><addressed-value/><ci>pcchEscaped</ci><cn>0</cn></apply>
+		  </apply>
+	       </apply>
+	    </math>
+	 </pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+         <sideeffect>
+            <math>
+               <apply>
+                  <block-write/>
+                  <type>TCHAR</type>
+                  <ci>pszEscaped</ci>
+                  <apply>
+                     <indexsize/>
+                     <apply><addressed-value/><ci>pcchEscaped</ci><cn>0</cn></apply>
+		  </apply>
+	       </apply>
+	    </math>
+         </sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

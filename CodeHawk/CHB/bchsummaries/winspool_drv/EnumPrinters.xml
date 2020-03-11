@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:17"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="winspool.drv" name="EnumPrinters">
+   <documentation>
+    <desc>enumerates available printers, print servers, domains, or print providers</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL EnumPrinters(</ll>
+      <ld>_In_   DWORD Flags,</ld>
+      <ld>_In_   LPTSTR Name,</ld>
+      <ld>_In_   DWORD Level,</ld>
+      <ld>_Out_  LPBYTE pPrinterEnum,</ld>
+      <ld>_In_   DWORD cbBuf,</ld>
+      <ld>_Out_  LPDWORD pcbNeeded,</ld>
+      <ld>_Out_  LPDWORD pcReturned</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Flags">The types of print objects that the function should enumerate</par>
+     <par name="Name">Pointer to the object to enumerate</par>
+     <par name="Level">
+       The type of data structures pointed to by pPrinterEnum. Valid values are
+       1, 2, 4, and 5.
+     </par>
+     <par name="pPrinterEnum">
+       A pointer to a buffer that receives an array of PRINTER_INFO_1, 
+       PRINTER_INFO_2, PRINTER_INFO_4, or PRINTER_INFO_5 structures. Each 
+       structure contains data that describes an available print object.
+     </par>
+     <par name="cbBuf">
+       The size, in bytes, of the buffer pointed to by pPrinterEnum.
+     </par>
+     <par name="pcbNeeded">
+       A pointer to a value that receives the number of bytes copied if the function 
+       succeeds or the number of bytes required if cbBuf is too small.
+     </par>
+     <par name="pcbReturned">
+       A pointer to a value that receives the number of PRINTER_INFO_1,
+       PRINTER_INFO_2, PRINTER_INF)_4 or PRINTER_INFO_5 structures that 
+       the function returns in the array to which pPrinterEnum points.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="EnumPrinters">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="Flags" roles="none" nr="1">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="Name" rep="hex" nr="2">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:printer"/>
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="Level" roles="none" nr="3">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="pPrinterEnum" nr="4">
+     <roles>
+      <role rt="ioc:system" rn="infox:printer" />
+     </roles>
+     <btype tname="LPBYTE" ttag="tnamed"/>
+    </par>
+    <par loc="stack" io="r" name="cbBuf" nr="5">
+     <roles>
+      <role rt="size:buffer" rn="size:buffer" />
+     </roles>
+     <type>DWORD</type>
+     <btype ikind="iuint" ttag="tint"/>
+    </par>
+    <par loc="stack" io="w" name="pcbNeeded" rep="hex" nr="6">
+     <roles>
+      <role rt="size:buffer" rn="size:actual" />
+     </roles>
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="pcReturned" rep="hex" nr="7">
+     <roles>
+      <role rt="size:count" rn="count:number of entries enumerated" />
+     </roles>
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-actions cat="system"
+		  desc="enumerates available printers or print servers or domains"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>pPrinterEnum</ci>
+	    <ci>cbBuf</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>pPrinterEnum</ci>
+	    <ci>cbBuf</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

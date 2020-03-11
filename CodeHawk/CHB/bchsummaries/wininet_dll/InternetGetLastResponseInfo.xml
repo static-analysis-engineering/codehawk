@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 15:06:19"/>
+  <libfun lib="wininet" name="InternetGetLastResponseInfo">
+   <documentation>
+    <desc>
+      Retrieves the last error description or server response on the thread 
+      calling this function
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL InternetGetLastResponseInfo(</ll>
+      <ld>_Out_   LPDWORD lpdwError</ld>
+      <ld>_Out_   LPTSTR  lpszBuffer</ld>
+      <ld>_Inout_ LPDWORD lpdwBufferLength</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpdwError">
+       Pointer to a variable that receives an error message pertaining to 
+       the operation that failed
+     </par>
+     <par name="lpszBuffer">
+       Pointer to a buffer that receives the error text
+     </par>
+     <par name="lpdwBufferLength">
+       Pointer to a variable that contains the size of the lpszBuffer buffer, 
+       in TCHARs. When the function returns, this parameter contains the size 
+       of the string written to the buffer, not including the terminating zero
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="InternetGetLastResponseInfo">
+    <par loc="stack" io="w" name="lpdwError" rep="hex" nr="1">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="ioc:network" rn="infox:error id" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpszBuffer" rep="hex" nr="2">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:network" rn="infox:error text" />
+      <role rt="ioc:memops" rn="dst-string:error text" />
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="lpdwBufferLength" rep="hex" nr="3">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="size:buffer" rn="InternetGetLastReponseInfo" />
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" 
+		desc="retrieves the last error description or server response">
+     </io-action>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszBuffer</ci>
+	    <apply>
+	      <indexsize/>
+	      <apply><addressed-value/><ci>lpdwBufferLength</ci><cn>0</cn></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszBuffer</ci>
+	    <apply>
+	      <indexsize/>
+	      <apply><addressed-value/><ci>lpdwBufferLength</ci><cn>0</cn></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

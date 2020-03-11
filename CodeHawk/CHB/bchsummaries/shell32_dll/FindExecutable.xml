@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 15:11:27"/>
+  <libfun lib="shell32" name="FindExecutable">
+   <documentation>
+    <desc>
+      Retrieves the name of and handle to the executable (.exe) file
+      associated with a specific document file
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HINSTANCE FindExecutable(</ll>
+      <ld>_In_     LPCTSTR lpFile</ld>
+      <ld>_In_opt_ LPCTSTR lpDirectory</ld>
+      <ld>_Out_    LPTSTR  lpResult</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpFile">
+       The address of a null-terminated string that specifies a file name.
+       This file should be a document
+     </par>
+     <par name="lpDirectory">
+       The address of a null-terminated string that specifies the default 
+       directory. This value can be NULL
+     </par>
+     <par name="lpResult">
+       The address of a buffer that receives the file name of the associated 
+       executable file. This file name is a null-terminated string that 
+       specifies the executable file started when an "open" by association 
+       is run on the file specified in the lpFile parameter. Put simply, this 
+       is the application that is launched when the document file is directly 
+       double-clicked or when Open is chosen from the file's shortcut menu.
+       This parameter must contain a valid non-null value and is assumed to
+       be of length MAX_PATH. Responsibility for validating the value is
+       left to the programmer.
+     </par>
+     <return>
+      <rc cond="success">a value greater than 32 if successful</rc>
+      <rc cond="failure">
+	a value less than or equal to 32 representing an error
+      </rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="FindExecutable">
+    <par loc="stack" name="lpFile" io="r" nr="1" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpDirectory" io="r" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpResult" io="w" nr="3" rep="hex">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:filename"/>
+     </roles>
+    </par>
+    <returntype>HINSTANCE</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="retrieves the name of the executable associated with a document"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply><gt/><return/><cn>32</cn></apply>
+	</math>
+      </post>
+      <error-post>
+	<math>
+	  <apply><leq/><return/><cn>32</cn></apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

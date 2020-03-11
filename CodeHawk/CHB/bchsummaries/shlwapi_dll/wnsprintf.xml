@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="wnsprintf.xml" time="2016-08-10 15:08:49.777493"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="wnsprintf">
+    <documentation>
+      <desc>
+	Takes a variable-length argument list and returns the values
+	of the arguments as a printf-style formatted string
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>int wnsprintf(</ll>
+          <ld>_Out_ PTSTR  pszDest</ld>
+          <ld>_In_  int    cchDest</ld>
+          <ld>_In_  PCTSTR pszFmt</ld>
+          <ld>_In_         varargs</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pszDest">
+	  A pointer to a buffer that, when this function returns
+	  successfully, receives the output string
+	</par>
+        <par name="cchDest">
+	  The maximum number of characters allowed in pszDest
+	</par>
+        <par name="pszFmt">
+	  A printf-style format string. The %s format identifier
+	  should never be used in an unbounded form. To avoid
+	  potential buffer overruns, always specify a size; for
+	  instance "%32s".
+	</par>
+        <par name="varargs">
+	  Additional parameters that contain the data to be output
+	</par>
+        <return>
+          <rc cond="success">
+	    the number of characters written to the buffer, excluding
+	    any terminating NULL characters
+	  </rc>
+          <rc cond="failure">negative value</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="wnsprintf">
+      <par loc="stack" name="pszDest" io="w" nr="1" rep="hex">
+        <type>PTSTR</type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-string:formatted data"/>
+	</roles>
+      </par>
+      <par loc="stack" name="cchDest" io="r" nr="2">
+        <type>int</type>
+	<roles>
+	  <role rt="size:buffersize" rn="wnsprintf"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pszFmt" io="r" nr="3" rep="hex">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:outputs" rn="format string"/>
+	</roles>
+      </par>
+      <par loc="stack" name="varargs" io="r" roles="none" nr="4">
+        <type>varargs</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="outputs"
+		   desc="prints formatted data to a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>pszDest</ci>
+	      <apply><indexsize/><ci>cchDest</ci></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>pszDest</ci>
+	      <apply><indexsize/><ci>cchDest</ci></apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

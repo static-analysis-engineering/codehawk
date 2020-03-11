@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:33:04"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="winspool.drv" name="StartDocPrinter">
+   <documentation>
+    <desc>notifies the print spooler that a document is to be spooled for printing</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD StartDocPrinter(</ll>
+      <ld>_In_  HANDLE hPrinter,</ld>
+      <ld>_In_  DWORD Level,</ld>
+      <ld>_In_  LPBYTE pDocInfo</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hPrinter">
+       A handle to the printer. Use the OpenPrinter or AddPrinter function to 
+       retrieve a printer handle.
+     </par>
+     <par name="Level">
+       The version of the structure to which pDocInfo points. This value must be 1.
+     </par>
+     <par name="pDocInfo">
+       A pointer to a DOC_INFO_1 structure that describes the document to print.
+     </par>
+     <return>
+      <rc cond="success">Identifies the print job</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="StartDocPrinter">
+    <returnbtype ikind="iuint" ttag="tint"/>
+    <par loc="stack" io="r" name="hPrinter" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:system" rn="handle:printer" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="Level" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="pDocInfo" rep="hex" nr="3">
+     <type><ptr>DOC_INFO_1</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:DOC_INFO" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system"
+		 desc="notifies a print spooler about a document to be spooled"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

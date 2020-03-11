@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/07/2015 15:25:18"/>
+  <libfun lib="shell32" name="SHGetDiskFreeSpaceA">
+   <refer-to char-type="ansi" name="SHGetDiskFreeSpace"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

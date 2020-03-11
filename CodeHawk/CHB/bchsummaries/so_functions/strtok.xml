@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/18/2015 10:13:34"/>
+  <libfun lib="msvcrt" name="strtok">
+   <documentation>
+    <desc>
+      Finds the next token in a string, by using the current locale or a 
+      specified locale that's passed in
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>char *strtok(</ll>
+      <ld>const char *strToken</ld>
+      <ld>strDelimit</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="strToken">String containing token or tokens</par>
+     <par name="strDelimit">Set of delimiter characters</par>
+     <return>
+      <rc cond="success">a pointer to the next token found in strToken</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="strtok">
+    <par loc="stack" io="r" name="strToken" rep="hex" nr="1">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:memops" rn="src-string:search"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="strDelimit" rep="hex" nr="2">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:inputs" rn="string search"/>
+     </roles>
+    </par>
+    <returntype><ptr>char</ptr></returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="inputs" desc="finds the next token in a string"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

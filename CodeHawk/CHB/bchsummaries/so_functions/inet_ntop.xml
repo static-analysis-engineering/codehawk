@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2019-10-24 21:59:30"/>
+  <libfun name="inet_ntop">
+    <documentation>
+      <desc>convert IPv4 and IPv6 addresses between binary and text form</desc>
+      <apidoc>
+        <pt>
+          <ll>char *inet_ntop(</ll>
+          <ld>int af</ld>
+          <ld>const void *restrict src</ld>
+          <ld>char *restric dst</ld>
+          <ld>socklen_t size</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="af">specifies the family of the address</par>
+        <par name="src">
+	  points to a buffer holding an IPv4 address if the af
+	  argument is AF_INET, or an IPv6 address
+	  if the af argument is AF_INET6
+	</par>
+        <par name="dst">
+	  points to a buffer where the function stores the resulting
+	  text string; it shall not be NULL
+	</par>
+        <par name="size">
+	  specifies the size of this buffer, which shall be large
+	  enough to hold the text string (INET_ADDRSTRLEN characters
+	  for IPv4, INET6_ADDRSTRLEN characters for IPv6)
+	</par>
+        <return>
+          <rc cond="success">a pointer to the buffer containing the text string</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="inet_ntop">
+      <par loc="stack" name="af" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="src" nr="2">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="dst" nr="3">
+        <type><ptr>char</ptr></type>
+      </par>
+      <par loc="stack" name="size" nr="4">
+        <type>socklen_t</type>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>dst</ci>
+	      <ci>size</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <eq/><return-value/><ci>dst</ci>
+	    </apply>
+	  </math>
+	</post>
+	<error-post>
+	  <math><apply><null/><return-value/></apply></math>
+	</error-post>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>char</type>
+	      <ci>dst</ci>
+	      <ci>size</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 15:35:27"/>
+  <libfun lib="shlwapi" name="PathFindExtension">
+   <documentation>
+    <desc>Searches a path for an extension</desc>
+    <apidoc>
+     <pt>PTSTR PathFindExtension (_In_ PTSTR pszPath)</pt>
+     <par name="pszPath">
+       A pointer to a null-terminated string of maximum length MAX_PATH that
+       contains the path to search, including the extension being searched for
+     </par>
+     <return>
+      <rc cond="success">
+	the address of the "." that precedes the extension within pszPath
+      </rc>
+      <rc cond="failure">
+	address of the terminating null character otherwise
+      </rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="PathFindExtension">
+    <par loc="stack" name="pszPath" io="r" nr="1">
+     <type>PTSTR</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+       <role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>PTSTR</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" desc="searches a path for an extension"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post>
+	<math>
+	  <apply><geq/><return/><ci>pszPath</ci></apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

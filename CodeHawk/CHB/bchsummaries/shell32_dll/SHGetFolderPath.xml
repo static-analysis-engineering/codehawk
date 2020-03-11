@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/23/2015 23:46:45"/>
+  <libfun lib="shell32" name="SHGetFolderPath">
+   <documentation>
+    <desc>Deprecated. Gets the path of a folder identified by a CSIDL value</desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT SHGetFolderPath(</ll>
+      <ld>_In_  HWND   hwndOwner</ld>
+      <ld>_In_  int    nFolder</ld>
+      <ld>_In_  HANDLE hToken</ld>
+      <ld>_In_  DWORD  dwFlags</ld>
+      <ld>_Out_ LPTSTR pszPath</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hwndOwner">Reserved.</par>
+     <par name="nFolder">
+       A CSIDL value that identifies the folder whose path is to be retrieved. 
+       Only real folders are valid. If a virtual folder is specified, this function
+       fails. You can force creation of a folder by combining the folder's CSIDL
+       with CSIDL_FLAG_CREATE
+     </par>
+     <par name="hToken">
+       An access token that can be used to represent a particular user.
+
+       The calling process is responsible for correct impersonation when hToken 
+       is non-NULL. The calling process must have appropriate security privileges
+       for the particular user, including TOKEN_QUERY and TOKEN_IMPERSONATE, and 
+       the user's registry hive must be currently mounted. 
+       Assigning the hToken parameter a value of -1 indicates the Default User. 
+       This enables clients of SHGetFolderPath to find folder locations (such 
+       as the Desktop folder) for the Default User. The Default User user profile 
+       is duplicated when any new user account is created, and includes special
+       folders such as My Documents and Desktop. Any items added to the Default 
+       User folder also appear in any new user account.
+     </par>
+     <par name="dwFlags">
+       Flags that specify the path to be returned. This value is used in cases 
+       where the folder associated with a KNOWNFOLDERID (or CSIDL) can be moved,
+       renamed, redirected, or roamed across languages by a user or administrator.
+       The known folder system that underlies SHGetFolderPath allows users or 
+       administrators to redirect a known folder to a location that suits their 
+       needs. This is achieved by calling IKnownFolderManager::Redirect, which 
+       sets the "current" value of the folder associated with the SHGFP_TYPE_CURRENT 
+       flag.
+       The default value of the folder, which is the location of the folder if a
+       user or administrator had not redirected it elsewhere, is retrieved by 
+       specifying the SHGFP_TYPE_DEFAULT flag. This value can be used to 
+       implement a "restore defaults" feature for a known folder.
+     </par>
+     <par name="pszPath">
+       A pointer to a null-terminated string of length MAX_PATH which will receive 
+       the path. If an error occurs or S_FALSE is returned, this string will be
+       empty. The returned path does not include a trailing backslash. For example,
+       "C:\Users" is returned rather than "C:\Users\".
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="SHGetFolderPath">
+    <par loc="stack" name="hwndOwner" io="r" roles="none" nr="1">
+     <type>HWND</type>
+    </par>
+    <par loc="stack" io="r" name="nFolder" roles="none" nr="2">
+      <type>int</type>
+    </par>
+    <par loc="stack" io="r" name="hToken" nr="3">
+      <type>HANDLE</type>
+      <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:access token"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="pszPath" nr="5" rep="hex">
+     <type>LPTSTR</type>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:filename"/>
+     </roles>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves a path from csidl"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

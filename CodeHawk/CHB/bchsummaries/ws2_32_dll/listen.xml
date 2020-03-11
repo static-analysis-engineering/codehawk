@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:38:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ws2_32" name="listen">
+   <documentation>
+    <desc>places a socket in a state in which it is listening for an incoming connection</desc>
+    <apidoc>
+     <pt>
+      <ll>int listen (</ll>
+      <ld>__in SOCKET s,</ld>
+      <ld>__in int backlog</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="s">descriptor identifying a bound, unconnected socket</par>
+     <par name="backlog">maximum length of the queue of pending connections</par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">SOCKET_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="listen">
+     <returntype>int</returntype>
+    <par loc="stack" name="s" nr="1">
+       <type>SOCKET</type>
+       <roles>
+          <role rt="ioc:network" rn="socket"/>
+       </roles>
+    </par>
+    <par loc="stack" name="backlog" nr="2">
+       <type>int</type>
+       <roles>
+          <role rt="size:queue length" rn="listen.xml"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="places a socket in listening mode"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

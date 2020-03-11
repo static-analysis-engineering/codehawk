@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/24/2015 17:58:37"/>
+  <libfun lib="wininet" name="InternetCanonicalizeUrl">
+   <documentation>
+    <desc>
+      Canonicalizes a URL, which includes converting unsafe characters 
+      and spaces into escape sequences
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL InternetCanonicalizeUrl(</ll>
+      <ld>_In_    LPCTSTR lpszUrl</ld>
+      <ld>_Out_   LPTSTR  lpszBuffer</ld>
+      <ld>_Inout_ LPDWORD lpdwBufferLength</ld>
+      <ld>_In_    DWORD   dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszUrl">
+       A pointer to the string that contains the URL to canonicalize
+     </par>
+     <par name="lpszBuffer">
+       A pointer to the buffer that receives the resulting canonicalized URL
+     </par>
+     <par name="lpdwBufferLength">
+       A pointer to a variable that contains the size, in characters, of the 
+       lpszBuffer buffer. If the function succeeds, this parameter receives the 
+       number of characters actually copied to the lpszBuffer buffer, which does
+       not include the terminating null character. If the function fails, this 
+       parameter receives the required size of the buffer, in characters, which 
+       includes the terminating null character.
+     </par>
+     <par name="dwFlags">
+       Controls canonicalization. If no flags are specified, the function converts 
+       all unsafe characters and meta sequences (such as \.,\ .., and \...) to 
+       escape sequences. This parameter can be one of the following values.
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="InternetCanonicalizeUrl">
+    <par loc="stack" name="lpszUrl" io="r" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:network" rn="url"/>
+       <role rt="rep:hex" rn="url"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpszBuffer" io="w" nr="2">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:network" rn="url"/>
+       <role rt="rep:hex" rn="url"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpdwBufferLength" io="rw" nr="3">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:buffersize" rn="InternetCanonicalizeUrl"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwFlags" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="canonicalizes a URL"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszBuffer</ci>
+	    <apply><indexsize/><ci>lpdwBufferLength</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <external-effects/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszBuffer</ci>
+	    <apply><indexsize/><ci>lpdwBufferLength</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetUserProfileDirectory.xml" time="2016-05-08 10:35:11.628785"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="userenv" name="GetUserProfileDirectory">
+    <documentation>
+      <desc>
+	Retrieves the path to the root directory of the specified user's profile
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI GetUserProfileDirectory(</ll>
+          <ld>_In_      HANDLE  hToken</ld>
+          <ld>_Out_opt_ LPTSTR  lpProfileDir</ld>
+          <ld>_Inout_   LPDWORD lpcchSize</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hToken">
+	  A token for the user, which is returned by the LogonUser,
+	  CreateRestrictedToken, DuplicateToken, OpenProcessToken, or
+	  OpenThreadToken function. The token must have TOKEN_QUERY
+	  access
+	</par>
+        <par name="lpProfileDir">
+	  A pointer to a buffer that, when this function returns
+	  successfully, receives the path to the specified user's
+	  profile directory
+	</par>
+        <par name="lpcchSize">
+	  Specifies the size of the lpProfileDir buffer, in TCHARs.
+	  If the buffer specified by lpProfileDir is not large enough
+	  or lpProfileDir is NULL, the function fails and this
+	  parameter receives the necessary buffer size, including the
+	  terminating null character.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="GetUserProfileDirectory">
+      <par loc="stack" name="hToken" io="r" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:access token"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpProfileDir" io="w" nr="2">
+        <type>LPTSTR</type>
+	<roles>
+	  <role rt="ioc:system" rn="infox:user profile directory"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpcchSize" io="rw" nr="3">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="size:buffersize" rn="GetUserProfileDirectory"/>
+	</roles>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="retrieves the path to the root directory of a user profile"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

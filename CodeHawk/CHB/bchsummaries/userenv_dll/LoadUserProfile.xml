@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="LoadUserProfile.xml" time="2016-05-08 10:24:42.628552"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="userenv" name="LoadUserProfile">
+    <documentation>
+      <desc>
+	Loads the specified user's profile. The profile can be a local
+	user profile or a roaming user profile
+      </desc>
+      <remarks>
+	When a user logs on interactively, the system automatically
+	loads the user's profile. If a service or an application
+	impersonates a user, the system does not load the user's
+	profile. Therefore, the service or application should load the
+	user's profile with LoadUserProfile.  
+
+	Services and applications that call LoadUserProfile should
+	check to see if the user has a roaming profile. If the user
+	has a roaming profile, specify its path as the lpProfilePath
+	member of PROFILEINFO. To retrieve the user's roaming profile
+	path, you can call the NetUserGetInfo function, specifying
+	information level 3 or 4.
+
+	Upon successful return, the hProfile member of PROFILEINFO is
+	a registry key handle opened to the root of the user's
+	hive. It has been opened with full access (KEY_ALL_ACCESS). If
+	a service that is impersonating a user needs to read or write
+	to the user's registry file, use this handle instead of
+	HKEY_CURRENT_USER. Do not close the hProfile handle. Instead,
+	pass it to the UnloadUserProfile function. This function
+	closes the handle. You should ensure that all handles to keys
+	in the user's registry hive are closed. If you do not close
+	all open registry handles, the user's profile fails to unload.
+
+	Note that it is your responsibility to load the user's
+	registry hive into the HKEY_USERS registry key with the
+	LoadUserProfile function before you call
+	CreateProcessAsUser. This is because CreateProcessAsUser does
+	not load the specified user's profile into HKEY_USERS. This
+	means that access to information in the HKEY_CURRENT_USER
+	registry key may not produce results consistent with a normal
+	interactive logon.
+
+	The calling process must have the SE_RESTORE_NAME and
+	SE_BACKUP_NAME privileges
+
+	Starting with Windows XP Service Pack 2 (SP2) and Windows
+	Server 2003, the caller must be an administrator or the
+	LocalSystem account. It is not sufficient for the caller to
+	merely impersonate the administrator or LocalSystem account.
+      </remarks>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI LoadUserProfile(</ll>
+          <ld>_In_    HANDLE        hToken</ld>
+          <ld>_Inout_ LPPROFILEINFO lpProfileInfo</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hToken">
+	  Token for the user, which is returned by the LogonUser,
+	  CreateRestrictedToken, DuplicateToken, OpenProcessToken, or
+	  OpenThreadToken function. The token must have TOKEN_QUERY,
+	  TOKEN_IMPERSONATE, and TOKEN_DUPLICATE access
+	</par>
+        <par name="lpProfileInfo">
+	  Pointer to a PROFILEINFO structure. LoadUserProfile fails
+	  and returns ERROR_INVALID_PARAMETER if the dwSize member of
+	  the structure is not set to sizeof(PROFILEINFO) or if the
+	  lpUserName member is NULL
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="LoadUserProfile">
+      <par loc="stack" name="hToken" io="r" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="user token"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpProfileInfo" io="rw" nr="2">
+        <type><ptr>PROFILEINFO</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="user profile info"/>
+	</roles>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="loads a user profile"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 05:50:15"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="winspool.drv" name="GetPrinter">
+   <documentation>
+    <desc>retrieves information about a specified printer </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetPrinter(</ll>
+      <ld>_In_   HANDLE hPrinter </ld>
+      <ld>_In_   DWORD Level </ld>
+      <ld>_Out_  LPBYTE pPrinter </ld>
+      <ld>_In_   DWORD cbBuf </ld>
+      <ld>_Out_  LPDWORD pcbNeeded </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">not-zero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hPrinter">
+       A handle to the printer for which the function retrieves information. 
+       Use the OpenPrinter or AddPrinter function to retrieve a printer handle.
+     </par>
+     <par name="Level">
+       The level or type of structure that the function stores into the buffer 
+       pointed to by pPrinter. 
+     </par>
+     <par name="pPrinter">
+       A pointer to a buffer that receives a structure containing information 
+       about the specified printer. 
+     </par>
+     <par name="cbBuf">The size, in bytes, of the buffer pointed to by pPrinter. </par>
+     <par name="pcbNeeded">
+       A pointer to a variable that the function sets to the size, in bytes, 
+       of the printer information. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="GetPrinter">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hPrinter" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:system" rn="handle:printer" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="Level" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="pPrinter" rep="hex" nr="3">
+     <roles>
+      <role rt="ioc:system" rn="infox:printer" />
+     </roles>
+     <type><ptr>BYTE</ptr></type>
+    </par>
+    <par loc="stack" io="r" name="cbBuf" nr="4">
+     <roles>
+      <role rt="size:buffer" rn="size:buffer" />
+     </roles>
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="pcbNeeded" rep="hex" nr="5">
+     <roles>
+      <role rt="size:buffer" rn="size:actual" />
+     </roles>
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system"
+		 desc="retrieves information about a printer"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>pPrinter</ci>
+	    <ci>cbBuf</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>pPrinter</ci>
+	    <ci>cbBuf</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

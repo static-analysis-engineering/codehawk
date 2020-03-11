@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 06:32:26"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="shell32" name="SHFileOperation">
+   <documentation>
+    <desc>Copies, moves, renames, or deletes a file system object. </desc>
+    <apidoc>
+     <pt>
+      <ll>int SHFileOperation(</ll>
+      <ld>_Inout_  LPSHFILEOPSTRUCT lpFileOp </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">zero </rc>
+      <rc cond="failure">not-zero </rc>
+     </return>
+     <par name="lpFileOp">
+       A pointer to an SHFILEOPSTRUCT structure that contains information 
+       this function needs to carry out the specified operation. This 
+       parameter must contain a valid value that is not NULL. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SHFileOperation">
+    <returntype>int</returntype>
+    <par loc="stack" io="rw" name="lpFileOp" nr="1" rep="hex">
+     <type><ptr>SHFILEOPSTRUCT</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:SHFILEOPSTRUCT" />
+      <role rt="ioc:memops" rn="dst-struct:SHFILEOPSTRUCT" />
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="manipulates filesystem object">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

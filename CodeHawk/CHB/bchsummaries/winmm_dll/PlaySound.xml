@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:31:30"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="winmm" name="PlaySound">
+   <documentation>
+    <desc>
+      plays a sound specified by the given file name, resource, or system event.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL PlaySound(</ll>
+      <ld>LPCTSTR pszSound,</ld>
+      <ld>HMODULE hmod,</ld>
+      <ld>DWORD fdwSound</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pszSound">
+       A string that specifies the sound to play. The maximum length, including 
+       the null terminator, is 256 characters. If this parameter is NULL, any 
+       currently playing waveform sound is stopped. 
+       To stop a non-waveform sound, specify SND_PURGE in the fdwSound parameter.
+     </par>
+     <par name="hmod">
+       Handle to the executable file that contains the resource to be loaded. 
+       This parameter must be NULL unless SND_RESOURCE is specified in fdwSound.
+     </par>
+     <par name="fdwSound" io="r" roles="none">Flags for playing the sound.</par>
+     <return>
+      <rc cond="success">true</rc>
+      <rc cond="failure">false</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="PlaySound">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="pszSound" nr="1">
+     <type>LPCTSTR</type>
+     <roles>
+       <role rt="system" rn="name:sound"/>
+      <role rt="ioc:memops" rn="src-string:sound" />
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="hmod" nr="2">
+     <type>HMODULE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:module" />
+     </roles>
+    </par>
+    <pre><deref-read/></pre>
+    <par loc="stack" io="r" name="fdwSound" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system"
+		  desc="plays a sound"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

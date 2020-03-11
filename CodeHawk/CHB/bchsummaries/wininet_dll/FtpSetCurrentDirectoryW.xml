@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FtpSetCurrentDirectoryW.xml" time="2016-05-17 21:23:50.607083"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="wininet" name="FtpSetCurrentDirectoryW">
+    <refer-to char-type="unicode" name="FtpSetCurrentDirectory"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:38:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="wsock32" name="setsockopt">
+    <refer-to lib="ws2_32" name="setsockopt"/>
+    <!--
+   <documentation>
+    <desc>sets a socket option</desc>
+    <apidoc>
+     <pt>
+      <ll>int setsockopt (</ll>
+      <ld>__in SOCKET s,</ld>
+      <ld>__in int level,</ld>
+      <ld>__in int optname,</ld>
+      <ld>__in const char *optval,</ld>
+      <ld>__in int optlen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="s">descriptor that identifies a socket</par>
+     <par name="level">level at which the option is defined</par>
+     <par name="optname">
+       socket option for which the value is to be set (for example, SO_BROADCAST). 
+       The optname parameter must be a socket option defined within the specified 
+       level, or behavior is undefined.
+     </par>
+     <par name="optval">
+       pointer to the buffer in which the value for the requested option is specified
+     </par>
+     <par name="optlen">size in bytes of the pointer pointed to by the optval parameter</par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">SOCKET_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="setsockopt">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" name="s" nr="1">
+     <btype tname="SOCKET" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="level" nr="2">
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="optname" nr="3">
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+    <par loc="stack" name="optval" nr="4">
+     <btype ttag="tptr">
+      <typ tname="char" ttag="tnamed"/>
+     </btype>
+    </par>
+    <par loc="stack" name="optlen" nr="5">
+     <btype tname="int" ttag="tnamed"/>
+    </par>
+   </api>
+   <semantics>
+    <external-effects>
+      <xeffect xtgt="socket" xaction="set socket option"/>
+    </external-effects>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>char</type>
+	 <ci>optval</ci>
+	 <ci>optlen</ci>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+-->
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

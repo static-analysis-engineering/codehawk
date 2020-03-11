@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CreateEnvironmentBlock.xml" time="2016-05-08 10:47:32.803650"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="userenv" name="CreateEnvironmentBlock">
+    <documentation>
+      <desc>
+	Retrieves the environment variables for the specified
+	user. This block can then be passed to the CreateProcessAsUser
+	function
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI CreateEnvironmentBlock(</ll>
+          <ld>_Out_    LPVOID *lpEnvironment</ld>
+          <ld>_In_opt_ HANDLE hToken</ld>
+          <ld>_In_     BOOL   bInherit</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpEnvironment">
+	  When this function returns, receives a pointer to the new
+	  environment block. The environment block is an array of
+	  null-terminated Unicode strings. The list ends with two
+	  nulls (\0\0).
+	</par>
+        <par name="hToken">
+	  Token for the user, returned from the LogonUser function. If
+	  this is a primary token, the token must have TOKEN_QUERY and
+	  TOKEN_DUPLICATE access. If the token is an impersonation
+	  token, it must have TOKEN_QUERY access.  If
+	  this parameter is NULL, the returned environment block
+	  contains system variables only.
+	</par>
+        <par name="bInherit">
+	  Specifies whether to inherit from the current process'
+	  environment. If this value is TRUE, the process inherits the
+	  current process' environment. If this value is FALSE, the
+	  process does not inherit the current process' environment.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="CreateEnvironmentBlock">
+      <par loc="stack" name="lpEnvironment" io="w" rep="hex" nr="1">
+        <type><ptr><ptr>void</ptr></ptr></type>
+	<pre><deref-write/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="infox:environment block"/>
+	</roles>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <par loc="stack" name="hToken" io="r" rep="hex" nr="2">
+        <type>HANDLE</type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:access token"/>
+	</roles>
+      </par>
+      <par loc="stack" name="bInherit" io="r" roles="none" nr="3">
+        <type>BOOL</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="retrieves the environment variables for a user"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

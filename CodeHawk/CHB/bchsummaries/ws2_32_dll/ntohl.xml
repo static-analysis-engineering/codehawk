@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 03:21:53"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ws2_32" name="ntohl">
+   <documentation>
+    <apidoc>
+      <desc>
+	converts a u_long from TCP/IP network order to host byte order (which is
+	little-endian on Intel processors).
+      </desc>
+      <pt>
+	<ll>u_long WSAAPI ntohl(</ll>
+	<ld>_In_  u_long netlong</ld>
+	<ll>)</ll>
+      </pt>
+      <return>
+	<rc cond="success">Return a 32 bit number in network byte order</rc>
+      </return>
+      <par name="netlong">A 32-bit number in TCP/IP network byte order. </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ntohl">
+     <returntype>u_long</returntype>
+     <par loc="stack" name="netlong" io="r" nr="1">
+       <type>u_long</type>
+       <roles>
+	 <role rt="ioc:network" rn="network data"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="converts from TCP/IP network order to host byte order">
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

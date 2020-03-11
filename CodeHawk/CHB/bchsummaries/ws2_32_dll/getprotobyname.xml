@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:38:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ws2_32" name="getprotobyname">
+   <documentation>
+    <desc>retrieves the protocol information corresponding to a protocol name</desc>
+    <apidoc>
+     <pt>struct protoent * far getprotobyname ( __in const char *name )</pt>
+     <par name="name">pointer to a null-terminated protocol name</par>
+     <return>
+      <rc cond="success">pointer to a protoent struct</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="getprotobyname">
+     <returntype><ptr>protoent</ptr></returntype>
+    <par loc="stack" name="name" io="r" rep="hex" nr="1">
+      <type><ptr>char</ptr></type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:network" rn="name:protocol"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="retrieves protocol information for a protocol name"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

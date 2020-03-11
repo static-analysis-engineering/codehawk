@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/27/2015 23:34:25"/>
+  <libfun lib="userenv" name="GetProfilesDirectory">
+   <documentation>
+    <desc>
+      Retrieves the path to the root directory where user profiles are stored
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetProfilesDirectory(</ll>
+      <ld>_Out_   LPTSTR  lpProfilesDir</ld>
+      <ld>_Inout_ LPDWORD lpcchSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpProfilesDir">
+       A pointer to a buffer that, when this function returns successfully,
+       receives the path to the profiles directory. Set this value to NULL
+       to determine the required size of the buffer
+     </par>
+     <par name="lpcchSize">
+       Specifies the size of the lpProfilesDir buffer, in TCHARs.
+       If the buffer specified by lpProfilesDir is not large enough or 
+       lpProfilesDir is NULL, the function fails and this parameter 
+       receives the necessary buffer size, including the terminating 
+       null character.
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetProfilesDirectory">
+    <par loc="stack" name="lpProfilesDir" io="w" rep="hex" nr="1">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:filename"/>
+       <role rt="ioc:filesystem" rn="infox:profiles directory"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpcchSize" io="rw" rep="hex" nr="2">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:buffersize" rn="GetProfilesDirectory"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="retrieves the root directory where user profiles are stored"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>TCHAR</type>
+	    <ci>lpProfilesDir</ci>
+	      <apply><addressed-value/><ci>lpcchSize</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="system" xdata="user profile root directory"/>
+	    <type>TCHAR</type>
+	    <ci>lpProfilesDir</ci>
+	    <apply>
+	      <indexsize/>
+	      <apply><addressed-value/><ci>lpcchSize</ci><cn>0</cn></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

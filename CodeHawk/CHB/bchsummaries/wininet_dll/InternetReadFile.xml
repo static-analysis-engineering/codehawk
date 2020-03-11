@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/04/2015 14:26:05"/>
+  <libfun lib="wininet" name="InternetReadFile">
+   <documentation>
+    <desc>
+      Reads data from a handle opened by the InternetOpenUrl, FtpOpenFile, or
+      HttpOpenRequest function
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL InternetReadFile(</ll>
+      <ld>_In_   HINTERNET hFile</ld>
+      <ld>_Out_  LPVOID lpBuffer</ld>
+      <ld>_In_   DWORD dwNumberOfBytesToRead</ld>
+      <ld>_Out_  LPDWORD lpdwNumberOfBytesRead</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       Handle returned from a previous call to InternetOpenUrl, FtpOpenFile, or HttpOpenRequest.
+     </par>
+     <par name="lpBuffer">Pointer to a buffer that receives the data.</par>
+     <par name="dwNumberOfBytesToRead">Number of bytes to be read</par>
+     <par name="lpdwNumberOfBytesRead">
+       Pointer to a variable that receives the number of bytes read. InternetReadFile 
+       sets this value to zero before doing any work or error checking
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="InternetReadFile">
+    <par loc="stack" io="r" name="hFile" nr="1">
+     <type>HINTERNET</type>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpBuffer" nr="2" rep="hex">
+     <type>LPVOID</type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-bytes:network input"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwNumberOfBytesToRead" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="InternetReadFile"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpdwNumberOfBytesRead" nr="4">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+       <role rt="size:actual" rn="InternetReadFile"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="reads data from the Internet"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpBuffer</ci>
+	    <ci>dwNumberOfBytesToRead</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>lpBuffer</ci>
+	    <ci>dwNumberOfBytesToRead</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

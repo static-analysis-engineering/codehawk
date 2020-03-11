@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="WinHttpQueryDataAvailable.xml" time="2016-05-12 23:08:34.603786"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="winhttp" name="WinHttpQueryDataAvailable">
+    <documentation>
+      <desc>
+	returns the amount of data, in bytes, available to be read with WinHttpReadData.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI WinHttpQueryDataAvailable(</ll>
+          <ld>_In_  HINTERNET hRequest</ld>
+          <ld>_Out_ LPDWORD   lpdwNumberOfBytesAvailable</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hRequest">
+	  A valid HINTERNET handle returned by
+	  WinHttpOpenRequest. WinHttpReceiveResponse must have been
+	  called for this handle and have completed before
+	  WinHttpQueryDataAvailable is called.
+	</par>
+        <par name="lpdwNumberOfBytesAvailable">
+	  A pointer to an unsigned long integer variable that receives
+	  the number of available bytes. When WinHTTP is used in
+	  asynchronous mode, always set this parameter to NULL and
+	  retrieve data in the callback function; not doing so can
+	  cause a memory fault.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="WinHttpQueryDataAvailable">
+      <par loc="stack" name="hRequest" io="r" rep="hex" nr="1">
+        <type>HINTERNET</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="handle:internet"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpdwNumberOfBytesAvailable" io="w" nr="2">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:network" rn="size of http data available"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network"
+		   desc="retrieves the amount of data available for reading with WinHttpRead"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

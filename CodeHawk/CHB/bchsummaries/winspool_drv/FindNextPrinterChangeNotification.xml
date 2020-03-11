@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 05:20:31"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="winspool.drv" name="FindNextPrinterChangeNotification">
+   <documentation>
+    <desc>
+      retrieves information about the most recent change notification for a 
+      change notification object associated with a printer or print server.  
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL FindNextPrinterChangeNotification(</ll>
+      <ld>_In_       HANDLE hChange </ld>
+      <ld>_Out_opt_  PDWORD pdwChange </ld>
+      <ld>_In_opt_   LPVOID pPrinterNotifyOptions </ld>
+      <ld>_Out_opt_  LPVOID *ppPrinterNotifyInfo </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">not-zero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+     <par name="hChange">
+       A handle to a change notification object associated with a printer or print server. 
+     </par>
+     <par name="pdwChange">
+       A pointer to a variable whose bits are set to indicate the changes that 
+       occurred to cause the most recent notification. 
+     </par>
+     <par name="pPrinterNotifyOptions">
+       A pointer to a PRINTER_NOTIFY_OPTIONS structure. 
+     </par>
+     <par name="ppPrinterNotifyInfo">
+       A pointer to a pointer variable that receives a pointer to a 
+       system-allocated, read-only buffer. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="FindNextPrinterChangeNotification">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="hChange" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:system" rn="handle:change notification object" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="pdwChange" roles="none" rep="hex" nr="2">
+      <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="pPrinterNotifyOptions" rep="hex" nr="3">
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:PRINTER_NOTIFY_OPTIONS" />
+     </roles>
+     <type><ptr>VOID</ptr></type>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="w" name="ppPrinterNotifyInfo" rep="hex" nr="4">
+     <type><ptr><ptr>void</ptr></ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:PRINTER_NOTIFY_OPTIONS" />
+     </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system"
+		 desc="retrieves change notifications from a printer or print server"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

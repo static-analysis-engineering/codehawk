@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="StrLen.xml" time="2016-11-27 23:17:44.269789"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="StrLen" package="System::SysUtils">
+    <documentation>
+      <desc>
+	Returns the number of characters in a string, excluding the null terminator.
+      </desc>
+      <apidoc>
+        <pt>StrLen (const Str:PAnsiChar):Cardinal</pt>
+        <par name="Str">string to be measured</par>
+        <return>
+	  number of characters in the string
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="StrLen">
+      <par loc="register" name="Str" reg="eax" rep="hex">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:examine"/>
+	</roles>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="obtains the length of a string"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

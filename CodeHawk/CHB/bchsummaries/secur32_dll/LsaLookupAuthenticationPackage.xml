@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/04/2015 14:32:27"/>
+  <libfun lib="secur32" name="LsaLookupAuthenticationPackage">
+   <documentation>
+    <desc>obtains the unique identifier of an authentication package</desc>
+    <apidoc>
+     <pt>
+      <ll>NTSTATUS LsaLookupAuthenticationPackage(</ll>
+      <ld>_In_  HANDLE      LsaHandle</ld>
+      <ld>_In_  PLSA_STRING PackageName</ld>
+      <ld>_Out_ PULONG      AuthenticationPackage</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="LsaHandle">
+       Handle obtained from a previous call to LsaRegisterLogonProcess or 
+       LsaConnectUntrusted
+     </par>
+     <par name="PackageName">
+       Pointer to an LSA_STRING structure that specifies the name of the 
+       authentication package. The package name must not exceed 127 bytes 
+       in length.
+     </par>
+     <par name="AuthenticationPackage">
+       Pointer to a ULONG that receives the authentication package identifier.
+     </par>
+     <return>
+      <rc cond="success">STATUS_SUCCESS</rc>
+      <rc cond="failure">NTSTATUS code </rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="LsaLookupAuthenticationPackage">
+    <par loc="stack" io="r" name="LsaHandle" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:lsa" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="PackageName" nr="2" rep="hex">
+     <type><ptr>LSA_STRING</ptr></type>
+     <roles>
+      <role rt="ioc:process" rn="name:authentication package"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="AuthenticationPackage" nr="3" rep="hex">
+     <type><ptr>ULONG</ptr></type>
+     <roles>
+      <role rt="ioc:system" rn="infox:id authentication package" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>NTSTATUS</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process"
+		  desc="obtains the identifier of an authentication package"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

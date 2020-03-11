@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/10/2015 02:03:47"/>
+  <libfun lib="shell32" name="SHBrowseForFolder">
+   <documentation>
+    <desc>
+      Displays a dialog box that enables the user to select a Shell folder
+    </desc>
+    <apidoc>
+     <pt>PIDLIST_ABSOLUTE SHBrowseForFolder (_In_ LPBROWSEINFO lpbi)</pt>
+     <par name="lpbi">
+       A pointer to a BROWSEINFO structure that contains information used to 
+       display the dialog box.
+     </par>
+     <return>
+      <rc cond="success">
+	PIDL that specifies the location of the selected folder relative to the 
+	root of the namespace. 
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SHBrowseForFolder">
+    <par loc="stack" io="r" name="lpbi" nr="1">
+     <type><ptr>BROWSEINFO</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="browse info"/>
+     </roles>
+    </par>
+    <returntype>PIDLIST_ABSOLUTE</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="displays dialog to select shell folder"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

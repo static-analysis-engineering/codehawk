@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="StrTrim.xml" time="2016-09-10 13:46:30.163414"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="StrTrim">
+    <documentation>
+      <desc>
+        Removes specified leading and trailing characters from a string
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL StrTrim(</ll>
+          <ld>_Inout_ PTSTR  psz</ld>
+          <ld>_In_    PCTSTR pszTrimChars</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="psz">
+           A pointer to the null-terminated string to be trimmed. When
+           this function returns successfully, psz receives the
+           trimmed string
+        </par>
+        <par name="pszTrimChars">
+           A pointer to a null-terminated string that contains the
+           characters to trim from psz
+        </par>
+        <return>
+          TRUE if any characters were removed; otherwise, FALSE
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="StrTrim">
+      <par loc="stack" name="psz" io="rw" rep="hex" nr="1">
+        <type>LPTSTR</type>
+        <pre><deref-read-null/></pre>
+        <roles>
+           <role rt="ioc:memops" rn="src-string:convert"/>
+           <role rt="ioc:memops" rn="dst-string:convert"/>
+        </roles>
+      </par>
+      <par loc="stack" name="pszTrimChars" io="r" rep="hex" nr="2">
+        <type>LPCTSTR</type>
+        <pre><deref-read-null/></pre>
+        <roles>
+           <role rt="ioc:memops" rn="src-string:misc"/>
+        </roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops"
+                   desc="removes specified leading and trailing characters from a string"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

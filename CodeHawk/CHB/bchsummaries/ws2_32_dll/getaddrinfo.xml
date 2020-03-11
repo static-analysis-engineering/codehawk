@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:38:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ws2_32" name="getaddrinfo">
+   <documentation>
+    <desc>
+      provides protocol-independent translation from an ANSI host name
+      to an address
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int WSAAPI getaddrinfo (</ll>
+      <ld>_in_opt_ PCSTR pNodeName,</ld>
+      <ld>_in_opt_ PCSTR pServiceName,</ld>
+      <ld>_in_opt_ const ADDRINFOA *pHints,</ld>
+      <ld>_out_    PADDRINFOA *ppResult</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pNodeName">
+       pointer to a null-terminated ANSI string that contains a host (node) name or
+       a numeric host address string
+     </par>
+     <par name="pServiceName">
+       pointer to a null-terminated ANSI string that contains either a service name or
+       a port number represented as a string
+     </par>
+     <par name="pHints">
+       pointer to an addrinfo structure that provides hints about the type of socket
+       the caller supports
+     </par>
+     <par name="ppResults">
+       pointer to a linked list of one or more addrinfo structures that contains response
+       information about the host
+     </par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">nonzero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="getaddrinfo">
+     <returntype>int</returntype>
+     <par loc="stack" name="pNodeName" io="r" nr="1" rep="hex">
+       <type><ptr>char</ptr></type>
+       <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:network" rn="name:host"/>
+      </roles>
+    </par>
+    <par loc="stack" name="pServiceName" io="r" nr="2" rep="hex">
+      <type><ptr>char</ptr></type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:network" rn="name:service"/>
+      </roles>
+    </par>
+    <par loc="stack" name="pHints" io="r" nr="3" rep="hex">
+      <type><ptr>ADDRINFOA</ptr></type>
+      <pre><deref-read-null/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-struct:addrinfo"/>
+      </roles>
+    </par>
+    <par loc="stack" name="ppResult" io="w" nr="4" rep="hex">
+      <type><ptr><ptr>ADDRINFOA</ptr></ptr></type>
+      <roles>
+	<role rt="ioc:network" rn="infox:host address info"/>
+      </roles>
+      <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="translates hostname to address"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <zero-notzero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

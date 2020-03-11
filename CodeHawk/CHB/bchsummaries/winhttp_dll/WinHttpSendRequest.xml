@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/10/2015 20:52:15"/>
+  <libfun lib="winhttp" name="WinHttpSendRequest">
+   <documentation>
+    <desc>sends the specified request to the HTTP server</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WinHttpSendRequest(</ll>
+      <ld>_In_     HINTERNET hRequest</ld>
+      <ld>_In_opt_ LPCWSTR   pwszHeaders</ld>
+      <ld>_In_     DWORD     dwHeadersLength</ld>
+      <ld>_In_opt_ LPVOID    lpOptional</ld>
+      <ld>_In_     DWORD     dwOptionalLength</ld>
+      <ld>_In_     DWORD     dwTotalLength</ld>
+      <ld>_In_     DWORD_PTR dwContext</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hRequest">
+       An HINTERNET handle returned by WinHttpOpenRequest
+     </par>
+     <par name="pwszHeaders">
+       A pointer to a string that contains the additional headers to
+       append to the request. This parameter can be
+       WINHTTP_NO_ADDITIONAL_HEADERS if there are no additional
+       headers to append.
+     </par>
+     <par name="dwHeadersLength">
+       An unsigned long integer value that contains the length, in
+       characters, of the additional headers. If this parameter is -1L
+       and pwszHeaders is not NULL, this function assumes that
+       pwszHeaders is null-terminated, and the length is calculated.
+     </par>
+     <par name="lpOptional">
+       A pointer to a buffer that contains any optional data to send
+       immediately after the request headers. This parameter is
+       generally used for POST and PUT operations. The optional data
+       can be the resource or data posted to the server. This
+       parameter can be WINHTTP_NO_REQUEST_DATA if there is no
+       optional data to send.  If the dwOptionalLength parameter is 0,
+       this parameter is ignored and set to NULL.  This buffer must
+       remain available until the request handle is closed or the call
+       to WinHttpReceiveResponse has completed.
+     </par>
+     <par name="dwOptionalLength">
+       An unsigned long integer value that contains the length, in
+       bytes, of the optional data. This parameter can be zero if
+       there is no optional data to send.  This parameter must contain
+       a valid length when the lpOptional parameter is not
+       NULL. Otherwise, lpOptional is ignored and set to NULL.
+     </par>
+     <par name="dwTotalLength">
+       An unsigned long integer value that contains the length, in
+       bytes, of the total data sent. This parameter specifies the
+       Content-Length header of the request. If the value of this
+       parameter is greater than the length specified by
+       dwOptionalLength, then WinHttpWriteData can be used to send
+       additional data.  dwTotalLength must not change between calls
+       to WinHttpSendRequest for the same request. If dwTotalLength
+       needs to be changed, the caller should create a new request.
+     </par>
+     <par name="dwContext">
+       A pointer to a pointer-sized variable that contains an
+       application-defined value that is passed, with the request
+       handle, to any callback functions.
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="WinHttpSendRequest">
+    <par loc="stack" name="hRequest" io="r" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pwszHeaders" io="r" nr="2" rep="hex">
+     <type>LPCWSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:network" rn="http request headers"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwHeadersLength" io="r" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="WinHttpSendRequest"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpOptional" io="r" nr="4" rep="hex">
+     <type><ptr>VOID</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:network output"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwOptionalLength" io="r" nr="5">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="WinHttpSendRequest"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwTotalLength" io="r" nr="6">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:count" rn="WinHttpSendRequest"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwContext" io="r" nr="7">
+     <type>DWORD_PTR</type>
+     <roles>
+       <role rt="ioc:network" rn="application context"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" desc="sends a request to an HTTP server"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <type>BYTE</type>
+	    <ci>pwszHeaders</ci>
+	    <apply><indexsize/><ci>dwHeadersLength</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <type>BYTE</type>
+	    <ci>lpOptional</ci>
+	    <ci>dwOptionalLength</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

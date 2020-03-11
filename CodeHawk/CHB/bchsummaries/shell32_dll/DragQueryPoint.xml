@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="DragQueryPoint.xml" time="2016-08-10 15:22:22.420927"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shell32" name="DragQueryPoint">
+    <documentation>
+      <desc>
+	Retrieves the position of the mouse pointer at the time a file
+	was dropped during a drag-and-drop operation.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL DragQueryPoint(</ll>
+          <ld>_In_  HDROP hDrop</ld>
+          <ld>_Out_ POINT *lppt</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hDrop">Handle of the drop structure that describes the dropped file</par>
+        <par name="lppt">
+	  Pointer to a POINT structure that, when this function
+	  returns successfully, receives the coordinates of the mouse
+	  pointer at the time the file was dropped.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="DragQueryPoint">
+      <par loc="stack" name="hDrop" io="r" nr="1">
+        <type>HDROP</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:drop"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lppt" io="w" nr="2" rep="hex">
+        <type><ptr>POINT</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-struct:POINT"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem"
+		   desc="retrieves mouse position at time of file drag and drop"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

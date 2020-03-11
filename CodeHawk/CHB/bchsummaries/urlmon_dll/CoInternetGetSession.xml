@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/27/2015 11:51:50"/>
+  <libfun lib="urlmon" name="CoInternetGetSession">
+   <documentation>
+    <desc>
+      Creates a session that allows temporary asynchronous pluggable 
+      protocols to be implemented and returns the IInternetSession 
+      interface of the session
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>STDAPI CoInternetGetSession(</ll>
+      <ld>_Reserved_  DWORD dwSessionMode</ld>
+      <ld>IInternetSession **ppIInternetSession</ld>
+      <ld>_Reserved_  DWORD dwReserved</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="dwSessionMode">Reserved. Must be set to 0</par>
+     <par name="ppIInternetSession">
+       The address of a pointer to the IInternetSession interface 
+     </par>
+     <par name="dwReserved">Reserved. Must be set to 0</par>
+     <return>HRESULT values</return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="CoInternetGetSession">
+    <par loc="stack" io="r" roles="none" name="dwSessionMode" nr="1">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="ppIInternetSession" rep="hex" nr="2">
+     <type><ptr><ptr>IInternetSession</ptr></ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:com" rn="ifp:IInternetSession"/>
+       <role rt="ioc:network" rn="IInternetSession interface"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" roles="none" name="dwReserved" nr="3">
+     <type>DWORD</type>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="creates an internet session"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

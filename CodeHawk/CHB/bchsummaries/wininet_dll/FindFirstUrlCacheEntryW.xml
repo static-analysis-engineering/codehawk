@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FindFirstUrlCacheEntryW.xml" time="2016-05-12 23:40:34.706222"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="wininet" name="FindFirstUrlCacheEntryW">
+    <refer-to char-type="unicode" name="FindFirstUrlCacheEntry"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 16:43:25"/>
+  <libfun lib="urlmon" name="URLDownloadToFile">
+   <documentation>
+    <desc>Downloads bits from the Internet and saves them to a file</desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT URLDownloadToFile(</ll>
+      <ld>LPUNKNOWN            pCaller</ld>
+      <ld>LPCTSTR              szURL</ld>
+      <ld>LPCTSTR              szFileName</ld>
+      <ld>DWORD                dwReserved</ld>
+      <ld>LPBINDSTATUSCALLBACK lpfnCB</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pCaller">
+       A pointer to the controlling IUnknown interface of the calling ActiveX 
+       component, if the caller is an ActiveX component. If the calling 
+       application is not an ActiveX component, this value can be set to NULL. 
+       Otherwise, the caller is a COM object that is contained in another 
+       component, such as an ActiveX control in the context of an HTML page. 
+       This parameter represents the outermost IUnknown of the calling component.
+       The function attempts the download in the context of the ActiveX client 
+       framework, and allows the caller container to receive callbacks on the
+       progress of the download.
+     </par>
+     <par name="szURL">
+       A pointer to a string value that contains the URL to download. Cannot
+       be set to NULL. If the URL is invalid, INET_E_DOWNLOAD_FAILURE is returned
+     </par>
+     <par name="szFileName">
+       A pointer to a string value containing the name or full path of the file
+       to create for the download. If szFileName includes a path, the target 
+       directory must already exist
+     </par>
+     <par name="dwReserved">Reserved. Must be set to 0</par>
+     <par name="lpfnCB">
+       A pointer to the IBindStatusCallback interface of the caller. By using 
+       IBindStatusCallback::OnProgress, a caller can receive download status. 
+       URLDownloadToFile calls the IBindStatusCallback::OnProgress and
+       IBindStatusCallback::OnDataAvailable methods as data is received.
+       The download operation can be canceled by returning E_ABORT from any 
+       callback. This parameter can be set to NULL if status is not required
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="URLDownloadToFile">
+    <par loc="stack" name="pCaller" io="r" nr="1" rep="hex">
+     <type><ptr>UNKNOWN</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:com" rn="ifp:IUnknown"/>
+     </roles>
+    </par>
+    <par loc="stack" name="szURL" io="r" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:network" rn="url"/>
+     </roles>
+    </par>
+    <par loc="stack" name="szFileName" io="r" nr="3" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwReserved" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpfnCB" io="r" nr="5" rep="hex">
+     <type><ptr>BINDSTATUSCALLBACK</ptr></type>
+     <roles>
+       <role rt="ioc:process" rn="callbackf:url download file"/>
+       <role rt="ioc:com" rn="ifp:IBindStatusCallback"/>
+     </roles>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" 
+		desc="Downloads bits from the Internet and saves them to a file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

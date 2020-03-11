@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 15:31:03"/>
+  <libfun lib="shlwapi" name="PathStripToRoot">
+   <documentation>
+    <desc>
+      Removes all file and directory elements in a path except for the root information
+    </desc>
+    <caution>
+      Misuse of this function can lead to a buffer overrun
+    </caution>
+    <apidoc>
+     <pt>BOOL PathStripToRoot (_Inout_ LPTSTR szRoot)</pt>
+     <par name="szRoot">
+       A pointer to a null-terminated string of length MAX_PATH that contains
+       the path to be converted. When this function returns successfully, this
+       string contains only the root information taken from that path
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="PathStripToRoot">
+    <par loc="stack" name="szRoot" io="rw" nr="1">
+     <type>LPTSTR</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+       <role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="removes file and directory elements in a path"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

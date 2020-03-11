@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="05/03/2015 11:26:20"/>
+  <libfun lib="shell32" name="Shell_NotifyIconA">
+   <refer-to char-type="ansi" name="Shell_NotifyIcon"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

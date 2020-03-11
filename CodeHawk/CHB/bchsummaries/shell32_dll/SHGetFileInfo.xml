@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="05/03/2015 11:30:47"/>
+  <libfun lib="shell32" name="SHGetFileInfo">
+   <documentation>
+    <desc>
+      Retrieves information about an object in the file system, such as a
+      file, folder, directory, or drive root.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD_PTR SHGetFileInfo(</ll>
+      <ld>_In_    LPCTSTR    pszPath</ld>
+      <ld>        DWORD      dwFileAttributes</ld>
+      <ld>_Inout_ SHFILEINFO psfi</ld>
+      <ld>        UINT       cbFileInfo</ld>
+      <ld>        UINT       uFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pszPath">
+       A pointer to a null-terminated string of maximum length MAX_PATH 
+       that contains the path and file name. Both absolute and relative
+       paths are valid
+     </par>
+     <par name="dwFileAttributes">
+       A combination of one or more file attribute flags
+     </par>
+     <par name="psfi">
+       Pointer to a SHFILEINFO structure to receive the file information. 
+     </par>
+     <par name="cbFileInfo">
+       The size, in bytes, of the SHFILEINFO structure pointed to by the psfi parameter.
+     </par>
+     <par name="uFlags">The flags that specify the file information to retrieve</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="SHGetFileInfo">
+    <par loc="stack" io="r" name="pszPath" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:file"/>
+	<role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="dwFileAttributes" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="psfi" nr="3">
+     <type><ptr>SHFILEINFO</ptr></type>
+     <roles>
+        <role rt="ioc:filesystem" rn="infox:file information"/>
+	<role rt="rep:hex" rn="infox:file information"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cbFileInfo" nr="4">
+     <type>UINT</type>
+     <roles>
+        <role rt="size:buffersize" rn="SHGetFileInfo"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="uFlags" roles="none" nr="5">
+     <type>UINT</type>
+    </par>
+    <returntype>DWORD_PTR</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem"
+		  desc="retrieves info about object in file system"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>SHFILEINFO</type>
+	    <ci>psfi</ci>
+	    <ci>cbFileInfo</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>SHFILEINFO</type>
+	    <ci>psfi</ci>
+	    <ci>cbFileInfo</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

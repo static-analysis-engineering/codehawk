@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/29/2015 17:20:36"/>
+  <libfun lib="shlwapi" name="SHAutoComplete">
+   <documentation>
+    <desc>
+      Instructs system edit controls to use AutoComplete to help complete URLs 
+      or file system paths
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HRESULT SHAutoComplete(</ll>
+      <ld>_In_ HWND  hwndEdit</ld>
+      <ld>     DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hwndEdit">
+       The window handle of a system edit control. Typically, this parameter is 
+       the handle of an edit control or the edit control embedded in a ComboBoxEx 
+       control.
+     </par>
+     <par name="dwFlags">
+       The flags to control the operation of SHAutoComplete. The first four flags
+       are used to override the Internet Explorer registry settings. The user can 
+       change these settings manually by launching the Internet Options property 
+       sheet from the Tools menu and clicking the Advanced tab.
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SHAutoComplete">
+    <par loc="stack" io="r" name="hwndEdit" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:system" rn="edit control handle"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" nr="2">
+     <type>DWORD</type>
+     <pre><enum-value name="sh_autocomplete_flags" flags="true"/></pre>
+     <roles>
+       <role rt="enum:flags" rn="sh_autocomplete_flags"/>
+       <role rt="ioc:system" rn="auto complete flags"/>
+     </roles>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="sets autocomplete for filenames and URLs"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

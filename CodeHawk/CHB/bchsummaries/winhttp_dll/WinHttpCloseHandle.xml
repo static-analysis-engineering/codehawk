@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/10/2015 16:08:50"/>
+  <libfun lib="winhttp" name="WinHttpCloseHandle">
+   <documentation>
+    <desc>closes a single HINTERNET handle</desc>
+    <apidoc>
+     <pt>BOOL WINAPI WinHttpCloseHandle (_In_ HINTERNET hInternet)</pt>
+     <par name="hInternet">Valid HINTERNET handle to be closed</par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="WinHttpCloseHandle">
+    <par loc="stack" name="hInternet" io="r" nr="1">
+     <type>HINTERNET</type>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" desc="closes an internet handle"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

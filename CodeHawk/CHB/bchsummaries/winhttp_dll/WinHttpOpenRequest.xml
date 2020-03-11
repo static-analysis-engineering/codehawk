@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/10/2015 19:35:57"/>
+  <libfun lib="winhttp" name="WinHttpOpenRequest">
+   <documentation>
+    <desc>creates an HTTP request handle</desc>
+    <apidoc>
+     <pt>
+      <ll>HINTERNET WINAPI WinHttpOpenRequest(</ll>
+      <ld>_In_ HINTERNET hConnect</ld>
+      <ld>_In_ LPCWSTR   pwszVerb</ld>
+      <ld>_In_ LPCWSTR   pwszObjectName</ld>
+      <ld>_In_ LPCWSTR   pwszVersion</ld>
+      <ld>_In_ LPCWSTR   pwszReferrer</ld>
+      <ld>_In_ LPCWSTR   *ppwszAcceptTypes</ld>
+      <ld>_In_ DWORD     dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hConnect">
+       HINTERNET connection handle to an HTTP session returned by WinHttpConnect.
+     </par>
+     <par name="pwszVerb">
+       Pointer to a string that contains the HTTP verb to use in the
+       request. If this parameter is NULL, the function uses GET as
+       the HTTP verb.  Note This string should be all uppercase. Many
+       servers treat HTTP verbs as case-sensitive, and the Internet
+       Engineering Task Force (IETF) Requests for Comments (RFCs)
+       spell these verbs using uppercase characters only.
+     </par>
+     <par name="pwszObjectName">
+       Pointer to a string that contains the name of the target
+       resource of the specified HTTP verb. This is generally a file
+       name, an executable module, or a search specifier.
+     </par>
+     <par name="pwszVersion">
+       Pointer to a string that contains the HTTP version. If this
+       parameter is NULL, the function uses HTTP/1.1.
+     </par>
+     <par name="pwszReferrer">
+       Pointer to a string that specifies the URL of the document from
+       which the URL in the request pwszObjectName was obtained. If
+       this parameter is set to WINHTTP_NO_REFERER, no referring
+       document is specified.
+     </par>
+     <par name="ppwszAcceptTypes">
+       Pointer to a null-terminated array of string pointers that
+       specifies media types accepted by the client. If this parameter
+       is set to WINHTTP_DEFAULT_ACCEPT_TYPES, no types are accepted
+       by the client. Typically, servers handle a lack of accepted
+       types as indication that the client accepts only documents of
+       type "text/*"; that is, only text documents -- no pictures or
+       other binary files. For a list of valid media types, see Media
+       Types defined by IANA at
+       http://www.iana.org/assignments/media-types/.
+     </par>
+     <par name="dwFlags">
+       Unsigned long integer value that contains the Internet flag values 
+     </par>
+     <return>
+      <rc cond="success">a valid HTTP request handle</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="WinHttpOpenRequest">
+    <par loc="stack" name="hConnect" io="r" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pwszVerb" io="r" rep="hex" nr="2">
+     <type>LPCWSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:http request verb"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pwszObjectName" rep="hex" io="r" nr="3">
+     <type>LPCWSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:http target resource"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pwszVersion" io="r" rep="hex" nr="4">
+     <type>LPCWSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:http version"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pwszReferrer" io="r" rep="hex" nr="5">
+     <type>LPCWSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="url"/>
+     </roles>
+    </par>
+    <par loc="stack" name="ppwszAcceptTypes" io="r" rep="hex" nr="6">
+     <type><ptr>LPCWSTR</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="types:http media"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwFlags" roles="none" io="r" nr="7">
+     <type>DWORD</type>
+    </par>
+    <returntype>HINTERNET</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" desc="creates an HTTP request handle"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/10/2015 20:43:04"/>
+  <libfun lib="winhttp" name="WinHttpReceiveResponse">
+   <documentation>
+    <desc>
+      waits to receive the response to an HTTP request initiated by
+      WinHttpSendRequest. When WinHttpReceiveResponse completes
+      successfully, the status code and response headers have been
+      received and are available for the application to inspect using
+      WinHttpQueryHeaders. An application must call
+      WinHttpReceiveResponse before it can use
+      WinHttpQueryDataAvailable and WinHttpReadData to access the
+      response entity body (if any).
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WinHttpReceiveResponse(</ll>
+      <ld>_In_  HINTERNET hRequest</ld>
+      <ld>_Out_ LPDWORD   lpReserved</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hRequest">
+       A valid HINTERNET handle returned by
+       WinHttpOpenRequest. WinHttpReceiveResponse must have been
+       called for this handle and have completed before
+       WinHttpQueryDataAvailable is called.
+     </par>
+     <par name="lpReserved">
+       This parameter is reserved and must be NULL.
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="WinHttpReceiveResponse">
+    <par loc="stack" name="hRequest" io="r" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpReserved" roles="none"  nr="2">
+     <type><ptr>DWORD</ptr></type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" desc="waits to receive response to a HTTP request"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

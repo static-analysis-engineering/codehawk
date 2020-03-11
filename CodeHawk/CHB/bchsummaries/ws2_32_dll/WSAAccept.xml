@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/05/2015 11:59:25"/>
+  <libfun lib="ws2_32" name="WSAAccept">
+   <documentation>
+    <desc>
+      conditionally accepts a connection based on the return value of a condition 
+      function, provides quality of service flow specifications, and allows the 
+      transfer of connection data
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>SOCKET WSAAccept(</ll>
+      <ld>_In_    SOCKET          s</ld>
+      <ld>_Out_   struct sockaddr *addr</ld>
+      <ld>_Inout_ LPINT           addrlen</ld>
+      <ld>_In_    LPCONDITIONPROC lpfnCondition</ld>
+      <ld>_In_    DWORD_PTR       dwCallbackData</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="s">
+       A descriptor that identifies a socket that is listening for connections 
+       after a call to the listen function
+     </par>
+     <par name="addr">
+       An optional pointer to an sockaddr structure that receives the address of
+       the connecting entity, as known to the communications layer. The exact 
+       format of the addr parameter is determined by the address family established 
+       when the socket was created
+     </par>
+     <par name="addrlen">
+       An optional pointer to an integer that contains the length of the sockaddr 
+       structure pointed to by the addr parameter, in bytes.
+     </par>
+     <par name="lpfnCondition">
+       The address of an optional, application-specified condition function that
+       will make an accept/reject decision based on the caller information passed 
+       in as parameters, and optionally create or join a socket group by assigning
+       an appropriate value to the result parameter g of this function. If this 
+       parameter is NULL, then no condition function is called
+     </par>
+     <par name="dwCallbackData">
+       Callback data passed back to the application-specified condition function 
+       as the value of the dwCallbackData parameter passed to the condition function. 
+       This parameter is only applicable if the lpfnCondition parameter is not NULL. 
+       This parameter is not interpreted by Windows Sockets.
+     </par>
+     <return>
+      <rc cond="success">
+	a value of type SOCKET that is a descriptor for the accepted socket
+      </rc>
+      <rc cond="failure">INVALID_SOCKET</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="WSAAccept">
+    <par loc="stack" name="s" nr="1">
+     <type>SOCKET</type>
+     <roles>
+       <role rt="ioc:network" rn="socket"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="addr" rep="hex" nr="2">
+     <type><ptr>sockaddr</ptr></type>
+     <roles>
+      <role rt="ioc:network" rn="infox:socket address" />
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="addrlen" rep="hex" nr="3">
+     <type><ptr>INT</ptr></type>
+     <roles>
+      <role rt="size:buffer" rn="socket address" />
+     </roles>
+     <pre><deref-read-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="lpfnCondition" nr="4">
+     <type>unknownfunction</type>
+     <roles>
+      <role rt="ioc:network" rn="callbackf:socket-accept-reject" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwCallbackData" nr="5">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="ioc:network" rn="callbackp:socket-accept-reject"/>
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <returntype>SOCKET</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="network"
+		 desc="conditionally accepts a network connection"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>sockaddr</type>
+	    <ci>addr</ci>
+	    <apply><addressed-value/><ci>addrlen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>sockaddr</type>
+	    <ci>addr</ci>
+	    <apply><addressed-value/><ci>addrlen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

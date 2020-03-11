@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="URLDownloadToCacheFileA.xml" time="2016-07-15 13:55:03.660570"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="urlmon" name="URLDownloadToCacheFileA">
+    <refer-to char-type="ansi" name="URLDownloadToCacheFile"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

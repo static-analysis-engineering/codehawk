@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/25/2015 13:24:42"/>
+  <libfun lib="ws2_32" name="getpeername">
+   <documentation>
+    <desc>retrieves the address of the peer to which a socket is connected</desc>
+    <apidoc>
+     <pt>
+      <ll>int getpeername(</ll>
+      <ld>_In_    SOCKET          s</ld>
+      <ld>_Out_   struct sockaddr *name</ld>
+      <ld>_Inout_ int             *namelen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="s">A descriptor identifying a connected socket</par>
+     <par name="name">The SOCKADDR structure that receives the address of the peer</par>
+     <par name="namelen">A pointer to the size, in bytes, of the name parameter</par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="getpeername">
+    <par loc="stack" name="s" io="r" nr="1">
+     <type>SOCKET</type>
+     <roles>
+       <role rt="ioc:network" rn="socket"/>
+     </roles>
+    </par>
+    <par loc="stack" name="name" io="w" nr="2">
+     <type><ptr>sockaddr</ptr></type>
+     <roles>
+       <role rt="ioc:network" rn="socket address"/>
+     </roles>
+    </par>
+    <par loc="stack" name="namelen" io="rw" nr="3">
+     <type><ptr>int</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:buffersize" rn="getpeername"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="retrieves the address of the peer to which a socket is connected">
+       </io-action>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>sockaddr</type>
+	    <ci>name</ci>
+	    <apply><addressed-value/><ci>namelen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <zero-notzero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>sockaddr</type>
+	    <ci>name</ci>
+	    <apply><addressed-value/><ci>namelen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

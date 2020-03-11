@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/07/2015 00:05:09"/>
+  <libfun lib="version" name="GetFileVersionInfoSize">
+   <documentation>
+    <desc>
+      Determines whether the operating system can retrieve version information 
+      for a specified file. If version information is available, 
+      GetFileVersionInfoSize returns the size, in bytes, of that information
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetFileVersionInfoSize(</ll>
+      <ld>_In_      LPCTSTR lptstrFilename</ld>
+      <ld>_Out_opt_ LPDWORD lpdwHandle</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lptstrFilename">
+       The name of the file of interest. The function uses the search sequence 
+       specified by the LoadLibrary function
+     </par>
+     <par name="lpdwHandle">
+       A pointer to a variable that the function sets to zero
+     </par>
+     <return>
+      <rc cond="success">the size, in bytes, of the file's version information</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="GetFileVersionInfoSize">
+    <par loc="stack" name="lptstrFilename" io="r" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+       <role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpdwHandle" roles="none" nr="2">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="retrieves size of file version info"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

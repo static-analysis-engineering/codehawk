@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/10/2015 05:18:28"/>
+  <libfun lib="wsock32" name="WSAAsyncGetHostByName">
+   <documentation>
+    <desc>
+      asynchronously retrieves host information that corresponds to a host name.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WSAAsyncGetHostByName(</ll>
+      <ld>_In_        HWND         hWnd</ld>
+      <ld>_In_        unsigned int wMsg</ld>
+      <ld>_In_  const char         *name</ld>
+      <ld>_Out_       char         *buf</ld>
+      <ld>_In_        int          buflen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       Handle of the window that will receive a message when the asynchronous 
+       request completes
+     </par>
+     <par name="wMsg">
+       Message to be received when the asynchronous request completes
+     </par>
+     <par name="name">Pointer to the null-terminated name of the host.</par>
+     <par name="buf">
+       Pointer to the data area to receive the hostent data. The data area must be larger
+       than the size of a hostent structure because the specified data area is used by 
+       Windows Sockets to contain a hostent structure and all of the data referenced by
+       members of the hostent structure. A buffer of MAXGETHOSTSTRUCT bytes is recommended
+     </par>
+     <par name="buflen">Size of data area for the buf parameter, in bytes</par>
+     <return>
+      <rc cond="success">asynchronous task handle</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="WSAAsyncGetHostByName">
+    <par loc="stack" name="hWnd" nr="1">
+     <type>HWND</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" name="wMsg" io="r" roles="none"  nr="2">
+     <type>unsigned int</type>
+    </par>
+    <par loc="stack" name="name" io="r" nr="3" rep="hex">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:network" rn="name:host"/>
+     </roles>
+    </par>
+    <par loc="stack" name="buf" nr="4" io="w" rep="hex">
+      <type><ptr>char</ptr></type>
+      <roles>
+	<role rt="ioc:network" rn="infox:host information"/>
+      </roles>
+    </par>
+    <par loc="stack" name="buflen" io="r" nr="5">
+      <type>int</type>
+      <roles>
+	<role rt="size:buffersize" rn="WSAAsyncGetHostByName"/>
+      </roles>
+    </par>
+    <returntype>HANDLE</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="retrieves host information for a host name"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>buf</ci>
+	    <ci>buflen</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="network" xdata="hostent"/>
+	    <type>char</type>
+	    <ci>buf</ci>
+	    <ci>buflen</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

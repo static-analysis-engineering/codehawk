@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="09/24/2015 17:32:25"/>
+  <libfun lib="shlwapi" name="PathIsDirectoryA">
+   <refer-to char-type="ansi" name="PathIsDirectory"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

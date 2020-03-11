@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2019-11-12 22:48:13"/>
+  <libfun name="read">
+    <documentation>
+      <desc>read from a file</desc>
+      <apidoc>
+        <pt>
+          <ll>ssize_t read(</ll>
+          <ld>int fildes</ld>
+          <ld>void *buf</ld>
+          <ld>size_t nbyte</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="fildes">file descriptor</par>
+        <par name="buf">buffer to write the bytes to</par>
+        <par name="nbyte">the number of bytes to be read</par>
+        <return>
+          <rc cond="success">number of bytes actually read</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="read">
+      <par loc="stack" name="fildes" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="buf" nr="2">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="stack" name="nbyte" nr="3">
+        <type>size_t</type>
+      </par>
+      <returntype>ssize_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>byte</type>
+	      <ci>buf</ci>
+	      <ci>nbyte</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <leq/>
+	      <return/>
+	      <ci>nbyte</ci>
+	    </apply>
+	  </math>
+	</post>
+	<post>
+	  <math>
+	    <apply>
+	      <geq/>
+	      <return/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</post>
+	<error-post>
+	  <math>
+	    <apply>
+	      <eq/>
+	      <return/>
+	      <cn>-1</cn>
+	    </apply>
+	  </math>
+	</error-post>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>byte</type>
+	      <ci>buf</ci>
+	      <ci>nbyte</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

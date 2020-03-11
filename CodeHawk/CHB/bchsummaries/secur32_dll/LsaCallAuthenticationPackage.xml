@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/04/2015 14:08:13"/>
+  <libfun lib="secur32" name="LsaCallAuthenticationPackage">
+   <documentation>
+    <desc>
+      used by a logon application to communicate with an authentication package.
+      This function is typically used to access services provided by the authentication 
+      package
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>NTSTATUS LsaCallAuthenticationPackage(</ll>
+      <ld>_In_  HANDLE    LsaHandle</ld>
+      <ld>_In_  ULONG     AuthenticationPackage</ld>
+      <ld>_In_  PVOID     ProtocolSubmitBuffer</ld>
+      <ld>_In_  ULONG     SubmitBufferLength</ld>
+      <ld>_Out_ PVOID     *ProtocolReturnBuffer</ld>
+      <ld>_Out_ PULONG    *ReturnBufferLength</ld>
+      <ld>_Out_ PNTSTATUS ProtocolStatus</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="LsaHandle">
+       A handle obtained from a previous call to LsaRegisterLogonProcess or 
+       LsaConnectUntrusted.
+     </par>
+     <par name="AuthenticationPackage">
+       Supplies the identifier of the authentication package. This value is 
+       obtained by calling LsaLookupAuthenticationPackage.
+     </par>
+     <par name="ProtocolSubmitBuffer">
+       An authentication package-specific message buffer passed to the authentication 
+       package
+     </par>
+     <par name="SubmitBufferLength">
+       Indicates the length, in bytes, of the ProtocolSubmitBuffer buffer.
+     </par>
+     <par name="ProtocolReturnBuffer">
+       A pointer that receives the address of the buffer returned by the authentication 
+       package.
+       This buffer is allocated by this function. When you have finished using this 
+       buffer, free the memory by calling the LsaFreeReturnBuffer function.
+     </par>
+     <par name="ReturnBufferLength">
+       A pointer to a ULONG that receives the length of the returned buffer, in bytes.
+     </par>
+     <par name="ProtocolStatus">
+       If the function succeeds, this parameter receives a pointer to an NTSTATUS 
+       code that indicates the completion status of the authentication package.
+     </par>
+     <return>
+      <rc cond="success">STATUS_SUCCESS</rc>
+      <rc cond="failure">NTSTATUS code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="LsaCallAuthenticationPackage">
+    <par loc="stack" io="r" name="LsaHandle" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:security" rn="handle:lsa" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="AuthenticationPackage" nr="2">
+     <type>ULONG</type>
+     <roles>
+      <role rt="ioc:system" rn="id:authentication package" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="ProtocolSubmitBuffer" nr="3">
+     <type><ptr>VOID</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:authentication package"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="SubmitBufferLength" nr="4">
+     <type>ULONG</type>
+     <roles>
+      <role rt="size:buffer" rn="LsaCallAuthenticationPackage" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="ProtocolReturnBuffer" nr="5">
+     <type><ptr><ptr>VOID</ptr></ptr></type>
+     <roles>
+      <role rt="ioc:process" rn="infox:authentication protocol"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="ReturnBufferLength" nr="6">
+     <type><ptr>ULONG</ptr></type>
+     <roles>
+      <role rt="size:buffer" rn="size:actual" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="ProtocolStatus" io="w" roles="none" nr="7">
+     <type><ptr>NTSTATUS</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>NTSTATUS</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process"
+		  desc="accesses services provided by the authentication package"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>VOID</type>
+	    <ci>ProtocolSubmitBuffer</ci>
+	    <ci>SubmitBufferLength</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/01/2015 23:22:20"/>
+  <libfun lib="wininet" name="InternetWriteFile">
+   <documentation>
+    <desc>Writes data to an open Internet file</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL InternetWriteFile(</ll>
+      <ld>_In_  HINTERNET hFile</ld>
+      <ld>_In_  LPCVOID   lpBuffer</ld>
+      <ld>_In_  DWORD     dwNumberOfBytesToWrite</ld>
+      <ld>_Out_ LPDWORD   lpdwNumberOfbytesWritten</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       Handle returned from a previous call to FtpOpenFile or an HINTERNET handle 
+       sent by HttpSendRequestEx.
+     </par>
+     <par name="lpBuffer">
+       Pointer to a buffer that contains the data to be written to the file
+     </par>
+     <par name="dwNumberOfBytesToWrite">
+       Number of bytes to be written to the file
+     </par>
+     <par name="lpdwNumberOfbytesWritten">
+       Pointer to a variable that receives the number of bytes written to the file. 
+       InternetWriteFile sets this value to zero before doing any work or error 
+       checking
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="InternetWriteFile">
+    <par loc="stack" io="r" name="hFile" nr="1">
+     <type>HINTERNET</type>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpBuffer" nr="2" rep="hex">
+     <type><ptr>void</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:network output"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwNumberOfBytesToWrite" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="InternetWriteFile"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpdwNumberOfbytesWritten" nr="4">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+       <role rt="size:actual" rn="InternetWriteFile"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="writes data to an open Internet file"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>byte</type>
+	    <ci>lpBuffer</ci>
+	    <ci>dwNumberOfBytesToWrite</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/16/2015 14:07:56"/>
+  <libfun lib="secur32" name="DecryptMessage">
+   <documentation>
+    <desc>
+      decrypts a message. Some packages do not encrypt and decrypt messages 
+      but rather perform and check an integrity hash.
+      The Digest security support provider (SSP) provides encryption and 
+      decryption confidentiality for messages exchanged between client and 
+      server as a SASL mechanism only.
+      This function is also used with the Schannel SSP to signal a request 
+      from a message sender for a renegotiation (redo) of the connection 
+      attributes or for a shutdown of the connection.
+      Note  EncryptMessage (General) and DecryptMessage (General) can be 
+      called at the same time from two different threads in a single Security
+      Support Provider Interface (SSPI) context if one thread is encrypting 
+      and the other is decrypting. If more than one thread is encrypting, 
+      or more than one thread is decrypting, each thread should obtain a 
+      unique context.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>SECURITY_STATUS SEC_Entry DecryptMessage(</ll>
+      <ld>_In_    PCtxtHandle    pHContext</ld>
+      <ld>_Inout_ PSecBufferDesc pMessage</ld>
+      <ld>_In_    ULONG          MessageSeqNo</ld>
+      <ld>_Out_   PULONG         pfQOP</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pHContext">
+       A handle to the security context to be used to decrypt the message
+     </par>
+     <par name="pMessage">
+       A pointer to a SecBufferDesc structure. On input, the structure 
+       references one or more SecBuffer structures. One of these may be
+       of type SECBUFFER_DATA. That buffer contains the encrypted message.
+       The encrypted message is decrypted in place, overwriting the original
+       contents of its buffer.
+       When using the Digest SSP, on input, the structure references one
+       or more SecBuffer structures. One of these must be of type 
+       SECBUFFER_DATA or SECBUFFER_STREAM, and it must contain the 
+       encrypted message.
+       When using the Schannel SSP with contexts that are not connection 
+       oriented, on input, the structure must contain four SecBuffer 
+       structures. Exactly one buffer must be of type SECBUFFER_DATA and
+       contain an encrypted message, which is decrypted in place. The 
+       remaining buffers are used for output and must be of type 
+       SECBUFFER_EMPTY. For connection-oriented contexts, a SECBUFFER_DATA 
+       type buffer must be supplied, as noted for nonconnection-oriented 
+       contexts. Additionally, a second SECBUFFER_TOKEN type buffer that
+       contains a security token must also be supplied.
+     </par>
+     <par name="MessageSeqNo">
+       The sequence number expected by the transport application, if any.
+       If the transport application does not maintain sequence numbers, 
+       this parameter must be set to zero.
+       When using the Digest SSP, this parameter must be set to zero. The
+       Digest SSP manages sequence numbering internally.
+       When using the Schannel SSP, this parameter must be set to zero. The 
+       Schannel SSP does not use sequence numbers.
+     </par>
+     <par name="pfQOP">
+       A pointer to a variable of type ULONG that receives package-specific
+       flags that indicate the quality of protection.
+       When using the Schannel SSP, this parameter is not used and should 
+       be set to NULL.
+     </par>
+     <return>
+      <rc cond="success">SEC_E_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="DecryptMessage">
+    <par loc="stack" io="r" name="pHContext" rep="hex" nr="1">
+     <type><ptr>CtxtHandle</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:crypto" rn="handle:security context"/>
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="pMessage" rep="hex" nr="2">
+     <type><ptr>SecBufferDesc</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:ciphertext"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="MessageSeqNo" nr="3">
+     <type>ULONG</type>
+     <roles>
+       <role rt="size:index" rn="message seqno"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="pfQOP" rep="hex" roles="none" nr="4">
+     <type><ptr>ULONG</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>SECURITY_STATUS SEC_Entry</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="crypto" desc="decrypts a message"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

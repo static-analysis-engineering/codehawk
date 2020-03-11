@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/24/2015 21:05:53"/>
+  <libfun lib="winspool" name="DeviceCapabilities">
+   <documentation>
+    <desc>retrieves the capabilities of a printer driver</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD DeviceCapabilities(</ll>
+      <ld>_In_        LPCTSTR pDevice</ld>
+      <ld>_In_        LPCTSTR pPort</ld>
+      <ld>_In_        WORD    fwCapability</ld>
+      <ld>_Out_       LPTSTR  pOutput</ld>
+      <ld>_In_  const DEVMODE *pDevMode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pDevice">
+       A pointer to a null-terminated string that contains the name of the printer. 
+       Note that this is the name of the printer, not of the printer driver
+     </par>
+     <par name="pPort">
+       A pointer to a null-terminated string that contains the name of the port to
+       which the device is connected, such as LPT1.
+     </par>
+     <par name="fwCapability">The capabilities to be queried</par>
+     <par name="pOutput">
+       A pointer to an array. The format of the array depends on the setting 
+       of the fwCapability parameter. If pOutput is NULL, DeviceCapabilities 
+       returns the number of bytes required for the output data.
+     </par>
+     <par name="pDevMode">
+       A pointer to a DEVMODE structure. If this parameter is NULL, 
+       DeviceCapabilities retrieves the current default initialization values
+       for the specified printer driver. Otherwise, the function retrieves the 
+       values contained in the structure to which pDevMode points
+     </par>
+     <return>
+       If the function succeeds, the return value depends on the setting of the
+       fwCapability parameter. A return value of zero generally indicates that, 
+       while the function completed successfully, there was some type of failure,
+       such as a capability that is not supported. For more details, see the 
+       descriptions for the fwCapability values.
+       If the function returns -1, this may mean either that the capability is 
+       not supported or there was a general function failure.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="DeviceCapabilities">
+    <par loc="stack" io="r" name="pDevice" nr="1">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:device" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="pPort" nr="2">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:network" rn="name:port" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" name="fwCapability" io="r" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="pOutput" nr="4">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:filesystem" rn="infox:device capability"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="pDevMode" nr="5">
+     <type><ptr>DEVMODE</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:DEVMODE" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves the capabilities of a printer driver">
+       </io-action>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>pOutput</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>pOutput</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

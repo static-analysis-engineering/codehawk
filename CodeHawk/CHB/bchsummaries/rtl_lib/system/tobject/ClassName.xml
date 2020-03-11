@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ClassName.xml" time="2016-11-27 16:06:21.514810"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="ClassName" package="System::TObject">
+    <documentation>
+      <desc>
+	Returns a string indicating the type of the object instance
+	(as opposed to the type of the variable passed as an
+	argument).
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>void ClassName(</ll>
+          <ld>this</ld>
+          <ld>dst:string</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="this">this object</par>
+        <par name="dst">result</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="ClassName">
+      <par loc="register" name="this" reg="eax" rep="hex">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="register" name="dst" reg="edx" rep="hex">
+        <type><ptr>char</ptr></type>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>dst</ci>
+	      <runtime-value/>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>char</type>
+	      <ci>dst</ci>
+	      <runtime-value/>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

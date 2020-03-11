@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FtpOpenFileA.xml" time="2016-05-08 11:05:26.594987"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="wininet" name="FtpOpenFileA">
+    <refer-to char-type="ansi" name="FtpOpenFile"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

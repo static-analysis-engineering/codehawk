@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetUserNameEx.xml" time="2016-05-07 21:10:20.289218"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="secur32" name="GetUserNameEx">
+    <documentation>
+      <desc>
+	Retrieves the name of the user or other security principal associated 
+	with the calling thread. If the thread is impersonating a client, 
+	GetUserNameEx returns the name of the client
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOLEAN WINAPI GetUserNameEx(</ll>
+          <ld>_In_    EXTENDED_NAME_FORMAT NameFormat</ld>
+          <ld>_Out_   LPTSTR               lpNameBuffer</ld>
+          <ld>_Inout_ PULONG               lpnSize</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="NameFormat">
+	  The format of the name. This parameter is a value from the
+	  EXTENDED_NAME_FORMAT enumeration type. It cannot be
+	  NameUnknown. If the user account is not in a domain, only
+	  NameSamCompatible is supported.
+	</par>
+        <par name="lpNameBuffer">
+	  A pointer to a buffer that receives the name in the
+	  specified format. The buffer must include space for the
+	  terminating null character.
+	</par>
+        <par name="lpnSize">
+	  On input, this variable specifies the size of the
+	  lpNameBuffer buffer, in TCHARs. If the function is
+	  successful, the variable receives the number of TCHARs
+	  copied to the buffer, not including the terminating null
+	  character.  If lpNameBuffer is too small, the function fails
+	  and GetLastError returns ERROR_MORE_DATA. This parameter
+	  receives the required buffer size, in Unicode characters
+	  (whether or not Unicode is being used), including the
+	  terminating null character
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="GetUserNameEx">
+      <par loc="stack" name="NameFormat" io="r" roles="none" nr="1">
+        <type>EXTENDED_NAME_FORMAT</type>
+      </par>
+      <par loc="stack" io="w" name="lpNameBuffer" nr="2">
+        <type>LPTSTR</type>
+	<roles>
+	  <role rt="ioc:system" rn="infox:username"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpnSize" nr="3">
+        <type><ptr>ULONG</ptr></type>
+	<pre><deref-write/></pre>
+	<roles>
+	  <role rt="size:buffersize" rn="GetUserNameEx"/>
+	</roles>
+      </par>
+      <returntype>BOOLEAN</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="ioc:system" desc="retrieves username associated with thread"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>lpNameBuffer</ci>
+	      <apply>
+		<indexsize/>
+		<apply><addressed-value/><ci>lpnSize</ci><cn>0</cn></apply>
+	      </apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<nonzero-zero/>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>lpNameBuffer</ci>
+	      <apply>
+		<indexsize/>
+		<apply><addressed-value/><ci>lpnSize</ci><cn>0</cn></apply>
+	      </apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

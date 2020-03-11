@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FtpOpenFile.xml" time="2016-05-08 11:05:26.594297"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="wininet" name="FtpOpenFile">
+    <documentation>
+      <desc>
+	Initiates access to a remote file on an FTP server for reading or writing.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HINTERNET FtpOpenFile(</ll>
+          <ld>_In_ HINTERNET hConnect</ld>
+          <ld>_In_ LPCTSTR   lpszFileName</ld>
+          <ld>_In_ DWORD     dwAccess</ld>
+          <ld>_In_ DWORD     dwFlags</ld>
+          <ld>_In_ DWORD_PTR dwContext</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hConnect">Handle to an FTP session</par>
+        <par name="lpszFileName">
+	  Pointer to a null-terminated string that contains the name
+	  of the file to be accessed
+	</par>
+        <par name="dwAccess">
+	  File access. This parameter can be GENERIC_READ or
+	  GENERIC_WRITE, but not both
+	</par>
+        <par name="dwFlags">
+	  Conditions under which the transfers occur. The application
+	  should select one transfer type and any of the flags that
+	  indicate how the caching of the file will be controlled.
+	</par>
+        <par name="dwContext">
+	  Pointer to a variable that contains the application-defined
+	  value that associates this search with any application
+	  data. This is only used if the application has already
+	  called InternetSetStatusCallback to set up a status callback
+	  function.
+	</par>
+        <return>
+          <rc cond="success">handle to remote file</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="FtpOpenFile">
+      <par loc="stack" name="hConnect" io="r" nr="1">
+        <type>HINTERNET</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="handle:internet"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpszFileName" io="r" nr="2">
+        <type>LPCSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="name:ftp file"/>
+	  <role rt="ioc:filesystem" rn="name:file"/>
+	  <role rt="rep:hex" rn="name:file"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwAccess" io="r" roles="none" nr="3">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="dwFlags" io="r" roles="none" nr="4">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="dwContext" io="r" nr="5">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="application context"/>
+	</roles>
+      </par>
+      <returntype>HINTERNET</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network"
+		   desc="initiates access to a remote file on an FTP server"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/04/2015 12:33:40"/>
+  <libfun lib="wininet" name="HttpAddRequestHeaders">
+   <documentation>
+    <desc>Adds one or more HTTP request headers to the HTTP request handle</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL HttpAddRequestHeaders(</ll>
+      <ld>_In_  HINTERNET hRequest</ld>
+      <ld>_In_  LPCTSTR lpszHeaders</ld>
+      <ld>_In_  DWORD dwHeadersLength</ld>
+      <ld>_In_  DWORD dwModifiers</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hRequest">A handle returned by a call to the HttpOpenRequest function</par>
+     <par name="lpszHeaders">
+       A pointer to a string variable containing the headers to append to the request. 
+       Each header must be terminated by a CR/LF (carriage return/line feed) pair
+     </par>
+     <par name="dwHeadersLength">
+       The size of lpszHeaders, in TCHARs. If this parameter is -1L, the function assumes 
+       that lpszHeaders is zero-terminated (ASCIIZ), and the length is computed
+     </par>
+     <par name="dwModifiers">
+       A set of modifiers that control the semantics of this function 
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="HttpAddRequestHeaders">
+    <par loc="stack" io="r" name="hRequest" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszHeaders" nr="2">
+     <type>LPCTSTR</type>
+     <roles>
+        <role rt="ioc:network" rn="http request headers"/>
+        <role rt="rep:hex" rn="http request headers"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwHeadersLength" nr="3">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="HttpAddRequestHeaders"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwModifiers" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="adds HTTP request headers to an HTTP request handle"/>
+     </io-actions>	 
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><eq/><ci>dwHeadersLength</ci><cn>0xffffffff</cn></apply>
+	    <apply>
+	      <deref-read-nt/>
+	      <type>TCHAR</type>
+	      <ci>lpszHeaders</ci>
+	      <apply>
+		<indexsize/>
+		<apply><null-terminator-pos/><ci>lpszHeaders</ci></apply>
+	      </apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><neq/><ci>dwHeadersLength</ci><cn>0xffffffff</cn></apply>
+	    <apply>
+	      <deref-read-nt/>
+	      <type>TCHAR</type>
+	      <ci>lpszHeaders</ci>
+	      <apply><indexsize/><ci>dwHeadersLength</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

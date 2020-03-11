@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FileOpen.xml" time="2016-11-27 21:18:32.190204"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="FileOpen" package="System::SysUtils">
+    <documentation>
+      <desc>
+	Opens a specified file using a specified access mode
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>FileOpen(</ll>
+          <ld>FileName:string</ld>
+          <ld>Mode:LongWord</ld>
+          <ll>):THandle</ll>
+        </pt>
+        <par name="FileName">name of file to be opened</par>
+        <par name="Mode">access mode</par>
+        <return>
+          <rc cond="success">handle to the open file</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="FileOpen">
+      <par loc="register" name="FileName" reg="eax" rep="hex">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:file"/>
+	</roles>
+      </par>
+      <par loc="register" name="Mode" roles="none" reg="edx">
+        <type>LongWord</type>
+      </par>
+      <returntype>THandle</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="opens a file"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

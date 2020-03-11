@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="SHGetValue.xml" time="2016-09-25 18:44:07.276242"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="SHGetValue">
+    <documentation>
+      <desc>Retrieves a registry value</desc>
+      <apidoc>
+        <pt>
+          <ll>LSTATUS SHGetValue(</ll>
+          <ld>_In_        HKEY    hkey</ld>
+          <ld>_In_opt_    LPCTSTR pszSubKey</ld>
+          <ld>_In_opt_    LPCTSTR pszValue</ld>
+          <ld>_Out_opt_   LPDWORD pdwType</ld>
+          <ld>_Out_opt_   LPVOID  pvData</ld>
+          <ld>_Inout_opt_ LPDWORD pcbData</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hkey">A handle to the currently open key</par>
+        <par name="pszSubKey">
+	  The address of a null-terminated string that specifies the
+	  name of the subkey from which to retrieve the value.
+	</par>
+        <par name="pszValue">The address of the value</par>
+        <par name="pdwType">The type of value</par>
+        <par name="pvData">The address of the destination data buffer</par>
+        <par name="pcbData">The size of the destination data buffer</par>
+        <return>
+          <rc cond="success">ERROR_SUCCESS</rc>
+          <rc cond="failure">nonzero error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="24" cc="stdcall" name="SHGetValue">
+      <par loc="stack" name="hkey" io="r" rep="hex" nr="1">
+      <role rt="rep:enum" rn="predefined_registry_key_constants"/>
+      <type>HKEY</type>
+      <roles>
+       <role rt="ioc:registry" rn="handle:key" />
+      </roles>
+      <pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="pszSubKey" io="r" rep="hex" nr="2">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:registry" rn="name:subkey"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pszValue" io="r" rep="hex" nr="3" >
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:registry" rn="name:value"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pdwType" io="w" rep="hex" nr="4">
+        <type><ptr>DWORD</ptr></type>
+	<roles>
+	  <role rt="ioc:registry" rn="infox:value type"/>
+        </roles>
+      </par>
+      <par loc="stack" name="pvData" io="w" rep="hex" nr="5">
+        <type><ptr>void</ptr></type>
+	<roles>
+	  <role rt="ioc:registry" rn="infox:value data"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pcbData" io="r" nr="6">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="size:buffersize" rn="SHGetValue"/>
+	</roles>
+      </par>
+      <returntype>LSTATUS</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="registry" desc="retrieves a registry value"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>byte</type>
+	      <ci>pvData</ci>
+	      <ci>pcbData</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>byte</type>
+	      <ci>pvData</ci>
+	      <ci>pcbData</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

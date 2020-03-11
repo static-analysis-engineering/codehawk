@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="StrCopy.xml" time="2016-11-27 22:23:23.527530"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="StrCopy" package="System::SysUtils">
+    <documentation>
+      <desc>Copies a null-terminated string</desc>
+      <apidoc>
+        <pt>
+          <ll>StrCopy(</ll>
+          <ld>Dest:PAnsiChar</ld>
+          <ld>Source:PAnsiChar</ld>
+          <ll>):PAnsiChar</ll>
+        </pt>
+        <par name="Dest">pointer to buffer to copy to</par>
+        <par name="Source">pointer to buffer to copy from</par>
+        <return>Dest</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="StrCopy">
+      <par loc="register" name="Dest" reg="eax" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-bytes:copy"/>
+	</roles>
+      </par>
+      <par loc="register" name="Source" reg="edx" rep="hex">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-bytes:copy"/>
+	</roles>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="copies a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>Dest</ci>
+	      <apply><null-terminator-pos/><ci>Source</ci></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <eq/>
+	      <return-value/>
+	      <ci>Dest</ci>
+	    </apply>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>char</type>
+	      <ci>Dest</ci>
+	      <apply><null-terminator-pos/><ci>Source</ci></apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

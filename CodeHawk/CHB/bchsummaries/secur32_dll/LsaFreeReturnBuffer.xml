@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/04/2015 14:25:28"/>
+  <libfun lib="secur32" name="LsaFreeReturnBuffer">
+   <documentation>
+    <desc>
+      frees the memory used by a buffer previously allocated by the LSA.
+    </desc>
+    <apidoc>
+     <pt>NTSTATUS LsaFreeReturnBuffer (_In_ PVOID Buffer)</pt>
+     <par name="Buffer">Pointer to the buffer to be freed</par>
+     <return>
+      <rc cond="success">STATUS_SUCCESS</rc>
+      <rc cond="failure">NTSTATUS</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="LsaFreeReturnBuffer">
+    <par loc="stack" io="r" name="Buffer" nr="1">
+     <type><ptr>VOID</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:authentication package" />
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><invalidates/></sideeffects>
+    </par>
+    <returntype>NTSTATUS</returntype>
+   </api>
+   <io-actions>
+      <io-action cat="process" desc="frees an LSA buffer"/>
+   </io-actions>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

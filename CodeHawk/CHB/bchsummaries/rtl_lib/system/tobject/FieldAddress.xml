@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FieldAddress.xml" time="2016-11-27 16:16:45.382413"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="FieldAddress" package="System::TObject">
+    <documentation>
+      <desc>Returns the address of a published object field</desc>
+      <apidoc>
+        <pt>
+          <ll>FieldAddress(</ll>
+          <ld>this</ld>
+          <ld>const Name:_ShortStr</ld>
+          <ll>):Pointer</ll>
+        </pt>
+        <par name="this">this object</par>
+        <par name="Name">name of the field to get the address of</par>
+        <return>
+          <rc cond="success">pointer to field object</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="FieldAddress">
+      <par loc="register" name="this" rep="hex" reg="eax">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="register" name="Name" rep="hex" reg="edx">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-null/></pre>
+      </par>
+      <returntype><ptr>void</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

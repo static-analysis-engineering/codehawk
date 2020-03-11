@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/19/2015 23:47:44"/>
+  <libfun lib="msvcrt" name="strerror">
+   <documentation>
+    <desc>Gets a system error message string</desc>
+    <apidoc>
+     <pt>char *strerror (const char *errnum)</pt>
+     <par name="errnum">Error number</par>
+     <return>
+       a pointer to the error-message string. Subsequent calls can overwrite the string
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="strerror">
+    <par loc="stack" io="r" name="errnum" nr="1">
+     <type>int</type>
+     <roles>
+      <role rt="ioc:system" rn="id:error message" />
+     </roles>
+    </par>
+    <returntype><ptr>char</ptr></returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="retrieves an error message"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post><math><apply><not-null/><return/></apply></math></post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

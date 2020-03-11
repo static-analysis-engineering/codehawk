@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2019-10-24 23:39:19"/>
+  <libfun name="setsockopt">
+    <documentation>
+      <desc>set the socket options</desc>
+      <apidoc>
+        <pt>
+          <ll>int setsockopt(</ll>
+          <ld>int socket</ld>
+          <ld>int level</ld>
+          <ld>int option_name</ld>
+          <ld>const void *option_value</ld>
+          <ld>socklen_t option_len</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="socket">file descriptor</par>
+        <par name="level">
+	  specifies the protocol level at which the option resides
+	</par>
+        <par name="option_name">specifies a single option to set</par>
+        <par name="option_value">new value for option</par>
+        <par name="option_len">length of option value?</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="setsockopt">
+      <par loc="stack" name="socket" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="level" nr="2">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="option_name" nr="3">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="option_value" nr="4">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="stack" name="option_len" nr="5">
+        <type>socklen_t</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>byte</type>
+	      <ci>option_value</ci>
+	      <ci>option_len</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

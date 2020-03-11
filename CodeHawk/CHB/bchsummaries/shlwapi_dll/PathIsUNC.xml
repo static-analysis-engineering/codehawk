@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 15:25:40"/>
+  <libfun lib="shlwapi" name="PathIsUNC">
+   <documentation>
+    <desc>
+      Determines if a path string is a valid Universal Naming Convention
+      (UNC) path, as opposed to a path based on a drive letter
+    </desc>
+    <apidoc>
+     <pt>BOOL PathIsUNC (_In_ LPCTSTR pszPath)</pt>
+     <par name="pszPath">
+       A pointer to a null-terminated string of maximum length MAX_PATH 
+       that contains the path to validate
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="PathIsUNC">
+    <par loc="stack" name="pszPath" io="r" rep="hex" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+       <role rt="ioc:network" rn="name:path"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" 
+		desc="determines if a path is a UNC path"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="Move.xml" time="2016-11-26 18:37:11.459904"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="Move" package="System">
+    <documentation>
+      <desc>copies bytes</desc>
+      <apidoc>
+        <pt>
+          <ll>Move(</ll>
+          <ld>void *Source</ld>
+          <ld>void *Dest</ld>
+          <ld>int Count</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="Source">source</par>
+        <par name="Dest">destination</par>
+        <par name="Count">number of bytes to be copied</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="Move">
+      <par loc="register" name="Source" reg="eax">
+        <type><ptr>void</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-bytes"/>
+	</roles>
+      </par>
+      <par loc="register" name="Dest" reg="edx">
+        <type><ptr>void</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-bytes"/>
+	</roles>
+      </par>
+      <par loc="register" name="Count" reg="ecx">
+        <type>int</type>
+	<roles>
+	  <role rt="size:buffersize" rn="Move"/>
+	</roles>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="copies bytes from source to destination"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>BYTE</type>
+	      <ci>Source</ci>
+	      <ci>Count</ci>
+	    </apply>
+	  </math>
+	</pre>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>BYTE</type>
+	      <ci>Dest</ci>
+	      <ci>Count</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>BYTE</type>
+	      <ci>Dest</ci>
+	      <ci>Count</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

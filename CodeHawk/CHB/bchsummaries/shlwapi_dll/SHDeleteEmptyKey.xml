@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/06/2015 16:48:08"/>
+  <libfun lib="shlwapi" name="SHDeleteEmptyKey">
+   <documentation>
+    <desc>Deletes an empty key</desc>
+    <apidoc>
+     <pt>
+      <ll>LSTATUS SHDeleteEmptyKey(</ll>
+      <ld>_In_     HKEY    hkey</ld>
+      <ld>_In_opt_ LPCTSTR pszSubKey</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hkey">
+       A handle to an open registry key, or one of the predefined keys
+     </par>
+     <par name="pszSubKey">
+       The address of a null-terminated string specifying the name of the key to delete
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">nonzero error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SHDeleteEmptyKey">
+    <par loc="stack" io="r" name="hkey" nr="1">
+      <rep type="enum" name="predefined_registry_key_constants"/>
+      <type>HKEY</type>
+      <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:registry" rn="handle:key"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pszSubKey" io="r" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:registry" rn="name:subkey"/>
+     </roles>
+    </par>
+    <returntype>LSTATUS</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry" desc="deletes an empty registry key"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

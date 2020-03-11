@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="PathRemoveArgs.xml" time="2016-06-18 18:22:21.672753"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="PathRemoveArgs">
+    <documentation>
+      <desc>
+        Removes any arguments from a given path
+      </desc>
+      <apidoc>
+        <pt>void PathRemoveArgs (_Inout_ LPTSTR pszPath)</pt>
+        <par name="pszPath">
+           Pointer to a null-terminated string of length MAX_PATH that
+           contains the path from which to remove arguments.
+	</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="PathRemoveArgs">
+      <par loc="stack" name="pszPath" io="rw" nr="1">
+        <type>LPTSTR</type>
+        <pre><deref-read-nt/></pre>
+        <roles>
+           <role rt="ioc:filesystem" rn="name:file"/>
+	   <role rt="rep:hex" rn="name:file"/>
+        </roles>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="removes arguments from a path"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

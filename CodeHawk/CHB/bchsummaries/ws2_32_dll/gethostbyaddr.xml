@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/07/2015 15:25:43"/>
+  <libfun lib="ws2_32" name="gethostbyaddr">
+   <documentation>
+    <desc>
+      retrieves the host information corresponding to a network address
+    </desc>
+    <remarks>
+      [gethostbyaddr is no longer recommended for use as of Windows Sockets 2.
+      Instead, use getnameinfo.]
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>struct hostent* FAR gethostbyaddr(</ll>
+      <ld>_In_  const char *addr</ld>
+      <ld>_In_  int len</ld>
+      <ld>_In_  int type</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="addr">A pointer to an address in network byte order</par>
+     <par name="len">The length, in bytes, of the address</par>
+     <par name="type">
+       The type of the address, such as the AF_INET address family type (used 
+       with TCP, UDP, and other associated Internet protocols). Possible values 
+       for the address family are defined in the Winsock2.h header file
+     </par>
+     <return>
+      <rc cond="success">a pointer to the hostent structure</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="gethostbyaddr">
+    <par loc="stack" name="addr" io="r" nr="1">
+     <type><ptr>char</ptr></type>
+     <roles>
+       <role rt="ioc:network" rn="network address"/>
+     </roles>
+    </par>
+    <par loc="stack" name="len" io="r" nr="2">
+     <type>int</type>
+     <roles>
+       <role rt="size:buffersize" rn="gethostbyaddr"/>
+     </roles>
+    </par>
+    <par loc="stack" name="type" io="r" nr="3">
+      <rep type="enum" name="address_type_constants"/>
+      <type>int</type>
+      <pre><enum-value name="address_type_constants"/></pre>
+      <roles>
+	<role rt="ioc:network" rn="type:network address"/>
+      </roles>
+    </par>
+    <returntype><ptr>hostent</ptr></returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="retrieves host information for a network address">
+       </io-action>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>char</type>
+	    <ci>addr</ci>
+	    <ci>len</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/07/2015 00:11:16"/>
+  <libfun lib="version" name="VerQueryValue">
+   <documentation>
+    <desc>
+      Retrieves specified version information from the specified version-information
+      resource. To retrieve the appropriate resource, before you call VerQueryValue, 
+      you must first call the GetFileVersionInfoSize function, and then the 
+      GetFileVersionInfo function
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI VerQueryValue(</ll>
+      <ld>_In_  LPCVOID pBlock</ld>
+      <ld>_In_  LPCTSTR lpSubBlock</ld>
+      <ld>_Out_ LPVOID  *lplBuffer</ld>
+      <ld>_Out_ PUINT   puLen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pBlock">
+       The version-information resource returned by the GetFileVersionInfo function
+     </par>
+     <par name="lpSubBlock">
+       The version-information value to be retrieved. The string must consist of 
+       names separated by backslashes and it must have one of the following forms.
+       backslash
+       The root block. The function retrieves a pointer to the VS_FIXEDFILEINFO 
+       structure for the version-information resource.
+     </par>
+     <par name="lplBuffer">
+       When this method returns, contains the address of a pointer to the 
+       requested version information in the buffer pointed to by pBlock. 
+       The memory pointed to by lplpBuffer is freed when the associated 
+       pBlock memory is freed
+     </par>
+     <par name="puLen">
+       When this method returns, contains a pointer to the size of the requested 
+       data pointed to by lplpBuffer: for version information values, the length 
+       in characters of the string stored at lplpBuffer; for translation array 
+       values, the size in bytes of the array stored at lplpBuffer; and for 
+       root block, the size in bytes of the structure.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="VerQueryValue">
+    <par loc="stack" name="pBlock" roles="none" nr="1">
+     <type><ptr>byte</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="lpSubBlock" io="r" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:process" rn="resource version info name"/>
+       <role rt="rep:hex" rn="resource version info name"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lplBuffer" io="w" nr="3">
+     <type><ptr>byte</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:memops" rn="dst-bytes:misc"/>
+     </roles>
+    </par>
+    <par loc="stack" name="puLen" io="w" nr="4">
+     <type><ptr>UINT</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:actual size" rn="VerQueryValue"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves resource version info"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

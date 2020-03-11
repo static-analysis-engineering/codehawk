@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 14:58:05"/>
+  <libfun lib="wininet" name="InternetSetFilePointer">
+   <documentation>
+    <desc>Sets a file position for InternetReadFile</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD InternetSetFilePointer(</ll>
+      <ld>_In_    HINTERNET hFile</ld>
+      <ld>_In_    LONG      lDistanceToMove</ld>
+      <ld>_Inout_ PLONG     lpDistanceToMoveHigh</ld>
+      <ld>_In_    DWORD     dwMoveMethod</ld>
+      <ld>_In_    DWORD_PTR dwContext</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       Handle returned from a previous call to InternetOpenUrl (on an HTTP or
+       HTTPS URL) or HttpOpenRequest (using the GET or HEAD HTTP verb and 
+       passed to HttpSendRequest or HttpSendRequestEx). This handle must 
+       not have been created with the INTERNET_FLAG_DONT_CACHE or 
+       INTERNET_FLAG_NO_CACHE_WRITE value set
+     </par>
+     <par name="lDistanceToMove">
+       The low order 32-bits of a signed 64-bit number of bytes to move the 
+       file pointer
+     </par>
+     <par name="lpDistanceToMoveHigh">
+       A pointer to the high order 32-bits of the signed 64-bit distance to move.
+       If you do not need the high order 32-bits, this pointer must be set to NULL.
+       When not NULL, this parameter also receives the high order DWORD of the
+       new value of the file pointer. A positive value moves the pointer forward 
+       in the file; a negative value moves it backward
+     </par>
+     <par name="dwMoveMethod">
+       Starting point for the file pointer move
+     </par>
+     <par name="dwContext">
+       This parameter is reserved and must be 0
+     </par>
+     <return>
+      <rc cond="success">the current file position</rc>
+      <rc cond="failure">INVALID_SET_FILE_POINTER</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="InternetSetFilePointer">
+    <par loc="stack" name="hFile" io="r" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lDistanceToMove" io="r" nr="2">
+     <type>LONG</type>
+     <roles>
+        <role rt="size:distance" rn="InternetSetFilePointer"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpDistanceToMoveHigh" io="r" nr="3">
+     <type>LONG</type>
+     <roles>
+        <role rt="size:distance" rn="InternetSetFilePointer"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwMoveMethod" io="r" nr="4">
+     <type>DWORD</type>
+     <pre><enum-value name="file_pointer_move_methods"/></pre>
+     <roles>
+        <role rt="rep:enum" rn="file_pointer_move_methods"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwContext" io="r" nr="5">
+     <type>DWORD_PTR</type>
+     <roles>
+       <role rt="ioc:network" rn="application context"/>
+     </roles>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" desc="sets a file position for reading an internet file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

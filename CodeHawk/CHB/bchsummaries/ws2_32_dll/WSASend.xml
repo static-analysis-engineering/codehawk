@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:38:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ws2_32" name="WSASend">
+   <documentation>
+    <desc>sends data on a connected socket</desc>
+    <apidoc>
+     <pt>
+      <ll>int WSASend (</ll>
+      <ld>__in  SOCKET s,</ld>
+      <ld>__in  LPWSABUF lpBuffers,</ld>
+      <ld>__in  DWORD dwBufferCount,</ld>
+      <ld>__out LPDWORD lpNumberOfBytesSent,</ld>
+      <ld>__in  DWORD dwFlags,</ld>
+      <ld>__in  LPWSAOVERLAPPED lpOverlapped,</ld>
+      <ld>__in  LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="s">descriptor that identifies a connected socket</par>
+     <par name="lpBuffers">pointer to an array of WSABUF structures</par>
+     <par name="dwBufferCount">number of WSABUF structures in the lpBuffers array</par>
+     <par name="lpNumberOfBytesSent">
+       pointer to the number, in bytes, sent by the call if the I/O operation
+       completes immediately
+     </par>
+     <par name="dwFlags">flags used to modify the behavior of WSASend</par>
+     <par name="lpOverlapped">pointer to a WSAOVERLAPPED structure</par>
+     <par name="lpCompletionRoutine">
+       pointer to the completion routine called when the send operation has been
+       completed
+     </par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">SOCKET_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="WSASend">
+     <returntype>int</returntype>
+     <par loc="stack" name="s" io="r" nr="1">
+       <type>SOCKET</type>
+       <roles>
+	 <role rt="ioc:network" rn="socket"/>
+       </roles>
+     </par>
+     <par loc="stack" name="lpBuffers" io="r" nr="2">
+       <type><ptr>WSABUF</ptr></type>
+       <roles>
+	 <role rt="ioc:network" rn="network data output"/>
+       </roles>
+    </par>
+    <par loc="stack" name="dwBufferCount" io="r" nr="3">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:buffersize" rn="WSASend"/>
+      </roles>
+    </par>
+    <par loc="stack" name="lpNumberOfBytesSent" io="rw" nr="4" rep="hex">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="size:actual" rn="WSASend"/>
+      </roles>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="5">
+      <type>DWORD</type>
+    </par>
+    <par loc="stack" name="lpOverlapped" nr="6" io="r" roles="none" rep="hex">
+      <type><ptr>WSAOVERLAPPED</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="lpCompletionRoutine" io="r" nr="7" rep="hex">
+      <type><ptr>WSAOVERLAPPED_COMPLETION_ROUTINE</ptr></type>
+      <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:network" rn="callbackf:network download"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="sends data on a socket"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>WSABUF</type>
+	 <ci>lpBuffers</ci>
+	 <apply><indexsize/><ci>dwBufferCount</ci></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

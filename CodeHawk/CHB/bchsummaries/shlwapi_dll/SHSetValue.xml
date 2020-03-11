@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/24/2015 00:06:16"/>
+  <libfun lib="shlwapi" name="SHSetValue">
+   <documentation>
+    <desc>Sets the value of a registry key</desc>
+    <apidoc>
+     <pt>
+      <ll>LSTATUS SHSetValue(</ll>
+      <ld>_In_     HKEY    hkey</ld>
+      <ld>_In_opt_ LPCTSTR pszSubKey</ld>
+      <ld>_In_opt_ LPCTSTR pszValue</ld>
+      <ld>_In_     DWORD   dwType</ld>
+      <ld>_In_opt_ LPCVOID pvData</ld>
+      <ld>_In_     DWORD   cbData</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hkey">A handle to the currently open key</par>
+     <par name="pszSubKey">
+       The address of a null-terminated string that specifies the name of
+       the subkey with which a value is associated. This can be NULL or a
+       pointer to an empty string. In this case, the value is added to the
+       key identified by the hkey parameter.
+     </par>
+     <par name="pszValue">
+       The address of a null-terminated string that specifies the value. 
+       This value can be NULL
+     </par>
+     <par name="dwType">
+       Type of data to be stored. This parameter must be the REG_SZ type
+     </par>
+     <par name="pvData">
+       Pointer to a buffer that contains the data to set for the specified value.
+       This value can be NULL
+     </par>
+     <par name="cbData">
+       Length, in bytes, of the buffer pointed to by the pvData parameter. If the 
+       data is a null-terminated string, this length includes the terminating null
+       character.
+     </par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="SHSetValue">
+    <par loc="stack" io="r" name="hkey" nr="1">
+      <role rt="rep:enum" rn="predefined_registry_key_constants"/>
+      <type>HKEY</type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:registry" rn="handle:key"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="pszSubKey" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:registry" rn="name:subkey"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="pszValue" nr="3" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:registry" rn="name:value"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwType" nr="4">
+     <type>DWORD</type>
+     <roles>
+       <role rt="ioc:registry" rn="type:value"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="pvData" nr="5">
+     <type>LPCVOID</type>
+     <roles>
+       <role rt="ioc:registry" rn="value:data"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cbData" nr="6">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="SHSetValue"/>
+     </roles>
+    </par>
+    <returntype>LSTATUS</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="registry" desc="sets the value of a registry key"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <type>byte</type>
+	    <ci>pvData</ci>
+	    <ci>cbData</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

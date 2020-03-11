@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/04/2015 14:28:36"/>
+  <libfun lib="secur32" name="LsaConnectUntrusted">
+   <documentation>
+    <desc>establishes an untrusted connection to the LSA server</desc>
+    <apidoc>
+     <pt>NTSTATUS LsaConnectUntrusted (_Out_ PHANDLE LsaHandle)</pt>
+     <par name="LsaHandle">
+       Pointer to a handle that receives the connection handle, which must be 
+       provided in future authentication services.
+     </par>
+     <return>
+      <rc cond="success">STATUS_SUCCESS</rc>
+      <rc cond="failure">NTSTATUS code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="LsaConnectUntrusted">
+    <par loc="stack" io="w" name="LsaHandle" nr="1">
+     <type><ptr>HANDLE</ptr></type>
+     <roles>
+      <role rt="ioc:process" rn="infox:lsa handle" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>NTSTATUS</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process"
+		  desc="establishes an untrusted connection to the LSA server"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

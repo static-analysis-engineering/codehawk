@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetUserProfileDirectoryA.xml" time="2016-05-08 10:35:11.629381"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="userenv" name="GetUserProfileDirectoryA">
+    <refer-to char-type="ansi" name="GetUserProfileDirectory"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

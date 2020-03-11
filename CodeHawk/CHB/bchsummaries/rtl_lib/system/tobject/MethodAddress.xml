@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="MethodAddress.xml" time="2016-11-27 18:47:16.903474"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="MethodAddress" package="System::TObject">
+    <documentation>
+      <desc>Returns the address of a class method by name</desc>
+      <apidoc>
+        <pt>
+          <ll>MethodAddress(</ll>
+          <ld>this</ld>
+          <ld>Name:string</ld>
+          <ll>):Pointer</ll>
+        </pt>
+        <par name="this">this object</par>
+        <par name="Name">name of the method to be retrieved</par>
+        <return>
+          <rc cond="success">address of the method</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="MethodAddress">
+      <par loc="register" name="this" reg="eax" rep="hex">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="register" name="Name" reg="edx">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype><ptr>void</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

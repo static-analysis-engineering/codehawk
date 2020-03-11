@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-09-13 09:45:29"/>
+  <libfun lib="shlwapi" name="PathUnquoteSpaces">
+    <documentation>
+      <desc>Removes quotes from the beginning and end of a path.</desc>
+      <apidoc>
+        <pt>void PathUnquoteSpaces (_Inout LPTSTR lpsz)</pt>
+        <par name="lpsz">
+	  A pointer to a null-terminated string of length MAX_PATH that contains
+	  the path. When the function returns successfully, points to the string
+	  with beginning and ending quotation marks removed.
+	</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="PathUnquoteSpaces">
+      <par loc="stack" name="lpsz" nr="1">
+        <type>LPTSTR</type>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:filename"/>
+	</roles>
+      </par>
+      <returntype>VOID</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="removes quotes from a path"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>TCHAR</type>
+	      <ci>lpsz</ci>
+	      <cn>256</cn>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>lpsz</ci>
+	      <cn>256</cn>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

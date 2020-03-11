@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="PathQuoteSpaces.xml" time="2016-06-18 18:14:42.934578"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="PathQuoteSpaces">
+    <documentation>
+      <desc>
+         Searches a path for spaces. If spaces are found, the entire
+         path is enclosed in quotation marks
+      </desc>
+      <apidoc>
+        <pt>BOOL PathQuoteSpaces (_Inout_ LPTSTR lpsz)</pt>
+        <par name="lpsz">
+           A pointer to a null-terminated string that contains the
+           path to search. The size of this buffer must be set to
+           MAX_PATH to ensure that it is large enough to hold the
+           returned string.
+	</par>
+        <return>TRUE if spaces were found; otherwise, FALSE</return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="PathQuoteSpaces">
+      <par loc="stack" name="lpsz" io="rw" nr="1">
+        <type>LPTSTR</type>
+        <pre><deref-read-nt/></pre>
+        <roles>
+           <role rt="ioc:filesystem" rn="name:file"/>
+	   <role rt="rep:hex" rn="name:file"/>
+        </roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="checks a pathname for spaces"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

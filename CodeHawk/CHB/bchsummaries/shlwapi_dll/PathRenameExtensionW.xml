@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2019-09-13 09:10:36"/>
+  <libfun lib="shlwapi" name="PathRenameExtensionW">
+    <refer-to char-type="unicode" name="PathRenameExtension"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

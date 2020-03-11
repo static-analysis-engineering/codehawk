@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 15:21:14"/>
+  <libfun lib="shell32" name="SHFreeNameMappings">
+   <documentation>
+    <desc>
+      Frees a file name mapping object that was retrieved by the 
+      SHFileOperation function
+    </desc>
+    <apidoc>
+     <pt>void SHFreeNameMappings (_In_opt_ HANDLE hNameMappings)</pt>
+     <par name="hNameMappings">
+       A handle to the file name mapping object to be freed
+     </par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SHFreeNameMappings">
+    <par loc="stack" io="r" name="hNameMappings" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="handle:filename mapping object" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>VOID</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem"
+		  desc="frees a filename mappint object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

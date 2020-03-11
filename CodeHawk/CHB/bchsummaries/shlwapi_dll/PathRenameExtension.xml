@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2019-09-13 09:10:36"/>
+  <libfun lib="shlwapi" name="PathRenameExtension">
+    <documentation>
+      <desc>
+	Replaces the extension of a file name with a new extension. If the
+	file name does not contain an extension, the extension will be
+	attached to the end of the string.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL PathRenameExtension(</ll>
+          <ld>_Inout_ LPTSTR  pszPath</ld>
+          <ld>_In_    LPCTSTR pszExt</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pszPath">
+	  Pointer to a null-terminated string of length MAX_PATH in which to
+	  replace the extension.
+	</par>
+        <par name="pszExt">
+	  Pointer to a character buffer that contains a '.' character followed
+	  by the new extension.
+	</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">
+	    zero if the new name would exceed MAX_PATH characters
+	  </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="PathRenameExtension">
+      <par loc="stack" name="pszPath" nr="1">
+        <type>LPTSTR</type>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:filename"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pszExt" nr="2">
+        <type>LPCSTR</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:filename"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="replaces a filename extension"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>pszPath</ci>
+	      <cn>256</cn>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>pszPath</ci>
+	      <cn>256</cn>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

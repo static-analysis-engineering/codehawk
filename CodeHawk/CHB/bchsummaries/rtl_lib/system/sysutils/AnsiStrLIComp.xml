@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="AnsiStrLIComp.xml" time="2016-11-27 19:05:40.222917"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="AnsiStrLIComp" package="System::SysUtils">
+    <documentation>
+      <desc>Compares two strings, case-insensitively, up to the first MaxLen bytes</desc>
+      <remarks>
+	AnsiStrLIComp can continue the comparison beyond a
+	null-terminating character if S1 and S2 are equal up to a null
+	character and the null character occurs before MaxLen bytes.
+      </remarks>
+      <apidoc>
+        <pt>
+          <ll>AnsiStrLIComp(</ll>
+          <ld>S1:PAnsiChar</ld>
+          <ld>S2:PAnsiChar</ld>
+          <ld>MaxLen:Cardinal</ld>
+          <ll>):Integer</ll>
+        </pt>
+        <par name="S1">string to compare</par>
+        <par name="S2">string to compare</par>
+        <par name="MaxLen">number of characters to compare</par>
+        <return>
+	  value that indicates how the string compare
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="AnsiStrLIComp">
+      <par loc="register" name="S1" reg="eax" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:inputs" rn="string comparison"/>
+	</roles>
+      </par>
+      <par loc="register" name="S2" reg="edx" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:inputs" rn="string comparison"/>
+	</roles>
+      </par>
+      <par loc="register" name="MaxLen" reg="ecx">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="inputs" desc="compares two strings"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

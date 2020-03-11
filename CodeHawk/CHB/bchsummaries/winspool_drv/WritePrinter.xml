@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:33:57"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="winspool.drv" name="WritePrinter">
+   <documentation>
+    <desc>
+      notifies the print spooler that data should be written to 
+      the specified printer.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WritePrinter(</ll>
+      <ld>_In_   HANDLE hPrinter,</ld>
+      <ld>_In_   LPVOID pBuf,</ld>
+      <ld>_In_   DWORD cbBuf,</ld>
+      <ld>_Out_  LPDWORD pcWritten</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hPrinter">A handle to the printer.</par>
+     <par name="pBuf">
+       A pointer to an array of bytes that contains the data that should be
+       written to the printer.
+     </par>
+     <par name="cbBuf">The size, in bytes, of the array.</par>
+     <par name="pcWritten">
+       A pointer to a value that receives the number of bytes of data that 
+       were written to the printer.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="WritePrinter">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hPrinter" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:system" rn="handle:printer" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="pBuf" nr="2">
+     <roles>
+      <role rt="ioc:memops" rn="src-bytes:printer output" />
+     </roles>
+     <type><ptr>VOID</ptr></type>
+    </par>
+    <par loc="stack" io="r" name="cbBuf" nr="3">
+     <roles>
+      <role rt="size:buffer" rn="size:buffer" />
+     </roles>
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="pcWritten" rep="hex" nr="4">
+     <roles>
+      <role rt="size:buffer" rn="size:actual" />
+     </roles>
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system"
+		 desc="notifies the spooler about data to be printed"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read/>
+	 <type>byte</type>
+	 <ci>pBuf</ci>
+	 <ci>cbBuf</ci>
+       </apply>
+       </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

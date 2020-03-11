@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 04:02:51"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ws2_32" name="WSAEventSelect">
+   <documentation>
+    <desc>
+      specifies an event object to be associated with the specified set of 
+      FD_XXX network events 
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int WSAEventSelect(</ll>
+      <ld>_In_  SOCKET s </ld>
+      <ld>_In_  WSAEVENT hEventObject </ld>
+      <ld>_In_  long lNetworkEvents </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">SOCKET_ERROR</rc>
+     </return>
+     <par name="s">A descriptor identifying the socket. </par>
+     <par name="hEventObject">
+       A handle identifying the event object to be associated with the specified 
+       set of FD_XXX network events. 
+     </par>
+     <par name="lNetworkEvents">
+       A bitmask that specifies the combination of FD_XXX network events in which 
+       the application has interest. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="WSAEventSelect">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" desc="socket" io="r" name="s" nr="1">
+     <btype tname="SOCKET" ttag="tnamed"/>
+     <roles>
+        <role rt="ioc:network" rn="socket"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="event object handle" io="r" name="hEventObject" nr="2">
+     <btype tname="WSAEVENT" ttag="tnamed"/>
+     <roles>
+        <role rt="ioc:network" rn="event object"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="network event filter" io="r" name="lNetworkEvents" nr="3">
+     <btype tname="long" ttag="tnamed"/>
+     <roles>
+        <role rt="ioc:network" rn="event filter"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="associates an event with FD_XXX network events"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

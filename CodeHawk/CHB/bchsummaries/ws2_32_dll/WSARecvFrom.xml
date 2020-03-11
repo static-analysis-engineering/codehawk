@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/05/2015 11:00:45"/>
+  <libfun lib="ws2_32" name="WSARecvFrom">
+   <documentation>
+    <desc>receives a datagram and stores the source address</desc>
+    <apidoc>
+     <pt>
+      <ll>int WSARecvFrom(</ll>
+      <ld>_In_    SOCKET                             s</ld>
+      <ld>_Inout_ LPWSABUF                           lpBuffers</ld>
+      <ld>_In_    DWORD                              dwBufferCount</ld>
+      <ld>_Out_   LPDWORD                            lpNumberOfBytesRecvd</ld>
+      <ld>_Inout_ LPDWORD                            lpFlags</ld>
+      <ld>_Out_   struct sockaddr                    *lpFrom</ld>
+      <ld>_Inout_ LPINT                              lpFromLen</ld>
+      <ld>_In_    LPWSAOVERLAPPED                    lpOverlapped</ld>
+      <ld>_In_    LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="s">A descriptor identifying a socket.</par>
+     <par name="lpBuffers">
+       A pointer to an array of WSABUF structures. Each WSABUF structure contains 
+       a pointer to a buffer and the length of the buffer.
+     </par>
+     <par name="dwBufferCount">The number of WSABUF structures in the lpBuffers array</par>
+     <par name="lpNumberOfBytesRecvd">
+       A pointer to the number of bytes received by this call if the WSARecvFrom 
+       operation completes immediately.
+       Use NULL for this parameter if the lpOverlapped parameter is not NULL to 
+       avoid potentially erroneous results. This parameter can be NULL only if 
+       the lpOverlapped parameter is not NULL.
+     </par>
+     <par name="lpFlags">
+       A pointer to flags used to modify the behavior of the WSARecvFrom function call
+     </par>
+     <par name="lpFrom">
+       An optional pointer to a buffer that will hold the source address upon the 
+       completion of the overlapped operation.
+     </par>
+     <par name="lpFromLen">
+       A pointer to the size, in bytes, of the "from" buffer required only if lpFrom 
+       is specified.
+     </par>
+     <par name="lpOverlapped">
+       A pointer to a WSAOVERLAPPED structure (ignored for nonoverlapped sockets).
+     </par>
+     <par name="lpCompletionRoutine">
+       A pointer to the completion routine called when the WSARecvFrom operation 
+       has been completed (ignored for nonoverlapped sockets).
+     </par>
+     <return>
+      <rc cond="success">
+	If no error occurs and the receive operation has completed immediately, 
+	WSARecvFrom returns zero. In this case, the completion routine will 
+	have already been scheduled to be called once the calling thread is in 
+	the alertable state
+      </rc>
+      <rc cond="failure">SOCKET_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="36" cc="stdcall" name="WSARecvFrom">
+    <par loc="stack" name="s" nr="1">
+     <type>SOCKET</type>
+     <roles>
+        <role rt="ioc:network" rn="socket"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpBuffers" nr="2" rep="hex">
+     <type><ptr>WSABUF</ptr></type>
+     <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:memops" rn="dst-bytes:network input"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwBufferCount" nr="3">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:buffer" rn="number of WSABUF structures in network data input" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpNumberOfBytesRecvd" nr="4">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="size:buffer" rn="size:actual" />
+     </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="lpFlags" io="rw" roles="none" nr="5">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="lpFrom" nr="6">
+     <type><ptr>sockaddr</ptr></type>
+     <roles>
+      <role rt="ioc:network" rn="infox:source address" />
+      <role rt="ioc:memops" rn="dst-bytes:network input"/>
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="lpFromLen" nr="7">
+     <type><ptr>INT</ptr></type>
+     <roles>
+      <role rt="size:buffer" rn="WSARecvFrom" />
+     </roles>
+     <pre><deref-read-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="lpOverlapped" nr="8">
+     <type><ptr>WSAOVERLAPPED</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:WSAOVERLAPPED" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" name="lpCompletionRoutine" nr="9">
+     <type>unknownfunction</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:network" rn="callbackf:network download"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="network"
+		 desc="receives a datagram and stores the source address"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>sockaddr</type>
+	    <ci>lpFrom</ci>
+	    <apply><addressed-value/><ci>lpFromLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <zero-notzero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>sockaddr</type>
+	    <ci>lpFrom</ci>
+	    <apply><addressed-value/><ci>lpFromLen</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

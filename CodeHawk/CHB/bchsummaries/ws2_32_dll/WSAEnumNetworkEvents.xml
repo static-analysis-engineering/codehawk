@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="07/09/2015 22:15:13"/>
+  <libfun lib="ws2_32" name="WSAEnumNetworkEvents">
+   <documentation>
+    <desc>
+      discovers occurrences of network events for the indicated socket, 
+      clear internal network event records, and reset event objects (optional).
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int WSAEnumNetworkEvents(</ll>
+      <ld>_In_  SOCKET             s</ld>
+      <ld>_In_  WSAEVENT           hEventObject</ld>
+      <ld>_Out_ LPWSANETWORKEVENTS lpNetworkEvents</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="s">A descriptor identifying the socket</par>
+     <par name="hEventObject">
+       An optional handle identifying an associated event object to be reset.
+     </par>
+     <par name="lpNetworkEvents">
+       A pointer to a WSANETWORKEVENTS structure that is filled with a record
+       of network events that occurred and any associated error codes.
+     </par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="WSAEnumNetworkEvents">
+    <par loc="stack" desc="socket" io="r" name="s" nr="1">
+     <type>SOCKET</type>
+     <roles>
+        <role rt="ioc:network" rn="socket"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="event object" io="r" name="hEventObject" nr="2">
+     <type>WSAEVENT</type>
+     <roles>
+        <role rt="ioc:network" rn="event object"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="network events" io="w" name="lpNetworkEvents" nr="3">
+     <type><ptr>WSANETWORKEVENTS</ptr></type>
+     <roles>
+        <role rt="ioc:network" rn="network events"/>
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="discovers network events for a socket"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <zero-notzero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

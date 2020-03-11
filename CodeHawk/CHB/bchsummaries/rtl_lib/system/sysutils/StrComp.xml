@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="StrComp.xml" time="2016-11-27 22:03:58.490511"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="StrComp" package="System::SysUtils">
+    <documentation>
+      <desc>Compares two strings with case sensitivity</desc>
+      <apidoc>
+        <pt>
+          <ll>StrComp(</ll>
+          <ld>Str1:PAnsiChar</ld>
+          <ld>Str2:PAnsiChar</ld>
+          <ll>):Integer</ll>
+        </pt>
+        <par name="Str1">string to be compared</par>
+        <par name="Str2">string to be compared</par>
+        <return>
+	  indicates how the strings compare
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="StrComp">
+      <par loc="register" name="Str1" reg="eax" rep="hex">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:inputs" rn="string comparison"/>
+	</roles>
+      </par>
+      <par loc="register" name="Str2" reg="edx" rep="hex">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:inputs" rn="string comparison"/>
+	</roles>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="inputs" desc="compares two strings"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

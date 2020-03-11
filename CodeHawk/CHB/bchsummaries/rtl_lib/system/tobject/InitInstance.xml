@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="InitInstance.xml" time="2016-11-26 22:51:33.517977"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="InitInstance" package="System::TObject">
+    <documentation>
+      <desc>
+	Initializes a newly allocated object instance to all zeros and
+	initializes the instance's virtual method table pointer
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>void InitInstance(</ll>
+          <ld>Instance:Pointer</ld>
+          <ld>Dest:TObject *</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="Instance">pointer to an instance</par>
+        <par name="Dest">pointer to resulting object</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="InitInstance">
+      <par loc="register" name="Instance" reg="eax">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="register" name="Dest" reg="edx">
+        <type><ptr>TObject</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="initializes a new object with zeroes"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

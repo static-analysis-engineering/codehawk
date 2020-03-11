@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CreateDir.xml" time="2016-11-27 21:12:40.600613"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="CreateDir" package="System::SysUtils">
+    <documentation>
+      <desc>Creates a new directory</desc>
+      <apidoc>
+        <pt>CreateDir (const Dir:string):Boolean</pt>
+        <par name="Dir">name of directory to be created</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="CreateDir">
+      <par loc="register" name="Dir" reg="eax" rep="hex">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:file"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="creates a new directory"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <positive-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

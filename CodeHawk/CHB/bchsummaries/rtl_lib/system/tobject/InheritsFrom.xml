@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="InheritsFrom.xml" time="2016-11-27 18:37:43.214510"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="InheritsFrom" package="System::TObject">
+    <documentation>
+      <desc>Determines the relationship of two object types</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL InheritsFrom(</ll>
+          <ld>this</ld>
+          <ld>AClass:TCLass</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="this">this object</par>
+        <par name="AClass">class type to be checked against</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="InheritsFrom">
+      <par loc="register" name="this" reg="eax">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="register" name="AClass" reg="edx">
+        <type>TClass</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

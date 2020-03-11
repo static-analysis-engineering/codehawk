@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/06/2015 15:47:26"/>
+  <libfun lib="shell32" name="DragFinish">
+   <documentation>
+    <desc>
+      Releases memory that the system allocated for use in transferring
+      file names to the application
+    </desc>
+    <apidoc>
+     <pt>VOID DragFinish (HDROP hDrop)</pt>
+     <par name="hDrop">
+       Identifier of the structure that describes dropped files. This handle 
+       is retrieved from the wParam parameter of the WM_DROPFILES message
+     </par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DragFinish">
+    <par loc="stack" io="r" name="hDrop" nr="1">
+     <type>HDROP</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:drop" />
+     </roles>
+    </par>
+    <returntype>VOID</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="process"
+		  desc="releases memory used for file transfer"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

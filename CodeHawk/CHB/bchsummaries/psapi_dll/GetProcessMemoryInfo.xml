@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/06/2015 16:58:49"/>
+  <libfun lib="psapi" name="GetProcessMemoryInfo">
+   <documentation>
+    <desc>Retrieves information about the memory usage of the specified process</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetProcessMemoryInfo(</ll>
+      <ld>_In_  HANDLE                   Process</ld>
+      <ld>_Out_ PPROCESS_MEMORY_COUNTERS ppsmemCounters</ld>
+      <ld>_In_  DWORD                    cb</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="Process">
+       A handle to the process. The handle must have the PROCESS_QUERY_INFORMATION or 
+       PROCESS_QUERY_LIMITED_INFORMATION access right and the PROCESS_VM_READ access right
+     </par>
+     <par name="ppsmemCounters">
+       A pointer to the PROCESS_MEMORY_COUNTERS or PROCESS_MEMORY_COUNTERS_EX structure 
+       that receives information about the memory usage of the process.
+     </par>
+     <par name="cb">The size of the ppsmemCounters structure, in bytes</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="GetProcessMemoryInfo">
+    <par loc="stack" name="Process" io="r" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:process"/>
+     </roles>
+    </par>
+    <par loc="stack" name="ppsmemCounters" io="w" rep="hex" nr="2">
+     <type><ptr>PROCESS_MEMORY_COUNTERS</ptr></type>
+     <roles>
+       <role rt="ioc:process" rn="infox:memory usage"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cb" io="r" nr="3">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:buffersize" rn="GetProcessMemoryInfo"/>
+      </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="retrieves information about the memory usage of a process"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>PROCESS_MEMORY_COUNTERS</type>
+	    <ci>ppsmemCounters</ci>
+	    <ci>cb</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="process" xdata="memory usage"/>
+	    <type>PROCESS_MEMORY_COUNTERS</type>
+	    <ci>ppsmemCounters</ci>
+	    <ci>cb</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

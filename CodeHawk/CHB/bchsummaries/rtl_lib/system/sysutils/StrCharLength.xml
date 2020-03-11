@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="StrCharLength.xml" time="2016-11-27 23:51:34.990151"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="StrCharLength" package="System::SysUtils">
+    <documentation>
+      <desc>Returns the length, in bytes, of a character</desc>
+      <apidoc>
+        <pt>StrCharLength (Str:PWdideChar):Integer</pt>
+        <par name="Str">pointer to character</par>
+        <return>1 or 2 on Windows</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="StrCharLength">
+      <par loc="register" name="Str" reg="eax" rep="hex">
+        <type><ptr>wchar_t</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:examine"/>
+	</roles>
+      </par>
+      <returntype>Integer</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="returns the length of a character"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

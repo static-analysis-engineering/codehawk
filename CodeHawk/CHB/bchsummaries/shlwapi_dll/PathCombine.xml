@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-09-13 08:22:08"/>
+  <libfun lib="shlwapi" name="PathCombine">
+    <documentation>
+      <desc>
+	Concatenates two strings that represent properly formed paths into one
+	path; also concatenates any relative path elements.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>LPSTR PathCombine(</ll>
+          <ld>LPSTR  pszDest</ld>
+          <ld>LPCSTR pszDir</ld>
+          <ld>LPCSTR pszFile</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pszDest">
+	  A pointer to a buffer that, when this function returns
+	  successfully, receives the combined path string. You must
+	  set the size of this buffer to MAX_PATH to ensure that it is
+	  large enough to hold the returned string.
+	</par>
+        <par name="pszDir">
+	  A pointer to a null-terminated string of maximum length MAX_PATH that
+	  contains the first path. This value can be NULL.
+	</par>
+        <par name="pszFile">
+	  A pointer to a null-terminated string of maximum length MAX_PATH that
+	  contains the second path. This value can be NULL.
+	</par>
+        <return>
+          <rc cond="success">
+	    A pointer to a buffer that, when this function returns successfully,
+	    receives the concatenated path string. This is the same string pointed
+	    to by pszPathOut.
+	  </rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="PathCombine">
+      <par loc="stack" name="pszDest" nr="1">
+        <type>LPTSTR</type>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:filename"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pszDir" nr="2">
+        <type>LPCSTR</type>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:filename"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pszFile" nr="3">
+        <type>LPCSTR</type>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:filename"/>
+	</roles>
+      </par>
+      <returntype>LPSTR</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="creates a path name"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>pszDest</ci>
+	      <cn>256</cn>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>pszDest</ci>
+	      <cn>256</cn>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

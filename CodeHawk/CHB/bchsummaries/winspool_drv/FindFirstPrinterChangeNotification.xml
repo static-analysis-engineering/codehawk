@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 05:26:55"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="winspool.drv" name="FindFirstPrinterChangeNotification">
+   <documentation>
+    <desc>creates a change notification object and returns a handle to the object</desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE FindFirstPrinterChangeNotification(</ll>
+      <ld>_In_      HANDLE hPrinter </ld>
+      <ld>DWORD fdwFilter </ld>
+      <ld>DWORD fdwOptions </ld>
+      <ld>_In_opt_  LPVOID pPrinterNotifyOptions </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">Change Notification Object Handle</rc>
+      <rc cond="failure">INVALID_HANDLE_VALUE</rc>
+     </return>
+     <par name="hPrinter">
+       A handle to the printer or print server that you want to monitor. 
+     </par>
+     <par name="fdwFilter">
+       The conditions that will cause the change notification object to enter a 
+       signaled state. 
+     </par>
+     <par name="fdwOptions">
+       The flag that determines the category of printers for which notifications will work. 
+     </par>
+     <par name="pPrinterNotifyOptions">
+       A pointer to a PRINTER_NOTIFY_OPTIONS structure. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="FindFirstPrinterChangeNotification">
+     <returntype>HANDLE</returntype>
+     <par loc="stack" io="r" name="hPrinter" nr="1">
+       <type>HANDLE</type>
+       <roles>
+         <role rt="ioc:system" rn="handle:printer" />
+       </roles>
+       <pre><deref-read/></pre>
+     </par>
+     <par loc="stack" io="r" name="fdwFilter" roles="none" nr="2">
+       <type>DWORD</type>
+     </par>
+     <par loc="stack" io="r" name="fdwOptions" roles="none" nr="3">
+       <type>DWORD</type>
+     </par>
+     <par loc="stack" io="r" name="pPrinterNotifyOptions" nr="4">
+       <roles>
+         <role rt="ioc:memops" rn="src-struct:PRINTER_NOTIFY_OPTIONS" />
+       </roles>
+       <type><ptr>VOID</ptr></type>
+       <pre><deref-read-null/></pre>
+     </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system"
+		  desc="creates a printer change notification object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

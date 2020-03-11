@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:38:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ws2_32" name="accept">
+   <documentation>
+    <desc>permits an incoming connections attempt on a socket</desc>
+    <apidoc>
+     <pt>
+      <ll>SOCKET accept (</ll>
+      <ld>__in    SOCKET s,</ld>
+      <ld>__out   struct sockaddr *addr,</ld>
+      <ld>__inout int *addrlen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="s">
+       descriptor that identifies a socket that has been placed in a listening state
+       with the listen function
+     </par>
+     <par name="addr">
+       optional pointer to a buffer that receives the address of the connecting
+       entity
+     </par>
+     <par name="addrlen">
+       optional pointer to an integer that contains the length of the structure
+       pointed to by th addr parameter
+     </par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">INVALID_SOCKET</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="accept">
+     <returntype>SOCKET</returntype>
+     <par loc="stack" name="s" io="r" nr="1">
+       <type>SOCKET</type>
+       <roles>
+	 <role rt="ioc:network" rn="socket"/>
+       </roles>
+     </par>
+    <par loc="stack" name="addr" io="w" nr="2">
+      <type><ptr>sockaddr</ptr></type>
+      <pre><deref-write/></pre>
+      <roles>
+	<role rt="ioc:network" rn="socket address"/>
+	<role rt="rep:hex" rn="socket address"/>
+      </roles>
+    </par>
+    <par loc="stack" name="addrlen" io="rw" nr="3">
+      <type><ptr>int</ptr></type>
+      <pre><deref-read/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="size:buffersize" rn="accept"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="accepts an incoming connection on a socket"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-read-null/>
+	 <type>sockaddr</type>
+	 <ci>addr</ci>
+	 <apply><addressed-value/><ci>addrlen</ci><cn>0</cn></apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+	 <block-write/>
+	 <type>sockaddr</type>
+	 <ci>addr</ci>
+	 <apply><addressed-value/><ci>addrlen</ci><cn>0</cn></apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

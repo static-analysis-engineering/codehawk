@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 04:08:57"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ws2_32" name="WSASendDisconnect">
+   <documentation>
+    <desc>
+      initiates termination of the connection for the socket and sends disconnect data.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int WSASendDisconnect(</ll>
+      <ld>_In_  SOCKET s </ld>
+      <ld>_In_  LPWSABUF lpOutboundDisconnectData </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">not-zero</rc>
+     </return>
+     <par name="s">Descriptor identifying a socket. </par>
+     <par name="lpOutboundDisconnectData">
+       A pointer to the outgoing disconnect data.  
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="WSASendDisconnect">
+    <returntype>int</returntype>
+    <par loc="stack" name="s" io="r" nr="1">
+      <type>SOCKET</type>
+      <roles>
+	<role rt="ioc:network" rn="socket"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpOutboundDisconnectData" rep="hex" nr="2">
+     <type><ptr>WSABUF</ptr></type>
+     <roles>
+      <role rt="ioc:network" rn="data:disconnect" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="initiates connection termination"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

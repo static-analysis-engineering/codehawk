@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header info="export-ordinal-table" name="WS2_32.dll" time="10/02/2015 22:51:00"/>
+  <export-ordinal-table size="37">
+   <entry name="accept" ordinal="1"/>
+   <entry name="bind" ordinal="2"/>
+   <entry name="closesocket" ordinal="3"/>
+   <entry name="connect" ordinal="4"/>
+   <entry name="getpeername" ordinal="5"/>
+   <entry name="getsockname" ordinal="6"/>
+   <entry name="getsockopt" ordinal="7"/>
+   <entry name="htonl" ordinal="8"/>
+   <entry name="htons" ordinal="9"/>
+   <entry name="ioctlsocket" ordinal="10"/>
+   <entry name="inet_addr" ordinal="11"/>
+   <entry name="inet_ntoa" ordinal="12"/>
+   <entry name="listen" ordinal="13"/>
+   <entry name="ntohl" ordinal="14"/>
+   <entry name="ntohs" ordinal="15"/>
+   <entry name="recv" ordinal="16"/>
+   <entry name="recvfrom" ordinal="17"/>
+   <entry name="select" ordinal="18"/>
+   <entry name="send" ordinal="19"/>
+   <entry name="sendto" ordinal="20"/>
+   <entry name="setsockopt" ordinal="21"/>
+   <entry name="shutdown" ordinal="22"/>
+   <entry name="socket" ordinal="23"/>
+   <entry name="gethostbyaddr" ordinal="51"/>
+   <entry name="gethostbyname" ordinal="52"/>
+   <entry name="getprotobyname" ordinal="53"/>
+   <entry name="getprotobynumber" ordinal="54"/>
+   <entry name="getservbyname" ordinal="55"/>
+   <entry name="getservbyport" ordinal="56"/>
+   <entry name="gethostname" ordinal="57"/>
+   <entry name="WSAGetLastError" ordinal="111"/>
+   <entry name="WSASetLastError" ordinal="112"/>
+   <entry name="WSACancelBlockingCall" ordinal="113"/>
+   <entry name="WSAIsBlocking" ordinal="114"/>
+   <entry name="WSAStartup" ordinal="115"/>
+   <entry name="WSACleanup" ordinal="116"/>
+   <entry name="__WSAFDIsSet" ordinal="151"/>
+  </export-ordinal-table>
+ </codehawk-binary-analyzer>

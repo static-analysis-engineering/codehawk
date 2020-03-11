@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/10/2015 02:36:49"/>
+  <libfun lib="shell32" name="SHGetMalloc">
+   <documentation>
+    <desc>Retrieves a pointer to the Shell's IMalloc interface</desc>
+    <apidoc>
+     <pt>HRESULT SHGetMalloc (LPMALLOC *ppMalloc)</pt>
+     <par name="ppMalloc">
+       The address of a pointer that receives the Shell's IMalloc interface pointer
+     </par>
+     <return>
+      <rc cond="success">HRESULT</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="SHGetMalloc">
+    <par loc="stack" name="ppMalloc" nr="1">
+     <type><ptr><ptr>IMalloc</ptr></ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:system" rn="shell IMalloc interface pointer"/>
+     </roles>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves a pointer to the shell IMalloc interface">
+	 <args/>
+       </io-action>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

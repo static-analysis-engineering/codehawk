@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/26/2014 15:14:32"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="wsock32" name="__WSAFDIsSet">
+   <documentation>
+    <desc>The __WSAFDIsSet function specifies whether a socket is included 
+     in a set of socket descriptors.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>int __WSAFDIsSet(</ll>
+      <ld>SOCKET fd,</ld>
+      <ld>fd_set *set</ld>
+      <ll>)</ll>
+     </pt>
+     <return/>
+     <par name="fd">Descriptor identifying a socket.</par>
+     <par name="set">Pointer to an fd_set structure containing the set of socket descriptors. 
+      The __WSAFDIsSet function determines whether the socket specified in the 
+      fd parameter is a member of that set.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="__WSAFDIsSet">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" io="r" name="fd" nr="1">
+     <roles>
+      <role rt="ioc:network" rn="socket" />
+     </roles>
+     <btype tname="SOCKET" ttag="tnamed"/>
+    </par>
+    <par loc="stack" io="r" name="set" nr="2">
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:fd_set" />
+     </roles>
+     <type><ptr>fd_set</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="network"
+		  desc="specifies whether a socket is included in a set"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

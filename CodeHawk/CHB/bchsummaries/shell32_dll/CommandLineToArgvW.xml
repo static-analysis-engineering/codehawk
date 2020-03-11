@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/23/2015 23:39:53"/>
+  <libfun lib="shell32" name="CommandLineToArgvW">
+   <documentation>
+    <desc>
+      Parses a Unicode command line string and returns an array of pointers 
+      to the command line arguments, along with a count of such arguments, 
+      in a way that is similar to the standard C run-time argv and argc values
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LPWSTR* CommandLineToArgvW(</ll>
+      <ld>_In_  LPCWSTR lpCmdLine</ld>
+      <ld>_Out_ int     *pNumArgs</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpCmdLine">
+       Pointer to a null-terminated Unicode string that contains the full 
+       command line. If this parameter is an empty string the function 
+       returns the path to the current executable file.
+     </par>
+     <par name="pNumArgs">
+       Pointer to an int that receives the number of array elements returned, 
+       similar to argc
+     </par>
+     <return>
+      <rc cond="success">A pointer to an array of LPWSTR values, similar to argv</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="CommandLineToArgvW">
+    <par loc="stack" io="r" name="lpCmdLine" nr="1">
+     <type>LPCWSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:process" rn="commandline"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="pNumArgs" nr="2">
+     <type><ptr>int</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:process" rn="number of commandline arguments"/>
+     </roles>
+    </par>
+    <returntype><ptr>LPWSTR</ptr></returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="parses a commandline string"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FtpGetFileSize.xml" time="2016-05-08 10:58:56.191011"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="wininet" name="FtpGetFileSize">
+    <documentation>
+      <desc>Retrieves the file size of the requested FTP resource</desc>
+      <apidoc>
+        <pt>
+          <ll>DWORD FtpGetFileSize(</ll>
+          <ld>_In_  HINTERNET hFile</ld>
+          <ld>_Out_ LPDWORD   lpdwFileSizeHigh</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hFile">Handle returned from a call to FtpOpenFile</par>
+        <par name="lpdwFileSizeHigh">
+	  Pointer to the high-order unsigned long integer of the file
+	  size of the requested FTP resource
+	</par>
+        <return>
+	  the low-order unsigned long integer of the file size of the
+	  requested FTP resource.
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="FtpGetFileSize">
+      <par loc="stack" name="hFile" io="r" rep="hex" nr="1">
+        <type>HINTERNET</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="handle:internet"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpdwFileSizeHigh" roles="none" io="w" nr="2">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>DOWRD</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network"
+		   desc="retrieves the size of an FTP resource"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply><geq/><return/><cn>0</cn></apply>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

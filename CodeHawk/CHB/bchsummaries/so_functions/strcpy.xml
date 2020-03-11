@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="strcpy">
+   <documentation>
+    <desc>copies a string from src to dst</desc>
+    <apidoc>
+     <pt>char *strcpy (char *dest, const char *src)</pt>
+     <par name="dest">pointer to destination string</par>
+     <par name="src">pointer to source string</par>
+     <return>value of dest</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="strcpy">
+    <returnbtype ttag="tptr">
+     <typ tname="char" ttag="tnamed"/>
+    </returnbtype>
+    <par loc="stack" name="dest" io="w" nr="1" rep="hex">
+      <type><ptr>char</ptr></type>
+      <roles>
+        <role rt="ioc:memops" rn="dst-string:copy"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="src" nr="2" rep="hex">
+      <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="src-string:copy"/>
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="copies a string"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+        <deref-write/>
+	<type>char</type>
+	<ci>dest</ci>
+        <apply>
+         <null-terminator-pos/>
+         <ci>src</ci>
+        </apply>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <null-terminated/>
+        <ci>dest</ci>
+       </apply>
+      </math>
+     </post>
+     <post>
+      <math>
+       <apply>
+        <eq/>
+        <return-value/>
+        <ci>dest</ci>
+       </apply>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+        <btype tname="char" ttag="tnamed"/>
+        <ci>dest</ci>
+        <apply>
+         <null-terminator-pos/>
+         <ci>src</ci>
+        </apply>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

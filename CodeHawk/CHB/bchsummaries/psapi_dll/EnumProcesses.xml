@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/01/2015 15:09:59"/>
+  <libfun lib="psapi" name="EnumProcesses">
+   <documentation>
+    <desc>
+      Retrieves the process identifier for each process object in the system
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI EnumProcesses(</ll>
+      <ld>_Out_ DWORD *pProcessIds</ld>
+      <ld>_In_  DWORD cb</ld>
+      <ld>_Out_ DWORD *pBytesReturned</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pProcessIds">
+       A pointer to an array that receives the list of process identifiers
+     </par>
+     <par name="cb">The size of the pProcessIds array, in bytes.</par>
+     <par name="pBytesReturned">
+       The number of bytes returned in the pProcessIds array
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="EnumProcesses">
+     <par loc="stack" name="pProcessIds" nr="1" rep="hex">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+       <role rt="ioc:system" rn="infox:process ids"/>
+     </roles>
+    </par>
+    <par loc="stack" name="cb" nr="2">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="EnumProcesses"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pBytesReturned" nr="3" rep="hex">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:returned" rn="EnumProcesses"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves the process id for each process in the system"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>DWORD</type>
+	    <ci>pProcessIds</ci>
+	    <ci>cb</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="system" xdata="process identifiers of all process objects"/>
+	    <type>DWORD</type>
+	    <ci>pProcessIds</ci>
+	    <ci>cb</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

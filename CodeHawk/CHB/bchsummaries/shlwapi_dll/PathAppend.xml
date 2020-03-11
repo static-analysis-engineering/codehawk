@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/24/2015 17:43:31"/>
+  <libfun lib="shlwapi" name="PathAppend">
+   <documentation>
+    <desc>Appends one path to the end of another </desc>
+    <remarks>
+      Misuse of this function can lead to a buffer overrun. We recommend the 
+      use of the safer PathCchAppend or PathCchAppendEx function in its place
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>BOOL PathAppend(</ll>
+      <ld>_Inout_ LPTSTR  pszPath</ld>
+      <ld>_In_    LPCTSTR pszMore</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pszPath">
+       A pointer to a null-terminated string to which the path specified 
+       in pszMore is appended. You must set the size of this buffer to 
+       MAX_PATH to ensure that it is large enough to hold the returned string
+     </par>
+     <par name="pszMore">
+       A pointer to a null-terminated string of maximum length MAX_PATH that 
+       contains the path to be appended
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="PathAppend">
+    <par loc="stack" name="pszPath" nr="1" rep="hex">
+     <type>LPTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pszMore" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="appends paths"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>pszPath</ci>
+	    <cn>260</cn>   <!-- MAX_PATH -->
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>pszPath</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

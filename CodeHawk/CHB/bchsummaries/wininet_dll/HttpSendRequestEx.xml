@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/01/2015 23:36:45"/>
+  <libfun lib="wininet" name="HttpSendRequestEx">
+   <documentation>
+    <desc>Sends the specified request to the HTTP server</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL HttpSendRequestEx(</ll>
+      <ld>_In_  HINTERNET          hRequest</ld>
+      <ld>_In_  LPINTERNET_BUFFERS lpBuffersIn</ld>
+      <ld>_Out_ LPINTERNET_BUFFERS lpBuffersOut</ld>
+      <ld>_In_  DWORD              dwFlags</ld>
+      <ld>_In_  DWORD_PTR          dwContext</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hRequest">
+       A handle returned by a call to the HttpOpenRequest function
+     </par>
+     <par name="lpBuffersIn">
+       Optional. A pointer to an INTERNET_BUFFERS structure
+     </par>
+     <par name="lpBuffersOut">Reserved. Must be NULL</par>
+     <par name="dwFlags">Reserved. Must be zero</par>
+     <par name="dwContext">
+       Application-defined context value, if a status callback function has 
+       been registered
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="HttpSendRequestEx">
+    <par loc="stack" desc="http request handle" io="r" name="hRequest" nr="1">
+     <type>HINTERNET</type>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpBuffersIn" nr="2" rep="hex">
+     <type><ptr>INTERNET_BUFFERS</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:network output"/>
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpBuffersOut" nr="3" rep="hex">
+     <type><ptr>INTERNET_BUFFERS</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="dst-bytes:network input"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="flags" io="r" name="dwFlags" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" desc="context" io="r" name="dwContext" nr="5">
+     <type>DWORD_PTR</type>
+     <roles>
+       <role rt="ioc:network" rn="application context"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="sends a request to an HTTP server"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

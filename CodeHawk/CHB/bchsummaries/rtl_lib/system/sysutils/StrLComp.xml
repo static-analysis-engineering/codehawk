@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="StrLComp.xml" time="2016-11-27 22:12:36.332708"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="StrLComp" package="System::SysUtils">
+    <documentation>
+      <desc>
+	Compares up to a specified maximum number of characters in two strings.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>StrLComp(</ll>
+          <ld>const Str1:PAnsiChar</ld>
+          <ld>const Str2:PAnsiChar</ld>
+          <ld>const MaxLen:Integer</ld>
+          <ll>):Integer</ll>
+        </pt>
+        <par name="Str1">string to be compared</par>
+        <par name="Str2">string to be compared</par>
+        <par name="MaxLen">maximum number of characters to be compared</par>
+        <return>
+	  indicates how the strings compare
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="StrLComp">
+      <par loc="register" name="Str1" reg="eax" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:inputs" rn="string comparison"/>
+	</roles>
+      </par>
+      <par loc="register" name="Str2" reg="edx" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:inputs" rn="string comparison"/>
+	</roles>
+      </par>
+      <par loc="register" name="MaxLen" reg="ecx">
+        <type>Cardinal</type>
+	<roles>
+	  <role rt="size:count" rn="number of characters to be compared"/>
+	</roles>
+      </par>
+      <returntype>Integer</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="inputs" desc="compares two strings"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

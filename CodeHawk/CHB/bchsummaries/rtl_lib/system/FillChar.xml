@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FillChar.xml" time="2016-11-26 22:12:40.366233"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="FillChar" package="System">
+    <documentation>
+      <desc>Fills contiguous bytes with a specified value</desc>
+      <apidoc>
+        <pt>
+          <ll>void FillChar(</ll>
+          <ld>var X</ld>
+          <ld>Count:Integer</ld>
+          <ld>Value:Ordinal</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="X">address of memory area to be filled with values</par>
+        <par name="Count">number of bytes to be filled</par>
+        <par name="Value">byte value</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="FillChar">
+      <par loc="register" name="X" reg="eax" rep="hex">
+        <type><ptr>BYTE</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-bytes"/>
+	</roles>
+      </par>
+      <par loc="register" name="Count" reg="edx">
+        <type>int</type>
+	<roles>
+	  <role rt="size:buffersize" rn="FillChar"/>
+	</roles>
+      </par>
+      <par loc="register" name="Value" roles="none" reg="ecx">
+        <type>BYTE</type>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="fills a region with a fixed value"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>BYTE</type>
+	      <ci>X</ci>
+	      <ci>Count</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>BYTE</type>
+	      <ci>X</ci>
+	      <ci>Count</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

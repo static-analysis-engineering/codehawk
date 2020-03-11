@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/10/2015 16:12:09"/>
+  <libfun lib="winhttp" name="WinHttpConnect">
+   <documentation>
+    <desc>
+      specifies the initial target server of an HTTP request and returns 
+      an HINTERNET connection handle to an HTTP session for that initial target
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HINTERNET WINAPI WinHttpConnect(</ll>
+      <ld>_In_       HINTERNET     hSession</ld>
+      <ld>_In_       LPCWSTR       pswzServerName</ld>
+      <ld>_In_       INTERNET_PORT nServerPort</ld>
+      <ld>_Reserved_ DWORD         dwReserved</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hSession">
+       Valid HINTERNET WinHTTP session handle returned by a previous
+       call to WinHttpOpen
+     </par>
+     <par name="pswzServerName">
+       Pointer to a null-terminated string that contains the host name
+       of an HTTP server. Alternately, the string can contain the IP
+       address of the site in ASCII, for example, 10.0.1.45. Note that
+       WinHttp does not accept international host names without
+       converting them first to Punycode. For more information, see
+       Handling Internationalized Domain Names (IDNs).
+     </par>
+     <par name="nServerPort">
+       Unsigned integer that specifies the TCP/IP port on the server
+       to which a connection is made. This parameter can be any valid
+       TCP/IP port number
+     </par>
+     <par name="dwReserved">This parameter is reserved and must be 0</par>
+     <return>
+      <rc cond="success">a valid connection handle to the HTTP session</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="WinHttpConnect">
+    <par loc="stack" name="hSession" io="r" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pswzServerName" io="r" nr="2">
+     <type>LPCWSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:network" rn="name:server"/>
+       <role rt="rep:hex" rn="name:server"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nServerPort" io="r" nr="3">
+     <type>INTERNET_PORT</type>
+     <roles>
+       <role rt="ioc:network" rn="tcp/ip port"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwReserved" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <returntype>HINTERNET</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" desc="connects to a server"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

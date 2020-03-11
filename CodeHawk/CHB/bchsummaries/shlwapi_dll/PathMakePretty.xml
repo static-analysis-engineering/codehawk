@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-09-13 09:55:15"/>
+  <libfun lib="shlwapi" name="PathMakePretty">
+    <documentation>
+      <desc>
+	Converts an all-uppercase path to all lowercase characters to give the
+	path a consistent appearance
+      </desc>
+      <apidoc>
+        <pt>BOOL PathMakePretty (LPSTR pszPath)</pt>
+        <par name="pszPath">
+	  A pointer to a null-terminated string of length MAX_PATH that contains
+	  the path to be converted.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="PathMakePretty">
+      <par loc="stack" name="pszPath" nr="1">
+        <type>LPSTR</type>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:filename"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="converts uppercase to lowercase"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>pszPath</ci>
+	      <cn>256</cn>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

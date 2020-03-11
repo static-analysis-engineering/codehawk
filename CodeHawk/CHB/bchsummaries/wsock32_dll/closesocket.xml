@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:38:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="wsock32" name="closesocket">
+    <refer-to lib="ws2_32" name="closesocket"/>
+<!--   <documentation>
+    <desc>closes an existing socket</desc>
+    <apidoc>
+     <pt>int closesocket ( __in SOCKET s )</pt>
+     <par name="s">descriptor identifying the socket to close</par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">SOCKET_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="closesocket">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" name="s" nr="1">
+     <btype tname="SOCKET" ttag="tnamed"/>
+    </par>
+   </api>
+   <semantics>
+    <external-effects>
+      <xeffect xtgt="socket" xaction="close"/>
+    </external-effects>
+    <preconditions/>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics> -->
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header info="export-ordinal-table" name="SHELL32.dll" time="10/02/2015 22:51:00"/>
+  <export-ordinal-table size="2">
+   <entry name="SHGetNewLinkInfoW_0" ordinal="179"/>
+   <entry name="SHGetNewLinkInfoA" ordinal="180"/>
+   <entry name="IsUserAnAdmin" ordinal="680"/>
+  </export-ordinal-table>
+ </codehawk-binary-analyzer>

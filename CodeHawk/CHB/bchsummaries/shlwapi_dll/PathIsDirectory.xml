@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/24/2015 17:32:25"/>
+  <libfun lib="shlwapi" name="PathIsDirectory">
+   <documentation>
+    <desc>Verifies that a path is a valid directory</desc>
+    <apidoc>
+     <pt>BOOL PathIsDirectory (_In_ LPCTSTR pszPath)</pt>
+     <par name="pszPath">
+       A pointer to a null-terminated string of maximum length MAX_PATH that 
+       contains the path to verify
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="PathIsDirectory">
+     <par loc="stack" io="r" name="pszPath" nr="1" rep="hex">
+       <type>LPCTSTR</type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="verifies a path is a valid directory"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

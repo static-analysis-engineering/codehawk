@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/23/2015 23:56:14"/>
+  <libfun lib="shlwapi" name="PathRemoveBackslash">
+   <documentation>
+    <desc>Removes the trailing backslash from a given path</desc>
+    <apidoc>
+     <pt>LPTSTR PathRemoveBackslash (_Inout_ LPTSTR lpszPath)</pt>
+     <par name="lpszPath">
+       A pointer to a null-terminated string of length MAX_PATH that contains 
+       the path from which to remove the backslash.
+     </par>
+     <return>
+       A pointer that, when this function returns successfully and if a backslash
+       has been removed, points to the terminating null character that has replaced
+       the backslash at the end of the string. If the path did not include a
+       trailing backslash, this value will point to the final character in the string
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="PathRemoveBackslash">
+    <par loc="stack" io="r" name="lpszPath" nr="1" rep="hex">
+     <type>LPTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>LPTSTR</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="removes trailing backslash from pathname"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

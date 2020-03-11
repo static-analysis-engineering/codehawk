@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="Copy.xml" time="2016-11-27 13:25:58.072096"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="Copy" package="System">
+    <documentation>
+      <desc>Returns a substring of a string or a segment of a dynamic array</desc>
+      <apidoc>
+        <pt>
+          <ll>void Copy(</ll>
+          <ld>S:[string or dynamic array]</ld>
+          <ld>Index:Integer</ld>
+          <ld>Count:Integer</ld>
+          <ld>dst:[string or dynamic array]</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="S">string or dynamic array</par>
+        <par name="Index">index to start copying</par>
+        <par name="Count">number of elements to be copied</par>
+        <par name="dst">destination to be copied</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="Copy">
+      <par loc="register" name="S" reg="eax" rep="hex">
+        <type><ptr>void</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-bytes:copy"/>
+	</roles>
+      </par>
+      <par loc="register" name="Index" roles="none" reg="edx">
+        <type>int</type>
+      </par>
+      <par loc="register" name="Count" reg="ecx">
+        <type>int</type>
+	<roles>
+	  <role rt="size:buffersize" rn="Copy"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dst" nr="1" rep="hex">
+        <type><ptr>void</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-bytes:copy"/>
+	</roles>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="copies a substring or subarray"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

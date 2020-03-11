@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/05/2015 10:43:56"/>
+  <libfun lib="ws2_32" name="WSASendTo">
+   <documentation>
+    <desc>
+      sends data to a specific destination, using overlapped I/O where applicable.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int WSASendTo(</ll>
+      <ld>_In_  SOCKET                             s</ld>
+      <ld>_In_  LPWSABUF                           lpBuffers</ld>
+      <ld>_In_  DWORD                              dwBufferCount</ld>
+      <ld>_Out_ LPDWORD                            lpNumberOfBytesSent</ld>
+      <ld>_In_  DWORD                              dwFlags</ld>
+      <ld>_In_  const struct sockaddr              lpTo</ld>
+      <ld>_In_  int                                iToLen</ld>
+      <ld>_In_  LPWSAOVERLAPPED                    lpOverlapped</ld>
+      <ld>_In_  LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="s">A descriptor identifying a (possibly connected) socket</par>
+     <par name="lpBuffers">
+       A pointer to an array of WSABUF structures. Each WSABUF structure contains 
+       a pointer to a buffer and the length of the buffer, in bytes. For a Winsock 
+       application, once the WSASendTo function is called, the system owns these 
+       buffers and the application may not access them. This array must remain 
+       valid for the duration of the send operation.
+     </par>
+     <par name="dwBufferCount">
+       The number of WSABUF structures in the lpBuffers array.
+     </par>
+     <par name="lpNumberOfBytesSent">
+       A pointer to the number of bytes sent by this call if the I/O operation 
+       completes immediately.
+       Use NULL for this parameter if the lpOverlapped parameter is not NULL to 
+       avoid potentially erroneous results. This parameter can be NULL only if 
+       the lpOverlapped parameter is not NULL.
+     </par>
+     <par name="dwFlags">
+       The flags used to modify the behavior of the WSASendTo function call.
+     </par>
+     <par name="lpTo">
+       An optional pointer to the address of the target socket in the SOCKADDR structure.
+     </par>
+     <par name="iToLen">
+       The size, in bytes, of the address in the lpTo parameter.
+     </par>
+     <par name="lpOverlapped">
+       A pointer to a WSAOVERLAPPED structure (ignored for nonoverlapped sockets).
+     </par>
+     <par name="lpCompletionRoutine">
+       A pointer to the completion routine called when the send operation has been 
+       completed (ignored for nonoverlapped sockets).
+     </par>
+     <return>
+      <rc cond="success">
+	If no error occurs and the send operation has completed immediately, 
+	WSASendTo returns zero. In this case, the completion routine will have 
+	already been scheduled to be called once the calling thread is in the 
+	alertable state
+      </rc>
+      <rc cond="failure">SOCKET_ERROR</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="36" cc="stdcall" name="WSASendTo">
+    <par loc="stack" name="s" nr="1">
+     <type>SOCKET</type>
+     <roles>
+        <role rt="ioc:network" rn="socket"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpBuffers" nr="2">
+     <type><ptr>WSABUF</ptr></type>
+       <roles>
+         <role rt="ioc:memops" rn="src-struct:WSABUF"/>
+	 <role rt="ioc:network" rn="data:output"/>
+       </roles>
+    </par>
+    <par loc="stack" io="r" name="dwBufferCount" nr="3">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:buffer" rn="size:number of WSABUF structures in network data output" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpNumberOfBytesSent" rep="hex"  nr="4">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="size:buffer" rn="size:actual" />
+     </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="5">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="lpTo" nr="6">
+     <type><ptr>sockaddr</ptr></type>
+     <roles>
+       <role rt="ioc:network" rn="socket address"/>
+      <role rt="ioc:memops" rn="src-struct:sockaddr"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="iToLen" nr="7">
+     <type>int</type>
+     <roles>
+      <role rt="size:actual" rn="WSASendTo" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpOverlapped" nr="8">
+     <type><ptr>WSAOVERLAPPED</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:WSAOVERLAPPED" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" name="lpCompletionRoutine" io="r" nr="9">
+     <type>unknownfunction</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:network" rn="callbackf:network download"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="network"
+		  desc="sends data to a network destination"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>WSABUF</type>
+	    <ci>lpTo</ci>
+	    <ci>iToLen</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <zero-notzero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

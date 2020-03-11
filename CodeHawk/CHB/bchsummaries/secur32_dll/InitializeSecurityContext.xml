@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/16/2015 12:14:03"/>
+  <libfun lib="secur32" name="InitializeSecurityContext">
+   <documentation>
+    <desc>
+      initiates the client side, outbound security context from a credential 
+      handle. The function is used to build a security context between the 
+      client application and a remote peer. InitializeSecurityContext (General) 
+      returns a token that the client must pass to the remote peer, which the
+      peer in turn submits to the local security implementation through the
+      AcceptSecurityContext (General) call. The token generated should be 
+      'considered opaque by all callers.
+      Typically, the InitializeSecurityContext (General) function is called 
+      in a loop until a sufficient security context is established.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>SECURITY_STATUS SEC_Entry InitializeSecurityContext(</ll>
+      <ld>_In_opt_    PCredHandle    phCredential</ld>
+      <ld>_In_opt_    PCtxtHandle    phContext</ld>
+      <ld>_In_opt_    SEC_CHAR       *pszTargetName</ld>
+      <ld>_In_        ULONG          fContextReq</ld>
+      <ld>_In_        ULONG          Reserved1</ld>
+      <ld>_In_        ULONG          TargetDataRep</ld>
+      <ld>_In_opt_    PSecBufferDesc pInput</ld>
+      <ld>_In_        ULONG          Reserved2</ld>
+      <ld>_Inout_opt_ PCtxtHandle    phNewContext</ld>
+      <ld>_Inout_opt_ PSecBufferDesc pOutput</ld>
+      <ld>_Out_       PULONG         pfContextAttr</ld>
+      <ld>_Out_opt_   PTimeStamp     ptsExpiry</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="phCredential">
+       A handle to the credentials returned by AcquireCredentialsHandle (General).
+       This handle is used to build the security context. The 
+       InitializeSecurityContext (General) function requires at least OUTBOUND 
+       credentials
+     </par>
+     <par name="phContext">
+       A pointer to a CtxtHandle structure. On the first call to 
+       InitializeSecurityContext (General), this pointer is NULL. On the second
+       call, this parameter is a pointer to the handle to the partially formed 
+       context returned in the phNewContext parameter by the first call.
+       This parameter is optional with the Microsoft Digest SSP and can be set 
+       to NULL.
+       When using the Schannel SSP, on the first call to InitializeSecurityContext 
+       (General), specify NULL. On future calls, specify the token received in 
+       the phNewContext parameter after the first call to this function.
+     </par>
+     <par name="pszTargetName">
+       A pointer to a null-terminated string that indicates the target of the 
+       context. The string contents are security-package specific, as described
+       in the following table. This list is not exhaustive. Additional system
+       SSPs and third party SSPs can be added to a system.
+     </par>
+     <par name="fContextReq">
+       Bit flags that indicate requests for the context. Not all packages can 
+       support all requirements. Flags used for this parameter are prefixed 
+       with ISC_REQ_, for example, ISC_REQ_DELEGATE.
+       The requested attributes may not be supported by the client. 
+     </par>
+     <par name="Reserved1">
+       This parameter is reserved and must be set to zero
+     </par>
+     <par name="TargetDataRep">
+       The data representation, such as byte ordering, on the target. This 
+       parameter can be either SECURITY_NATIVE_DREP or SECURITY_NETWORK_DREP.
+       This parameter is not used with Digest or Schannel. Set it to zero.
+     </par>
+     <par name="pInput">
+       A pointer to a SecBufferDesc structure that contains pointers to the 
+       buffers supplied as input to the package. Unless the client context was 
+       initiated by the server, the value of this parameter must be NULL on the
+       first call to the function. On subsequent calls to the function or when
+       the client context was initiated by the server, the value of this parameter
+       is a pointer to a buffer allocated with enough memory to hold the token 
+       returned by the remote computer.
+     </par>
+     <par name="Reserved2">
+       This parameter is reserved and must be set to zero.
+     </par>
+     <par name="phNewContext">
+       A pointer to a CtxtHandle structure. On the first call to 
+       InitializeSecurityContext (General), this pointer receives the new context 
+       handle. On the second call, phNewContext can be the same as the handle 
+       specified in the phContext parameter.
+       When using the Schannel SSP, on calls after the first call, pass the handle 
+       returned here as the phContext parameter and specify NULL for phNewContext.
+     </par>
+     <par name="pOutput">
+       A pointer to a SecBufferDesc structure that contains pointers to the SecBuffer 
+       structure that receives the output data. If a buffer was typed as SEC_READWRITE
+       in the input, it will be there on output. The system will allocate a buffer 
+       for the security token if requested (through ISC_REQ_ALLOCATE_MEMORY) and 
+       fill in the address in the buffer descriptor for the security token.
+       When using the Microsoft Digest SSP, this parameter receives the challenge 
+       response that must be sent to the server.
+       When using the Schannel SSP, if the ISC_REQ_ALLOCATE_MEMORY flag is specified,
+       the Schannel SSP will allocate memory for the buffer and put the appropriate
+       information in the SecBufferDesc. In addition, the caller must pass in a 
+       buffer of type SECBUFFER_ALERT. On output, if an alert is generated, this
+       buffer contains information about that alert, and the function fails.
+     </par>
+     <par name="pfContextAttr">
+       A pointer to a variable to receive a set of bit flags that indicate the
+       attributes of the established context. For a description of the various 
+       attributes, see Context Requirements.
+       Flags used for this parameter are prefixed with ISC_RET, such as 
+       ISC_RET_DELEGATE. For a list of valid values, see the fContextReq parameter.
+       Do not check for security-related attributes until the final function
+       call returns successfully. Attribute flags that are not related to security,
+       such as the ASC_RET_ALLOCATED_MEMORY flag, can be checked before the final
+       return.
+       Note  Particular context attributes can change during negotiation with a
+       remote peer.
+     </par>
+     <par name="ptsExpiry">
+       A pointer to a TimeStamp structure that receives the expiration time of 
+       the context. It is recommended that the security package always return 
+       this value in local time. This parameter is optional and NULL should be 
+       passed for short-lived clients.
+       There is no expiration time for Microsoft Digest SSP security contexts
+       or credentials.
+     </par>
+     <return>
+      <rc cond="success">success code</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="48" cc="stdcall" name="InitializeSecurityContext">
+    <par loc="stack" io="r" name="phCredential" rep="hex"  nr="1">
+     <type><ptr>CredHandle</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:crypto" rn="handle:credentials"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="phContext" rep="hex" nr="2">
+     <type><ptr>CtxtHandle</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:crypto" rn="handle:security context"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="pszTargetName" nr="3">
+     <type><ptr>SEC_CHAR</ptr></type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+       <role rt="ioc:crypto" rn="name:security context"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="fContextReq" roles="none" nr="4">
+     <type>ULONG</type>
+    </par>
+    <par loc="stack" name="Reserved1" roles="none" nr="5">
+     <type>ULONG</type>
+    </par>
+    <par loc="stack" io="r" name="TargetDataRep" roles="none" nr="6">
+     <type>ULONG</type>
+    </par>
+    <par loc="stack" io="r" name="pInput" nr="7">
+     <type><ptr>SecBufferDesc</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:misc"/>
+     </roles>
+    </par>
+    <par loc="stack" name="Reserved2" nr="8">
+     <type>ULONG</type>
+     <roles/>
+    </par>
+    <par loc="stack" desc="new security context" io="rw" name="phNewContext" nr="9">
+     <type><ptr>CtxtHandle</ptr></type>
+     <pre><deref-read-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:crypto" rn="handle:security context"/>
+     </roles>
+    </par>
+    <par loc="stack" io="rw"  rep="hex" name="pOutput" nr="10">
+     <type><ptr>SecBufferDesc</ptr></type>
+     <pre><deref-read-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:memops" rn="dst-bytes:misc"/>
+       <role rt="ioc:memops" rn="src-bytes:misc"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="pfContextAttr" rep="hex" roles="none" nr="11">
+     <type><ptr>ULONG</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="w" name="ptsExpiry" roles="none" nr="12">
+     <type><ptr>TimeStamp</ptr></type>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>SECURITY_STATUS SEC_Entry</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action 
+	 cat="system" 
+	 desc="initiates client side, outbound security context from a credential handle"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

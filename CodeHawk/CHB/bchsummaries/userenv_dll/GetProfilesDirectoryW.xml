@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="09/27/2015 23:34:25"/>
+  <libfun lib="userenv" name="GetProfilesDirectoryW">
+   <refer-to char-type="unicode" name="GetProfilesDirectory"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

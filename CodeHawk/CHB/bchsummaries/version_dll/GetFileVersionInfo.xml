@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/06/2015 23:55:58"/>
+  <libfun lib="version" name="GetFileVersionInfo">
+   <documentation>
+    <desc>Retrieves version information for the specified file</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI GetFileVersionInfo(</ll>
+      <ld>_In_       LPCTSTR lptstrFilename</ld>
+      <ld>_Reserved_ DWORD   dwHandle</ld>
+      <ld>_In_       DWORD   dwLen</ld>
+      <ld>_Out_      LPVOID  lpData</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lptstrFilename">
+       The name of the file. If a full path is not specified, the function uses 
+       the search sequence specified by the LoadLibrary function
+     </par>
+     <par name="dwHandle">This parameter is ignored</par>
+     <par name="dwLen">
+       The size, in bytes, of the buffer pointed to by the lpData parameter.
+       Call the GetFileVersionInfoSize function first to determine the size,
+       in bytes, of a file's version information. The dwLen member should be 
+       equal to or greater than that value.
+       If the buffer pointed to by lpData is not large enough, the function
+       truncates the file's version information to the size of the buffer
+     </par>
+     <par name="lpData">
+       Pointer to a buffer that receives the file-version information
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetFileVersionInfo">
+     <par loc="stack" name="lptstrFilename" io="r" nr="1">
+       <type>LPCTSTR</type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:filesystem" rn="name:file"/>
+	 <role rt="rep:hex" rn="name:file"/>
+       </roles>
+    </par>
+    <par loc="stack" name="dwHandle" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="dwLen" io="r" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="GetFileVersionInfo"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpData" io="w" nr="4">
+     <type><ptr>void</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-bytes:misc"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="retrieves file version"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpData</ci>
+	    <ci>dwLen</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="file system" xdata="file version info"/>
+	    <type>byte</type>
+	    <ci>lpData</ci>
+	    <ci>dwLen</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

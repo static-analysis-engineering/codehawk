@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="CompareStr.xml" time="2016-11-27 19:19:47.442087"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="CompareStr" package="System::SysUtils">
+    <documentation>
+      <desc>Compares two strings, with case sensitivity</desc>
+      <apidoc>
+        <pt>
+          <ll>CompareStr(</ll>
+          <ld>S1:string</ld>
+          <ld>S2:string</ld>
+          <ll>):Integer</ll>
+        </pt>
+        <par name="S1">string to compare</par>
+        <par name="S2">string to compare </par>
+        <return>
+	  value indicates how the strings compare
+	</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="CompareStr">
+      <par loc="register" name="S1" reg="eax" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:inputs" rn="string comparison"/>
+	</roles>
+      </par>
+      <par loc="register" name="S2" reg="edx" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:inputs" rn="string comparison"/>
+	</roles>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="inputs" desc="compares two strings"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/06/2013 10:31:04"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="spoolss" name="OpenPrinter">
+   <documentation>
+    <desc>
+      retrieves a handle to the specified printer or print server or other 
+      types of handles in the print subsystem.	
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL OpenPrinter(</ll>
+      <ld>_In_   LPTSTR pPrinterName,</ld>
+      <ld>_Out_  LPHANDLE phPrinter,</ld>
+      <ld>_In_   LPPRINTER_DEFAULTS pDefault</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pPrinterName">
+       A pointer to a null-terminated string that specifies the name of the printer
+       or print server, the printer object, the XcvMonitor, or the XcvPort.
+       If NULL, it indicates the local printer server.
+	</par>
+     <par name="phPrinter">
+       A pointer to a variable that receives a handle (not thread safe) to the 
+       open printer or print server object.
+     </par>
+     <par name="pDefaults">
+       A pointer to a PRINTER_DEFAULTS structure. This value can be NULL.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="OpenPrinter">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" io="r" name="pPrinterName" nr="1">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:printer" />
+     </roles>
+     <pre><deref-read-null-nt/></pre>
+    </par>
+    <par loc="stack" io="w" name="phPrinter" nr="2">
+     <type><ptr>HANDLE</ptr></type>
+     <roles>
+      <role rt="ioc:system" rn="infox:printer handle" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="pDefault" nr="3">
+     <type><ptr>PRINTER_DEFAULTS</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:PRINTER_DEFAULTS" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system"
+		  desc="retrieves a handle to a printer or print server"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/29/2015 16:35:28"/>
+  <libfun lib="shell32" name="SHChangeNotify">
+   <documentation>
+    <desc>
+      Notifies the system of an event that an application has performed. 
+      An application should use this function if it performs an action 
+      that may affect the Shell
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>void SHChangeNotify(</ll>
+      <ld>         LONG    wEventId</ld>
+      <ld>         UINT    uFlags</ld>
+      <ld>_In_opt_ LPCVOID dwItem1</ld>
+      <ld>_In_opt_ LPCVOID dwItem2</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="wEventId">
+       Describes the event that has occurred. Typically, only one event is specified 
+       at a time. If more than one event is specified, the values contained in the 
+       dwItem1 and dwItem2 parameters must be the same, respectively, for all
+       specified events.
+     </par>
+     <par name="uFlags">
+       Flags that, when combined bitwise with SHCNF_TYPE, indicate the meaning of 
+       the dwItem1 and dwItem2 parameters
+     </par>
+     <par name="dwItem1">Optional. First event-dependent value</par>
+     <par name="dwItem2">Optional. Second event-dependent value</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SHChangeNotify">
+    <par loc="stack" name="wEventId" nr="1">
+     <rep type="enum" name="event_notification_types"/>
+     <type>LONG</type>
+     <pre><enum-value name="event_notification_types"/></pre>
+     <roles>
+        <role rt="ioc:synchronization" rn="id:event"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="uFlags" roles="none" nr="2">
+     <rep type="enum" name="event_notification_flags"/>
+     <type>UINT</type>
+     <pre><enum-value name="event_notification_flags" flags="true"/></pre>
+     <roles>
+        <role rt="ioc:synchronization" rn="event notification flags"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" roles="none" name="dwItem1" nr="3">
+     <type><ptr>byte</ptr></type>
+     <pre><deref-read-null/></pre>
+     <roles/>
+    </par>
+    <par loc="stack" io="r" roles="none" name="dwItem2" nr="4">
+     <type><ptr>byte</ptr></type>
+     <pre><deref-read-null/></pre>
+    <roles/>
+    </par>
+    <returntype>void</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="notifies the system of an event that affects the shell"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

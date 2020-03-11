@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="mciSendString.xml" time="2016-07-26 16:21:29.152296"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="winmm" name="mciSendString">
+    <documentation>
+      <desc>
+	sends a command string to an MCI device. The device that the
+	command is sent to is specified in the command string
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>MCIERROR mciSendString(</ll>
+          <ld>LPCTSTR lpszCommand</ld>
+          <ld>LPSTR   lpszReturnString</ld>
+          <ld>UINT    cchReturn</ld>
+          <ld>HANDLE  hwndCallback</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpszCommand">
+	  Pointer to a null-terminated string that specifies an MCI command string
+	</par>
+        <par name="lpszReturnString">
+	  Pointer to a buffer that receives return information. If no
+	  return information is needed, this parameter can be NULL.
+	</par>
+        <par name="cchReturn">
+	  Size, in characters, of the return buffer specified by the
+	  lpszReturnString parameter.
+	</par>
+        <par name="hwndCallback">
+	  Handle to a callback window if the "notify" flag was
+	  specified in the command string
+	</par>
+        <return>
+          <rc cond="success">zero</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="16" cc="stdcall" name="mciSendString">
+      <par loc="stack" name="lpszCommand" io="r" nr="1" rep="hex">
+        <type>LPCTSTR</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="command:device"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpszReturnString" io="w" nr="2" rep="hex">
+        <type>LPTSTR</type>
+	<roles>
+	  <role rt="ioc:system" rn="infox:device feedback"/>
+	</roles>
+      </par>
+      <par loc="stack" name="cchReturn" io="r" nr="3">
+        <type>UINT</type>
+	<roles>
+	  <role rt="size:buffersize" rn="mciSendString"/>
+	</roles>
+      </par>
+      <par loc="stack" name="hwndCallback" io="r" nr="4">
+        <type>HANDLE</type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="handle:window"/>
+	</roles>
+      </par>
+      <returntype>MCIERROR</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="sends a command string to an MCI device"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>lpszReturnString</ci>
+	      <apply><indexsize/><ci>cchReturn</ci></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>lpszReturnString</ci>
+	      <apply><indexsize/><ci>cchReturn</ci></apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

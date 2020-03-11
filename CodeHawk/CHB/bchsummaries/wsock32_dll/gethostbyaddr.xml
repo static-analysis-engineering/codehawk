@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/07/2015 15:25:43"/>
+  <libfun lib="wsock32" name="gethostbyaddr">
+    <refer-to lib="ws2_32" name="gethostbyaddr"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/27/2015 12:04:35"/>
+  <libfun lib="wininet" name="InternetCombineUrl">
+   <documentation>
+    <desc>
+      Combines a base and relative URL into a single URL. The resultant URL is canonicalized
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL InternetCombineUrl(</ll>
+      <ld>_In_     LPCTSTR lpszBaseUrl</ld>
+      <ld>_In_     LPCTSTR lpszRelativeUrl</ld>
+      <ld>_Out_    LPTSTR lpszBuffer</ld>
+      <ld>_Inout_  LPDWORD lpdwBufferLength</ld>
+      <ld>_In_     DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszBaseUrl">
+       Pointer to a null-terminated string that contains the base URL 
+     </par>
+     <par name="lpszRelativeUrl">
+       Pointer to a null-terminated string that contains the relative URL
+     </par>
+     <par name="lpszBuffer">
+       Pointer to a buffer that receives the combined URL
+     </par>
+     <par name="lpdwBufferLength">
+       Pointer to a variable that contains the size of the lpszBuffer buffer, 
+       in characters. If the function succeeds, this parameter receives the size 
+       of the combined URL, in characters, not including the null-terminating 
+       character. If the function fails, this parameter receives the size of 
+       the required buffer, in characters (including the null-terminating 
+       character)
+     </par>
+     <par name="dwFlags">Controls the operation of the function</par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="InternetCombineUrl">
+    <par loc="stack" io="r" name="lpszBaseUrl" rep="hex" nr="1">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:network" rn="url" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpszRelativeUrl" rep="hex" nr="2">
+     <type>LPCTSTR</type>
+     <roles>
+      <role rt="ioc:network" rn="url" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpszBuffer" rep="hex" nr="3">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:network" rn="url" />
+      <role rt="ioc:memops" rn="dst-bytes:combined url buffer" />
+     </roles>
+    </par>
+    <par loc="stack" io="rw" name="lpdwBufferLength" rep="hex" nr="4">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="size:buffer" rn="InternetCombineUrl" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="5">
+     <type>DOWRD</type>
+     <pre><enum-value name="url_combination_constants"/></pre>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszBuffer</ci>
+	    <apply><indexsize/><ci>lpdwBufferLength</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpszBuffer</ci>
+	    <apply><indexsize/><ci>lpdwBufferLength</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

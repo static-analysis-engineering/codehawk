@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 15:25:18"/>
+  <libfun lib="shell32" name="SHGetDiskFreeSpaceEx">
+   <documentation>
+    <desc>Retrieves disk space information for a disk volume</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL SHGetDiskFreeSpaceEx(</ll>
+      <ld>LPCTSTR        pszVolume</ld>
+      <ld>ULARGE_INTEGER *pqwFreeCaller</ld>
+      <ld>ULARGE_INTEGER *pqwTot</ld>
+      <ld>ULARGE_INTEGER *pqwFree</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pszVolume">
+       A null-terminated string that specifies the volume for which size
+       information is retrieved. This can be a drive letter, UNC name, or 
+       the path of a folder. You cannot use NULL to represent the current drive
+     </par>
+     <par name="pqwFreeCaller">
+       The address of a ULARGE_INTEGER value that receives the number of bytes
+       on the volume available to the calling application. If the operating 
+       system implements per-user quotas, this value may be less than the 
+       total number of free bytes on the volume.
+     </par>
+     <par name="pqwTot">
+       The address of a ULARGE_INTEGER value that receives the total size 
+       of the volume, in bytes
+     </par>
+     <par name="pqwFree">
+       The address of a ULARGE_INTEGER value that receives the number of
+       bytes of free space on the volume
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SHGetDiskFreeSpaceEx">
+    <par loc="stack" name="pszVolume" io="r" rep="hex" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:volume"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pqwFreeCaller" io="w" rep="hex" nr="2">
+     <type><ptr>ULARGE_INTEGER</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:filesystem" rn="infox:volume free space available"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pqwTot" io="w" rep="hex" nr="3">
+     <type><ptr>ULARGE_INTEGER</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:filesystem" rn="infox:volume size"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pqwFree" io="w" rep="hex" nr="4">
+     <type><ptr>ULARGE_INTEGER</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+         <role rt="ioc:filesystem" rn="infox:volume free space"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" desc="retrieves disk space information"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

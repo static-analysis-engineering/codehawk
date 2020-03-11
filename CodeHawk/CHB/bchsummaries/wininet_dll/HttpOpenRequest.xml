@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/04/2015 12:10:21"/>
+  <libfun lib="wininet" name="HttpOpenRequest">
+   <documentation>
+    <desc>Creates an HTTP request handle</desc>
+    <apidoc>
+     <pt>
+      <ll>HINTERNET HttpOpenRequest(</ll>
+      <ld>_In_  HINTERNET hConnect</ld>
+      <ld>_In_  LPCTSTR lpszVerb</ld>
+      <ld>_In_  LPCTSTR lpszObjectName</ld>
+      <ld>_In_  LPCTSTR lpszVersion</ld>
+      <ld>_In_  LPCTSTR lpszReferer</ld>
+      <ld>_In_  LPCTSTR *lplpszAcceptTypes</ld>
+      <ld>_In_  DWORD dwFlags</ld>
+      <ld>_In_  DWORD_PTR dwContext</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hConnect">A handle to an HTTP session returned by InternetConnect</par>
+     <par name="lpszVerb">
+       A pointer to a null-terminated string that contains the HTTP verb to use in the 
+       request. If this parameter is NULL, the function uses GET as the HTTP verb
+     </par>
+     <par name="lpszObjectName">
+       A pointer to a null-terminated string that contains the name of the target object 
+       of the specified HTTP verb. This is generally a file name, an executable module, 
+       or a search specifier
+     </par>
+     <par name="lpszVersion">
+       A pointer to a null-terminated string that contains the HTTP version to use 
+       in the request. Settings in Internet Explorer will override the value specified 
+       in this parameter.
+       If this parameter is NULL, the function uses an HTTP version of 1.1 or 1.0, 
+       depending on the value of the Internet Explorer settings
+     </par>
+     <par name="lpszReferer">
+       A pointer to a null-terminated string that specifies the URL of the document 
+       from which the URL in the request (lpszObjectName) was obtained. If this 
+       parameter is NULL, no referrer is specified
+     </par>
+     <par name="lplpszAcceptTypes">
+        pointer to a null-terminated array of strings that indicates media types 
+	accepted by the client. 
+	Failing to properly terminate the array with a NULL pointer will cause a crash.
+	If this parameter is NULL, no types are accepted by the client. Servers 
+	generally interpret a lack of accept types to indicate that the client 
+	accepts only documents of type "text/*" (that is, only text
+	documents, no
+	pictures or other binary files). For more information and a list of 
+	valid media types, 
+	see ftp://ftp.isi.edu/in-notes/iana/assignments/media-types/media-types
+     </par>
+     <par name="dwFlags">Internet options</par>
+     <par name="dwContext">
+       A pointer to a variable that contains the application-defined value that 
+       associates this operation with any application data
+     </par>
+     <return>
+      <rc cond="success">an HTTP request handle</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="HttpOpenRequest">
+    <par loc="stack" io="r"  name="hConnect" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszVerb" rep="hex" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-null-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:http request verb"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszObjectName" rep="hex" nr="3">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:http target resource"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszVersion" rep="hex" nr="4">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:http version"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszReferer" rep="hex" nr="5">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="url"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lplpszAcceptTypes" rep="hex" nr="6">
+     <type><ptr>LPCTSTR</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="types:http media"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="7">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwContext" nr="8">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:network" rn="application context"/>
+     </roles>
+    </par>
+    <returntype>HINTERNET</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"  desc="creates an HTTP request handle"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

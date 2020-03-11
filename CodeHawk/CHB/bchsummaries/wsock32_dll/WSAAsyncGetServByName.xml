@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/01/2015 23:43:40"/>
+  <libfun lib="wsock32" name="WSAAsyncGetServByName">
+   <documentation>
+    <desc>
+      asynchronously retrieves service information that corresponds to a 
+      service name and port.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HANDLE WSAAsyncGetServByName(</ll>
+      <ld>_In_        HWND         hWnd</ld>
+      <ld>_In_        unsigned int wMsg</ld>
+      <ld>_In_  const char         *name</ld>
+      <ld>_In_  const char         *proto</ld>
+      <ld>_Out_       char         *buf</ld>
+      <ld>_In_        int          buflen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       Handle of the window that should receive a message when the asynchronous
+       request completes.
+     </par>
+     <par name="wMsg">
+       Message to be received when the asynchronous request completes
+     </par>
+     <par name="name">
+       Pointer to a null-terminated service name
+     </par>
+     <par name="proto">
+       Pointer to a protocol name. This can be NULL, in which case WSAAsyncGetServByName 
+       will search for the first service entry for which s_name or one of the s_aliases 
+       matches the given name. Otherwise, WSAAsyncGetServByName matches both name and
+       proto.
+     </par>
+     <par name="buf">
+       Pointer to the data area to receive the servent data. The data area must be larger
+       than the size of a servent structure because the data area is used by Windows 
+       Sockets to contain a servent structure and all of the data that is referenced 
+       by members of the servent structure. A buffer of MAXGETHOSTSTRUCT bytes is 
+       recommended.
+     </par>
+     <par name="buflen">Size of data area for the buf parameter, in bytes</par>
+     <return>
+      <rc cond="success">
+	nonzero value of type HANDLE that is the asynchronous task handle for 
+	the request 
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="WSAAsyncGetServByName">
+    <par loc="stack" io="r" name="hWnd" rep="hex" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="wMsg" io="r" roles="none" nr="2">
+     <type>unsigned int</type>
+    </par>
+    <par loc="stack" io="r" name="name" rep="hex" nr="3">
+     <type><ptr>char</ptr></type>
+     <roles>
+      <role rt="ioc:network" rn="name:service" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="proto" rep="hex" nr="4">
+     <type><ptr>char</ptr></type>
+     <roles>
+      <role rt="ioc:network" rn="name:protocol" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="buf" rep="hex" nr="5">
+     <type><ptr>char</ptr></type>
+     <roles>
+      <role rt="ioc:network" rn="infox:servent data"/>
+      <role rt="ioc:memops" rn="dst-bytes:servent" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="buflen" nr="6">
+     <type>int</type>
+     <roles>
+      <role rt="size:buffer" rn="size:buffer" />
+     </roles>
+    </par>
+    <returntype>HANDLE</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="retrieves service information for a service name">
+       </io-action>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>buf</ci>
+	    <ci>buflen</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>buf</ci>
+	    <ci>buflen</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

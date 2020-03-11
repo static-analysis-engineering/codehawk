@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2019-10-24 23:31:47"/>
+  <libfun name="socket">
+    <documentation>
+      <desc>create an endpoint for communication</desc>
+      <apidoc>
+        <pt>
+          <ll>int socket(</ll>
+          <ld>int domain</ld>
+          <ld>int type</ld>
+          <ld>int protocol</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="domain">
+	  Specifies the communications domain in which a socket is to be created.
+	</par>
+        <par name="type">
+	  Specifies the type of socket to be created.
+	</par>
+        <par name="protocol">
+	  Specifies a particular protocol to be used with the
+	  socket. Specifying a protocol of 0 causes socket() to use an
+	  unspecified default protocol appropriate for the requested
+	  socket type.
+	</par>
+        <return>
+          <rc cond="success">non-negative integer</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="socket">
+      <par loc="stack" name="domain" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="type" nr="2">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="protocol" nr="3">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

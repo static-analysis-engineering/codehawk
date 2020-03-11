@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/10/2015 19:52:01"/>
+  <libfun lib="winhttp" name="WinHttpQueryOption">
+   <documentation>
+    <desc>queries an Internet option on the specified handle</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WinHttpQueryOption(</ll>
+      <ld>_In_    HINTERNET hInternet</ld>
+      <ld>_In_    DWORD     dwOption</ld>
+      <ld>_Out_   LPVOID    lpBuffer</ld>
+      <ld>_Inout_ LPDWORD   lpdwBufferLength</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hInternet">
+       An HINTERNET handle on which to query information. Note that
+       this can be either a Session handle or a Request handle,
+       depending on what option is being queried; see the Option Flags
+       topic to determine which handle is appropriate to use in
+       querying a particular option.
+     </par>
+     <par name="dwOption">
+       An unsigned long integer value that contains the Internet option to query
+     </par>
+     <par name="lpBuffer">
+       A pointer to a buffer that receives the option setting. Strings
+       returned by the WinHttpQueryOption function are globally
+       allocated, so the calling application must globally free the
+       string when it finishes using it. Setting this parameter to
+       NULL causes this function to return FALSE. Calling GetLastError
+       then returns ERROR_INSUFFICIENT_BUFFER and lpdwBufferLength
+       contains the number of bytes required to hold the requested
+       information.
+     </par>
+     <par name="lpdwBufferLength">
+       A pointer to an unsigned long integer variable that contains
+       the length of lpBuffer, in bytes. When the function returns,
+       the variable receives the length of the data placed into
+       lpBuffer. If GetLastError returns ERROR_INSUFFICIENT_BUFFER,
+       this parameter receives the number of bytes required to hold
+       the requested information.
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="WinHttpQueryOption">
+    <par loc="stack" name="hInternet" io="r" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwOption" io="r" nr="2">
+     <type>DWORD</type>
+     <pre><enum-value name="internet_option_constants"/></pre>
+     <roles>
+       <role rt="ioc:network" rn="http query option"/>
+       <role rt="rep:enum" rn="internet_option_constants"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpBuffer" io="w" nr="3">
+     <type><ptr>VOID</ptr></type>
+     <roles>
+       <role rt="ioc:network" rn="infox:internet option setting"/>
+       <role rt="rep:hex" rn="infox:internet option setting"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpdwBufferLength" nr="4">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:buffersize" rn="WinHttpQueryOption"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" desc="queries an Internet option"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>BYTE</type>
+	    <ci>lpBuffer</ci>
+	    <apply><addressed-value/><ci>lpdwBufferLength</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>BYTE</type>
+	    <ci>lpBuffer</ci>
+	    <apply><addressed-value/><ci>lpdwBufferLength</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

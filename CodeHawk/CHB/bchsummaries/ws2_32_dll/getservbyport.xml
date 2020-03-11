@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="getservbyport.xml" time="2016-05-08 12:26:58.602973"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="ws2_32" name="getservbyport">
+    <documentation>
+      <desc>
+	retrieves service information corresponding to a port and protocol
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>struct servent *getservbyport(</ll>
+          <ld>_In_       int  port</ld>
+          <ld>_In_ const char *proto</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="port">Port for a service, in network byte order</par>
+        <par name="proto">
+	  Optional pointer to a protocol name. If this is null,
+	  getservbyport returns the first service entry for which the
+	  port matches the s_port of the servent structure. Otherwise,
+	  getservbyport matches both the port and the proto
+	  parameters.
+	</par>
+        <return>
+          <rc cond="success">pointer to the servent structure</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="getservbyport">
+      <par loc="stack" name="port" io="r" nr="1">
+        <type>int</type>
+	<roles>
+	  <role rt="ioc:network" rn="port number"/>
+	</roles>
+      </par>
+      <par loc="stack" name="proto" io="r" nr="2">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-null-nt/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="name:protocol"/>
+	</roles>
+      </par>
+      <returntype><ptr>servent</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network"
+		   desc="retrieves service information for a port and protocol"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

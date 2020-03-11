@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="MethodName.xml" time="2016-12-19 23:03:48.012589"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="MethodName" package="System::TObject">
+    <documentation>
+      <desc>Returns the name of a class method by address</desc>
+      <apidoc>
+        <pt>
+          <ll>__classmethod UnicodeString __fastcall MethodName(</ll>
+          <ld>this</ld>
+          <ld>void *Address</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="this">this object</par>
+        <par name="Address">address of the method</par>
+        <return>name of the object method</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="MethodName">
+      <par loc="register" name="this" reg="eax">
+        <type><ptr>void</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="register" name="Address" reg="edx">
+        <type><ptr>void</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype><ptr>void</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="process" desc="retrieves the name of an object method"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="06/25/2015 13:36:02"/>
+  <libfun lib="ws2_32" name="WSAGetOverlappedResult">
+   <documentation>
+    <desc>retrieves the results of an overlapped operation on the specified socket</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WSAAPI WSAGetOverlappedResult(</ll>
+      <ld>_In_  SOCKET          s</ld>
+      <ld>_In_  LPWSAOVERLAPPED lpOverlapped</ld>
+      <ld>_Out_ LPDWORD         lpcbTransfer</ld>
+      <ld>_In_  BOOL            fWait</ld>
+      <ld>_Out_ LPDWORD         lpdwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="s">A descriptor identifying the socket</par>
+     <par name="lpOverlapped">
+       A pointer to a WSAOVERLAPPED structure that was specified when the overlapped 
+       operation was started. This parameter must not be a NULL pointer
+     </par>
+     <par name="lpcbTransfer">
+       A pointer to a 32-bit variable that receives the number of bytes that were 
+       actually transferred by a send or receive operation, or by the WSAIoctl 
+       function. This parameter must not be a NULL pointer
+     </par>
+     <par name="fWait">
+       A flag that specifies whether the function should wait for the pending 
+       overlapped operation to complete. If TRUE, the function does not return 
+       until the operation has been completed. If FALSE and the operation is 
+       still pending, the function returns FALSE and the WSAGetLastError function
+       returns WSA_IO_INCOMPLETE. The fWait parameter may be set to TRUE only 
+       if the overlapped operation selected the event-based completion notification
+     </par>
+     <par name="lpdwFlags">
+       A pointer to a 32-bit variable that will receive one or more flags that 
+       supplement the completion status. If the overlapped operation was initiated 
+       through WSARecv or WSARecvFrom, this parameter will contain the results
+       value for lpFlags parameter. This parameter must not be a NULL pointer
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="WSAGetOverlappedResult">
+    <par loc="stack" name="s" io="r" nr="1">
+     <type>SOCKET</type>
+     <roles>
+       <role rt="ioc:network" rn="socket"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpOverlapped" nr="2">
+     <type><ptr>WSAOVERLAPPED</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:WSAOVERLAPPED" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="w" name="lpcbTransfer" rep="hex" nr="3">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="size:buffer" rn="size:actual" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects>
+       <block-write/>
+     </sideeffects>
+    </par>
+    <par loc="stack" name="fWait" io="r" roles="none" nr="4">
+     <type>BOOL</type>
+    </par>
+    <par loc="stack" name="lpdwFlags" io="w" roles="none" nr="5">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="receives the results from an overlapped operation on a socket"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

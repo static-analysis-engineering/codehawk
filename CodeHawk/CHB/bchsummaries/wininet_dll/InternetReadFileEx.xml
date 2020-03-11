@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="InternetReadFileEx.xml" time="2016-05-08 11:25:33.655204"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="wininet" name="InternetReadFileEx">
+    <documentation>
+      <desc>
+	Reads data from a handle opened by the InternetOpenUrl or
+	HttpOpenRequest function
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL InternetReadFileEx(</ll>
+          <ld>_In_  HINTERNET          hFile</ld>
+          <ld>_Out_ LPINTERNET_BUFFERS lpBuffersOut</ld>
+          <ld>_In_  DWORD              dwFlags</ld>
+          <ld>_In_  DWORD_PTR          dwContext</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hFile">
+	  Handle returned by the InternetOpenUrl or HttpOpenRequest function
+	</par>
+        <par name="lpBuffersOut">
+	  Pointer to an INTERNET_BUFFERS structure that receives the
+	  data downloaded
+	</par>
+        <par name="dwFlags">flags</par>
+        <par name="dwContext">
+	  A caller supplied context value used for asynchronous operations
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="16" cc="stdcall" name="InternetReadFileEx">
+      <par loc="stack" name="hFile" io="r" nr="1">
+        <type>HINTERNET</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="handle:internet"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpBuffersOut" io="w" nr="2" rep="hex">
+        <type><ptr>INTERNET_BUFFERS</ptr></type>
+	<pre><deref-write/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-bytes:network input"/>
+	</roles>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <par loc="stack" name="dwFlags" io="r" roles="none" nr="3">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="dwContext" io="r" nr="4">
+        <type><ptr>DWORD</ptr></type>
+	<roles>
+	  <role rt="ioc:network" rn="application context"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network" desc="reads data from an internet handle"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/24/2015 21:43:56"/>
+  <libfun lib="winspool.drv" name="DocumentProperties">
+   <documentation>
+    <desc>
+      retrieves or modifies printer initialization information or displays a 
+      printer-configuration property sheet for the specified printer
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>LONG DocumentProperties(</ll>
+      <ld>_In_  HWND     hWnd</ld>
+      <ld>_In_  HANDLE   hPrinter</ld>
+      <ld>In_  LPTSTR   pDeviceName</ld>
+      <ld>_Out_ PDEVMODE pDevModeOutput</ld>
+      <ld>_In_  PDEVMODE pDevModeInput</ld>
+      <ld>_In_  DWORD    fMode</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       A handle to the parent window of the printer-configuration property sheet
+     </par>
+     <par name="hPrinter">
+       A handle to a printer object. Use the OpenPrinter or AddPrinter function to 
+       retrieve a printer handle.
+     </par>
+     <par name="pDeviceName">
+       A pointer to a null-terminated string that specifies the name of the device 
+       for which the printer-configuration property sheet is displayed.
+     </par>
+     <par name="pDevModeOutput">
+       A pointer to a DEVMODE structure that receives the printer configuration data 
+       specified by the user.
+     </par>
+     <par name="pDevModeInput">
+       A pointer to a DEVMODE structure that the operating system uses to initialize
+       the property sheet controls
+     </par>
+     <par name="fMode">
+       The operations the function performs. If this parameter is zero, the 
+       DocumentProperties function returns the number of bytes required by the printer
+       driver's DEVMODE data structure. 
+     </par>
+     <return>
+       <rc cond="success">
+	 If the fMode parameter is zero, the return value is the size of the buffer
+	 required to contain the printer driver initialization data. Note that this 
+	 buffer can be larger than a DEVMODE structure if the printer driver appends
+	 private data to the structure.
+	 If the function displays the property sheet, the return value is either IDOK 
+	 or IDCANCEL, depending on which button the user selects.
+	 If the function does not display the property sheet and is successful, the 
+	 return value is IDOK.
+      </rc>
+      <rc cond="failure">less than zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="DocumentProperties">
+    <par loc="stack" io="r" rep="hex" name="hWnd" nr="1">
+     <type>HWND</type>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="hPrinter" nr="2">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:system" rn="handle:printer" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="pDeviceName" nr="3">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:system" rn="name:device" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="w" name="pDevModeOutput" nr="4">
+     <type><ptr>DEVMODE</ptr></type>
+     <roles>
+      <role rt="ioc:system" rn="infox:printer configuration"/>
+      <role rt="ioc:memops" rn="dst-struct:DEVMODE" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="pDevModeInput" rep="hex" nr="5">
+     <type><ptr>DEVMODE</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:DEVMODE" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="fMode" io="r" roles="none" nr="6">
+     <type>DWORD</type>
+    </par>
+    <returntype>LONG</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system"
+		 desc="retrieves or modifies printer initialization data"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

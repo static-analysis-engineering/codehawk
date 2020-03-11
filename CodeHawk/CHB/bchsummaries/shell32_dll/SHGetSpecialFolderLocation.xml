@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="07/09/2015 22:22:17"/>
+  <libfun lib="shell32" name="SHGetSpecialFolderLocation">
+   <documentation>
+    <desc>
+      Retrieves a pointer to the ITEMIDLIST structure of a special folder
+    </desc>
+    <remarks>
+      [SHGetSpecialFolderLocation is not supported and may be altered or 
+      unavailable in the future. Instead, use SHGetFolderLocation.]
+    </remarks>
+    <apidoc>
+     <pt>
+      <ll>HRESULT SHGetSpecialFolderLocation(</ll>
+      <ld>_In_  HWND             hwndOwner</ld>
+      <ld>_In_  int              nFolder</ld>
+      <ld>_Out_ PIDLIST_ABSOLUTE *ppidl</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hwndOwner">Reserved</par>
+     <par name="nFolder">A CSIDL value that identifies the folder of interest</par>
+     <par name="ppidl">
+       A PIDL specifying the folder's location relative to the root of the namespace 
+       (the desktop). It is the responsibility of the calling application to free 
+       the returned IDList by using CoTaskMemFree.
+     </par>
+     <return>
+      <rc cond="success">S_OK</rc>
+      <rc cond="failure">HRESULT errorcode</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="SHGetSpecialFolderLocation">
+    <par loc="stack" name="hwndOwner" io="r" nr="1">
+     <type>HWND</type>
+     <roles>
+        <role rt="ioc:process" rn="handle:window"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nFolder" nr="2">
+     <type>int</type>
+     <roles>
+      <role rt="ioc:filesystem" rn="id:CSIDL" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="ppidl" nr="3">
+     <type><ptr>PIDLIST_ABSOLUTE</ptr></type>
+     <roles>
+      <role rt="ioc:filesystem" rn="infox:PIDL" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects>
+       <block-write/>
+     </sideeffects>
+    </par>
+    <returntype>HRESULT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="obtains item ID list of a special folder"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:44"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun name="calloc">
+   <documentation>
+    <desc>allocates an array in memory with elements intialized to 0</desc>
+    <apidoc>
+     <pt>void *calloc (size_t count, size_t size)</pt>
+     <par name="count">number of elements</par>
+     <par name="size">length in bytes of each element</par>
+     <return>
+      <rc cond="success">pointer to the allocated space</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="calloc">
+     <returntype><ptr>void</ptr></returntype>
+    <par loc="stack" io="r" name="count" nr="1">
+     <type>size_t</type>
+     <roles>
+        <role rt="ioc:memops" rn="size:allocation"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="size" nr="2">
+     <type>size_t</type>
+     <roles>
+        <role rt="ioc:memops" rn="size:allocation"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="allocates memory"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <new-memory-region/>
+        <return-value/>
+        <apply>
+         <times/>
+         <ci>count</ci>
+         <ci>size</ci>
+        </apply>
+       </apply>
+      </math>
+     </post>
+     <error-post>
+      <math>
+       <apply>
+        <null/>
+        <return-value/>
+       </apply>
+      </math>
+     </error-post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

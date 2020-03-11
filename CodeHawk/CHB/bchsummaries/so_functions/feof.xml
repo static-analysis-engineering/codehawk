@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/21/2015 10:22:27"/>
+  <libfun lib="msvcrt" name="feof">
+   <documentation>
+    <desc>Tests for end-of-file on a stream</desc>
+    <apidoc>
+     <pt>int feof (FILE *stream)</pt>
+     <par name="stream">Pointer to FILE structure</par>
+     <return>
+       a nonzero value if a read operation has attempted to read past the 
+       end of the file; it returns 0 otherwise
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="feof">
+    <par loc="stack" name="stream" io="r" rep="hex" nr="1">
+     <type><ptr>FILE</ptr></type>
+     <roles>
+       <role rt="ioc:filesystem" rn="file"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="tests for end-of-file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

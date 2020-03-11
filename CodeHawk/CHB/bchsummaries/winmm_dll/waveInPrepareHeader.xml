@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 08:17:07"/>
+  <libfun lib="winmm" name="waveInPrepareHeader">
+   <documentation>
+    <desc>prepares a buffer for waveform-audio input</desc>
+    <apidoc>
+     <pt>
+      <ll>MMRESULT waveInPrepareHeader(</ll>
+      <ld>HWAVEIN   hwi</ld>
+      <ld>LPWAVEHDR pwh</ld>
+      <ld>UINT      cbwh</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hwi">Handle to the waveform-audio input device</par>
+     <par name="pwh">
+       Pointer to a WAVEHDR structure that identifies the buffer to be prepared
+     </par>
+     <par name="cbwh">Size, in bytes, of the WAVEHDR structure</par>
+     <return>
+      <rc cond="success">MMSYSERR_NOERROR</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="waveInPrepareHeader">
+    <par loc="stack" io="r" name="hwi" nr="1">
+     <type>HWAVEIN</type>
+     <roles>
+      <role rt="ioc:system" rn="handle:waveform-audio input device" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="pwh" nr="2">
+     <type><ptr>WAVEHDR</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:WAVEHDR" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cbwh" rep="hex" nr="3">
+     <type>UINT</type>
+     <roles>
+      <role rt="size:buffer" rn="size:buffer" />
+     </roles>
+    </par>
+    <returntype>MMRESULT</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="prepares a buffer for waveform audio input"/>
+     </io-actions>
+     <!-- there are also preconditions on the wavehdr data -->
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>WAVEHDR</type>
+	    <ci>pwh</ci>
+	    <ci>cbwh</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

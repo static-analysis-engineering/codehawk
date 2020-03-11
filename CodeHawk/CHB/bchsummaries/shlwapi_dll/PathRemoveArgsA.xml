@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="PathRemoveArgsA.xml" time="2016-06-18 18:22:21.673347"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="PathRemoveArgsA">
+    <refer-to char-type="ansi" name="PathRemoveArgs"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

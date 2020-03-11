@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="UnloadUserProfile.xml" time="2016-05-08 10:18:39.289801"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="userenv" name="UnloadUserProfile">
+    <documentation>
+      <remarks>
+	Before calling UnloadUserProfile you should ensure that all
+	handles to keys that you have opened in the user's registry
+	hive are closed. If you do not close all open registry
+	handles, the user's profile fails to unload
+      </remarks>
+      <desc>
+	Unloads a user's profile that was loaded by the
+	LoadUserProfile function. The caller must have administrative
+	privileges on the computer
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI UnloadUserProfile(</ll>
+          <ld>_In_ HANDLE hToken</ld>
+          <ld>_In_ HANDLE hProfile</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hToken">
+	  Token for the user, returned from the LogonUser,
+	  CreateRestrictedToken, DuplicateToken, OpenProcessToken, or
+	  OpenThreadToken function. The token must have
+	  TOKEN_IMPERSONATE and TOKEN_DUPLICATE access
+	</par>
+        <par name="hProfile">
+	  Handle to the registry key. This value is the hProfile
+	  member of the PROFILEINFO structure. For more information
+	  see the Remarks section of LoadUserProfile and Registry Key
+	  Security and Access Rights.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="UnloadUserProfile">
+      <par loc="stack" name="hToken" io="r" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="user token"/>
+	</roles>
+      </par>
+      <par loc="stack" name="hProfile" io="r" nr="2">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:system" rn="user profile"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="unloads a user profile"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

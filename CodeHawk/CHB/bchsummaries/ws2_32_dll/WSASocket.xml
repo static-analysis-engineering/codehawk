@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/05/2015 10:27:17"/>
+  <libfun lib="ws2_32" name="WSASocket">
+   <documentation>
+    <desc>
+      creates a socket that is bound to a specific transport-service provider
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>SOCKET WSASocket(</ll>
+      <ld>_In_ int                af</ld>
+      <ld>_In_ int                type</ld>
+      <ld>_In_ int                protocol</ld>
+      <ld>_In_ LPWSAPROTOCOL_INFO lpProtocolInfo</ld>
+      <ld>_In_ GROUP              g</ld>
+      <ld>_In_ DWORD              dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="af">
+       Possible values for the address family are defined in the Winsock2.h header file.
+     </par>
+     <par name="type">
+       The type specification for the new socket. Possible values for the socket type 
+       are defined in the Winsock2.h header file.
+       In Windows Sockets 2, new socket types were introduced. An application can 
+       dynamically discover the attributes of each available transport protocol 
+       through the WSAEnumProtocols function. So an application can determine the
+       possible socket type and protocol options for an address family and use 
+       this information when specifying this parameter.
+     </par>
+     <par name="protocol">
+       The protocol to be used. The possible options for the protocol parameter are 
+       specific to the address family and socket type specified. Possible values for
+       the protocol are defined are defined in the Winsock2.h and Wsrm.h header files.
+     </par>
+     <par name="lpProtocolInfo">
+       A pointer to a WSAPROTOCOL_INFO structure that defines the characteristics of
+       the socket to be created. If this parameter is not NULL, the socket will be 
+       bound to the provider associated with the indicated WSAPROTOCOL_INFO structure.
+     </par>
+     <par name="g">
+       An existing socket group ID or an appropriate action to take when creating a 
+       new socket and a new socket group.
+       If g is an existing socket group ID, join the new socket to this socket group,
+       provided all the requirements set by this group are met.
+     </par>
+     <par name="dwFlags">
+       A set of flags used to specify additional socket attributes. A combination of 
+       these flags may be set, although some combinations are not allowed.
+     </par>
+     <return>
+      <rc cond="success">a descriptor referencing the new socket</rc>
+      <rc cond="failure">INVALID_SOCKET</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="WSASocket">
+    <par loc="stack" desc="address family" io="r" name="af" nr="1">
+     <type>int</type>
+     <roles>
+        <role rt="ioc:network" rn="address family"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="socket type" io="r" name="type" nr="2">
+     <type>int</type>
+     <roles>
+        <role rt="ioc:network" rn="socket type"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="protocol" io="r" name="protocol" nr="3">
+     <type>int</type>
+     <roles>
+        <role rt="ioc:network" rn="protocol"/>
+        <role rt="enum:const" rn="socket_protocol_constants"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="protocol info" io="r" name="lpProtocolInfo" nr="4">
+     <type><ptr>WSAPROTOCOL_INFO</ptr></type>
+     <roles>
+        <role rt="ioc:network" rn="protocol info"/>
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" desc="socket group id" io="r" name="g" nr="5">
+     <type>GROUP</type>
+     <roles>
+        <role rt="ioc:network" rn="socket group id"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="socket flags" io="r" name="dwFlags" nr="6">
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:network" rn="socket flags"/>
+        <role rt="enum:flags" rn="wsa_socket_attribute_flags"/>
+     </roles>
+    </par>
+    <returntype>WSASocket</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="creates a socket"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

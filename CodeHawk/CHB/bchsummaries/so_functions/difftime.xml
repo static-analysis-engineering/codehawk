@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2019-10-24 21:30:18"/>
+  <libfun name="difftime">
+    <documentation>
+      <desc>
+	compute the difference between two calendar time values
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>double difftime(</ll>
+          <ld>time_t time1</ld>
+          <ld>time_t time0</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="time1">later time</par>
+        <par name="time0">earlier time</par>
+        <return>
+	  the difference time1 - time0 expressed in seconds.
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="difftime">
+      <par loc="stack" name="time1" nr="1">
+        <type>time_t</type>
+      </par>
+      <par loc="stack" name="time0" nr="2">
+        <type>time_t</type>
+      </par>
+      <returntype>double</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

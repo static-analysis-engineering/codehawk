@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FtpSetCurrentDirectory.xml" time="2016-05-17 21:23:50.606142"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="wininet" name="FtpSetCurrentDirectory">
+    <documentation>
+      <desc>
+	Changes to a different working directory on the FTP server
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL FtpSetCurrentDirectory(</ll>
+          <ld>_In_ HINTERNET hConnect</ld>
+          <ld>_In_ LPCTSTR   lpszDirectory</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hConnect">Handle to an FTP session.</par>
+        <par name="lpszDirectory">
+	  Pointer to a null-terminated string that contains the name
+	  of the directory to become the current working
+	  directory. This can be either a fully qualified path or a
+	  name relative to the current directory.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="FtpSetCurrentDirectory">
+      <par loc="stack" name="hConnect" io="r" nr="1">
+        <type>HINTERNET</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="handle:internet"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpszDirectory" io="r" nr="2">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:file"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network"
+		   desc="changes to a different working directory on an FTP server"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

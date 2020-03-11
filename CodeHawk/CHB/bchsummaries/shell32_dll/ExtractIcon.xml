@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ExtractIcon.xml" time="2016-08-09 23:49:27.342762"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shell32" name="ExtractIcon">
+    <documentation>
+      <desc>
+	Retrieves a handle to an icon from the specified executable
+	file, DLL, or icon file
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HICON WINAPI ExtractIcon(</ll>
+          <ld>_Reserved_ HINSTANCE hInst</ld>
+          <ld>_In_       LPCTSTR   lpszExeFileName</ld>
+          <ld>_In_       UINT      nIconIndex</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hInst">
+	  A handle to the instance of the application calling the function
+	</par>
+        <par name="lpszExeFileName">
+	  The name of an executable file, DLL, or icon file
+	</par>
+        <par name="nIconIndex">
+	  The zero-based index of the icon to retrieve. For example,
+	  if this value is 0, the function returns a handle to the
+	  first icon in the specified file.  If this value is -1, the
+	  function returns the total number of icons in the specified
+	  file. If the file is an executable file or DLL, the return
+	  value is the number of RT_GROUP_ICON resources. If the file
+	  is an .ICO file, the return value is 1.  If this value is a
+	  negative number not equal to -1, the function returns a
+	  handle to the icon in the specified file whose resource
+	  identifier is equal to the absolute value of nIconIndex. For
+	  example, you should use -3 to extract the icon whose
+	  resource identifier is 3
+	</par>
+        <return>
+          <rc cond="success">a handle to an icon</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="ExtractIcon">
+      <par loc="stack" name="hInst" io="r" nr="1">
+        <type>HINSTANCE</type>
+	<roles>
+	  <role rt="ioc:process" rn="handle:module"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpszExeFileName" io="r" nr="2" rep="hex">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:file"/>
+	</roles>
+      </par>
+      <par loc="stack" name="nIconIndex" io="r" nr="3">
+        <type>UINT</type>
+	<roles>
+	  <role rt="size:index" rn="icon"/>
+	</roles>
+      </par>
+      <returntype>HICON</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+		   desc="retrieves a handle to an icon in an executable file"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="URLDownloadToCacheFile.xml" time="2016-07-15 13:55:03.659762"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="urlmon" name="URLDownloadToCacheFile">
+    <documentation>
+      <desc>
+	Downloads data to the Internet cache and returns the file name
+	of the cache location for retrieving the bits
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HRESULT URLDownloadToCacheFile(</ll>
+          <ld>_In_       LPUNKNOWN           lpUnkcaller</ld>
+          <ld>_In_       LPCSTR              zsURL</ld>
+          <ld>_Out_      LPTSTR              szFileName</ld>
+          <ld>_In_       DWORD               cchFileName</ld>
+          <ld>_Reserved_ DWORD               dwReserved</ld>
+          <ld>_In_opt_   IBindStatusCallback *pBSC</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="lpUnkcaller">
+	  A pointer to the controlling IUnknown interface of the
+	  calling ActiveX component, if the caller is an ActiveX
+	  component. If the caller is not an ActiveX component, this
+	  value can be set to NULL. Otherwise, the caller is a COM
+	  object that is contained in another component, such as an
+	  ActiveX control in the context of an HTML page. This
+	  parameter represents the outermost IUnknown of the calling
+	  component. The function attempts the download in the context
+	  of the ActiveX client framework, and allows the caller
+	  container to receive callbacks on the progress of the
+	  download.
+	</par>
+        <par name="zsURL">
+	  A pointer to a string value that contains the URL to
+	  download. Cannot be set to NULL
+	</par>
+        <par name="szFileName">
+	  A pointer to a string value that contains the name of the
+	  downloaded file. Cannot be set to NULL
+	</par>
+        <par name="cchFileName">
+	  An unsigned long integer value that contains the number of
+	  characters of the szFileName value
+	</par>
+        <par name="dwReserved">Reserved. Must be set to 0</par>
+        <par name="pBSC">
+	  A pointer to the IBindStatusCallback interface of the
+	  caller. By using IBindStatusCallback::OnProgress, a caller
+	  can receive download status. URLDownloadToCacheFile calls
+	  the IBindStatusCallback::OnProgress and
+	  IBindStatusCallback::OnDataAvailable methods as data is
+	  received. The download operation can be canceled by
+	  returning E_ABORT from any callback. This parameter can be
+	  set to NULL if status is not required.
+	</par>
+        <return>
+          <rc cond="success">S_OK</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="24" cc="stdcall" name="URLDownloadToCacheFile">
+      <par loc="stack" name="lpUnkcaller" io="r" nr="1" rep="hex">
+        <type><ptr>UNKNOWN</ptr></type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="ifp:IUnknown"/>
+	</roles>
+      </par>
+      <par loc="stack" name="zsURL" io="r" nr="2" rep="hex">
+        <type>LPCTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="url"/>
+	</roles>
+      </par>
+      <par loc="stack" name="szFileName" io="w" nr="3" rep="hex">
+        <type>LPTSTR</type>
+	<roles>
+	  <role rt="ioc:filesystem" rn="infox:filename"/>
+	</roles>
+      </par>
+      <par loc="stack" name="cchFileName" io="r" nr="4">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:buffersize" rn="URLDownloadToCacheFile"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwReserved" io="r" roles="none" nr="5">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="pBSC" nr="6">
+        <type><ptr>IBindStatusCallback</ptr></type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:com" rn="ifp:IBindStatusCallback"/>
+	</roles>
+      </par>
+      <returntype>HRESULT</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network" desc="downloads data to the internet cache"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>szFileName</ci>
+	      <apply><indexsize/><ci>cchFileName</ci></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>szFileName</ci>
+	      <apply><indexsize/><ci>cchFileName</ci></apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

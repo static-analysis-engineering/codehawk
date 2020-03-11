@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/24/2015 18:21:58"/>
+  <libfun lib="winmm" name="timeGetTime">
+   <documentation>
+    <desc>
+      retrieves the system time, in milliseconds. The system time is the time 
+      elapsed since Windows was started
+    </desc>
+    <apidoc>
+     <pt>DWORD timeGetTime (void)</pt>
+     <return>the system time, in milliseconds</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="stdcall" name="timeGetTime">
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

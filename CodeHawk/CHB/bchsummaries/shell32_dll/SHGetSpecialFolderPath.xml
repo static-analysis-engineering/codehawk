@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/07/2015 15:49:36"/>
+  <libfun lib="shell32" name="SHGetSpecialFolderPath">
+   <documentation>
+    <desc>
+      Retrieves the path of a special folder, identified by its CSIDL
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL SHGetSpecialFolderPath(</ll>
+      <ld>      HWND   hwndOwner</ld>
+      <ld>_Out_ LPTSTR lpszPath</ld>
+      <ld>_In_  int    csidl</ld>
+      <ld>_In_  BOOL   fCreate</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hwndOwner">Reserved</par>
+     <par name="lpszPath">
+       A pointer to a null-terminated string that receives the drive and
+       path of the specified folder. This buffer must be at least MAX_PATH 
+       characters in size
+     </par>
+     <par name="csidl">
+       A CSIDL that identifies the folder of interest. If a virtual folder 
+       is specified, this function will fail
+     </par>
+     <par name="fCreate">
+       Indicates whether the folder should be created if it does not already 
+       exist. If this value is nonzero, the folder is created. If this value 
+       is zero, the folder is not created
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="SHGetSpecialFolderPath">
+    <par loc="stack" io="r" name="hwndOwner" nr="1">
+     <type>HWND</type>
+     <roles/>
+    </par>
+    <par loc="stack" io="w" name="lpszPath" nr="2" rep="hex">
+     <type>LPTSTR</type>
+      <roles>
+         <role rt="ioc:filesystem" rn="infox:filename"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="csidl" nr="3">
+     <type>int</type>
+      <roles>
+         <role rt="ioc:filesystem" rn="csidl"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="fCreate" roles="none" nr="4">
+     <type>BOOL</type>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="retrieves the path of a special folder"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

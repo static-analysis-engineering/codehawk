@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="ClassInfo.xml" time="2016-11-27 15:58:34.885379"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="ClassInfo" package="System::TObject">
+    <documentation>
+      <desc>
+	Returns a pointer to the run-time type information (RTTI)
+	table for the object type
+      </desc>
+      <apidoc>
+        <pt>ClassInfo (this):Pointer ; inline</pt>
+        <par name="this">this object</par>
+        <return>
+          <rc cond="success">pointer to the RTTI table</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="ClassInfo">
+      <par loc="register" name="this" reg="eax">
+        <type><ptr>void</ptr></type>
+      </par>
+      <returntype><ptr>void</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

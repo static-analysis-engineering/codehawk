@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/04/2015 11:49:38"/>
+  <libfun lib="wininet" name="InternetCrackUrl">
+   <documentation>
+    <desc>Cracks a URL into its component parts</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL InternetCrackUrl(</ll>
+      <ld>_In_     LPCTSTR lpszUrl</ld>
+      <ld>_In_     DWORD dwUrlLength</ld>
+      <ld>_In_     DWORD dwFlags</ld>
+      <ld>_Inout_  LPURL_COMPONENTS lpUrlComponents</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszUrl">
+       Pointer to a string that contains the canonical URL to be cracked
+     </par>
+     <par name="dwUrlLength">
+       Size of the lpszUrl string, in TCHARs, or zero if lpszUrl is an ASCIIZ string
+     </par>
+     <par name="dwFlags">Controls the operation</par>
+     <par name="lpUrlComponents">
+       Pointer to a URL_COMPONENTS structure that receives the URL components
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="InternetCrackUrl">
+    <par loc="stack" io="r" name="lpszUrl" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="url"/>
+        <role rt="rep:hex" rn="url"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwUrlLength" nr="2">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="InternetCrackUrl"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="rw" name="lpUrlComponents" nr="4">
+     <type><ptr>URL_COMPONENTS</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:network" rn="url-components struct"/>
+        <role rt="rep:hex" rn="url-components struct"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="cracks a URL into its component parts"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

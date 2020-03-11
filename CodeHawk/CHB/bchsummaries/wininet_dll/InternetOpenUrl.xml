@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/31/2015 23:28:22"/>
+  <libfun lib="wininet" name="InternetOpenUrl">
+   <documentation>
+    <desc>Opens a resource specified by a complete FTP or HTTP URL</desc>
+    <apidoc>
+     <pt>
+      <ll>HINTERNET InternetOpenUrl(</ll>
+      <ld>_In_ HINTERNET hInternet</ld>
+      <ld>_In_ LPCTSTR   lpszUrl</ld>
+      <ld>_In_ LPCTSTR   lpszHeaders</ld>
+      <ld>_In_ DWORD     dwHeadersLength</ld>
+      <ld>_In_ DWORD     dwFlags</ld>
+      <ld>_In_ DWORD_PTR dwContext</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hInternet">
+       The handle to the current Internet session. The handle must have been returned 
+       by a previous call to InternetOpen.
+     </par>
+     <par name="lpszUrl">
+       A pointer to a null-terminated string variable that specifies the URL to begin
+       reading. Only URLs beginning with ftp:, http:, or https: are supported.
+     </par>
+     <par name="lpszHeaders">
+       A pointer to a null-terminated string that specifies the headers to be sent to 
+       the HTTP server. 
+     </par>
+     <par name="dwHeadersLength">
+       The size of the additional headers, in TCHARs. If this parameter is -1L and 
+       lpszHeaders is not NULL, lpszHeaders is assumed to be zero-terminated (ASCIIZ)
+       and the length is calculated
+     </par>
+     <par name="dwFlags">flags</par>
+     <par name="dwContext">
+       A pointer to a variable that specifies the application-defined value that is
+       passed, along with the returned handle, to any callback functions
+     </par>
+     <return>
+      <rc cond="success">valid handle to the URL</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="InternetOpenUrl">
+    <par loc="stack" io="r" name="hInternet" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszUrl" nr="2">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="url"/>
+        <role rt="rep:hex" rn="url"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszHeaders" nr="3">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="http request headers"/>
+        <role rt="rep:hex" rn="http request headers"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwHeadersLength" nr="4">
+     <type>DOWRD</type>
+     <roles>
+        <role rt="size:buffersize" rn="InternetOpenURL"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none"  nr="5">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwContext" roles="none" nr="6">
+     <type>DWORD_PTR</type>
+    </par>
+    <returntype>HINTERNET</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="opens a URL"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

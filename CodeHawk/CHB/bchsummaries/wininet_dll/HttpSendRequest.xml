@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/04/2015 12:45:11"/>
+  <libfun lib="wininet" name="HttpSendRequest">
+   <documentation>
+    <desc>
+      Sends the specified request to the HTTP server, allowing callers to send 
+      extra data beyond what is normally passed to HttpSendRequestEx
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL HttpSendRequest(</ll>
+      <ld>_In_  HINTERNET hRequest</ld>
+      <ld>_In_  LPCTSTR lpszHeaders</ld>
+      <ld>_In_  DWORD dwHeadersLength</ld>
+      <ld>_In_  LPVOID lpOptional</ld>
+      <ld>_In_  DWORD dwOptionalLength</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hRequest">A handle returned by a call to the HttpOpenRequest function</par>
+     <par name="lpszHeaders">
+       A pointer to a null-terminated string that contains the additional headers to be
+       appended to the request. This parameter can be NULL if there are no additional 
+       headers to be appended
+     </par>
+     <par name="dwHeadersLength">
+       The size of the additional headers, in TCHARs. If this parameter is -1L and 
+       lpszHeaders is not NULL, the function assumes that lpszHeaders is 
+       zero-terminated (ASCIIZ), and the length is calculated.
+     </par>
+     <par name="lpOptional">
+       A pointer to a buffer containing any optional data to be sent immediately 
+       after the request headers. This parameter is generally used for POST and PUT
+       operations. The optional data can be the resource or information being posted 
+       to the server. This parameter can be NULL if there is no optional data to send
+     </par>
+     <par name="dwOptionalLength">
+       The size of the optional data, in bytes. This parameter can be zero if there
+       is no optional data to send.
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="HttpSendRequest">
+    <par loc="stack" io="r" name="hRequest" nr="1">
+     <type>HINTERNET</type>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="lpszHeaders" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <roles>
+       <role rt="ioc:network" rn="http request headers"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwHeadersLength" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="HttpSendRequest"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpOptional" nr="4" rep="hex">
+     <type>LPVOID</type>
+     <roles>
+       <role rt="ioc:memops" rn="src-bytes:network output"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwOptionalLength" nr="5">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="HttpSendRequest"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="sends a request to an HTTP server"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><eq/><ci>dwHeadersLength</ci><cn>0xffffffff</cn></apply>
+	    <apply>
+	      <deref-read-nt/>
+	      <type>TCHAR</type>
+	      <ci>lpszHeaders</ci>
+	      <apply>
+		<indexsize/>
+		<apply><null-terminator-pos/><ci>lpszHeaders</ci></apply>
+	      </apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <implies/>
+	    <apply><neq/><ci>dwHeadersLength</ci><cn>0xffffffff</cn></apply>
+	    <apply>
+	      <deref-read-nt/>
+	      <type>TCHAR</type>
+	      <ci>lpszHeaders</ci>
+	      <apply><indexsize/><ci>dwHeadersLength</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read-null/>
+	    <type>byte</type>
+	    <ci>lpOptional</ci>
+	    <ci>dwOptionalLength</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>      
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+    <external-effects>
+      <xeffect xtgt="internet" xaction="send http request"/>
+    </external-effects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

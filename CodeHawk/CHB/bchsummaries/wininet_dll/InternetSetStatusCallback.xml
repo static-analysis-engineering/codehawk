@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/24/2015 18:10:31"/>
+  <libfun lib="wininet" name="InternetSetStatusCallback">
+   <documentation>
+    <desc>
+      sets up a callback function 
+      that WinINet functions can call as progress is made during an operation
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>INTERNET_STATUS_CALLBACK InternetSetStatusCallback(</ll>
+      <ld>_In_ HINTERNET                hInternet</ld>
+      <ld>_In_ INTERNET_STATUS_CALLBACK lpfnInternetCallback</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hInternet">The handle for which the callback is set</par>
+     <par name="lpfnInternetCallback">
+       A pointer to the callback function to call when progress is made, or
+       NULL to remove the existing callback function
+     </par>
+     <return>
+       Returns the previously defined status callback function if successful, 
+       NULL if there was no previously defined status callback function, or 
+       INTERNET_INVALID_STATUS_CALLBACK if the callback function is not valid.
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="InternetSetStatusCallback">
+    <par loc="stack" io="r" name="hInternet" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpfnInternetCallback" nr="2" rep="hex">
+     <type>INTERNET_STATUS_CALLBACK</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:network" rn="callbackf:internet"/>
+     </roles>
+    </par>
+    <returntype>INTERNET_STATUS_CALLBACK</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="sets up callback function for WinINet functions to call"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

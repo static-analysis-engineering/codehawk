@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2019-10-24 19:37:28"/>
+  <libfun name="dcgettext">
+    <documentation>
+      <desc>
+	attempts to translate a text string into the user's
+	native language, by looking up the translation in a
+	message catalog
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>char *dcgettext(</ll>
+          <ld>const char *domainname</ld>
+          <ld>const char* msgid</ld>
+          <ld>int category</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="domainname">
+	  A message domain is a set of translatable msgid messages
+	</par>
+        <par name="msgid">
+	  The msgid argument identifies the message to be translated
+	</par>
+        <par name="category">
+	  the locale facet is determined by the category argument
+	</par>
+        <return>
+          <rc cond="success">
+	    If a translation was found in one of the specified
+	    catalogs, it is converted to the locale's codeset and
+	    returned. The resulting string is statically allocated and
+	    must not be modified or freed. 
+	  </rc>
+          <rc cond="failure">msgid</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="dcgettext">
+      <par loc="stack" name="domainname" io="r" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="msgid" io="r" nr="2">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="category" nr="3">
+        <type>int</type>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

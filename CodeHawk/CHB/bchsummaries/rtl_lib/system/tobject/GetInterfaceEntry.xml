@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="GetInterfaceEntry.xml" time="2016-11-29 15:26:28.295644"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="GetInterfaceEntry" package="System::TObject">
+    <documentation>
+      <desc>Returns the entry for a specific interface implemented in a class</desc>
+      <apidoc>
+        <pt>
+          <ll>GetInterfaceEntry(</ll>
+          <ld>this</ld>
+          <ld>const IID:TGUID</ld>
+          <ll>)PInterfaceEntry</ll>
+        </pt>
+        <par name="this">this object</par>
+        <par name="IID">interface identifier</par>
+        <return>
+          <rc cond="success">pointer to interface</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="GetInterfaceEntry">
+      <par loc="register" name="this" reg="eax" roles="none" rep="hex">
+        <type><ptr>void</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="register" name="IID" rep="hex" reg="edx">
+        <type><ptr>GUID</ptr></type>
+      </par>
+      <returntype><ptr>InterfaceEntry</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

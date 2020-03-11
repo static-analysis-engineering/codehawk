@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 03:49:33"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ws2_32" name="WSACloseEvent">
+   <documentation>
+    <desc>closes an open event object handle </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WSACloseEvent(</ll>
+      <ld>_In_  WSAEVENT hEvent</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       <rc cond="success">TRUE</rc>
+       <rc cond="failure">FALSE</rc>
+     </return>
+     <par name="hEvent">Object handle identifying the open event. </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="WSACloseEvent">
+    <returnbtype tname="BOOL" ttag="tnamed"/>
+    <par loc="stack" desc="event object handle" io="r" name="hEvent" nr="1">
+     <btype tname="WSAEVENT" ttag="tnamed"/>
+     <roles>
+        <role rt="ioc:network" rn="event object"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+        <io-action cat="network" desc="closes an event object handle"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

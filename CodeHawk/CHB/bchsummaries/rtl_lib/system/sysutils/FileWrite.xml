@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FileWrite.xml" time="2016-11-27 21:26:49.563742"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="FileWrite" package="System::SysUtils">
+    <documentation>
+      <desc>Writes the contents of a buffer to the current position in a file</desc>
+      <apidoc>
+        <pt>
+          <ll>FileWrite(</ll>
+          <ld>const Handle:THandle</ld>
+          <ld>const Buffer</ld>
+          <ld>const Count:Integer</ld>
+          <ll>):Integer</ll>
+        </pt>
+        <par name="Handle">handle to the file to be written</par>
+        <par name="Buffer">pointer to buffer to be written to file</par>
+        <par name="Count">number of bytes to be written</par>
+        <return>
+          <rc cond="success">non-negative</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="FileWrite">
+      <par loc="register" name="Handle" reg="eax">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="handle:file"/>
+	</roles>
+      </par>
+      <par loc="register" name="Buffer" reg="edx" rep="hex">
+        <type><ptr>void</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-bytes:file output"/>
+	</roles>
+      </par>
+      <par loc="register" name="Count" reg="ecx">
+        <type>int</type>
+	<roles>
+	  <role rt="size:count" rn="bytes to be written"/>
+	</roles>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="writes to a file"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>BYTE</type>
+	      <ci>Buffer</ci>
+	      <ci>Count</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+        <nonnegative-negative/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

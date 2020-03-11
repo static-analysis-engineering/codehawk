@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 06:09:23"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="shell32" name="ShellExecuteEx">
+   <documentation>
+    <desc>Performs an operation on a specified file. </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ShellExecuteEx(</ll>
+      <ld>_Inout_  SHELLEXECUTEINFO *pExecInfo </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">true</rc>
+      <rc cond="failure">false</rc>
+     </return>
+     <par name="pExecInfo">
+       A pointer to a SHELLEXECUTEINFO structure that contains and receives 
+       information about the application being executed.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ShellExecuteEx">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="rw" name="pExecInfo" nr="1">
+      <type><ptr>SHELLEXECUTEINFO</ptr></type>
+      <pre><deref-read/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+         <role rt="ioc:system" rn="shell execution info"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="executes an application"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

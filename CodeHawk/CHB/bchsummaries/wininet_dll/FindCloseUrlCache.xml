@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FindCloseUrlCache.xml" time="2016-05-12 23:14:50.972441"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="wininet" name="FindCloseUrlCache">
+    <documentation>
+      <desc>Closes the specified cache enumeration handle</desc>
+      <apidoc>
+        <pt>BOOLAPI FindCloseUrlCache (_In_ HANDLE hEnumHandle)</pt>
+        <par name="hEnumHandle">
+	  Handle returned by a previous call to the FindFirstUrlCacheEntry function
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="FindCloseUrlCache">
+      <par loc="stack" name="hEnumHandle" io="r" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:network" rn=" cache enumeration handle"/>
+	  <role rt="rep:hex" rn="cache enumeration handle"/>
+	</roles>
+      </par>
+      <returntype>TRUE</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network"
+		   desc="closes a URL cache enumeration handle"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

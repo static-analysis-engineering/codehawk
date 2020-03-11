@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/04/2015 13:02:49"/>
+  <libfun lib="wininet" name="HttpQueryInfo">
+   <documentation>
+    <desc>Retrieves header information associated with an HTTP request</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL HttpQueryInfo(</ll>
+      <ld>_In_     HINTERNET hRequest</ld>
+      <ld>_In_     DWORD dwInfoLevel</ld>
+      <ld>_Inout_  LPVOID lpvBuffer</ld>
+      <ld>_Inout_  LPDWORD lpdwBufferLength</ld>
+      <ld>_Inout_  LPDWORD lpdwIndex</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hRequest">
+       A handle returned by a call to the HttpOpenRequest or InternetOpenUrl function
+     </par>
+     <par name="dwInfoLevel">
+       A combination of an attribute to be retrieved and flags that modify the request
+     </par>
+     <par name="lpvBuffer">
+       A pointer to a buffer to receive the requested information. This parameter must 
+       not be NULL
+     </par>
+     <par name="lpdwBufferLength">
+       A pointer to a variable that contains, on entry, the size in bytes of the buffer 
+       pointed to by lpvBuffer.
+       When the function returns successfully, this variable contains the number of 
+       bytes of information written to the buffer. In the case of a string, the 
+       byte count does not include the string's terminating null character.
+       When the function fails with an extended error code of ERROR_INSUFFICIENT_BUFFER, 
+       the variable pointed to by lpdwBufferLength contains on exit the size, in bytes, 
+       of a buffer large enough to receive the requested information. The calling 
+       application can then allocate a buffer of this size or larger, and call the 
+       function again
+     </par>
+     <par name="lpdwIndex">
+       A pointer to a zero-based header index used to enumerate multiple headers with 
+       the same name. When calling the function, this parameter is the index of the 
+       specified header to return. When the function returns, this parameter is the 
+       index of the next header. If the next index cannot be found, 
+       ERROR_HTTP_HEADER_NOT_FOUND is returned
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="HttpQueryInfo">
+    <par loc="stack" desc="http request handle" io="r" name="hRequest" nr="1">
+     <type>HINTERNET</type>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" desc="info level" io="r" name="dwInfoLevel" nr="2">
+      <rep type="enum" name="http_query_info_flags" flags="true"/>
+     <type>DWORD</type>
+     <roles>
+       <role rt="ioc:network" rn="type:http information request"/>
+     </roles>
+     <pre><enum-value name="http_query_info_flags" flags="true"/></pre>
+    </par>
+    <par loc="stack" desc="buffer" io="w" name="lpvBuffer" nr="3" rep="hex">
+     <type>LPVOID</type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-bytes:network input"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="buffersize" io="rw" name="lpdwBufferLength" nr="4">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+       <rile rt="size:buffersize" rn="HttpQueryInfo"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" desc="header index" io="rw" name="lpdwIndex" nr="5">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+       <role rt="size:index" rn="http header index"/>
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="retrieves header information associated with an HTTP request"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>byte</type>
+	    <ci>lpvBuffer</ci>
+	    <apply><addressed-value/><ci>lpdwBufferLength</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>byte</type>
+	    <ci>lpvBuffer</ci>
+	    <apply><addressed-value/><ci>lpdwBufferLength</ci><cn>0</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+    <external-effects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

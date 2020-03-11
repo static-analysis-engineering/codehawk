@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="07/09/2015 22:31:07"/>
+  <libfun lib="shell32" name="SHGetPathFromIDList">
+   <documentation>
+    <desc>Converts an item identifier list to a file system path</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL SHGetPathFromIDList(</ll>
+      <ld>_In_  PCIDLIST_ABSOLUTE pidl</ld>
+      <ld>_Out_ LPTSTR            pszPath</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pidl">
+       The address of an item identifier list that specifies a file or directory 
+       location relative to the root of the namespace (the desktop).
+     </par>
+     <par name="pszPath">
+       The address of a buffer to receive the file system path. This buffer must 
+       be at least MAX_PATH characters in size.
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="SHGetPathFromIDList">
+    <par loc="stack" io="r" name="pidl" nr="1" rep="hex">
+     <type>PCIDLIST_ABSOLUTE</type>
+     <roles>
+        <role rt="ioc:filesystem" rn="item identifier list"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="pszPath" nr="2" rep="hex">
+     <type>LPTSTR</type>
+     <roles>
+        <role rt="ioc:filesystem" rn="infox:filename"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="converts ID list to file system path"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>pszPath</ci>
+	    <apply><indexsize/><cn>260</cn></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="file system" xdata="path to file"/>
+	    <type>TCHAR</type>
+	    <ci>pszPath</ci>
+	    <apply><indexsize/><cn>260</cn></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

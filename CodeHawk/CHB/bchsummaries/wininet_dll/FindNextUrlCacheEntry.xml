@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FindNextUrlCacheEntry.xml" time="2016-05-12 23:53:17.659059"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="wininet" name="FindNextUrlCacheEntry">
+    <documentation>
+      <desc>Retrieves the next entry in the Internet cache</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOLAPI FindNextUrlCachEntry(</ll>
+          <ld>_In_    HANDLE                      hEnumHandle</ld>
+          <ld>_Out_   LPINTERNET_CACHE_ENTRY_INFO lpNextCacheEntryInfo</ld>
+          <ld>_Inout_ LPDWORD                     lpcbCacheEntryInfo</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hEnumHandle">
+	  Handle to the enumeration obtained from a previous call to FindFirstUrlCacheEntry.
+	</par>
+        <par name="lpNextCacheEntryInfo">
+	  Pointer to an INTERNET_CACHE_ENTRY_INFO structure that
+	  receives information about the cache entry.
+	</par>
+        <par name="lpcbCacheEntryInfo">
+	  Pointer to a variable that specifies the size of the
+	  lpNextCacheEntryInfo buffer, in bytes. When the function
+	  returns, the variable contains the number of bytes copied to
+	  the buffer, or the size of the buffer required to retrieve
+	  the cache entry, in bytes.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="FindNextUrlCacheEntry">
+      <par loc="stack" name="hEnumHandle" io="r" nr="1">
+        <type>HANDLE</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="internet cache enumeration handle"/>
+	  <role rt="rep:hex" rn="internet cache enumeration handle"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpNextCacheEntryInfo" io="w" nr="2">
+        <type><ptr>INTERNET_CACHE_ENTRY_INFO</ptr></type>
+	<roles>
+	  <role rt="ioc:network" rn="internet cache entry info"/>
+	  <role rt="rep:hex" rn="internet cache entry info"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpcbCacheEntryInfo" io="rw" nr="3">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="size:buffersize" rn="FindNextUrlCacheEntry"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network"
+		   desc="retrieves the next entry in the internet cache"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>INTERNET_CACHE_ENTRY_INFO</type>
+	      <ci>lpNextCacheEntryInfo</ci>
+	      <apply><addressed-value/><ci>lpcbCacheEntryInfo</ci><cn>0</cn></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>INTERNET_CACHE_ENTRY_INFO</type>
+	      <ci>lpNextCacheEntryInfo</ci>
+	      <apply><addressed-value/><ci>lpcbCacheEntryInfo</ci><cn>0</cn></apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

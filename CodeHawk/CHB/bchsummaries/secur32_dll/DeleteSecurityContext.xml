@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/16/2015 10:53:39"/>
+  <libfun lib="secur32" name="DeleteSecurityContext">
+   <documentation>
+    <desc>
+      deletes the local data structures associated with the specified security 
+      context initiated by a previous call to the InitializeSecurityContext 
+      (General) function or the AcceptSecurityContext (General) function
+    </desc>
+    <apidoc>
+     <pt>SECURITY_STATUS SEC_Entry DeleteSecurityContext (_In_ PCtxtHandle phContext)</pt>
+     <par name="phContext">Handle of the security context to delete</par>
+     <return>
+      <rc cond="success">SEC_E_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="DeleteSecurityContext">
+    <par loc="stack" io="r" name="phContext" rep="hex" nr="1">
+     <type><ptr>CtxtHandle</ptr></type>
+     <roles>
+       <role rt="ioc:crypto" rn="handle:security context"/>
+     </roles>
+    </par>
+    <returntype>SECURITY_STATUS SEC_Entry</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system" desc="deletes the security context"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

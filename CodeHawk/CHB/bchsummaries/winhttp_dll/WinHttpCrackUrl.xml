@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="WinHttpCrackUrl.xml" time="2016-03-06 16:07:43.053797"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun name="WinHttpCrackUrl" lib="winhttp">
+    <documentation>
+      <desc>
+	separates a URL into its component parts such as host name and path
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI WinHttpCrackUrl(</ll>
+          <ld>_In_    LPCWSTR          pwszUrl</ld>
+          <ld>_In_    DWORD            dwUrlLength</ld>
+          <ld>_In_    DWORD            dwFlags</ld>
+          <ld>_Inout_ LPURL_COMPONENTS lpUrlComponents</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pwszUrl">
+	  Pointer to a string that contains the canonical URL to
+	  separate. WinHttpCrackUrl does not check this URL for
+	  validity or correct format before attempting to crack it.
+	</par>
+        <par name="dwUrlLength">
+	  The length of the pwszUrl string, in characters. If
+	  dwUrlLength is set to zero, WinHttpCrackUrl assumes that the
+	  pwszUrl string is null terminated and determines the length
+	  of the pwszUrl string based on that assumption.
+	</par>
+        <par name="dwFlags">The flags that control the operation</par>
+        <par name="lpUrlComponents">
+	  Pointer to a URL_COMPONENTS structure that receives the URL components
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="stdcall" adj="16" name="WinHttpCrackUrl">
+      <par loc="stack" io="r" nr="1" name="pwszUrl">
+        <type>LPCWSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="url"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" nr="2" name="dwUrlLength">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:buffersize" rn="WinHttpCrackUrl"/>
+	</roles>
+      </par>
+      <par loc="stack" io="r" nr="3" name="dwFlags">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="ioc:network" rn="url cracking flags"/>
+	</roles>
+      </par>
+      <par loc="stack" io="rw" nr="4" name="lpUrlComponents">
+        <type><ptr>URL_COMPONENTS</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+	<roles>
+	  <role rt="ioc:network" rn="url components"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network" desc="separates a URL into its components"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

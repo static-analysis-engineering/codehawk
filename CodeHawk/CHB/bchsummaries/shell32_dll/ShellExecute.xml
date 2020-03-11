@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 06:08:44"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="shell32" name="ShellExecute">
+   <documentation>
+    <desc>Performs an operation on a specified file. </desc>
+    <apidoc>
+     <pt>
+      <ll>HINSTANCE ShellExecute(</ll>
+      <ld>_In_opt_  HWND hwnd </ld>
+      <ld>_In_opt_  LPCTSTR lpOperation</ld>
+      <ld>_In_      LPCTSTR lpFile</ld>
+      <ld>_In_opt_  LPCTSTR lpParameters</ld>
+      <ld>_In_opt_  LPCTSTR lpDirectory</ld>
+      <ld>_In_      INT nShowCmd</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">greater than 32 </rc>
+      <rc cond="failure">less than or equal to 32 </rc>
+     </return>
+     <par name="hwnd">
+       A handle to the parent window used for displaying a UI or error messages. 
+       This value can be NULL if the operation is not associated with a window. 
+     </par>
+     <par name="lpOperation">
+       A pointer to a null-terminated string, referred to in this case as a verb, 
+       that specifies the action to be performed.
+     </par>
+     <par name="lpFile">
+       A pointer to a null-terminated string that specifies the file or object on 
+       which to execute the specified verb. 
+     </par>
+     <par name="lpParameters">
+       If lpFile specifies an executable file, this parameter is a pointer to a 
+       null-terminated string that specifies the parameters to be passed to the application.
+     </par>
+     <par name="lpDirectory">
+       A pointer to a null-terminated string that specifies the default (working) 
+       directory for the action. If this value is NULL, the current working 
+       directory is used. 
+     </par>
+     <par name="nShowCmd">
+       The flags that specify how an application is to be displayed when it is opened. 
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="ShellExecute">
+     <returntype>HINSTANCE</returntype>
+     <par loc="stack" io="r" name="hwnd" nr="1">
+       <type>HWND</type>
+       <pre><deref-read-null/></pre>
+       <roles>
+         <role rt="ioc:process" rn="handle:window"/>
+       </roles>
+     </par>
+    <par loc="stack" io="r" name="lpOperation" nr="2" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:system" rn="shell operation:command"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpFile" nr="3" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+         <role rt="ioc:system" rn="shell operation:target"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpParameters" nr="4"  rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:system" rn="shell operation:parameters"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="lpDirectory" nr="5" rep="hex">
+      <type>LPCTSTR</type>
+      <pre><deref-read-null-nt/></pre>
+      <roles>
+         <role rt="ioc:filesystem" rn="name:file"/>
+         <role rt="ioc:system" rn="shell operation:working directory"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="nShowCmd" nr="6">
+      <rep type="enum" name="show_command_constants"/>
+      <type>INT</type>
+      <pre><enum-value name="show_command_constants"/></pre>
+      <roles>
+        <role rt="ioc:system" rn="shell operation:show command"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="execute shell command"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <gt/>
+        <return-value/>
+        <cn>32</cn>
+       </apply>
+      </math>
+     </post>
+     <error-post>
+      <math>
+       <apply>
+        <leq/>
+        <return-value/>
+        <cn>32</cn>
+       </apply>
+      </math>
+     </error-post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

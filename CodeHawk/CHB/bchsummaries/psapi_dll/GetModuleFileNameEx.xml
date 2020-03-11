@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/25/2016 15:12:33"/>
+  <libfun lib="psapi" name="GetModuleFileNameEx">
+   <documentation>
+     <remarks>
+       The GetModuleFileNameEx function is primarily designed for use
+       by debuggers and similar applications that must extract module
+       information from another process. If the module list in the
+       target process is corrupted or is not yet initialized, or if
+       the module list changes during the function call as a result of
+       DLLs being loaded or unloaded, GetModuleFileNameEx may fail or
+       return incorrect information.
+     </remarks>
+    <desc>
+      Retrieves the fully qualified path for the file containing the 
+      specified module
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetModuleFileNameEx(</ll>
+      <ld>_In_     HANDLE  hProcess</ld>
+      <ld>_In_opt_ HMODULE hModule</ld>
+      <ld>_Out_    LPTSTR  lpFilename</ld>
+      <ld>_In_     DWORD   nSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hProcess">
+       A handle to the process that contains the module.  The handle
+       must have the PROCESS_QUERY_INFORMATION and PROCESS_VM_READ
+       access rights. For more information, see Process Security and
+       Access Rights.  
+       The GetModuleFileNameEx function does not
+       retrieve the path for modules that were loaded using the
+       LOAD_LIBRARY_AS_DATAFILE flag. For more information, see
+       LoadLibraryEx.
+     </par>
+     <par name="hModule">
+       A handle to the module. If this parameter is NULL,
+       GetModuleFileNameEx returns the path of the executable file of
+       the process specified in hProcess.
+     </par>
+     <par name="lpFilename">
+       A pointer to a buffer that receives the fully qualified path to
+       the module. If the size of the file name is larger than the
+       value of the nSize parameter, the function succeeds but the
+       file name is truncated and null-terminated.
+     </par>
+     <par name="nSize">The size of the lpFilename buffer, in characters</par>
+     <return>
+      <rc cond="success">length of the string copied to the buffer</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" io="r" name="GetModuleFileNameEx">
+    <par loc="stack" name="hProcess" io="r" nr="1">
+     <type>HANDLE</type>
+     <roles>
+       <role rt="ioc:process" rn="handle:process"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="hModule" nr="2">
+     <type>HMODULE</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:module"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpFilename" nr="3">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+       <role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nSize" nr="4">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="GetModuleFileNameEx"/>
+     </roles>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="process" desc="retrieves the pathname for the module"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpFilename</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <positive-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>TCHAR</type>
+	    <ci>lpFilename</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

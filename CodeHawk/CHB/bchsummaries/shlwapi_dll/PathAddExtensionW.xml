@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="PathAddExtensionW.xml" time="2016-06-18 21:59:32.311600"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="PathAddExtensionW">
+    <refer-to char-type="unicode" name="PathAddExtension"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

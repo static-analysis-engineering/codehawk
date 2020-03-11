@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/18/2015 07:51:42"/>
+  <libfun lib="winmm" name="waveInReset">
+   <documentation>
+    <desc>
+      stops input on the given waveform-audio input device and resets 
+      the current position to zero. All pending buffers are marked as 
+      done and returned to the application
+    </desc>
+    <apidoc>
+     <pt>MMRESULT waveInReset (HWAVEIN hwi)</pt>
+     <par name="hwi">Handle to the waveform-audio input device</par>
+     <return>
+      <rc cond="success">MMSYSERR_NOERROR</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="waveInReset">
+    <par loc="stack" io="r" name="hwi" nr="1">
+     <type>HWAVEIN</type>
+     <roles>
+      <role rt="ioc:system" rn="handle:waveform-audio input device" />
+     </roles>
+    </par>
+    <returntype>MMRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system"
+		 desc="stops input on a waveform-audio input device"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

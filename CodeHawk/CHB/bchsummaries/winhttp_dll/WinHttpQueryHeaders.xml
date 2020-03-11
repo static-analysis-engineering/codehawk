@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="WinHttpQueryHeaders.xml" time="2016-05-11 23:48:53.480323"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="winhttp" name="WinHttpQueryHeaders">
+    <documentation>
+      <desc>retrieves header information associated with an HTTP request</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI WinHttpQueryHeaders(</ll>
+          <ld>_In_     HINTERNET hRequest</ld>
+          <ld>_In_     DWORD     dwInfoLevel</ld>
+          <ld>_In_opt_ LPCWSTR   pwszName</ld>
+          <ld>_Out_    LPVOID    lpBuffer</ld>
+          <ld>_Inout_  LPDWORD   lpdwBufferLength</ld>
+          <ld>_Inout_  LPDWORD   lpdwIndex</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hRequest">
+	  HINTERNET request handle returned by
+	  WinHttpOpenRequest. WinHttpReceiveResponse must have been
+	  called for this handle and have completed before
+	  WinHttpQueryHeaders is called.
+	</par>
+        <par name="dwInfoLevel">
+	  Value of type DWORD that specifies a combination of
+	  attribute and modifier flags listed on the Query Info Flags
+	  page. These attribute and modifier flags indicate that the
+	  information is being requested and how it is to be
+	  formatted.
+	</par>
+        <par name="pwszName">
+	  Pointer to a string that contains the header name. If the
+	  flag in dwInfoLevel is not WINHTTP_QUERY_CUSTOM, set this
+	  parameter to WINHTTP_HEADER_NAME_BY_INDEX.
+	</par>
+        <par name="lpBuffer">
+	  Pointer to the buffer that receives the information. Setting
+	  this parameter to WINHTTP_NO_OUTPUT_BUFFER causes this
+	  function to return FALSE. Calling GetLastError then returns
+	  ERROR_INSUFFICIENT_BUFFER and lpdwBufferLength contains the
+	  number of bytes required to hold the requested information.
+	</par>
+        <par name="lpdwBufferLength">
+	  Pointer to a value of type DWORD that specifies the length
+	  of the data buffer, in bytes. When the function returns,
+	  this parameter contains the pointer to a value that
+	  specifies the length of the information written to the
+	  buffer. When the function returns strings, the following
+	  rules apply.
+
+	  If the function succeeds, lpdwBufferLength specifies the
+	  length of the string, in bytes, minus 2 for the terminating
+	  null.  
+	  If the function fails and ERROR_INSUFFICIENT_BUFFER
+	  is returned, lpdwBufferLength specifies the number of bytes
+	  that the application must allocate to receive the string.
+	</par>
+        <par name="lpdwIndex">
+	  Pointer to a zero-based header index used to enumerate
+	  multiple headers with the same name. When calling the
+	  function, this parameter is the index of the specified
+	  header to return. When the function returns, this parameter
+	  is the index of the next header. If the next index cannot be
+	  found, ERROR_WINHTTP_HEADER_NOT_FOUND is returned. Set this
+	  parameter to WINHTTP_NO_HEADER_INDEX to specify that only
+	  the first occurrence of a header should be returned.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="24" cc="stdcall" name="WinHttpQueryHeaders">
+      <par loc="stack" name="hRequest" io="r" nr="1">
+        <type>HINTERNET</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="handle:internet"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwInfoLevel" roles="none" io="r" nr="2">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="pwszName" io="r" rep="hex" nr="3">
+        <type>LPCWSTR</type>
+	<pre><deref-read-null-nt/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="name:http header"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpBuffer" io="w" rep="hex" nr="4">
+        <type><ptr>void</ptr></type>
+	<roles>
+	  <role rt="ioc:network" rn="infox:http header info"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpdwBufferLength" rep="hex" io="rw" nr="5">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="size:buffersize" rn="WinHttpQueryHeaders"/>
+	</roles>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <par loc="stack" name="lpdwIndex" io="rw" rep="hex" roles="none" nr="6">
+        <type><ptr>DWORD</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network"
+		   desc="retrieves header info associated with an HTTP request"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>wchar_t</type>
+	      <ci>lpBuffer</ci>
+	      <apply><addressed-value/><ci>lpdwBufferLength</ci><cn>0</cn></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

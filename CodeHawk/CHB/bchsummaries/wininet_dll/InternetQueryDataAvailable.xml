@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="08/31/2015 23:37:24"/>
+  <libfun lib="wininet" name="InternetQueryDataAvailable">
+   <documentation>
+    <desc>Queries the server to determine the amount of data available</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL InternetQueryDataAvailable(</ll>
+      <ld>_In_  HINTERNET hFile</ld>
+      <ld>_Out_ LPDWORD   lpdwNumberOfBytesAvailable</ld>
+      <ld>_In_  DWORD     dwFlags</ld>
+      <ld>_In_  DWORD_PTR dwContext</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hFile">
+       Handle returned by the InternetOpenUrl, FtpOpenFile, GopherOpenFile, or 
+       HttpOpenRequest function
+     </par>
+     <par name="lpdwNumberOfBytesAvailable">
+       Pointer to a variable that receives the number of available bytes. May be NULL
+     </par>
+     <par name="dwFlags">This parameter is reserved and must be 0</par>
+     <par name="dwContext">This parameter is reserved and must be 0</par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="InternetQueryDataAvailable">
+    <par loc="stack" io="r" name="hFile" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpdwNumberOfBytesAvailable" roles="none" nr="2">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwContext" nr="4" rep="hex">
+     <type>DWORD_PTR</type>
+     <roles>
+       <role rt="ioc:network" rn="application context"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="queries the server to determine the amount of data available"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

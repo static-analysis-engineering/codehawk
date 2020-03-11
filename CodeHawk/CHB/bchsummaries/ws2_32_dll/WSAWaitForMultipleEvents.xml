@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/09/2015 10:04:31"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ws2_32" name="WSAWaitForMultipleEvents">
+   <documentation>
+    <desc>
+      returns when one or all of the specified event objects are in the signaled 
+      state, when the time-out interval expires, or when an I/O completion routine
+      has executed.
+   </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WSAWaitForMultipleEvents (</ll>
+      <ld>_In_  DWORD cEvents</ld>
+      <ld>_In_  const WSAEVENT *lphEvents</ld>
+      <ld>_In_  BOOL fWaitAll</ld>
+      <ld>_In_  DWORD dwTimeout</ld>
+      <ld>_In_  BOOL fAlertable</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="cEvents">
+       The number of event object handles in the array pointed to by lphEvents.
+     </par>
+     <par name="lphEvents">A pointer to an array of event object handles.</par>
+     <par name="fWaitAll">A value that specifies the wait type.</par>
+     <par name="dwTimeout">The time-out interval, in milliseconds. </par>
+     <par name="fAlertable">
+       A value that specifies whether the thread is placed in an alertable wait 
+       state so the system can execute I/O completion routines.
+     </par>
+     <return>
+       <rc cond="success">non-negative</rc>
+       <rc cond="failure">WSA_WAIT_FAILED</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="WSAWaitForMultipleEvents">
+    <returnbtype ikind="iuint" ttag="tint"/>
+    <par loc="stack" desc="number of events" io="r" name="cEvents" nr="1">
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:network" rn="number of events"/>
+        <role rt="ioc:synchronization" rn="number of events"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="event object handles" io="r" name="lphEvents" nr="2">
+     <btype ttag="tptr">
+      <typ tname="WSAEVENT" ttag="tnamed"/>
+     </btype>
+     <roles>
+        <role rt="ioc:network" rn="event objects"/>
+        <role rt="ioc:synchronization" rn="event objects"/>
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" desc="waitforall?" io="r" roles="none" name="fWaitAll" nr="3">
+     <btype tname="BOOL" ttag="tnamed"/>
+     <roles/>
+    </par>
+    <par loc="stack" desc="timeout" io="r" name="dwTimeout" nr="4">
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:synchronization" rn="timeout"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="alertable?" io="r" roles="none" name="fAlertable" nr="5">
+     <btype tname="BOOL" ttag="tnamed"/>
+     <roles/>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="waits for event objects to be in a signaled state"/>
+       <io-action cat="synchronization"
+		  desc="waits for event objects to be in a signaled state"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

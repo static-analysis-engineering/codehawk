@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/26/2014 14:08:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="wininet" name="InternetGetConnectedState">
+   <documentation>
+     <desc>
+       Retrieves the connected state of the local system
+     </desc>
+    <apidoc>
+     <pt>
+      <ll>InternetGetConnectedState(</ll>
+      <ld>_Out_  LPDWORD lpdwFlags,</ld>
+      <ld>_In_   DWORD dwReserved</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+       Returns TRUE if there is an active modem or a LAN Internet connection, 
+       or FALSE if there is no Internet connection, or if all possible Internet 
+       connections are not currently active.
+     </return>
+     <par name="lpdwFlags">
+       Pointer to a variable that receives the connection description. This 
+       parameter may return a valid flag even when the function returns FALSE. 
+       This parameter can be one or more of the following values. 
+     </par>
+     <par name="dwReserved">This parameter is reserved and must be 0.
+    </par>
+    </apidoc>
+   </documentation>
+   <api adj="8" cc="stdcall" name="InternetGetConnectedState">
+     <returntype>BOOL</returntype>
+    <par loc="stack" io="w" name="lpdwFlags" nr="1">
+      <type><ptr>DWORD</ptr></type>
+      <pre><deref-write/></pre>
+      <sideeffects><block-write/></sideeffects>
+      <roles>
+	<role rt="ioc:network" rn="internet connection description"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="dwReserved" roles="none" nr="2">
+      <type>DWORD</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" desc="retrieves the connected state of the local system"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

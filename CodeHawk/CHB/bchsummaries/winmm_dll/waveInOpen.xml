@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/18/2015 07:55:15"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="winmm" name="waveInOpen">
+   <documentation>
+    <desc>opens the given waveform-audio input device for recording</desc>
+    <apidoc>
+     <pt>
+      <ll>MMRESULT waveInOpen(</ll>
+      <ld>Out LPHWAVEIN       phwi</ld>
+      <ld>In  UINT            uDeviceID</ld>
+      <ld>    LPCWAVEFORMATEX pwfx</ld>
+      <ld>In  DWORD_PTR       dwCallback</ld>
+      <ld>In  DWORD_PTR       dwCallbackInstance</ld>
+      <ld>In  DWORD           fdwOpen</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="phwi">
+       Pointer to a buffer that receives a handle identifying the open 
+       waveform-audio input device. Use this handle to identify the device 
+       when calling other waveform-audio input functions. This parameter 
+       can be NULL if WAVE_FORMAT_QUERY is specified for fdwOpen
+     </par>
+     <par name="uDeviceID">
+       Identifier of the waveform-audio input device to open. It can be
+       either a device identifier or a handle of an open waveform-audio 
+       input device
+     </par>
+     <par name="pwfx">
+       Pointer to a WAVEFORMATEX structure that identifies the desired format 
+       for recording waveform-audio data. You can free this structure immediately 
+       after waveInOpen returns
+     </par>
+     <par name="dwCallback">
+       Pointer to a fixed callback function, an event handle, a handle to a
+       window, or the identifier of a thread to be called during waveform-audio 
+       recording to process messages related to the progress of recording. If 
+       no callback function is required, this value can be zero.
+     </par>
+     <par name="dwCallbackInstance">
+       User-instance data passed to the callback mechanism. This parameter is 
+       not used with the window callback mechanism
+     </par>
+     <par name="fdwOpen">Flags for opening the device</par>
+     <return>
+      <rc cond="success">MMSYSERR_NOERROR</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="waveInOpen">
+    <par loc="stack" io="r" name="phwi" nr="1">
+     <type><ptr>HWAVEIN</ptr></type>
+     <roles>
+      <role rt="ioc:system" rn="infox:handle to waveform-audio input device" />
+     </roles>
+     <pre><deref-write-null/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <par loc="stack" io="r" name="uDeviceID" nr="2">
+     <type>UINT</type>
+     <roles>
+      <role rt="ioc:system" rn="id:device" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="pwfx" nr="3">
+     <type><ptr>WAVEFORMATEX</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:WAVEFORMATEX" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwCallback" nr="4">
+     <type><ptr>unknownfunction</ptr></type>
+     <roles>
+      <role rt="ioc:system" rn="callbackf:audio recording device" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" io="r" name="dwCallbackInstance" rep="hex" nr="5">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="ioc:system" rn="callbackp:audio recording device" />
+     </roles>
+     <pre><deref-read-null/></pre>
+    </par>
+    <par loc="stack" name="fdwOpen" io="r" roles="none" nr="6">
+     <type>DWORD</type>
+     <pre><enum-value name="wave_audio_input_device_constants"/></pre>
+    </par>
+    <returntype>MMRESULT</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system"
+                  desc="opens a waveform-audio input device for recording"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="DestroyEnvironmentBlock.xml" time="2016-05-08 10:54:02.378127"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="userenv" name="DestroyEnvironmentBlock">
+    <documentation>
+      <desc>
+	Frees environment variables created by the CreateEnvironmentBlock function
+      </desc>
+      <apidoc>
+        <pt>BOOL WINAPI DestroyEnvironmentBlock (_In_ LPVOID lpEnvironment)</pt>
+        <par name="lpEnvironment">
+	  Pointer to the environment block created by
+	  CreateEnvironmentBlock. The environment block is an array of
+	  null-terminated Unicode strings. The list ends with two
+	  nulls (\0\0).
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="DestroyEnvironmentBlock">
+      <par loc="stack" name="lpEnvironment" io="r" nr="1">
+        <type><ptr>void</ptr></type>
+	<roles>
+	  <role rt="ioc:process" rn="environment block"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system"
+		   desc="frees environment variables block"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

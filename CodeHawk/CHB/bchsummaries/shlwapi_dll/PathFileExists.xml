@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/24/2015 17:29:02"/>
+  <libfun lib="shlwapi" name="PathFileExists">
+   <documentation>
+    <desc>
+      Determines whether a path to a file system object such as a file or folder is valid
+    </desc>
+    <apidoc>
+     <pt>BOOL PathFileExists (_In_ LPCTSTR pszPath)</pt>
+     <par name="pszPath">
+       A pointer to a null-terminated string of maximum length MAX_PATH that 
+       contains the full path of the object to verify
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="PathFileExists">
+    <par loc="stack" io="r" name="pszPath" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="checks validity of pathname"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

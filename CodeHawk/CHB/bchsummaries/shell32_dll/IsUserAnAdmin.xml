@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="IsUserAnAdmin.xml" time="2016-09-12 10:47:45.996769"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shell32" name="IsUserAnAdmin">
+    <documentation>
+      <desc>
+         Tests whether the current user is a member of the Administrator's group.
+      </desc>
+      <apidoc>
+        <pt>BOOL IsUserAnAdmin (void)</pt>
+        <return>
+          Returns TRUE if the user is a member of the Administrator's
+          group; otherwise, FALSE.
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="stdcall" name="IsUserAnAdmin">
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="system" desc="tests whether the current user is an admin"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

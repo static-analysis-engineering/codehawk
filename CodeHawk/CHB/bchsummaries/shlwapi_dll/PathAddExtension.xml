@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="PathAddExtension.xml" time="2016-06-18 21:59:32.310776"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="PathAddExtension">
+    <documentation>
+      <desc>Adds a file name extension to a path string.</desc>
+      <remarks>
+         Note Misuse of this function can lead to a buffer overrun. We
+         recommend the use of the safer PathCchAddExtension function
+         in its place.
+      </remarks>
+      <apidoc>
+        <pt>
+          <ll>BOOL PathAddExtension(</ll>
+          <ld>_Inout_  LPTSTR  pszPath</ld>
+          <ld>_In_opt_ LPCTSTR pszExtension</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pszPath">
+           A pointer to a buffer with the null-terminated string to
+           which the file name extension will be appended. You must
+           set the size of this buffer to MAX_PATH to ensure that it
+           is large enough to hold the returned string.
+	</par>
+        <par name="pszExtension">
+	   A pointer to a null-terminated string that contains the
+	   file name extension. This value can be NULL.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="PathAddExtension">
+      <par loc="stack" name="pszPath" io="rw" nr="1">
+        <type>LPTSTR</type>
+        <pre><deref-read-nt/></pre>
+        <roles>
+           <role rt="ioc:filesystem" rn="name:file"/>
+           <role rt="rep:hex" rn="name:file"/>
+        </roles>
+      </par>
+      <par loc="stack" name="pszExtension" io="r" nr="2">
+        <type>LPCTSTR</type>
+        <pre><deref-read-nt/></pre>
+        <roles>
+           <role rt="ioc:filesystem" rn="name:file extension"/>
+	   <role rt="rep:hex" rn="name:file extension"/>
+        </roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem" desc="adds a filename extension to a path"/>
+      </io-actions>
+      <preconditions>
+         <pre>
+            <math>
+               <apply>
+               <deref-write/>
+               <type>TCHAR</type>
+               <ci>pszPath</ci>
+               <cn>260</cn>
+	       </apply>
+	    </math>
+	 </pre>
+      </preconditions>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects>
+         <sideeffect>
+            <math>
+               <apply>
+                  <block-write/>
+               <type>TCHAR</type>
+               <ci>pszPath</ci>
+               <cn>260</cn>
+	       </apply>
+	    </math>
+         </sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

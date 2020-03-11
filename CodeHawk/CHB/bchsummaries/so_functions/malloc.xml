@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:44"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="malloc">
+   <documentation>
+    <desc>allocates a memory block</desc>
+    <apidoc>
+     <pt>void *malloc (size_t size)</pt>
+     <par name="size">number of bytes to allocate</par>
+     <return>
+      <rc cond="success">pointer to the allocated space</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="malloc">
+     <returntype><ptr>void</ptr></returntype>
+    <par loc="stack" io="r" name="size" nr="1">
+      <type>size_t</type>
+      <pre><positive/></pre>
+      <roles>
+        <role rt="ioc:memops" rn="size:allocation"/>
+     </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="memops" desc="allocates heap memory"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <new-memory-region/>
+        <return-value/>
+        <ci>size</ci>
+       </apply>
+      </math>
+     </post>
+     <error-post>
+      <math>
+       <apply>
+        <null/>
+        <return-value/>
+       </apply>
+      </math>
+     </error-post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

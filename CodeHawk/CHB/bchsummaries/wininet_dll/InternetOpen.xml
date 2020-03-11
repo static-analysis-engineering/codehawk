@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/04/2015 11:23:38"/>
+  <libfun lib="wininet" name="InternetOpen">
+   <documentation>
+    <desc>Initializes an application's use of the WinINet functions</desc>
+    <apidoc>
+     <pt>
+      <ll>HINTERNET InternetOpen(</ll>
+      <ld>_In_  LPCTSTR lpszAgent</ld>
+      <ld>_In_  DWORD dwAccessType</ld>
+      <ld>_In_  LPCTSTR lpszProxyName</ld>
+      <ld>_In_  LPCTSTR lpszProxyBypass</ld>
+      <ld>_In_  DWORD dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="lpszAgent">
+       Pointer to a null-terminated string that specifies the name of the 
+       application or entity calling the WinINet functions. This name is 
+       used as the user agent in the HTTP protocol.
+     </par>
+     <par name="dwAccessType">Type of access required</par>
+     <par name="lpszProxyName">
+       Pointer to a null-terminated string that specifies the name of the proxy 
+       server(s) to use when proxy access is specified by setting dwAccessType 
+       to INTERNET_OPEN_TYPE_PROXY. Do not use an empty string, because InternetOpen 
+       will use it as the proxy name. The WinINet functions recognize only CERN 
+       type proxies (HTTP only) and the TIS FTP gateway (FTP only). If Microsoft 
+       Internet Explorer is installed, these functions also support SOCKS proxies.
+       FTP requests can be made through a CERN type proxy either by changing them 
+       to an HTTP request or by using InternetOpenUrl. If dwAccessType is not set
+       to INTERNET_OPEN_TYPE_PROXY, this parameter is ignored and should be NULL.
+     </par>
+     <par name="lpszProxyBypass">
+       Pointer to a null-terminated string that specifies an optional list of host 
+       names or IP addresses, or both, that should not be routed through the proxy 
+       when dwAccessType is set to INTERNET_OPEN_TYPE_PROXY. The list can contain 
+       wildcards. Do not use an empty string, because InternetOpen will use it as 
+       the proxy bypass list. If this parameter specifies the "local" macro, 
+       the function bypasses the proxy for any host name that does not contain
+       a period.
+       By default, WinINet will bypass the proxy for requests that use the host
+       names "localhost", "loopback", "127.0.0.1", or "[::1]". This behavior exists 
+       because a remote proxy server typically will not resolve these addresses properly.
+     </par>
+     <par name="dwFlags">options</par>
+     <return>
+      <rc cond="success">
+	a valid handle that the application passes to subsequent WinINet functions
+      </rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="InternetOpen">
+    <par loc="stack" io="r" name="lpszAgent" nr="1">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:http user agent"/>
+        <role rt="ioc:filesystem" rn="name:application"/>
+        <role rt="rep:hex" rn="name:application"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwAccessType" nr="2">
+     <type>DWORD</type>
+     <roles>
+        <role rt="ioc:network" rn="type:http access"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszProxyName" nr="3">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:proxy server"/>
+        <role rt="rep:hex" rn="name:proxy server"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszProxyBypass" nr="4">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:host"/>
+        <role rt="rep:hex" rn="name:host"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="5">
+     <type>DWORD</type>
+    </par>
+    <returntype>HINTERNET</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="initializes use of the WinINet functions"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

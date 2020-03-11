@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="StrTrimA.xml" time="2016-09-10 13:46:30.163951"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="StrTrimA">
+    <refer-to char-type="ansi" name="StrTrim"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

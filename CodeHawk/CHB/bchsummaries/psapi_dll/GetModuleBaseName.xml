@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/02/2015 23:26:08"/>
+  <libfun lib="psapi" name="GetModuleBaseName">
+   <documentation>
+    <desc>Retrieves the base name of the specified module</desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD WINAPI GetModuleBaseName(</ll>
+      <ld>_In_     HANDLE  hProcess</ld>
+      <ld>_In_opt_ HMODULE hModule</ld>
+      <ld>_Out_    LPTSTR  lpBaseName</ld>
+      <ld>_In_     DWORD   nSize</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hProcess">
+       A handle to the process that contains the module.
+       The handle must have the PROCESS_QUERY_INFORMATION and PROCESS_VM_READ 
+       access rights.
+     </par>
+     <par name="hModule">
+       A handle to the module. If this parameter is NULL, this function returns 
+       the name of the file used to create the calling process.
+     </par>
+     <par name="lpBaseName">
+       A pointer to the buffer that receives the base name of the module. If the
+       base name is longer than maximum number of characters specified by the 
+       nSize parameter, the base name is truncated.
+     </par>
+     <par name="nSize">The size of the lpBaseName buffer, in characters.</par>
+     <return>
+      <rc cond="success">
+	the length of the string copied to the buffer, in characters.
+      </rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="GetModuleBaseName">
+    <par loc="stack" name="hProcess" io="r" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:process"/>
+     </roles>
+    </par>
+    <par loc="stack" name="hModule" io="r" nr="2">
+     <type>HMODULE</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+       <role rt="ioc:process" rn="handle:module"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpBaseName" io="w" rep="hex" nr="3">
+     <type>LPTSTR</type>
+     <roles>
+       <role rt="ioc:process" rn="infox:module name"/>
+     </roles>
+    </par>
+    <par loc="stack" name="nSize" io="r" nr="4">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:buffersize" rn="GetModuleBaseName"/>
+      </roles>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process" desc="retrieves the name of a module"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>TCHAR</type>
+	    <ci>lpBaseName</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="system" xdata="module base name"/>
+	    <type>TCHAR</type>
+	    <ci>lpBaseName</ci>
+	    <apply><indexsize/><ci>nSize</ci></apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

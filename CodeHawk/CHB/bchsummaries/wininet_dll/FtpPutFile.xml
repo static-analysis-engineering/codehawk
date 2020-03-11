@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="FtpPutFile.xml" time="2016-05-17 22:16:29.971570"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="wininet" name="FtpPutFile">
+    <documentation>
+      <desc>Stores a file on the FTP server</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL FtpPutFile(</ll>
+          <ld>_In_ HINTERNET hConnect</ld>
+          <ld>_In_ LPCTSTR   lpszLocalFile</ld>
+          <ld>_In_ LPCTSTR   lpszNewRemoteFile</ld>
+          <ld>_In_ DWORD     dwFlags</ld>
+          <ld>_In_ DWORD_PTR dwContext</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hConnect">Handle to an FTP session</par>
+        <par name="lpszLocalFile">
+	  Pointer to a null-terminated string that contains the name
+	  of the file to be sent from the local system.
+	</par>
+        <par name="lpszNewRemoteFile">
+	  Pointer to a null-terminated string that contains the name
+	  of the file to be created on the remote system.
+	</par>
+        <par name="dwFlags">
+	  Conditions under which the transfers occur. The application
+	  should select one transfer type and any of the flags that
+	  control how the caching of the file will be controlled.
+	</par>
+        <par name="dwContext">
+	  Pointer to a variable that contains the application-defined
+	  value that associates this search with any application
+	  data. This parameter is used only if the application has
+	  already called InternetSetStatusCallback to set up a status
+	  callback.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="FtpPutFile">
+      <par loc="stack" name="hConnect" io="r" nr="1">
+        <type>HINTERNET</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="handle:internet"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpszLocalFile" io="r" nr="2">
+        <type>LPCSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:file"/>
+	  <role rt="rep:hex" rn="name:file"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpszNewRemoteFile" io="r" nr="3">
+        <type>LPCSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:file"/>
+	  <folr rt="ioc:network" rn="name:ftp file"/>
+	  <role rt="rep:hex" rn="name:file"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwFlags" io="r" roles="none" nr="4">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="dwContext" io="r" nr="5">
+        <type><ptr>DWORD</ptr></type>
+	<roles>
+	  <role rt="ioc:network" rn="application context"/>
+	  <role rt="rep:hex" rn="application context"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network" desc="stores a file on the FTP server"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

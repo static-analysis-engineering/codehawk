@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/10/2015 16:21:18"/>
+  <libfun lib="winhttp" name="WinHttpGetProxyForUrl">
+   <documentation>
+    <desc>etrieves the proxy data for the specified URL</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WinHttpGetProxyForUrl(</ll>
+      <ld>_In_  HINTERNET                 hSession</ld>
+      <ld>_In_  LPCWSTR                   lpcwszUrl</ld>
+      <ld>_In_  WINHTTP_AUTOPROXY_OPTIONS *pAutoProxyOptions</ld>
+      <ld>_Out_ WINHTTP_PROXY_INFO        *pProxyInfo</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hSession">
+       The WinHTTP session handle returned by the WinHttpOpen function
+     </par>
+     <par name="lpcwszUrl">
+       A pointer to a null-terminated Unicode string that contains the URL 
+       of the HTTP request that the application is preparing to send.
+     </par>
+     <par name="pAutoProxyOptions">
+       A pointer to a WINHTTP_AUTOPROXY_OPTIONS structure that specifies 
+       the auto-proxy options to use
+     </par>
+     <par name="pProxyInfo">
+       A pointer to a WINHTTP_PROXY_INFO structure that receives the
+       proxy setting. This structure is then applied to the request
+       handle using the WINHTTP_OPTION_PROXY option. Free the
+       lpszProxy and lpszProxyBypass strings contained in this
+       structure (if they are non-NULL) using the GlobalFree function.
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="WinHttpGetProxyForUrl">
+    <par loc="stack" name="hSession" io="r" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpcwszUrl" io="r" nr="2">
+     <type>LPCWSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:network" rn="url"/>
+       <role rt="rep:hex" rn="url"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pAutoProxyOptions" io="r" roles="none" nr="3">
+     <type><ptr>WINHTTP_AUTOPROXY_OPTIONS</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" name="pProxyInfo" io="w" nr="4">
+     <type><ptr>WINHTTP_PROXY_INFO</ptr></type>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="ioc:memops" rn="dst-struct:proxy-settings"/>
+       <role rt="rep:hex" rn="dst-struct:proxy-settings"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" desc="retrieves the proxy data for a URL"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

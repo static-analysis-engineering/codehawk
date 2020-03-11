@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:38:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="ws2_32" name="getnameinfo">
+   <documentation>
+    <desc>
+      provides protocol-independent name resolution from an address to an ANSI host
+      name and from a port number to the ANSI service name
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>int WSAAPI (</ll>
+      <ld>__in  const struct sockaddr FAR *sa,</ld>
+      <ld>__in  socklen_t salen,</ld>
+      <ld>__out char FAR *host,</ld>
+      <ld>__in  DWORD hostlen,</ld>
+      <ld>__out char FAR *serv,</ld>
+      <ld>__in  DWORD servlen,</ld>
+      <ld>__in  int flags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="sa">
+       pointer to a socket address structure that contains the address
+       and port number of the socket. For IPv4, the sa parameter
+       points to a sockaddr_in structure. For IPv6, the sa parameter
+       points to a sockaddr_in6 structure
+     </par>
+     <par name="salen">
+       the length, in bytes, of the structure pointed to by the sa parameter
+     </par>
+     <par name="host">
+       a pointer to an ANSI string used to hold the host name. On
+       success, the host name is returned as a Fully Qualified Domain
+       Name by default. If the host parameter is NULL, this indicates
+       the caller does not want to receive a host name string
+	</par>
+     <par name="hostlen">
+       the length, in bytes, of the buffer pointed to by the host
+       parameter. The caller must provide a buffer large enough to
+       hold the host name, including the terminating NULL character
+     </par>
+     <par name="serv">
+       pointer to an ANSI string to hold the service name. On success,
+       an ANSI string that represents the service name associated with
+       the port number is returned. If the serv parameter is NULL,
+       this indicates the caller does not want to receive a service
+       name string
+     </par>
+     <par name="servlen">
+       length, in bytes, of the buffer pointed to by the serv
+       parameter. The caller must provide a buffer large enough to
+       hold the service name, including the terminating NULL character
+     </par>
+     <par name="flags">used to customize processing of the getnameinfo function</par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">nonzero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="28" cc="stdcall" name="getnameinfo">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" name="sa" io="r" nr="1" rep="hex">
+      <type><ptr>sockaddr</ptr></type>
+      <roles>
+	<role rt="ioc:network" rn="socket address"/>
+      </roles>
+    </par>
+    <par loc="stack" name="salen" io="r" nr="2">
+      <type>socklen_t</type>
+      <roles>
+	<role rt="size:buffersize" rn="getnameinfo"/>
+      </roles>
+    </par>
+    <par loc="stack" name="host" io="w" nr="3" rep="hex">
+      <type><ptr>char</ptr></type>
+      <roles>
+	<role rt="ioc:network" rn="infox:hostname"/>
+      </roles>
+    </par>
+    <par loc="stack" name="hostlen" io="r" nr="4">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:buffersize" rn="getnameinfo"/>
+      </roles>
+    </par>
+    <par loc="stack" name="serv" io="w" nr="5" rep="hex">
+      <type><ptr>char</ptr></type>
+      <roles>
+	<role rt="ioc:network" rn="infox:service name"/>
+      </roles>
+    </par>
+    <par loc="stack" name="servlen" io="r" nr="6">
+      <type>DWORD</type>
+      <roles>
+	<role rt="size:buffersize" rn="getnameinfo"/>
+      </roles>
+    </par>
+    <par loc="stack" name="flags" io="r" roles="none" nr="7">
+      <type>int</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network" 
+		  desc="provides name resolution from address to host name and from port to service name"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <type>sockaddr</type>
+	    <ci>sa</ci>
+	    <ci>salen</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>char</type>
+	    <ci>host</ci>
+	    <ci>hostlen</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write-null/>
+	    <type>char</type>
+	    <ci>serv</ci>
+	    <ci>servlen</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <zero-notzero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>host</ci>
+	    <ci>hostlen</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>serv</ci>
+	    <ci>servlen</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

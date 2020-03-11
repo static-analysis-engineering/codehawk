@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="PathStripPath.xml" time="2016-06-18 18:10:53.851865"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="PathStripPath">
+    <documentation>
+      <desc>
+         Removes the path portion of a fully qualified path and file
+      </desc>
+      <apidoc>
+        <pt>void PathStripPath (_Inout_ LPTSTR pszPath)</pt>
+        <par name="pszPath">
+           A pointer to a null-terminated string of length MAX_PATH
+           that contains the path and file name. When this function
+           returns successfully, the string contains only the file
+           name, with the path removed.
+	</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="PathStripPath">
+      <par loc="stack" name="pszPath" io="rw" nr="1">
+        <type>LPTSTR</type>
+        <pre><deref-read/></pre>
+        <roles>
+           <role rt="ioc:filesystem" rn="name:file"/>
+	   <role rt="rep:hex" rn="name:file"/>
+        </roles>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem"
+                   desc="removes the path portion of a filename"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

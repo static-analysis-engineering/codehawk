@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/04/2015 11:57:32"/>
+  <libfun lib="wininet" name="InternetConnect">
+   <documentation>
+    <desc>Opens an File Transfer Protocol (FTP) or HTTP session for a given site</desc>
+    <apidoc>
+     <pt>
+      <ll>HINTERNET InternetConnect(</ll>
+      <ld>_In_  HINTERNET hInternet</ld>
+      <ld>_In_  LPCTSTR lpszServerName</ld>
+      <ld>_In_  INTERNET_PORT nServerPort</ld>
+      <ld>_In_  LPCTSTR lpszUsername</ld>
+      <ld>_In_  LPCTSTR lpsPassword</ld>
+      <ld>_In_  DWORD dwService</ld>
+      <ld>_In_  DWORD dwFlags</ld>
+      <ld>_In_  DWORD_PTR dwContext</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hInternet">Handle returned by a previous call to InternetOpen</par>
+     <par name="lpszServerName">
+       Pointer to a null-terminated string that specifies the host name of an Internet 
+       server. Alternately, the string can contain the IP number of the site, in ASCII 
+       dotted-decimal format (for example, 11.0.1.45).
+     </par>
+     <par name="nServerPort">
+       Transmission Control Protocol/Internet Protocol (TCP/IP) port on the server. 
+       These flags set only the port that is used. The service is set by the value 
+       of dwService. This parameter can be one of the following values.
+     </par>
+     <par name="lpszUsername">
+       Pointer to a null-terminated string that specifies the name of the user to 
+       log on. If this parameter is NULL, the function uses an appropriate default. 
+       For the FTP protocol, the default is "anonymous".
+     </par>
+     <par name="lpsPassword">
+       Pointer to a null-terminated string that contains the password to use to log on. 
+       If both lpszPassword and lpszUsername are NULL, the function uses the default 
+       "anonymous" password. In the case of FTP, the default password is the user's 
+       email name. If lpszPassword is NULL, but lpszUsername is not NULL, the function 
+       uses a blank password.
+     </par>
+     <par name="dwService">Type of service to access</par>
+     <par name="dwFlags">
+       Options specific to the service used. If dwService is INTERNET_SERVICE_FTP, 
+       INTERNET_FLAG_PASSIVE causes the application to use passive FTP semantics
+     </par>
+     <par name="dwContext">
+       Pointer to a variable that contains an application-defined value that is used 
+       to identify the application context for the returned handle in callbacks.
+     </par>
+     <return>
+      <rc cond="success">a valid handle to the session</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="32" cc="stdcall" name="InternetConnect">
+    <par loc="stack" io="r" name="hInternet" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszServerName" nr="2" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:server"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="nServerPort" nr="3">
+     <type>INTERNET_PORT</type>
+     <roles>
+        <role rt="ioc:network" rn="tcp/ip port"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszUsername" nr="4" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:username"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="lpszPassword" nr="5" rep="hex">
+     <type>LPCTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="password"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="dwService" roles="none" nr="6">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwFlags" roles="none" nr="7">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="r" name="dwContext" nr="8" rep="hex">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:network" rn="application context"/>
+     </roles>
+    </par>
+    <returntype>HINTERNET</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"  desc="opens an FTP or HTTP session"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

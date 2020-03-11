@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/02/2015 11:14:46"/>
+  <libfun lib="winspool.drv" name="GetPrinterDriver">
+   <documentation>
+    <desc>
+      retrieves driver data for the specified printer. If the driver is not
+      installed on the local computer, GetPrinterDriver installs it.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL GetPrinterDriver(</ll>
+      <ld>_In_  HANDLE  hPrinter</ld>
+      <ld>_In_  LPTSTR  pEnvironment</ld>
+      <ld>_In_  DWORD   Level</ld>
+      <ld>_Out_ LPBYTE  pDriverInfo</ld>
+      <ld>_In_  DWORD   cbBuf</ld>
+      <ld>_Out_ LPDWORD pcbNeeded</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hPrinter">
+       A handle to the printer for which the driver data should be retrieved.
+       Use the OpenPrinter or AddPrinter function to retrieve a printer handle
+     </par>
+     <par name="pEnvironment">
+       A pointer to a null-terminated string that specifies the environment
+       (for example, Windows x86, Windows IA64, or Windows x64). If this parameter 
+       is NULL, the current environment of the calling application and client 
+       machine (not of the destination application and print server) is used.
+     </par>
+     <par name="Level">
+       The printer driver structure returned in the pDriverInfo buffer
+     </par>
+     <par name="pDriverInfo">
+       A pointer to a buffer that receives a structure containing information 
+       about the driver, as specified by Level. The buffer must be large enough 
+       to store the strings pointed to by the structure members.
+       To determine the required buffer size, call GetPrinterDriver with cbBuf
+       set to zero. GetPrinterDriver fails, GetLastError returns 
+       ERROR_INSUFFICIENT_BUFFER, and the pcbNeeded parameter returns the size, 
+       in bytes, of the buffer required to hold the array of structures and 
+       their data.
+     </par>
+     <par name="cbBuf">
+       The size, in bytes, of the array at which pDriverInfo points
+     </par>
+     <par name="pcbNeeded">
+       A pointer to a value that receives the number of bytes copied if the
+       function succeeds or the number of bytes required if cbBuf is too small.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="24" cc="stdcall" name="GetPrinterDriver">
+    <par loc="stack" io="r" name="hPrinter" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:system" rn="handle:printer" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <par loc="stack" io="r" name="pEnvironment" nr="2">
+     <type>LPTSTR</type>
+     <roles>
+      <role rt="ioc:process" rn="name:printer environment" />
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="Level" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="w" name="pDriverInfo" nr="4">
+     <type><ptr>BYTE</ptr></type>
+     <roles>
+      <role rt="ioc:system" rn="infox:printer driver info" />
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cbBuf" nr="5">
+     <type>DWORD</type>
+     <roles>
+      <role rt="size:buffer" rn="size:buffer" />
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="pcbNeeded" rep="hex" nr="6">
+     <type><ptr>DWORD</ptr></type>
+     <roles>
+      <role rt="size:buffer" rn="size:actual" />
+     </roles>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system" desc="retrieves driver data for a printer">
+       </io-action>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>BYTE</type>
+	    <ci>pDriverInfo</ci>
+	    <ci>cbBuf</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>BYTE</type>
+	    <ci>pDriverInfo</ci>
+	    <ci>cbBuf</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

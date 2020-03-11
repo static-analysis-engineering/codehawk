@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/04/2015 12:52:48"/>
+  <libfun lib="wininet" name="InternetErrorDlg">
+   <documentation>
+    <desc>
+      Displays a dialog box for the error that is passed to InternetErrorDlg, 
+      if an appropriate dialog box exists. If the FLAGS_ERROR_UI_FILTER_FOR_ERRORS 
+      flag is used, the function also checks the headers for any hidden errors 
+      and displays a dialog box if needed
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>DWORD InternetErrorDlg(</ll>
+      <ld>_In_     HWND hWnd</ld>
+      <ld>_Inout_  HINTERNET hRequest</ld>
+      <ld>_In_     DWORD dwError</ld>
+      <ld>_In_     DWORD dwFlags</ld>
+      <ld>_Inout_  LPVOID *lppvData</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hWnd">
+       Handle to the parent window for any needed dialog box. If no dialog box is
+       needed and FLAGS_ERROR_UI_FLAGS_NO_UI is passed to dwFlags, then this
+       parameter can be NULL.
+     </par>
+     <par name="hRequest">
+       Handle to the Internet connection used in the call to HttpSendRequest
+     </par>
+     <par name="dwError">
+       Error value for which to display a dialog box. 
+     </par>
+     <par name="dwFlags">Actions</par>
+     <par name="lppvData">
+       Pointer to the address of a data structure. The structure can be different 
+       for each error that needs to be handled
+     </par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="InternetErrorDlg">
+    <par loc="stack" name="hWnd" io="r" rep="hex" nr="1">
+     <type>HWND</type>
+     <pre><deref-read-null/></pre>
+     <roles>
+      <role rt="ioc:process" rn="handle:window" />
+     </roles>
+    </par>
+    <par loc="stack" name="hRequest" io="rw" nr="2">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+      <role rt="ioc:network" rn="handle:internet" />
+     </roles>
+    </par>
+    <par loc="stack" name="dwError" io="r" roles="none" nr="3">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="dwFlags" io="r" roles="none" nr="4">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" io="rw" name="lppvData" nr="5">
+     <type><ptr><ptr>VOID</ptr></ptr></type>
+     <roles>
+      <role rt="ioc:network" rn="infox:error data" />
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="network" desc="displays an internet error dialog box"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

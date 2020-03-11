@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="StrCmpN.xml" time="2016-09-09 23:43:03.713181"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="StrCmpN">
+    <documentation>
+      <desc>
+         Compares a specified number of characters from the beginning
+         of two strings to determine if they are the same. The
+         comparison is case-sensitive. The StrNCmp macro differs from
+         this function in name only.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>int StrCmpN(</ll>
+          <ld>_In_ PCTSTR psz1</ld>
+          <ld>_In_ PCTSTR psz2</ld>
+          <ld>_In_ int nChar</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="psz1">A pointer to the first null-terminated string to be compared</par>
+        <par name="psz2">A pointer to the second null-terminated string to be compared</par>
+        <par name="nChar">
+           The number of characters from the beginning of each string to be compared
+        </par>
+        <return>
+          Returns zero if the strings are identical. Returns a
+          positive value if the first nChar characters of the string
+          pointed to by psz1 are greater than those from the string
+          pointed to by psz2. It returns a negative value if the first
+          nChar characters of the string pointed to by psz1 are less
+          than those from the string pointed to by psz2. 
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="StrCmpN">
+      <par loc="stack" name="psz1" io="r" rep="hex" nr="1">
+        <type>PCTSTR</type>
+        <roles>
+           <role rt="ioc:inputs" rn="string comparison"/>
+        </roles>
+      </par>
+      <par loc="stack" name="psz2" io="r" rep="hex" nr="2">
+        <type>PCTSTR</type>
+        <roles>
+           <role rt="ioc:inputs" rn="string comparison"/>
+        </roles>
+      </par>
+      <par loc="stack" name="nChar" io="r" nr="3">
+        <type>int</type>
+        <roles>
+           <role rt="size:buffersize" rn="StrCmpN"/>
+        </roles>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="inputs" desc="compares two string prefixes"/>
+      </io-actions>
+      <preconditions>
+         <pre>
+            <math>
+               <apply>
+                  <deref-read/>
+                  <type>TCHAR</type>
+                  <ci>psz1</ci>
+                  <apply><indexsize/><ci>nChar</ci></apply>
+               </apply>
+            </math>
+	 </pre>
+         <pre>
+            <math>
+               <apply>
+                  <deref-read/>
+                  <type>TCHAR</type>
+                  <ci>psz2</ci>
+                  <apply><indexsize/><ci>nChar</ci></apply>
+               </apply>
+            </math>
+	 </pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

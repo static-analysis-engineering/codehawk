@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/06/2015 15:06:19"/>
+  <libfun lib="wininet" name="InternetGetLastResponseInfoW">
+   <refer-to char-type="unicode" name="InternetGetLastResponseInfo"/>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/10/2015 16:32:12"/>
+  <libfun lib="winhttp" name="WinHttpOpen">
+   <documentation>
+    <desc>
+      initializes, for an application, the use of WinHTTP functions
+      and returns a WinHTTP-session handle
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>HINTERNET WINAPI WinHttpOpen(</ll>
+      <ld>_In_opt_ LPCWSTR pwszUserAgent</ld>
+      <ld>_In_     DWORD   dwAccessType</ld>
+      <ld>_In_     LPCWSTR pwszProxyName</ld>
+      <ld>_In_     LPCWSTR pwszProxyBypass</ld>
+      <ld>_In_     DWORD   dwFlags</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="pwszUserAgent">
+       A pointer to a string variable that contains the name of the
+       application or entity calling the WinHTTP functions. This name
+       is used as the user agent in the HTTP protocol.
+     </par>
+     <par name="dwAccessType">Type of access required</par>
+     <par name="pwszProxyName">
+       A pointer to a string variable that contains the name of the
+       proxy server to use when proxy access is specified by setting
+       dwAccessType to WINHTTP_ACCESS_TYPE_NAMED_PROXY. The WinHTTP
+       functions recognize only CERN type proxies for HTTP. If
+       dwAccessType is not set to WINHTTP_ACCESS_TYPE_NAMED_PROXY,
+       this parameter must be set to WINHTTP_NO_PROXY_NAME.
+     </par>
+     <par name="pwszProxyBypass">
+       A pointer to a string variable that contains an optional
+       semicolon delimited list of host names or IP addresses, or
+       both, that should not be routed through the proxy when
+       dwAccessType is set to WINHTTP_ACCESS_TYPE_NAMED_PROXY. The
+       list can contain wildcard characters. Do not use an empty
+       string, because the WinHttpOpen function uses it as the proxy
+       bypass list. If this parameter specifies the local macro in
+       the list as the only entry, this function bypasses any host
+       name that does not contain a period. If dwAccessType is not set
+       to WINHTTP_ACCESS_TYPE_NAMED_PROXY, this parameter must be set
+       to WINHTTP_NO_PROXY_BYPASS.
+     </par>
+     <par name="dwFlags">
+       Unsigned long integer value that contains the flags that
+       indicate various options affecting the behavior of this
+       function.
+     </par>
+     <return>
+      <rc cond="success">a valid session handle</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="20" cc="stdcall" name="WinHttpOpen">
+    <par loc="stack" name="pwszUserAgent" io="r" nr="1" rep="hex">
+     <type>LPCWSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:http user agent"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwAccessType" roles="none" nr="2">
+     <type>DWORD</type>
+    </par>
+    <par loc="stack" name="pwszProxyName" io="r" nr="3" rep="hex">
+     <type>LPCWSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="name:proxy server"/>
+     </roles>
+    </par>
+    <par loc="stack" name="pwszProxyBypass" io="r"  nr="4" rep="hex">
+     <type>LPCWSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:network" rn="names:proxy bypass"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwFlags" roles="none" nr="5">
+     <type>DWORD</type>
+    </par>
+    <returntype>HINTERNET</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" desc="initializes the use of WinHttp functions"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

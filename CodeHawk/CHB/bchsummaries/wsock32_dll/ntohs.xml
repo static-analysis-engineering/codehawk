@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:38:11"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun name="ntohs" lib="wsock32">
+    <refer-to lib="ws2_32" name="ntohs"/>
+<!--
+   <documentation>
+    <desc>converts a u_short from TCP/IP network byte order to host byte order</desc>
+    <apidoc>
+     <pt>u_short WSAAPI ntohs ( __in u_short netshort )</pt>
+     <par name="netshort">16-bit number in TCP/IP network byte order</par>
+     <return>input value in host byte order</return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ntohs">
+    <returnbtype tname="u_short" ttag="tnamed"/>
+    <par loc="stack" name="netshort" nr="1">
+     <btype tname="u_short" ttag="tnamed"/>
+    </par>
+   </api>
+   <semantics>
+    <external-effects/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+-->
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

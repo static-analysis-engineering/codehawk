@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/01/2015 23:33:25"/>
+  <libfun lib="wininet" name="InternetAttemptConnect">
+   <documentation>
+    <desc>Attempts to make a connection to the Internet</desc>
+    <apidoc>
+     <pt>DWORD InternetAttemptConnect (_In_ DWORD dwReserved)</pt>
+     <par name="dwReserved">This parameter is reserved and must be 0</par>
+     <return>
+      <rc cond="success">ERROR_SUCCESS</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="InternetAttemptConnect">
+    <par loc="stack" name="dwReserved" nr="1">
+     <type>DWORD</type>
+     <roles/>
+    </par>
+    <returntype>DWORD</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="network"
+		  desc="attempts to make a connection to the Internet"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

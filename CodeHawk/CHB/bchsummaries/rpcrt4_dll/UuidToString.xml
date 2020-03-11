@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2019-11-27 11:21:35"/>
+  <libfun lib="rpcrt4" name="UuidToString">
+    <documentation>
+      <desc>converts a UUID to a string</desc>
+      <apidoc>
+        <pt>
+          <ll>RPC_STATUS UuidToString(</ll>
+          <ld>const UUID *Uuid</ld>
+          <ld>RPC_CSTR *StringUuid</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="Uuid">Pointer to a binary UUID</par>
+        <par name="StringUuid">
+	  Pointer to the null-terminated string into which the UUID
+	  specified in the Uuid parameter will be placed.
+	</par>
+        <return>
+          <rc cond="success">RPC_S_OK</rc>
+          <rc cond="failure">RPC_S_OUT_OF_MEMORY</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="UuidToString">
+      <par loc="stack" name="Uuid" nr="1">
+        <type><ptr>UUID</ptr></type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="src-struct:uuid"/>
+	</roles>
+      </par>
+      <par loc="stack" name="StringUuid" nr="2">
+        <type><ptr>RPC_CSTR</ptr></type>
+        <pre><deref-write/></pre>
+        <sideeffects><block-write/></sideeffects>
+        <roles>
+          <role rt="ioc:process" rn="dst-string:uuid"/>
+        </roles>
+      </par>
+      <returntype>RPC_STATUS</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="process"
+                   desc="converts a uuid to a string"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

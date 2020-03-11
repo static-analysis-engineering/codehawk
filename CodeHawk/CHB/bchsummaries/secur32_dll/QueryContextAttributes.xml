@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/16/2015 13:18:10"/>
+  <libfun lib="secur32" name="QueryContextAttributes">
+   <documentation>
+    <desc>
+      Enables a transport application to query a security package for certain 
+      attributes of a security context.
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>SECURITY_STATUS SEC_Entry QueryContextAttributes(</ll>
+      <ld>_In_  PCtxtHandle phContext</ld>
+      <ld>_In_  ULONG       ulAttribute</ld>
+      <ld>_Out_ PVOID       pBuffer</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="phContext">A handle to the security context to be queried</par>
+     <par name="ulAttribute">
+       Specifies the attribute of the context to be returned
+     </par>
+     <par name="pBuffer">
+       A pointer to a structure that receives the attributes. The type of 
+       structure pointed to depends on the value specified in the ulAttribute
+       parameter
+     </par>
+     <return>
+      <rc cond="success">SEC_E_OK</rc>
+      <rc cond="failure">error code</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="12" cc="stdcall" name="QueryContextAttributes">
+    <par loc="stack" io="r" name="phContext" rep="hex" nr="1">
+     <type><ptr>CtxtHandle</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:crypto" rn="handle:security context"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="ulAttribute" roles="none" nr="2">
+     <type>ULONG</type>
+    </par>
+    <par loc="stack" io="w" name="pBuffer" nr="3">
+     <type><ptr>VOID</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="ioc:crypto" rn="infox:security context attribute"/>
+     </roles>
+    </par>
+    <returntype>SECURITY_STATUS SEC_Entry</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" 
+		desc="queries a security package for attributes of a security context"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

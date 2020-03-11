@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="12/10/2015 20:10:33"/>
+  <libfun lib="winhttp" name="WinHttpReadData">
+   <documentation>
+    <desc>
+      reads data from a handle opened by the WinHttpOpenRequest function
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI WinHttpReadData(</ll>
+      <ld>_In_  HINTERNET hRequest</ld>
+      <ld>_Out_ LPVOID    lpBuffer</ld>
+      <ld>_In_  DWORD     dwNumberOfBytesToRead</ld>
+      <ld>_Out_ LPDWORD   lpdwNumberOfBytesToRead</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hRequest">
+       Valid HINTERNET handle returned from a previous call to
+       WinHttpOpenRequest. WinHttpReceiveResponse or
+       WinHttpQueryDataAvailable must have been called for this handle
+       and must have completed before WinHttpReadData is
+       called. Although calling WinHttpReadData immediately after
+       completion of WinHttpReceiveResponse avoids the expense of a
+       buffer copy, doing so requires that the application use a
+       fixed-length buffer for reading.
+     </par>
+     <par name="lpBuffer">
+       Pointer to a buffer that receives the data read. Make sure that
+       this buffer remains valid until WinHttpReadData has completed.
+     </par>
+     <par name="dwNumberOfBytesToRead">
+       Unsigned long integer value that contains the number of bytes to read
+     </par>
+     <par name="lpdwNumberOfBytesToRead">
+       Pointer to an unsigned long integer variable that receives the
+       number of bytes read. WinHttpReadData sets this value to zero
+       before doing any work or error checking. When using WinHTTP
+       asynchronously, always set this parameter to NULL and retrieve
+       the information in the callback function; not doing so can
+       cause a memory fault.
+     </par>
+     <return>
+      <rc cond="success">TRUE</rc>
+      <rc cond="failure">FALSE</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="WinHttpReadData">
+    <par loc="stack" name="hRequest" io="r" nr="1">
+     <type>HINTERNET</type>
+     <pre><deref-read/></pre>
+     <roles>
+       <role rt="ioc:network" rn="handle:internet"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpBuffer" io="w"  nr="2" rep="hex">
+     <type><ptr>VOID</ptr></type>
+     <roles>
+       <role rt="ioc:memops" rn="dst-bytes:network input"/>
+     </roles>
+    </par>
+    <par loc="stack" name="dwNumberOfBytesToRead" io="r" nr="3">
+     <type>DWORD</type>
+     <roles>
+       <role rt="size:buffersize" rn="WinHttpReadData"/>
+     </roles>
+    </par>
+    <par loc="stack" name="lpdwNumberOfBytesToRead" io="rw" nr="4">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+       <role rt="size:actual" rn="WinHttpReadData"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="network" desc="reads internet request data"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>BYTE</type>
+	    <ci>lpBuffer</ci>
+	    <ci>dwNumberOfBytesToRead</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <notzero-zero/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>BYTE</type>
+	    <ci>lpBuffer</ci>
+	    <ci>dwNumberOfBytesToRead</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

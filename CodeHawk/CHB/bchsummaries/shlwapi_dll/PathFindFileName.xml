@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="09/24/2015 17:35:36"/>
+  <libfun lib="shlwapi" name="PathFindFileName">
+   <documentation>
+    <desc>Searches a path for a file name</desc>
+    <apidoc>
+     <pt>PTSTR PathFindFileName (_In_ PTSTR pPath)</pt>
+     <par name="pPath">
+       A pointer to a null-terminated string of maximum length MAX_PATH that
+       contains the path to search
+     </par>
+     <return>
+      <rc cond="success">a pointer to the address of the string</rc>
+      <rc cond="failure"> pointer to the beginning of the path</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="PathFindFileName">
+    <par loc="stack" name="pPath" io="r" nr="1">
+     <type>PTSTR</type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+       <role rt="ioc:filesystem" rn="name:file"/>
+       <role rt="rep:hex" rn="name:file"/>
+     </roles>
+    </par>
+    <returntype>PTSTR</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="searches a path for a file name"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <post><math><apply><not-null/><return/></apply></math></post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

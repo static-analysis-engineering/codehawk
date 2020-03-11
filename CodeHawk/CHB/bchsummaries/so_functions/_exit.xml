@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:44"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun name="_exit">
+   <documentation>
+    <desc>terminates the calling process immediately</desc>
+    <apidoc>
+     <pt>void _exit (int status)</pt>
+     <par name="status">exit status</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="_exit">
+     <returntype>void</returntype>
+     <par loc="stack" name="status" nr="1">
+       <type>int</type>
+       <roles>
+	 <role rt="ioc:process" rn="exit code"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="process"
+		  desc="terminates the process immediately"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <post>
+      <math>
+       <non-returning/>
+      </math>
+     </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

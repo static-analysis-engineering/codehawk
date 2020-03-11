@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="Free.xml" time="2016-11-26 22:35:11.812132"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="Free" package="System::TObject">
+    <documentation>
+      <desc>
+	Destroys an object and frees its associated memory, if necessary.
+      </desc>
+      <apidoc>
+        <pt>void Free (this)</pt>
+        <par name="this">this object</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="Free">
+      <par loc="register" name="this" reg="eax">
+        <type><ptr>void</ptr></type>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="destroys an object"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

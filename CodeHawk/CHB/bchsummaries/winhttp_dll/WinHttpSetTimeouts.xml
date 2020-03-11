@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="WinHttpSetTimeouts.xml" time="2016-05-11 23:38:40.144494"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="winhttp" name="WinHttpSetTimeouts">
+    <documentation>
+      <desc>sets time-outs involved with HTTP transactions.</desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI WinHttpSetTimeouts(</ll>
+          <ld>_In_ HINTERNET hInternet</ld>
+          <ld>_In_ int       dwResolveTimeout</ld>
+          <ld>_In_ int       dwConnectTimeout</ld>
+          <ld>_In_ int       dwSendTimeout</ld>
+          <ld>_In_ int       dwReceiveTimeout</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hInternet">
+	  The HINTERNET handle returned by WinHttpOpen or WinHttpOpenRequest
+	</par>
+        <par name="dwResolveTimeout">
+	  A value of type integer that specifies the time-out value,
+	  in milliseconds, to use for name resolution. If resolution
+	  takes longer than this time-out value, the action is
+	  canceled. The initial value is zero, meaning no time-out
+	  (infinite).  
+
+	  Windows Vista and Windows XP: If DNS timeout is specified
+	  using NAME_RESOLUTION_TIMEOUT, there is an overhead of one
+	  thread per request.
+	</par>
+        <par name="dwConnectTimeout">
+	  A value of type integer that specifies the time-out value,
+	  in milliseconds, to use for server connection requests. If a
+	  connection request takes longer than this time-out value,
+	  the request is canceled. The initial value is 60,000 (60
+	  seconds).
+	</par>
+        <par name="dwSendTimeout">
+	  A value of type integer that specifies the time-out value,
+	  in milliseconds, to use for sending requests. If sending a
+	  request takes longer than this time-out value, the send is
+	  canceled. The initial value is 30,000 (30 seconds).
+	</par>
+        <par name="dwReceiveTimeout">
+	  A value of type integer that specifies the time-out value,
+	  in milliseconds, to receive a response to a request. If a
+	  response takes longer than this time-out value, the request
+	  is canceled. The initial value is 30,000 (30 seconds).
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="20" cc="stdcall" name="WinHttpSetTimeouts">
+      <par loc="stack" name="hInternet" io="r" rep="hex" nr="1">
+        <type>HINTERNET</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="handle:internet"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwResolveTimeout" io="r" nr="2">
+        <type>int</type>
+	<roles>
+	  <role rt="ioc:network" rn="name resolution timeout"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwConnectTimeout" io="r" nr="3">
+        <type>int</type>
+	<roles>
+	  <role rt="ioc:network" rn="server connection timeout"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwSendTimeout" io="r" nr="4">
+        <type>int</type>
+	<roles>
+	  <role rt="ioc:network" rn="send request timeout"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwReceiveTimeout" io="r" nr="5">
+        <type>int</type>
+	<roles>
+	  <role rt="ioc:network" rn="response wait timeout"/>
+	</roles>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network"
+		   desc="sets timeouts for HTTP transactions"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

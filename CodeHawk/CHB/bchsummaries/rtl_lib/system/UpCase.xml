@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="UpCase.xml" time="2016-11-27 12:59:06.197486"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="UpCase" package="System">
+    <documentation>
+      <desc>Converts a character to uppercase</desc>
+      <apidoc>
+        <pt>UpCase (ch:Char)</pt>
+        <par name="ch">character to be converted</par>
+        <return>
+          <rc cond="success">upper case character</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="UpCase">
+      <par loc="register" name="ch" reg="eax">
+        <type>char</type>
+      </par>
+      <returntype>char</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

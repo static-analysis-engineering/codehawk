@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:34:17"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="winspool.drv" name="ClosePrinter">
+   <documentation>
+    <desc>The ClosePrinter function closes the specified printer object.</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL ClosePrinter(</ll>
+      <ld>_In_  HANDLE hPrinter</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hPrinter">
+       A handle to the printer object to be closed. 
+       This handle is returned by the OpenPrinter or AddPrinter function.
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="ClosePrinter">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hPrinter" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:system" rn="handle:printer" />
+     </roles>
+     <pre><deref-read/></pre>
+     <sideeffects><invalidates/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system"
+		  desc="closes a printer object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

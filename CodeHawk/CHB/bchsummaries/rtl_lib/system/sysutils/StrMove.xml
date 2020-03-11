@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="StrMove.xml" time="2016-11-27 23:23:43.797826"/>
+  <reference href="docwiki.embarcadero.com"/>
+  <libfun lib="rtl" name="StrMove" package="System::SysUtils">
+    <documentation>
+      <desc>Copies a specified number of characters to the string</desc>
+      <apidoc>
+        <pt>
+          <ll>StrMove(</ll>
+          <ld>Dest:PAnsiChar</ld>
+          <ld>Source:PAnsiChar</ld>
+          <ld>Count:Cardinal</ld>
+          <ll>):PAnsiChar</ll>
+        </pt>
+        <par name="Dest">destination buffer</par>
+        <par name="Source">source buffer</par>
+        <par name="Count">number of characters to be copied</par>
+        <return>
+	  pointer to the destination buffer
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="StrMove">
+      <par loc="register" name="Dest" reg="eax" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-string:copy"/>
+	</roles>
+      </par>
+      <par loc="register" name="Source" reg="edx" rep="hex">
+        <type><ptr>char</ptr></type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:copy"/>
+	</roles>
+      </par>
+      <par loc="register" name="Count" reg="ecx">
+        <type>Cardinal</type>
+	<roles>
+	  <role rt="size:count" rn="number of characters to be copied"/>
+	</roles>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="memops" desc="copies a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>char</type>
+	      <ci>Source</ci>
+	      <ci>Count</ci>
+	    </apply>
+	  </math>
+	</pre>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>Dest</ci>
+	      <ci>Count</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply><eq/><return/><ci>Dest</ci></apply>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>char</type>
+	      <ci>Dest</ci>
+	      <ci>Count</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

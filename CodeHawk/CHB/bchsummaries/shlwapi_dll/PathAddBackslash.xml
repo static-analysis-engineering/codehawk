@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="PathAddBackslash.xml" time="2016-07-28 16:16:59.053830"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="shlwapi" name="PathAddBackslash">
+    <documentation>
+      <desc>
+	Adds a backslash to the end of a string to create the correct
+	syntax for a path. If the source path already has a trailing
+	backslash, no backslash will be added
+      </desc>
+      <apidoc>
+        <pt>LPTSTR PathAddBackslash (_Inout_ LPTSTR lpszPath)</pt>
+        <par name="lpszPath">
+	  A pointer to a buffer with a string that represents a
+	  path. The size of this buffer must be set to MAX_PATH to
+	  ensure that it is large enough to hold the returned string.
+	</par>
+        <return>
+          <rc cond="success">
+	    A pointer that points to the new string's terminating null character
+	  </rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="PathAddBackslash">
+      <par loc="stack" name="lpszPath" io="rw" nr="1" rep="hex">
+        <type>LPTSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:file"/>
+	</roles>
+      </par>
+      <returntype>LPTSTR</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="filesystem"
+		   desc="adds a backslash to the end of a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>  <!-- null-terminator-pos should be adjusted for wide chars -->
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>lpszPath</ci>
+	      <apply>
+		<indexsize/>
+		<apply>
+		  <plus/>
+		  <apply>
+		    <null-terminator-pos/>
+		    <ci>lpszPath</ci>
+		  </apply>
+		  <cn>1</cn>
+		</apply>
+	      </apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

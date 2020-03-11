@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/12/2015 05:32:10"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="winspool.drv" name="FindClosePrinterChangeNotification">
+   <documentation>
+    <desc>
+      closes a change notification object created by calling the 
+      FindFirstPrinterChangeNotification function. 
+    </desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL FindClosePrinterChangeNotification(</ll>
+      <ld>_In_  HANDLE hChange </ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">not-zero </rc>
+      <rc cond="failure">zero </rc>
+     </return>
+     <par name="hChange">
+       A handle to the change notification object to be closed. This is a 
+       handle created by calling the FindFirstPrinterChangeNotification function.
+     </par>
+    </apidoc>
+   </documentation>
+   <api adj="4" cc="stdcall" name="FindClosePrinterChangeNotification">
+    <returntype>BOOL</returntype>
+    <par loc="stack" io="r" name="hChange" nr="1">
+     <type>HANDLE</type>
+     <roles>
+      <role rt="ioc:system" rn="handle:printer change notification" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="system"
+		 desc="closes a change notification object"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+     <nonzero-zero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2017, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

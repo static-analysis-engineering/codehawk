@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header info="libfun" name="WinHttpAddRequestHeaders.xml" time="2016-05-12 22:59:38.692825"/>
+  <reference href="http://msdn.microsoft.com"/>
+  <libfun lib="winhttp" name="WinHttpAddRequestHeaders">
+    <documentation>
+      <desc>
+	adds one or more HTTP request headers to the HTTP request handle
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>BOOL WINAPI WinHttpAddRequestHeaders(</ll>
+          <ld>_In_ HINTERNET hRequest</ld>
+          <ld>_In_ LPCWSTR   pwszHeaders</ld>
+          <ld>_In_ DWORD     dwHeadersLength</ld>
+          <ld>_In_ DWORD     dwModifiers</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hRequest">
+	  A HINTERNET handle returned by a call to the WinHttpOpenRequest function
+	</par>
+        <par name="pwszHeaders">
+	  A pointer to a string variable that contains the headers to
+	  append to the request. Each header except the last must be
+	  terminated by a carriage return/line feed (CR/LF).
+	</par>
+        <par name="dwHeadersLength">
+	  An unsigned long integer value that contains the length, in
+	  characters, of pwszHeaders. If this parameter is -1L, the
+	  function assumes that pwszHeaders is zero-terminated
+	  (ASCIIZ), and the length is computed.
+	</par>
+        <par name="dwModifiers">
+	  An unsigned long integer value that contains the flags used
+	  to modify the semantics of this function.
+	</par>
+        <return>
+          <rc cond="success">TRUE</rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="16" cc="stdcall" name="WinHttpAddRequestHeaders">
+      <par loc="stack" name="hRequest" io="r" nr="1">
+        <type>HINTERNET</type>
+	<pre><deref-read/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="handle:internet"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pwszHeaders" io="r" nr="2">
+        <type>LPCWSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:network" rn="http request headers"/>
+	  <role rt="rep:hex" rn="http request headers"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwHeadersLength" io="r" nr="3">
+        <type>DWORD</type>
+	<roles>
+	  <role rt="size:buffersize" rn="WinHttAddRequestHeaders"/>
+	</roles>
+      </par>
+      <par loc="stack" name="dwModifiers" io="r" roles="none" nr="4">
+        <type>DWORD</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+        <io-action cat="network"
+		   desc="adds HTTP request headers to a request handle"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+        <notzero-zero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

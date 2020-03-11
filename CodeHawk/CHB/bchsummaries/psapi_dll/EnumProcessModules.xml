@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="10/02/2015 23:14:23"/>
+  <libfun lib="psapi" name="EnumProcessModules">
+   <documentation>
+    <desc>Retrieves a handle for each module in the specified process</desc>
+    <apidoc>
+     <pt>
+      <ll>BOOL WINAPI EnumProcessModules(</ll>
+      <ld>_In_  HANDLE  hProcess</ld>
+      <ld>_Out_ HMODULE *lphModule</ld>
+      <ld>_In_  DWORD   cb</ld>
+      <ld>_Out_ LPDWORD lpcbNeeded</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="hProcess">A handle to the process</par>
+     <par name="lphModule">
+       An array that receives the list of module handles
+     </par>
+     <par name="cb">The size of the lphModule array, in bytes</par>
+     <par name="lpcbNeeded">
+       The number of bytes required to store all module handles in the 
+       lphModule array
+     </par>
+     <return>
+      <rc cond="success">nonzero</rc>
+      <rc cond="failure">zero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="16" cc="stdcall" name="EnumProcessModules">
+    <par loc="stack" io="r" name="hProcess" nr="1">
+     <type>HANDLE</type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:process" rn="handle:process"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lphModule" nr="2">
+     <type><ptr>HMODULE</ptr></type>
+     <roles>
+        <role rt="ioc:process" rn="handle array:modules"/>
+	<role rt="rep:hex" rn="handle array:modules"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="cb" nr="3">
+     <type>DWORD</type>
+     <roles>
+        <role rt="size:buffersize" rn="EnumProcessModules"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="lpcbNeeded" nr="4">
+     <type><ptr>DWORD</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+     <roles>
+        <role rt="size:needed" rn="EnumProcessModules"/>
+     </roles>
+    </par>
+    <returntype>BOOL</returntype>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="system"
+		  desc="retrieves a handle to each module in a process"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>HMODULE</type>
+	    <ci>lphModule</ci>
+	    <ci>cb</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write xsrc="system" xdata="handle to all modules in remote process"/>
+	    <type>HMODULE</type>
+	    <ci>lphModule</ci>
+	    <ci>cb</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>
