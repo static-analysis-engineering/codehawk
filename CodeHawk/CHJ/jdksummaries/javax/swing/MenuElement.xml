@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-12 23:55:53"/>
+  <interface name="MenuElement" package="javax.swing">
+    <superinterfaces/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getComponent -->
+      <method abstract="yes" access="public" name="getComponent" valid="no">
+        <signature>
+          <return>
+            <object>java.awt.Component</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSubElements -->
+      <method abstract="yes" access="public" name="getSubElements" valid="no">
+        <signature>
+          <return>
+            <array>
+              <object>javax.swing.MenuElement</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ menuSelectionChanged -->
+      <method abstract="yes" access="public" name="menuSelectionChanged" valid="no">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ processKeyEvent -->
+      <method abstract="yes" access="public" name="processKeyEvent" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.KeyEvent</object>
+          </arg>
+          <arg nr="2">
+            <array>
+              <object>javax.swing.MenuElement</object>
+            </array>
+          </arg>
+          <arg nr="3">
+            <object>javax.swing.MenuSelectionManager</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ processMouseEvent -->
+      <method abstract="yes" access="public" name="processMouseEvent" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+          <arg nr="2">
+            <array>
+              <object>javax.swing.MenuElement</object>
+            </array>
+          </arg>
+          <arg nr="3">
+            <object>javax.swing.MenuSelectionManager</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

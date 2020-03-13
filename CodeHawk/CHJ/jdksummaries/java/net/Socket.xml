@@ -25,7 +25,7 @@
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.net.Proxy) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.net.Proxy</object>
@@ -33,11 +33,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.net.SocketImpl) -->
-      <constructor access="protected" valid="no">
+      <constructor access="protected">
         <signature>
           <arg nr="1">
             <object>java.net.SocketImpl</object>
@@ -47,7 +52,12 @@
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String,int) -->
@@ -65,8 +75,6 @@
           <throws>java.net.UnknownHostException</throws>
           <throws>java.net.SocketException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.net.UnknownHostException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -97,7 +105,6 @@
         <exceptions>
           <throws>java.io.IOException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -135,7 +142,6 @@
           <throws>java.io.IOException</throws>
           <throws>java.net.SocketException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -162,7 +168,7 @@
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~ (java.net.InetAddress,int,java.net.InetAddress,int) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.net.InetAddress</object>
@@ -181,11 +187,28 @@
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="4"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String,int,boolean) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -201,11 +224,24 @@
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.net.InetAddress,int,boolean) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.net.InetAddress</object>
@@ -221,7 +257,20 @@
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
     </constructors>
@@ -237,7 +286,6 @@
         <exceptions>
           <throws>java.io.IOException</throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -251,7 +299,6 @@
       <method access="public" name="close">
         <signature/>
         <exceptions>
-          <throws>java.io.IOException</throws>
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
@@ -273,7 +320,6 @@
           <throws>java.io.IOException</throws>
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.nio.channels.IllegalBlockingModeException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -298,7 +344,6 @@
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.nio.channels.IllegalBlockingModeException</throws>
           <throws>java.net.SocketTimeoutException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -309,7 +354,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getChannel -->
-      <method access="public" name="getChannel" valid="no">
+      <method access="public" name="getChannel">
         <signature>
           <return>
             <object>java.nio.channels.SocketChannel</object>
@@ -317,7 +362,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInetAddress -->
@@ -346,7 +396,6 @@
         </signature>
         <exceptions>
           <throws>java.io.IOException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -367,7 +416,6 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.net.SocketException</throws>
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
@@ -439,7 +487,6 @@
         </signature>
         <exceptions>
           <throws>java.net.SocketException</throws>
-          <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -458,7 +505,6 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.io.IOException</throws>
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
@@ -494,7 +540,6 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.net.SocketException</throws>
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
@@ -532,7 +577,6 @@
         </signature>
         <exceptions>
           <throws>java.net.SocketException</throws>
-          <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -551,7 +595,6 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.net.SocketException</throws>
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
@@ -572,7 +615,6 @@
         </signature>
         <exceptions>
           <throws>java.net.SocketException</throws>
-          <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -591,7 +633,6 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.net.SocketException</throws>
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
@@ -632,7 +673,6 @@
         </signature>
         <exceptions>
           <throws>java.net.SocketException</throws>
-          <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -644,7 +684,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isBound -->
-      <method access="public" name="isBound" valid="no">
+      <method access="public" name="isBound">
         <signature>
           <return>
             <boolean/>
@@ -652,7 +692,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isClosed -->
@@ -746,7 +791,6 @@
         </signature>
         <exceptions>
           <throws>java.net.SocketException</throws>
-          <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -765,7 +809,6 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.net.SocketException</throws>
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
@@ -805,7 +848,6 @@
         <exceptions>
           <throws>java.net.SocketException</throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -824,7 +866,6 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.net.SocketException</throws>
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
@@ -846,7 +887,6 @@
         <exceptions>
           <throws>java.net.SocketException</throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -870,7 +910,6 @@
         <exceptions>
           <throws>java.net.SocketException</throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -894,7 +933,6 @@
         </signature>
         <exceptions>
           <throws>java.net.SocketException</throws>
-          <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -906,7 +944,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSocketImplFactory -->
-      <method access="public" name="setSocketImplFactory" static="yes" valid="no">
+      <method access="public" name="setSocketImplFactory" static="yes">
         <signature>
           <arg nr="1">
             <object>java.net.SocketImplFactory</object>
@@ -928,7 +966,6 @@
         </signature>
         <exceptions>
           <throws>java.net.SocketException</throws>
-          <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -947,7 +984,6 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.net.SocketException</throws>
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>

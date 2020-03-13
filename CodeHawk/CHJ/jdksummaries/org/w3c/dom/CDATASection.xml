@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-13 10:38:03"/>
+  <interface name="CDATASection" package="org.w3c.dom">
+    <superinterfaces>
+      <superinterface>org.w3c.dom.Text</superinterface>
+      <superinterface>org.w3c.dom.CharacterData</superinterface>
+    </superinterfaces>
+    <!-- ============================== METHODS ==============================  -->
+    <methods/>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

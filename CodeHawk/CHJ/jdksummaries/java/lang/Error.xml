@@ -77,7 +77,7 @@
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~ (java.lang.String,java.lang.Throwable,boolean,boolean) -->
-      <constructor access="protected" valid="no">
+      <constructor access="protected">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -94,7 +94,24 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="4"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
     </constructors>

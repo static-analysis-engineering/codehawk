@@ -207,7 +207,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getChannel -->
-      <method access="public" name="getChannel" valid="no">
+      <method access="public" name="getChannel">
         <signature>
           <return>
             <object>java.nio.channels.ServerSocketChannel</object>
@@ -215,11 +215,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInetAddress -->
-      <method access="public" name="getInetAddress" valid="no">
+      <method access="public" name="getInetAddress">
         <signature>
           <return>
             <object>java.net.InetAddress</object>
@@ -227,7 +232,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getLocalPort -->
@@ -265,7 +275,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getReceiveBufferSize -->
-      <method access="public" name="getReceiveBufferSize" valid="no">
+      <method access="public" name="getReceiveBufferSize">
         <signature>
           <return>
             <int/>
@@ -275,11 +285,27 @@
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getReuseAddress -->
-      <method access="public" name="getReuseAddress" valid="no">
+      <method access="public" name="getReuseAddress">
         <signature>
           <return>
             <boolean/>
@@ -289,11 +315,16 @@
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSoTimeout -->
-      <method access="public" name="getSoTimeout" valid="no">
+      <method access="public" name="getSoTimeout">
         <signature>
           <return>
             <int/>
@@ -303,11 +334,27 @@
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ implAccept -->
-      <method access="protected" final="yes" name="implAccept" valid="no">
+      <method access="protected" final="yes" name="implAccept">
         <signature>
           <arg nr="1">
             <object>java.net.Socket</object>
@@ -315,9 +362,15 @@
         </signature>
         <exceptions>
           <throws>java.io.IOException</throws>
+	  <throws>java.nio.channels.IllegalBlockingModeException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isBound -->
@@ -355,7 +408,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setPerformancePreferences -->
-      <method access="public" name="setPerformancePreferences" valid="no">
+      <method access="public" name="setPerformancePreferences">
         <signature>
           <arg nr="1">
             <int/>
@@ -369,7 +422,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setReceiveBufferSize -->
@@ -381,7 +447,18 @@
         </signature>
         <exceptions>
           <throws>java.net.SocketException</throws>
-          <throws>java.net.SocketException</throws>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -400,7 +477,6 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.net.SocketException</throws>
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
@@ -421,7 +497,6 @@
         </signature>
         <exceptions>
           <throws>java.net.SocketException</throws>
-          <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -433,7 +508,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSocketFactory -->
-      <method access="public" name="setSocketFactory" static="yes" valid="no">
+      <method access="public" name="setSocketFactory" static="yes">
         <signature>
           <arg nr="1">
             <object>java.net.SocketImplFactory</object>

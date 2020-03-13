@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-12 21:08:43"/>
+  <interface name="MouseListener" package="java.awt.event">
+    <superinterfaces>
+      <superinterface>java.util.EventListener</superinterface>
+    </superinterfaces>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mouseClicked -->
+      <method abstract="yes" access="public" name="mouseClicked" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mouseEntered -->
+      <method abstract="yes" access="public" name="mouseEntered" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mouseExited -->
+      <method abstract="yes" access="public" name="mouseExited" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mousePressed -->
+      <method abstract="yes" access="public" name="mousePressed" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mouseReleased -->
+      <method abstract="yes" access="public" name="mouseReleased" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
