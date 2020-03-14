@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-12 16:33:00"/>
-  <class final="yes" name="UUID" package="java.util">
+  <class final="yes" name="UUID" immutable="yes" package="java.util">
     <interfaces>
       <implements>java.io.Serializable</implements>
       <implements>java.lang.Comparable</implements>

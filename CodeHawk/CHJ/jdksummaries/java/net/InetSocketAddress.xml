@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-09 23:52:37"/>
-  <class name="InetSocketAddress" package="java.net">
+  <class name="InetSocketAddress" immutable="yes" package="java.net">
     <superclass>java.net.SocketAddress</superclass>
     <interfaces>
       <implements>java.io.Serializable</implements>

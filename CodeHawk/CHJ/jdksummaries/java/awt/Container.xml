@@ -272,7 +272,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addContainerListener -->
-      <method access="public" name="addContainerListener" valid="no">
+      <method access="public" name="addContainerListener">
         <signature>
           <arg nr="1">
             <object>java.awt.event.ContainerListener</object>
@@ -280,7 +280,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addImpl -->
@@ -370,7 +375,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ applyComponentOrientation -->
-      <method access="public" name="applyComponentOrientation" valid="no">
+      <method access="public" name="applyComponentOrientation">
         <signature>
           <arg nr="1">
             <object>java.awt.ComponentOrientation</object>
@@ -378,7 +383,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ areFocusTraversalKeysSet -->
@@ -686,7 +696,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getContainerListeners -->
-      <method access="public" name="getContainerListeners" valid="no">
+      <method access="public" name="getContainerListeners">
         <signature>
           <return>
             <array>
@@ -696,7 +706,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFocusTraversalKeys -->
@@ -787,7 +802,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getListeners -->
-      <method access="public" name="getListeners" valid="no">
+      <method access="public" name="getListeners">
         <signature>
           <arg nr="1">
             <object>java.lang.Class</object>
@@ -800,7 +815,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMaximumSize -->
@@ -838,7 +862,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMousePosition -->
-      <method access="public" name="getMousePosition" valid="no">
+      <method access="public" name="getMousePosition">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -851,7 +875,16 @@
           <throws>java.awt.HeadlessException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPreferredSize -->
@@ -979,7 +1012,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isFocusTraversalPolicySet -->
-      <method access="public" name="isFocusTraversalPolicySet" valid="no">
+      <method access="public" name="isFocusTraversalPolicySet">
         <signature>
           <return>
             <boolean/>
@@ -987,7 +1020,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isValidateRoot -->
@@ -1160,7 +1198,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ paramString -->
-      <method access="protected" name="paramString" valid="no">
+      <method access="protected" name="paramString">
         <signature>
           <return>
             <object>java.lang.String</object>
@@ -1168,7 +1206,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ preferredSize -->
@@ -1223,7 +1266,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ processContainerEvent -->
-      <method access="protected" name="processContainerEvent" valid="no">
+      <method access="protected" name="processContainerEvent">
         <signature>
           <arg nr="1">
             <object>java.awt.event.ContainerEvent</object>
@@ -1231,7 +1274,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ processEvent -->
@@ -1286,7 +1334,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeContainerListener -->
-      <method access="public" name="removeContainerListener" valid="no">
+      <method access="public" name="removeContainerListener">
         <signature>
           <arg nr="1">
             <object>java.awt.event.ContainerListener</object>
@@ -1294,7 +1342,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeNotify -->
@@ -1333,7 +1386,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFocusCycleRoot -->
-      <method access="public" name="setFocusCycleRoot" valid="no">
+      <method access="public" name="setFocusCycleRoot">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -1341,7 +1394,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFocusTraversalKeys -->
@@ -1388,7 +1446,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFocusTraversalPolicyProvider -->
-      <method access="public" final="yes" name="setFocusTraversalPolicyProvider" valid="no">
+      <method access="public" final="yes" name="setFocusTraversalPolicyProvider">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -1396,7 +1454,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFont -->

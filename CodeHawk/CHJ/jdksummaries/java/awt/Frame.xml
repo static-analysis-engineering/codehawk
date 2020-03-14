@@ -226,7 +226,7 @@
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.awt.GraphicsConfiguration) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.awt.GraphicsConfiguration</object>
@@ -234,7 +234,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String) -->
@@ -257,7 +262,7 @@
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~ (java.lang.String,java.awt.GraphicsConfiguration) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -268,7 +273,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
     </constructors>
@@ -300,7 +314,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getCursorType -->
-      <method access="public" name="getCursorType" valid="no">
+      <method access="public" name="getCursorType">
         <signature>
           <return>
             <int/>
@@ -308,7 +322,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getExtendedState -->
@@ -329,7 +348,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFrames -->
-      <method access="public" name="getFrames" static="yes" valid="no">
+      <method access="public" name="getFrames" static="yes">
         <signature>
           <return>
             <array>
@@ -343,7 +362,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getIconImage -->
-      <method access="public" name="getIconImage" valid="no">
+      <method access="public" name="getIconImage">
         <signature>
           <return>
             <object>java.awt.Image</object>
@@ -351,11 +370,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMaximizedBounds -->
-      <method access="public" name="getMaximizedBounds" valid="no">
+      <method access="public" name="getMaximizedBounds">
         <signature>
           <return>
             <object>java.awt.Rectangle</object>
@@ -363,11 +387,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMenuBar -->
-      <method access="public" name="getMenuBar" valid="no">
+      <method access="public" name="getMenuBar">
         <signature>
           <return>
             <object>java.awt.MenuBar</object>
@@ -375,7 +404,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getState -->
@@ -413,7 +447,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isResizable -->
-      <method access="public" name="isResizable" valid="no">
+      <method access="public" name="isResizable">
         <signature>
           <return>
             <boolean/>
@@ -421,11 +455,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isUndecorated -->
-      <method access="public" name="isUndecorated" valid="no">
+      <method access="public" name="isUndecorated">
         <signature>
           <return>
             <boolean/>
@@ -433,11 +472,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ paramString -->
-      <method access="protected" name="paramString" valid="no">
+      <method access="protected" name="paramString">
         <signature>
           <return>
             <object>java.lang.String</object>
@@ -445,7 +489,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ remove -->
@@ -491,7 +540,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setCursor -->
-      <method access="public" name="setCursor" valid="no">
+      <method access="public" name="setCursor">
         <signature>
           <arg nr="1">
             <int/>
@@ -499,7 +548,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setExtendedState -->
@@ -520,7 +574,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setIconImage -->
-      <method access="public" name="setIconImage" valid="no">
+      <method access="public" name="setIconImage">
         <signature>
           <arg nr="1">
             <object>java.awt.Image</object>
@@ -528,11 +582,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setMaximizedBounds -->
-      <method access="public" name="setMaximizedBounds" valid="no">
+      <method access="public" name="setMaximizedBounds">
         <signature>
           <arg nr="1">
             <object>java.awt.Rectangle</object>
@@ -540,11 +599,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setMenuBar -->
-      <method access="public" name="setMenuBar" valid="no">
+      <method access="public" name="setMenuBar">
         <signature>
           <arg nr="1">
             <object>java.awt.MenuBar</object>
@@ -552,11 +616,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setOpacity -->
-      <method access="public" name="setOpacity" valid="no">
+      <method access="public" name="setOpacity">
         <signature>
           <arg nr="1">
             <float/>
@@ -564,7 +633,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setResizable -->
@@ -585,7 +659,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setShape -->
-      <method access="public" name="setShape" valid="no">
+      <method access="public" name="setShape">
         <signature>
           <arg nr="1">
             <object>java.awt.Shape</object>
@@ -593,11 +667,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setState -->
-      <method access="public" name="setState" valid="no">
+      <method access="public" name="setState">
         <signature>
           <arg nr="1">
             <int/>
@@ -605,7 +684,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setTitle -->

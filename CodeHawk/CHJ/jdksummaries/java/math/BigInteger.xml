@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-12 14:34:48"/>
-  <class name="BigInteger" package="java.math">
+  <class name="BigInteger" immutable="yes" package="java.math">
     <superclass>java.lang.Number</superclass>
     <interfaces>
       <implements>java.lang.Comparable</implements>

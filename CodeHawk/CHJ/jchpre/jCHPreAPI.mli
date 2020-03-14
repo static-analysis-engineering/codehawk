@@ -943,6 +943,7 @@ object
   method get_final_summaries: class_name_int -> class_method_signature_int list
   method get_invalid_methods:
            (class_method_signature_int list * class_method_signature_int list)
+  method get_immutable_classes: class_name_int list
 
   (* iterators *)
   method iter: (function_summary_int -> unit) -> unit

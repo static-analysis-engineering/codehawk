@@ -82,6 +82,7 @@ module ClassMethodSignatureCollections = CHCollections.Make (
   end)
 
 let showinvalid = ref false
+let showimmutable = ref false
 let name = ref ""
 let cn = make_cn "java.lang.Object"
 
@@ -325,14 +326,23 @@ let inspect_summaries (name:string) =
                     STR (string_repeat "-" 80) ; NL ] ;
          pr_debug (List.map (fun cms -> LBLOCK [ cms#toPretty ; NL ]) pub)
        end) ;
-    pr_debug [ NL ; NL ; STR "Patterns" ; NL ] ;
+    
+    (if !showimmutable then
+       let cns =
+         List.sort
+           (fun cn1 cn2 -> P.compare cn1#name cn2#name)
+           function_summary_library#get_immutable_classes in
+       pr_debug [ NL ; STR "Immutable classes: " ; NL ;
+                  LBLOCK (List.map (fun cn -> LBLOCK [ STR "  " ; cn#toPretty ; NL ]) cns) ])
   end
 
 let speclist =
   [("-classpath",Arg.String system_settings#add_classpath_unit,
     "sets java classpath") ;
    ("-showinvalid", Arg.Set showinvalid,
-    "shows methods that have not been summarized yet")]
+    "shows methods that have not been summarized yet");
+   ("-showimmutable", Arg.Set showimmutable,
+    "prints list of classes that are immutable") ]
 
 let usage_msg = "inspect_summaries filename"
 let read_args () = Arg.parse speclist   (fun s -> name := s) usage_msg

@@ -361,6 +361,7 @@ let write_xml_summary_class
     if function_summary_library#has_class_summary cn then
       let summary = function_summary_library#get_class_summary cn in
       let cprops = summary#get_class_properties in
+      let _ = sety "immutable" summary#is_immutable in
       match summary#get_class_properties with
       | [] -> ()
       | _ ->
@@ -476,8 +477,7 @@ let write_xml_summary_class
       set "name" cn#simple_name ;
       set "package" cn#package_name ;
       sety "final" cInfo#is_final ;
-      sety "abstract" cInfo#is_abstract ;
-      sety "immutable" cInfo#is_immutable
+      sety "abstract" cInfo#is_abstract 
     end in
   ()
   

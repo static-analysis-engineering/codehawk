@@ -643,6 +643,7 @@ let read_xml_class
   try
     let is_abstract = is_yes "abstract" in
     let is_final = is_yes "final" in
+    let is_immutable = is_yes "immutable" in
     let _ = class_is_final := is_final in
     let cn = if package = "" then 
 	make_cn name 
@@ -672,6 +673,7 @@ let read_xml_class
         ~super_class
         ~is_abstract
         ~is_final
+        ~is_immutable
         ~date
         ~interfaces
         ~class_properties

@@ -74,7 +74,9 @@ let get_summary_classpath () =
   | Some cp -> cp
     
 let rec add_class_dependency ?(src="unknown") (cn:class_name_int) =
-  if app#has_class cn then () else
+  if app#has_class cn then
+    ()
+  else
     let summaryClasspath = get_summary_classpath () in
     if JCHFile.has_summary_class summaryClasspath cn then
       let depsrc = cn#name ^ " dependents" in
@@ -451,7 +453,8 @@ let rec load_class_and_dependents (cn:class_name_int) =
     let c = get_class cp cn in
     let classes = c :: (List.map (get_class cp) c#get_interfaces) in
     let load_super c = 
-      match c#get_super_class with Some sc -> load_class_and_dependents sc | _ -> () in
+      match c#get_super_class with
+      | Some sc -> load_class_and_dependents sc | _ -> () in
     begin
       List.iter app#add_class classes ;
       List.iter load_super classes ;
@@ -470,7 +473,8 @@ let process_classes () =
         end) ;
     app#iter_classes (fun cInfo ->
         begin
-          (if cInfo#has_super_class then add_class_dependency ~src:"superclass" cInfo#get_super_class) ;
+          (if cInfo#has_super_class then
+             add_class_dependency ~src:"superclass" cInfo#get_super_class) ;
           List.iter add_class_dependency cInfo#get_interfaces ;
           (if cInfo#is_stubbed then () else
 	     begin
@@ -479,7 +483,9 @@ let process_classes () =
 	           if app#has_method cms then
 		     let mInfo = app#get_method cms in
 		     begin
-		       List.iter (add_class_dependency ~src:"classes referenced") (get_classes_referenced mInfo) ;
+		       List.iter
+                         (add_class_dependency ~src:"classes referenced")
+                         (get_classes_referenced mInfo) ;
 		       scan_method mInfo
 		     end) cInfo#get_methods_defined ;
 	     end )

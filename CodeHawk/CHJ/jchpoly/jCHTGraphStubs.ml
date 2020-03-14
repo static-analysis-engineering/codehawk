@@ -146,7 +146,15 @@ let mk_lib_stub stub_name cms:JCHTGraph.taint_graph_t =
                   (JCH_failure
                      (LBLOCK [ STR "mk_lib_stubs:add_edges: " ; p ]))
               end in
-         let fs = cInfo#get_field_signature fieldname in
+         let fs =
+           try
+             cInfo#get_field_signature fieldname
+           with
+           | JCH_failure p ->
+              let cms = retrieve_cms cmsix in
+              raise (JCH_failure
+                       (LBLOCK [ STR "TGraphStubs:mk_lib_stub:add_edges:JObjectFieldValue: " ;
+                                 cms#toPretty ; STR ": " ; p ])) in
          let cfs = make_cfs cn fs in
          let _ = pr__debug [ STR "Library field taint: " ; cfs#toPretty ;
                              STR " (using variable only now)" ; NL ] in
@@ -174,7 +182,14 @@ let mk_lib_stub stub_name cms:JCHTGraph.taint_graph_t =
                   (LBLOCK [ cms#toPretty ; STR ": " ; cn#toPretty ]) ;
                 raise (JCH_failure (LBLOCK [ STR "mk_lib_stubs:add_edges: " ; p ]))
               end in             
-         let fs = cInfo#get_field_signature fieldname in
+         let fs =
+           try
+             cInfo#get_field_signature fieldname
+           with
+           | JCH_failure p ->
+              raise (JCH_failure
+                       (LBLOCK [ STR "TGraphStubs:mk_lib_stub:add_edges:JStaticFieldValue: " ;
+                                 p ])) in
          let cfs = make_cfs cn fs in
          let _ =
            pr__debug [ STR "mkLibStub: "; stub_name#toPretty ; STR " " ;

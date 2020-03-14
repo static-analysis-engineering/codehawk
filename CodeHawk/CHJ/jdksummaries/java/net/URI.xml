@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-12 16:28:24"/>
-  <class final="yes" name="URI" package="java.net">
+  <class final="yes" immutable="yes" name="URI" package="java.net">
     <interfaces>
       <implements>java.lang.Comparable</implements>
       <implements>java.io.Serializable</implements>

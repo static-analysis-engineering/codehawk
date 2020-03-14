@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-09 22:30:39"/>
-  <class name="File" package="java.io">
+  <class name="File" immutable="yes" package="java.io">
     <interfaces>
       <implements>java.io.Serializable</implements>
       <implements>java.lang.Comparable</implements>
@@ -57,7 +57,7 @@
         <summary>
           <taint>
             <transfer>
-              <this/>
+              <arg nr="1"/>
               <this/>
             </transfer>
           </taint>
@@ -851,10 +851,9 @@
         </exceptions>
         <summary>
           <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
+	    <defput>
+	      <return/>
+	    </defput>
           </taint>
         </summary>
       </method>
@@ -870,10 +869,9 @@
         </exceptions>
         <summary>
           <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
+	    <defput>
+	      <return/>
+	    </defput>
           </taint>
           <postconditions>
             <post>
@@ -1087,10 +1085,9 @@
         </exceptions>
         <summary>
           <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
+	    <defput>
+	      <return/>
+	    </defput>
           </taint>
           <postconditions>
             <post>
@@ -1126,10 +1123,9 @@
         </exceptions>
         <summary>
           <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
+	    <defput>
+	      <return/>
+	    </defput>
           </taint>
           <postconditions>
             <post>
@@ -1208,7 +1204,7 @@
         <summary>
           <taint>
 	    <defput>
-	      <this/>
+	      <return/>
 	    </defput>
 	  </taint>
         </summary>
@@ -1227,7 +1223,7 @@
         <summary>
           <taint>
 	    <defput>
-	      <this/>
+	      <return/>
 	    </defput>
 	  </taint>
         </summary>
@@ -1259,10 +1255,9 @@
         </exceptions>
         <summary>
           <taint>
-            <transfer>
-              <arg nr="1"/>
-              <this/>
-            </transfer>
+	    <defput>
+	      <return/>
+	    </defput>
           </taint>
           <postconditions>
             <post>
@@ -1297,7 +1292,11 @@
           <throws>java.lang.SecurityException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <defput>
+	      <return/>
+	    </defput>
+	  </taint>
           <postconditions>
             <post>
               <math>
@@ -1336,26 +1335,9 @@
         <exceptions/>
         <summary>
           <taint>
-            <transfer>
-              <arg nr="1"/>
-              <this/>
-            </transfer>
-            <transfer>
-              <arg nr="2"/>
-              <this/>
-            </transfer>
-            <transfer>
-              <arg nr="1"/>
-              <return/>
-            </transfer>
-            <transfer>
-              <arg nr="2"/>
-              <return/>
-            </transfer>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
+	    <defput>
+	      <return/>
+	    </defput>
           </taint>
         </summary>
       </method>
@@ -1372,18 +1354,9 @@
         <exceptions/>
         <summary>
           <taint>
-            <transfer>
-              <arg nr="1"/>
-              <return/>
-            </transfer>
-            <transfer>
-              <arg nr="1"/>
-              <this/>
-            </transfer>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
+	    <defput>
+	      <return/>
+	    </defput>
           </taint>
         </summary>
       </method>
@@ -1403,26 +1376,9 @@
         <exceptions/>
         <summary>
           <taint>
-            <transfer>
-              <arg nr="1"/>
-              <this/>
-            </transfer>
-            <transfer>
-              <arg nr="2"/>
-              <this/>
-            </transfer>
-            <transfer>
-              <arg nr="1"/>
-              <return/>
-            </transfer>
-            <transfer>
-              <arg nr="2"/>
-              <return/>
-            </transfer>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
+	    <defput>
+	      <return/>
+	    </defput>
           </taint>
         </summary>
       </method>
@@ -1439,18 +1395,9 @@
         <exceptions/>
         <summary>
           <taint>
-            <transfer>
-              <arg nr="1"/>
-              <return/>
-            </transfer>
-            <transfer>
-              <arg nr="1"/>
-              <this/>
-            </transfer>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
+	    <defput>
+	      <return/>
+	    </defput>
           </taint>
         </summary>
       </method>
@@ -1522,7 +1469,6 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.net.MalformedURLException</throws>
           <throws>java.net.MalformedURLException</throws>
         </exceptions>
         <summary>

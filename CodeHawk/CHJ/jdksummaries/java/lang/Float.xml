@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-12 14:41:18"/>
-  <class final="yes" name="Float" package="java.lang">
+  <class final="yes" immutable="yes" name="Float" package="java.lang">
     <superclass>java.lang.Number</superclass>
     <interfaces>
       <implements>java.lang.Comparable</implements>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-09 23:58:37"/>
-  <class final="yes" name="Pattern" package="java.util.regex">
+  <class final="yes" immutable="yes" name="Pattern" package="java.util.regex">
     <interfaces>
       <implements>java.io.Serializable</implements>
     </interfaces>
@@ -167,26 +167,7 @@
               <this/>
               <return/>
             </transfer>
-            <transfer>
-              <return/>
-              <this/>
-            </transfer>
-            <transfer>
-              <this field="flags"/>
-              <return/>
-            </transfer>
           </taint>
-          <postconditions>
-            <post>
-              <math>
-                <apply>
-                  <eq/>
-                  <return/>
-                  <this/>
-                </apply>
-              </math>
-            </post>
-          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ matcher -->
@@ -253,7 +234,7 @@
         <summary>
           <taint>
             <transfer>
-              <this field="pattern"/>
+              <this/>
               <return/>
             </transfer>
           </taint>
@@ -373,7 +354,7 @@
         <summary>
           <taint>
             <transfer>
-              <this field="pattern"/>
+              <this/>
               <return/>
             </transfer>
           </taint>

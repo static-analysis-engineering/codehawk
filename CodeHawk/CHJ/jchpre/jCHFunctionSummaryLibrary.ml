@@ -222,6 +222,10 @@ object (self)
     else
       []
 
+  method get_immutable_classes =
+    H.fold (fun _ v a ->
+        if v#is_immutable then (v#get_class_name :: a) else a) class_library []
+
   method get_invalid_methods =
     let invalidMethods =
       H.fold (fun k v a ->
