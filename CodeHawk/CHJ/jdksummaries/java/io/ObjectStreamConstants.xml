@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-14 23:17:27"/>
+  <interface name="ObjectStreamConstants" package="java.io">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:STREAM_MAGIC -->
+      <field access="public" final="yes" name="STREAM_MAGIC" static="yes">
+        <signature>
+          <short/>
+        </signature>
+        <value>
+          <int value="-21267"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:STREAM_VERSION -->
+      <field access="public" final="yes" name="STREAM_VERSION" static="yes">
+        <signature>
+          <short/>
+        </signature>
+        <value>
+          <int value="5"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_BASE -->
+      <field access="public" final="yes" name="TC_BASE" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="112"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_NULL -->
+      <field access="public" final="yes" name="TC_NULL" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="112"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_REFERENCE -->
+      <field access="public" final="yes" name="TC_REFERENCE" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="113"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_CLASSDESC -->
+      <field access="public" final="yes" name="TC_CLASSDESC" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="114"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_OBJECT -->
+      <field access="public" final="yes" name="TC_OBJECT" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="115"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_STRING -->
+      <field access="public" final="yes" name="TC_STRING" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="116"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_ARRAY -->
+      <field access="public" final="yes" name="TC_ARRAY" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="117"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_CLASS -->
+      <field access="public" final="yes" name="TC_CLASS" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="118"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_BLOCKDATA -->
+      <field access="public" final="yes" name="TC_BLOCKDATA" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="119"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_ENDBLOCKDATA -->
+      <field access="public" final="yes" name="TC_ENDBLOCKDATA" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="120"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_RESET -->
+      <field access="public" final="yes" name="TC_RESET" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="121"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_BLOCKDATALONG -->
+      <field access="public" final="yes" name="TC_BLOCKDATALONG" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="122"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_EXCEPTION -->
+      <field access="public" final="yes" name="TC_EXCEPTION" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="123"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_LONGSTRING -->
+      <field access="public" final="yes" name="TC_LONGSTRING" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="124"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_PROXYCLASSDESC -->
+      <field access="public" final="yes" name="TC_PROXYCLASSDESC" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="125"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_ENUM -->
+      <field access="public" final="yes" name="TC_ENUM" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="126"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TC_MAX -->
+      <field access="public" final="yes" name="TC_MAX" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="126"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:baseWireHandle -->
+      <field access="public" final="yes" name="baseWireHandle" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="8257536"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SC_WRITE_METHOD -->
+      <field access="public" final="yes" name="SC_WRITE_METHOD" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="1"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SC_BLOCK_DATA -->
+      <field access="public" final="yes" name="SC_BLOCK_DATA" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="8"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SC_SERIALIZABLE -->
+      <field access="public" final="yes" name="SC_SERIALIZABLE" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="2"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SC_EXTERNALIZABLE -->
+      <field access="public" final="yes" name="SC_EXTERNALIZABLE" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="4"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SC_ENUM -->
+      <field access="public" final="yes" name="SC_ENUM" static="yes">
+        <signature>
+          <byte/>
+        </signature>
+        <value>
+          <int value="16"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUBSTITUTION_PERMISSION -->
+      <field access="public" final="yes" name="SUBSTITUTION_PERMISSION" not-null="yes" static="yes">
+        <signature>
+          <object>java.io.SerializablePermission</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUBCLASS_IMPLEMENTATION_PERMISSION -->
+      <field access="public" final="yes" name="SUBCLASS_IMPLEMENTATION_PERMISSION" not-null="yes" static="yes">
+        <signature>
+          <object>java.io.SerializablePermission</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:PROTOCOL_VERSION_1 -->
+      <field access="public" final="yes" name="PROTOCOL_VERSION_1" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="1"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:PROTOCOL_VERSION_2 -->
+      <field access="public" final="yes" name="PROTOCOL_VERSION_2" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="2"/>
+        </value>
+      </field>
+    </fields>
+    <!-- ============================== METHODS ==============================  -->
+    <methods/>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

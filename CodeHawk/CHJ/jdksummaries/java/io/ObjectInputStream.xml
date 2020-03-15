@@ -1,0 +1,909 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-14 23:13:25"/>
+  <class name="ObjectInputStream" package="java.io">
+    <superclass>java.io.InputStream</superclass>
+    <interfaces>
+      <implements>java.io.ObjectInput</implements>
+      <implements>java.io.ObjectStreamConstants</implements>
+      <implements>java.io.Closeable</implements>
+      <implements>java.lang.AutoCloseable</implements>
+      <implements>java.io.DataInput</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.InputStream) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <object>java.io.InputStream</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.io.StreamCorruptedException</throws>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.SecurityException</throws>
+          <throws>java.lang.NullPointerException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ () -->
+      <constructor access="protected">
+        <signature/>
+        <exceptions>
+          <throws>java.lang.SecurityException</throws>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ available -->
+      <method access="public" name="available">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <geq/>
+                  <return/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ close -->
+      <method access="public" name="close">
+        <signature/>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <remove>
+              <this/>
+            </remove>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ defaultReadObject -->
+      <method access="public" name="defaultReadObject">
+        <signature/>
+        <exceptions>
+          <throws>java.lang.ClassNotFoundException</throws>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.NotActiveException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <this/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enableResolveObject -->
+      <method access="protected" name="enableResolveObject" valid="no">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.SecurityException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ read -->
+      <method access="public" name="read">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <geq/>
+                  <return/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </post>
+            <post>
+              <math>
+                <apply>
+                  <leq/>
+                  <return/>
+                  <cn>255</cn>
+                </apply>
+              </math>
+            </post>
+            <error-post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <cn>-1</cn>
+                </apply>
+              </math>
+            </error-post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ read -->
+      <method access="public" name="read">
+        <signature>
+          <arg nr="1">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <arg nr="1"/>
+            </defput>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <geq/>
+                  <return/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </post>
+            <post>
+              <math>
+                <apply>
+                  <leq/>
+                  <return/>
+                  <arg nr="3"/>
+                </apply>
+              </math>
+            </post>
+            <error-post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <cn>-1</cn>
+                </apply>
+              </math>
+            </error-post>
+          </postconditions>
+          <side-effects>
+            <side-effect>
+              <math>
+                <apply>
+                  <numeric-abstract/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </side-effect>
+          </side-effects>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readBoolean -->
+      <method access="public" name="readBoolean">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.EOFException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readByte -->
+      <method access="public" name="readByte">
+        <signature>
+          <return>
+            <byte/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.EOFException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readChar -->
+      <method access="public" name="readChar">
+        <signature>
+          <return>
+            <char/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.EOFException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readClassDescriptor -->
+      <method access="protected" name="readClassDescriptor" valid="no">
+        <signature>
+          <return>
+            <object>java.io.ObjectStreamClass</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.ClassNotFoundException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readDouble -->
+      <method access="public" name="readDouble">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.EOFException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readFields -->
+      <method access="public" name="readFields" valid="no">
+        <signature>
+          <return>
+            <object>java.io.ObjectInputStream$GetField</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.ClassNotFoundException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readFloat -->
+      <method access="public" name="readFloat">
+        <signature>
+          <return>
+            <float/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.EOFException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readFully -->
+      <method access="public" name="readFully">
+        <signature>
+          <arg nr="1">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.EOFException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <arg nr="1"/>
+            </defput>
+          </taint>
+          <side-effects>
+            <side-effect>
+              <math>
+                <apply>
+                  <numeric-abstract/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </side-effect>
+          </side-effects>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readFully -->
+      <method access="public" name="readFully">
+        <signature>
+          <arg nr="1">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.EOFException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <arg nr="1"/>
+            </defput>
+          </taint>
+          <side-effects>
+            <side-effect>
+              <math>
+                <apply>
+                  <numeric-abstract/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </side-effect>
+          </side-effects>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readInt -->
+      <method access="public" name="readInt">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.EOFException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readLine -->
+      <method access="public" name="readLine">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readLong -->
+      <method access="public" name="readLong">
+        <signature>
+          <return>
+            <long/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.EOFException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readObject -->
+      <method access="public" final="yes" name="readObject">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.ClassNotFoundException</throws>
+          <throws>java.io.InvalidClassException</throws>
+          <throws>java.io.StreamCorruptedException</throws>
+          <throws>java.io.OptionalDataException</throws>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readObjectOverride -->
+      <method access="protected" name="readObjectOverride" valid="no">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.ClassNotFoundException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readShort -->
+      <method access="public" name="readShort">
+        <signature>
+          <return>
+            <short/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.EOFException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readStreamHeader -->
+      <method access="protected" name="readStreamHeader" valid="no">
+        <signature/>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.StreamCorruptedException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readUTF -->
+      <method access="public" name="readUTF">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.UTFDataFormatException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readUnshared -->
+      <method access="public" name="readUnshared" valid="no">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.ClassNotFoundException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readUnsignedByte -->
+      <method access="public" name="readUnsignedByte">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.EOFException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readUnsignedShort -->
+      <method access="public" name="readUnsignedShort">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.io.EOFException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ registerValidation -->
+      <method access="public" name="registerValidation" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.io.ObjectInputValidation</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.io.NotActiveException</throws>
+          <throws>java.io.InvalidObjectException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ resolveClass -->
+      <method access="protected" name="resolveClass">
+        <signature>
+          <arg nr="1">
+            <object>java.io.ObjectStreamClass</object>
+          </arg>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.ClassNotFoundException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ resolveObject -->
+      <method access="protected" name="resolveObject" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ resolveProxyClass -->
+      <method access="protected" name="resolveProxyClass">
+        <signature>
+          <arg nr="1">
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </arg>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.ClassNotFoundException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ skipBytes -->
+      <method access="public" name="skipBytes">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <geq/>
+                  <return/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </post>
+            <post>
+              <math>
+                <apply>
+                  <leq/>
+                  <return/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mark -->
+      <method from="java.io.InputStream" inherited="yes" name="mark">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) markSupported -->
+      <method from="java.io.InputStream" inherited="yes" name="markSupported">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) read -->
+      <method from="java.io.InputStream" inherited="yes" name="read">
+        <signature>
+          <arg nr="1">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) reset -->
+      <method from="java.io.InputStream" inherited="yes" name="reset">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) skip -->
+      <method from="java.io.InputStream" inherited="yes" name="skip">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <return>
+            <long/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.lang.Object" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
