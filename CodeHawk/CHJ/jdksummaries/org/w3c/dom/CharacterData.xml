@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
-  <header info="interface" time="2020-03-13 10:42:02"/>
+  <header info="interface" time="2020-03-14 19:12:03"/>
   <interface name="CharacterData" package="org.w3c.dom">
     <superinterfaces>
       <superinterface>org.w3c.dom.Node</superinterface>
     </superinterfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ appendData -->

@@ -1,0 +1,1733 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-14 23:39:05"/>
+  <class abstract="yes" name="Toolkit" package="java.awt">
+    <interfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:desktopProperties -->
+      <field access="protected" final="yes" name="desktopProperties">
+        <signature>
+          <object>java.util.Map</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:desktopPropsSupport -->
+      <field access="protected" final="yes" name="desktopPropsSupport">
+        <signature>
+          <object>java.beans.PropertyChangeSupport</object>
+        </signature>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ () -->
+      <constructor access="public">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addAWTEventListener -->
+      <method access="public" name="addAWTEventListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.AWTEventListener</object>
+          </arg>
+          <arg nr="2">
+            <long/>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.lang.SecurityException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addPropertyChangeListener -->
+      <method access="public" name="addPropertyChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.beans.PropertyChangeListener</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ areExtraMouseButtonsEnabled -->
+      <method access="public" name="areExtraMouseButtonsEnabled">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ beep -->
+      <method abstract="yes" access="public" name="beep" valid="no">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ checkImage -->
+      <method abstract="yes" access="public" name="checkImage" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Image</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <object>java.awt.image.ImageObserver</object>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createButton -->
+      <method abstract="yes" access="protected" name="createButton" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Button</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.ButtonPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createCanvas -->
+      <method abstract="yes" access="protected" name="createCanvas" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Canvas</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.CanvasPeer</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createCheckbox -->
+      <method abstract="yes" access="protected" name="createCheckbox" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Checkbox</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.CheckboxPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createCheckboxMenuItem -->
+      <method abstract="yes" access="protected" name="createCheckboxMenuItem" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.CheckboxMenuItem</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.CheckboxMenuItemPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createChoice -->
+      <method abstract="yes" access="protected" name="createChoice" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Choice</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.ChoicePeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createComponent -->
+      <method access="protected" name="createComponent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.LightweightPeer</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createCustomCursor -->
+      <method access="public" name="createCustomCursor">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Image</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.Point</object>
+          </arg>
+          <arg nr="3">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.awt.Cursor</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+          <throws>java.lang.IndexOutOfBoundsException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createDesktopPeer -->
+      <method abstract="yes" access="protected" name="createDesktopPeer" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Desktop</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.DesktopPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createDialog -->
+      <method abstract="yes" access="protected" name="createDialog" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Dialog</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.DialogPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createDragGestureRecognizer -->
+      <method access="public" name="createDragGestureRecognizer">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Class</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.dnd.DragSource</object>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.Component</object>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+          <arg nr="5">
+            <object>java.awt.dnd.DragGestureListener</object>
+          </arg>
+          <return>
+            <object>java.awt.dnd.DragGestureRecognizer</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="5"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+            <error-post>
+              <math>
+                <null/>
+              </math>
+            </error-post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createDragSourceContextPeer -->
+      <method abstract="yes" access="public" name="createDragSourceContextPeer" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.dnd.DragGestureEvent</object>
+          </arg>
+          <return>
+            <object>java.awt.dnd.peer.DragSourceContextPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.dnd.InvalidDnDOperationException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createFileDialog -->
+      <method abstract="yes" access="protected" name="createFileDialog" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.FileDialog</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.FileDialogPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createFrame -->
+      <method abstract="yes" access="protected" name="createFrame" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Frame</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.FramePeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createImage -->
+      <method abstract="yes" access="public" name="createImage" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.awt.Image</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createImage -->
+      <method abstract="yes" access="public" name="createImage" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.net.URL</object>
+          </arg>
+          <return>
+            <object>java.awt.Image</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createImage -->
+      <method abstract="yes" access="public" name="createImage" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.image.ImageProducer</object>
+          </arg>
+          <return>
+            <object>java.awt.Image</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createImage -->
+      <method access="public" name="createImage">
+        <signature>
+          <arg nr="1">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+          <return>
+            <object>java.awt.Image</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createImage -->
+      <method abstract="yes" access="public" name="createImage" valid="no">
+        <signature>
+          <arg nr="1">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <return>
+            <object>java.awt.Image</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createLabel -->
+      <method abstract="yes" access="protected" name="createLabel" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Label</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.LabelPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createList -->
+      <method abstract="yes" access="protected" name="createList" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.List</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.ListPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createMenu -->
+      <method abstract="yes" access="protected" name="createMenu" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Menu</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.MenuPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createMenuBar -->
+      <method abstract="yes" access="protected" name="createMenuBar" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.MenuBar</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.MenuBarPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createMenuItem -->
+      <method abstract="yes" access="protected" name="createMenuItem" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.MenuItem</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.MenuItemPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createPanel -->
+      <method abstract="yes" access="protected" name="createPanel" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Panel</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.PanelPeer</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createPopupMenu -->
+      <method abstract="yes" access="protected" name="createPopupMenu" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.PopupMenu</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.PopupMenuPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createScrollPane -->
+      <method abstract="yes" access="protected" name="createScrollPane" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.ScrollPane</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.ScrollPanePeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createScrollbar -->
+      <method abstract="yes" access="protected" name="createScrollbar" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Scrollbar</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.ScrollbarPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createTextArea -->
+      <method abstract="yes" access="protected" name="createTextArea" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.TextArea</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.TextAreaPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createTextField -->
+      <method abstract="yes" access="protected" name="createTextField" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.TextField</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.TextFieldPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createWindow -->
+      <method abstract="yes" access="protected" name="createWindow" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Window</object>
+          </arg>
+          <return>
+            <object>java.awt.peer.WindowPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAWTEventListeners -->
+      <method access="public" name="getAWTEventListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.awt.event.AWTEventListener</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.SecurityException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAWTEventListeners -->
+      <method access="public" name="getAWTEventListeners">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <return>
+            <array>
+              <object>java.awt.event.AWTEventListener</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.SecurityException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getBestCursorSize -->
+      <method access="public" name="getBestCursorSize">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <object>java.awt.Dimension</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColorModel -->
+      <method abstract="yes" access="public" name="getColorModel" valid="no">
+        <signature>
+          <return>
+            <object>java.awt.image.ColorModel</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDefaultToolkit -->
+      <method access="public" name="getDefaultToolkit" static="yes">
+        <signature>
+          <return>
+            <object>java.awt.Toolkit</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.AWTError</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDesktopProperty -->
+      <method access="public" final="yes" name="getDesktopProperty">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFontList -->
+      <method abstract="yes" access="public" name="getFontList" valid="no">
+        <signature>
+          <return>
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFontMetrics -->
+      <method abstract="yes" access="public" name="getFontMetrics" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Font</object>
+          </arg>
+          <return>
+            <object>java.awt.FontMetrics</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFontPeer -->
+      <method abstract="yes" access="protected" name="getFontPeer" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <object>java.awt.peer.FontPeer</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getImage -->
+      <method abstract="yes" access="public" name="getImage" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.awt.Image</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getImage -->
+      <method abstract="yes" access="public" name="getImage" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.net.URL</object>
+          </arg>
+          <return>
+            <object>java.awt.Image</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getLockingKeyState -->
+      <method access="public" name="getLockingKeyState">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.UnsupportedOperationException</throws>
+          <throws>java.lang.IllegalArgumentException</throws>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMaximumCursorColors -->
+      <method access="public" name="getMaximumCursorColors">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <geq/>
+                  <return/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMenuShortcutKeyMask -->
+      <method access="public" name="getMenuShortcutKeyMask">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMouseInfoPeer -->
+      <method access="protected" name="getMouseInfoPeer">
+        <signature>
+          <return>
+            <object>java.awt.peer.MouseInfoPeer</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.UnsupportedOperationException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getNativeContainer -->
+      <method access="protected" name="getNativeContainer" static="yes">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+          <return>
+            <object>java.awt.Container</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPrintJob -->
+      <method abstract="yes" access="public" name="getPrintJob" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Frame</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="3">
+            <object>java.util.Properties</object>
+          </arg>
+          <return>
+            <object>java.awt.PrintJob</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPrintJob -->
+      <method access="public" name="getPrintJob">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Frame</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.JobAttributes</object>
+          </arg>
+          <arg nr="4">
+            <object>java.awt.PageAttributes</object>
+          </arg>
+          <return>
+            <object>java.awt.PrintJob</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.IllegalArgumentException</throws>
+          <throws>java.lang.SecurityException</throws>
+          <throws>java.lang.NullPointerException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+            <error-post>
+              <math>
+                <null/>
+              </math>
+            </error-post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getProperty -->
+      <method access="public" name="getProperty" static="yes">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPropertyChangeListeners -->
+      <method access="public" name="getPropertyChangeListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.beans.PropertyChangeListener</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPropertyChangeListeners -->
+      <method access="public" name="getPropertyChangeListeners">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <array>
+              <object>java.beans.PropertyChangeListener</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+          <sinks>
+            <sink arg="1" dest="Toolkit" form="property name" type="string"/>
+          </sinks>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getScreenInsets -->
+      <method access="public" name="getScreenInsets">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.GraphicsConfiguration</object>
+          </arg>
+          <return>
+            <object>java.awt.Insets</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getScreenResolution -->
+      <method abstract="yes" access="public" name="getScreenResolution" valid="no">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getScreenSize -->
+      <method abstract="yes" access="public" name="getScreenSize" valid="no">
+        <signature>
+          <return>
+            <object>java.awt.Dimension</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSystemClipboard -->
+      <method abstract="yes" access="public" name="getSystemClipboard" valid="no">
+        <signature>
+          <return>
+            <object>java.awt.datatransfer.Clipboard</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSystemEventQueue -->
+      <method access="public" final="yes" name="getSystemEventQueue">
+        <signature>
+          <return>
+            <object>java.awt.EventQueue</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.SecurityException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSystemEventQueueImpl -->
+      <method abstract="yes" access="protected" name="getSystemEventQueueImpl" valid="no">
+        <signature>
+          <return>
+            <object>java.awt.EventQueue</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSystemSelection -->
+      <method access="public" name="getSystemSelection">
+        <signature>
+          <return>
+            <object>java.awt.datatransfer.Clipboard</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ initializeDesktopProperties -->
+      <method access="protected" name="initializeDesktopProperties">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint>
+            <defput>
+              <this/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isAlwaysOnTopSupported -->
+      <method access="public" name="isAlwaysOnTopSupported">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isDynamicLayoutActive -->
+      <method access="public" name="isDynamicLayoutActive">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isDynamicLayoutSet -->
+      <method access="protected" name="isDynamicLayoutSet">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isFrameStateSupported -->
+      <method access="public" name="isFrameStateSupported">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isModalExclusionTypeSupported -->
+      <method abstract="yes" access="public" name="isModalExclusionTypeSupported" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Dialog$ModalExclusionType</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isModalityTypeSupported -->
+      <method abstract="yes" access="public" name="isModalityTypeSupported" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Dialog$ModalityType</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ lazilyLoadDesktopProperty -->
+      <method access="protected" name="lazilyLoadDesktopProperty">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+            <defput>
+              <this/>
+            </defput>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ loadSystemColors -->
+      <method access="protected" name="loadSystemColors">
+        <signature>
+          <arg nr="1">
+            <array>
+              <int/>
+            </array>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <arg nr="1"/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mapInputMethodHighlight -->
+      <method abstract="yes" access="public" name="mapInputMethodHighlight" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.im.InputMethodHighlight</object>
+          </arg>
+          <return>
+            <object>java.util.Map</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepareImage -->
+      <method abstract="yes" access="public" name="prepareImage" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Image</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <object>java.awt.image.ImageObserver</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeAWTEventListener -->
+      <method access="public" name="removeAWTEventListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.AWTEventListener</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.lang.SecurityException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removePropertyChangeListener -->
+      <method access="public" name="removePropertyChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.beans.PropertyChangeListener</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setDesktopProperty -->
+      <method access="protected" final="yes" name="setDesktopProperty">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setDynamicLayout -->
+      <method access="public" name="setDynamicLayout">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setLockingKeyState -->
+      <method access="public" name="setLockingKeyState">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <boolean/>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.lang.IllegalArgumentException</throws>
+          <throws>java.lang.UnsupportedOperationException</throws>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ sync -->
+      <method abstract="yes" access="public" name="sync" valid="no">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.lang.Object" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-14 23:27:32"/>
+  <interface name="Composite" package="java.awt">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createContext -->
+      <method abstract="yes" access="public" name="createContext" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.image.ColorModel</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.image.ColorModel</object>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.RenderingHints</object>
+          </arg>
+          <return>
+            <object>java.awt.CompositeContext</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
