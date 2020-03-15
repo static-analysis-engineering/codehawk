@@ -31,6 +31,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHStringIndexTable
 open CHXmlDocument
 open CHXmlReader
 
@@ -334,7 +335,12 @@ let write_xmlx_constant_value (node:xml_element_int) (v:constant_value_t) =
   let append = node#appendChildren in
   let app tag key v = append [ xml_attr_string tag key v ] in
   match v with
-  | ConstString s -> app "string" "value" s 
+  | ConstString s ->
+     let (ishex,newstring) = encode_string s in
+     if ishex then
+       app "string" "hexvalue" newstring
+     else
+       app "string" "value" s 
   | ConstInt i    -> app "int" "value" (Int32.to_string i)
   | ConstFloat f  -> app "float" "value" (Printf.sprintf "%f" f) 
   | ConstLong l   -> app "long" "value" (Int64.to_string l)

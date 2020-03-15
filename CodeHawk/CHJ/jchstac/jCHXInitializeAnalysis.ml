@@ -295,7 +295,7 @@ let main () =
 	     save_signature_file () ;
 	     save_callgraph_file () ;
 	     save_dictionary () ;           
-	     save_missing_classes () ;
+	     save_missing_items () ;
 	     save_log_files "scanlog" 
 	   end
         with
@@ -327,7 +327,7 @@ let main () =
 	    save_dictionary () ;
 	    save_signature_file () ;
 	    save_callgraph_file () ;
-	    save_missing_classes () ;
+	    save_missing_items () ;
 	    save_log_files "translatelog"  ;
             ignore (translate_base_system ())
 	  end
@@ -486,7 +486,7 @@ let main () =
 	  save_dictionary () ;
 	  save_signature_file () ;
 	  save_callgraph_file () ;
-	  save_missing_classes () ;
+	  save_missing_items () ;
 	  save_log_files "loading" ;   (* save log files before analysis *)
 	  JCHSystemUtils.start_timing();
 	  ignore (translate_base_system ()) ;

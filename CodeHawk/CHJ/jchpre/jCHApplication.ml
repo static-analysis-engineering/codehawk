@@ -400,6 +400,8 @@ object (self)
 
   method iter_methods f = List.iter f self#get_methods
 
+  method iter_fields f = List.iter f self#get_fields
+
   method get_instructions = instructions#listOfValues
 
   method get_methods = 
@@ -449,20 +451,64 @@ object (self)
   method is_application_method (cms:class_method_signature_int) =
     self#is_application_class cms#class_name
 
-  method write_xml_missing_classes (node:xml_element_int) =
-    let l = ref [] in
-    let _ = self#iter_classes (fun cInfo -> 
-      if cInfo#is_missing then l := cInfo#get_class_name :: !l) in
-    let l = List.sort (fun c1 c2 -> P.compare c1#name c2#name) !l in
+  method write_xml_missing_items (node:xml_element_int) =
+    let missingclasses = ref [] in
+    let missingmethods = ref [] in
+    let missingfields = ref []  in
+    let _ =
+      self#iter_classes (fun cInfo -> 
+          if cInfo#is_missing then
+            missingclasses := cInfo#get_class_name :: !missingclasses) in
+    let missingclasses =
+      List.sort (fun c1 c2 -> P.compare c1#name c2#name) !missingclasses in
+    let _ =
+      self#iter_methods (fun mInfo ->
+          if mInfo#is_missing then
+            missingmethods :=
+              mInfo#get_class_method_signature :: !missingmethods) in
+    let missingmethods =
+      List.sort (fun m1 m2 ->
+          P.compare m1#class_method_signature_string
+                    m2#class_method_signature_string) !missingmethods in
+    let _ =
+      self#iter_fields (fun fInfo ->
+          if fInfo#is_missing then
+            missingfields :=
+              fInfo#get_class_signature :: !missingfields) in
+    let missingfields =
+      List.sort (fun f1 f2 -> P.compare f1#to_string f2#to_string) !missingfields in
+
+    let ccNode = xmlElement "missing-classes" in
+    let mmNode = xmlElement "missing-methods" in
+    let ffNode = xmlElement "missing-fields" in
     begin
-      node#appendChildren (List.map (fun cn ->
-	let cNode = xmlElement "cn" in
-	let set = cNode#setAttribute in
-	let seti = cNode#setIntAttribute in
-	begin set "name" cn#name ; seti "ix" cn#index ; cNode end) l) ;
-      node#setIntAttribute "size" (List.length l)
+      ccNode#appendChildren
+        (List.map (fun cn ->
+	     let cNode = xmlElement "cn" in
+	     begin
+               cNode#setAttribute "name" cn#name ;
+               cNode#setIntAttribute "ix" cn#index ;
+               cNode
+             end) missingclasses) ;
+      mmNode#appendChildren
+        (List.map (fun m ->
+             let mNode = xmlElement "method" in
+             begin
+               mNode#setAttribute "name" m#class_method_signature_string ;
+               mNode#setIntAttribute "ix" m#index ;
+               mNode
+             end) missingmethods) ;
+      ffNode#appendChildren
+        (List.map (fun f ->
+             let fNode = xmlElement "field" in
+             begin
+               fNode#setAttribute "name" f#to_string ;
+               fNode#setIntAttribute "ix" f#index ;
+               fNode
+             end) missingfields) ;
+      node#appendChildren [ ccNode ; mmNode ; ffNode ]
     end
-	
+
 end
   
 let app = new application_t

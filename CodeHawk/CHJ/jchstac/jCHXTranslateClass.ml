@@ -123,7 +123,7 @@ let main () =
 	  save_dictionary () ;
 	  save_signature_file () ;
 	  save_callgraph_file () ;
-	  save_missing_classes () ;
+	  save_missing_items () ;
       end
     else
       pr_debug [ STR "Class " ; STR !classname ; STR " could not be loaded" ; NL ]

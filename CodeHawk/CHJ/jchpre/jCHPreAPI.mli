@@ -1335,6 +1335,7 @@ object
   (* iterators *)
   method iter_classes   : (class_info_int -> unit) -> unit
   method iter_methods   : (method_info_int -> unit) -> unit
+  method iter_fields    : (field_info_int -> unit) -> unit
     
   (* predicates *)
   method has_class      : class_name_int -> bool
@@ -1352,7 +1353,7 @@ object
 
   method is_inherited : class_method_signature_int -> bool
 
-  method write_xml_missing_classes: xml_element_int -> unit
+  method write_xml_missing_items: xml_element_int -> unit
 
 end
 

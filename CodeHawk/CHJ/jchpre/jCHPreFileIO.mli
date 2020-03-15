@@ -49,7 +49,7 @@ val save_dictionary     : unit -> unit
 val save_jt_dictionary  : unit -> unit
 val save_signature_file : unit -> unit
 val save_callgraph_file : unit -> unit
-val save_missing_classes: unit -> unit
+val save_missing_items  : unit -> unit
 val save_taint_origins  : unit -> unit
 
 val save_classnames: class_name_int list -> unit

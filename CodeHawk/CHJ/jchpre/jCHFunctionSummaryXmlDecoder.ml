@@ -30,9 +30,10 @@ open CHPretty
 open CHNumerical
 
 (* chutil *)
+open CHLogger
+open CHStringIndexTable
 open CHXmlDocument
 open CHXmlReader
-open CHLogger
 
 (* jchlib *)
 open JCHBasicTypes
@@ -559,7 +560,14 @@ let read_xml_field_value (node:xml_element_int) =
   | "long" -> ConstLong (get64 "value")
   | "float" -> ConstFloat (getf "value")
   | "double" -> ConstDouble (getf "value")
-  | "string" -> if has "value" then ConstString (get "value") else ConstString vNode#getText
+  | "string" ->
+     if has "value" then
+       ConstString (get "value")
+     else if has "hexvalue" then
+       let s = decode_string (true,get "hexvalue") in
+       ConstString s
+     else
+       ConstString vNode#getText
   | "object" -> ConstClass (TClass (make_cn vNode#getText))
   | s -> raise_xml_error node (LBLOCK [ STR "Field value type " ; STR s ;
 					STR " not recognized" ])

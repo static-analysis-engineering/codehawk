@@ -516,6 +516,34 @@ let write_xml_summary_interface
                   end) cprops) in
          append [ ppNode ] in
   
+  (* --------------------------------------------------------- fields *)
+  let _ =
+    let ffNode = xmlElement "fields" in
+    let _ = ffNode#setGroupString "FIELDS" in
+    let cfss =
+      try
+        List.map (fun fs -> make_cfs cn fs) cInfo#get_fields_defined
+      with
+      | JCHFile.No_class_found s ->
+         raise (JCH_failure
+                  (LBLOCK [ STR "get fields defined: " ; cn#toPretty ;
+                            STR "; No class found:  " ; STR s ])) in
+    let cfss =
+      List.filter (fun cfs ->
+          let _ = 
+            if app#has_field cfs then
+              ()
+            else
+              app#add_field (cInfo#get_field cfs#field_signature) in
+          let fInfo = app#get_field cfs in
+          fInfo#is_public || fInfo#is_protected) cfss in
+    let _ =
+      ffNode#appendChildren
+        (List.map (fun cfs ->
+             let fNode = xmlElement "field" in
+             begin write_xmlx_field fNode cfs ; fNode end) cfss) in
+    append [ ffNode ] in
+  
   (* -------------------------------------------------------- methods *)
   let _ =
     let mmNode = xmlElement "methods" in

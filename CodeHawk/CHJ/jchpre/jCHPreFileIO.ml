@@ -207,8 +207,8 @@ let get_signature_filename () =
 let get_callgraph_filename () = 
   get_stac_analysis_data_prefix_name "callgraph.xml"
 
-let get_missing_classes_filename () = 
-  get_stac_analysis_data_prefix_name "missing_classes.xml"
+let get_missing_items_filename () = 
+  get_stac_analysis_data_prefix_name "missing_items.xml"
 
 let get_classnames_filename () = 
   get_stac_analysis_data_prefix_name "classnames.xml"
@@ -446,14 +446,14 @@ let read_callgraph_file () =
   else
     pr_debug [ STR "Warning: No callgraphh file found" ; NL ]
 
-let save_missing_classes () =
+let save_missing_items () =
   let doc = xmlDocument () in
-  let root = get_jch_root "missing-classes" in
-  let filename = get_missing_classes_filename () in
-  let node = xmlElement "missing-classes" in
+  let root = get_jch_root "missing-items" in
+  let filename = get_missing_items_filename () in
+  let node = xmlElement "missing-items" in
   begin
     doc#setNode root ;
-    app#write_xml_missing_classes node ;
+    app#write_xml_missing_items node ;
     root#appendChildren [ node ] ;
     file_output#saveFile filename doc#toPretty
   end
