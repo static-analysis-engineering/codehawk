@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-15 23:16:53"/>
+  <interface name="RasterOp" package="java.awt.image">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createCompatibleDestRaster -->
+      <method abstract="yes" access="public" name="createCompatibleDestRaster" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.image.Raster</object>
+          </arg>
+          <return>
+            <object>java.awt.image.WritableRaster</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ filter -->
+      <method abstract="yes" access="public" name="filter" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.image.Raster</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.image.WritableRaster</object>
+          </arg>
+          <return>
+            <object>java.awt.image.WritableRaster</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getBounds2D -->
+      <method abstract="yes" access="public" name="getBounds2D" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.image.Raster</object>
+          </arg>
+          <return>
+            <object>java.awt.geom.Rectangle2D</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPoint2D -->
+      <method abstract="yes" access="public" name="getPoint2D" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+          <return>
+            <object>java.awt.geom.Point2D</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRenderingHints -->
+      <method abstract="yes" access="public" name="getRenderingHints" valid="no">
+        <signature>
+          <return>
+            <object>java.awt.RenderingHints</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

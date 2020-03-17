@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-16 17:51:58"/>
+  <interface name="Transferable" package="java.awt.datatransfer">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getTransferData -->
+      <method abstract="yes" access="public" name="getTransferData" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.datatransfer.DataFlavor</object>
+          </arg>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.awt.datatransfer.UnsupportedFlavorException</throws>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getTransferDataFlavors -->
+      <method abstract="yes" access="public" name="getTransferDataFlavors" valid="no">
+        <signature>
+          <return>
+            <array>
+              <object>java.awt.datatransfer.DataFlavor</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isDataFlavorSupported -->
+      <method abstract="yes" access="public" name="isDataFlavorSupported" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.datatransfer.DataFlavor</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

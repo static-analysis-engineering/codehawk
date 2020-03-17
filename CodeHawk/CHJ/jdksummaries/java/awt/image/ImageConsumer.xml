@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-15 23:16:33"/>
+  <interface name="ImageConsumer" package="java.awt.image">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RANDOMPIXELORDER -->
+      <field access="public" final="yes" name="RANDOMPIXELORDER" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="1"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TOPDOWNLEFTRIGHT -->
+      <field access="public" final="yes" name="TOPDOWNLEFTRIGHT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="2"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:COMPLETESCANLINES -->
+      <field access="public" final="yes" name="COMPLETESCANLINES" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="4"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SINGLEPASS -->
+      <field access="public" final="yes" name="SINGLEPASS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="8"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SINGLEFRAME -->
+      <field access="public" final="yes" name="SINGLEFRAME" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="16"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:IMAGEERROR -->
+      <field access="public" final="yes" name="IMAGEERROR" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="1"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SINGLEFRAMEDONE -->
+      <field access="public" final="yes" name="SINGLEFRAMEDONE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="2"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:STATICIMAGEDONE -->
+      <field access="public" final="yes" name="STATICIMAGEDONE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="3"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:IMAGEABORTED -->
+      <field access="public" final="yes" name="IMAGEABORTED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="4"/>
+        </value>
+      </field>
+    </fields>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ imageComplete -->
+      <method abstract="yes" access="public" name="imageComplete">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setColorModel -->
+      <method abstract="yes" access="public" name="setColorModel">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.image.ColorModel</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setDimensions -->
+      <method abstract="yes" access="public" name="setDimensions">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setHints -->
+      <method abstract="yes" access="public" name="setHints">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setPixels -->
+      <method abstract="yes" access="public" name="setPixels">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+          <arg nr="5">
+            <object>java.awt.image.ColorModel</object>
+          </arg>
+          <arg nr="6">
+            <array>
+              <byte/>
+            </array>
+          </arg>
+          <arg nr="7">
+            <int/>
+          </arg>
+          <arg nr="8">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="5"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="6"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="7"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="8"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setPixels -->
+      <method abstract="yes" access="public" name="setPixels">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+          <arg nr="5">
+            <object>java.awt.image.ColorModel</object>
+          </arg>
+          <arg nr="6">
+            <array>
+              <int/>
+            </array>
+          </arg>
+          <arg nr="7">
+            <int/>
+          </arg>
+          <arg nr="8">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="5"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="6"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="7"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="8"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setProperties -->
+      <method abstract="yes" access="public" name="setProperties">
+        <signature>
+          <arg nr="1">
+            <object>java.util.Hashtable</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

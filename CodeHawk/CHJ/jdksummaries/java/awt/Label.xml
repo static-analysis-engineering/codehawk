@@ -1,0 +1,2376 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-17 00:20:30"/>
+  <class name="Label" package="java.awt">
+    <superclass>java.awt.Component</superclass>
+    <interfaces>
+      <implements>javax.accessibility.Accessible</implements>
+      <implements>java.awt.image.ImageObserver</implements>
+      <implements>java.awt.MenuContainer</implements>
+      <implements>java.io.Serializable</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LEFT -->
+      <field access="public" final="yes" name="LEFT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="0"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CENTER -->
+      <field access="public" final="yes" name="CENTER" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="1"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RIGHT -->
+      <field access="public" final="yes" name="RIGHT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="2"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:RIGHT_ALIGNMENT -->
+      <field from="java.awt.Component" inherited="yes" name="RIGHT_ALIGNMENT">
+        <signature>
+          <float/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:LEFT_ALIGNMENT -->
+      <field from="java.awt.Component" inherited="yes" name="LEFT_ALIGNMENT">
+        <signature>
+          <float/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:BOTTOM_ALIGNMENT -->
+      <field from="java.awt.Component" inherited="yes" name="BOTTOM_ALIGNMENT">
+        <signature>
+          <float/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:CENTER_ALIGNMENT -->
+      <field from="java.awt.Component" inherited="yes" name="CENTER_ALIGNMENT">
+        <signature>
+          <float/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:TOP_ALIGNMENT -->
+      <field from="java.awt.Component" inherited="yes" name="TOP_ALIGNMENT">
+        <signature>
+          <float/>
+        </signature>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ () -->
+      <constructor access="public">
+        <signature/>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String,int) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.awt.HeadlessException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addNotify -->
+      <method access="public" name="addNotify">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAccessibleContext -->
+      <method access="public" name="getAccessibleContext" valid="no">
+        <signature>
+          <return>
+            <object>javax.accessibility.AccessibleContext</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAlignment -->
+      <method access="public" name="getAlignment">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getText -->
+      <method access="public" name="getText">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ paramString -->
+      <method access="protected" name="paramString" valid="no">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setAlignment -->
+      <method access="public" name="setAlignment">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setText -->
+      <method access="public" name="setText">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) action -->
+      <method from="java.awt.Component" inherited="yes" name="action">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) add -->
+      <method from="java.awt.Component" inherited="yes" name="add">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.PopupMenu</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addComponentListener -->
+      <method from="java.awt.Component" inherited="yes" name="addComponentListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.ComponentListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addFocusListener -->
+      <method from="java.awt.Component" inherited="yes" name="addFocusListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.FocusListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addHierarchyBoundsListener -->
+      <method from="java.awt.Component" inherited="yes" name="addHierarchyBoundsListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.HierarchyBoundsListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addHierarchyListener -->
+      <method from="java.awt.Component" inherited="yes" name="addHierarchyListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.HierarchyListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addInputMethodListener -->
+      <method from="java.awt.Component" inherited="yes" name="addInputMethodListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.InputMethodListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addKeyListener -->
+      <method from="java.awt.Component" inherited="yes" name="addKeyListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.KeyListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addMouseListener -->
+      <method from="java.awt.Component" inherited="yes" name="addMouseListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addMouseMotionListener -->
+      <method from="java.awt.Component" inherited="yes" name="addMouseMotionListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseMotionListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addMouseWheelListener -->
+      <method from="java.awt.Component" inherited="yes" name="addMouseWheelListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseWheelListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addPropertyChangeListener -->
+      <method from="java.awt.Component" inherited="yes" name="addPropertyChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.beans.PropertyChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addPropertyChangeListener -->
+      <method from="java.awt.Component" inherited="yes" name="addPropertyChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.beans.PropertyChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) applyComponentOrientation -->
+      <method from="java.awt.Component" inherited="yes" name="applyComponentOrientation">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.ComponentOrientation</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) areFocusTraversalKeysSet -->
+      <method from="java.awt.Component" inherited="yes" name="areFocusTraversalKeysSet">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) bounds -->
+      <method from="java.awt.Component" inherited="yes" name="bounds">
+        <signature>
+          <return>
+            <object>java.awt.Rectangle</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) checkImage -->
+      <method from="java.awt.Component" inherited="yes" name="checkImage">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Image</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.image.ImageObserver</object>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) checkImage -->
+      <method from="java.awt.Component" inherited="yes" name="checkImage">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Image</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <object>java.awt.image.ImageObserver</object>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) coalesceEvents -->
+      <method from="java.awt.Component" inherited="yes" name="coalesceEvents">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.AWTEvent</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.AWTEvent</object>
+          </arg>
+          <return>
+            <object>java.awt.AWTEvent</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.Component" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Point</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.Component" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) createImage -->
+      <method from="java.awt.Component" inherited="yes" name="createImage">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <object>java.awt.Image</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) createImage -->
+      <method from="java.awt.Component" inherited="yes" name="createImage">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.image.ImageProducer</object>
+          </arg>
+          <return>
+            <object>java.awt.Image</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) createVolatileImage -->
+      <method from="java.awt.Component" inherited="yes" name="createVolatileImage">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.ImageCapabilities</object>
+          </arg>
+          <return>
+            <object>java.awt.image.VolatileImage</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) createVolatileImage -->
+      <method from="java.awt.Component" inherited="yes" name="createVolatileImage">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <object>java.awt.image.VolatileImage</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) deliverEvent -->
+      <method from="java.awt.Component" inherited="yes" name="deliverEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) disable -->
+      <method from="java.awt.Component" inherited="yes" name="disable">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) disableEvents -->
+      <method from="java.awt.Component" inherited="yes" name="disableEvents">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) dispatchEvent -->
+      <method from="java.awt.Component" inherited="yes" name="dispatchEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.AWTEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) doLayout -->
+      <method from="java.awt.Component" inherited="yes" name="doLayout">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) enable -->
+      <method from="java.awt.Component" inherited="yes" name="enable">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) enable -->
+      <method from="java.awt.Component" inherited="yes" name="enable">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) enableEvents -->
+      <method from="java.awt.Component" inherited="yes" name="enableEvents">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) enableInputMethods -->
+      <method from="java.awt.Component" inherited="yes" name="enableInputMethods">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) firePropertyChange -->
+      <method from="java.awt.Component" inherited="yes" name="firePropertyChange">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) firePropertyChange -->
+      <method from="java.awt.Component" inherited="yes" name="firePropertyChange">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <float/>
+          </arg>
+          <arg nr="3">
+            <float/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) firePropertyChange -->
+      <method from="java.awt.Component" inherited="yes" name="firePropertyChange">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <long/>
+          </arg>
+          <arg nr="3">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) firePropertyChange -->
+      <method from="java.awt.Component" inherited="yes" name="firePropertyChange">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <short/>
+          </arg>
+          <arg nr="3">
+            <short/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) firePropertyChange -->
+      <method from="java.awt.Component" inherited="yes" name="firePropertyChange">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <char/>
+          </arg>
+          <arg nr="3">
+            <char/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) firePropertyChange -->
+      <method from="java.awt.Component" inherited="yes" name="firePropertyChange">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <byte/>
+          </arg>
+          <arg nr="3">
+            <byte/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) firePropertyChange -->
+      <method from="java.awt.Component" inherited="yes" name="firePropertyChange">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) firePropertyChange -->
+      <method from="java.awt.Component" inherited="yes" name="firePropertyChange">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <boolean/>
+          </arg>
+          <arg nr="3">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) firePropertyChange -->
+      <method from="java.awt.Component" inherited="yes" name="firePropertyChange">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+          <arg nr="3">
+            <object>java.lang.Object</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAlignmentX -->
+      <method from="java.awt.Component" inherited="yes" name="getAlignmentX">
+        <signature>
+          <return>
+            <float/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAlignmentY -->
+      <method from="java.awt.Component" inherited="yes" name="getAlignmentY">
+        <signature>
+          <return>
+            <float/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getBackground -->
+      <method from="java.awt.Component" inherited="yes" name="getBackground">
+        <signature>
+          <return>
+            <object>java.awt.Color</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getBaseline -->
+      <method from="java.awt.Component" inherited="yes" name="getBaseline">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getBaselineResizeBehavior -->
+      <method from="java.awt.Component" inherited="yes" name="getBaselineResizeBehavior">
+        <signature>
+          <return>
+            <object>java.awt.Component$BaselineResizeBehavior</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getBounds -->
+      <method from="java.awt.Component" inherited="yes" name="getBounds">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Rectangle</object>
+          </arg>
+          <return>
+            <object>java.awt.Rectangle</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getBounds -->
+      <method from="java.awt.Component" inherited="yes" name="getBounds">
+        <signature>
+          <return>
+            <object>java.awt.Rectangle</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getColorModel -->
+      <method from="java.awt.Component" inherited="yes" name="getColorModel">
+        <signature>
+          <return>
+            <object>java.awt.image.ColorModel</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getComponentAt -->
+      <method from="java.awt.Component" inherited="yes" name="getComponentAt">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Point</object>
+          </arg>
+          <return>
+            <object>java.awt.Component</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getComponentAt -->
+      <method from="java.awt.Component" inherited="yes" name="getComponentAt">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <object>java.awt.Component</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getComponentListeners -->
+      <method from="java.awt.Component" inherited="yes" name="getComponentListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.awt.event.ComponentListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getComponentOrientation -->
+      <method from="java.awt.Component" inherited="yes" name="getComponentOrientation">
+        <signature>
+          <return>
+            <object>java.awt.ComponentOrientation</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getCursor -->
+      <method from="java.awt.Component" inherited="yes" name="getCursor">
+        <signature>
+          <return>
+            <object>java.awt.Cursor</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDropTarget -->
+      <method from="java.awt.Component" inherited="yes" name="getDropTarget">
+        <signature>
+          <return>
+            <object>java.awt.dnd.DropTarget</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFocusCycleRootAncestor -->
+      <method from="java.awt.Component" inherited="yes" name="getFocusCycleRootAncestor">
+        <signature>
+          <return>
+            <object>java.awt.Container</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFocusListeners -->
+      <method from="java.awt.Component" inherited="yes" name="getFocusListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.awt.event.FocusListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFocusTraversalKeys -->
+      <method from="java.awt.Component" inherited="yes" name="getFocusTraversalKeys">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.util.Set</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFocusTraversalKeysEnabled -->
+      <method from="java.awt.Component" inherited="yes" name="getFocusTraversalKeysEnabled">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFont -->
+      <method from="java.awt.Component" inherited="yes" name="getFont">
+        <signature>
+          <return>
+            <object>java.awt.Font</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFontMetrics -->
+      <method from="java.awt.Component" inherited="yes" name="getFontMetrics">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Font</object>
+          </arg>
+          <return>
+            <object>java.awt.FontMetrics</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getForeground -->
+      <method from="java.awt.Component" inherited="yes" name="getForeground">
+        <signature>
+          <return>
+            <object>java.awt.Color</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getGraphics -->
+      <method from="java.awt.Component" inherited="yes" name="getGraphics">
+        <signature>
+          <return>
+            <object>java.awt.Graphics</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getGraphicsConfiguration -->
+      <method from="java.awt.Component" inherited="yes" name="getGraphicsConfiguration">
+        <signature>
+          <return>
+            <object>java.awt.GraphicsConfiguration</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getHeight -->
+      <method from="java.awt.Component" inherited="yes" name="getHeight">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getHierarchyBoundsListeners -->
+      <method from="java.awt.Component" inherited="yes" name="getHierarchyBoundsListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.awt.event.HierarchyBoundsListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getHierarchyListeners -->
+      <method from="java.awt.Component" inherited="yes" name="getHierarchyListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.awt.event.HierarchyListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getIgnoreRepaint -->
+      <method from="java.awt.Component" inherited="yes" name="getIgnoreRepaint">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getInputContext -->
+      <method from="java.awt.Component" inherited="yes" name="getInputContext">
+        <signature>
+          <return>
+            <object>java.awt.im.InputContext</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getInputMethodListeners -->
+      <method from="java.awt.Component" inherited="yes" name="getInputMethodListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.awt.event.InputMethodListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getInputMethodRequests -->
+      <method from="java.awt.Component" inherited="yes" name="getInputMethodRequests">
+        <signature>
+          <return>
+            <object>java.awt.im.InputMethodRequests</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getKeyListeners -->
+      <method from="java.awt.Component" inherited="yes" name="getKeyListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.awt.event.KeyListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getListeners -->
+      <method from="java.awt.Component" inherited="yes" name="getListeners">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Class</object>
+          </arg>
+          <return>
+            <array>
+              <object>java.util.EventListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getLocale -->
+      <method from="java.awt.Component" inherited="yes" name="getLocale">
+        <signature>
+          <return>
+            <object>java.util.Locale</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getLocation -->
+      <method from="java.awt.Component" inherited="yes" name="getLocation">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Point</object>
+          </arg>
+          <return>
+            <object>java.awt.Point</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getLocation -->
+      <method from="java.awt.Component" inherited="yes" name="getLocation">
+        <signature>
+          <return>
+            <object>java.awt.Point</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getLocationOnScreen -->
+      <method from="java.awt.Component" inherited="yes" name="getLocationOnScreen">
+        <signature>
+          <return>
+            <object>java.awt.Point</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMaximumSize -->
+      <method from="java.awt.Component" inherited="yes" name="getMaximumSize">
+        <signature>
+          <return>
+            <object>java.awt.Dimension</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMinimumSize -->
+      <method from="java.awt.Component" inherited="yes" name="getMinimumSize">
+        <signature>
+          <return>
+            <object>java.awt.Dimension</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMouseListeners -->
+      <method from="java.awt.Component" inherited="yes" name="getMouseListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.awt.event.MouseListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMouseMotionListeners -->
+      <method from="java.awt.Component" inherited="yes" name="getMouseMotionListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.awt.event.MouseMotionListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMousePosition -->
+      <method from="java.awt.Component" inherited="yes" name="getMousePosition">
+        <signature>
+          <return>
+            <object>java.awt.Point</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMouseWheelListeners -->
+      <method from="java.awt.Component" inherited="yes" name="getMouseWheelListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.awt.event.MouseWheelListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getName -->
+      <method from="java.awt.Component" inherited="yes" name="getName">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getParent -->
+      <method from="java.awt.Component" inherited="yes" name="getParent">
+        <signature>
+          <return>
+            <object>java.awt.Container</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPeer -->
+      <method from="java.awt.Component" inherited="yes" name="getPeer">
+        <signature>
+          <return>
+            <object>java.awt.peer.ComponentPeer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPreferredSize -->
+      <method from="java.awt.Component" inherited="yes" name="getPreferredSize">
+        <signature>
+          <return>
+            <object>java.awt.Dimension</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPropertyChangeListeners -->
+      <method from="java.awt.Component" inherited="yes" name="getPropertyChangeListeners">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <array>
+              <object>java.beans.PropertyChangeListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPropertyChangeListeners -->
+      <method from="java.awt.Component" inherited="yes" name="getPropertyChangeListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.beans.PropertyChangeListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getSize -->
+      <method from="java.awt.Component" inherited="yes" name="getSize">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Dimension</object>
+          </arg>
+          <return>
+            <object>java.awt.Dimension</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getSize -->
+      <method from="java.awt.Component" inherited="yes" name="getSize">
+        <signature>
+          <return>
+            <object>java.awt.Dimension</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getToolkit -->
+      <method from="java.awt.Component" inherited="yes" name="getToolkit">
+        <signature>
+          <return>
+            <object>java.awt.Toolkit</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getTreeLock -->
+      <method from="java.awt.Component" inherited="yes" name="getTreeLock">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getWidth -->
+      <method from="java.awt.Component" inherited="yes" name="getWidth">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getX -->
+      <method from="java.awt.Component" inherited="yes" name="getX">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getY -->
+      <method from="java.awt.Component" inherited="yes" name="getY">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) gotFocus -->
+      <method from="java.awt.Component" inherited="yes" name="gotFocus">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) handleEvent -->
+      <method from="java.awt.Component" inherited="yes" name="handleEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hasFocus -->
+      <method from="java.awt.Component" inherited="yes" name="hasFocus">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hide -->
+      <method from="java.awt.Component" inherited="yes" name="hide">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) imageUpdate -->
+      <method from="java.awt.Component" inherited="yes" name="imageUpdate">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Image</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+          <arg nr="5">
+            <int/>
+          </arg>
+          <arg nr="6">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) inside -->
+      <method from="java.awt.Component" inherited="yes" name="inside">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) invalidate -->
+      <method from="java.awt.Component" inherited="yes" name="invalidate">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isBackgroundSet -->
+      <method from="java.awt.Component" inherited="yes" name="isBackgroundSet">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isCursorSet -->
+      <method from="java.awt.Component" inherited="yes" name="isCursorSet">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isDisplayable -->
+      <method from="java.awt.Component" inherited="yes" name="isDisplayable">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isDoubleBuffered -->
+      <method from="java.awt.Component" inherited="yes" name="isDoubleBuffered">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isEnabled -->
+      <method from="java.awt.Component" inherited="yes" name="isEnabled">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isFocusCycleRoot -->
+      <method from="java.awt.Component" inherited="yes" name="isFocusCycleRoot">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Container</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isFocusOwner -->
+      <method from="java.awt.Component" inherited="yes" name="isFocusOwner">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isFocusTraversable -->
+      <method from="java.awt.Component" inherited="yes" name="isFocusTraversable">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isFocusable -->
+      <method from="java.awt.Component" inherited="yes" name="isFocusable">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isFontSet -->
+      <method from="java.awt.Component" inherited="yes" name="isFontSet">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isForegroundSet -->
+      <method from="java.awt.Component" inherited="yes" name="isForegroundSet">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isLightweight -->
+      <method from="java.awt.Component" inherited="yes" name="isLightweight">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isMaximumSizeSet -->
+      <method from="java.awt.Component" inherited="yes" name="isMaximumSizeSet">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isMinimumSizeSet -->
+      <method from="java.awt.Component" inherited="yes" name="isMinimumSizeSet">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isOpaque -->
+      <method from="java.awt.Component" inherited="yes" name="isOpaque">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isPreferredSizeSet -->
+      <method from="java.awt.Component" inherited="yes" name="isPreferredSizeSet">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isShowing -->
+      <method from="java.awt.Component" inherited="yes" name="isShowing">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isValid -->
+      <method from="java.awt.Component" inherited="yes" name="isValid">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isVisible -->
+      <method from="java.awt.Component" inherited="yes" name="isVisible">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) keyDown -->
+      <method from="java.awt.Component" inherited="yes" name="keyDown">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) keyUp -->
+      <method from="java.awt.Component" inherited="yes" name="keyUp">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) layout -->
+      <method from="java.awt.Component" inherited="yes" name="layout">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) list -->
+      <method from="java.awt.Component" inherited="yes" name="list">
+        <signature>
+          <arg nr="1">
+            <object>java.io.PrintWriter</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) list -->
+      <method from="java.awt.Component" inherited="yes" name="list">
+        <signature>
+          <arg nr="1">
+            <object>java.io.PrintStream</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) list -->
+      <method from="java.awt.Component" inherited="yes" name="list">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) list -->
+      <method from="java.awt.Component" inherited="yes" name="list">
+        <signature>
+          <arg nr="1">
+            <object>java.io.PrintWriter</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) list -->
+      <method from="java.awt.Component" inherited="yes" name="list">
+        <signature>
+          <arg nr="1">
+            <object>java.io.PrintStream</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) locate -->
+      <method from="java.awt.Component" inherited="yes" name="locate">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <object>java.awt.Component</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) location -->
+      <method from="java.awt.Component" inherited="yes" name="location">
+        <signature>
+          <return>
+            <object>java.awt.Point</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) lostFocus -->
+      <method from="java.awt.Component" inherited="yes" name="lostFocus">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) minimumSize -->
+      <method from="java.awt.Component" inherited="yes" name="minimumSize">
+        <signature>
+          <return>
+            <object>java.awt.Dimension</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mouseDown -->
+      <method from="java.awt.Component" inherited="yes" name="mouseDown">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mouseDrag -->
+      <method from="java.awt.Component" inherited="yes" name="mouseDrag">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mouseEnter -->
+      <method from="java.awt.Component" inherited="yes" name="mouseEnter">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mouseExit -->
+      <method from="java.awt.Component" inherited="yes" name="mouseExit">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mouseMove -->
+      <method from="java.awt.Component" inherited="yes" name="mouseMove">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mouseUp -->
+      <method from="java.awt.Component" inherited="yes" name="mouseUp">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) move -->
+      <method from="java.awt.Component" inherited="yes" name="move">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) nextFocus -->
+      <method from="java.awt.Component" inherited="yes" name="nextFocus">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) paint -->
+      <method from="java.awt.Component" inherited="yes" name="paint">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Graphics</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) paintAll -->
+      <method from="java.awt.Component" inherited="yes" name="paintAll">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Graphics</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) postEvent -->
+      <method from="java.awt.Component" inherited="yes" name="postEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Event</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) preferredSize -->
+      <method from="java.awt.Component" inherited="yes" name="preferredSize">
+        <signature>
+          <return>
+            <object>java.awt.Dimension</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) prepareImage -->
+      <method from="java.awt.Component" inherited="yes" name="prepareImage">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Image</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.image.ImageObserver</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) prepareImage -->
+      <method from="java.awt.Component" inherited="yes" name="prepareImage">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Image</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <object>java.awt.image.ImageObserver</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) print -->
+      <method from="java.awt.Component" inherited="yes" name="print">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Graphics</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) printAll -->
+      <method from="java.awt.Component" inherited="yes" name="printAll">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Graphics</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) processComponentEvent -->
+      <method from="java.awt.Component" inherited="yes" name="processComponentEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.ComponentEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) processEvent -->
+      <method from="java.awt.Component" inherited="yes" name="processEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.AWTEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) processFocusEvent -->
+      <method from="java.awt.Component" inherited="yes" name="processFocusEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.FocusEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) processHierarchyBoundsEvent -->
+      <method from="java.awt.Component" inherited="yes" name="processHierarchyBoundsEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.HierarchyEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) processHierarchyEvent -->
+      <method from="java.awt.Component" inherited="yes" name="processHierarchyEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.HierarchyEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) processInputMethodEvent -->
+      <method from="java.awt.Component" inherited="yes" name="processInputMethodEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.InputMethodEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) processKeyEvent -->
+      <method from="java.awt.Component" inherited="yes" name="processKeyEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.KeyEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) processMouseEvent -->
+      <method from="java.awt.Component" inherited="yes" name="processMouseEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) processMouseMotionEvent -->
+      <method from="java.awt.Component" inherited="yes" name="processMouseMotionEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) processMouseWheelEvent -->
+      <method from="java.awt.Component" inherited="yes" name="processMouseWheelEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseWheelEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) remove -->
+      <method from="java.awt.Component" inherited="yes" name="remove">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.MenuComponent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeComponentListener -->
+      <method from="java.awt.Component" inherited="yes" name="removeComponentListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.ComponentListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeFocusListener -->
+      <method from="java.awt.Component" inherited="yes" name="removeFocusListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.FocusListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeHierarchyBoundsListener -->
+      <method from="java.awt.Component" inherited="yes" name="removeHierarchyBoundsListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.HierarchyBoundsListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeHierarchyListener -->
+      <method from="java.awt.Component" inherited="yes" name="removeHierarchyListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.HierarchyListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeInputMethodListener -->
+      <method from="java.awt.Component" inherited="yes" name="removeInputMethodListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.InputMethodListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeKeyListener -->
+      <method from="java.awt.Component" inherited="yes" name="removeKeyListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.KeyListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeMouseListener -->
+      <method from="java.awt.Component" inherited="yes" name="removeMouseListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeMouseMotionListener -->
+      <method from="java.awt.Component" inherited="yes" name="removeMouseMotionListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseMotionListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeMouseWheelListener -->
+      <method from="java.awt.Component" inherited="yes" name="removeMouseWheelListener">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseWheelListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeNotify -->
+      <method from="java.awt.Component" inherited="yes" name="removeNotify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removePropertyChangeListener -->
+      <method from="java.awt.Component" inherited="yes" name="removePropertyChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.beans.PropertyChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removePropertyChangeListener -->
+      <method from="java.awt.Component" inherited="yes" name="removePropertyChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.beans.PropertyChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) repaint -->
+      <method from="java.awt.Component" inherited="yes" name="repaint">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) repaint -->
+      <method from="java.awt.Component" inherited="yes" name="repaint">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+          <arg nr="5">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) repaint -->
+      <method from="java.awt.Component" inherited="yes" name="repaint">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) repaint -->
+      <method from="java.awt.Component" inherited="yes" name="repaint">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) requestFocus -->
+      <method from="java.awt.Component" inherited="yes" name="requestFocus">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) requestFocus -->
+      <method from="java.awt.Component" inherited="yes" name="requestFocus">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) requestFocusInWindow -->
+      <method from="java.awt.Component" inherited="yes" name="requestFocusInWindow">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) requestFocusInWindow -->
+      <method from="java.awt.Component" inherited="yes" name="requestFocusInWindow">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) reshape -->
+      <method from="java.awt.Component" inherited="yes" name="reshape">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) resize -->
+      <method from="java.awt.Component" inherited="yes" name="resize">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Dimension</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) resize -->
+      <method from="java.awt.Component" inherited="yes" name="resize">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) revalidate -->
+      <method from="java.awt.Component" inherited="yes" name="revalidate">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setBackground -->
+      <method from="java.awt.Component" inherited="yes" name="setBackground">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Color</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setBounds -->
+      <method from="java.awt.Component" inherited="yes" name="setBounds">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Rectangle</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setBounds -->
+      <method from="java.awt.Component" inherited="yes" name="setBounds">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setComponentOrientation -->
+      <method from="java.awt.Component" inherited="yes" name="setComponentOrientation">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.ComponentOrientation</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setCursor -->
+      <method from="java.awt.Component" inherited="yes" name="setCursor">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Cursor</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setDropTarget -->
+      <method from="java.awt.Component" inherited="yes" name="setDropTarget">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.dnd.DropTarget</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setEnabled -->
+      <method from="java.awt.Component" inherited="yes" name="setEnabled">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFocusTraversalKeys -->
+      <method from="java.awt.Component" inherited="yes" name="setFocusTraversalKeys">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>java.util.Set</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFocusTraversalKeysEnabled -->
+      <method from="java.awt.Component" inherited="yes" name="setFocusTraversalKeysEnabled">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFocusable -->
+      <method from="java.awt.Component" inherited="yes" name="setFocusable">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFont -->
+      <method from="java.awt.Component" inherited="yes" name="setFont">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Font</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setForeground -->
+      <method from="java.awt.Component" inherited="yes" name="setForeground">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Color</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setIgnoreRepaint -->
+      <method from="java.awt.Component" inherited="yes" name="setIgnoreRepaint">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setLocale -->
+      <method from="java.awt.Component" inherited="yes" name="setLocale">
+        <signature>
+          <arg nr="1">
+            <object>java.util.Locale</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setLocation -->
+      <method from="java.awt.Component" inherited="yes" name="setLocation">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Point</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setLocation -->
+      <method from="java.awt.Component" inherited="yes" name="setLocation">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setMaximumSize -->
+      <method from="java.awt.Component" inherited="yes" name="setMaximumSize">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Dimension</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setMinimumSize -->
+      <method from="java.awt.Component" inherited="yes" name="setMinimumSize">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Dimension</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setName -->
+      <method from="java.awt.Component" inherited="yes" name="setName">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setPreferredSize -->
+      <method from="java.awt.Component" inherited="yes" name="setPreferredSize">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Dimension</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setSize -->
+      <method from="java.awt.Component" inherited="yes" name="setSize">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Dimension</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setSize -->
+      <method from="java.awt.Component" inherited="yes" name="setSize">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setVisible -->
+      <method from="java.awt.Component" inherited="yes" name="setVisible">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) show -->
+      <method from="java.awt.Component" inherited="yes" name="show">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) show -->
+      <method from="java.awt.Component" inherited="yes" name="show">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) size -->
+      <method from="java.awt.Component" inherited="yes" name="size">
+        <signature>
+          <return>
+            <object>java.awt.Dimension</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.awt.Component" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) transferFocus -->
+      <method from="java.awt.Component" inherited="yes" name="transferFocus">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) transferFocusBackward -->
+      <method from="java.awt.Component" inherited="yes" name="transferFocusBackward">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) transferFocusUpCycle -->
+      <method from="java.awt.Component" inherited="yes" name="transferFocusUpCycle">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) update -->
+      <method from="java.awt.Component" inherited="yes" name="update">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Graphics</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) validate -->
+      <method from="java.awt.Component" inherited="yes" name="validate">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
