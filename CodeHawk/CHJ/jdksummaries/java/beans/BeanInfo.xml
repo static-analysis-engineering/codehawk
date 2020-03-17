@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-15 23:17:57"/>
+  <interface name="BeanInfo" package="java.beans">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ICON_COLOR_16x16 -->
+      <field access="public" final="yes" name="ICON_COLOR_16x16" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="1"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ICON_COLOR_32x32 -->
+      <field access="public" final="yes" name="ICON_COLOR_32x32" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="2"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ICON_MONO_16x16 -->
+      <field access="public" final="yes" name="ICON_MONO_16x16" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="3"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ICON_MONO_32x32 -->
+      <field access="public" final="yes" name="ICON_MONO_32x32" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="4"/>
+        </value>
+      </field>
+    </fields>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAdditionalBeanInfo -->
+      <method abstract="yes" access="public" name="getAdditionalBeanInfo">
+        <signature>
+          <return>
+            <array>
+              <object>java.beans.BeanInfo</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getBeanDescriptor -->
+      <method abstract="yes" access="public" name="getBeanDescriptor">
+        <signature>
+          <return>
+            <object>java.beans.BeanDescriptor</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDefaultEventIndex -->
+      <method abstract="yes" access="public" name="getDefaultEventIndex">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDefaultPropertyIndex -->
+      <method abstract="yes" access="public" name="getDefaultPropertyIndex">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getEventSetDescriptors -->
+      <method abstract="yes" access="public" name="getEventSetDescriptors">
+        <signature>
+          <return>
+            <array>
+              <object>java.beans.EventSetDescriptor</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getIcon -->
+      <method abstract="yes" access="public" name="getIcon">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.awt.Image</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMethodDescriptors -->
+      <method abstract="yes" access="public" name="getMethodDescriptors">
+        <signature>
+          <return>
+            <array>
+              <object>java.beans.MethodDescriptor</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPropertyDescriptors -->
+      <method abstract="yes" access="public" name="getPropertyDescriptors">
+        <signature>
+          <return>
+            <array>
+              <object>java.beans.PropertyDescriptor</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
