@@ -84,7 +84,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ add -->
-      <method access="public" name="add" valid="no">
+      <method access="public" name="add" >
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Point2D</object>
@@ -92,11 +92,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ add -->
-      <method access="public" name="add" valid="no">
+      <method access="public" name="add">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Rectangle2D</object>
@@ -104,7 +109,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ contains -->

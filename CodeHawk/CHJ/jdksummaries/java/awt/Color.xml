@@ -851,7 +851,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getHSBColor -->
-      <method access="public" name="getHSBColor" static="yes" valid="no">
+      <method access="public" name="getHSBColor" static="yes">
         <signature>
           <arg nr="1">
             <float/>
@@ -868,7 +868,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRGB -->

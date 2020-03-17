@@ -24,7 +24,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addFirst -->
-      <method abstract="yes" access="public" name="addFirst" valid="no">
+      <method abstract="yes" access="public" name="addFirst">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -32,11 +32,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addLast -->
-      <method abstract="yes" access="public" name="addLast" valid="no">
+      <method abstract="yes" access="public" name="addLast">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -44,7 +49,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ contains -->
@@ -168,7 +178,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ peek -->
-      <method abstract="yes" access="public" name="peek" valid="no">
+      <method abstract="yes" access="public" name="peek">
         <signature>
           <return>
             <object>java.lang.Object</object>
@@ -176,11 +186,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ peekFirst -->
-      <method abstract="yes" access="public" name="peekFirst" valid="no">
+      <method abstract="yes" access="public" name="peekFirst">
         <signature>
           <return>
             <object>java.lang.Object</object>
@@ -188,11 +203,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ peekLast -->
-      <method abstract="yes" access="public" name="peekLast" valid="no">
+      <method abstract="yes" access="public" name="peekLast">
         <signature>
           <return>
             <object>java.lang.Object</object>
@@ -200,11 +220,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ poll -->
-      <method abstract="yes" access="public" name="poll" valid="no">
+      <method abstract="yes" access="public" name="poll">
         <signature>
           <return>
             <object>java.lang.Object</object>
@@ -212,7 +237,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ pollFirst -->
@@ -291,7 +321,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeFirst -->
-      <method abstract="yes" access="public" name="removeFirst" valid="no">
+      <method abstract="yes" access="public" name="removeFirst">
         <signature>
           <return>
             <object>java.lang.Object</object>
@@ -299,7 +329,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeFirstOccurrence -->
@@ -318,7 +353,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeLast -->
-      <method abstract="yes" access="public" name="removeLast" valid="no">
+      <method abstract="yes" access="public" name="removeLast">
         <signature>
           <return>
             <object>java.lang.Object</object>
@@ -326,7 +361,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeLastOccurrence -->

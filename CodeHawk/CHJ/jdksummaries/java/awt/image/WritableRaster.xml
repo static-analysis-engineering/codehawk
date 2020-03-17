@@ -179,7 +179,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setDataElements -->
-      <method access="public" name="setDataElements" valid="no">
+      <method access="public" name="setDataElements">
         <signature>
           <arg nr="1">
             <int/>
@@ -191,9 +191,25 @@
             <object>java.lang.Object</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.NullPointerException</throws>
+	  <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setDataElements -->
@@ -209,13 +225,29 @@
             <object>java.awt.image.Raster</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.NullPointerException</throws>
+	  <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setDataElements -->
-      <method access="public" name="setDataElements" valid="no">
+      <method access="public" name="setDataElements">
         <signature>
           <arg nr="1">
             <int/>
@@ -233,13 +265,37 @@
             <object>java.lang.Object</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.NullPointerException</throws>
+	  <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="4"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="5"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setPixel -->
-      <method access="public" name="setPixel" valid="no">
+      <method access="public" name="setPixel">
         <signature>
           <arg nr="1">
             <int/>
@@ -253,13 +309,29 @@
             </array>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.NullPointerException</throws>
+	  <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setPixel -->
-      <method access="public" name="setPixel" valid="no">
+      <method access="public" name="setPixel">
         <signature>
           <arg nr="1">
             <int/>
@@ -273,13 +345,29 @@
             </array>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.NullPointerException</throws>
+	  <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setPixel -->
-      <method access="public" name="setPixel" valid="no">
+      <method access="public" name="setPixel">
         <signature>
           <arg nr="1">
             <int/>
@@ -293,9 +381,25 @@
             </array>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.NullPointerException</throws>
+	  <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setPixels -->

@@ -6,7 +6,7 @@
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readLock -->
-      <method abstract="yes" access="public" name="readLock" valid="no">
+      <method abstract="yes" access="public" name="readLock">
         <signature>
           <return>
             <object>java.util.concurrent.locks.Lock</object>
@@ -14,11 +14,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ writeLock -->
-      <method abstract="yes" access="public" name="writeLock" valid="no">
+      <method abstract="yes" access="public" name="writeLock">
         <signature>
           <return>
             <object>java.util.concurrent.locks.Lock</object>
@@ -26,7 +31,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
     </methods>

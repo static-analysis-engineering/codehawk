@@ -118,7 +118,6 @@
         <exceptions>
           <throws>java.awt.image.RasterFormatException</throws>
           <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -158,10 +157,41 @@
         </signature>
         <exceptions>
           <throws>java.awt.image.RasterFormatException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <not-null/>
+		  <arg nr="1"/>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <not-null/>
+		  <arg nr="2"/>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <not-null/>
+		  <arg nr="3"/>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <not-null/>
+		  <arg nr="4"/>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.NullPointerException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -291,7 +321,6 @@
         <exceptions>
           <throws>java.awt.image.RasterFormatException</throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -1868,7 +1897,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSampleModelTranslateX -->
-      <method access="public" final="yes" name="getSampleModelTranslateX" valid="no">
+      <method access="public" final="yes" name="getSampleModelTranslateX">
         <signature>
           <return>
             <int/>
@@ -1876,11 +1905,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSampleModelTranslateY -->
-      <method access="public" final="yes" name="getSampleModelTranslateY" valid="no">
+      <method access="public" final="yes" name="getSampleModelTranslateY">
         <signature>
           <return>
             <int/>
@@ -1888,7 +1922,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSamples -->
@@ -1994,7 +2033,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getTransferType -->
-      <method access="public" final="yes" name="getTransferType" valid="no">
+      <method access="public" final="yes" name="getTransferType">
         <signature>
           <return>
             <int/>
@@ -2002,11 +2041,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWidth -->
-      <method access="public" final="yes" name="getWidth" valid="no">
+      <method access="public" final="yes" name="getWidth">
         <signature>
           <return>
             <int/>
@@ -2014,7 +2058,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
