@@ -1,0 +1,544 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-16 17:39:59"/>
+  <class name="Executors" package="java.util.concurrent">
+    <interfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ callable -->
+      <method access="public" name="callable" static="yes">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Runnable</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.Callable</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.NullPointerException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <arg nr="2"/>
+            </transfer>
+            <transfer>
+              <return/>
+              <arg nr="2"/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ callable -->
+      <method access="public" name="callable" static="yes">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Runnable</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.Callable</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.NullPointerException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ callable -->
+      <method access="public" name="callable" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.security.PrivilegedAction</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.Callable</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ callable -->
+      <method access="public" name="callable" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.security.PrivilegedExceptionAction</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.Callable</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ defaultThreadFactory -->
+      <method access="public" name="defaultThreadFactory" static="yes">
+        <signature>
+          <return>
+            <object>java.util.concurrent.ThreadFactory</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newCachedThreadPool -->
+      <method access="public" name="newCachedThreadPool" static="yes">
+        <signature>
+          <return>
+            <object>java.util.concurrent.ExecutorService</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newCachedThreadPool -->
+      <method access="public" name="newCachedThreadPool" static="yes">
+        <signature>
+          <arg nr="1">
+            <object>java.util.concurrent.ThreadFactory</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.ExecutorService</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.NullPointerException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newFixedThreadPool -->
+      <method access="public" name="newFixedThreadPool" static="yes">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.util.concurrent.ExecutorService</object>
+          </return>
+        </signature>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.IllegalArgumentException</exn>
+          </c-throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+          <sinks>
+            <sink arg="1" form="threads" type="resource"/>
+          </sinks>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newFixedThreadPool -->
+      <method access="public" name="newFixedThreadPool" static="yes">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>java.util.concurrent.ThreadFactory</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.ExecutorService</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.NullPointerException</throws>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.IllegalArgumentException</exn>
+          </c-throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <sinks>
+            <sink arg="1" form="threads" type="resource"/>
+          </sinks>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newScheduledThreadPool -->
+      <method access="public" name="newScheduledThreadPool" static="yes">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.util.concurrent.ScheduledExecutorService</object>
+          </return>
+        </signature>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.IllegalArgumentException</exn>
+          </c-throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+          <sinks>
+            <sink arg="1" form="threads" type="resource"/>
+          </sinks>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newScheduledThreadPool -->
+      <method access="public" name="newScheduledThreadPool" static="yes">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>java.util.concurrent.ThreadFactory</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.ScheduledExecutorService</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.NullPointerException</throws>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.IllegalArgumentException</exn>
+          </c-throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <sinks>
+            <sink arg="1" form="threads" type="resource"/>
+          </sinks>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newSingleThreadExecutor -->
+      <method access="public" name="newSingleThreadExecutor" static="yes">
+        <signature>
+          <return>
+            <object>java.util.concurrent.ExecutorService</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newSingleThreadExecutor -->
+      <method access="public" name="newSingleThreadExecutor" static="yes">
+        <signature>
+          <arg nr="1">
+            <object>java.util.concurrent.ThreadFactory</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.ExecutorService</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.NullPointerException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newSingleThreadScheduledExecutor -->
+      <method access="public" name="newSingleThreadScheduledExecutor" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>java.util.concurrent.ScheduledExecutorService</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newSingleThreadScheduledExecutor -->
+      <method access="public" name="newSingleThreadScheduledExecutor" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.concurrent.ThreadFactory</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.ScheduledExecutorService</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newWorkStealingPool -->
+      <method access="public" name="newWorkStealingPool" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.util.concurrent.ExecutorService</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newWorkStealingPool -->
+      <method access="public" name="newWorkStealingPool" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>java.util.concurrent.ExecutorService</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ privilegedCallable -->
+      <method access="public" name="privilegedCallable" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.concurrent.Callable</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.Callable</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~ privilegedCallableUsingCurrentClassLoader -->
+      <method access="public" name="privilegedCallableUsingCurrentClassLoader" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.concurrent.Callable</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.Callable</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ privilegedThreadFactory -->
+      <method access="public" name="privilegedThreadFactory" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>java.util.concurrent.ThreadFactory</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ unconfigurableExecutorService -->
+      <method access="public" name="unconfigurableExecutorService" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.concurrent.ExecutorService</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.ExecutorService</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ unconfigurableScheduledExecutorService -->
+      <method access="public" name="unconfigurableScheduledExecutorService" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.concurrent.ScheduledExecutorService</object>
+          </arg>
+          <return>
+            <object>java.util.concurrent.ScheduledExecutorService</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.lang.Object" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
