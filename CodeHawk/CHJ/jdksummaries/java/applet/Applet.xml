@@ -58,7 +58,7 @@
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ destroy -->
-      <method access="public" name="destroy" valid="no">
+      <method access="public" name="destroy">
         <signature/>
         <exceptions/>
         <summary>
@@ -66,7 +66,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAccessibleContext -->
-      <method access="public" name="getAccessibleContext" valid="no">
+      <method access="public" name="getAccessibleContext">
         <signature>
           <return>
             <object>javax.accessibility.AccessibleContext</object>
@@ -74,7 +74,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAppletContext -->
@@ -90,7 +95,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAppletInfo -->
-      <method access="public" name="getAppletInfo" valid="no">
+      <method access="public" name="getAppletInfo">
         <signature>
           <return>
             <object>java.lang.String</object>
@@ -98,7 +103,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAudioClip -->
@@ -135,7 +145,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getCodeBase -->
-      <method access="public" name="getCodeBase" valid="no">
+      <method access="public" name="getCodeBase">
         <signature>
           <return>
             <object>java.net.URL</object>
@@ -143,11 +153,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDocumentBase -->
-      <method access="public" name="getDocumentBase" valid="no">
+      <method access="public" name="getDocumentBase">
         <signature>
           <return>
             <object>java.net.URL</object>
@@ -155,11 +170,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getImage -->
-      <method access="public" name="getImage" valid="no">
+      <method access="public" name="getImage">
         <signature>
           <arg nr="1">
             <object>java.net.URL</object>
@@ -170,11 +190,15 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <defput>
+	      <return/>
+	    </defput>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getImage -->
-      <method access="public" name="getImage" valid="no">
+      <method access="public" name="getImage">
         <signature>
           <arg nr="1">
             <object>java.net.URL</object>
@@ -188,7 +212,11 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <defput>
+	      <return/>
+	    </defput>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getLocale -->
@@ -231,7 +259,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getParameterInfo -->
-      <method access="public" name="getParameterInfo" valid="no">
+      <method access="public" name="getParameterInfo">
         <signature>
           <return>
             <array>
@@ -247,7 +275,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ init -->
-      <method access="public" name="init" valid="no">
+      <method access="public" name="init">
         <signature/>
         <exceptions/>
         <summary>
@@ -255,7 +283,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isActive -->
-      <method access="public" name="isActive" valid="no">
+      <method access="public" name="isActive">
         <signature>
           <return>
             <boolean/>
@@ -267,7 +295,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isValidateRoot -->
-      <method access="public" name="isValidateRoot" valid="no">
+      <method access="public" name="isValidateRoot">
         <signature>
           <return>
             <boolean/>
@@ -294,7 +322,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ play -->
-      <method access="public" name="play" valid="no">
+      <method access="public" name="play">
         <signature>
           <arg nr="1">
             <object>java.net.URL</object>
@@ -302,11 +330,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ play -->
-      <method access="public" name="play" valid="no">
+      <method access="public" name="play">
         <signature>
           <arg nr="1">
             <object>java.net.URL</object>
@@ -317,11 +350,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ resize -->
-      <method access="public" name="resize" valid="no">
+      <method access="public" name="resize">
         <signature>
           <arg nr="1">
             <int/>
@@ -332,11 +374,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ resize -->
-      <method access="public" name="resize" valid="no">
+      <method access="public" name="resize">
         <signature>
           <arg nr="1">
             <object>java.awt.Dimension</object>
@@ -344,11 +395,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setStub -->
-      <method access="public" final="yes" name="setStub" valid="no">
+      <method access="public" final="yes" name="setStub">
         <signature>
           <arg nr="1">
             <object>java.applet.AppletStub</object>
@@ -356,11 +412,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ showStatus -->
-      <method access="public" name="showStatus" valid="no">
+      <method access="public" name="showStatus">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -368,11 +429,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ start -->
-      <method access="public" name="start" valid="no">
+      <method access="public" name="start">
         <signature/>
         <exceptions/>
         <summary>
@@ -380,7 +446,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ stop -->
-      <method access="public" name="stop" valid="no">
+      <method access="public" name="stop">
         <signature/>
         <exceptions/>
         <summary>
