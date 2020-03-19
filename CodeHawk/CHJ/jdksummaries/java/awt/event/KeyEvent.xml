@@ -1,0 +1,2576 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-17 13:30:08"/>
+  <class name="KeyEvent" package="java.awt.event">
+    <superclass>java.awt.event.InputEvent</superclass>
+    <interfaces>
+      <implements>java.io.Serializable</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KEY_FIRST -->
+      <field access="public" final="yes" name="KEY_FIRST" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="400"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KEY_LAST -->
+      <field access="public" final="yes" name="KEY_LAST" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="402"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KEY_TYPED -->
+      <field access="public" final="yes" name="KEY_TYPED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="400"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KEY_PRESSED -->
+      <field access="public" final="yes" name="KEY_PRESSED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="401"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KEY_RELEASED -->
+      <field access="public" final="yes" name="KEY_RELEASED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="402"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_ENTER -->
+      <field access="public" final="yes" name="VK_ENTER" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="10"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_BACK_SPACE -->
+      <field access="public" final="yes" name="VK_BACK_SPACE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="8"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_TAB -->
+      <field access="public" final="yes" name="VK_TAB" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="9"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_CANCEL -->
+      <field access="public" final="yes" name="VK_CANCEL" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="3"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_CLEAR -->
+      <field access="public" final="yes" name="VK_CLEAR" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="12"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_SHIFT -->
+      <field access="public" final="yes" name="VK_SHIFT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="16"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_CONTROL -->
+      <field access="public" final="yes" name="VK_CONTROL" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="17"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_ALT -->
+      <field access="public" final="yes" name="VK_ALT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="18"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_PAUSE -->
+      <field access="public" final="yes" name="VK_PAUSE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="19"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_CAPS_LOCK -->
+      <field access="public" final="yes" name="VK_CAPS_LOCK" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="20"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_ESCAPE -->
+      <field access="public" final="yes" name="VK_ESCAPE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="27"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_SPACE -->
+      <field access="public" final="yes" name="VK_SPACE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="32"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_PAGE_UP -->
+      <field access="public" final="yes" name="VK_PAGE_UP" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="33"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_PAGE_DOWN -->
+      <field access="public" final="yes" name="VK_PAGE_DOWN" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="34"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_END -->
+      <field access="public" final="yes" name="VK_END" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="35"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_HOME -->
+      <field access="public" final="yes" name="VK_HOME" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="36"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_LEFT -->
+      <field access="public" final="yes" name="VK_LEFT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="37"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_UP -->
+      <field access="public" final="yes" name="VK_UP" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="38"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_RIGHT -->
+      <field access="public" final="yes" name="VK_RIGHT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="39"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DOWN -->
+      <field access="public" final="yes" name="VK_DOWN" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="40"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_COMMA -->
+      <field access="public" final="yes" name="VK_COMMA" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="44"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_MINUS -->
+      <field access="public" final="yes" name="VK_MINUS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="45"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_PERIOD -->
+      <field access="public" final="yes" name="VK_PERIOD" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="46"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_SLASH -->
+      <field access="public" final="yes" name="VK_SLASH" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="47"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_0 -->
+      <field access="public" final="yes" name="VK_0" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="48"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_1 -->
+      <field access="public" final="yes" name="VK_1" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="49"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_2 -->
+      <field access="public" final="yes" name="VK_2" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="50"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_3 -->
+      <field access="public" final="yes" name="VK_3" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="51"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_4 -->
+      <field access="public" final="yes" name="VK_4" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="52"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_5 -->
+      <field access="public" final="yes" name="VK_5" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="53"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_6 -->
+      <field access="public" final="yes" name="VK_6" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="54"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_7 -->
+      <field access="public" final="yes" name="VK_7" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="55"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_8 -->
+      <field access="public" final="yes" name="VK_8" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="56"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_9 -->
+      <field access="public" final="yes" name="VK_9" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="57"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_SEMICOLON -->
+      <field access="public" final="yes" name="VK_SEMICOLON" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="59"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_EQUALS -->
+      <field access="public" final="yes" name="VK_EQUALS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_A -->
+      <field access="public" final="yes" name="VK_A" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="65"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_B -->
+      <field access="public" final="yes" name="VK_B" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="66"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_C -->
+      <field access="public" final="yes" name="VK_C" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="67"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_D -->
+      <field access="public" final="yes" name="VK_D" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="68"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_E -->
+      <field access="public" final="yes" name="VK_E" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="69"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F -->
+      <field access="public" final="yes" name="VK_F" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="70"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_G -->
+      <field access="public" final="yes" name="VK_G" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="71"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_H -->
+      <field access="public" final="yes" name="VK_H" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="72"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_I -->
+      <field access="public" final="yes" name="VK_I" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="73"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_J -->
+      <field access="public" final="yes" name="VK_J" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="74"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_K -->
+      <field access="public" final="yes" name="VK_K" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="75"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_L -->
+      <field access="public" final="yes" name="VK_L" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="76"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_M -->
+      <field access="public" final="yes" name="VK_M" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="77"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_N -->
+      <field access="public" final="yes" name="VK_N" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="78"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_O -->
+      <field access="public" final="yes" name="VK_O" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="79"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_P -->
+      <field access="public" final="yes" name="VK_P" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="80"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_Q -->
+      <field access="public" final="yes" name="VK_Q" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="81"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_R -->
+      <field access="public" final="yes" name="VK_R" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="82"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_S -->
+      <field access="public" final="yes" name="VK_S" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="83"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_T -->
+      <field access="public" final="yes" name="VK_T" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="84"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_U -->
+      <field access="public" final="yes" name="VK_U" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="85"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_V -->
+      <field access="public" final="yes" name="VK_V" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="86"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_W -->
+      <field access="public" final="yes" name="VK_W" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="87"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_X -->
+      <field access="public" final="yes" name="VK_X" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="88"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_Y -->
+      <field access="public" final="yes" name="VK_Y" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="89"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_Z -->
+      <field access="public" final="yes" name="VK_Z" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="90"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_OPEN_BRACKET -->
+      <field access="public" final="yes" name="VK_OPEN_BRACKET" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="91"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_BACK_SLASH -->
+      <field access="public" final="yes" name="VK_BACK_SLASH" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="92"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_CLOSE_BRACKET -->
+      <field access="public" final="yes" name="VK_CLOSE_BRACKET" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="93"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NUMPAD0 -->
+      <field access="public" final="yes" name="VK_NUMPAD0" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="96"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NUMPAD1 -->
+      <field access="public" final="yes" name="VK_NUMPAD1" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="97"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NUMPAD2 -->
+      <field access="public" final="yes" name="VK_NUMPAD2" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="98"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NUMPAD3 -->
+      <field access="public" final="yes" name="VK_NUMPAD3" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="99"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NUMPAD4 -->
+      <field access="public" final="yes" name="VK_NUMPAD4" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="100"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NUMPAD5 -->
+      <field access="public" final="yes" name="VK_NUMPAD5" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="101"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NUMPAD6 -->
+      <field access="public" final="yes" name="VK_NUMPAD6" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="102"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NUMPAD7 -->
+      <field access="public" final="yes" name="VK_NUMPAD7" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="103"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NUMPAD8 -->
+      <field access="public" final="yes" name="VK_NUMPAD8" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="104"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NUMPAD9 -->
+      <field access="public" final="yes" name="VK_NUMPAD9" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="105"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_MULTIPLY -->
+      <field access="public" final="yes" name="VK_MULTIPLY" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="106"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_ADD -->
+      <field access="public" final="yes" name="VK_ADD" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="107"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_SEPARATER -->
+      <field access="public" final="yes" name="VK_SEPARATER" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="108"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_SEPARATOR -->
+      <field access="public" final="yes" name="VK_SEPARATOR" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="108"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_SUBTRACT -->
+      <field access="public" final="yes" name="VK_SUBTRACT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="109"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DECIMAL -->
+      <field access="public" final="yes" name="VK_DECIMAL" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="110"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DIVIDE -->
+      <field access="public" final="yes" name="VK_DIVIDE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="111"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DELETE -->
+      <field access="public" final="yes" name="VK_DELETE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="127"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NUM_LOCK -->
+      <field access="public" final="yes" name="VK_NUM_LOCK" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="144"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_SCROLL_LOCK -->
+      <field access="public" final="yes" name="VK_SCROLL_LOCK" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="145"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F1 -->
+      <field access="public" final="yes" name="VK_F1" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="112"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F2 -->
+      <field access="public" final="yes" name="VK_F2" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="113"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F3 -->
+      <field access="public" final="yes" name="VK_F3" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="114"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F4 -->
+      <field access="public" final="yes" name="VK_F4" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="115"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F5 -->
+      <field access="public" final="yes" name="VK_F5" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="116"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F6 -->
+      <field access="public" final="yes" name="VK_F6" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="117"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F7 -->
+      <field access="public" final="yes" name="VK_F7" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="118"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F8 -->
+      <field access="public" final="yes" name="VK_F8" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="119"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F9 -->
+      <field access="public" final="yes" name="VK_F9" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="120"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F10 -->
+      <field access="public" final="yes" name="VK_F10" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="121"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F11 -->
+      <field access="public" final="yes" name="VK_F11" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="122"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F12 -->
+      <field access="public" final="yes" name="VK_F12" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="123"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F13 -->
+      <field access="public" final="yes" name="VK_F13" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61440"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F14 -->
+      <field access="public" final="yes" name="VK_F14" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61441"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F15 -->
+      <field access="public" final="yes" name="VK_F15" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61442"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F16 -->
+      <field access="public" final="yes" name="VK_F16" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61443"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F17 -->
+      <field access="public" final="yes" name="VK_F17" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61444"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F18 -->
+      <field access="public" final="yes" name="VK_F18" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61445"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F19 -->
+      <field access="public" final="yes" name="VK_F19" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61446"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F20 -->
+      <field access="public" final="yes" name="VK_F20" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61447"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F21 -->
+      <field access="public" final="yes" name="VK_F21" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61448"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F22 -->
+      <field access="public" final="yes" name="VK_F22" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61449"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F23 -->
+      <field access="public" final="yes" name="VK_F23" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61450"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_F24 -->
+      <field access="public" final="yes" name="VK_F24" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="61451"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_PRINTSCREEN -->
+      <field access="public" final="yes" name="VK_PRINTSCREEN" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="154"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_INSERT -->
+      <field access="public" final="yes" name="VK_INSERT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="155"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_HELP -->
+      <field access="public" final="yes" name="VK_HELP" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="156"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_META -->
+      <field access="public" final="yes" name="VK_META" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="157"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_BACK_QUOTE -->
+      <field access="public" final="yes" name="VK_BACK_QUOTE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="192"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_QUOTE -->
+      <field access="public" final="yes" name="VK_QUOTE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="222"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_KP_UP -->
+      <field access="public" final="yes" name="VK_KP_UP" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="224"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_KP_DOWN -->
+      <field access="public" final="yes" name="VK_KP_DOWN" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="225"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_KP_LEFT -->
+      <field access="public" final="yes" name="VK_KP_LEFT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="226"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_KP_RIGHT -->
+      <field access="public" final="yes" name="VK_KP_RIGHT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="227"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_GRAVE -->
+      <field access="public" final="yes" name="VK_DEAD_GRAVE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="128"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_ACUTE -->
+      <field access="public" final="yes" name="VK_DEAD_ACUTE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="129"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_CIRCUMFLEX -->
+      <field access="public" final="yes" name="VK_DEAD_CIRCUMFLEX" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="130"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_TILDE -->
+      <field access="public" final="yes" name="VK_DEAD_TILDE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="131"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_MACRON -->
+      <field access="public" final="yes" name="VK_DEAD_MACRON" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="132"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_BREVE -->
+      <field access="public" final="yes" name="VK_DEAD_BREVE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="133"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_ABOVEDOT -->
+      <field access="public" final="yes" name="VK_DEAD_ABOVEDOT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="134"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_DIAERESIS -->
+      <field access="public" final="yes" name="VK_DEAD_DIAERESIS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="135"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_ABOVERING -->
+      <field access="public" final="yes" name="VK_DEAD_ABOVERING" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="136"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_DOUBLEACUTE -->
+      <field access="public" final="yes" name="VK_DEAD_DOUBLEACUTE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="137"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_CARON -->
+      <field access="public" final="yes" name="VK_DEAD_CARON" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="138"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_CEDILLA -->
+      <field access="public" final="yes" name="VK_DEAD_CEDILLA" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="139"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_OGONEK -->
+      <field access="public" final="yes" name="VK_DEAD_OGONEK" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="140"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_IOTA -->
+      <field access="public" final="yes" name="VK_DEAD_IOTA" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="141"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_VOICED_SOUND -->
+      <field access="public" final="yes" name="VK_DEAD_VOICED_SOUND" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="142"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DEAD_SEMIVOICED_SOUND -->
+      <field access="public" final="yes" name="VK_DEAD_SEMIVOICED_SOUND" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="143"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_AMPERSAND -->
+      <field access="public" final="yes" name="VK_AMPERSAND" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="150"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_ASTERISK -->
+      <field access="public" final="yes" name="VK_ASTERISK" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="151"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_QUOTEDBL -->
+      <field access="public" final="yes" name="VK_QUOTEDBL" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="152"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_LESS -->
+      <field access="public" final="yes" name="VK_LESS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="153"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_GREATER -->
+      <field access="public" final="yes" name="VK_GREATER" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="160"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_BRACELEFT -->
+      <field access="public" final="yes" name="VK_BRACELEFT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="161"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_BRACERIGHT -->
+      <field access="public" final="yes" name="VK_BRACERIGHT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="162"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_AT -->
+      <field access="public" final="yes" name="VK_AT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="512"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_COLON -->
+      <field access="public" final="yes" name="VK_COLON" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="513"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_CIRCUMFLEX -->
+      <field access="public" final="yes" name="VK_CIRCUMFLEX" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="514"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_DOLLAR -->
+      <field access="public" final="yes" name="VK_DOLLAR" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="515"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_EURO_SIGN -->
+      <field access="public" final="yes" name="VK_EURO_SIGN" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="516"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_EXCLAMATION_MARK -->
+      <field access="public" final="yes" name="VK_EXCLAMATION_MARK" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="517"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_INVERTED_EXCLAMATION_MARK -->
+      <field access="public" final="yes" name="VK_INVERTED_EXCLAMATION_MARK" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="518"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_LEFT_PARENTHESIS -->
+      <field access="public" final="yes" name="VK_LEFT_PARENTHESIS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="519"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NUMBER_SIGN -->
+      <field access="public" final="yes" name="VK_NUMBER_SIGN" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="520"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_PLUS -->
+      <field access="public" final="yes" name="VK_PLUS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="521"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_RIGHT_PARENTHESIS -->
+      <field access="public" final="yes" name="VK_RIGHT_PARENTHESIS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="522"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_UNDERSCORE -->
+      <field access="public" final="yes" name="VK_UNDERSCORE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="523"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_WINDOWS -->
+      <field access="public" final="yes" name="VK_WINDOWS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="524"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_CONTEXT_MENU -->
+      <field access="public" final="yes" name="VK_CONTEXT_MENU" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="525"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_FINAL -->
+      <field access="public" final="yes" name="VK_FINAL" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="24"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_CONVERT -->
+      <field access="public" final="yes" name="VK_CONVERT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="28"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_NONCONVERT -->
+      <field access="public" final="yes" name="VK_NONCONVERT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="29"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_ACCEPT -->
+      <field access="public" final="yes" name="VK_ACCEPT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="30"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_MODECHANGE -->
+      <field access="public" final="yes" name="VK_MODECHANGE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="31"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_KANA -->
+      <field access="public" final="yes" name="VK_KANA" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="21"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_KANJI -->
+      <field access="public" final="yes" name="VK_KANJI" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="25"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_ALPHANUMERIC -->
+      <field access="public" final="yes" name="VK_ALPHANUMERIC" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="240"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_KATAKANA -->
+      <field access="public" final="yes" name="VK_KATAKANA" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="241"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_HIRAGANA -->
+      <field access="public" final="yes" name="VK_HIRAGANA" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="242"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_FULL_WIDTH -->
+      <field access="public" final="yes" name="VK_FULL_WIDTH" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="243"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_HALF_WIDTH -->
+      <field access="public" final="yes" name="VK_HALF_WIDTH" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="244"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_ROMAN_CHARACTERS -->
+      <field access="public" final="yes" name="VK_ROMAN_CHARACTERS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="245"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_ALL_CANDIDATES -->
+      <field access="public" final="yes" name="VK_ALL_CANDIDATES" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="256"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_PREVIOUS_CANDIDATE -->
+      <field access="public" final="yes" name="VK_PREVIOUS_CANDIDATE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="257"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_CODE_INPUT -->
+      <field access="public" final="yes" name="VK_CODE_INPUT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="258"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_JAPANESE_KATAKANA -->
+      <field access="public" final="yes" name="VK_JAPANESE_KATAKANA" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="259"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_JAPANESE_HIRAGANA -->
+      <field access="public" final="yes" name="VK_JAPANESE_HIRAGANA" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="260"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_JAPANESE_ROMAN -->
+      <field access="public" final="yes" name="VK_JAPANESE_ROMAN" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="261"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_KANA_LOCK -->
+      <field access="public" final="yes" name="VK_KANA_LOCK" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="262"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_INPUT_METHOD_ON_OFF -->
+      <field access="public" final="yes" name="VK_INPUT_METHOD_ON_OFF" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="263"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_CUT -->
+      <field access="public" final="yes" name="VK_CUT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="65489"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_COPY -->
+      <field access="public" final="yes" name="VK_COPY" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="65485"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_PASTE -->
+      <field access="public" final="yes" name="VK_PASTE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="65487"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_UNDO -->
+      <field access="public" final="yes" name="VK_UNDO" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="65483"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_AGAIN -->
+      <field access="public" final="yes" name="VK_AGAIN" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="65481"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_FIND -->
+      <field access="public" final="yes" name="VK_FIND" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="65488"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_PROPS -->
+      <field access="public" final="yes" name="VK_PROPS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="65482"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_STOP -->
+      <field access="public" final="yes" name="VK_STOP" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="65480"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_COMPOSE -->
+      <field access="public" final="yes" name="VK_COMPOSE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="65312"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_ALT_GRAPH -->
+      <field access="public" final="yes" name="VK_ALT_GRAPH" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="65406"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_BEGIN -->
+      <field access="public" final="yes" name="VK_BEGIN" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="65368"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VK_UNDEFINED -->
+      <field access="public" final="yes" name="VK_UNDEFINED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="0"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CHAR_UNDEFINED -->
+      <field access="public" final="yes" name="CHAR_UNDEFINED" static="yes">
+        <signature>
+          <char/>
+        </signature>
+        <value>
+          <int value="65535"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KEY_LOCATION_UNKNOWN -->
+      <field access="public" final="yes" name="KEY_LOCATION_UNKNOWN" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="0"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KEY_LOCATION_STANDARD -->
+      <field access="public" final="yes" name="KEY_LOCATION_STANDARD" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="1"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KEY_LOCATION_LEFT -->
+      <field access="public" final="yes" name="KEY_LOCATION_LEFT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="2"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KEY_LOCATION_RIGHT -->
+      <field access="public" final="yes" name="KEY_LOCATION_RIGHT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="3"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KEY_LOCATION_NUMPAD -->
+      <field access="public" final="yes" name="KEY_LOCATION_NUMPAD" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="4"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:RESERVED_ID_MAX -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="RESERVED_ID_MAX">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:WINDOW_FOCUS_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="WINDOW_FOCUS_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:WINDOW_STATE_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="WINDOW_STATE_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:MOUSE_WHEEL_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="MOUSE_WHEEL_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:HIERARCHY_BOUNDS_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="HIERARCHY_BOUNDS_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:HIERARCHY_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="HIERARCHY_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:INVOCATION_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="INVOCATION_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:PAINT_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="PAINT_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:INPUT_METHOD_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="INPUT_METHOD_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:TEXT_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="TEXT_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:ITEM_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="ITEM_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:ADJUSTMENT_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="ADJUSTMENT_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:ACTION_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="ACTION_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:WINDOW_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="WINDOW_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:MOUSE_MOTION_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="MOUSE_MOTION_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:MOUSE_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="MOUSE_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:KEY_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="KEY_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:FOCUS_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="FOCUS_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:CONTAINER_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="CONTAINER_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:COMPONENT_EVENT_MASK -->
+      <field from="java.awt.AWTEvent" inherited="yes" name="COMPONENT_EVENT_MASK">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:COMPONENT_HIDDEN -->
+      <field from="java.awt.event.ComponentEvent" inherited="yes" name="COMPONENT_HIDDEN">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:COMPONENT_SHOWN -->
+      <field from="java.awt.event.ComponentEvent" inherited="yes" name="COMPONENT_SHOWN">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:COMPONENT_RESIZED -->
+      <field from="java.awt.event.ComponentEvent" inherited="yes" name="COMPONENT_RESIZED">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:COMPONENT_MOVED -->
+      <field from="java.awt.event.ComponentEvent" inherited="yes" name="COMPONENT_MOVED">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:COMPONENT_LAST -->
+      <field from="java.awt.event.ComponentEvent" inherited="yes" name="COMPONENT_LAST">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:COMPONENT_FIRST -->
+      <field from="java.awt.event.ComponentEvent" inherited="yes" name="COMPONENT_FIRST">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:ALT_GRAPH_DOWN_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="ALT_GRAPH_DOWN_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:BUTTON3_DOWN_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="BUTTON3_DOWN_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:BUTTON2_DOWN_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="BUTTON2_DOWN_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:BUTTON1_DOWN_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="BUTTON1_DOWN_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:ALT_DOWN_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="ALT_DOWN_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:META_DOWN_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="META_DOWN_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:CTRL_DOWN_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="CTRL_DOWN_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:SHIFT_DOWN_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="SHIFT_DOWN_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:BUTTON3_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="BUTTON3_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:BUTTON2_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="BUTTON2_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:BUTTON1_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="BUTTON1_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:ALT_GRAPH_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="ALT_GRAPH_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:ALT_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="ALT_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:META_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="META_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:CTRL_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="CTRL_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:SHIFT_MASK -->
+      <field from="java.awt.event.InputEvent" inherited="yes" name="SHIFT_MASK">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~ (java.awt.Component,int,long,int,int,char,int) -->
+      <constructor access="public" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <long/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+          <arg nr="5">
+            <int/>
+          </arg>
+          <arg nr="6">
+            <char/>
+          </arg>
+          <arg nr="7">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.awt.Component,int,long,int,int,char) -->
+      <constructor access="public" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <long/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+          <arg nr="5">
+            <int/>
+          </arg>
+          <arg nr="6">
+            <char/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.awt.Component,int,long,int,int) -->
+      <constructor access="public" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <long/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+          <arg nr="5">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getExtendedKeyCode -->
+      <method access="public" name="getExtendedKeyCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getExtendedKeyCodeForChar -->
+      <method access="public" name="getExtendedKeyCodeForChar" static="yes">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getKeyChar -->
+      <method access="public" name="getKeyChar">
+        <signature>
+          <return>
+            <char/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getKeyCode -->
+      <method access="public" name="getKeyCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getKeyLocation -->
+      <method access="public" name="getKeyLocation">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getKeyModifiersText -->
+      <method access="public" name="getKeyModifiersText" static="yes">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getKeyText -->
+      <method access="public" name="getKeyText" static="yes">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isActionKey -->
+      <method access="public" name="isActionKey">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ paramString -->
+      <method access="public" name="paramString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setKeyChar -->
+      <method access="public" name="setKeyChar" valid="no">
+        <signature>
+          <arg nr="1">
+            <char/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setKeyCode -->
+      <method access="public" name="setKeyCode">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setModifiers -->
+      <method access="public" name="setModifiers">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) consume -->
+      <method from="java.awt.event.InputEvent" inherited="yes" name="consume">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getComponent -->
+      <method from="java.awt.event.ComponentEvent" inherited="yes" name="getComponent">
+        <signature>
+          <return>
+            <object>java.awt.Component</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getID -->
+      <method from="java.awt.AWTEvent" inherited="yes" name="getID">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMaskForButton -->
+      <method from="java.awt.event.InputEvent" inherited="yes" name="getMaskForButton">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getModifiers -->
+      <method from="java.awt.event.InputEvent" inherited="yes" name="getModifiers">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getModifiersEx -->
+      <method from="java.awt.event.InputEvent" inherited="yes" name="getModifiersEx">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getModifiersExText -->
+      <method from="java.awt.event.InputEvent" inherited="yes" name="getModifiersExText">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getSource -->
+      <method from="java.util.EventObject" inherited="yes" name="getSource">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getWhen -->
+      <method from="java.awt.event.InputEvent" inherited="yes" name="getWhen">
+        <signature>
+          <return>
+            <long/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isAltDown -->
+      <method from="java.awt.event.InputEvent" inherited="yes" name="isAltDown">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isAltGraphDown -->
+      <method from="java.awt.event.InputEvent" inherited="yes" name="isAltGraphDown">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isConsumed -->
+      <method from="java.awt.event.InputEvent" inherited="yes" name="isConsumed">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isControlDown -->
+      <method from="java.awt.event.InputEvent" inherited="yes" name="isControlDown">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isMetaDown -->
+      <method from="java.awt.event.InputEvent" inherited="yes" name="isMetaDown">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isShiftDown -->
+      <method from="java.awt.event.InputEvent" inherited="yes" name="isShiftDown">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setSource -->
+      <method from="java.awt.AWTEvent" inherited="yes" name="setSource">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.awt.AWTEvent" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

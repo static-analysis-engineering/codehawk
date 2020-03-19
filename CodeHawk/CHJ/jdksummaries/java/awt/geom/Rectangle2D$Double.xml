@@ -1,0 +1,811 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-17 13:39:57"/>
+  <class name="Rectangle2D$Double" package="java.awt.geom">
+    <superclass>java.awt.geom.Rectangle2D</superclass>
+    <interfaces>
+      <implements>java.io.Serializable</implements>
+      <implements>java.awt.Shape</implements>
+      <implements>java.lang.Cloneable</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:x -->
+      <field access="public" name="x">
+        <signature>
+          <double/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:y -->
+      <field access="public" name="y">
+        <signature>
+          <double/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:width -->
+      <field access="public" name="width">
+        <signature>
+          <double/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:height -->
+      <field access="public" name="height">
+        <signature>
+          <double/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:OUT_BOTTOM -->
+      <field from="java.awt.geom.Rectangle2D" inherited="yes" name="OUT_BOTTOM">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:OUT_RIGHT -->
+      <field from="java.awt.geom.Rectangle2D" inherited="yes" name="OUT_RIGHT">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:OUT_TOP -->
+      <field from="java.awt.geom.Rectangle2D" inherited="yes" name="OUT_TOP">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:OUT_LEFT -->
+      <field from="java.awt.geom.Rectangle2D" inherited="yes" name="OUT_LEFT">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ () -->
+      <constructor access="public">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (double,double,double,double) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createIntersection -->
+      <method access="public" name="createIntersection">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <return>
+            <object>java.awt.geom.Rectangle2D</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createUnion -->
+      <method access="public" name="createUnion" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <return>
+            <object>java.awt.geom.Rectangle2D</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getBounds2D -->
+      <method access="public" name="getBounds2D">
+        <signature>
+          <return>
+            <object>java.awt.geom.Rectangle2D</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getHeight -->
+      <method access="public" name="getHeight">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWidth -->
+      <method access="public" name="getWidth">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getX -->
+      <method access="public" name="getX">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getY -->
+      <method access="public" name="getY">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isEmpty -->
+      <method access="public" name="isEmpty">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ outcode -->
+      <method access="public" name="outcode">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRect -->
+      <method access="public" name="setRect">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRect -->
+      <method access="public" name="setRect">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toString -->
+      <method access="public" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) add -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="add">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) add -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="add">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) add -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="add">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getBounds -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getBounds">
+        <signature>
+          <return>
+            <object>java.awt.Rectangle</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getCenterX -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getCenterX">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getCenterY -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getCenterY">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFrame -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getFrame">
+        <signature>
+          <return>
+            <object>java.awt.geom.Rectangle2D</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMaxX -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getMaxX">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMaxY -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getMaxY">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMinX -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getMinX">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMinY -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getMinY">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPathIterator -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="getPathIterator">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.AffineTransform</object>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <return>
+            <object>java.awt.geom.PathIterator</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPathIterator -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="getPathIterator">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.AffineTransform</object>
+          </arg>
+          <return>
+            <object>java.awt.geom.PathIterator</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) intersect -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="intersect">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) intersects -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="intersects">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) intersects -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="intersects">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) intersectsLine -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="intersectsLine">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Line2D</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) intersectsLine -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="intersectsLine">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) outcode -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="outcode">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrame -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="setFrame">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrame -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="setFrame">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.geom.Dimension2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrame -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="setFrame">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrameFromCenter -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="setFrameFromCenter">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrameFromCenter -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="setFrameFromCenter">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrameFromDiagonal -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="setFrameFromDiagonal">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrameFromDiagonal -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="setFrameFromDiagonal">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) union -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="union">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
