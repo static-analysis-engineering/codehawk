@@ -181,7 +181,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSupportedProtocols -->
-      <method abstract="yes" access="public" name="getSupportedProtocols" valid="no">
+      <method abstract="yes" access="public" name="getSupportedProtocols">
         <signature>
           <return>
             <array>
@@ -191,7 +191,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getUseClientMode -->

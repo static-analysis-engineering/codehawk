@@ -981,7 +981,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ divideToIntegralValue -->
-      <method access="public" name="divideToIntegralValue" valid="no">
+      <method access="public" name="divideToIntegralValue">
         <signature>
           <arg nr="1">
             <object>java.math.BigDecimal</object>
@@ -990,9 +990,27 @@
             <object>java.math.BigDecimal</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ArithmeticException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ divideToIntegralValue -->

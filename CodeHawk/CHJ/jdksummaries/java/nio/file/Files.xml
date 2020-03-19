@@ -34,9 +34,6 @@
           <throws>java.nio.file.DirectoryNotEmptyException</throws>
           <throws>java.lang.SecurityException</throws>
           <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -103,8 +100,6 @@
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
           <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -141,7 +136,6 @@
         <exceptions>
           <throws>java.io.IOException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -183,7 +177,6 @@
           <throws>java.nio.file.FileAlreadyExistsException</throws>
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -227,7 +220,6 @@
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
           <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -270,7 +262,6 @@
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
           <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -310,7 +301,6 @@
           <throws>java.nio.file.FileAlreadyExistsException</throws>
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -356,8 +346,6 @@
           <throws>java.nio.file.FileAlreadyExistsException</throws>
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -407,8 +395,6 @@
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -458,7 +444,6 @@
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -510,9 +495,6 @@
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -570,8 +552,6 @@
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -662,7 +642,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -729,8 +708,6 @@
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
           <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -771,8 +748,6 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -854,7 +829,6 @@
           <throws>java.io.IOException</throws>
           <throws>java.lang.SecurityException</throws>
           <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -896,7 +870,6 @@
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
           <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -937,7 +910,6 @@
           <throws>java.io.IOException</throws>
           <throws>java.lang.UnsupportedOperationException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -1067,7 +1039,6 @@
         <exceptions>
           <throws>java.lang.SecurityException</throws>
           <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -1093,7 +1064,6 @@
         <exceptions>
           <throws>java.io.IOException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -1153,7 +1123,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ lines -->
-      <method access="public" name="lines" static="yes" valid="no">
+      <method access="public" name="lines" static="yes">
         <signature>
           <arg nr="1">
             <object>java.nio.file.Path</object>
@@ -1167,13 +1137,18 @@
         </signature>
         <exceptions>
           <throws>java.io.IOException</throws>
+	  <throws>java.lang.SecurityException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <defput>
+	      <return/>
+	    </defput>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ lines -->
-      <method access="public" name="lines" static="yes" valid="no">
+      <method access="public" name="lines" static="yes">
         <signature>
           <arg nr="1">
             <object>java.nio.file.Path</object>
@@ -1184,13 +1159,18 @@
         </signature>
         <exceptions>
           <throws>java.io.IOException</throws>
+	  <throws>java.lang.SecurityException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <defput>
+	      <return/>
+	    </defput>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ list -->
-      <method access="public" name="list" static="yes" valid="no">
+      <method access="public" name="list" static="yes">
         <signature>
           <arg nr="1">
             <object>java.nio.file.Path</object>
@@ -1200,10 +1180,16 @@
           </return>
         </signature>
         <exceptions>
+	  <throws>java.nio.file.NotDirectoryException</throws>
           <throws>java.io.IOException</throws>
+	  <throws>java.lang.SecurityException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <defput>
+	      <return/>
+	    </defput>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ move -->

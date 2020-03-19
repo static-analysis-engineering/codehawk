@@ -127,7 +127,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addInputMethodListener -->
-      <method access="public" name="addInputMethodListener" valid="no">
+      <method access="public" name="addInputMethodListener">
         <signature>
           <arg nr="1">
             <object>java.awt.event.InputMethodListener</object>
@@ -135,7 +135,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addKeymap -->

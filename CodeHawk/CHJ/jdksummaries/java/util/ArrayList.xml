@@ -11,6 +11,15 @@
       <implements>java.util.Collection</implements>
       <implements>java.lang.Iterable</implements>
     </interfaces>
+    <class-properties>
+      <cprop method="size" name="size">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </cprop>
+    </class-properties>
     <!-- =============================== FIELDS ===============================  -->
     <fields/>
     <!-- ============================ CONSTRUCTORS ============================  -->
@@ -921,7 +930,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  &gt;=  0">
+              <math>
                 <apply>
                   <geq/>
                   <return/>
