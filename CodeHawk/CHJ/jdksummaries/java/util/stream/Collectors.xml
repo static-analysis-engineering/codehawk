@@ -1,0 +1,719 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-17 23:21:00"/>
+  <class final="yes" name="Collectors" package="java.util.stream">
+    <interfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ averagingDouble -->
+      <method access="public" name="averagingDouble" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.ToDoubleFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ averagingInt -->
+      <method access="public" name="averagingInt" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.ToIntFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ averagingLong -->
+      <method access="public" name="averagingLong" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.ToLongFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ collectingAndThen -->
+      <method access="public" name="collectingAndThen" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.stream.Collector</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.Function</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ counting -->
+      <method access="public" name="counting" static="yes">
+        <signature>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ groupingBy -->
+      <method access="public" name="groupingBy" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ groupingBy -->
+      <method access="public" name="groupingBy" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.stream.Collector</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ groupingBy -->
+      <method access="public" name="groupingBy" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.Supplier</object>
+          </arg>
+          <arg nr="3">
+            <object>java.util.stream.Collector</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ groupingByConcurrent -->
+      <method access="public" name="groupingByConcurrent" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ groupingByConcurrent -->
+      <method access="public" name="groupingByConcurrent" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.stream.Collector</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ groupingByConcurrent -->
+      <method access="public" name="groupingByConcurrent" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.Supplier</object>
+          </arg>
+          <arg nr="3">
+            <object>java.util.stream.Collector</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ joining -->
+      <method access="public" name="joining" static="yes">
+        <signature>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ joining -->
+      <method access="public" name="joining" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ joining -->
+      <method access="public" name="joining" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <arg nr="3">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mapping -->
+      <method access="public" name="mapping" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.stream.Collector</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ maxBy -->
+      <method access="public" name="maxBy" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.Comparator</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ minBy -->
+      <method access="public" name="minBy" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.Comparator</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ partitioningBy -->
+      <method access="public" name="partitioningBy" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Predicate</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ partitioningBy -->
+      <method access="public" name="partitioningBy" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Predicate</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.stream.Collector</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ reducing -->
+      <method access="public" name="reducing" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.BinaryOperator</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ reducing -->
+      <method access="public" name="reducing" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.BinaryOperator</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ reducing -->
+      <method access="public" name="reducing" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="3">
+            <object>java.util.function.BinaryOperator</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ summarizingDouble -->
+      <method access="public" name="summarizingDouble" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.ToDoubleFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ summarizingInt -->
+      <method access="public" name="summarizingInt" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.ToIntFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ summarizingLong -->
+      <method access="public" name="summarizingLong" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.ToLongFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ summingDouble -->
+      <method access="public" name="summingDouble" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.ToDoubleFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ summingInt -->
+      <method access="public" name="summingInt" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.ToIntFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ summingLong -->
+      <method access="public" name="summingLong" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.ToLongFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toCollection -->
+      <method access="public" name="toCollection" static="yes">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Supplier</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toConcurrentMap -->
+      <method access="public" name="toConcurrentMap" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.Function</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toConcurrentMap -->
+      <method access="public" name="toConcurrentMap" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="3">
+            <object>java.util.function.BinaryOperator</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toConcurrentMap -->
+      <method access="public" name="toConcurrentMap" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="3">
+            <object>java.util.function.BinaryOperator</object>
+          </arg>
+          <arg nr="4">
+            <object>java.util.function.Supplier</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toList -->
+      <method access="public" name="toList" static="yes">
+        <signature>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toMap -->
+      <method access="public" name="toMap" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.Function</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toMap -->
+      <method access="public" name="toMap" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="3">
+            <object>java.util.function.BinaryOperator</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toMap -->
+      <method access="public" name="toMap" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.Function</object>
+          </arg>
+          <arg nr="3">
+            <object>java.util.function.BinaryOperator</object>
+          </arg>
+          <arg nr="4">
+            <object>java.util.function.Supplier</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toSet -->
+      <method access="public" name="toSet" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>java.util.stream.Collector</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.lang.Object" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

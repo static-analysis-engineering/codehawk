@@ -1,0 +1,676 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-18 15:41:06"/>
+  <interface name="LongStream" package="java.util.stream">
+    <superinterfaces>
+      <superinterface>java.util.stream.BaseStream</superinterface>
+      <superinterface>java.lang.AutoCloseable</superinterface>
+    </superinterfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ allMatch -->
+      <method abstract="yes" access="public" name="allMatch" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongPredicate</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ anyMatch -->
+      <method abstract="yes" access="public" name="anyMatch" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongPredicate</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ asDoubleStream -->
+      <method abstract="yes" access="public" name="asDoubleStream" valid="no">
+        <signature>
+          <return>
+            <object>java.util.stream.DoubleStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ average -->
+      <method abstract="yes" access="public" name="average" valid="no">
+        <signature>
+          <return>
+            <object>java.util.OptionalDouble</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ boxed -->
+      <method abstract="yes" access="public" name="boxed" valid="no">
+        <signature>
+          <return>
+            <object>java.util.stream.Stream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ builder -->
+      <method access="public" name="builder" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>java.util.stream.LongStream$Builder</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ collect -->
+      <method abstract="yes" access="public" name="collect" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.Supplier</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.ObjLongConsumer</object>
+          </arg>
+          <arg nr="3">
+            <object>java.util.function.BiConsumer</object>
+          </arg>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ concat -->
+      <method access="public" name="concat" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.stream.LongStream</object>
+          </arg>
+          <arg nr="2">
+            <object>java.util.stream.LongStream</object>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ count -->
+      <method abstract="yes" access="public" name="count" valid="no">
+        <signature>
+          <return>
+            <long/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ distinct -->
+      <method abstract="yes" access="public" name="distinct" valid="no">
+        <signature>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ empty -->
+      <method access="public" name="empty" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ filter -->
+      <method abstract="yes" access="public" name="filter" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongPredicate</object>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ findAny -->
+      <method abstract="yes" access="public" name="findAny" valid="no">
+        <signature>
+          <return>
+            <object>java.util.OptionalLong</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ findFirst -->
+      <method abstract="yes" access="public" name="findFirst" valid="no">
+        <signature>
+          <return>
+            <object>java.util.OptionalLong</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ flatMap -->
+      <method abstract="yes" access="public" name="flatMap" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ forEach -->
+      <method abstract="yes" access="public" name="forEach" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongConsumer</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ forEachOrdered -->
+      <method abstract="yes" access="public" name="forEachOrdered" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongConsumer</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ generate -->
+      <method access="public" name="generate" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongSupplier</object>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ iterate -->
+      <method access="public" name="iterate" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.LongUnaryOperator</object>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ iterator -->
+      <method abstract="yes" access="public" name="iterator" valid="no">
+        <signature>
+          <return>
+            <object>java.util.PrimitiveIterator$OfLong</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ iterator -->
+      <method access="public" bridge="yes" name="iterator" valid="no">
+        <signature>
+          <return>
+            <object>java.util.Iterator</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ limit -->
+      <method abstract="yes" access="public" name="limit" valid="no">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ map -->
+      <method abstract="yes" access="public" name="map" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongUnaryOperator</object>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mapToDouble -->
+      <method abstract="yes" access="public" name="mapToDouble" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongToDoubleFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.DoubleStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mapToInt -->
+      <method abstract="yes" access="public" name="mapToInt" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongToIntFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.IntStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mapToObj -->
+      <method abstract="yes" access="public" name="mapToObj" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongFunction</object>
+          </arg>
+          <return>
+            <object>java.util.stream.Stream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ max -->
+      <method abstract="yes" access="public" name="max" valid="no">
+        <signature>
+          <return>
+            <object>java.util.OptionalLong</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ min -->
+      <method abstract="yes" access="public" name="min" valid="no">
+        <signature>
+          <return>
+            <object>java.util.OptionalLong</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ noneMatch -->
+      <method abstract="yes" access="public" name="noneMatch" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongPredicate</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ of -->
+      <method access="public" name="of" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ of -->
+      <method access="public" name="of" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <array>
+              <long/>
+            </array>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ parallel -->
+      <method abstract="yes" access="public" name="parallel" valid="no">
+        <signature>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ parallel -->
+      <method access="public" bridge="yes" name="parallel" valid="no">
+        <signature>
+          <return>
+            <object>java.util.stream.BaseStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ peek -->
+      <method abstract="yes" access="public" name="peek" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongConsumer</object>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ range -->
+      <method access="public" name="range" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <long/>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ rangeClosed -->
+      <method access="public" name="rangeClosed" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <long/>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ reduce -->
+      <method abstract="yes" access="public" name="reduce" valid="no">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <object>java.util.function.LongBinaryOperator</object>
+          </arg>
+          <return>
+            <long/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ reduce -->
+      <method abstract="yes" access="public" name="reduce" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.function.LongBinaryOperator</object>
+          </arg>
+          <return>
+            <object>java.util.OptionalLong</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ sequential -->
+      <method abstract="yes" access="public" name="sequential" valid="no">
+        <signature>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ sequential -->
+      <method access="public" bridge="yes" name="sequential" valid="no">
+        <signature>
+          <return>
+            <object>java.util.stream.BaseStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ skip -->
+      <method abstract="yes" access="public" name="skip" valid="no">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ sorted -->
+      <method abstract="yes" access="public" name="sorted" valid="no">
+        <signature>
+          <return>
+            <object>java.util.stream.LongStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ spliterator -->
+      <method abstract="yes" access="public" name="spliterator" valid="no">
+        <signature>
+          <return>
+            <object>java.util.Spliterator$OfLong</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ spliterator -->
+      <method access="public" bridge="yes" name="spliterator" valid="no">
+        <signature>
+          <return>
+            <object>java.util.Spliterator</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ sum -->
+      <method abstract="yes" access="public" name="sum">
+        <signature>
+          <return>
+            <long/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ summaryStatistics -->
+      <method abstract="yes" access="public" name="summaryStatistics" valid="no">
+        <signature>
+          <return>
+            <object>java.util.LongSummaryStatistics</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toArray -->
+      <method abstract="yes" access="public" name="toArray" valid="no">
+        <signature>
+          <return>
+            <array>
+              <long/>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
