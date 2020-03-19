@@ -245,7 +245,11 @@
             <object>java.awt.Font</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>

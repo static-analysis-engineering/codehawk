@@ -62,7 +62,7 @@
     <!-- ============================ CONSTRUCTORS ============================  -->
     <constructors>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ () -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature/>
         <exceptions/>
         <summary>
@@ -70,7 +70,7 @@
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (float,float,float,float) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <float/>
@@ -87,14 +87,31 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="4"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
     </constructors>
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createIntersection -->
-      <method access="public" name="createIntersection" valid="no">
+      <method access="public" name="createIntersection">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Rectangle2D</object>
@@ -105,11 +122,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createUnion -->
-      <method access="public" name="createUnion" valid="no">
+      <method access="public" name="createUnion">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Rectangle2D</object>
@@ -120,11 +146,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getBounds2D -->
-      <method access="public" name="getBounds2D" valid="no">
+      <method access="public" name="getBounds2D">
         <signature>
           <return>
             <object>java.awt.geom.Rectangle2D</object>
@@ -132,11 +167,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getHeight -->
-      <method access="public" name="getHeight" valid="no">
+      <method access="public" name="getHeight">
         <signature>
           <return>
             <double/>
@@ -144,11 +184,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWidth -->
-      <method access="public" name="getWidth" valid="no">
+      <method access="public" name="getWidth">
         <signature>
           <return>
             <double/>
@@ -156,11 +201,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getX -->
-      <method access="public" name="getX" valid="no">
+      <method access="public" name="getX">
         <signature>
           <return>
             <double/>
@@ -168,11 +218,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getY -->
-      <method access="public" name="getY" valid="no">
+      <method access="public" name="getY">
         <signature>
           <return>
             <double/>
@@ -180,11 +235,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isEmpty -->
-      <method access="public" name="isEmpty" valid="no">
+      <method access="public" name="isEmpty">
         <signature>
           <return>
             <boolean/>
@@ -192,11 +252,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ outcode -->
-      <method access="public" name="outcode" valid="no">
+      <method access="public" name="outcode">
         <signature>
           <arg nr="1">
             <double/>
@@ -210,11 +275,24 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRect -->
-      <method access="public" name="setRect" valid="no">
+      <method access="public" name="setRect">
         <signature>
           <arg nr="1">
             <float/>
@@ -231,11 +309,28 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="4"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRect -->
-      <method access="public" name="setRect" valid="no">
+      <method access="public" name="setRect">
         <signature>
           <arg nr="1">
             <double/>
@@ -252,11 +347,28 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="4"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRect -->
-      <method access="public" name="setRect" valid="no">
+      <method access="public" name="setRect">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Rectangle2D</object>
@@ -264,11 +376,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toString -->
-      <method access="public" name="toString" valid="no">
+      <method access="public" name="toString">
         <signature>
           <return>
             <object>java.lang.String</object>
@@ -276,7 +393,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) add -->

@@ -239,7 +239,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -261,7 +263,9 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -294,7 +298,9 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>

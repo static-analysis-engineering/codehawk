@@ -126,7 +126,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getGraphics -->
-      <method abstract="yes" access="public" name="getGraphics" valid="no">
+      <method abstract="yes" access="public" name="getGraphics">
         <signature>
           <return>
             <object>java.awt.Graphics</object>
@@ -134,7 +134,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getHeight -->

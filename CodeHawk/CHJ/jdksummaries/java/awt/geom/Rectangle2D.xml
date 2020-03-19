@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
-  <header info="class" time="2020-03-14 23:41:40"/>
+  <header info="class" time="2020-03-17 13:39:32"/>
   <class abstract="yes" name="Rectangle2D" package="java.awt.geom">
     <superclass>java.awt.geom.RectangularShape</superclass>
     <interfaces>
@@ -84,7 +84,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ add -->
-      <method access="public" name="add" >
+      <method access="public" name="add" valid="no">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Point2D</object>
@@ -92,16 +92,11 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint>
-	    <transfer>
-	      <arg nr="1"/>
-	      <this/>
-	    </transfer>
-	  </taint>
+          <taint/>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ add -->
-      <method access="public" name="add">
+      <method access="public" name="add" valid="no">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Rectangle2D</object>
@@ -109,12 +104,7 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint>
-	    <transfer>
-	      <arg nr="1"/>
-	      <this/>
-	    </transfer>
-	  </taint>
+          <taint/>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ contains -->

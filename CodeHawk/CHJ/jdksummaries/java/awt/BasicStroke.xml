@@ -244,9 +244,7 @@
             <object>java.awt.Shape</object>
           </return>
         </signature>
-        <exceptions>
-          <throws>java.lang.NullPointerException</throws>
-        </exceptions>
+        <exceptions/>
         <summary>
           <taint>
             <transfer>

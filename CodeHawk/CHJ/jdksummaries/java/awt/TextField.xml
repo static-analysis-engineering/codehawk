@@ -45,7 +45,7 @@
     <!-- ============================ CONSTRUCTORS ============================  -->
     <constructors>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ () -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature/>
         <exceptions>
           <throws>java.awt.HeadlessException</throws>
@@ -55,7 +55,7 @@
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -65,11 +65,16 @@
           <throws>java.awt.HeadlessException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (int) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <int/>
@@ -79,7 +84,12 @@
           <throws>java.awt.HeadlessException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String,int) -->
@@ -112,7 +122,7 @@
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addActionListener -->
-      <method access="public" name="addActionListener" valid="no">
+      <method access="public" name="addActionListener">
         <signature>
           <arg nr="1">
             <object>java.awt.event.ActionListener</object>
@@ -120,11 +130,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addNotify -->
-      <method access="public" name="addNotify" valid="no">
+      <method access="public" name="addNotify">
         <signature/>
         <exceptions/>
         <summary>
@@ -132,7 +147,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ echoCharIsSet -->
-      <method access="public" name="echoCharIsSet" valid="no">
+      <method access="public" name="echoCharIsSet">
         <signature>
           <return>
             <boolean/>
@@ -140,11 +155,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAccessibleContext -->
-      <method access="public" name="getAccessibleContext" valid="no">
+      <method access="public" name="getAccessibleContext">
         <signature>
           <return>
             <object>javax.accessibility.AccessibleContext</object>
@@ -152,11 +172,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getActionListeners -->
-      <method access="public" name="getActionListeners" valid="no">
+      <method access="public" name="getActionListeners">
         <signature>
           <return>
             <array>
@@ -166,11 +191,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColumns -->
-      <method access="public" name="getColumns" valid="no">
+      <method access="public" name="getColumns">
         <signature>
           <return>
             <int/>
@@ -178,11 +215,27 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getEchoChar -->
-      <method access="public" name="getEchoChar" valid="no">
+      <method access="public" name="getEchoChar">
         <signature>
           <return>
             <char/>
@@ -190,11 +243,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getListeners -->
-      <method access="public" name="getListeners" valid="no">
+      <method access="public" name="getListeners">
         <signature>
           <arg nr="1">
             <object>java.lang.Class</object>
@@ -205,13 +263,31 @@
             </array>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ClassCastException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMinimumSize -->
-      <method access="public" name="getMinimumSize" valid="no">
+      <method access="public" name="getMinimumSize">
         <signature>
           <arg nr="1">
             <int/>
@@ -222,11 +298,27 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMinimumSize -->
-      <method access="public" name="getMinimumSize" valid="no">
+      <method access="public" name="getMinimumSize">
         <signature>
           <return>
             <object>java.awt.Dimension</object>
@@ -234,11 +326,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPreferredSize -->
-      <method access="public" name="getPreferredSize" valid="no">
+      <method access="public" name="getPreferredSize">
         <signature>
           <arg nr="1">
             <int/>
@@ -249,11 +353,27 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPreferredSize -->
-      <method access="public" name="getPreferredSize" valid="no">
+      <method access="public" name="getPreferredSize">
         <signature>
           <return>
             <object>java.awt.Dimension</object>
@@ -261,7 +381,19 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ minimumSize -->
@@ -292,7 +424,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ paramString -->
-      <method access="protected" name="paramString" valid="no">
+      <method access="protected" name="paramString">
         <signature>
           <return>
             <object>java.lang.String</object>
@@ -300,7 +432,19 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ preferredSize -->

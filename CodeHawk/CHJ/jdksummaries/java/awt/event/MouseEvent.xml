@@ -573,8 +573,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.IllegalArgumentException</throws>
         </exceptions>
         <summary>
           <taint>

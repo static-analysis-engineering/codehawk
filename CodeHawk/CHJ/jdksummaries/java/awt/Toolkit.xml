@@ -101,7 +101,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ beep -->
-      <method abstract="yes" access="public" name="beep" valid="no">
+      <method abstract="yes" access="public" name="beep">
         <signature/>
         <exceptions/>
         <summary>
@@ -1257,7 +1257,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getScreenSize -->
-      <method abstract="yes" access="public" name="getScreenSize" valid="no">
+      <method abstract="yes" access="public" name="getScreenSize">
         <signature>
           <return>
             <object>java.awt.Dimension</object>
@@ -1267,7 +1267,12 @@
           <throws>java.awt.HeadlessException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSystemClipboard -->
@@ -1642,7 +1647,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ sync -->
-      <method abstract="yes" access="public" name="sync" valid="no">
+      <method abstract="yes" access="public" name="sync">
         <signature/>
         <exceptions/>
         <summary>

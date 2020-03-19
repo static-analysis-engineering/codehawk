@@ -558,7 +558,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ decode -->
-      <method access="public" name="decode" static="yes" valid="no">
+      <method access="public" name="decode" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -571,7 +571,12 @@
           <throws>java.lang.NumberFormatException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ equals -->
@@ -669,7 +674,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColor -->
-      <method access="public" name="getColor" static="yes" valid="no">
+      <method access="public" name="getColor" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -680,11 +685,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColor -->
-      <method access="public" name="getColor" static="yes" valid="no">
+      <method access="public" name="getColor" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -698,11 +708,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColor -->
-      <method access="public" name="getColor" static="yes" valid="no">
+      <method access="public" name="getColor" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -716,7 +735,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColorComponents -->
@@ -761,7 +789,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColorSpace -->
-      <method access="public" name="getColorSpace" valid="no">
+      <method access="public" name="getColorSpace">
         <signature>
           <return>
             <object>java.awt.color.ColorSpace</object>
@@ -769,7 +797,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getComponents -->
