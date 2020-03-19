@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-18 15:43:03"/>
+  <interface name="RoundEnvironment" package="javax.annotation.processing">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ errorRaised -->
+      <method abstract="yes" access="public" name="errorRaised">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getElementsAnnotatedWith -->
+      <method abstract="yes" access="public" name="getElementsAnnotatedWith">
+        <signature>
+          <arg nr="1">
+            <object>javax.lang.model.element.TypeElement</object>
+          </arg>
+          <return>
+            <object>java.util.Set</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getElementsAnnotatedWith -->
+      <method abstract="yes" access="public" name="getElementsAnnotatedWith">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Class</object>
+          </arg>
+          <return>
+            <object>java.util.Set</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRootElements -->
+      <method abstract="yes" access="public" name="getRootElements">
+        <signature>
+          <return>
+            <object>java.util.Set</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ processingOver -->
+      <method abstract="yes" access="public" name="processingOver">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

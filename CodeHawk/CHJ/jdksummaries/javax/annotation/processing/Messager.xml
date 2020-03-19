@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-18 15:42:22"/>
+  <interface name="Messager" package="javax.annotation.processing">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ printMessage -->
+      <method abstract="yes" access="public" name="printMessage">
+        <signature>
+          <arg nr="1">
+            <object>javax.tools.Diagnostic$Kind</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.CharSequence</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ printMessage -->
+      <method abstract="yes" access="public" name="printMessage">
+        <signature>
+          <arg nr="1">
+            <object>javax.tools.Diagnostic$Kind</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <arg nr="3">
+            <object>javax.lang.model.element.Element</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ printMessage -->
+      <method abstract="yes" access="public" name="printMessage">
+        <signature>
+          <arg nr="1">
+            <object>javax.tools.Diagnostic$Kind</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <arg nr="3">
+            <object>javax.lang.model.element.Element</object>
+          </arg>
+          <arg nr="4">
+            <object>javax.lang.model.element.AnnotationMirror</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ printMessage -->
+      <method abstract="yes" access="public" name="printMessage">
+        <signature>
+          <arg nr="1">
+            <object>javax.tools.Diagnostic$Kind</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <arg nr="3">
+            <object>javax.lang.model.element.Element</object>
+          </arg>
+          <arg nr="4">
+            <object>javax.lang.model.element.AnnotationMirror</object>
+          </arg>
+          <arg nr="5">
+            <object>javax.lang.model.element.AnnotationValue</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="5"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

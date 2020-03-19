@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-18 15:41:43"/>
+  <class abstract="yes" name="AbstractProcessor" package="javax.annotation.processing">
+    <interfaces>
+      <implements>javax.annotation.processing.Processor</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:processingEnv -->
+      <field access="protected" name="processingEnv">
+        <signature>
+          <object>javax.annotation.processing.ProcessingEnvironment</object>
+        </signature>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ () -->
+      <constructor access="protected">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getCompletions -->
+      <method access="public" name="getCompletions">
+        <signature>
+          <arg nr="1">
+            <object>javax.lang.model.element.Element</object>
+          </arg>
+          <arg nr="2">
+            <object>javax.lang.model.element.AnnotationMirror</object>
+          </arg>
+          <arg nr="3">
+            <object>javax.lang.model.element.ExecutableElement</object>
+          </arg>
+          <arg nr="4">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.lang.Iterable</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSupportedAnnotationTypes -->
+      <method access="public" name="getSupportedAnnotationTypes">
+        <signature>
+          <return>
+            <object>java.util.Set</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSupportedOptions -->
+      <method access="public" name="getSupportedOptions">
+        <signature>
+          <return>
+            <object>java.util.Set</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSupportedSourceVersion -->
+      <method access="public" name="getSupportedSourceVersion">
+        <signature>
+          <return>
+            <object>javax.lang.model.SourceVersion</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ init -->
+      <method access="public" name="init">
+        <signature>
+          <arg nr="1">
+            <object>javax.annotation.processing.ProcessingEnvironment</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.lang.IllegalStateException</throws>
+          <throws>java.lang.NullPointerException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isInitialized -->
+      <method access="protected" name="isInitialized">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ process -->
+      <method abstract="yes" access="public" name="process">
+        <signature>
+          <arg nr="1">
+            <object>java.util.Set</object>
+          </arg>
+          <arg nr="2">
+            <object>javax.annotation.processing.RoundEnvironment</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.NullPointerException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.lang.Object" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

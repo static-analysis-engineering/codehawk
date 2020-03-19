@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-18 15:41:57"/>
+  <interface name="Filer" package="javax.annotation.processing">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createClassFile -->
+      <method abstract="yes" access="public" name="createClassFile">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <arg nr="2">
+            <array>
+              <object>javax.lang.model.element.Element</object>
+            </array>
+          </arg>
+          <return>
+            <object>javax.tools.JavaFileObject</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createResource -->
+      <method abstract="yes" access="public" name="createResource">
+        <signature>
+          <arg nr="1">
+            <object>javax.tools.JavaFileManager$Location</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <arg nr="3">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <arg nr="4">
+            <array>
+              <object>javax.lang.model.element.Element</object>
+            </array>
+          </arg>
+          <return>
+            <object>javax.tools.FileObject</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createSourceFile -->
+      <method abstract="yes" access="public" name="createSourceFile">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <arg nr="2">
+            <array>
+              <object>javax.lang.model.element.Element</object>
+            </array>
+          </arg>
+          <return>
+            <object>javax.tools.JavaFileObject</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getResource -->
+      <method abstract="yes" access="public" name="getResource">
+        <signature>
+          <arg nr="1">
+            <object>javax.tools.JavaFileManager$Location</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <arg nr="3">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <return>
+            <object>javax.tools.FileObject</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

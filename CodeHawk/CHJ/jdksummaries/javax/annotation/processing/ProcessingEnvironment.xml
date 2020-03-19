@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-18 15:42:38"/>
+  <interface name="ProcessingEnvironment" package="javax.annotation.processing">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getElementUtils -->
+      <method abstract="yes" access="public" name="getElementUtils">
+        <signature>
+          <return>
+            <object>javax.lang.model.util.Elements</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFiler -->
+      <method abstract="yes" access="public" name="getFiler">
+        <signature>
+          <return>
+            <object>javax.annotation.processing.Filer</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getLocale -->
+      <method abstract="yes" access="public" name="getLocale">
+        <signature>
+          <return>
+            <object>java.util.Locale</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMessager -->
+      <method abstract="yes" access="public" name="getMessager">
+        <signature>
+          <return>
+            <object>javax.annotation.processing.Messager</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getOptions -->
+      <method abstract="yes" access="public" name="getOptions">
+        <signature>
+          <return>
+            <object>java.util.Map</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSourceVersion -->
+      <method abstract="yes" access="public" name="getSourceVersion">
+        <signature>
+          <return>
+            <object>javax.lang.model.SourceVersion</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getTypeUtils -->
+      <method abstract="yes" access="public" name="getTypeUtils">
+        <signature>
+          <return>
+            <object>javax.lang.model.util.Types</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
