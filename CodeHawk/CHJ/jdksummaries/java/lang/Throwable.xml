@@ -105,8 +105,10 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -138,7 +140,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  =  localvar:var0">
+              <math>
                 <apply>
                   <eq/>
                   <return/>
@@ -273,7 +275,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  =  localvar:var0">
+              <math>
                 <apply>
                   <eq/>
                   <return/>

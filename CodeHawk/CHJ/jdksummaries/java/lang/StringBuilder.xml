@@ -1436,7 +1436,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ codePointCount -->
-      <method access="public" bridge="yes" name="codePointCount" valid="no">
+      <method access="public" bridge="yes" name="codePointCount">
         <signature>
           <arg nr="1">
             <int/>
@@ -1473,6 +1473,15 @@
 		  <geq/>
 		  <return/>
 		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <ci>MAXCODEPOINT</ci>
 		</apply>
 	      </math>
 	    </post>
@@ -1949,7 +1958,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" name="insert" valid="no">
+      <method access="public" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -1963,13 +1972,74 @@
             <object>java.lang.StringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
-        </summary>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
+	</summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" name="insert" valid="no">
+      <method access="public" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -1981,9 +2051,70 @@
             <object>java.lang.StringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
@@ -2103,7 +2234,30 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.IndexOutOfBoundsException</throws>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -2462,7 +2616,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" bridge="yes" name="insert" valid="no">
+      <method access="public" bridge="yes" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -2474,13 +2628,74 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
-        </summary>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
+	</summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" bridge="yes" name="insert" valid="no">
+      <method access="public" bridge="yes" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -2492,13 +2707,74 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" bridge="yes" name="insert" valid="no">
+      <method access="public" bridge="yes" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -2510,13 +2786,74 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" bridge="yes" name="insert" valid="no">
+      <method access="public" bridge="yes" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -2528,13 +2865,74 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" bridge="yes" name="insert" valid="no">
+      <method access="public" bridge="yes" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -2546,13 +2944,74 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" bridge="yes" name="insert" valid="no">
+      <method access="public" bridge="yes" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -2564,9 +3023,70 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
@@ -2594,7 +3114,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" bridge="yes" name="insert" valid="no">
+      <method access="public" bridge="yes" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -2606,13 +3126,74 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" bridge="yes" name="insert" valid="no">
+      <method access="public" bridge="yes" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -2626,13 +3207,74 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" bridge="yes" name="insert" valid="no">
+      <method access="public" bridge="yes" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -2644,13 +3286,74 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" bridge="yes" name="insert" valid="no">
+      <method access="public" bridge="yes" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -2662,9 +3365,70 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <arg nr="1"/>
+                  <apply>
+                    <size/>
+                    <this/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.StringIndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <this/>
+                  <return/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
@@ -2903,7 +3667,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="localvar:var0  =  return">
+              <math>
                 <apply>
                   <eq/>
                   <this/>

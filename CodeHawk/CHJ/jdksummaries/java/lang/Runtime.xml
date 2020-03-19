@@ -64,10 +64,12 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.SecurityException</throws>
           <throws>java.io.IOException</throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -436,27 +438,53 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ load -->
-      <method access="public" name="load" valid="no">
+      <method access="public" name="load">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	  <throws>java.lang.SecurityException</throws>
+	  <throws>java.lang.UnsatisfiedLinkError</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <defput>
+	      <this/>
+	    </defput>
+	  </taint>
+          <sinks>
+            <sink arg="1" dest="load file" form="filename" type="string"/>
+          </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ loadLibrary -->
-      <method access="public" name="loadLibrary" valid="no">
+      <method access="public" name="loadLibrary">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	  <throws>java.lang.SecurityException</throws>
+	  <throws>java.lang.UnsatisfiedLinkError</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <defput>
+	      <this/>
+	    </defput>
+	  </taint>
+          <sinks>
+            <sink arg="1" dest="loadlibrary" form="library name" type="string"/>
+          </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ maxMemory -->
@@ -556,7 +584,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ traceInstructions -->
-      <method access="public" name="traceInstructions" native="yes" valid="no">
+      <method access="public" name="traceInstructions" native="yes">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -564,11 +592,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ traceMethodCalls -->
-      <method access="public" name="traceMethodCalls" native="yes" valid="no">
+      <method access="public" name="traceMethodCalls" native="yes">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -576,7 +609,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->

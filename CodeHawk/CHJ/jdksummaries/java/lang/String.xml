@@ -43,7 +43,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -63,7 +65,11 @@
             </array>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -89,6 +95,9 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.lang.IndexOutOfBoundsException</throws>
         </exceptions>
@@ -125,6 +134,9 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.lang.IndexOutOfBoundsException</throws>
         </exceptions>
@@ -164,6 +176,9 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IndexOutOfBoundsException</throws>
         </exceptions>
         <summary>
@@ -199,7 +214,11 @@
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -232,10 +251,12 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="4"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.lang.IndexOutOfBoundsException</throws>
-          <throws>java.io.UnsupportedEncodingException</throws>
-          <throws>java.lang.NullPointerException</throws>
           <throws>java.io.UnsupportedEncodingException</throws>
         </exceptions>
         <summary>
@@ -278,8 +299,11 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="4"/>
+	  </c-throws>
           <throws>java.lang.IndexOutOfBoundsException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -315,8 +339,10 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.io.UnsupportedEncodingException</throws>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
           <throws>java.io.UnsupportedEncodingException</throws>
         </exceptions>
         <summary>
@@ -345,7 +371,10 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -376,6 +405,9 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.lang.IndexOutOfBoundsException</throws>
         </exceptions>
@@ -423,7 +455,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -442,7 +476,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -552,6 +588,26 @@
               <return/>
             </transfer>
           </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <ci>MAXCODEPOINT</ci>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ codePointBefore -->
@@ -601,6 +657,26 @@
               <return/>
             </transfer>
           </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <ci>MAXCODEPOINT</ci>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ codePointCount -->
@@ -668,7 +744,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  &gt;=  0">
+              <math>
                 <apply>
                   <geq/>
                   <return/>
@@ -690,7 +766,9 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -716,8 +794,10 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.ClassCastException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -743,7 +823,9 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -769,7 +851,9 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -782,6 +866,13 @@
               <return/>
             </transfer>
           </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ contains -->
@@ -795,7 +886,9 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -820,7 +913,11 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -844,7 +941,11 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -926,7 +1027,11 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -1004,6 +1109,9 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.util.IllegalFormatException</throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
@@ -1049,8 +1157,10 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="2"/>
+	  </c-throws>
           <throws>java.util.IllegalFormatException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -1144,7 +1254,9 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.io.UnsupportedEncodingException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.io.UnsupportedEncodingException</throws>
         </exceptions>
         <summary>
@@ -1182,7 +1294,11 @@
             </array>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -1322,7 +1438,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  &gt;=  0">
+              <math>
                 <apply>
                   <geq/>
                   <return/>
@@ -1331,7 +1447,7 @@
               </math>
             </post>
             <error-post name="not-found">
-              <math xpr="return  =  -1">
+              <math>
                 <apply>
                   <eq/>
                   <return/>
@@ -1373,7 +1489,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  &gt;=  localvar:var2">
+              <math>
                 <apply>
                   <geq/>
                   <return/>
@@ -1382,7 +1498,7 @@
               </math>
             </post>
             <error-post name="not-found">
-              <math xpr="return  =  -1">
+              <math>
                 <apply>
                   <eq/>
                   <return/>
@@ -1403,7 +1519,11 @@
             <int/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -1417,7 +1537,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  &gt;=  0">
+              <math>
                 <apply>
                   <geq/>
                   <return/>
@@ -1426,7 +1546,7 @@
               </math>
             </post>
             <error-post name="not-found">
-              <math xpr="return  =  -1">
+              <math>
                 <apply>
                   <eq/>
                   <return/>
@@ -1450,7 +1570,11 @@
             <int/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -1468,7 +1592,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  &gt;=  localvar:var2">
+              <math>
                 <apply>
                   <geq/>
                   <return/>
@@ -1477,7 +1601,7 @@
               </math>
             </post>
             <error-post name="not-found">
-              <math xpr="return  =  -1">
+              <math>
                 <apply>
                   <eq/>
                   <return/>
@@ -1537,7 +1661,12 @@
             <object>java.lang.String</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -1564,7 +1693,12 @@
             <object>java.lang.String</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -1602,7 +1736,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  &gt;=  0">
+              <math>
                 <apply>
                   <geq/>
                   <return/>
@@ -1611,7 +1745,7 @@
               </math>
             </post>
             <error-post name="not-found">
-              <math xpr="return  =  -1">
+              <math>
                 <apply>
                   <eq/>
                   <return/>
@@ -1651,6 +1785,35 @@
               <return/>
             </transfer>
           </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <geq/>
+                  <return/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <arg nr="2"/>
+		</apply>
+	      </math>
+	    </post>
+            <error-post name="not-found">
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <cn>-1</cn>
+                </apply>
+              </math>
+            </error-post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ lastIndexOf -->
@@ -1663,7 +1826,11 @@
             <int/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -1677,7 +1844,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  &gt;=  0">
+              <math>
                 <apply>
                   <geq/>
                   <return/>
@@ -1686,7 +1853,7 @@
               </math>
             </post>
             <error-post name="not-found">
-              <math xpr="return  =  -1">
+              <math>
                 <apply>
                   <eq/>
                   <return/>
@@ -1710,7 +1877,11 @@
             <int/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -1728,7 +1899,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  &gt;=  0">
+              <math>
                 <apply>
                   <geq/>
                   <return/>
@@ -1736,8 +1907,17 @@
                 </apply>
               </math>
             </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <arg nr="2"/>
+		</apply>
+	      </math>
+	    </post>
             <post>
-              <math xpr="return  &lt;=  localvar:var2">
+              <math>
                 <apply>
                   <leq/>
                   <return/>
@@ -1746,7 +1926,7 @@
               </math>
             </post>
             <error-post name="not-found">
-              <math xpr="return  =  -1">
+              <math>
                 <apply>
                   <eq/>
                   <return/>
@@ -1774,7 +1954,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  &gt;=  0">
+              <math>
                 <apply>
                   <geq/>
                   <return/>
@@ -1783,7 +1963,7 @@
               </math>
             </post>
             <post>
-              <math xpr="return  =  size(localvar:var0)">
+              <math>
                 <apply>
                   <eq/>
                   <return/>
@@ -1808,6 +1988,9 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.util.regex.PatternSyntaxException</throws>
         </exceptions>
         <summary>
@@ -1856,7 +2039,7 @@
           </taint>
           <postconditions>
             <post>
-              <math xpr="return  &gt;=  0">
+              <math>
                 <apply>
                   <geq/>
                   <return/>
@@ -1934,7 +2117,11 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="3"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -2016,8 +2203,10 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -2057,9 +2246,11 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
           <throws>java.util.regex.PatternSyntaxException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -2099,9 +2290,11 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
           <throws>java.util.regex.PatternSyntaxException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -2143,6 +2336,9 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.util.regex.PatternSyntaxException</throws>
         </exceptions>
         <summary>
@@ -2185,6 +2381,9 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.util.regex.PatternSyntaxException</throws>
         </exceptions>
         <summary>
@@ -2223,7 +2422,11 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -2251,7 +2454,11 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -2659,7 +2866,11 @@
             <object>java.lang.String</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
