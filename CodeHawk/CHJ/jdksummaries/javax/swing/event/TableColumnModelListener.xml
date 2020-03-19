@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-17 20:57:11"/>
+  <interface name="TableColumnModelListener" package="javax.swing.event">
+    <superinterfaces>
+      <superinterface>java.util.EventListener</superinterface>
+    </superinterfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ columnAdded -->
+      <method abstract="yes" access="public" name="columnAdded" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TableColumnModelEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ columnMarginChanged -->
+      <method abstract="yes" access="public" name="columnMarginChanged" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.ChangeEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ columnMoved -->
+      <method abstract="yes" access="public" name="columnMoved" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TableColumnModelEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ columnRemoved -->
+      <method abstract="yes" access="public" name="columnRemoved" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TableColumnModelEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ columnSelectionChanged -->
+      <method abstract="yes" access="public" name="columnSelectionChanged" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.ListSelectionEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
