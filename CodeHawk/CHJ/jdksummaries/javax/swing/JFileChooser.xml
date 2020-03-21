@@ -366,7 +366,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="file chooser" form="directory path" type="string"/>
+            <sink arg="1" dest="display" form="pathname" type="string"/>
           </sinks>
         </summary>
       </constructor>
@@ -451,7 +451,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="file chooser" form="directory path" type="string"/>
+            <sink arg="1" dest="display" form="pathname" type="string"/>
           </sinks>
         </summary>
       </constructor>
@@ -606,7 +606,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="file chooser" form="action command" type="string"/>
+            <sink arg="1" dest="event handling" form="action command" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1363,7 +1363,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="file chooser" form="button text" type="string"/>
+            <sink arg="1" dest="dialog box" form="button text" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1383,7 +1383,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="file chooser" form="tooltip text" type="string"/>
+            <sink arg="1" dest="dialog box" form="tooltip text" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1435,6 +1435,9 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="dialog box" form="title" type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setDialogType -->
@@ -1657,6 +1660,10 @@
               <return/>
             </defput>
           </taint>
+	  <sinks>
+	    <sink arg="2" dest="dialog box" form="button text"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ showOpenDialog -->

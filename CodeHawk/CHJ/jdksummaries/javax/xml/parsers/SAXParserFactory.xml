@@ -45,12 +45,17 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="environment request" form="system property" type="string"/>
+            <sink arg="1" dest="property retrieval"
+		  form="URI" type="string">
+              <throws>javax.xml.parsers.ParserConfigurationException</throws>
+              <throws>org.xml.sax.SAXNotRecognizedException</throws>
+              <throws>org.xml.sax.SAXNotSupportedException</throws>
+	    </sink>	      
           </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSchema -->
-      <method access="public" name="getSchema" valid="no">
+      <method access="public" name="getSchema">
         <signature>
           <return>
             <object>javax.xml.validation.Schema</object>
@@ -58,11 +63,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isNamespaceAware -->
-      <method access="public" name="isNamespaceAware" valid="no">
+      <method access="public" name="isNamespaceAware">
         <signature>
           <return>
             <boolean/>
@@ -70,11 +80,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isValidating -->
-      <method access="public" name="isValidating" valid="no">
+      <method access="public" name="isValidating">
         <signature>
           <return>
             <boolean/>
@@ -82,11 +97,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isXIncludeAware -->
-      <method access="public" name="isXIncludeAware" valid="no">
+      <method access="public" name="isXIncludeAware">
         <signature>
           <return>
             <boolean/>
@@ -94,7 +114,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newInstance -->
@@ -143,7 +168,10 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading"
+		  form="class name" type="string">
+	      <throws>javax.xml.parsers.FactoryConfigurationError</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -168,7 +196,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFeature -->
-      <method abstract="yes" access="public" name="setFeature" valid="no">
+      <method abstract="yes" access="public" name="setFeature">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -183,7 +211,24 @@
           <throws>org.xml.sax.SAXNotSupportedException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	  </taint>
+	  <sinks>
+	    <sink arg="1" dest="property retrieval" form="URI"
+		  type="string">
+              <throws>javax.xml.parsers.ParserConfigurationException</throws>
+              <throws>org.xml.sax.SAXNotRecognizedException</throws>
+              <throws>org.xml.sax.SAXNotSupportedException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setNamespaceAware -->
@@ -204,7 +249,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSchema -->
-      <method access="public" name="setSchema" valid="no">
+      <method access="public" name="setSchema">
         <signature>
           <arg nr="1">
             <object>javax.xml.validation.Schema</object>
@@ -212,7 +257,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setValidating -->
@@ -233,7 +283,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setXIncludeAware -->
-      <method access="public" name="setXIncludeAware" valid="no">
+      <method access="public" name="setXIncludeAware">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -241,7 +291,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->

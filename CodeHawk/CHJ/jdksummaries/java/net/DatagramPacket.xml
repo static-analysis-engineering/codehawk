@@ -470,7 +470,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSocketAddress -->
-      <method access="public" name="setSocketAddress" valid="no">
+      <method access="public" name="setSocketAddress">
         <signature>
           <arg nr="1">
             <object>java.net.SocketAddress</object>
@@ -478,7 +478,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->

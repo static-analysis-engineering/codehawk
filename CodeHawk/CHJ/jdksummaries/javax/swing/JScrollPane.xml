@@ -373,7 +373,7 @@
             </error-post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="JScrollPane" form="corner" type="string"/>
+            <sink arg="1" dest="field value access" form="field name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -675,7 +675,10 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="JScrollPane" form="corner" type="string"/>
+            <sink arg="1" dest="field value access" form="field name"
+		  type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>

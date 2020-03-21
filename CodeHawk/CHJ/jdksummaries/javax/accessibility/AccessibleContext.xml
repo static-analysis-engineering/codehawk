@@ -282,7 +282,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="accessibility" form="bound property name" type="string"/>
+            <sink arg="1" dest="accessibility" form="property name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -316,7 +316,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAccessibleChild -->
-      <method abstract="yes" access="public" name="getAccessibleChild" valid="no">
+      <method abstract="yes" access="public" name="getAccessibleChild">
         <signature>
           <arg nr="1">
             <int/>
@@ -327,11 +327,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAccessibleChildrenCount -->
-      <method abstract="yes" access="public" name="getAccessibleChildrenCount" valid="no">
+      <method abstract="yes" access="public" name="getAccessibleChildrenCount">
         <signature>
           <return>
             <int/>
@@ -339,7 +348,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAccessibleComponent -->
@@ -757,6 +782,10 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="accessibility" form="localized name"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setAccessibleParent -->

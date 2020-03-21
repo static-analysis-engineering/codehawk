@@ -235,7 +235,7 @@
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ activeCount -->
-      <method access="public" name="activeCount" static="yes" valid="no">
+      <method access="public" name="activeCount" static="yes">
         <signature>
           <return>
             <int/>
@@ -265,7 +265,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.CloneNotSupportedException</throws>
-          <throws>java.lang.CloneNotSupportedException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -277,15 +276,33 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ countStackFrames -->
-      <method access="public" name="countStackFrames" native="yes" valid="no">
+      <method access="public" name="countStackFrames" native="yes">
         <signature>
           <return>
             <int/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalThreadStateException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ currentThread -->
@@ -308,7 +325,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ destroy -->
-      <method access="public" name="destroy" valid="no">
+      <method access="public" name="destroy">
         <signature/>
         <exceptions/>
         <summary>
@@ -414,7 +431,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDefaultUncaughtExceptionHandler -->
-      <method access="public" name="getDefaultUncaughtExceptionHandler" static="yes" valid="no">
+      <method access="public" name="getDefaultUncaughtExceptionHandler" static="yes">
         <signature>
           <return>
             <object>java.lang.Thread$UncaughtExceptionHandler</object>
@@ -724,14 +741,13 @@
         <signature/>
         <exceptions>
           <throws>java.lang.InterruptedException</throws>
-          <throws>java.lang.InterruptedException</throws>
         </exceptions>
         <summary>
           <taint/>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ resume -->
-      <method access="public" final="yes" name="resume" valid="no">
+      <method access="public" final="yes" name="resume">
         <signature/>
         <exceptions/>
         <summary>
@@ -867,7 +883,6 @@
         <exceptions>
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.lang.InterruptedException</throws>
-          <throws>java.lang.InterruptedException</throws>
         </exceptions>
         <summary>
           <taint/>
@@ -888,7 +903,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.InterruptedException</throws>
           <throws>java.lang.InterruptedException</throws>
         </exceptions>
         <summary>
@@ -920,19 +934,21 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ stop -->
-      <method access="public" final="yes" name="stop" valid="no">
+      <method access="public" final="yes" name="stop">
         <signature>
           <arg nr="1">
             <object>java.lang.Throwable</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.UnsupportedOperationException</throws>
+	</exceptions>
         <summary>
           <taint/>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ suspend -->
-      <method access="public" final="yes" name="suspend" valid="no">
+      <method access="public" final="yes" name="suspend">
         <signature/>
         <exceptions/>
         <summary>

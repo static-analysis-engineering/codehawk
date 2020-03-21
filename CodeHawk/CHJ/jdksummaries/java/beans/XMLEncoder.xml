@@ -80,7 +80,10 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="xml-encoder" form="charset-name" type="string"/>
+            <sink arg="2" dest="xml-encoder" form="character encoding"
+		  type="string">
+	      <throws>java.nio.charset.UnsupportedCharsetException</throws>
+	    </sink>
           </sinks>
         </summary>
       </constructor>

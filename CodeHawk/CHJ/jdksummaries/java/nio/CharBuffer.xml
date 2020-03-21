@@ -1037,7 +1037,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ put -->
-      <method access="public" name="put" valid="no">
+      <method access="public" name="put">
         <signature>
           <arg nr="1">
             <array>
@@ -1054,13 +1054,57 @@
             <object>java.nio.CharBuffer</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.nio.BufferOverflowException</throws>
+	  <throws>java.nio.ReadOnlyBufferException</throws>
+	  <throws>java.lang.IndexOutOfBoundsException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <eq/>
+		  <return/>
+		  <this/>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ put -->
-      <method access="public" final="yes" name="put" valid="no">
+      <method access="public" final="yes" name="put">
         <signature>
           <arg nr="1">
             <array>
@@ -1071,9 +1115,25 @@
             <object>java.nio.CharBuffer</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.nio.BufferOverflowException</throws>
+	  <throws>java.nio.ReadOnlyBufferException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ put -->

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-17 23:18:12"/>
-  <class final="yes" name="MathContext" package="java.math">
+  <class final="yes" immutable="yes"  name="MathContext" package="java.math">
     <interfaces>
       <implements>java.io.Serializable</implements>
     </interfaces>
@@ -116,7 +116,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPrecision -->
-      <method access="public" name="getPrecision" valid="no">
+      <method access="public" name="getPrecision">
         <signature>
           <return>
             <int/>
@@ -124,11 +124,27 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRoundingMode -->
-      <method access="public" name="getRoundingMode" valid="no">
+      <method access="public" name="getRoundingMode">
         <signature>
           <return>
             <object>java.math.RoundingMode</object>
@@ -136,7 +152,19 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hashCode -->

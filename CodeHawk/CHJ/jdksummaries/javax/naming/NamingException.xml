@@ -51,7 +51,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="exception" form="error-msg" type="string"/>
+            <sink arg="1" dest="exception" form="errormsg" type="string"/>
           </sinks>
         </summary>
       </constructor>
@@ -82,7 +82,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="exception" form="component-name" type="string"/>
+            <sink arg="1" dest="exception" form="component name" type="string"/>
           </sinks>
         </summary>
       </method>

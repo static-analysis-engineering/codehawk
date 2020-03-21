@@ -132,7 +132,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="class name"
+		  type="string">
+	      <throws>java.lang.ClassNotFoundException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -176,7 +179,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="class name"
+		  type="string">
+	      <throws>java.lang.ClassNotFoundException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -648,6 +654,12 @@
               </math>
             </post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="reflection" form="field name"
+		  type="string">
+	      <throws>java.lang.NoSuchFieldException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDeclaredFields -->
@@ -710,6 +722,12 @@
               </math>
             </post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="reflection" form="method name"
+		  type="string">
+	      <throws>java.lang.NoSuchMethodException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDeclaredMethods -->
@@ -904,6 +922,12 @@
               </math>
             </post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="reflection" form="field name"
+		  type="string">
+	      <throws>java.lang.NoSuchFieldException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFields -->
@@ -1189,6 +1213,10 @@
               </math>
             </error-post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="reflection" form="resource name"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getResourceAsStream -->
@@ -1233,6 +1261,10 @@
               </math>
             </error-post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="reflection" form="resource name"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSigners -->

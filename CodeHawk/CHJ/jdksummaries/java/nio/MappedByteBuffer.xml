@@ -47,7 +47,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isLoaded -->
-      <method access="public" final="yes" name="isLoaded" valid="no">
+      <method access="public" final="yes" name="isLoaded">
         <signature>
           <return>
             <boolean/>
@@ -55,11 +55,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ load -->
-      <method access="public" final="yes" name="load" valid="no">
+      <method access="public" final="yes" name="load">
         <signature>
           <return>
             <object>java.nio.MappedByteBuffer</object>
@@ -67,7 +72,25 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <defput>
+	      <return/>
+	    </defput>
+	    <defput>
+	      <this/>
+	    </defput>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <eq/>
+		  <return/>
+		  <this/>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) allocate -->

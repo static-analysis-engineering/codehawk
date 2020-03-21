@@ -94,7 +94,7 @@
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ asPredicate -->
-      <method access="public" name="asPredicate" valid="no">
+      <method access="public" name="asPredicate">
         <signature>
           <return>
             <object>java.util.function.Predicate</object>
@@ -102,7 +102,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ compile -->
@@ -125,6 +130,11 @@
               <return/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="matching" form="regex" type="string">
+	      <throws>java.util.regex.PatternSyntaxException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ compile -->
@@ -141,7 +151,7 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.util.regex.PatternSyntaxException</throws>
+	  <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.util.regex.PatternSyntaxException</throws>
         </exceptions>
         <summary>
@@ -151,6 +161,11 @@
               <return/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="matching" form="regex" type="string">
+	      <throws>java.util.regex.PatternSyntaxException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ flags -->
@@ -221,6 +236,11 @@
               <return/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="matching" form="regex" type="string">
+	      <throws>java.util.regex.PatternSyntaxException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ pattern -->

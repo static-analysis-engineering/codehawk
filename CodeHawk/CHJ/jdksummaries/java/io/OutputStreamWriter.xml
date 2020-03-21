@@ -38,7 +38,10 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="Writer" form="charset name" type="string"/>
+            <sink arg="1" dest="Writer" form="character encoding"
+		  type="string">
+	      <throws>java.io.UnsupportedEncodingException</throws>
+	    </sink>
           </sinks>
         </summary>
       </constructor>

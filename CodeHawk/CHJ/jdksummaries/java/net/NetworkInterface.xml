@@ -34,7 +34,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getByIndex -->
-      <method access="public" name="getByIndex" static="yes" valid="no">
+      <method access="public" name="getByIndex" static="yes">
         <signature>
           <arg nr="1">
             <int/>
@@ -44,10 +44,27 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getByInetAddress -->
@@ -61,8 +78,10 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.net.SocketException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -96,8 +115,10 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.net.SocketException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -138,7 +159,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getHardwareAddress -->
-      <method access="public" name="getHardwareAddress" valid="no">
+      <method access="public" name="getHardwareAddress">
         <signature>
           <return>
             <array>
@@ -150,11 +171,16 @@
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getIndex -->
-      <method access="public" name="getIndex" valid="no">
+      <method access="public" name="getIndex">
         <signature>
           <return>
             <int/>
@@ -162,7 +188,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInetAddresses -->
@@ -183,7 +214,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInterfaceAddresses -->
-      <method access="public" name="getInterfaceAddresses" valid="no">
+      <method access="public" name="getInterfaceAddresses">
         <signature>
           <return>
             <object>java.util.List</object>
@@ -191,11 +222,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMTU -->
-      <method access="public" name="getMTU" valid="no">
+      <method access="public" name="getMTU">
         <signature>
           <return>
             <int/>
@@ -205,7 +241,12 @@
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getName -->
@@ -252,7 +293,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getParent -->
-      <method access="public" name="getParent" valid="no">
+      <method access="public" name="getParent">
         <signature>
           <return>
             <object>java.net.NetworkInterface</object>
@@ -260,7 +301,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSubInterfaces -->
@@ -317,7 +363,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isPointToPoint -->
-      <method access="public" name="isPointToPoint" valid="no">
+      <method access="public" name="isPointToPoint">
         <signature>
           <return>
             <boolean/>
@@ -327,7 +373,12 @@
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isUp -->
@@ -350,7 +401,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isVirtual -->
-      <method access="public" name="isVirtual" valid="no">
+      <method access="public" name="isVirtual">
         <signature>
           <return>
             <boolean/>
@@ -358,11 +409,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ supportsMulticast -->
-      <method access="public" name="supportsMulticast" valid="no">
+      <method access="public" name="supportsMulticast">
         <signature>
           <return>
             <boolean/>
@@ -372,7 +428,12 @@
           <throws>java.net.SocketException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toString -->

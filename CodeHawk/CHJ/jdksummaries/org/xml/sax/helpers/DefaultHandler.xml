@@ -102,9 +102,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="3" dest="xml" form="qualified name URI" type="string"/>
-            <sink arg="2" dest="xml" form="localname URI" type="string"/>
-            <sink arg="1" dest="xml" form="namespace URI" type="string"/>
+            <sink arg="3" dest="xml" form="URI" type="string"/>
+            <sink arg="2" dest="xml" form="XML tag" type="string"/>
+            <sink arg="1" dest="xml" form="URI" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -125,6 +125,10 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="xml" form="namespace prefix"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ error -->
@@ -222,8 +226,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="xml" form="system identifier" type="string"/>
-            <sink arg="2" dest="xml" form="public identifier" type="string"/>
+            <sink arg="3" dest="xml" form="identifier" type="string"/>
+            <sink arg="2" dest="xml" form="identifier" type="string"/>
             <sink arg="1" dest="xml" form="notation name" type="string"/>
           </sinks>
         </summary>
@@ -285,8 +289,8 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="2" dest="xml" form="system identifier" type="string"/>
-            <sink arg="1" dest="xml" form="public identifier" type="string"/>
+            <sink arg="2" dest="xml" form="identifier" type="string"/>
+            <sink arg="1" dest="xml" form="identifier" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -325,7 +329,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="xml" form="xml entity" type="string"/>
+            <sink arg="1" dest="xml" form="entity name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -378,9 +382,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="4" dest="xml" form="attributes" type="string"/>
-            <sink arg="3" dest="xml" form="qualified name" type="string"/>
-            <sink arg="2" dest="xml" form="localname" type="string"/>
+            <sink arg="3" dest="xml" form="URI" type="string"/>
+            <sink arg="2" dest="xml" form="XML tag" type="string"/>
             <sink arg="1" dest="xml" form="URI" type="string"/>
           </sinks>
         </summary>
@@ -411,7 +414,7 @@
           </taint>
           <sinks>
             <sink arg="2" dest="xml" form="URI" type="string"/>
-            <sink arg="1" dest="xml" form="namespace" type="string"/>
+            <sink arg="1" dest="xml" form="namespace prefix" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -455,8 +458,8 @@
           </taint>
           <sinks>
             <sink arg="4" dest="xml" form="notation name" type="string"/>
-            <sink arg="3" dest="xml" form="system identifier" type="string"/>
-            <sink arg="2" dest="xml" form="public identifier" type="string"/>
+            <sink arg="3" dest="xml" form="identifier" type="string"/>
+            <sink arg="2" dest="xml" form="identifier" type="string"/>
             <sink arg="1" dest="xml" form="entity name" type="string"/>
           </sinks>
         </summary>

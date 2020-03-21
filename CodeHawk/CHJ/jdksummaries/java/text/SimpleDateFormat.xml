@@ -166,8 +166,10 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -177,8 +179,11 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="formatting" form="date/time pattern" type="string"/>
-          </sinks>
+            <sink arg="1" dest="parse" form="date-time pattern"
+		  type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
+	  </sinks>	    
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String,java.util.Locale) -->

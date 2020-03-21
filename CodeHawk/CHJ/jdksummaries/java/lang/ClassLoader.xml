@@ -40,7 +40,7 @@
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ clearAssertionStatus -->
-      <method access="public" name="clearAssertionStatus" valid="no">
+      <method access="public" name="clearAssertionStatus">
         <signature/>
         <exceptions/>
         <summary>
@@ -48,7 +48,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ defineClass -->
-      <method access="protected" final="yes" name="defineClass" valid="no">
+      <method access="protected" final="yes" name="defineClass">
         <signature>
           <arg nr="1">
             <array>
@@ -67,9 +67,71 @@
         </signature>
         <exceptions>
           <throws>java.lang.ClassFormatError</throws>
+          <throws>java.lang.SecurityException</throws>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="2"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="3"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <apply>
+                    <plus/>
+                    <arg nr="2"/>
+                    <arg nr="3"/>
+                  </apply>
+                  <apply>
+                    <size/>
+                    <arg nr="1"/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.IndexOutOfBoundsException</exn>
+          </c-throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ defineClass -->
@@ -133,7 +195,6 @@
             </safety-condition>
             <exn>java.lang.IndexOutOfBoundsException</exn>
           </c-throws>
-          <throws>java.lang.ClassFormatError</throws>
         </exceptions>
         <summary>
           <taint>
@@ -166,7 +227,7 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -235,7 +296,6 @@
             </safety-condition>
             <exn>java.lang.IndexOutOfBoundsException</exn>
           </c-throws>
-          <throws>java.lang.ClassFormatError</throws>
         </exceptions>
         <summary>
           <taint>
@@ -268,7 +328,7 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -293,7 +353,6 @@
           <throws>java.lang.SecurityException</throws>
           <throws>java.lang.NoClassDefFoundError</throws>
           <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.ClassFormatError</throws>
         </exceptions>
         <summary>
           <taint>
@@ -322,7 +381,7 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -359,7 +418,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.IllegalArgumentException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -435,6 +493,12 @@
               </math>
             </post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="dynamic loading" form="package name"
+		  type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ findClass -->
@@ -448,7 +512,6 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.ClassNotFoundException</throws>
           <throws>java.lang.ClassNotFoundException</throws>
         </exceptions>
         <summary>
@@ -465,7 +528,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="class name"
+		  type="string">
+	      <throws>java.lang.ClassNotFoundException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -509,7 +575,7 @@
             </error-post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="native library name" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="filename" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -543,7 +609,7 @@
             </error-post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -598,7 +664,6 @@
         </signature>
         <exceptions>
           <throws>java.io.IOException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -635,7 +700,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.ClassNotFoundException</throws>
-          <throws>java.lang.ClassNotFoundException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -656,7 +720,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="class name"
+		  type="string">
+	      <throws>java.lang.ClassNotFoundException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -671,7 +738,9 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -692,7 +761,7 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="class loader" form="classname" type="string"/>
+            <sink arg="1" dest="class loader" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -809,6 +878,10 @@
               </math>
             </error-post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="class loader" form="resource name"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getResourceAsStream -->
@@ -856,7 +929,6 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.io.IOException</throws>
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
@@ -936,7 +1008,7 @@
             </error-post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="class loader" form="system resource" type="string"/>
+            <sink arg="1" dest="class loader" form="resource name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -971,7 +1043,7 @@
             </error-post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="resource request" form="system resource" type="string"/>
+            <sink arg="1" dest="class loader" form="resource name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -986,7 +1058,6 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.io.IOException</throws>
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
@@ -1025,7 +1096,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.ClassNotFoundException</throws>
-          <throws>java.lang.ClassNotFoundException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -1041,7 +1111,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="class name"
+		  type="string">
+	      <throws>java.lang.ClassNotFoundException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -1060,7 +1133,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.ClassNotFoundException</throws>
-          <throws>java.lang.ClassNotFoundException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -1076,7 +1148,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="class name"
+		  type="string">
+	      <throws>java.lang.ClassNotFoundException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -1100,7 +1175,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint/>
@@ -1129,7 +1206,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="set assertion status" form="classname" type="string"/>
+            <sink arg="1" dest="class loader" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1173,7 +1250,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="set assertion status" form="package name" type="string"/>
+            <sink arg="1" dest="class loader" form="package name" type="string"/>
           </sinks>
         </summary>
       </method>

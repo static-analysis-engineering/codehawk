@@ -91,7 +91,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.NumberFormatException</throws>
-          <throws>java.lang.NumberFormatException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -100,6 +99,11 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="parse" form="number" type="string">
+	      <throws>java.lang.NumberFormatException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </constructor>
     </constructors>
@@ -290,7 +294,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.NumberFormatException</throws>
-          <throws>java.lang.NumberFormatException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -299,6 +302,11 @@
               <return/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="parse" form="number" type="string">
+	      <throws>java.lang.NumberFormatException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ divideUnsigned -->
@@ -410,7 +418,9 @@
             <object>java.lang.Integer</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.SecurityException</throws>
+	</exceptions>
         <summary>
           <taint>
             <defput>
@@ -432,6 +442,11 @@
               </math>
             </error-post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="property retrieval" form="system property" type="string">
+	      <throws>java.lang.SecurityException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInteger -->
@@ -447,7 +462,9 @@
             <object>java.lang.Integer</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.SecurityException</throws>
+	</exceptions>
         <summary>
           <taint>
             <defput>
@@ -464,6 +481,11 @@
               </math>
             </post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="property retrieval" form="system property" type="string">
+	      <throws>java.lang.SecurityException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInteger -->
@@ -479,7 +501,9 @@
             <object>java.lang.Integer</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.SecurityException</throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -504,7 +528,7 @@
               </math>
             </post>
             <error-post>
-              <math xpr="return  =  localvar:var1">
+              <math>
                 <apply>
                   <eq/>
                   <return/>
@@ -513,6 +537,11 @@
               </math>
             </error-post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="property retrieval" form="system property" type="string">
+	      <throws>java.lang.SecurityException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hashCode -->
@@ -778,7 +807,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="parse number" form="number" type="string"/>
+            <sink arg="1" dest="parse" form="number" type="string">
+	      <throws>java.lang.NumberFormatException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -803,7 +834,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="parse number" form="number" type="string"/>
+            <sink arg="1" dest="parse" form="number" type="string">
+	      <throws>java.lang.NumberFormatException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -831,7 +864,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="parse number" form="number" type="string"/>
+            <sink arg="1" dest="parse" form="number" type="string">
+	      <throws>java.lang.NumberFormatException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -856,7 +891,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="parse number" form="number" type="string"/>
+            <sink arg="1" dest="parse" form="number" type="string">
+	      <throws>java.lang.NumberFormatException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -1271,7 +1308,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.NumberFormatException</throws>
-          <throws>java.lang.NumberFormatException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -1284,6 +1320,11 @@
               <return/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="parse" form="number" type="string">
+	      <throws>java.lang.NumberFormatException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ valueOf -->
@@ -1297,7 +1338,6 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NumberFormatException</throws>
           <throws>java.lang.NumberFormatException</throws>
         </exceptions>
         <summary>
@@ -1314,6 +1354,11 @@
               </math>
             </post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="parse" form="number" type="string">
+	      <throws>java.lang.NumberFormatException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ valueOf -->

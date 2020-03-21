@@ -1278,7 +1278,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="encoding" form="charset name" type="string"/>
+            <sink arg="1" dest="encoding" form="character encoding"
+		  type="string">
+	      <throws>java.io.UnsupportedEncodingException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -2364,7 +2367,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="string split" form="regular expression" type="string"/>
+            <sink arg="1" dest="string split" form="regex"
+		  type="string">
+	      <throws>java.util.regex.PatternSyntaxException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -2405,7 +2411,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="string split" form="regular expression" type="string"/>
+            <sink arg="1" dest="string split" form="regex"
+		  type="string">
+	      <throws>java.util.regex.PatternSyntaxException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>

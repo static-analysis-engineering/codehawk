@@ -126,8 +126,10 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.ClassCastException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>

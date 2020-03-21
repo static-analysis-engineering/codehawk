@@ -58,7 +58,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="class name"
+		  type="string">
+	      <throws>org.xml.sax.SAXException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>

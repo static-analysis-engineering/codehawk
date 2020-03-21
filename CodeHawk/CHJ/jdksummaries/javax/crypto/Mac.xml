@@ -216,7 +216,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="mac" form="algorithm name" type="string"/>
+            <sink arg="1" dest="mac" form="algorithm name"
+		  type="string">
+	      <throws>java.security.NoSuchAlgorithmException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -257,8 +260,14 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="2" dest="mac" form="provier name" type="string"/>
-            <sink arg="1" dest="mac" form="algorithm name" type="string"/>
+            <sink arg="2" dest="mac" form="provider name"
+		  type="string">
+	      <throws>java.security.NoSuchProviderException</throws>
+	    </sink>
+            <sink arg="1" dest="mac" form="algorithm name"
+		  type="string">
+	      <throws>java.security.NoSuchAlgorithmException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -308,7 +317,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="mac" form="algorithm name" type="string"/>
+            <sink arg="1" dest="mac" form="algorithm name"
+		  type="string">
+	      <throws>java.security.NoSuchAlgorithmException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>

@@ -39,7 +39,7 @@
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ valueOf -->
-      <method access="public" name="valueOf" static="yes" valid="no">
+      <method access="public" name="valueOf" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -50,11 +50,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ values -->
-      <method access="public" name="values" static="yes" valid="no">
+      <method access="public" name="values" static="yes">
         <signature>
           <return>
             <array>

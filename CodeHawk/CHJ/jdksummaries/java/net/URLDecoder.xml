@@ -74,7 +74,10 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="decoder" form="character encoding" type="string"/>
+            <sink arg="2" dest="decoder" form="character encoding"
+		  type="string">
+	      <throws>java.io.UnsupportedEncodingException</throws>
+	    </sink>
             <sink arg="1" dest="decoder" form="encoded string" type="string"/>
           </sinks>
         </summary>

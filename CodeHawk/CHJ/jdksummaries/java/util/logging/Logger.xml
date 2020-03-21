@@ -33,7 +33,9 @@
             <object>java.lang.String</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.util.MissingResourceException</throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -45,6 +47,14 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="logger" form="logger name"
+		  type="string"/>
+	    <sink arg="2" dest="logger" form="resource name"
+		  type="string">
+	      <throws>java.util.MissingResourceException</throws>
+	    </sink>
+	    </sinks>
         </summary>
       </constructor>
     </constructors>
@@ -58,7 +68,6 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.SecurityException</throws>
           <throws>java.lang.SecurityException</throws>
         </exceptions>
         <summary>
@@ -127,8 +136,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="logger" form="methodname" type="string"/>
-            <sink arg="1" dest="logger" form="classname" type="string"/>
+            <sink arg="2" dest="logger" form="method name" type="string"/>
+            <sink arg="1" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -162,8 +171,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="logger" form="methodname" type="string"/>
-            <sink arg="1" dest="logger" form="classname" type="string"/>
+            <sink arg="2" dest="logger" form="method name" type="string"/>
+            <sink arg="1" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -199,8 +208,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="logger" form="methodname" type="string"/>
-            <sink arg="1" dest="logger" form="classname" type="string"/>
+            <sink arg="2" dest="logger" form="method name" type="string"/>
+            <sink arg="1" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -227,8 +236,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="logger" form="methodname" type="string"/>
-            <sink arg="1" dest="logger" form="classname" type="string"/>
+            <sink arg="2" dest="logger" form="method name" type="string"/>
+            <sink arg="1" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -262,8 +271,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="logger" form="methodname" type="string"/>
-            <sink arg="1" dest="logger" form="classname" type="string"/>
+            <sink arg="2" dest="logger" form="method name" type="string"/>
+            <sink arg="1" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -416,7 +425,7 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="logger" form="resource bundle name" type="string"/>
+            <sink arg="1" dest="logger" form="resource name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -515,7 +524,9 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -524,6 +535,10 @@
               <return/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="logger" form="logger name"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getLogger -->
@@ -542,7 +557,9 @@
         <exceptions>
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.util.MissingResourceException</throws>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -563,7 +580,12 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="2" dest="logger" form="resource bundle name" type="string"/>
+	    <sink arg="1" dest="logger" form="logger name"
+		  type="string"/>
+            <sink arg="2" dest="logger" form="resource name"
+		  type="string">
+	      <throws>java.util.MissingResourceException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -993,8 +1015,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="3" dest="logger" form="methodname" type="string"/>
-            <sink arg="2" dest="logger" form="classname" type="string"/>
+            <sink arg="3" dest="logger" form="method name" type="string"/>
+            <sink arg="2" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1035,8 +1057,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="3" dest="logger" form="methodname" type="string"/>
-            <sink arg="2" dest="logger" form="classname" type="string"/>
+            <sink arg="3" dest="logger" form="method name" type="string"/>
+            <sink arg="2" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1084,8 +1106,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="3" dest="logger" form="methodname" type="string"/>
-            <sink arg="2" dest="logger" form="classname" type="string"/>
+            <sink arg="3" dest="logger" form="method name" type="string"/>
+            <sink arg="2" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1135,8 +1157,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="3" dest="logger" form="methodname" type="string"/>
-            <sink arg="2" dest="logger" form="classname" type="string"/>
+            <sink arg="3" dest="logger" form="method name" type="string"/>
+            <sink arg="2" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1184,8 +1206,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="3" dest="logger" form="methodname" type="string"/>
-            <sink arg="2" dest="logger" form="classname" type="string"/>
+            <sink arg="3" dest="logger" form="method name" type="string"/>
+            <sink arg="2" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1233,8 +1255,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="3" dest="logger" form="methodname" type="string"/>
-            <sink arg="2" dest="logger" form="classname" type="string"/>
+            <sink arg="3" dest="logger" form="method name" type="string"/>
+            <sink arg="2" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1282,9 +1304,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="4" dest="logger" form="resource bundle name" type="string"/>
-            <sink arg="3" dest="logger" form="methodname" type="string"/>
-            <sink arg="2" dest="logger" form="classname" type="string"/>
+            <sink arg="4" dest="logger" form="resource name" type="string"/>
+            <sink arg="3" dest="logger" form="method name" type="string"/>
+            <sink arg="2" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1339,9 +1361,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="4" dest="logger" form="resource bundle name" type="string"/>
-            <sink arg="3" dest="logger" form="methodname" type="string"/>
-            <sink arg="2" dest="logger" form="classname" type="string"/>
+            <sink arg="4" dest="logger" form="resource name" type="string"/>
+            <sink arg="3" dest="logger" form="method name" type="string"/>
+            <sink arg="2" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1398,9 +1420,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="4" dest="logger" form="resource bundle name" type="string"/>
-            <sink arg="3" dest="logger" form="methodname" type="string"/>
-            <sink arg="2" dest="logger" form="classname" type="string"/>
+            <sink arg="4" dest="logger" form="resource name" type="string"/>
+            <sink arg="3" dest="logger" form="method name" type="string"/>
+            <sink arg="2" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1457,9 +1479,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="4" dest="logger" form="resource bundle name" type="string"/>
-            <sink arg="3" dest="logger" form="methodname" type="string"/>
-            <sink arg="2" dest="logger" form="classname" type="string"/>
+            <sink arg="4" dest="logger" form="resource name" type="string"/>
+            <sink arg="3" dest="logger" form="method name" type="string"/>
+            <sink arg="2" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1514,9 +1536,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="4" dest="logger" form="resource bundle name" type="string"/>
-            <sink arg="3" dest="logger" form="methodname" type="string"/>
-            <sink arg="2" dest="logger" form="classname" type="string"/>
+            <sink arg="4" dest="logger" form="resource name" type="string"/>
+            <sink arg="3" dest="logger" form="method name" type="string"/>
+            <sink arg="2" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1571,9 +1593,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="4" dest="logger" form="resource bundle name" type="string"/>
-            <sink arg="3" dest="logger" form="methodname" type="string"/>
-            <sink arg="2" dest="logger" form="classname" type="string"/>
+            <sink arg="4" dest="logger" form="resource name" type="string"/>
+            <sink arg="3" dest="logger" form="method name" type="string"/>
+            <sink arg="2" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -1585,7 +1607,6 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.SecurityException</throws>
           <throws>java.lang.SecurityException</throws>
         </exceptions>
         <summary>
@@ -1600,7 +1621,6 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.SecurityException</throws>
           <throws>java.lang.SecurityException</throws>
         </exceptions>
         <summary>
@@ -1620,7 +1640,6 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.SecurityException</throws>
           <throws>java.lang.SecurityException</throws>
         </exceptions>
         <summary>
@@ -1749,8 +1768,8 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="logger" form="methodname" type="string"/>
-            <sink arg="1" dest="logger" form="classname" type="string"/>
+            <sink arg="2" dest="logger" form="method name" type="string"/>
+            <sink arg="1" dest="logger" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>

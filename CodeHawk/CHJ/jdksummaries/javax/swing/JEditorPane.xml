@@ -150,6 +150,12 @@
 	      <this/>
 	    </transfer>
 	  </taint>
+	  <sinks>
+	    <sink arg="1" dest="component creation" form="URL"
+		  type="string">
+	      <throws>java.io.IOException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String,java.lang.String) -->
@@ -250,7 +256,7 @@
             </error-post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="mime type" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -351,6 +357,10 @@
               <return/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="dynamic loading" form="mime type"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getEditorKitForContentType -->
@@ -364,7 +374,9 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -385,7 +397,7 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="mime type" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -597,10 +609,19 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint/>
+	  <sinks>
+	    <sink arg="1" dest="property set" form="mime type"
+		  type="string"/>
+	    <sink arg="2" dest="dynamic loading" form="class name"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ registerEditorKitForContentType -->
@@ -617,10 +638,18 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint/>
+	  <sinks>
+	    <sink arg="1" dest="property set" form="mime type"
+		  type="string"/>
+	    <sink arg="2" dest="dynamic loading" form="class name"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeHyperlinkListener -->
@@ -665,7 +694,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint/>
@@ -679,7 +710,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -689,7 +722,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="JEditorPane" form="mime type" type="string"/>
+            <sink arg="1" dest="propery set" form="mime type" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -721,7 +754,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp  arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -734,6 +769,10 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="property set" form="mime type"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setPage -->
@@ -773,7 +812,10 @@
             </defput>
           </taint>
           <sinks>
-            <sink arg="1" dest="JEditorPane" form="URL" type="string"/>
+            <sink arg="1" dest="retrieve content" form="URL"
+		  type="string">
+	      <throws>java.io.IOException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>

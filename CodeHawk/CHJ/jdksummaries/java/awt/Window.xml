@@ -409,7 +409,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFocusOwner -->
-      <method access="public" name="getFocusOwner" valid="no">
+      <method access="public" name="getFocusOwner">
         <signature>
           <return>
             <object>java.awt.Component</object>
@@ -417,7 +417,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFocusTraversalKeys -->
@@ -464,7 +469,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getIconImages -->
-      <method access="public" name="getIconImages" valid="no">
+      <method access="public" name="getIconImages">
         <signature>
           <return>
             <object>java.util.List</object>
@@ -472,7 +477,19 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInputContext -->
@@ -505,7 +522,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getListeners -->
-      <method access="public" name="getListeners" valid="no">
+      <method access="public" name="getListeners">
         <signature>
           <arg nr="1">
             <object>java.lang.Class</object>
@@ -516,9 +533,26 @@
             </array>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ClassCastException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getLocale -->
@@ -565,7 +599,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMostRecentFocusOwner -->
-      <method access="public" name="getMostRecentFocusOwner" valid="no">
+      <method access="public" name="getMostRecentFocusOwner">
         <signature>
           <return>
             <object>java.awt.Component</object>
@@ -573,11 +607,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getOpacity -->
-      <method access="public" name="getOpacity" valid="no">
+      <method access="public" name="getOpacity">
         <signature>
           <return>
             <float/>
@@ -585,7 +624,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getOwnedWindows -->
@@ -625,7 +669,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getOwnerlessWindows -->
-      <method access="public" name="getOwnerlessWindows" static="yes" valid="no">
+      <method access="public" name="getOwnerlessWindows" static="yes">
         <signature>
           <return>
             <array>
@@ -639,7 +683,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getShape -->
-      <method access="public" name="getShape" valid="no">
+      <method access="public" name="getShape">
         <signature>
           <return>
             <object>java.awt.Shape</object>
@@ -647,7 +691,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getToolkit -->
@@ -675,7 +724,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getType -->
-      <method access="public" name="getType" valid="no">
+      <method access="public" name="getType">
         <signature>
           <return>
             <object>java.awt.Window$Type</object>
@@ -683,11 +732,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWarningString -->
-      <method access="public" final="yes" name="getWarningString" valid="no">
+      <method access="public" final="yes" name="getWarningString">
         <signature>
           <return>
             <object>java.lang.String</object>
@@ -695,11 +756,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWindowFocusListeners -->
-      <method access="public" name="getWindowFocusListeners" valid="no">
+      <method access="public" name="getWindowFocusListeners">
         <signature>
           <return>
             <array>
@@ -709,11 +775,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWindowListeners -->
-      <method access="public" name="getWindowListeners" valid="no">
+      <method access="public" name="getWindowListeners">
         <signature>
           <return>
             <array>
@@ -723,11 +801,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWindowStateListeners -->
-      <method access="public" name="getWindowStateListeners" valid="no">
+      <method access="public" name="getWindowStateListeners">
         <signature>
           <return>
             <array>
@@ -737,11 +827,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWindows -->
-      <method access="public" name="getWindows" static="yes" valid="no">
+      <method access="public" name="getWindows" static="yes">
         <signature>
           <return>
             <array>
@@ -752,6 +854,13 @@
         <exceptions/>
         <summary>
           <taint/>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hide -->
@@ -763,7 +872,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isActive -->
-      <method access="public" name="isActive" valid="no">
+      <method access="public" name="isActive">
         <signature>
           <return>
             <boolean/>
@@ -771,11 +880,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isAlwaysOnTop -->
-      <method access="public" final="yes" name="isAlwaysOnTop" valid="no">
+      <method access="public" final="yes" name="isAlwaysOnTop">
         <signature>
           <return>
             <boolean/>
@@ -783,11 +897,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isAlwaysOnTopSupported -->
-      <method access="public" name="isAlwaysOnTopSupported" valid="no">
+      <method access="public" name="isAlwaysOnTopSupported">
         <signature>
           <return>
             <boolean/>
@@ -795,11 +914,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isAutoRequestFocus -->
-      <method access="public" name="isAutoRequestFocus" valid="no">
+      <method access="public" name="isAutoRequestFocus">
         <signature>
           <return>
             <boolean/>
@@ -807,7 +931,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isFocusCycleRoot -->
@@ -857,7 +986,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isLocationByPlatform -->
-      <method access="public" name="isLocationByPlatform" valid="no">
+      <method access="public" name="isLocationByPlatform">
         <signature>
           <return>
             <boolean/>
@@ -865,7 +994,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isOpaque -->
@@ -903,7 +1037,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isValidateRoot -->
-      <method access="public" name="isValidateRoot" valid="no">
+      <method access="public" name="isValidateRoot">
         <signature>
           <return>
             <boolean/>
@@ -911,7 +1045,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ pack -->
@@ -1147,7 +1286,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setAutoRequestFocus -->
-      <method access="public" name="setAutoRequestFocus" valid="no">
+      <method access="public" name="setAutoRequestFocus">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -1155,7 +1294,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setBackground -->
@@ -1248,7 +1392,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFocusCycleRoot -->
-      <method access="public" final="yes" name="setFocusCycleRoot" valid="no">
+      <method access="public" final="yes" name="setFocusCycleRoot">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -1256,7 +1400,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFocusableWindowState -->
@@ -1407,7 +1556,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setModalExclusionType -->
-      <method access="public" name="setModalExclusionType" valid="no">
+      <method access="public" name="setModalExclusionType">
         <signature>
           <arg nr="1">
             <object>java.awt.Dialog$ModalExclusionType</object>
@@ -1415,11 +1564,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setOpacity -->
-      <method access="public" name="setOpacity" valid="no">
+      <method access="public" name="setOpacity">
         <signature>
           <arg nr="1">
             <float/>
@@ -1427,11 +1581,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setShape -->
-      <method access="public" name="setShape" valid="no">
+      <method access="public" name="setShape">
         <signature>
           <arg nr="1">
             <object>java.awt.Shape</object>
@@ -1439,7 +1598,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSize -->
@@ -1534,7 +1698,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toBack -->
-      <method access="public" name="toBack" valid="no">
+      <method access="public" name="toBack">
         <signature/>
         <exceptions/>
         <summary>

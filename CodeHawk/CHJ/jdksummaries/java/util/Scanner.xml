@@ -70,7 +70,10 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="scanner" form="charset name" type="string"/>
+            <sink arg="2" dest="scanner" form="character encoding"
+		  type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
           </sinks>
         </summary>
       </constructor>
@@ -119,7 +122,10 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="scanner" form="charset name" type="string"/>
+            <sink arg="2" dest="scanner" form="character encoding"
+		  type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
           </sinks>
         </summary>
       </constructor>
@@ -154,6 +160,7 @@
         </signature>
         <exceptions>
           <throws>java.io.IOException</throws>
+	  <throws>java.lang.IllegalArgumentException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -166,6 +173,12 @@
 	      <this/>
 	    </transfer>
 	  </taint>
+	  <sinks>
+	    <sink arg="2" dest="scanner" form="character encoding"
+		  type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String) -->
@@ -212,7 +225,9 @@
             <object>java.lang.String</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalArgumentException</throws>
+	</exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -224,6 +239,12 @@
 	      <this/>
 	    </transfer>
 	  </taint>
+	  <sinks>
+	    <sink arg="2" dest="scanner" form="character encoding"
+		  type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </constructor>
     </constructors>
@@ -276,6 +297,9 @@
 	      <return/>
 	    </transfer>
 	  </taint>
+	  <sinks>
+	    <sink arg="1" dest="scanner" form="regex" type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ findInLine -->
@@ -303,7 +327,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ findWithinHorizon -->
-      <method access="public" name="findWithinHorizon" valid="no">
+      <method access="public" name="findWithinHorizon">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -315,13 +339,43 @@
             <object>java.lang.String</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <sinks>
+	    <sink arg="1" dest="scanner" form="regex" type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ findWithinHorizon -->
-      <method access="public" name="findWithinHorizon" valid="no">
+      <method access="public" name="findWithinHorizon">
         <signature>
           <arg nr="1">
             <object>java.util.regex.Pattern</object>
@@ -333,9 +387,36 @@
             <object>java.lang.String</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNext -->
@@ -358,7 +439,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNext -->
-      <method access="public" name="hasNext" valid="no">
+      <method access="public" name="hasNext">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -367,13 +448,27 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <sinks>
+	    <sink arg="1" dest="scanner" form="regex" type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNext -->
-      <method access="public" name="hasNext" valid="no">
+      <method access="public" name="hasNext">
         <signature>
           <arg nr="1">
             <object>java.util.regex.Pattern</object>
@@ -382,9 +477,20 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNextBigDecimal -->
@@ -422,7 +528,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNextBigInteger -->
-      <method access="public" name="hasNextBigInteger" valid="no">
+      <method access="public" name="hasNextBigInteger">
         <signature>
           <arg nr="1">
             <int/>
@@ -431,31 +537,32 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNextBoolean -->
-      <method access="public" name="hasNextBoolean" valid="no">
+      <method access="public" name="hasNextBoolean">
         <signature>
           <return>
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNextByte -->
-      <method access="public" name="hasNextByte">
-        <signature>
-          <return>
-            <boolean/>
-          </return>
-        </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -466,7 +573,26 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNextByte -->
-      <method access="public" name="hasNextByte" valid="no">
+      <method access="public" name="hasNextByte">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
+        <summary>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNextByte -->
+      <method access="public" name="hasNextByte">
         <signature>
           <arg nr="1">
             <int/>
@@ -475,9 +601,20 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNextDouble -->
@@ -487,7 +624,9 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -504,7 +643,9 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -534,7 +675,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNextInt -->
-      <method access="public" name="hasNextInt" valid="no">
+      <method access="public" name="hasNextInt">
         <signature>
           <arg nr="1">
             <int/>
@@ -543,9 +684,20 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNextLine -->
@@ -574,7 +726,9 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -585,7 +739,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNextLong -->
-      <method access="public" name="hasNextLong" valid="no">
+      <method access="public" name="hasNextLong">
         <signature>
           <arg nr="1">
             <int/>
@@ -594,9 +748,20 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNextShort -->
@@ -606,7 +771,9 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -617,7 +784,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasNextShort -->
-      <method access="public" name="hasNextShort" valid="no">
+      <method access="public" name="hasNextShort">
         <signature>
           <arg nr="1">
             <int/>
@@ -626,13 +793,24 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ioException -->
-      <method access="public" name="ioException" valid="no">
+      <method access="public" name="ioException">
         <signature>
           <return>
             <object>java.io.IOException</object>
@@ -640,7 +818,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ locale -->
@@ -667,7 +850,9 @@
             <object>java.util.regex.MatchResult</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -698,7 +883,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ next -->
-      <method access="public" name="next" valid="no">
+      <method access="public" name="next">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -707,13 +892,28 @@
             <object>java.lang.String</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	  <throws>java.util.NoSuchElementException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <sinks>
+	    <sink arg="1" dest="scanner" form="regex" type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ next -->
-      <method access="public" name="next" valid="no">
+      <method access="public" name="next">
         <signature>
           <arg nr="1">
             <object>java.util.regex.Pattern</object>
@@ -722,9 +922,21 @@
             <object>java.lang.String</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	  <throws>java.util.NoSuchElementException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ next -->
@@ -754,7 +966,11 @@
             <object>java.math.BigDecimal</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	  <throws>java.util.NoSuchElementException</throws>
+	  <throws>java.util.InputMismatchException</throws>
+	</exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -771,7 +987,11 @@
             <object>java.math.BigInteger</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	  <throws>java.util.NoSuchElementException</throws>
+	  <throws>java.util.InputMismatchException</throws>
+	</exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -782,7 +1002,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ nextBigInteger -->
-      <method access="public" name="nextBigInteger" valid="no">
+      <method access="public" name="nextBigInteger">
         <signature>
           <arg nr="1">
             <int/>
@@ -791,9 +1011,22 @@
             <object>java.math.BigInteger</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	  <throws>java.util.NoSuchElementException</throws>
+	  <throws>java.util.InputMismatchException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ nextBoolean -->
@@ -803,7 +1036,11 @@
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <throws>java.util.InputMismatchException</throws>
+          <throws>java.lang.IllegalStateException</throws>
+          <throws>java.util.NoSuchElementException</throws>
+        </exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -820,7 +1057,11 @@
             <byte/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <throws>java.util.InputMismatchException</throws>
+          <throws>java.lang.IllegalStateException</throws>
+          <throws>java.util.NoSuchElementException</throws>
+        </exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -831,7 +1072,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ nextByte -->
-      <method access="public" name="nextByte" valid="no">
+      <method access="public" name="nextByte">
         <signature>
           <arg nr="1">
             <int/>
@@ -840,9 +1081,22 @@
             <byte/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <throws>java.util.InputMismatchException</throws>
+          <throws>java.lang.IllegalStateException</throws>
+          <throws>java.util.NoSuchElementException</throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ nextDouble -->
@@ -873,7 +1127,11 @@
             <float/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <throws>java.util.InputMismatchException</throws>
+          <throws>java.lang.IllegalStateException</throws>
+          <throws>java.util.NoSuchElementException</throws>
+        </exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -914,9 +1172,22 @@
             <int/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <throws>java.util.InputMismatchException</throws>
+          <throws>java.lang.IllegalStateException</throws>
+          <throws>java.util.NoSuchElementException</throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ nextLine -->
@@ -961,7 +1232,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ nextLong -->
-      <method access="public" name="nextLong" valid="no">
+      <method access="public" name="nextLong">
         <signature>
           <arg nr="1">
             <int/>
@@ -970,9 +1241,22 @@
             <long/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <throws>java.util.InputMismatchException</throws>
+          <throws>java.lang.IllegalStateException</throws>
+          <throws>java.util.NoSuchElementException</throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ nextShort -->
@@ -982,7 +1266,11 @@
             <short/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <throws>java.util.InputMismatchException</throws>
+          <throws>java.lang.IllegalStateException</throws>
+          <throws>java.util.NoSuchElementException</throws>
+        </exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -993,7 +1281,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ nextShort -->
-      <method access="public" name="nextShort" valid="no">
+      <method access="public" name="nextShort">
         <signature>
           <arg nr="1">
             <int/>
@@ -1002,9 +1290,22 @@
             <short/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <throws>java.util.InputMismatchException</throws>
+          <throws>java.lang.IllegalStateException</throws>
+          <throws>java.util.NoSuchElementException</throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ radix -->
@@ -1100,7 +1401,9 @@
             <object>java.util.Scanner</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
           <taint>
 	    <transfer>
@@ -1127,6 +1430,9 @@
 	      </math>
 	    </post>
 	  </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="scanner" form="regex" type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toString -->
@@ -1229,6 +1535,9 @@
               </math>
             </post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="scanner" form="regex" type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ useLocale -->

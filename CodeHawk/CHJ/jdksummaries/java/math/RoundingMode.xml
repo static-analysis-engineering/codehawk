@@ -74,7 +74,9 @@
         </signature>
         <exceptions>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -91,7 +93,10 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="enumeration" form="roundingmode" type="string"/>
+            <sink arg="1" dest="rounding mode" form="enum constant"
+		  type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>

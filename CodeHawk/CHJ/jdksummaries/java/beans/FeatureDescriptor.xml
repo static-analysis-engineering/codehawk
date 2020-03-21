@@ -141,6 +141,9 @@
               </math>
             </error-post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" form="attribute name" dest="beans" type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isExpert -->
@@ -209,6 +212,10 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" form="display name" dest="beans"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setExpert -->
@@ -297,6 +304,10 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" form="description" dest="beans"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setValue -->
@@ -321,6 +332,10 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" form="attribute name" dest="beans"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toString -->

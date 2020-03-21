@@ -749,7 +749,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <double/>
@@ -760,11 +760,35 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <float/>
@@ -775,11 +799,35 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <long/>
@@ -790,11 +838,35 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <int/>
@@ -805,11 +877,35 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <char/>
@@ -820,11 +916,35 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -835,11 +955,35 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <array>
@@ -856,13 +1000,86 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="2"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="3"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <apply>
+                    <plus/>
+                    <arg nr="2"/>
+                    <arg nr="3"/>
+                  </apply>
+                  <apply>
+                    <size/>
+                    <arg nr="1"/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.IndexOutOfBoundsException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <array>
@@ -873,13 +1090,41 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <object>java.lang.CharSequence</object>
@@ -894,13 +1139,86 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="2"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="3"/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <safety-condition>
+              <math>
+                <apply>
+                  <leq/>
+                  <apply>
+                    <plus/>
+                    <arg nr="2"/>
+                    <arg nr="3"/>
+                  </apply>
+                  <apply>
+                    <size/>
+                    <arg nr="1"/>
+                  </apply>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.IndexOutOfBoundsException</exn>
+          </c-throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <object>java.lang.CharSequence</object>
@@ -911,11 +1229,35 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
-        </summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
+	</summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <object>java.lang.StringBuffer</object>
@@ -924,13 +1266,41 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -939,13 +1309,41 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
-      <method access="public" bridge="yes" name="append" valid="no">
+      <method access="public" bridge="yes" name="append">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -954,9 +1352,37 @@
             <object>java.lang.AbstractStringBuilder</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+	      <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ append -->
@@ -1179,7 +1605,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ appendCodePoint -->
-      <method access="public" bridge="yes" name="appendCodePoint" valid="no">
+      <method access="public" bridge="yes" name="appendCodePoint">
         <signature>
           <arg nr="1">
             <int/>
@@ -1190,7 +1616,31 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <eq/>
+		  <return/>
+		  <this/>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ capacity -->
@@ -1481,7 +1931,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ delete -->
-      <method access="public" bridge="yes" name="delete" valid="no">
+      <method access="public" bridge="yes" name="delete">
         <signature>
           <arg nr="1">
             <int/>
@@ -1495,7 +1945,39 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <eq/>
+		  <return/>
+		  <this/>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ deleteCharAt -->
@@ -1567,7 +2049,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ deleteCharAt -->
-      <method access="public" bridge="yes" name="deleteCharAt" valid="no">
+      <method access="public" bridge="yes" name="deleteCharAt">
         <signature>
           <arg nr="1">
             <int/>
@@ -1578,7 +2060,35 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <return/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <this/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ensureCapacity -->
@@ -1840,7 +2350,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->
-      <method access="public" name="insert" valid="no">
+      <method access="public" name="insert">
         <signature>
           <arg nr="1">
             <int/>
@@ -1860,9 +2370,107 @@
             <object>java.lang.StringBuffer</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="2"/>
+	  </c-throws>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="3"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="4"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <apply>
+		    <plus/>
+		    <arg nr="3"/>
+		    <arg nr="4"/>
+		  </apply>
+		  <apply>
+		    <size/>
+		    <arg nr="2"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.StringIndexOutOfBoundsException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="4"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="4"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <eq/>
+		  <return/>
+		  <this/>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insert -->

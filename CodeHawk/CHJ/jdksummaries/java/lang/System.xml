@@ -111,6 +111,13 @@
               <return/>
             </defput>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="property retrieval"
+		  form="system property" type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	      <throws>java.lang.SecurityException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ console -->
@@ -213,7 +220,11 @@
             </error-post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="environment request" form="system property name" type="string"/>
+            <sink arg="1" dest="property retrieval"
+		  form="system property" type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	      <throws>java.lang.SecurityException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -235,6 +246,7 @@
 	    <cnp arg="1"/>
 	  </c-throws>
           <throws>java.lang.SecurityException</throws>
+	  <throws>java.lang.IllegalArgumentException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -243,8 +255,12 @@
             </defput>
           </taint>
           <sinks>
-            <sink arg="2" dest="internal" form="system property value" type="string"/>
-            <sink arg="1" dest="environment request" form="system property name" type="string"/>
+            <sink arg="2" dest="property value" form="none" type="string"/>
+            <sink arg="1" dest="property retrieval"
+		  form="system property" type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	      <throws>java.lang.SecurityException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -295,7 +311,10 @@
             </error-post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="environment" form="environment variable" type="string"/>
+            <sink arg="1" dest="property retrieval"
+		  form="environment variable" type="string">
+	      <throws>java.lang.SecurityException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -382,7 +401,11 @@
         <summary>
           <taint/>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="filename" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="filename"
+		  type="string">
+	      <throws>java.lang.SecurityException</throws>
+	      <throws>java.lang.UnsatisfiedLinkError</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -403,7 +426,11 @@
         <summary>
           <taint/>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="library name" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="filename"
+		  type="string">
+	      <throws>java.lang.SecurityException</throws>
+	      <throws>java.lang.UnsatisfiedLinkError</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>
@@ -574,8 +601,12 @@
             </defput>
           </taint>
           <sinks>
-            <sink arg="2" dest="set property" form="system property value" type="string"/>
-            <sink arg="1" dest="set property" form="system property name" type="string"/>
+            <sink arg="2" dest="property value" form="none" type="string"/>
+            <sink arg="1" dest="property set" form="system property"
+		  type="string">
+	      <throws>java.lang.SecurityException</throws>
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>

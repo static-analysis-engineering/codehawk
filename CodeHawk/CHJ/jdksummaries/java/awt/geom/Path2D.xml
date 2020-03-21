@@ -462,7 +462,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPathIterator -->
-      <method access="public" final="yes" name="getPathIterator" valid="no">
+      <method access="public" final="yes" name="getPathIterator">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.AffineTransform</object>
@@ -476,7 +476,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWindingRule -->
@@ -517,7 +530,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ intersects -->
-      <method access="public" name="intersects" static="yes" valid="no">
+      <method access="public" name="intersects" static="yes">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.PathIterator</object>
@@ -540,11 +553,32 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="4"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="5"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ intersects -->
-      <method access="public" name="intersects" static="yes" valid="no">
+      <method access="public" name="intersects" static="yes">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.PathIterator</object>
@@ -558,7 +592,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ intersects -->

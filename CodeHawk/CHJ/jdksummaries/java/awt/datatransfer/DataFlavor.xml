@@ -100,7 +100,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -140,6 +142,13 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="dynamic loading" form="mime type"
+		  type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	      <throws>java.lang.ClassNotFoundException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~ (java.lang.String,java.lang.String,java.lang.ClassLoader) -->
@@ -175,6 +184,13 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="dynamic loading" form="mime type"
+		  type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	      <throws>java.lang.ClassNotFoundException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String) -->
@@ -187,7 +203,9 @@
         <exceptions>
           <throws>java.lang.IllegalArgumentException</throws>
           <throws>java.lang.ClassNotFoundException</throws>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -196,6 +214,13 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="dynamic loading" form="mime type"
+		  type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	      <throws>java.lang.ClassNotFoundException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </constructor>
     </constructors>
@@ -656,7 +681,9 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -669,6 +696,10 @@
               <return/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="dynamic loading" form="mime type"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isMimeTypeEqual -->
@@ -1006,8 +1037,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.ClassNotFoundException</throws>
-          <throws>java.lang.NullPointerException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -1021,7 +1050,10 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="dynamic loading" form="classname" type="string"/>
+            <sink arg="1" dest="dynamic loading" form="class name"
+		  type="string">
+	      <throws>java.lang.ClassNotFoundException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>

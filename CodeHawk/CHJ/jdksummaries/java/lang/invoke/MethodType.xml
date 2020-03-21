@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-18 23:05:46"/>
-  <class final="yes" name="MethodType" package="java.lang.invoke">
+  <class final="yes" immutable="yes" name="MethodType" package="java.lang.invoke">
     <interfaces>
       <implements>java.io.Serializable</implements>
     </interfaces>
@@ -12,7 +12,7 @@
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ appendParameterTypes -->
-      <method access="public" name="appendParameterTypes" valid="no">
+      <method access="public" name="appendParameterTypes">
         <signature>
           <arg nr="1">
             <array>
@@ -23,13 +23,32 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.NullPointerException</throws>
+	  <throws>java.lang.IllegalArgumentException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ appendParameterTypes -->
-      <method access="public" name="appendParameterTypes" valid="no">
+      <method access="public" name="appendParameterTypes">
         <signature>
           <arg nr="1">
             <object>java.util.List</object>
@@ -38,13 +57,32 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.NullPointerException</throws>
+	  <throws>java.lang.IllegalArgumentException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ changeParameterType -->
-      <method access="public" name="changeParameterType" valid="no">
+      <method access="public" name="changeParameterType">
         <signature>
           <arg nr="1">
             <int/>
@@ -56,13 +94,39 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="2"/>
+	  </c-throws>
+	  <throws>java.lang.IndexOutOfBoundsException</throws>
+	  <throws>java.lang.IllegalArgumentException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ changeReturnType -->
-      <method access="public" name="changeReturnType" valid="no">
+      <method access="public" name="changeReturnType">
         <signature>
           <arg nr="1">
             <object>java.lang.Class</object>
@@ -71,13 +135,26 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ dropParameterTypes -->
-      <method access="public" name="dropParameterTypes" valid="no">
+      <method access="public" name="dropParameterTypes">
         <signature>
           <arg nr="1">
             <int/>
@@ -89,9 +166,24 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IndexOutOfBoundsException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ equals -->
@@ -119,7 +211,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ erase -->
-      <method access="public" name="erase" valid="no">
+      <method access="public" name="erase">
         <signature>
           <return>
             <object>java.lang.invoke.MethodType</object>
@@ -127,7 +219,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fromMethodDescriptorString -->
@@ -187,7 +284,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ generic -->
-      <method access="public" name="generic" valid="no">
+      <method access="public" name="generic">
         <signature>
           <return>
             <object>java.lang.invoke.MethodType</object>
@@ -195,11 +292,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ genericMethodType -->
-      <method access="public" name="genericMethodType" static="yes" valid="no">
+      <method access="public" name="genericMethodType" static="yes">
         <signature>
           <arg nr="1">
             <int/>
@@ -211,13 +313,51 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <arg nr="1"/>
+		  <cn>254</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ genericMethodType -->
-      <method access="public" name="genericMethodType" static="yes" valid="no">
+      <method access="public" name="genericMethodType" static="yes">
         <signature>
           <arg nr="1">
             <int/>
@@ -226,10 +366,44 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <arg nr="1"/>
+		  <cn>254</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
-        </summary>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
+	</summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasPrimitives -->
       <method access="public" name="hasPrimitives">
@@ -249,7 +423,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasWrappers -->
-      <method access="public" name="hasWrappers" valid="no">
+      <method access="public" name="hasWrappers">
         <signature>
           <return>
             <boolean/>
@@ -257,7 +431,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hashCode -->
@@ -322,7 +501,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ insertParameterTypes -->
-      <method access="public" name="insertParameterTypes" valid="no">
+      <method access="public" name="insertParameterTypes">
         <signature>
           <arg nr="1">
             <int/>
@@ -334,9 +513,33 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <throws>java.lang.IndexOutOfBoundsException</throws>
+          <throws>java.lang.NullPointerException</throws>
+          <throws>java.lang.IllegalArgumentException</throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ methodType -->
@@ -415,7 +618,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ methodType -->
-      <method access="public" name="methodType" static="yes" valid="no">
+      <method access="public" name="methodType" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Class</object>
@@ -427,13 +630,32 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.NullPointerException</throws>
+	  <throws>java.lang.IllegalArgumentException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ methodType -->
-      <method access="public" name="methodType" static="yes" valid="no">
+      <method access="public" name="methodType" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Class</object>
@@ -450,13 +672,36 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.NullPointerException</throws>
+	  <throws>java.lang.IllegalArgumentException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ methodType -->
-      <method access="public" name="methodType" static="yes" valid="no">
+      <method access="public" name="methodType" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Class</object>
@@ -465,13 +710,23 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	  <throws>java.lang.IllegalArgumentException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ methodType -->
-      <method access="public" name="methodType" static="yes" valid="no">
+      <method access="public" name="methodType" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Class</object>
@@ -483,13 +738,35 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
+	  <throws>java.lang.IllegalArgumentException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ methodType -->
-      <method access="public" name="methodType" static="yes" valid="no">
+      <method access="public" name="methodType" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Class</object>
@@ -501,9 +778,30 @@
             <object>java.lang.invoke.MethodType</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ parameterArray -->
@@ -580,9 +878,15 @@
             <object>java.lang.Class</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IndexOutOfBoundsException</throws>
+	</exceptions>
         <summary>
           <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
 	    <transfer>
 	      <this/>
 	      <return/>

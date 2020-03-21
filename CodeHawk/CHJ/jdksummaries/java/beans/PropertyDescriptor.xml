@@ -33,7 +33,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="beans" form="bean property name" type="string"/>
+            <sink arg="1" dest="beans" form="bean name" type="string"/>
           </sinks>
         </summary>
       </constructor>
@@ -78,7 +78,7 @@
           <sinks>
             <sink arg="4" dest="beans" form="method name" type="string"/>
             <sink arg="3" dest="beans" form="method name" type="string"/>
-            <sink arg="1" dest="beans" form="bean property name" type="string"/>
+            <sink arg="1" dest="beans" form="bean name" type="string"/>
           </sinks>
         </summary>
       </constructor>
@@ -113,6 +113,10 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="beans" form="bean name"
+		  type="string"/>
+	  </sinks>
         </summary>
       </constructor>
     </constructors>
@@ -330,7 +334,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setBound -->
-      <method access="public" name="setBound" valid="no">
+      <method access="public" name="setBound">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -338,11 +342,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setConstrained -->
-      <method access="public" name="setConstrained" valid="no">
+      <method access="public" name="setConstrained">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -350,7 +359,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setPropertyEditorClass -->

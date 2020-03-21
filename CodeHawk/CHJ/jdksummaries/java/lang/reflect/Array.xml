@@ -23,9 +23,34 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -54,9 +79,34 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -81,9 +131,34 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -108,9 +183,34 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -135,9 +235,34 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -162,9 +287,34 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -189,9 +339,34 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -222,6 +397,17 @@
               <return/>
             </transfer>
           </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getLong -->
@@ -238,9 +424,34 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -265,9 +476,34 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -292,12 +528,34 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.NegativeArraySizeException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.NegativeArraySizeException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newInstance -->
@@ -321,7 +579,16 @@
           <throws>java.lang.NegativeArraySizeException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ set -->
@@ -338,9 +605,34 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -360,7 +652,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setBoolean -->
-      <method access="public" name="setBoolean" native="yes" static="yes" valid="no">
+      <method access="public" name="setBoolean" native="yes" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -373,15 +665,50 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="2"/>
+	      <arg nr="1"/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <arg nr="1"/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setByte -->
-      <method access="public" name="setByte" native="yes" static="yes" valid="no">
+      <method access="public" name="setByte" native="yes" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -394,15 +721,50 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="2"/>
+	      <arg nr="1"/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <arg nr="1"/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setChar -->
-      <method access="public" name="setChar" native="yes" static="yes" valid="no">
+      <method access="public" name="setChar" native="yes" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -415,15 +777,50 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="2"/>
+	      <arg nr="1"/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <arg nr="1"/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setDouble -->
-      <method access="public" name="setDouble" native="yes" static="yes" valid="no">
+      <method access="public" name="setDouble" native="yes" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -436,15 +833,50 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="2"/>
+	      <arg nr="1"/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <arg nr="1"/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFloat -->
-      <method access="public" name="setFloat" native="yes" static="yes" valid="no">
+      <method access="public" name="setFloat" native="yes" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -457,15 +889,50 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="2"/>
+	      <arg nr="1"/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <arg nr="1"/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setInt -->
-      <method access="public" name="setInt" native="yes" static="yes" valid="no">
+      <method access="public" name="setInt" native="yes" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -478,15 +945,50 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="2"/>
+	      <arg nr="1"/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <arg nr="1"/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setLong -->
-      <method access="public" name="setLong" native="yes" static="yes" valid="no">
+      <method access="public" name="setLong" native="yes" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -499,15 +1001,50 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="2"/>
+	      <arg nr="1"/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <arg nr="1"/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setShort -->
-      <method access="public" name="setShort" native="yes" static="yes" valid="no">
+      <method access="public" name="setShort" native="yes" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -520,11 +1057,46 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.ArrayIndexOutOfBoundsException</throws>
+          <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <lt/>
+		  <arg nr="2"/>
+		  <apply>
+		    <size/>
+		    <arg nr="1"/>
+		  </apply>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.ArrayIndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="2"/>
+	      <arg nr="1"/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <arg nr="1"/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->

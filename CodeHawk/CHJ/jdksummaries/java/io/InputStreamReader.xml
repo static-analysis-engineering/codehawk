@@ -41,7 +41,6 @@
         </signature>
         <exceptions>
           <throws>java.io.UnsupportedEncodingException</throws>
-          <throws>java.io.UnsupportedEncodingException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -55,7 +54,11 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="inputstream reader" form="charset name" type="string"/>
+            <sink arg="2" dest="inputstream reader"
+		  form="character encoding"
+		  type="string">
+	      <throws>java.io.UnsupportedEncodingException</throws>
+	    </sink>
           </sinks>
         </summary>
       </constructor>

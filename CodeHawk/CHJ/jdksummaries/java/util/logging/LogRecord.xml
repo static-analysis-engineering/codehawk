@@ -358,6 +358,10 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="logger" form="logger name"
+		  type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setMessage -->
@@ -445,6 +449,10 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink  arg="1" dest="logger" form="resource name"
+		   type="string"/>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSequenceNumber -->
@@ -480,7 +488,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="logrecord" form="classname" type="string"/>
+            <sink arg="1" dest="logging" form="class name" type="string"/>
           </sinks>
         </summary>
       </method>
@@ -500,7 +508,7 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="logrecord" form="methodname" type="string"/>
+            <sink arg="1" dest="logging" form="method name" type="string"/>
           </sinks>
         </summary>
       </method>
