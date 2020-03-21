@@ -170,6 +170,23 @@ let minint = mkNumericalFromString "-2147483648"
 let maxlong = mkNumericalFromString "9223372036854775807"
 let minlong = mkNumericalFromString "-9223372036854775808"
 
+let macroconstants = H.create 11
+
+let _ =
+  List.iter (fun (name,tval) ->
+      H.add macroconstants name (mkNumericalFromString tval))
+            [ ("MAXCHAR", "65535");
+              ("MAXCODEPOINT", "1114111") ]
+
+let is_macro_constant (name:string) = H.mem macroconstants name
+
+let get_macro_constant (name:string):numerical_t =
+  if H.mem macroconstants name then
+    H.find macroconstants name
+  else
+    raise (JCH_failure (LBLOCK [ STR "Macro constant " ; STR name ;
+                                 STR " not found" ]))
+
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
     LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
@@ -654,13 +671,18 @@ let rec read_xmlx_jterm
 	  (LBLOCK [ STR "Term " ; INT argnr ; 
 		    STR " is not part of the signature"] ) in
     JLocalVar argnr in
-  let getnamedargument n name = 
+  let getnamedargument n name =
     try
-      let (i,_) = List.find (fun (_,n) -> n = name) argumentnames in
-      getargument i
+      if is_macro_constant name then
+        JConstant (get_macro_constant name)
+      else
+        let (i,_) = List.find (fun (_,n) -> n = name) argumentnames in
+        getargument i
     with
+    | JCH_failure p ->
+       raise_xml_error n (LBLOCK [ STR "Macro error: " ; p ])
     | Not_found -> 
-      if n#hasNamedAttribute "kind" && (n#getAttribute "kinde") = "aux" then
+      if n#hasNamedAttribute "kind" && (n#getAttribute "kind") = "aux" then
 	JAuxiliaryVar name 
       else
 	raise_xml_error n
