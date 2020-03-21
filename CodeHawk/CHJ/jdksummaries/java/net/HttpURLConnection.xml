@@ -1,0 +1,1222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-19 21:37:24"/>
+  <class abstract="yes" name="HttpURLConnection" package="java.net">
+    <superclass>java.net.URLConnection</superclass>
+    <interfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:method -->
+      <field access="protected" name="method">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:chunkLength -->
+      <field access="protected" name="chunkLength">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:fixedContentLength -->
+      <field access="protected" name="fixedContentLength">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:fixedContentLengthLong -->
+      <field access="protected" name="fixedContentLengthLong">
+        <signature>
+          <long/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:responseCode -->
+      <field access="protected" name="responseCode">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:responseMessage -->
+      <field access="protected" name="responseMessage">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:instanceFollowRedirects -->
+      <field access="protected" name="instanceFollowRedirects">
+        <signature>
+          <boolean/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_OK -->
+      <field access="public" final="yes" name="HTTP_OK" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="200"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_CREATED -->
+      <field access="public" final="yes" name="HTTP_CREATED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="201"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_ACCEPTED -->
+      <field access="public" final="yes" name="HTTP_ACCEPTED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="202"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_NOT_AUTHORITATIVE -->
+      <field access="public" final="yes" name="HTTP_NOT_AUTHORITATIVE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="203"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_NO_CONTENT -->
+      <field access="public" final="yes" name="HTTP_NO_CONTENT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="204"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_RESET -->
+      <field access="public" final="yes" name="HTTP_RESET" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="205"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_PARTIAL -->
+      <field access="public" final="yes" name="HTTP_PARTIAL" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="206"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_MULT_CHOICE -->
+      <field access="public" final="yes" name="HTTP_MULT_CHOICE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="300"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_MOVED_PERM -->
+      <field access="public" final="yes" name="HTTP_MOVED_PERM" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="301"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_MOVED_TEMP -->
+      <field access="public" final="yes" name="HTTP_MOVED_TEMP" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="302"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_SEE_OTHER -->
+      <field access="public" final="yes" name="HTTP_SEE_OTHER" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="303"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_NOT_MODIFIED -->
+      <field access="public" final="yes" name="HTTP_NOT_MODIFIED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="304"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_USE_PROXY -->
+      <field access="public" final="yes" name="HTTP_USE_PROXY" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="305"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_BAD_REQUEST -->
+      <field access="public" final="yes" name="HTTP_BAD_REQUEST" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="400"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_UNAUTHORIZED -->
+      <field access="public" final="yes" name="HTTP_UNAUTHORIZED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="401"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_PAYMENT_REQUIRED -->
+      <field access="public" final="yes" name="HTTP_PAYMENT_REQUIRED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="402"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_FORBIDDEN -->
+      <field access="public" final="yes" name="HTTP_FORBIDDEN" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="403"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_NOT_FOUND -->
+      <field access="public" final="yes" name="HTTP_NOT_FOUND" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="404"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_BAD_METHOD -->
+      <field access="public" final="yes" name="HTTP_BAD_METHOD" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="405"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_NOT_ACCEPTABLE -->
+      <field access="public" final="yes" name="HTTP_NOT_ACCEPTABLE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="406"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_PROXY_AUTH -->
+      <field access="public" final="yes" name="HTTP_PROXY_AUTH" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="407"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_CLIENT_TIMEOUT -->
+      <field access="public" final="yes" name="HTTP_CLIENT_TIMEOUT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="408"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_CONFLICT -->
+      <field access="public" final="yes" name="HTTP_CONFLICT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="409"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_GONE -->
+      <field access="public" final="yes" name="HTTP_GONE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="410"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_LENGTH_REQUIRED -->
+      <field access="public" final="yes" name="HTTP_LENGTH_REQUIRED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="411"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_PRECON_FAILED -->
+      <field access="public" final="yes" name="HTTP_PRECON_FAILED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="412"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_ENTITY_TOO_LARGE -->
+      <field access="public" final="yes" name="HTTP_ENTITY_TOO_LARGE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="413"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_REQ_TOO_LONG -->
+      <field access="public" final="yes" name="HTTP_REQ_TOO_LONG" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="414"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_UNSUPPORTED_TYPE -->
+      <field access="public" final="yes" name="HTTP_UNSUPPORTED_TYPE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="415"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_SERVER_ERROR -->
+      <field access="public" final="yes" name="HTTP_SERVER_ERROR" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="500"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_INTERNAL_ERROR -->
+      <field access="public" final="yes" name="HTTP_INTERNAL_ERROR" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="500"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_NOT_IMPLEMENTED -->
+      <field access="public" final="yes" name="HTTP_NOT_IMPLEMENTED" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="501"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_BAD_GATEWAY -->
+      <field access="public" final="yes" name="HTTP_BAD_GATEWAY" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="502"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_UNAVAILABLE -->
+      <field access="public" final="yes" name="HTTP_UNAVAILABLE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="503"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_GATEWAY_TIMEOUT -->
+      <field access="public" final="yes" name="HTTP_GATEWAY_TIMEOUT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="504"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HTTP_VERSION -->
+      <field access="public" final="yes" name="HTTP_VERSION" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="505"/>
+        </value>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.net.URL) -->
+      <constructor access="protected">
+        <signature>
+          <arg nr="1">
+            <object>java.net.URL</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <defput>
+              <this/>
+            </defput>
+          </taint>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ disconnect -->
+      <method abstract="yes" access="public" name="disconnect">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getErrorStream -->
+      <method access="public" name="getErrorStream">
+        <signature>
+          <return>
+            <object>java.io.InputStream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+            <error-post>
+              <math>
+                <null/>
+              </math>
+            </error-post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFollowRedirects -->
+      <method access="public" name="getFollowRedirects" static="yes">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getHeaderField -->
+      <method access="public" name="getHeaderField" valid="no">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getHeaderFieldDate -->
+      <method access="public" name="getHeaderFieldDate">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <long/>
+          </arg>
+          <return>
+            <long/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+          <sinks>
+            <sink arg="1" dest="http connection info" form="http header field" type="string"/>
+          </sinks>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getHeaderFieldKey -->
+      <method access="public" name="getHeaderFieldKey">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+            <error-post>
+              <math>
+                <null/>
+              </math>
+            </error-post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInstanceFollowRedirects -->
+      <method access="public" name="getInstanceFollowRedirects">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPermission -->
+      <method access="public" name="getPermission">
+        <signature>
+          <return>
+            <object>java.security.Permission</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRequestMethod -->
+      <method access="public" name="getRequestMethod" valid="no">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getResponseCode -->
+      <method access="public" name="getResponseCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.RuntimeException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getResponseMessage -->
+      <method access="public" name="getResponseMessage">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setChunkedStreamingMode -->
+      <method access="public" name="setChunkedStreamingMode" valid="no">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFixedLengthStreamingMode -->
+      <method access="public" name="setFixedLengthStreamingMode">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.lang.IllegalStateException</throws>
+          <throws>java.lang.IllegalArgumentException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFixedLengthStreamingMode -->
+      <method access="public" name="setFixedLengthStreamingMode" valid="no">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFollowRedirects -->
+      <method access="public" name="setFollowRedirects" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setInstanceFollowRedirects -->
+      <method access="public" name="setInstanceFollowRedirects">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRequestMethod -->
+      <method access="public" name="setRequestMethod">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.net.ProtocolException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ usingProxy -->
+      <method abstract="yes" access="public" name="usingProxy" valid="no">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addRequestProperty -->
+      <method from="java.net.URLConnection" inherited="yes" name="addRequestProperty">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) connect -->
+      <method from="java.net.URLConnection" inherited="yes" name="connect">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAllowUserInteraction -->
+      <method from="java.net.URLConnection" inherited="yes" name="getAllowUserInteraction">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getConnectTimeout -->
+      <method from="java.net.URLConnection" inherited="yes" name="getConnectTimeout">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getContent -->
+      <method from="java.net.URLConnection" inherited="yes" name="getContent">
+        <signature>
+          <arg nr="1">
+            <array>
+              <object>java.lang.Class</object>
+            </array>
+          </arg>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getContent -->
+      <method from="java.net.URLConnection" inherited="yes" name="getContent">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getContentEncoding -->
+      <method from="java.net.URLConnection" inherited="yes" name="getContentEncoding">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getContentLength -->
+      <method from="java.net.URLConnection" inherited="yes" name="getContentLength">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getContentLengthLong -->
+      <method from="java.net.URLConnection" inherited="yes" name="getContentLengthLong">
+        <signature>
+          <return>
+            <long/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getContentType -->
+      <method from="java.net.URLConnection" inherited="yes" name="getContentType">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDate -->
+      <method from="java.net.URLConnection" inherited="yes" name="getDate">
+        <signature>
+          <return>
+            <long/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDefaultAllowUserInteraction -->
+      <method from="java.net.URLConnection" inherited="yes" name="getDefaultAllowUserInteraction">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDefaultRequestProperty -->
+      <method from="java.net.URLConnection" inherited="yes" name="getDefaultRequestProperty">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDefaultUseCaches -->
+      <method from="java.net.URLConnection" inherited="yes" name="getDefaultUseCaches">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDoInput -->
+      <method from="java.net.URLConnection" inherited="yes" name="getDoInput">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDoOutput -->
+      <method from="java.net.URLConnection" inherited="yes" name="getDoOutput">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getExpiration -->
+      <method from="java.net.URLConnection" inherited="yes" name="getExpiration">
+        <signature>
+          <return>
+            <long/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFileNameMap -->
+      <method from="java.net.URLConnection" inherited="yes" name="getFileNameMap">
+        <signature>
+          <return>
+            <object>java.net.FileNameMap</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getHeaderField -->
+      <method from="java.net.URLConnection" inherited="yes" name="getHeaderField">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getHeaderFieldInt -->
+      <method from="java.net.URLConnection" inherited="yes" name="getHeaderFieldInt">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getHeaderFieldLong -->
+      <method from="java.net.URLConnection" inherited="yes" name="getHeaderFieldLong">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <long/>
+          </arg>
+          <return>
+            <long/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getHeaderFields -->
+      <method from="java.net.URLConnection" inherited="yes" name="getHeaderFields">
+        <signature>
+          <return>
+            <object>java.util.Map</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getIfModifiedSince -->
+      <method from="java.net.URLConnection" inherited="yes" name="getIfModifiedSince">
+        <signature>
+          <return>
+            <long/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getInputStream -->
+      <method from="java.net.URLConnection" inherited="yes" name="getInputStream">
+        <signature>
+          <return>
+            <object>java.io.InputStream</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getLastModified -->
+      <method from="java.net.URLConnection" inherited="yes" name="getLastModified">
+        <signature>
+          <return>
+            <long/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getOutputStream -->
+      <method from="java.net.URLConnection" inherited="yes" name="getOutputStream">
+        <signature>
+          <return>
+            <object>java.io.OutputStream</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getReadTimeout -->
+      <method from="java.net.URLConnection" inherited="yes" name="getReadTimeout">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getRequestProperties -->
+      <method from="java.net.URLConnection" inherited="yes" name="getRequestProperties">
+        <signature>
+          <return>
+            <object>java.util.Map</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getRequestProperty -->
+      <method from="java.net.URLConnection" inherited="yes" name="getRequestProperty">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getURL -->
+      <method from="java.net.URLConnection" inherited="yes" name="getURL">
+        <signature>
+          <return>
+            <object>java.net.URL</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getUseCaches -->
+      <method from="java.net.URLConnection" inherited="yes" name="getUseCaches">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) guessContentTypeFromName -->
+      <method from="java.net.URLConnection" inherited="yes" name="guessContentTypeFromName">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) guessContentTypeFromStream -->
+      <method from="java.net.URLConnection" inherited="yes" name="guessContentTypeFromStream">
+        <signature>
+          <arg nr="1">
+            <object>java.io.InputStream</object>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setAllowUserInteraction -->
+      <method from="java.net.URLConnection" inherited="yes" name="setAllowUserInteraction">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setConnectTimeout -->
+      <method from="java.net.URLConnection" inherited="yes" name="setConnectTimeout">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setContentHandlerFactory -->
+      <method from="java.net.URLConnection" inherited="yes" name="setContentHandlerFactory">
+        <signature>
+          <arg nr="1">
+            <object>java.net.ContentHandlerFactory</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setDefaultAllowUserInteraction -->
+      <method from="java.net.URLConnection" inherited="yes" name="setDefaultAllowUserInteraction">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setDefaultRequestProperty -->
+      <method from="java.net.URLConnection" inherited="yes" name="setDefaultRequestProperty">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setDefaultUseCaches -->
+      <method from="java.net.URLConnection" inherited="yes" name="setDefaultUseCaches">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setDoInput -->
+      <method from="java.net.URLConnection" inherited="yes" name="setDoInput">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setDoOutput -->
+      <method from="java.net.URLConnection" inherited="yes" name="setDoOutput">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFileNameMap -->
+      <method from="java.net.URLConnection" inherited="yes" name="setFileNameMap">
+        <signature>
+          <arg nr="1">
+            <object>java.net.FileNameMap</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setIfModifiedSince -->
+      <method from="java.net.URLConnection" inherited="yes" name="setIfModifiedSince">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setReadTimeout -->
+      <method from="java.net.URLConnection" inherited="yes" name="setReadTimeout">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setRequestProperty -->
+      <method from="java.net.URLConnection" inherited="yes" name="setRequestProperty">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setUseCaches -->
+      <method from="java.net.URLConnection" inherited="yes" name="setUseCaches">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.net.URLConnection" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-19 21:35:01"/>
+  <class abstract="yes" name="X509Certificate" package="java.security.cert">
+    <superclass>java.security.cert.Certificate</superclass>
+    <interfaces>
+      <implements>java.security.cert.X509Extension</implements>
+      <implements>java.io.Serializable</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ () -->
+      <constructor access="protected">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ checkValidity -->
+      <method abstract="yes" access="public" name="checkValidity">
+        <signature/>
+        <exceptions>
+          <throws>java.security.cert.CertificateExpiredException</throws>
+          <throws>java.security.cert.CertificateNotYetValidException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ checkValidity -->
+      <method abstract="yes" access="public" name="checkValidity">
+        <signature>
+          <arg nr="1">
+            <object>java.util.Date</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.security.cert.CertificateExpiredException</throws>
+          <throws>java.security.cert.CertificateNotYetValidException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getBasicConstraints -->
+      <method abstract="yes" access="public" name="getBasicConstraints" valid="no">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getExtendedKeyUsage -->
+      <method access="public" name="getExtendedKeyUsage">
+        <signature>
+          <return>
+            <object>java.util.List</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.security.cert.CertificateParsingException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getIssuerAlternativeNames -->
+      <method access="public" name="getIssuerAlternativeNames" valid="no">
+        <signature>
+          <return>
+            <object>java.util.Collection</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.security.cert.CertificateParsingException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getIssuerDN -->
+      <method abstract="yes" access="public" name="getIssuerDN" valid="no">
+        <signature>
+          <return>
+            <object>java.security.Principal</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getIssuerUniqueID -->
+      <method abstract="yes" access="public" name="getIssuerUniqueID" valid="no">
+        <signature>
+          <return>
+            <array>
+              <boolean/>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getIssuerX500Principal -->
+      <method access="public" name="getIssuerX500Principal">
+        <signature>
+          <return>
+            <object>javax.security.auth.x500.X500Principal</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getKeyUsage -->
+      <method abstract="yes" access="public" name="getKeyUsage" valid="no">
+        <signature>
+          <return>
+            <array>
+              <boolean/>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getNotAfter -->
+      <method abstract="yes" access="public" name="getNotAfter" valid="no">
+        <signature>
+          <return>
+            <object>java.util.Date</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getNotBefore -->
+      <method abstract="yes" access="public" name="getNotBefore" valid="no">
+        <signature>
+          <return>
+            <object>java.util.Date</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSerialNumber -->
+      <method abstract="yes" access="public" name="getSerialNumber">
+        <signature>
+          <return>
+            <object>java.math.BigInteger</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSigAlgName -->
+      <method abstract="yes" access="public" name="getSigAlgName" valid="no">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSigAlgOID -->
+      <method abstract="yes" access="public" name="getSigAlgOID" valid="no">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSigAlgParams -->
+      <method abstract="yes" access="public" name="getSigAlgParams" valid="no">
+        <signature>
+          <return>
+            <array>
+              <byte/>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSignature -->
+      <method abstract="yes" access="public" name="getSignature" valid="no">
+        <signature>
+          <return>
+            <array>
+              <byte/>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSubjectAlternativeNames -->
+      <method access="public" name="getSubjectAlternativeNames">
+        <signature>
+          <return>
+            <object>java.util.Collection</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.security.cert.CertificateParsingException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSubjectDN -->
+      <method abstract="yes" access="public" name="getSubjectDN" valid="no">
+        <signature>
+          <return>
+            <object>java.security.Principal</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSubjectUniqueID -->
+      <method abstract="yes" access="public" name="getSubjectUniqueID" valid="no">
+        <signature>
+          <return>
+            <array>
+              <boolean/>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSubjectX500Principal -->
+      <method access="public" name="getSubjectX500Principal">
+        <signature>
+          <return>
+            <object>javax.security.auth.x500.X500Principal</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getTBSCertificate -->
+      <method abstract="yes" access="public" name="getTBSCertificate">
+        <signature>
+          <return>
+            <array>
+              <byte/>
+            </array>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.security.cert.CertificateEncodingException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getVersion -->
+      <method abstract="yes" access="public" name="getVersion" valid="no">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ verify -->
+      <method access="public" name="verify" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.security.PublicKey</object>
+          </arg>
+          <arg nr="2">
+            <object>java.security.Provider</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.security.cert.CertificateException</throws>
+          <throws>java.security.NoSuchAlgorithmException</throws>
+          <throws>java.security.InvalidKeyException</throws>
+          <throws>java.security.SignatureException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.security.cert.Certificate" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getEncoded -->
+      <method from="java.security.cert.Certificate" inherited="yes" name="getEncoded">
+        <signature>
+          <return>
+            <array>
+              <byte/>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPublicKey -->
+      <method from="java.security.cert.Certificate" inherited="yes" name="getPublicKey">
+        <signature>
+          <return>
+            <object>java.security.PublicKey</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getType -->
+      <method from="java.security.cert.Certificate" inherited="yes" name="getType">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.security.cert.Certificate" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.security.cert.Certificate" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) verify -->
+      <method from="java.security.cert.Certificate" inherited="yes" name="verify">
+        <signature>
+          <arg nr="1">
+            <object>java.security.PublicKey</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) verify -->
+      <method from="java.security.cert.Certificate" inherited="yes" name="verify">
+        <signature>
+          <arg nr="1">
+            <object>java.security.PublicKey</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) writeReplace -->
+      <method from="java.security.cert.Certificate" inherited="yes" name="writeReplace">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

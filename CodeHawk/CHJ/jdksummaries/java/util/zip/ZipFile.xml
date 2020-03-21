@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-19 21:25:58"/>
+  <class name="ZipFile" package="java.util.zip">
+    <interfaces>
+      <implements>java.util.zip.ZipConstants</implements>
+      <implements>java.io.Closeable</implements>
+      <implements>java.lang.AutoCloseable</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:OPEN_READ -->
+      <field access="public" final="yes" name="OPEN_READ" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="1"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:OPEN_DELETE -->
+      <field access="public" final="yes" name="OPEN_DELETE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="4"/>
+        </value>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.util.zip.ZipException</throws>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.SecurityException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <this/>
+            </defput>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.File,int) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <object>java.io.File</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.util.zip.ZipException</throws>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.SecurityException</throws>
+          <throws>java.lang.IllegalArgumentException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <this/>
+            </defput>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.File) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <object>java.io.File</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.util.zip.ZipException</throws>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <this/>
+            </defput>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.File,int,java.nio.charset.Charset) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <object>java.io.File</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <object>java.nio.charset.Charset</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.util.zip.ZipException</throws>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.SecurityException</throws>
+          <throws>java.lang.IllegalArgumentException</throws>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <not-null/>
+                  <arg nr="3"/>
+                </apply>
+              </math>
+            </safety-condition>
+            <error-condition>
+              <math>
+                <apply>
+                  <null/>
+                  <arg nr="3"/>
+                </apply>
+              </math>
+            </error-condition>
+            <exn>java.lang.NullPointerException</exn>
+          </c-throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <this/>
+            </defput>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String,java.nio.charset.Charset) -->
+      <constructor access="public" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.nio.charset.Charset</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.File,java.nio.charset.Charset) -->
+      <constructor access="public" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.io.File</object>
+          </arg>
+          <arg nr="2">
+            <object>java.nio.charset.Charset</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ close -->
+      <method access="public" name="close">
+        <signature/>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <remove>
+              <this/>
+            </remove>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ entries -->
+      <method access="public" name="entries">
+        <signature>
+          <return>
+            <object>java.util.Enumeration</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.IllegalStateException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ finalize -->
+      <method access="protected" name="finalize" valid="no">
+        <signature/>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getComment -->
+      <method access="public" name="getComment" valid="no">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getEntry -->
+      <method access="public" name="getEntry">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.util.zip.ZipEntry</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.IllegalStateException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInputStream -->
+      <method access="public" name="getInputStream">
+        <signature>
+          <arg nr="1">
+            <object>java.util.zip.ZipEntry</object>
+          </arg>
+          <return>
+            <object>java.io.InputStream</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.util.zip.ZipException</throws>
+          <throws>java.io.IOException</throws>
+          <throws>java.lang.IllegalStateException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <defput>
+              <return/>
+            </defput>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getName -->
+      <method access="public" name="getName">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ size -->
+      <method access="public" name="size" valid="no">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ stream -->
+      <method access="public" name="stream" valid="no">
+        <signature>
+          <return>
+            <object>java.util.stream.Stream</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.lang.Object" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
