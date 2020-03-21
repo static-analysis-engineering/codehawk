@@ -71,8 +71,11 @@ let main () =
     let _ = load_class_and_dependents cn in
     save_xml_class_or_interface_summary cn
   with
-    CHFailure p
+  | CHFailure p
   | JCH_failure p ->
-    pr_debug [ STR "Error in chj_template: " ; p ]
+     begin
+       pr_debug [ STR "Error in chj_template: " ; p ] ;
+       exit 1
+     end
 
 let _ = Printexc.print main ()

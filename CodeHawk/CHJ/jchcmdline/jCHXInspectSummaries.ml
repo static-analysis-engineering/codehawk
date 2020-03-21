@@ -82,7 +82,10 @@ module ClassMethodSignatureCollections = CHCollections.Make (
   end)
 
 let showinvalid = ref false
+let showinvalidfinal = ref false
 let showimmutable = ref false
+let showranges = ref false
+let showstringsinks = ref false
 let name = ref ""
 let cn = make_cn "java.lang.Object"
 
@@ -152,6 +155,51 @@ let classify_exception_guards (s:function_summary_int) =
       | PreNotNull _ -> add_guard "not-null" 
       | PreValidString _ -> add_guard "valid string") conditions
 
+let stringforms = H.create 5
+let stringdests = H.create 5
+let stringexceptions = H.create 5
+
+let categorize_string_sinks
+      (cms:class_method_signature_int) (sinks:string_sink_int list) =
+  let add_form form dest  =
+    let entry = if H.mem stringforms form then H.find stringforms form else [] in
+    H.replace stringforms form ((dest,cms)::entry) in
+  let add_dest dest form  =
+    let entry = if H.mem stringdests dest then H.find stringdests dest else [] in
+    H.replace stringdests dest ((form,cms)::entry) in
+  let add_exn exn form =
+    let entry = if H.mem stringexceptions exn then H.find stringexceptions exn else [] in
+    H.replace stringexceptions exn ((form,cms)::entry) in
+  List.iter (fun sink ->
+      begin
+        add_form sink#get_form sink#get_dest;
+        add_dest sink#get_dest sink#get_form;
+        List.iter (fun exn -> add_exn exn#name sink#get_form) sink#get_exceptions
+      end) sinks
+
+let print_string_sinks () =
+  let forms = H.fold (fun k v a -> (k,v)::a) stringforms [] in
+  let dests = H.fold (fun k v a -> (k,v)::a) stringdests [] in
+  let exns = H.fold (fun k v a -> (k,v)::a) stringexceptions [] in
+  let sort l = List.sort (fun (s1,_) (s2,_) -> P.compare s1 s2) l in
+  let pl l =
+    List.map (fun (s,cms)  ->
+        LBLOCK [ STR s  ; STR "  " ; cms#toPretty ; NL ])
+             (List.sort (fun (s1,_) (s2,_) -> P.compare s1 s2) l) in
+  pr_debug [
+      STR "Forms:" ; NL ;
+      LBLOCK (List.map (fun (s,l)  ->
+                  LBLOCK  [ STR s ; NL ; INDENT (3, LBLOCK (pl l)) ]) (sort forms)) ;
+      NL ; NL ;
+      STR "Destinations:" ; NL ;
+      LBLOCK (List.map (fun (s,l) ->
+                  LBLOCK [ STR s ; NL ; INDENT (3, LBLOCK (pl  l)) ]) (sort dests)) ;
+      NL ; NL ;
+      STR "Exceptions:" ; NL ;
+      LBLOCK (List.map (fun (s,l) ->
+                  LBLOCK [ STR s ; NL ; INDENT (3, LBLOCK  (pl l)) ]) (sort exns)) ]
+
+
 let print_exception_guards () =
   let pp = ref [] in
   let _ =
@@ -174,7 +222,7 @@ let print_package_statistics () =
   LBLOCK [ STR "Package statistics: " ; NL ; LBLOCK !pp ; NL ]
 
 let get_statistics summaries =
-  List.iter (fun (_,_,summary) ->
+  List.iter (fun (cms,_,summary) ->
     begin
       (match summary#get_exception_infos with
        | [] -> ()
@@ -183,6 +231,7 @@ let get_statistics summaries =
                  eInfo#has_safety_condition) l then nGuards := !nGuards + 1) ;
       nSideEffects := !nSideEffects + (List.length summary#get_sideeffects) ;
       nStringSinks := !nStringSinks + (List.length summary#get_string_sinks) ;
+      categorize_string_sinks cms summary#get_string_sinks ;
       nResourceSinks := !nResourceSinks + (List.length summary#get_resource_sinks) ;
       nPost := !nPost + (List.length summary#get_post) ;
       (if summary#has_pattern then
@@ -191,6 +240,27 @@ let get_statistics summaries =
            nPatterns := !nPatterns + 1
          end)
     end) summaries
+
+let rangepostconditions = H.create 11
+let get_range_postconditions () =
+  H.fold (fun k v a  -> (k,v)::a) rangepostconditions []
+
+let collect_range_postconditions summaries  =
+  let add classname r =
+    let entry =
+      if H.mem rangepostconditions classname then
+        H.find rangepostconditions classname
+      else
+        [] in
+    H.replace rangepostconditions classname (r::entry) in
+
+  List.iter (fun (cms,_,summary) ->
+      let classname = cms#class_name#name in
+      List.iter (fun post ->
+          match post#get_predicate with
+          | PostRelationalExpr r -> add classname r
+          | _ -> ()) summary#get_post) summaries
+  
 
 let inspect_summaries (name:string) =
   let cnSet = new ClassNameCollections.set_t in
@@ -285,6 +355,7 @@ let inspect_summaries (name:string) =
                 if not cost#is_top then
                   costexprs := (m#get_cms,cost) :: !costexprs) methodSummaries ;       
 	    get_statistics methodSummaries ;
+            collect_range_postconditions methodSummaries ;
 	  end) (fun _ _ -> ()) name ;
     
     file_output#saveFile "jdk_summaries.ch_array_arguments" (print_summaries ()) ;
@@ -317,14 +388,38 @@ let inspect_summaries (name:string) =
                STR (string_repeat "-" 80) ; NL ];
     List.iter (fun (cms,x) ->
         pr_debug [ cms#toPretty ; NL ; INDENT (3,x#toPretty) ; NL ]) !costexprs ;
-    (if !showinvalid then
-       let (priv,pub) = function_summary_library#get_invalid_methods in
-       let publen = List.length pub in
+
+    (if !showinvalid || !showinvalidfinal then
+       let comparesummaries s1 s2 =
+         P.compare
+           s1#get_cms#class_method_signature_string
+           s2#get_cms#class_method_signature_string in
+       let summaries = function_summary_library#get_invalid_methods in
+       let summaries =
+         List.filter (fun v ->
+             (not v#is_abstract)
+             && (match v#get_visibility with
+                 | Private | Default -> false
+                 |  _ -> true)) summaries in
+       let summaries =
+         if !showinvalidfinal then
+           List.filter (fun v -> v#is_final) summaries
+         else
+           summaries in
+       let summaries = List.sort comparesummaries summaries in
+       let numSummaries = List.length summaries in
        begin
          pr_debug [ NL ; STR "Public methods not yet summarized (" ;
-                    INT publen ; STR  "): " ;  NL ;
+                    INT numSummaries ; STR  "): " ;  NL ;
                     STR (string_repeat "-" 80) ; NL ] ;
-         pr_debug (List.map (fun cms -> LBLOCK [ cms#toPretty ; NL ]) pub)
+         pr_debug
+           (List.map (fun s ->
+                let f =
+                  if s#is_final then
+                    LBLOCK [ STR " (final)" ]
+                  else
+                    STR "" in
+                LBLOCK [ s#get_cms#toPretty ; f ; NL ]) summaries)
        end) ;
     
     (if !showimmutable then
@@ -333,7 +428,24 @@ let inspect_summaries (name:string) =
            (fun cn1 cn2 -> P.compare cn1#name cn2#name)
            function_summary_library#get_immutable_classes in
        pr_debug [ NL ; STR "Immutable classes: " ; NL ;
-                  LBLOCK (List.map (fun cn -> LBLOCK [ STR "  " ; cn#toPretty ; NL ]) cns) ])
+                  LBLOCK (List.map (fun cn -> LBLOCK [ STR "  " ; cn#toPretty ; NL ]) cns) ]);
+
+    (if !showranges then
+       let rangepost = get_range_postconditions () in
+       let rangepost =
+         List.sort
+           (fun (cn1,_) (cn2,_) -> P.compare cn1 cn2) rangepost in
+       pr_debug [ NL ; STR "Range post conditions: " ; NL ;
+                  LBLOCK (List.map (fun (cn,l) ->
+                              LBLOCK [ NL ; STR "  " ; STR cn ; STR " (" ;
+                                       INT (List.length l) ; STR ")" ; NL ;
+                                         LBLOCK (List.map (fun r ->
+                                                     LBLOCK [ STR "    " ;
+                                                              relational_expr_to_pretty r ;
+                                                              NL  ]) l)  ]) rangepost) ] ) ;
+
+    (if !showstringsinks then print_string_sinks ())
+
   end
 
 let speclist =
@@ -341,8 +453,14 @@ let speclist =
     "sets java classpath") ;
    ("-showinvalid", Arg.Set showinvalid,
     "shows methods that have not been summarized yet");
+   ("-showinvalidfinal", Arg.Set showinvalidfinal,
+    "shows final methods that have not been summarized yet");
    ("-showimmutable", Arg.Set showimmutable,
-    "prints list of classes that are immutable") ]
+    "prints list of classes that are immutable");
+   ("-showranges", Arg.Set showranges,
+    "prints list of range post conditions");
+   ("-showstringsinks", Arg.Set showstringsinks,
+    "prints list of string sinks") ]
 
 let usage_msg = "inspect_summaries filename"
 let read_args () = Arg.parse speclist   (fun s -> name := s) usage_msg
