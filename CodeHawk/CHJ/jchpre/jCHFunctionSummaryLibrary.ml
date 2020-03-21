@@ -227,31 +227,22 @@ object (self)
         if v#is_immutable then (v#get_class_name :: a) else a) class_library []
 
   method get_invalid_methods =
-    let invalidMethods =
-      H.fold (fun k v a ->
-          let (priv,pub) = a in
-          if v#is_valid then
-            a
-          else
-            let cn = v#get_cms#class_name in
-            try
-              let classSummary = H.find class_library cn#index in
-              if classSummary#is_dispatch
-                 || classSummary#is_interface
-                 || v#is_abstract then
-                a
-              else
-                match v#get_visibility with
-                | Private -> (v#get_cms :: priv, pub)
-                | _ -> (priv, v#get_cms :: pub)
-            with
-            | Not_found ->
-              raise (JCH_failure (LBLOCK [ STR "class summary for " ; cn#toPretty ;
-                                           STR " not found" ]))) method_library ([],[]) in
-    (List.sort (fun cms1 cms2 -> P.compare cms1#class_name#name cms2#class_name#name)
-               (fst invalidMethods),
-     List.sort (fun cms1 cms2 -> P.compare cms1#class_name#name cms2#class_name#name)
-               (snd invalidMethods))
+    H.fold (fun k v a ->
+        if v#is_valid then
+          a
+        else
+          let cn = v#get_cms#class_name in
+          try
+            let classSummary = H.find class_library cn#index in
+            if classSummary#is_dispatch
+               || classSummary#is_interface then
+              a
+            else
+              v::a
+          with
+          | Not_found ->
+             raise (JCH_failure (LBLOCK [ STR "class summary for " ; cn#toPretty ;
+                                          STR " not found" ]))) method_library []
     
   method statistics_to_pretty =
     let numClasses = H.length class_library in

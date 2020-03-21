@@ -297,11 +297,17 @@ object (self:'a)
 end
   
  	
-class string_sink_t (arg:int) (form:string) (dest:string):string_sink_int =
+class string_sink_t
+        (arg:int)
+        (form:string)
+        (dest:string)
+        (exceptions:class_name_int list):string_sink_int =
 object (self)
+     
   method get_arg = arg
   method get_form = form
   method get_dest = dest
+  method get_exceptions = exceptions
     
   method write_xml (node:xml_element_int) (ms:method_signature_int) =
     let set = node#setAttribute in
@@ -311,6 +317,11 @@ object (self)
       seti "arg" arg ;
       set "form" self#get_form ;
       set "dest" self#get_dest ;
+      (match exceptions with
+       | [] -> ()
+       | l ->
+          node#appendChildren
+            (List.map (fun exn -> xml_string "throws" exn#name) l))
     end
       
   method toPretty = 

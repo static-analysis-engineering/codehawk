@@ -59,7 +59,8 @@ val get_taint_element_class_dependencies: taint_element_t -> class_name_int list
     
 val make_taint: taint_element_t list -> taint_int
 
-val make_string_sink: int -> string -> string -> string_sink_int
+val make_string_sink:
+  int -> string -> string -> class_name_int list -> string_sink_int
 
 val make_resource_sink: int -> resource_type_t -> resource_sink_int
 

@@ -121,7 +121,9 @@ let read_xml_sinks (node:xml_element_int) (cms:class_method_signature_int) =
 	| _ -> "string"
       else "string" in
     if sinkType = "string" then
-      let sink = make_string_sink arg (get "form") (get "dest") in
+      let exns =
+        List.map  (fun n -> make_cn n#getText) (n#getTaggedChildren "throws") in
+      let sink = make_string_sink arg (get "form") (get "dest") exns in
       (sink::sinks,resources)
     else 
       let form = match get "form" with
@@ -385,6 +387,7 @@ let read_xml_exceptions (node:xml_element_int) (cms:class_method_signature_int) 
     List.map (fun eNode -> 
       make_exception_info (make_cn eNode#getText)) (getcc "throws") in
   let make_cnp (node:xml_element_int) =
+    let getcc = node#getTaggedChildren in     
     if List.for_all (fun x -> x#getTag = "cnp") node#getChildren then
       let exn = make_cn "java.lang.NullPointerException" in
       let args = List.map (fun n -> n#getIntAttribute "arg") (getcc "cnp") in
@@ -483,7 +486,12 @@ let read_xml_method (node:xml_element_int) (cn:class_name_int) =
             read_xml_access_modifier node
           else
             Public in
-	(cms, [], make_function_summary ~visibility ~is_valid:false cms)
+        let is_abstract = is_yes "abstract" in
+        let is_final = !class_is_final || (is_yes "final") in
+	(cms,
+         [],
+         make_function_summary
+           ~is_final ~is_abstract ~visibility ~is_valid:false cms)
       else
 	let is_final = !class_is_final || (is_yes "final") in
 	let is_abstract = is_yes "abstract" in
@@ -499,9 +507,17 @@ let read_xml_method (node:xml_element_int) (cn:class_name_int) =
 	  [] in
 	let summary =
           read_xml_method_summary
-            ~node:(getc "summary") ~cms ~exception_infos
-	    ~virtual_calls ~interface_calls ~is_static ~is_final ~is_abstract
-	    ~is_default ~is_bridge ~visibility in
+            ~node:(getc "summary")
+            ~cms
+            ~exception_infos
+	    ~virtual_calls
+            ~interface_calls
+            ~is_static
+            ~is_final
+            ~is_abstract
+	    ~is_default
+            ~is_bridge
+            ~visibility in
 	(cms,loops,summary)
   with
   | XmlParseError (line,column,p)

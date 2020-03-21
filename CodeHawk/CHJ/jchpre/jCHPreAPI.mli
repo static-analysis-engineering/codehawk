@@ -581,6 +581,7 @@ object
   method get_arg : int
   method get_form: string
   method get_dest: string
+  method get_exceptions: class_name_int list
   method write_xml : xml_element_int -> method_signature_int -> unit
   method toPretty: pretty_t
 end
@@ -936,22 +937,21 @@ object
   method exclude_class      : string -> unit
 
   (* accessors *)
-  method get_method_summary : ?anysummary:bool -> class_method_signature_int -> function_summary_int
-  method get_field_summary  : class_field_signature_int -> field_stub_int
-  method get_class_summary  : class_name_int -> class_summary_int
+  method get_method_summary: ?anysummary:bool -> class_method_signature_int -> function_summary_int
+  method get_field_summary: class_field_signature_int -> field_stub_int
+  method get_class_summary: class_name_int -> class_summary_int
 
   method get_final_summaries: class_name_int -> class_method_signature_int list
-  method get_invalid_methods:
-           (class_method_signature_int list * class_method_signature_int list)
+  method get_invalid_methods: function_summary_int list
   method get_immutable_classes: class_name_int list
 
   (* iterators *)
   method iter: (function_summary_int -> unit) -> unit
 
   (* predicates *)
-  method has_method_summary : ?anysummary:bool -> class_method_signature_int -> bool
-  method has_field_summary  : class_field_signature_int -> bool
-  method has_class_summary  : class_name_int -> bool
+  method has_method_summary: ?anysummary:bool -> class_method_signature_int -> bool
+  method has_field_summary: class_field_signature_int -> bool
+  method has_class_summary: class_name_int -> bool
 
   (* info *)
   method size : int
