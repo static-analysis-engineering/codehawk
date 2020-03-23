@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -160,7 +160,10 @@ object (self)
 
 end
 
-class elf_symbol_table_t (s:string) (entrysize:int) (vaddr:doubleword_int):elf_symbol_table_int =
+class elf_symbol_table_t
+        (s:string)
+        (entrysize:int)
+        (vaddr:doubleword_int):elf_symbol_table_int =
 object (self)
 
   val entries = H.create 3
@@ -169,7 +172,8 @@ object (self)
         
   method read =
     try
-      let ch = make_pushback_stream s in
+      let ch =
+        make_pushback_stream ~little_endian:system_info#is_little_endian s in
       let n = (String.length s) / entrysize in
       let c = ref 0 in
       begin
@@ -188,7 +192,8 @@ object (self)
                         (LBLOCK [ STR "Unable to read the symbol table " ])
 
   method set_symbol_names (t:elf_string_table_int) =
-    H.iter (fun _ e -> e#set_name (t#get_string e#get_st_name#to_int)) entries
+    H.iter (fun _ e ->
+        e#set_name (t#get_string e#get_st_name#to_int)) entries
 
   method set_function_entry_points =
     H.iter (fun _ e ->

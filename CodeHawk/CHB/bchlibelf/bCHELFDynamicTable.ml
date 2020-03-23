@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -131,7 +131,9 @@ object (self)
 
 end
     
-class elf_dynamic_table_t (s:string) (vaddr:doubleword_int):elf_dynamic_table_int =
+class elf_dynamic_table_t
+        (s:string)
+        (vaddr:doubleword_int):elf_dynamic_table_int =
 object (self)
 
   val mutable entries = []
@@ -141,7 +143,8 @@ object (self)
   method read =
     try
       let entrysize = 8 in
-      let ch = make_pushback_stream s in
+      let ch =
+        make_pushback_stream ~little_endian:system_info#is_little_endian s in
       let n = (String.length s) / entrysize in
       let c = ref 0 in
       begin

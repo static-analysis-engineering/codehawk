@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -315,7 +315,6 @@ object
       e_shnum <- geti "e_shnum" ;
       e_shstrndx <- geti "e_shstrndx"
     end
-      
 
   method toPretty =
     LBLOCK [
@@ -576,7 +575,8 @@ object(self)
       | _ ->
 	raise (BCH_failure 
 		 (LBLOCK [ STR "Unexpected section type; string table expected" ])) in
-    H.iter (fun _ sh -> sh#set_name (get_name sh#get_name#to_int)) section_header_table
+    H.iter (fun _ sh ->
+        sh#set_name (get_name sh#get_name#to_int)) section_header_table
       
 
   method private check_elf =

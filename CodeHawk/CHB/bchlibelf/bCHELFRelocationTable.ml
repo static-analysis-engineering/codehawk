@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -127,7 +127,9 @@ end
 
 
 class elf_relocation_table_t
-        (s:string) (entrysize:int) (vaddr:doubleword_int):elf_relocation_table_int =
+        (s:string)
+        (entrysize:int)
+        (vaddr:doubleword_int):elf_relocation_table_int =
 object (self)
 
   val mutable entries = []
@@ -136,7 +138,8 @@ object (self)
 
   method read =
     try
-      let ch = make_pushback_stream s in
+      let ch =
+        make_pushback_stream ~little_endian:system_info#is_little_endian s in
       let n = (String.length s) / entrysize in
       let c = ref 0 in
       begin
@@ -166,7 +169,9 @@ object (self)
       e#get_symbol_string
     with
     | Not_found ->
-       raise (BCH_failure (LBLOCK [ STR "Error in get_offset_symbol: " ; dw#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [ STR "Error in get_offset_symbol: " ; dw#toPretty ]))
 
   method write_xml_entries (node:xml_element_int) =
     let table = mk_num_record_table "relocation-table" in
