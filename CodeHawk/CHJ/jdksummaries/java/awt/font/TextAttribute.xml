@@ -1,0 +1,514 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-23 13:15:31"/>
+  <class final="yes" immutable="yes" name="TextAttribute" package="java.awt.font">
+    <superclass>java.text.AttributedCharacterIterator$Attribute</superclass>
+    <interfaces>
+      <implements>java.io.Serializable</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:FAMILY -->
+      <field access="public" final="yes" name="FAMILY" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WEIGHT -->
+      <field access="public" final="yes" name="WEIGHT" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WEIGHT_EXTRA_LIGHT -->
+      <field access="public" final="yes" name="WEIGHT_EXTRA_LIGHT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WEIGHT_LIGHT -->
+      <field access="public" final="yes" name="WEIGHT_LIGHT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WEIGHT_DEMILIGHT -->
+      <field access="public" final="yes" name="WEIGHT_DEMILIGHT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WEIGHT_REGULAR -->
+      <field access="public" final="yes" name="WEIGHT_REGULAR" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WEIGHT_SEMIBOLD -->
+      <field access="public" final="yes" name="WEIGHT_SEMIBOLD" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WEIGHT_MEDIUM -->
+      <field access="public" final="yes" name="WEIGHT_MEDIUM" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WEIGHT_DEMIBOLD -->
+      <field access="public" final="yes" name="WEIGHT_DEMIBOLD" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WEIGHT_BOLD -->
+      <field access="public" final="yes" name="WEIGHT_BOLD" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WEIGHT_HEAVY -->
+      <field access="public" final="yes" name="WEIGHT_HEAVY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WEIGHT_EXTRABOLD -->
+      <field access="public" final="yes" name="WEIGHT_EXTRABOLD" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WEIGHT_ULTRABOLD -->
+      <field access="public" final="yes" name="WEIGHT_ULTRABOLD" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WIDTH -->
+      <field access="public" final="yes" name="WIDTH" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WIDTH_CONDENSED -->
+      <field access="public" final="yes" name="WIDTH_CONDENSED" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WIDTH_SEMI_CONDENSED -->
+      <field access="public" final="yes" name="WIDTH_SEMI_CONDENSED" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WIDTH_REGULAR -->
+      <field access="public" final="yes" name="WIDTH_REGULAR" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WIDTH_SEMI_EXTENDED -->
+      <field access="public" final="yes" name="WIDTH_SEMI_EXTENDED" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WIDTH_EXTENDED -->
+      <field access="public" final="yes" name="WIDTH_EXTENDED" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:POSTURE -->
+      <field access="public" final="yes" name="POSTURE" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:POSTURE_REGULAR -->
+      <field access="public" final="yes" name="POSTURE_REGULAR" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:POSTURE_OBLIQUE -->
+      <field access="public" final="yes" name="POSTURE_OBLIQUE" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SIZE -->
+      <field access="public" final="yes" name="SIZE" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TRANSFORM -->
+      <field access="public" final="yes" name="TRANSFORM" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUPERSCRIPT -->
+      <field access="public" final="yes" name="SUPERSCRIPT" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUPERSCRIPT_SUPER -->
+      <field access="public" final="yes" name="SUPERSCRIPT_SUPER" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Integer</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUPERSCRIPT_SUB -->
+      <field access="public" final="yes" name="SUPERSCRIPT_SUB" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Integer</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:FONT -->
+      <field access="public" final="yes" name="FONT" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CHAR_REPLACEMENT -->
+      <field access="public" final="yes" name="CHAR_REPLACEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:FOREGROUND -->
+      <field access="public" final="yes" name="FOREGROUND" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BACKGROUND -->
+      <field access="public" final="yes" name="BACKGROUND" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:UNDERLINE -->
+      <field access="public" final="yes" name="UNDERLINE" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:UNDERLINE_ON -->
+      <field access="public" final="yes" name="UNDERLINE_ON" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Integer</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:STRIKETHROUGH -->
+      <field access="public" final="yes" name="STRIKETHROUGH" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:STRIKETHROUGH_ON -->
+      <field access="public" final="yes" name="STRIKETHROUGH_ON" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Boolean</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RUN_DIRECTION -->
+      <field access="public" final="yes" name="RUN_DIRECTION" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RUN_DIRECTION_LTR -->
+      <field access="public" final="yes" name="RUN_DIRECTION_LTR" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Boolean</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RUN_DIRECTION_RTL -->
+      <field access="public" final="yes" name="RUN_DIRECTION_RTL" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Boolean</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BIDI_EMBEDDING -->
+      <field access="public" final="yes" name="BIDI_EMBEDDING" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:JUSTIFICATION -->
+      <field access="public" final="yes" name="JUSTIFICATION" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:JUSTIFICATION_FULL -->
+      <field access="public" final="yes" name="JUSTIFICATION_FULL" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:JUSTIFICATION_NONE -->
+      <field access="public" final="yes" name="JUSTIFICATION_NONE" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:INPUT_METHOD_HIGHLIGHT -->
+      <field access="public" final="yes" name="INPUT_METHOD_HIGHLIGHT" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:INPUT_METHOD_UNDERLINE -->
+      <field access="public" final="yes" name="INPUT_METHOD_UNDERLINE" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:UNDERLINE_LOW_ONE_PIXEL -->
+      <field access="public" final="yes" name="UNDERLINE_LOW_ONE_PIXEL" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Integer</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:UNDERLINE_LOW_TWO_PIXEL -->
+      <field access="public" final="yes" name="UNDERLINE_LOW_TWO_PIXEL" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Integer</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:UNDERLINE_LOW_DOTTED -->
+      <field access="public" final="yes" name="UNDERLINE_LOW_DOTTED" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Integer</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:UNDERLINE_LOW_GRAY -->
+      <field access="public" final="yes" name="UNDERLINE_LOW_GRAY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Integer</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:UNDERLINE_LOW_DASHED -->
+      <field access="public" final="yes" name="UNDERLINE_LOW_DASHED" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Integer</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SWAP_COLORS -->
+      <field access="public" final="yes" name="SWAP_COLORS" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SWAP_COLORS_ON -->
+      <field access="public" final="yes" name="SWAP_COLORS_ON" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Boolean</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:NUMERIC_SHAPING -->
+      <field access="public" final="yes" name="NUMERIC_SHAPING" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KERNING -->
+      <field access="public" final="yes" name="KERNING" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KERNING_ON -->
+      <field access="public" final="yes" name="KERNING_ON" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Integer</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LIGATURES -->
+      <field access="public" final="yes" name="LIGATURES" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LIGATURES_ON -->
+      <field access="public" final="yes" name="LIGATURES_ON" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Integer</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TRACKING -->
+      <field access="public" final="yes" name="TRACKING" not-null="yes" static="yes">
+        <signature>
+          <object>java.awt.font.TextAttribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TRACKING_TIGHT -->
+      <field access="public" final="yes" name="TRACKING_TIGHT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TRACKING_LOOSE -->
+      <field access="public" final="yes" name="TRACKING_LOOSE" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Float</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:INPUT_METHOD_SEGMENT -->
+      <field from="java.text.AttributedCharacterIterator$Attribute" inherited="yes" name="INPUT_METHOD_SEGMENT">
+        <signature>
+          <object>java.text.AttributedCharacterIterator$Attribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:READING -->
+      <field from="java.text.AttributedCharacterIterator$Attribute" inherited="yes" name="READING">
+        <signature>
+          <object>java.text.AttributedCharacterIterator$Attribute</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:LANGUAGE -->
+      <field from="java.text.AttributedCharacterIterator$Attribute" inherited="yes" name="LANGUAGE">
+        <signature>
+          <object>java.text.AttributedCharacterIterator$Attribute</object>
+        </signature>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.String) -->
+      <constructor access="protected">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ readResolve -->
+      <method access="protected" name="readResolve">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.InvalidObjectException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.text.AttributedCharacterIterator$Attribute" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getName -->
+      <method from="java.text.AttributedCharacterIterator$Attribute" inherited="yes" name="getName">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.text.AttributedCharacterIterator$Attribute" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.text.AttributedCharacterIterator$Attribute" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

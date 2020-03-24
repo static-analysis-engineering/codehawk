@@ -1,7 +1,7 @@
 ## JDK Summaries
 
 Class and method summaries are provided for a large number of classes
-(currently 834 classes and interfaces with 8946 methods). The summaries
+(currently 892 classes and interfaces with 9467 methods). The summaries
 are represented in XML, with one XML file per class file; the files are stored
 according to the class file hierarchy.
 

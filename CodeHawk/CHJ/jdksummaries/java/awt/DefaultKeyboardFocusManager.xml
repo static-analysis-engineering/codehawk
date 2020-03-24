@@ -1,0 +1,738 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-03-23 16:35:32"/>
+  <class name="DefaultKeyboardFocusManager" package="java.awt">
+    <superclass>java.awt.KeyboardFocusManager</superclass>
+    <interfaces>
+      <implements>java.awt.KeyEventDispatcher</implements>
+      <implements>java.awt.KeyEventPostProcessor</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:DOWN_CYCLE_TRAVERSAL_KEYS -->
+      <field from="java.awt.KeyboardFocusManager" inherited="yes" name="DOWN_CYCLE_TRAVERSAL_KEYS">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:UP_CYCLE_TRAVERSAL_KEYS -->
+      <field from="java.awt.KeyboardFocusManager" inherited="yes" name="UP_CYCLE_TRAVERSAL_KEYS">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:BACKWARD_TRAVERSAL_KEYS -->
+      <field from="java.awt.KeyboardFocusManager" inherited="yes" name="BACKWARD_TRAVERSAL_KEYS">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:FORWARD_TRAVERSAL_KEYS -->
+      <field from="java.awt.KeyboardFocusManager" inherited="yes" name="FORWARD_TRAVERSAL_KEYS">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ () -->
+      <constructor access="public">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ dequeueKeyEvents -->
+      <method access="protected" name="dequeueKeyEvents">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.Component</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ discardKeyEvents -->
+      <method access="protected" name="discardKeyEvents">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ dispatchEvent -->
+      <method access="public" name="dispatchEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.AWTEvent</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ dispatchKeyEvent -->
+      <method access="public" name="dispatchKeyEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.KeyEvent</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ downFocusCycle -->
+      <method access="public" name="downFocusCycle">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Container</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enqueueKeyEvents -->
+      <method access="protected" name="enqueueKeyEvents" valid="no">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.Component</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ focusNextComponent -->
+      <method access="public" name="focusNextComponent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ focusPreviousComponent -->
+      <method access="public" name="focusPreviousComponent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ postProcessKeyEvent -->
+      <method access="public" name="postProcessKeyEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.KeyEvent</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ processKeyEvent -->
+      <method access="public" name="processKeyEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.event.KeyEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ upFocusCycle -->
+      <method access="public" name="upFocusCycle">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addKeyEventDispatcher -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="addKeyEventDispatcher">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.KeyEventDispatcher</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addKeyEventPostProcessor -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="addKeyEventPostProcessor">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.KeyEventPostProcessor</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addPropertyChangeListener -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="addPropertyChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.beans.PropertyChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addPropertyChangeListener -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="addPropertyChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.beans.PropertyChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addVetoableChangeListener -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="addVetoableChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.beans.VetoableChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addVetoableChangeListener -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="addVetoableChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.beans.VetoableChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clearFocusOwner -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="clearFocusOwner">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clearGlobalFocusOwner -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="clearGlobalFocusOwner">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) downFocusCycle -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="downFocusCycle">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) firePropertyChange -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="firePropertyChange">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+          <arg nr="3">
+            <object>java.lang.Object</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) fireVetoableChange -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="fireVetoableChange">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+          <arg nr="3">
+            <object>java.lang.Object</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) focusNextComponent -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="focusNextComponent">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) focusPreviousComponent -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="focusPreviousComponent">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getActiveWindow -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getActiveWindow">
+        <signature>
+          <return>
+            <object>java.awt.Window</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getCurrentFocusCycleRoot -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getCurrentFocusCycleRoot">
+        <signature>
+          <return>
+            <object>java.awt.Container</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getCurrentKeyboardFocusManager -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getCurrentKeyboardFocusManager">
+        <signature>
+          <return>
+            <object>java.awt.KeyboardFocusManager</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDefaultFocusTraversalKeys -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getDefaultFocusTraversalKeys">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.util.Set</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDefaultFocusTraversalPolicy -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getDefaultFocusTraversalPolicy">
+        <signature>
+          <return>
+            <object>java.awt.FocusTraversalPolicy</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFocusOwner -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getFocusOwner">
+        <signature>
+          <return>
+            <object>java.awt.Component</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFocusedWindow -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getFocusedWindow">
+        <signature>
+          <return>
+            <object>java.awt.Window</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getGlobalActiveWindow -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getGlobalActiveWindow">
+        <signature>
+          <return>
+            <object>java.awt.Window</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getGlobalCurrentFocusCycleRoot -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getGlobalCurrentFocusCycleRoot">
+        <signature>
+          <return>
+            <object>java.awt.Container</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getGlobalFocusOwner -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getGlobalFocusOwner">
+        <signature>
+          <return>
+            <object>java.awt.Component</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getGlobalFocusedWindow -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getGlobalFocusedWindow">
+        <signature>
+          <return>
+            <object>java.awt.Window</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getGlobalPermanentFocusOwner -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getGlobalPermanentFocusOwner">
+        <signature>
+          <return>
+            <object>java.awt.Component</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getKeyEventDispatchers -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getKeyEventDispatchers">
+        <signature>
+          <return>
+            <object>java.util.List</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getKeyEventPostProcessors -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getKeyEventPostProcessors">
+        <signature>
+          <return>
+            <object>java.util.List</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPermanentFocusOwner -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getPermanentFocusOwner">
+        <signature>
+          <return>
+            <object>java.awt.Component</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPropertyChangeListeners -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getPropertyChangeListeners">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <array>
+              <object>java.beans.PropertyChangeListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPropertyChangeListeners -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getPropertyChangeListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.beans.PropertyChangeListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getVetoableChangeListeners -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getVetoableChangeListeners">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <array>
+              <object>java.beans.VetoableChangeListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getVetoableChangeListeners -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="getVetoableChangeListeners">
+        <signature>
+          <return>
+            <array>
+              <object>java.beans.VetoableChangeListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) redispatchEvent -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="redispatchEvent">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.AWTEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeKeyEventDispatcher -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="removeKeyEventDispatcher">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.KeyEventDispatcher</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeKeyEventPostProcessor -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="removeKeyEventPostProcessor">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.KeyEventPostProcessor</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removePropertyChangeListener -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="removePropertyChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.beans.PropertyChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removePropertyChangeListener -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="removePropertyChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.beans.PropertyChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeVetoableChangeListener -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="removeVetoableChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.beans.VetoableChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeVetoableChangeListener -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="removeVetoableChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>java.beans.VetoableChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setCurrentKeyboardFocusManager -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="setCurrentKeyboardFocusManager">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.KeyboardFocusManager</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setDefaultFocusTraversalKeys -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="setDefaultFocusTraversalKeys">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>java.util.Set</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setDefaultFocusTraversalPolicy -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="setDefaultFocusTraversalPolicy">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.FocusTraversalPolicy</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setGlobalActiveWindow -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="setGlobalActiveWindow">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Window</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setGlobalCurrentFocusCycleRoot -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="setGlobalCurrentFocusCycleRoot">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Container</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setGlobalFocusOwner -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="setGlobalFocusOwner">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setGlobalFocusedWindow -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="setGlobalFocusedWindow">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Window</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setGlobalPermanentFocusOwner -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="setGlobalPermanentFocusOwner">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.lang.Object" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) upFocusCycle -->
+      <method from="java.awt.KeyboardFocusManager" inherited="yes" name="upFocusCycle">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

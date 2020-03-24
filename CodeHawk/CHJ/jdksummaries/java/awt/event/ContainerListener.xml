@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-03-23 13:10:22"/>
+  <interface name="ContainerListener" package="java.awt.event">
+    <superinterfaces>
+      <superinterface>java.util.EventListener</superinterface>
+    </superinterfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ componentAdded -->
+      <method abstract="yes" access="public" name="componentAdded" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.ContainerEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ componentRemoved -->
+      <method abstract="yes" access="public" name="componentRemoved" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.ContainerEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
