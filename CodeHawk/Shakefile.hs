@@ -173,8 +173,16 @@ runBuild flags = do
         let env = [AddEnv x y | (x, y) <- envMembers]
         cmd_ (Cwd "_build") env "ocamlfind ocamlopt -c -package" (intercalate "," ocamlfind_libraries) (takeFileName ml) "-o" (takeFileName out)
 
-    let implDeps file alreadySeen stack = do
-        let fileAsCmx = "_build" </> takeFileName file -<.> "cmx"
+    "_build/*.cmo" %> \out -> do
+        let ml = out -<.> "ml"
+        mli_dependencies <- getModuleDeps $ ModuleDependencies ml
+        need $ [ml, out -<.> "cmi"] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
+        envMembers <- askOracle $ OcamlEnv ()
+        let env = [AddEnv x y | (x, y) <- envMembers]
+        cmd_ (Cwd "_build") env "ocamlfind ocamlc -c -package" (intercalate "," ocamlfind_libraries) (takeFileName ml) "-o" (takeFileName out)
+
+    let implDeps file alreadySeen stack ext = do
+        let fileAsCmx = "_build" </> takeFileName file -<.> ext
         --putError $ "file: " ++ fileAsCmx
         --putError $ "already seen: " ++ (intercalate " " alreadySeen)
         if elem file stack then do
@@ -185,13 +193,13 @@ runBuild flags = do
         else do
             --putError "continuing"
             modules <- getModuleDeps $ ModuleDependencies ("_build" </> takeFileName file -<.> "ml")
-            let modules2 = ["_build" </> moduleToFile modul -<.> "cmx" | modul <- modules]
-            let unseen = filter (\dep -> not $ elem (dep -<.> "cmx") alreadySeen) modules2
+            let modules2 = ["_build" </> moduleToFile modul -<.> ext | modul <- modules]
+            let unseen = filter (\dep -> not $ elem (dep -<.> ext) alreadySeen) modules2
             let depsMl = ["_build" </> dep -<.> "ml" | dep <- unseen]
             --putError $ "Unseen: " ++ intercalate " " depsMl
             let mystack = stack ++ [file]
             recursiveDeps <- foldM (\seen newfile -> do
-                recDeps <- implDeps newfile seen mystack
+                recDeps <- implDeps newfile seen mystack ext
                 return recDeps) alreadySeen depsMl
             return $ recursiveDeps ++ [fileAsCmx]
 
@@ -200,13 +208,24 @@ runBuild flags = do
             let main_ml = "_build" </> main_file -<.> "ml"
             let main_cmx = "_build" </> main_file -<.> "cmx"
             absolute_out <- liftIO $ makeAbsolute out
-            deps <- implDeps main_ml [] []
+            deps <- implDeps main_ml [] [] "cmx"
             let objs = [dep -<.> "o" | dep <- deps]
             let reldeps = [takeFileName dep | dep <- deps]
             need $ [main_cmx] ++ deps ++ objs
             envMembers <- askOracle $ OcamlEnv ()
             let env = [AddEnv x y | (x, y) <- envMembers]
             cmd_ (Cwd "_build") env "ocamlfind ocamlopt -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out
+        return ()
+        "_bin" </> name -<.> "byte" %> \out -> do
+            let main_ml = "_build" </> main_file -<.> "ml"
+            let main_cmx = "_build" </> main_file -<.> "cmo"
+            absolute_out <- liftIO $ makeAbsolute out
+            deps <- implDeps main_ml [] [] "cmo"
+            let reldeps = [takeFileName dep | dep <- deps]
+            need $ [main_cmx] ++ deps
+            envMembers <- askOracle $ OcamlEnv ()
+            let env = [AddEnv x y | (x, y) <- envMembers]
+            cmd_ (Cwd "_build") env "ocamlfind ocamlc -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out
         return ()
 
     let exes = [("chx86_make_lib_summary", "bCHXMakeLibSummary.ml"),
@@ -245,6 +264,14 @@ runBuild flags = do
         -- actual dependencies
         need ["_bin/" </> name | (name, _) <- exes]
     
+    phony "bytecodes" $ do
+        -- warm ModuleDependencies cache
+        --let files = [name | (name, original) <- Map.toList originalToMap]
+        --let mls = filter (\file -> isInfixOf ".ml" file) files
+        --askOracles [ModuleDependencies $ "_build" </> file | file <- mls]
+        -- actual dependencies
+        need [("_bin/" </> name -<.> "byte") | (name, _) <- exes]
+    
     let makeDocs dir private = do
         -- warm ModuleDependencies cache
         let files = [name | (name, original) <- Map.toList originalToMap]
@@ -253,7 +280,7 @@ runBuild flags = do
         -- actual dependencies
         let exe_files = ["_build" </> filename | (_, filename) <- exes]
         let foldCall accum file = do
-            recCall <- implDeps file (Set.toList accum) []
+            recCall <- implDeps file (Set.toList accum) [] "cmx"
             return $ Set.union accum $ Set.fromList recCall
         allFiles <- foldM foldCall Set.empty exe_files 
         let relFiles = [takeFileName file | file <- Set.toList allFiles]
