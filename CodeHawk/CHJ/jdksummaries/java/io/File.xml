@@ -52,7 +52,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -77,7 +79,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="2"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -107,7 +111,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="2"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -134,7 +140,9 @@
         </signature>
         <exceptions>
           <throws>java.lang.IllegalArgumentException</throws>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -261,7 +269,6 @@
         </signature>
         <exceptions>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.io.IOException</throws>
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
@@ -512,7 +519,6 @@
         <exceptions>
           <throws>java.io.IOException</throws>
           <throws>java.lang.SecurityException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
