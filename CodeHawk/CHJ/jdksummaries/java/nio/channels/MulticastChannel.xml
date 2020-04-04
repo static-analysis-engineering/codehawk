@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-04-04 11:33:22"/>
+  <interface name="MulticastChannel" package="java.nio.channels">
+    <superinterfaces>
+      <superinterface>java.nio.channels.NetworkChannel</superinterface>
+      <superinterface>java.nio.channels.Channel</superinterface>
+    </superinterfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ close -->
+      <method abstract="yes" access="public" name="close" valid="no">
+        <signature/>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ join -->
+      <method abstract="yes" access="public" name="join" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.net.InetAddress</object>
+          </arg>
+          <arg nr="2">
+            <object>java.net.NetworkInterface</object>
+          </arg>
+          <return>
+            <object>java.nio.channels.MembershipKey</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ join -->
+      <method abstract="yes" access="public" name="join" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.net.InetAddress</object>
+          </arg>
+          <arg nr="2">
+            <object>java.net.NetworkInterface</object>
+          </arg>
+          <arg nr="3">
+            <object>java.net.InetAddress</object>
+          </arg>
+          <return>
+            <object>java.nio.channels.MembershipKey</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
