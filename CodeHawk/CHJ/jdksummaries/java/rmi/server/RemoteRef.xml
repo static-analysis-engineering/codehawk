@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-04-04 16:20:11"/>
+  <interface name="RemoteRef" package="java.rmi.server">
+    <superinterfaces>
+      <superinterface>java.io.Externalizable</superinterface>
+      <superinterface>java.io.Serializable</superinterface>
+    </superinterfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:serialVersionUID -->
+      <field access="public" final="yes" name="serialVersionUID" static="yes">
+        <signature>
+          <long/>
+        </signature>
+        <value>
+          <long value="3632638527362204081"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:packagePrefix -->
+      <field access="public" final="yes" name="packagePrefix" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="sun.rmi.server"/>
+        </value>
+      </field>
+    </fields>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ done -->
+      <method abstract="yes" access="public" name="done" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.rmi.server.RemoteCall</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.rmi.RemoteException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRefClass -->
+      <method abstract="yes" access="public" name="getRefClass" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.io.ObjectOutput</object>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ invoke -->
+      <method abstract="yes" access="public" name="invoke" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.rmi.Remote</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.reflect.Method</object>
+          </arg>
+          <arg nr="3">
+            <array>
+              <object>java.lang.Object</object>
+            </array>
+          </arg>
+          <arg nr="4">
+            <long/>
+          </arg>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.Exception</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ invoke -->
+      <method abstract="yes" access="public" name="invoke" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.rmi.server.RemoteCall</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.lang.Exception</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newCall -->
+      <method abstract="yes" access="public" name="newCall" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.rmi.server.RemoteObject</object>
+          </arg>
+          <arg nr="2">
+            <array>
+              <object>java.rmi.server.Operation</object>
+            </array>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <long/>
+          </arg>
+          <return>
+            <object>java.rmi.server.RemoteCall</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.rmi.RemoteException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ remoteEquals -->
+      <method abstract="yes" access="public" name="remoteEquals" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.rmi.server.RemoteRef</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ remoteHashCode -->
+      <method abstract="yes" access="public" name="remoteHashCode" valid="no">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ remoteToString -->
+      <method abstract="yes" access="public" name="remoteToString" valid="no">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
