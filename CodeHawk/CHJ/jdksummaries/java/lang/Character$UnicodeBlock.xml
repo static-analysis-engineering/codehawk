@@ -1,0 +1,1525 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-04-03 09:40:25"/>
+  <class final="yes" name="Character$UnicodeBlock" package="java.lang">
+    <superclass>java.lang.Character$Subset</superclass>
+    <interfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BASIC_LATIN -->
+      <field access="public" final="yes" name="BASIC_LATIN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LATIN_1_SUPPLEMENT -->
+      <field access="public" final="yes" name="LATIN_1_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LATIN_EXTENDED_A -->
+      <field access="public" final="yes" name="LATIN_EXTENDED_A" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LATIN_EXTENDED_B -->
+      <field access="public" final="yes" name="LATIN_EXTENDED_B" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:IPA_EXTENSIONS -->
+      <field access="public" final="yes" name="IPA_EXTENSIONS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SPACING_MODIFIER_LETTERS -->
+      <field access="public" final="yes" name="SPACING_MODIFIER_LETTERS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:COMBINING_DIACRITICAL_MARKS -->
+      <field access="public" final="yes" name="COMBINING_DIACRITICAL_MARKS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:GREEK -->
+      <field access="public" final="yes" name="GREEK" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CYRILLIC -->
+      <field access="public" final="yes" name="CYRILLIC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ARMENIAN -->
+      <field access="public" final="yes" name="ARMENIAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HEBREW -->
+      <field access="public" final="yes" name="HEBREW" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ARABIC -->
+      <field access="public" final="yes" name="ARABIC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:DEVANAGARI -->
+      <field access="public" final="yes" name="DEVANAGARI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BENGALI -->
+      <field access="public" final="yes" name="BENGALI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:GURMUKHI -->
+      <field access="public" final="yes" name="GURMUKHI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:GUJARATI -->
+      <field access="public" final="yes" name="GUJARATI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ORIYA -->
+      <field access="public" final="yes" name="ORIYA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TAMIL -->
+      <field access="public" final="yes" name="TAMIL" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TELUGU -->
+      <field access="public" final="yes" name="TELUGU" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KANNADA -->
+      <field access="public" final="yes" name="KANNADA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MALAYALAM -->
+      <field access="public" final="yes" name="MALAYALAM" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:THAI -->
+      <field access="public" final="yes" name="THAI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LAO -->
+      <field access="public" final="yes" name="LAO" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TIBETAN -->
+      <field access="public" final="yes" name="TIBETAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:GEORGIAN -->
+      <field access="public" final="yes" name="GEORGIAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HANGUL_JAMO -->
+      <field access="public" final="yes" name="HANGUL_JAMO" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LATIN_EXTENDED_ADDITIONAL -->
+      <field access="public" final="yes" name="LATIN_EXTENDED_ADDITIONAL" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:GREEK_EXTENDED -->
+      <field access="public" final="yes" name="GREEK_EXTENDED" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:GENERAL_PUNCTUATION -->
+      <field access="public" final="yes" name="GENERAL_PUNCTUATION" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUPERSCRIPTS_AND_SUBSCRIPTS -->
+      <field access="public" final="yes" name="SUPERSCRIPTS_AND_SUBSCRIPTS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CURRENCY_SYMBOLS -->
+      <field access="public" final="yes" name="CURRENCY_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:COMBINING_MARKS_FOR_SYMBOLS -->
+      <field access="public" final="yes" name="COMBINING_MARKS_FOR_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LETTERLIKE_SYMBOLS -->
+      <field access="public" final="yes" name="LETTERLIKE_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:NUMBER_FORMS -->
+      <field access="public" final="yes" name="NUMBER_FORMS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ARROWS -->
+      <field access="public" final="yes" name="ARROWS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MATHEMATICAL_OPERATORS -->
+      <field access="public" final="yes" name="MATHEMATICAL_OPERATORS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MISCELLANEOUS_TECHNICAL -->
+      <field access="public" final="yes" name="MISCELLANEOUS_TECHNICAL" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CONTROL_PICTURES -->
+      <field access="public" final="yes" name="CONTROL_PICTURES" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:OPTICAL_CHARACTER_RECOGNITION -->
+      <field access="public" final="yes" name="OPTICAL_CHARACTER_RECOGNITION" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ENCLOSED_ALPHANUMERICS -->
+      <field access="public" final="yes" name="ENCLOSED_ALPHANUMERICS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BOX_DRAWING -->
+      <field access="public" final="yes" name="BOX_DRAWING" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BLOCK_ELEMENTS -->
+      <field access="public" final="yes" name="BLOCK_ELEMENTS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:GEOMETRIC_SHAPES -->
+      <field access="public" final="yes" name="GEOMETRIC_SHAPES" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MISCELLANEOUS_SYMBOLS -->
+      <field access="public" final="yes" name="MISCELLANEOUS_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:DINGBATS -->
+      <field access="public" final="yes" name="DINGBATS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CJK_SYMBOLS_AND_PUNCTUATION -->
+      <field access="public" final="yes" name="CJK_SYMBOLS_AND_PUNCTUATION" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HIRAGANA -->
+      <field access="public" final="yes" name="HIRAGANA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KATAKANA -->
+      <field access="public" final="yes" name="KATAKANA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BOPOMOFO -->
+      <field access="public" final="yes" name="BOPOMOFO" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HANGUL_COMPATIBILITY_JAMO -->
+      <field access="public" final="yes" name="HANGUL_COMPATIBILITY_JAMO" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KANBUN -->
+      <field access="public" final="yes" name="KANBUN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ENCLOSED_CJK_LETTERS_AND_MONTHS -->
+      <field access="public" final="yes" name="ENCLOSED_CJK_LETTERS_AND_MONTHS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CJK_COMPATIBILITY -->
+      <field access="public" final="yes" name="CJK_COMPATIBILITY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CJK_UNIFIED_IDEOGRAPHS -->
+      <field access="public" final="yes" name="CJK_UNIFIED_IDEOGRAPHS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HANGUL_SYLLABLES -->
+      <field access="public" final="yes" name="HANGUL_SYLLABLES" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:PRIVATE_USE_AREA -->
+      <field access="public" final="yes" name="PRIVATE_USE_AREA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CJK_COMPATIBILITY_IDEOGRAPHS -->
+      <field access="public" final="yes" name="CJK_COMPATIBILITY_IDEOGRAPHS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ALPHABETIC_PRESENTATION_FORMS -->
+      <field access="public" final="yes" name="ALPHABETIC_PRESENTATION_FORMS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ARABIC_PRESENTATION_FORMS_A -->
+      <field access="public" final="yes" name="ARABIC_PRESENTATION_FORMS_A" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:COMBINING_HALF_MARKS -->
+      <field access="public" final="yes" name="COMBINING_HALF_MARKS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CJK_COMPATIBILITY_FORMS -->
+      <field access="public" final="yes" name="CJK_COMPATIBILITY_FORMS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SMALL_FORM_VARIANTS -->
+      <field access="public" final="yes" name="SMALL_FORM_VARIANTS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ARABIC_PRESENTATION_FORMS_B -->
+      <field access="public" final="yes" name="ARABIC_PRESENTATION_FORMS_B" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HALFWIDTH_AND_FULLWIDTH_FORMS -->
+      <field access="public" final="yes" name="HALFWIDTH_AND_FULLWIDTH_FORMS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SPECIALS -->
+      <field access="public" final="yes" name="SPECIALS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SURROGATES_AREA -->
+      <field access="public" final="yes" name="SURROGATES_AREA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SYRIAC -->
+      <field access="public" final="yes" name="SYRIAC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:THAANA -->
+      <field access="public" final="yes" name="THAANA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SINHALA -->
+      <field access="public" final="yes" name="SINHALA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MYANMAR -->
+      <field access="public" final="yes" name="MYANMAR" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ETHIOPIC -->
+      <field access="public" final="yes" name="ETHIOPIC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CHEROKEE -->
+      <field access="public" final="yes" name="CHEROKEE" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ field:UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS -->
+      <field access="public" final="yes" name="UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:OGHAM -->
+      <field access="public" final="yes" name="OGHAM" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RUNIC -->
+      <field access="public" final="yes" name="RUNIC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KHMER -->
+      <field access="public" final="yes" name="KHMER" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MONGOLIAN -->
+      <field access="public" final="yes" name="MONGOLIAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BRAILLE_PATTERNS -->
+      <field access="public" final="yes" name="BRAILLE_PATTERNS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CJK_RADICALS_SUPPLEMENT -->
+      <field access="public" final="yes" name="CJK_RADICALS_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KANGXI_RADICALS -->
+      <field access="public" final="yes" name="KANGXI_RADICALS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:IDEOGRAPHIC_DESCRIPTION_CHARACTERS -->
+      <field access="public" final="yes" name="IDEOGRAPHIC_DESCRIPTION_CHARACTERS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BOPOMOFO_EXTENDED -->
+      <field access="public" final="yes" name="BOPOMOFO_EXTENDED" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A -->
+      <field access="public" final="yes" name="CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:YI_SYLLABLES -->
+      <field access="public" final="yes" name="YI_SYLLABLES" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:YI_RADICALS -->
+      <field access="public" final="yes" name="YI_RADICALS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CYRILLIC_SUPPLEMENTARY -->
+      <field access="public" final="yes" name="CYRILLIC_SUPPLEMENTARY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TAGALOG -->
+      <field access="public" final="yes" name="TAGALOG" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HANUNOO -->
+      <field access="public" final="yes" name="HANUNOO" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BUHID -->
+      <field access="public" final="yes" name="BUHID" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TAGBANWA -->
+      <field access="public" final="yes" name="TAGBANWA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LIMBU -->
+      <field access="public" final="yes" name="LIMBU" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TAI_LE -->
+      <field access="public" final="yes" name="TAI_LE" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KHMER_SYMBOLS -->
+      <field access="public" final="yes" name="KHMER_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:PHONETIC_EXTENSIONS -->
+      <field access="public" final="yes" name="PHONETIC_EXTENSIONS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MISCELLANEOUS_MATHEMATICAL_SYMBOLS_A -->
+      <field access="public" final="yes" name="MISCELLANEOUS_MATHEMATICAL_SYMBOLS_A" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUPPLEMENTAL_ARROWS_A -->
+      <field access="public" final="yes" name="SUPPLEMENTAL_ARROWS_A" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUPPLEMENTAL_ARROWS_B -->
+      <field access="public" final="yes" name="SUPPLEMENTAL_ARROWS_B" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MISCELLANEOUS_MATHEMATICAL_SYMBOLS_B -->
+      <field access="public" final="yes" name="MISCELLANEOUS_MATHEMATICAL_SYMBOLS_B" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUPPLEMENTAL_MATHEMATICAL_OPERATORS -->
+      <field access="public" final="yes" name="SUPPLEMENTAL_MATHEMATICAL_OPERATORS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MISCELLANEOUS_SYMBOLS_AND_ARROWS -->
+      <field access="public" final="yes" name="MISCELLANEOUS_SYMBOLS_AND_ARROWS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KATAKANA_PHONETIC_EXTENSIONS -->
+      <field access="public" final="yes" name="KATAKANA_PHONETIC_EXTENSIONS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:YIJING_HEXAGRAM_SYMBOLS -->
+      <field access="public" final="yes" name="YIJING_HEXAGRAM_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VARIATION_SELECTORS -->
+      <field access="public" final="yes" name="VARIATION_SELECTORS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LINEAR_B_SYLLABARY -->
+      <field access="public" final="yes" name="LINEAR_B_SYLLABARY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LINEAR_B_IDEOGRAMS -->
+      <field access="public" final="yes" name="LINEAR_B_IDEOGRAMS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:AEGEAN_NUMBERS -->
+      <field access="public" final="yes" name="AEGEAN_NUMBERS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:OLD_ITALIC -->
+      <field access="public" final="yes" name="OLD_ITALIC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:GOTHIC -->
+      <field access="public" final="yes" name="GOTHIC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:UGARITIC -->
+      <field access="public" final="yes" name="UGARITIC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:DESERET -->
+      <field access="public" final="yes" name="DESERET" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SHAVIAN -->
+      <field access="public" final="yes" name="SHAVIAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:OSMANYA -->
+      <field access="public" final="yes" name="OSMANYA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CYPRIOT_SYLLABARY -->
+      <field access="public" final="yes" name="CYPRIOT_SYLLABARY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BYZANTINE_MUSICAL_SYMBOLS -->
+      <field access="public" final="yes" name="BYZANTINE_MUSICAL_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MUSICAL_SYMBOLS -->
+      <field access="public" final="yes" name="MUSICAL_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TAI_XUAN_JING_SYMBOLS -->
+      <field access="public" final="yes" name="TAI_XUAN_JING_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MATHEMATICAL_ALPHANUMERIC_SYMBOLS -->
+      <field access="public" final="yes" name="MATHEMATICAL_ALPHANUMERIC_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B -->
+      <field access="public" final="yes" name="CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~ field:CJK_COMPATIBILITY_IDEOGRAPHS_SUPPLEMENT -->
+      <field access="public" final="yes" name="CJK_COMPATIBILITY_IDEOGRAPHS_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TAGS -->
+      <field access="public" final="yes" name="TAGS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VARIATION_SELECTORS_SUPPLEMENT -->
+      <field access="public" final="yes" name="VARIATION_SELECTORS_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUPPLEMENTARY_PRIVATE_USE_AREA_A -->
+      <field access="public" final="yes" name="SUPPLEMENTARY_PRIVATE_USE_AREA_A" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUPPLEMENTARY_PRIVATE_USE_AREA_B -->
+      <field access="public" final="yes" name="SUPPLEMENTARY_PRIVATE_USE_AREA_B" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HIGH_SURROGATES -->
+      <field access="public" final="yes" name="HIGH_SURROGATES" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HIGH_PRIVATE_USE_SURROGATES -->
+      <field access="public" final="yes" name="HIGH_PRIVATE_USE_SURROGATES" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LOW_SURROGATES -->
+      <field access="public" final="yes" name="LOW_SURROGATES" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ARABIC_SUPPLEMENT -->
+      <field access="public" final="yes" name="ARABIC_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:NKO -->
+      <field access="public" final="yes" name="NKO" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SAMARITAN -->
+      <field access="public" final="yes" name="SAMARITAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MANDAIC -->
+      <field access="public" final="yes" name="MANDAIC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ETHIOPIC_SUPPLEMENT -->
+      <field access="public" final="yes" name="ETHIOPIC_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~ field:UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS_EXTENDED -->
+      <field access="public" final="yes" name="UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS_EXTENDED" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:NEW_TAI_LUE -->
+      <field access="public" final="yes" name="NEW_TAI_LUE" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BUGINESE -->
+      <field access="public" final="yes" name="BUGINESE" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TAI_THAM -->
+      <field access="public" final="yes" name="TAI_THAM" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BALINESE -->
+      <field access="public" final="yes" name="BALINESE" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUNDANESE -->
+      <field access="public" final="yes" name="SUNDANESE" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BATAK -->
+      <field access="public" final="yes" name="BATAK" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LEPCHA -->
+      <field access="public" final="yes" name="LEPCHA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:OL_CHIKI -->
+      <field access="public" final="yes" name="OL_CHIKI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VEDIC_EXTENSIONS -->
+      <field access="public" final="yes" name="VEDIC_EXTENSIONS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:PHONETIC_EXTENSIONS_SUPPLEMENT -->
+      <field access="public" final="yes" name="PHONETIC_EXTENSIONS_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ field:COMBINING_DIACRITICAL_MARKS_SUPPLEMENT -->
+      <field access="public" final="yes" name="COMBINING_DIACRITICAL_MARKS_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:GLAGOLITIC -->
+      <field access="public" final="yes" name="GLAGOLITIC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LATIN_EXTENDED_C -->
+      <field access="public" final="yes" name="LATIN_EXTENDED_C" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:COPTIC -->
+      <field access="public" final="yes" name="COPTIC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:GEORGIAN_SUPPLEMENT -->
+      <field access="public" final="yes" name="GEORGIAN_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TIFINAGH -->
+      <field access="public" final="yes" name="TIFINAGH" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ETHIOPIC_EXTENDED -->
+      <field access="public" final="yes" name="ETHIOPIC_EXTENDED" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CYRILLIC_EXTENDED_A -->
+      <field access="public" final="yes" name="CYRILLIC_EXTENDED_A" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUPPLEMENTAL_PUNCTUATION -->
+      <field access="public" final="yes" name="SUPPLEMENTAL_PUNCTUATION" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CJK_STROKES -->
+      <field access="public" final="yes" name="CJK_STROKES" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LISU -->
+      <field access="public" final="yes" name="LISU" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VAI -->
+      <field access="public" final="yes" name="VAI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CYRILLIC_EXTENDED_B -->
+      <field access="public" final="yes" name="CYRILLIC_EXTENDED_B" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BAMUM -->
+      <field access="public" final="yes" name="BAMUM" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MODIFIER_TONE_LETTERS -->
+      <field access="public" final="yes" name="MODIFIER_TONE_LETTERS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LATIN_EXTENDED_D -->
+      <field access="public" final="yes" name="LATIN_EXTENDED_D" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SYLOTI_NAGRI -->
+      <field access="public" final="yes" name="SYLOTI_NAGRI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:COMMON_INDIC_NUMBER_FORMS -->
+      <field access="public" final="yes" name="COMMON_INDIC_NUMBER_FORMS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:PHAGS_PA -->
+      <field access="public" final="yes" name="PHAGS_PA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SAURASHTRA -->
+      <field access="public" final="yes" name="SAURASHTRA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:DEVANAGARI_EXTENDED -->
+      <field access="public" final="yes" name="DEVANAGARI_EXTENDED" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KAYAH_LI -->
+      <field access="public" final="yes" name="KAYAH_LI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:REJANG -->
+      <field access="public" final="yes" name="REJANG" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HANGUL_JAMO_EXTENDED_A -->
+      <field access="public" final="yes" name="HANGUL_JAMO_EXTENDED_A" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:JAVANESE -->
+      <field access="public" final="yes" name="JAVANESE" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CHAM -->
+      <field access="public" final="yes" name="CHAM" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MYANMAR_EXTENDED_A -->
+      <field access="public" final="yes" name="MYANMAR_EXTENDED_A" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TAI_VIET -->
+      <field access="public" final="yes" name="TAI_VIET" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ETHIOPIC_EXTENDED_A -->
+      <field access="public" final="yes" name="ETHIOPIC_EXTENDED_A" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MEETEI_MAYEK -->
+      <field access="public" final="yes" name="MEETEI_MAYEK" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:HANGUL_JAMO_EXTENDED_B -->
+      <field access="public" final="yes" name="HANGUL_JAMO_EXTENDED_B" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VERTICAL_FORMS -->
+      <field access="public" final="yes" name="VERTICAL_FORMS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ANCIENT_GREEK_NUMBERS -->
+      <field access="public" final="yes" name="ANCIENT_GREEK_NUMBERS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ANCIENT_SYMBOLS -->
+      <field access="public" final="yes" name="ANCIENT_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:PHAISTOS_DISC -->
+      <field access="public" final="yes" name="PHAISTOS_DISC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LYCIAN -->
+      <field access="public" final="yes" name="LYCIAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CARIAN -->
+      <field access="public" final="yes" name="CARIAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:OLD_PERSIAN -->
+      <field access="public" final="yes" name="OLD_PERSIAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:IMPERIAL_ARAMAIC -->
+      <field access="public" final="yes" name="IMPERIAL_ARAMAIC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:PHOENICIAN -->
+      <field access="public" final="yes" name="PHOENICIAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LYDIAN -->
+      <field access="public" final="yes" name="LYDIAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KHAROSHTHI -->
+      <field access="public" final="yes" name="KHAROSHTHI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:OLD_SOUTH_ARABIAN -->
+      <field access="public" final="yes" name="OLD_SOUTH_ARABIAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:AVESTAN -->
+      <field access="public" final="yes" name="AVESTAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:INSCRIPTIONAL_PARTHIAN -->
+      <field access="public" final="yes" name="INSCRIPTIONAL_PARTHIAN" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:INSCRIPTIONAL_PAHLAVI -->
+      <field access="public" final="yes" name="INSCRIPTIONAL_PAHLAVI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:OLD_TURKIC -->
+      <field access="public" final="yes" name="OLD_TURKIC" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RUMI_NUMERAL_SYMBOLS -->
+      <field access="public" final="yes" name="RUMI_NUMERAL_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BRAHMI -->
+      <field access="public" final="yes" name="BRAHMI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KAITHI -->
+      <field access="public" final="yes" name="KAITHI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CUNEIFORM -->
+      <field access="public" final="yes" name="CUNEIFORM" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CUNEIFORM_NUMBERS_AND_PUNCTUATION -->
+      <field access="public" final="yes" name="CUNEIFORM_NUMBERS_AND_PUNCTUATION" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:EGYPTIAN_HIEROGLYPHS -->
+      <field access="public" final="yes" name="EGYPTIAN_HIEROGLYPHS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BAMUM_SUPPLEMENT -->
+      <field access="public" final="yes" name="BAMUM_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:KANA_SUPPLEMENT -->
+      <field access="public" final="yes" name="KANA_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ANCIENT_GREEK_MUSICAL_NOTATION -->
+      <field access="public" final="yes" name="ANCIENT_GREEK_MUSICAL_NOTATION" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:COUNTING_ROD_NUMERALS -->
+      <field access="public" final="yes" name="COUNTING_ROD_NUMERALS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MAHJONG_TILES -->
+      <field access="public" final="yes" name="MAHJONG_TILES" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:DOMINO_TILES -->
+      <field access="public" final="yes" name="DOMINO_TILES" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:PLAYING_CARDS -->
+      <field access="public" final="yes" name="PLAYING_CARDS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ENCLOSED_ALPHANUMERIC_SUPPLEMENT -->
+      <field access="public" final="yes" name="ENCLOSED_ALPHANUMERIC_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ENCLOSED_IDEOGRAPHIC_SUPPLEMENT -->
+      <field access="public" final="yes" name="ENCLOSED_IDEOGRAPHIC_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ field:MISCELLANEOUS_SYMBOLS_AND_PICTOGRAPHS -->
+      <field access="public" final="yes" name="MISCELLANEOUS_SYMBOLS_AND_PICTOGRAPHS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:EMOTICONS -->
+      <field access="public" final="yes" name="EMOTICONS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TRANSPORT_AND_MAP_SYMBOLS -->
+      <field access="public" final="yes" name="TRANSPORT_AND_MAP_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ALCHEMICAL_SYMBOLS -->
+      <field access="public" final="yes" name="ALCHEMICAL_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CJK_UNIFIED_IDEOGRAPHS_EXTENSION_C -->
+      <field access="public" final="yes" name="CJK_UNIFIED_IDEOGRAPHS_EXTENSION_C" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CJK_UNIFIED_IDEOGRAPHS_EXTENSION_D -->
+      <field access="public" final="yes" name="CJK_UNIFIED_IDEOGRAPHS_EXTENSION_D" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ARABIC_EXTENDED_A -->
+      <field access="public" final="yes" name="ARABIC_EXTENDED_A" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUNDANESE_SUPPLEMENT -->
+      <field access="public" final="yes" name="SUNDANESE_SUPPLEMENT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MEETEI_MAYEK_EXTENSIONS -->
+      <field access="public" final="yes" name="MEETEI_MAYEK_EXTENSIONS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MEROITIC_HIEROGLYPHS -->
+      <field access="public" final="yes" name="MEROITIC_HIEROGLYPHS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MEROITIC_CURSIVE -->
+      <field access="public" final="yes" name="MEROITIC_CURSIVE" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SORA_SOMPENG -->
+      <field access="public" final="yes" name="SORA_SOMPENG" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CHAKMA -->
+      <field access="public" final="yes" name="CHAKMA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SHARADA -->
+      <field access="public" final="yes" name="SHARADA" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TAKRI -->
+      <field access="public" final="yes" name="TAKRI" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:MIAO -->
+      <field access="public" final="yes" name="MIAO" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ field:ARABIC_MATHEMATICAL_ALPHABETIC_SYMBOLS -->
+      <field access="public" final="yes" name="ARABIC_MATHEMATICAL_ALPHABETIC_SYMBOLS" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.Character$UnicodeBlock</object>
+        </signature>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ forName -->
+      <method access="public" final="yes" name="forName" static="yes">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.lang.Character$UnicodeBlock</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.IllegalArgumentException</throws>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <not-null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.NullPointerException</exn>
+          </c-throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+	  <sinks>
+	    <sink arg="1" dest="conversion" form="unicodeblock name" type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
+	  </sinks>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ of -->
+      <method access="public" name="of" static="yes">
+        <signature>
+          <arg nr="1">
+            <char/>
+          </arg>
+          <return>
+            <object>java.lang.Character$UnicodeBlock</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+            <error-post>
+              <math>
+                <null/>
+              </math>
+            </error-post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ of -->
+      <method access="public" name="of" static="yes">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.lang.Character$UnicodeBlock</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.lang.IllegalArgumentException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+            <error-post>
+              <math>
+                <null/>
+              </math>
+            </error-post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Character$Subset" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Character$Subset" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.lang.Character$Subset" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
