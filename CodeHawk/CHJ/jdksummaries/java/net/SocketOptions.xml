@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-04-04 00:02:11"/>
+  <interface name="SocketOptions" package="java.net">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TCP_NODELAY -->
+      <field access="public" final="yes" name="TCP_NODELAY" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="1"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SO_BINDADDR -->
+      <field access="public" final="yes" name="SO_BINDADDR" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="15"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SO_REUSEADDR -->
+      <field access="public" final="yes" name="SO_REUSEADDR" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="4"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SO_BROADCAST -->
+      <field access="public" final="yes" name="SO_BROADCAST" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="32"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:IP_MULTICAST_IF -->
+      <field access="public" final="yes" name="IP_MULTICAST_IF" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="16"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:IP_MULTICAST_IF2 -->
+      <field access="public" final="yes" name="IP_MULTICAST_IF2" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="31"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:IP_MULTICAST_LOOP -->
+      <field access="public" final="yes" name="IP_MULTICAST_LOOP" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="18"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:IP_TOS -->
+      <field access="public" final="yes" name="IP_TOS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="3"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SO_LINGER -->
+      <field access="public" final="yes" name="SO_LINGER" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="128"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SO_TIMEOUT -->
+      <field access="public" final="yes" name="SO_TIMEOUT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="4102"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SO_SNDBUF -->
+      <field access="public" final="yes" name="SO_SNDBUF" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="4097"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SO_RCVBUF -->
+      <field access="public" final="yes" name="SO_RCVBUF" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="4098"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SO_KEEPALIVE -->
+      <field access="public" final="yes" name="SO_KEEPALIVE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="8"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SO_OOBINLINE -->
+      <field access="public" final="yes" name="SO_OOBINLINE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="4099"/>
+        </value>
+      </field>
+    </fields>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getOption -->
+      <method abstract="yes" access="public" name="getOption" valid="no">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.net.SocketException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setOption -->
+      <method abstract="yes" access="public" name="setOption" valid="no">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.net.SocketException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
