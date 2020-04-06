@@ -56,7 +56,7 @@
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ generateSeed -->
-      <method access="public" name="generateSeed" valid="no">
+      <method access="public" name="generateSeed">
         <signature>
           <arg nr="1">
             <int/>
@@ -69,11 +69,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAlgorithm -->
-      <method access="public" name="getAlgorithm" valid="no">
+      <method access="public" name="getAlgorithm">
         <signature>
           <return>
             <object>java.lang.String</object>
@@ -81,7 +90,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInstance -->
@@ -104,6 +118,12 @@
               <return/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="random" form="algorithm name"
+		  type="string">
+	      <throws>java.security.NoSuchAlgorithmException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInstance -->
@@ -134,6 +154,16 @@
               <return/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="random" form="algorithm name"
+		  type="string">
+	      <throws>java.security.NoSuchAlgorithmException</throws>
+	    </sink>
+	    <sink arg="2" dest="random" form="provider name"
+		  type="string">
+	      <throws>java.security.NoSuchProviderException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInstance -->
@@ -164,10 +194,16 @@
               <return/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" dest="random" form="algorithm name"
+		  type="string">
+	      <throws>java.security.NoSuchAlgorithmException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInstanceStrong -->
-      <method access="public" name="getInstanceStrong" static="yes" valid="no">
+      <method access="public" name="getInstanceStrong" static="yes">
         <signature>
           <return>
             <object>java.security.SecureRandom</object>
@@ -181,7 +217,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getProvider -->
-      <method access="public" final="yes" name="getProvider" valid="no">
+      <method access="public" final="yes" name="getProvider">
         <signature>
           <return>
             <object>java.security.Provider</object>
@@ -189,7 +225,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSeed -->
@@ -270,7 +311,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSeed -->
-      <method access="public" name="setSeed" valid="no">
+      <method access="public" name="setSeed">
         <signature>
           <arg nr="1">
             <array>
@@ -280,7 +321,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSeed -->
