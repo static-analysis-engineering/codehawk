@@ -60,6 +60,7 @@ open BCHELFDictionary
 open BCHELFDynamicTable
 open BCHELFUtil
 open BCHELFProgramHeader
+open BCHELFProgramSection
 open BCHELFRelocationTable
 open BCHELFSection
 open BCHELFSectionHeader
@@ -111,7 +112,8 @@ let make_elf_section (sh:elf_section_header_int) (s:string) =
   | SHT_DynSym -> ElfDynamicSymbolTable (mk_elf_symbol_table s sh vaddr)
   | SHT_Rel -> ElfRelocationTable (mk_elf_relocation_table s sh vaddr)
   (* | SHT_Rela | SHT_Rel -> ElfSymbolTable (new elf_relocation_table_t s vaddr) *)
-  | SHT_Dynamic -> ElfDynamicTable (mk_elf_dynamic_table s sh vaddr) 
+  | SHT_Dynamic -> ElfDynamicTable (mk_elf_dynamic_table s sh vaddr)
+  | SHT_ProgBits -> ElfProgramSection (mk_elf_program_section s sh vaddr)
   | _ -> ElfOtherSection (new elf_raw_section_t s vaddr)
 
 let read_xml_elf_section (sh:elf_section_header_int) (node:xml_element_int) =
@@ -122,6 +124,7 @@ let read_xml_elf_section (sh:elf_section_header_int) (node:xml_element_int) =
   | SHT_DynSym -> ElfDynamicSymbolTable (read_xml_elf_symbol_table node)
   | SHT_Rel -> ElfRelocationTable (read_xml_elf_relocation_table node)
   | SHT_Dynamic -> ElfDynamicTable (read_xml_elf_dynamic_table node)
+  | SHT_ProgBits  -> ElfProgramSection (read_xml_elf_program_section node)
   | _ -> ElfOtherSection (read_xml_elf_raw_section node)
 
     
@@ -437,6 +440,8 @@ object(self)
               t#get_string_reference a
            | ElfStringTable t when not (v#get_addr#equal wordzero)->
               t#get_string_reference a
+           | ElfProgramSection s when not (v#get_addr#equal wordzero) ->
+              s#get_string_reference a
            | _ -> None) section_header_table None
 
   method get_containing_section (a:doubleword_int) =
@@ -448,7 +453,30 @@ object(self)
            | ElfOtherSection t when t#includes_VA a -> Some t
            | _ -> None) section_header_table None
 
-    
+  method get_program_value (a:doubleword_int) =
+    let section =
+      H.fold (fun k v result ->
+          match result with
+          | Some _ -> result
+          | _ ->
+             match self#get_section k with
+             | ElfProgramSection s when s#includes_VA a -> Some s
+             | _ -> None) section_header_table None in
+    match section with
+    | Some s -> s#get_value a
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [ STR "Address " ; a#toPretty ;
+                      STR " is not included in a program section" ]))
+
+  method is_program_address (a:doubleword_int) =
+    H.fold (fun k v result ->
+        result
+        || match self#get_section k with
+           | ElfProgramSection s -> s#includes_VA a
+           | _ -> false) section_header_table false
+
   method private get_string_table =
     let result = ref [] in
     let _ = H.iter (fun k v ->

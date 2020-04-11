@@ -37,6 +37,7 @@ MLIS := \
 	bCHELFUtil \
 	bCHELFDictionary \
 	bCHELFSection \
+	bCHELFProgramSection \
 	bCHELFStringTable \
 	bCHELFSymbolTable \
 	bCHELFDynamicTable \
@@ -52,6 +53,7 @@ SOURCES := \
 	bCHELFUtil \
 	bCHELFDictionary \
 	bCHELFSection \
+	bCHELFProgramSection \
 	bCHELFStringTable \
 	bCHELFSymbolTable \
 	bCHELFRelocationTable \

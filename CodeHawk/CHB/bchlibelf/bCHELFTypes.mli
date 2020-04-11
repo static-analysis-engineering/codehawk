@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -231,12 +231,24 @@ class type elf_dynamic_table_int =
     method toPretty: pretty_t
   end
 
+class type elf_program_section_int =
+  object
+    method get_xstring: string
+    method get_vaddr: doubleword_int
+    method get_value: doubleword_int -> doubleword_int
+    method get_string_reference: doubleword_int -> string option
+    method includes_VA: doubleword_int -> bool
+    method write_xml: xml_element_int -> unit
+    method toPretty: pretty_t
+  end
+
 type elf_section_t =
 | ElfStringTable of elf_string_table_int
 | ElfSymbolTable of elf_symbol_table_int
 | ElfDynamicSymbolTable of elf_symbol_table_int
 | ElfRelocationTable of elf_relocation_table_int
 | ElfDynamicTable of elf_dynamic_table_int
+| ElfProgramSection of elf_program_section_int
 | ElfOtherSection of elf_raw_section_int
 
 class type elf_file_header_int =
@@ -322,6 +334,7 @@ object
   method is_string_table: bool
   method is_symbol_table: bool
   method is_relocation_table: bool
+  method is_program_section: bool
 
   (* xml *)
   method write_xml: xml_element_int -> unit
@@ -345,6 +358,10 @@ object
   method get_string_at_address: doubleword_int -> string option
   method get_relocation: doubleword_int -> string option
   method get_containing_section: doubleword_int -> elf_raw_section_int option
+  method get_program_value: doubleword_int -> doubleword_int
+
+  (* predicates *)
+  method is_program_address: doubleword_int -> bool
 
   (* xml *)
   method write_xml: xml_element_int -> unit

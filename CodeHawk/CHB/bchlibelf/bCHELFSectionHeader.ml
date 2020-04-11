@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -346,6 +346,9 @@ object (self)
 
   method is_relocation_table =
     match self#get_section_type with SHT_Rel -> true | _ -> false
+
+  method is_program_section =
+    match self#get_section_type with SHT_ProgBits -> true | _ -> false
 
   method write_xml (node:xml_element_int) =
     let set = node#setAttribute in

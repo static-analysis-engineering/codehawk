@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -274,6 +274,7 @@ let elf_section_to_raw_section (s:elf_section_t):elf_raw_section_int =
   | ElfDynamicSymbolTable t -> (t :> elf_raw_section_int)
   | ElfRelocationTable t -> (t :> elf_raw_section_int)
   | ElfDynamicTable t -> (t :> elf_raw_section_int)
+  | ElfProgramSection s -> (s :> elf_raw_section_int)
   | ElfOtherSection s -> s
 
 let elf_section_to_string_table (s:elf_section_t):elf_string_table_int =
