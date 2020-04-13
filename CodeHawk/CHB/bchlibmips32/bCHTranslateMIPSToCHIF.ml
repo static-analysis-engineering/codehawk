@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,7 @@ open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHCallTarget
 open BCHCodegraph
 open BCHCPURegisters
 open BCHDoubleword
@@ -805,12 +806,8 @@ let translate_mips_instruction
        | _ -> floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | JumpLinkRegister (dst,tgt) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs = num_constant_expr (floc#ia#to_numerical#add (mkNumerical 8)) in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
+  | JumpLinkRegister _ ->
+     default (get_floc loc)#get_mips_call_commands
 
   | JumpLink _ |  BranchLink _ ->
      let floc = get_floc loc in

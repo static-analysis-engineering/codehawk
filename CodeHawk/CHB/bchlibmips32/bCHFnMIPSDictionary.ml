@@ -252,6 +252,15 @@ object (self)
 
       | JumpLink _ | BranchLink _ -> ([],[])
 
+      | JumpLinkRegister _ when floc#has_call_target_signature ->
+         let args = List.map snd floc#get_mips_call_arguments in
+         let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
+         if (List.length  args) > 0 then
+           ([ xtag ], (List.map xd#index_xpr args)
+                      @ [ ixd#index_call_target floc#get_call_target ])
+         else
+           ([],[ ixd#index_call_target floc#get_call_target ])
+
       | JumpLinkRegister (dst,tgt) ->
          let ra = num_constant_expr (floc#ia#to_numerical#add (mkNumerical 8)) in
          let tgt = rewrite_expr (tgt#to_expr floc) in

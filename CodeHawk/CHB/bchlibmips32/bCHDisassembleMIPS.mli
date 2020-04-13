@@ -40,3 +40,5 @@ val disassemble: doubleword_int -> int -> string -> unit
 val disassemble_mips_sections: unit -> doubleword_int
 val construct_functions: (unit -> doubleword_int list) -> unit
 val construct_functions_mips: unit -> unit
+
+val resolve_indirect_mips_calls: mips_assembly_function_int -> unit

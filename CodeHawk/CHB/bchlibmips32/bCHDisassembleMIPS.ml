@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -229,8 +229,9 @@ let get_so_target (instr:mips_assembly_instruction_int) =
     extract_so_symbol [ tgtopc1; tgtopc2; tgtopc3 ] in
   match instr#get_opcode with
   | JumpLink op
-    | BranchLink op when op#is_absolute_address ->
-     (match check_so_target op#get_absolute_address with
+  | BranchLink op when op#is_absolute_address ->
+     let opaddr = op#get_absolute_address in
+     (match check_so_target opaddr with
       | Some addr -> elf_header#get_relocation addr
       | _ -> None)
   | _ -> None
@@ -521,20 +522,25 @@ let record_call_targets () =
         let finfo = get_function_info faddr in
         begin
           f#iteri
-            (fun _ iaddr instr ->
+            (fun _ ctxtiaddr instr ->
               match instr#get_opcode with
               | BranchLink op
               | JumpLink op ->
-                 if finfo#has_call_target iaddr then
+                 if finfo#has_call_target ctxtiaddr then
                    ()
                  else
                    begin
                      match get_so_target instr with
-                     | Some tgt -> finfo#set_so_target iaddr tgt
+                     | Some tgt -> finfo#set_so_target ctxtiaddr tgt
                      | _ ->
                         if op#is_absolute_address then
-                          finfo#set_app_target iaddr op#get_absolute_address
+                          finfo#set_app_target ctxtiaddr op#get_absolute_address
                    end
+              | JumpLinkRegister (ra,op) ->
+                 if finfo#has_call_target ctxtiaddr then
+                   ()
+                 else
+                   finfo#set_unknown_target ctxtiaddr
               | _ -> ())
         end
       with
@@ -555,3 +561,53 @@ let construct_functions_mips () =
     construct_functions collect_function_entry_points ;
     decorate_functions ()
   end
+
+let set_call_address (floc:floc_int) (op:mips_operand_int) =
+  let env = floc#f#env in
+  let opExpr = op#to_expr floc in
+  let opExpr = floc#inv#rewrite_expr opExpr env#get_variable_comparator in
+  match opExpr with
+  | XConst (IntConst c) ->
+     let dw = numerical_to_doubleword c in
+     if mips_assembly_functions#has_function_by_address dw then
+       let _ = pr_debug [ STR " set application target: " ; dw#toPretty ; NL ] in
+       floc#set_application_target dw
+     else
+       ()
+  | XVar v when env#is_global_variable v ->
+     let gaddr =  env#get_global_variable_address v in
+     if elf_header#is_program_address gaddr then
+       let dw = elf_header#get_program_value gaddr in
+       if mips_assembly_functions#has_function_by_address dw then
+         if functions_data#has_function_name dw then
+           let name = (functions_data#get_function dw)#get_function_name in
+           if function_summary_library#has_so_function name then
+             let _ = pr_debug [ STR "  set library function: " ; STR name ; NL ] in
+             floc#set_so_target name
+           else
+             floc#set_application_target dw
+         else
+           floc#set_application_target dw
+       else
+         ch_error_log#add
+           "set call address"
+           (LBLOCK [ STR "  reference does not resolve to function address: " ; dw#toPretty ])
+     else
+       ch_error_log#add
+         "set call address"
+         (LBLOCK [ STR "  reference is not in program space: " ; gaddr#toPretty ])
+  | _ ->
+     ()
+
+let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
+  let _ =
+    f#iteri
+      (fun faddr ctxtiaddr instr ->
+        let loc = ctxt_string_to_location faddr ctxtiaddr in
+        match instr#get_opcode with
+        | JumpLinkRegister (ra,tgt) ->
+           let floc = get_floc loc in
+           if floc#has_unknown_target then
+             set_call_address floc tgt
+        | _ -> ()) in
+  ()
