@@ -52,6 +52,7 @@ open BCHX86AnalysisResults
 open BCHX86Metrics
 
 (* bchlibmips32 *)
+open BCHDisassembleMIPS
 open BCHMIPSAnalysisResults
 open BCHMIPSCHIFSystem
 open BCHMIPSAssemblyFunctions
@@ -206,6 +207,7 @@ let analyze_mips_function faddr f =
       extract_ranges finfo bb_invariants#get_invariants ;
       extract_linear_equalities finfo bb_invariants#get_invariants ;
       extract_valuesets finfo bb_invariants#get_invariants ;
+      resolve_indirect_mips_calls f ;
       finfo#reset_invariants ;
       save_function_info finfo ;
       save_function_invariants finfo ;
