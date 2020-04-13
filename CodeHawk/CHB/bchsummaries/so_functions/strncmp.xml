@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="strncmp">
+   <documentation>
+    <desc>compares part of two strings</desc>
+    <apidoc>
+     <pt>
+      <ll>int strncmp (</ll>
+      <ld>const char *string1,</ld>
+      <ld>const char *string2,</ld>
+      <ld>size_t count</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="string1">pointer to first string</par>
+     <par name="string2">pointer to second string</par>
+     <par name="count">number of characters to compare</par>
+     <return>indicates the relation of the count characters of string1 and string2</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="strncmp">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" io="r" name="string1" nr="1" rep="hex">
+      <type><ptr>char</ptr></type>
+      <roles>
+        <role rt="ioc:inputs" rn="string comparison"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="string2" nr="2" rep="hex">
+      <type><ptr>char</ptr></type>
+      <roles>
+        <role rt="ioc:inputs" rn="string comparison"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="count" roles="none" nr="3">
+      <type>size_t</type>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="inputs" desc="compares two strings"/>
+     </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+        <deref-read/>
+        <btype tname="char" ttag="tnamed"/>
+        <ci>string1</ci>
+        <ci>count</ci>
+       </apply>
+      </math>
+     </pre>
+     <pre>
+      <math>
+       <apply>
+        <deref-read/>
+        <btype tname="char" ttag="tnamed"/>
+        <ci>string2</ci>
+        <ci>count</ci>
+       </apply>
+      </math>
+     </pre>
+     <pre>
+       <math>
+	 <apply>
+	   <geq/>
+	   <ci>count</ci>
+	   <cn>0</cn>
+	 </apply>
+       </math>
+     </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

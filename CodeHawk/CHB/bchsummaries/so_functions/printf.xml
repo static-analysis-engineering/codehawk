@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:36"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="printf">
+   <documentation>
+     <notes>TBD: deal properly with varargs</notes>
+    <desc>print formatted output to the standard output stream</desc>
+    <apidoc>
+     <pt>int printf (const char *format, [ argumens ])</pt>
+     <par name="format">format control</par>
+     <par name="arguments">variable list of arguments</par>
+     <return>
+      <rc cond="success">the number of characters printed</rc>
+      <rc cond="failure">negative number</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="printf">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="format" nr="1" rep="hex">
+      <type><ptr>char</ptr></type>
+      <pre><deref-read-nt/><format-string/></pre>
+      <roles>
+         <role rt="ioc:outputs" rn="format string"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="outputs" desc="prints a formatted string to stdout"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonnegative-negative/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

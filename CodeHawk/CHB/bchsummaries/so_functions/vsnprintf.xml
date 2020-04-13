@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="01/07/2015 14:32:22"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="vsnprintf">
+   <documentation>
+    <desc>write formatted output using a pointer to a list of arguments</desc>
+    <apidoc>
+     <pt>
+      <ll>int _vsnprintf(</ll>
+      <ld>char *buffer,</ld>
+      <ld>size_t count,</ld>
+      <ld>const char *format,</ld>
+      <ld>va_list argptr</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+        number of characters written if the number of characters to write is less
+	than or equal to count; does not include the terminating null character, if
+	written
+      </rc>
+      <rc cond="failure">
+        -1, if the number of characters is greater than count, indicating that the
+	output has been truncated
+      </rc>
+     </return>
+     <par name="buffer">storage location for output</par>
+     <par name="count">maximum number of characters to write</par>
+     <par name="format">format specification</par>
+     <par name="argptr">pointer to list of arguments</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="vsnprintf">
+     <returntype>int</returntype>
+     <par loc="stack" desc="dest buffer" io="w" name="buffer" nr="1" rep="hex">
+       <type><ptr>char</ptr></type>
+       <roles>
+	 <role rt="ioc:memops" rn="dst-string:formatted data"/>
+	 <role rt="ioc:outputs" rn="formatted data to string"/>
+       </roles>
+    </par>
+    <par loc="stack" desc="count" io="r" name="count" roles="none" nr="2">
+      <type>size_t</type>
+    </par>
+    <par loc="stack" desc="format" io="r" name="format" nr="3" rep="hex">
+      <type><ptr>char</ptr></type>
+      <roles>
+        <role rt="ioc:outputs" rn="format string"/>
+      </roles>
+     <pre><deref-read-nt/><format-string/></pre>
+    </par>
+    <par loc="stack" desc="args" name="argptr" io="r" roles="none" nr="4">
+     <btype tname="va_list" ttag="tnamed"/>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="format" desc="writes formatted data to string"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>buffer</ci>
+	    <ci>count</ci>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply><geq/><return/><cn>0</cn></apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply><leq/><return/><ci>count</ci></apply>
+	</math>
+      </post>
+      <error-post>
+	<math>
+	  <apply><eq/><return/><cn>-1</cn></apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>buffer</ci>
+	    <ci>count</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

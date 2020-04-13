@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:36"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="sprintf">
+   <documentation>
+    <desc>writes formatted data to a string</desc>
+    <apidoc>
+     <pt>
+      <ll>int sprintf (</ll>
+      <ld>char *buffer,</ld>
+      <ld>const char *format,</ld>
+      <ld>[arguments]</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="buffer">storage location for data</par>
+     <par name="format">format-control string</par>
+     <par name="arguments">variable number of arguments</par>
+     <return>
+      <rc cond="success">number of characters written</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="sprintf">
+    <returntype>int</returntype>
+    <par loc="stack" io="w" name="buffer" nr="1" rep="hex">
+      <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="dst-string:formatted data"/>
+	<role rt="ioc:outputs" rn="formatted data to string"/>
+     </roles>
+    </par>
+    <par loc="stack" io="r" name="format" nr="2" rep="hex">
+      <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:outputs" rn="format string"/>
+     </roles>
+     <pre><deref-read-nt/><format-string/></pre>
+    </par>
+    <par loc="stack" name="args" nr="3">
+     <btype tname="var-arg" ttag="tnamed"/>
+     <roles/>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="format" desc="writes formatted data to string"/>
+     </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>buffer</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+        <btype tname="char" ttag="tnamed"/>
+        <ci>buffer</ci>
+        <runtime-value/>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

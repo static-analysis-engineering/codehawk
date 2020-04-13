@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="11/10/2015 14:33:34"/>
+  <libfun lib="msvcrt" name="fgetpos">
+   <documentation>
+    <desc>get current file position information</desc>
+    <apidoc>
+     <pt>
+      <ll>int fgetpos(</ll>
+      <ld>FILE *restrict stream</ld>
+      <ld>fpos_t *restrict pos</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="stream">target stream</par>
+     <par name="pos">position indicator storage</par>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">nonzero</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="fgetpos">
+    <par loc="stack" io="r" name="stream" nr="1">
+     <type><ptr>FILE</ptr></type>
+     <pre><deref-read/></pre>
+     <roles>
+        <role rt="ioc:filesystem" rn="file"/>
+     </roles>
+    </par>
+    <par loc="stack" io="w" name="pos" roles="none" nr="2">
+     <type><ptr>fpos_t</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" desc="retrieves file position indicator"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <zero-nonzero/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

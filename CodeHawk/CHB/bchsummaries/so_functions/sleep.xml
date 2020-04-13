@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-10 11:38:44"/>
+  <libfun lib="so_functions" name="sleep">
+    <documentation>
+      <desc>suspend execution for an interval of time</desc>
+      <apidoc>
+        <pt>unsigned sleep (unsigned seconds)</pt>
+        <par name="seconds">
+	  time for the thread to be suspended, in seconds
+	</par>
+        <return>
+          <rc cond="success">zero</rc>
+          <rc cond="failure">positive</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="sleep">
+      <par loc="stack" name="seconds" nr="1">
+        <type>UINT</type>
+      </par>
+      <returntype>UINT</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

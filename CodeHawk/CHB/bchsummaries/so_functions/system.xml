@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="11/18/2015 10:17:53"/>
+  <libfun lib="msvcrt" name="system">
+   <documentation>
+    <desc>Executes a command</desc>
+    <apidoc>
+     <pt>int system (const char *command)</pt>
+     <par name="command">The command to be executed</par>
+     <return>
+       If command is NULL and the command interpreter is found, returns a nonzero 
+       value. If the command interpreter is not found, returns 0 and sets errno 
+       to ENOENT. If command is not NULL, system returns the value that is 
+       returned by the command interpreter. It returns the value 0 only if the 
+       command interpreter returns the value 0. A return value of -1 indicates 
+       an error
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="system">
+    <par loc="stack" io="r" name="command" rep="hex" nr="1">
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+     <roles>
+        <role rt="ioc:system" rn="name:command"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="system" desc="executes a system command"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

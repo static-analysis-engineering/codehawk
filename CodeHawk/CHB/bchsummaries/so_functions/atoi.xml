@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:44"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="atoi">
+   <documentation>
+    <desc>converts a string to an integer</desc>
+    <apidoc>
+     <pt>int atoi ( const char *str )</pt>
+     <par name="str">string to be converted</par>
+     <return>int value produced by interpreting the input characters as an int</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="atoi">
+    <returntype>int</returntype>
+    <par loc="stack" name="str" rep="hex" nr="1">
+      <type><ptr>char</ptr></type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+         <role rt="ioc:memops" rn="src-string:convert"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="memops" desc="converts string to int"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>
