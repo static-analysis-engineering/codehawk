@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <header date="08/05/2013 10:39:54"/>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
-  <libfun lib="msvcrt" name="strcmp">
+  <libfun lib="so_functions" name="strcmp">
    <documentation>
     <desc>compares two strings</desc>
     <apidoc>

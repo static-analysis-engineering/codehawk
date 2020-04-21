@@ -2,7 +2,7 @@
 <codehawk-binary-analyzer>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
   <header date="2019-11-12 21:57:24"/>
-  <libfun name="write">
+  <libfun lib="so_functions" name="write">
     <documentation>
       <desc>write on a file</desc>
       <apidoc>

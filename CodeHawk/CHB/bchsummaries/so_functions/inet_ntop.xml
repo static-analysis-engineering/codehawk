@@ -2,7 +2,7 @@
 <codehawk-binary-analyzer>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
   <header date="2019-10-24 21:59:30"/>
-  <libfun name="inet_ntop">
+  <libfun lib="so_functions" name="inet_ntop">
     <documentation>
       <desc>convert IPv4 and IPv6 addresses between binary and text form</desc>
       <apidoc>

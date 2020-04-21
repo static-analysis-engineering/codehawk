@@ -2,7 +2,7 @@
 <codehawk-binary-analyzer>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
   <header date="2019-10-24 23:31:47"/>
-  <libfun name="socket">
+  <libfun lib="so_functions" name="socket">
     <documentation>
       <desc>create an endpoint for communication</desc>
       <apidoc>

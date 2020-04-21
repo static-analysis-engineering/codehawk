@@ -2,7 +2,7 @@
 <codehawk-binary-analyzer>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
   <header date="2019-11-06 21:43:07"/>
-  <libfun name="__assert_fail">
+  <libfun lib="so-functions" name="__assert_fail">
     <documentation>
       <desc>insert program diagnostics</desc>
       <apidoc>

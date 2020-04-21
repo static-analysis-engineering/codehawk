@@ -2,7 +2,7 @@
 <codehawk-binary-analyzer>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
   <header date="2019-10-24 23:39:19"/>
-  <libfun name="setsockopt">
+  <libfun lib="so_functions" name="setsockopt">
     <documentation>
       <desc>set the socket options</desc>
       <apidoc>

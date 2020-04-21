@@ -2,7 +2,7 @@
 <codehawk-binary-analyzer>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
   <header date="2019-11-12 22:48:13"/>
-  <libfun name="read">
+  <libfun lib="so_functions" name="read">
     <documentation>
       <desc>read from a file</desc>
       <apidoc>

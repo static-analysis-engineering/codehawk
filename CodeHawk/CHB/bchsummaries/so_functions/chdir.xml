@@ -2,7 +2,7 @@
 <codehawk-binary-analyzer>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
   <header date="2019-11-07 23:58:10"/>
-  <libfun name="chdir">
+  <libfun lib="so_functions" name="chdir">
     <documentation>
       <desc>change working directory</desc>
       <apidoc>

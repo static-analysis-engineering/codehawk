@@ -2,7 +2,7 @@
 <codehawk-binary-analyzer>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
   <header date="2019-11-07 23:39:36"/>
-  <libfun name="getcwd">
+  <libfun lib="so_functions" name="getcwd">
     <documentation>
       <desc>get the pathname of the current working directory</desc>
       <apidoc>

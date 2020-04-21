@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-binary-analyzer>
   <header date="2019-10-24 19:37:28"/>
-  <libfun name="dcgettext">
+  <libfun lib="so_functions" name="dcgettext">
     <documentation>
       <desc>
 	attempts to translate a text string into the user's

@@ -2,7 +2,7 @@
 <codehawk-binary-analyzer>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
   <header date="2019-10-24 21:30:18"/>
-  <libfun name="difftime">
+  <libfun lib="so_functions" name="difftime">
     <documentation>
       <desc>
 	compute the difference between two calendar time values

@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <header date="08/05/2013 10:39:44"/>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
-  <libfun name="_exit">
+  <libfun lib="so_functions" name="_exit">
    <documentation>
     <desc>terminates the calling process immediately</desc>
     <apidoc>
