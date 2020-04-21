@@ -54,6 +54,8 @@ object (self)
   val mutable virtual_function = false
   val mutable classinfo = None
   val mutable inlined = false
+  val mutable library_stub = false
+  val mutable inlined_blocks = []
 
   method set_non_returning = non_returning <- true
 
@@ -67,11 +69,24 @@ object (self)
 
   method set_virtual = virtual_function <- true
 
+  method set_library_stub = library_stub <- true
+
   method add_name (s:string) =
     if List.mem s names then () else names <- s::names
 
   method set_class_info ~(classname:string) ~(isstatic:bool) =
-    classinfo <- Some (classname,isstatic) ;
+    classinfo <- Some (classname,isstatic)
+
+  method add_inlined_block (baddr:doubleword_int) =
+    inlined_blocks <- baddr :: inlined_blocks
+
+  method is_inlined_block (baddr:doubleword_int) =
+    List.exists (fun a -> a#equal baddr) inlined_blocks
+
+  method get_inlined_blocks = inlined_blocks
+
+  method has_inlined_blocks =
+    match inlined_blocks with [] -> false | _ -> true
 
   method get_names = names
 
@@ -100,6 +115,8 @@ object (self)
 
   method is_inlined = inlined
 
+  method is_library_stub = library_stub
+
   method has_class_info =
     match classinfo with Some _ -> true | _ -> false
 
@@ -112,6 +129,7 @@ object (self)
     let tags = if user_provided then "u" :: tags else tags in
     let tags = if virtual_function then "v" :: tags else tags in
     let tags = if self#has_class_info then "c" :: tags else tags in
+    let tags = if library_stub then "l" :: tags else tags in
     let args =
       match classinfo with
       | Some (cname,isstatic) ->
@@ -204,6 +222,7 @@ object (self)
             (if List.mem "ida" tags then fe#set_ida_provided) ;
             (if List.mem "u" tags then fe#set_user_provided) ;
             (if List.mem "v" tags then fe#set_virtual) ;
+            (if List.mem "l" tags then fe#set_library_stub) ;
             (if List.mem "c" tags then
                let classname = bd#get_string (a 0) in
                let isstatic = (a 1) = 1 in

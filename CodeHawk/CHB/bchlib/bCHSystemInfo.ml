@@ -239,6 +239,15 @@ object (self)
       chlog#add "add inlined function" (faddr#toPretty)
     end
 
+  method private add_inlined_block (faddr:doubleword_int) (baddr:doubleword_int) =
+    let fd = functions_data#add_function faddr in
+    begin
+      fd#add_inlined_block baddr ;
+      chlog#add
+        "add inlined block"
+        (LBLOCK [ faddr#toPretty ; STR ": " ; baddr#toPretty ])
+    end
+
   method has_esp_adjustment (faddr:doubleword_int) (iaddr:doubleword_int) =
     H.mem esp_adjustments_i iaddr#index ||
       (H.mem esp_adjustments (faddr#index, iaddr#index))
@@ -574,6 +583,9 @@ object (self)
       (if hasc "inlined-functions" then
          let inode = getc "inlined-functions" in
          self#read_xml_inlined_functions inode) ;
+      (if hasc "inlined-blocks" then
+         let inode = getc "inlined-blocks" in
+         self#read_xml_inlined_blocks inode) ;
       (if hasc "esp-adjustments-i" then
 	  let enode = getc "esp-adjustments-i" in
 	  self#read_xml_esp_adjustments_i enode) ;
@@ -822,6 +834,18 @@ object (self)
         let faddr = geta n "fa" in
         let _ = chlog#add "add inlined function" faddr#toPretty in
         self#add_inlined_function faddr) (node#getTaggedChildren "inline")
+
+  method private read_xml_inlined_blocks (node:xml_element_int) =
+    List.iter (fun n  ->
+        let get = n#getAttribute in
+        let geta n tag = string_to_doubleword (get tag) in
+        let faddr = geta n "fa" in
+        let baddr = geta n "ba" in
+        let _ =
+          chlog#add
+            "set inlined block"
+            (LBLOCK [ faddr#toPretty ; STR ":" ; baddr#toPretty ]) in
+        self#add_inlined_block faddr baddr) (node#getTaggedChildren "inline")
 
   method private read_xml_readonly_ranges (node:xml_element_int) =
     List.iter (fun n ->

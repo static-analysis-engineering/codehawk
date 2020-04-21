@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -59,12 +59,13 @@ val ctxt_string_to_location:
 
 val add_ctxt_to_ctxt_string:
   doubleword_int      (* outer function address *)
-  -> ctxt_iaddress_t  (* string thta represents the context, outer context first *)
+  -> ctxt_iaddress_t  (* string that represents the context, outer context first *)
   -> context_t        (* new context to be prepended *)
   -> ctxt_iaddress_t
 
 val ctxt_string_to_string: ctxt_iaddress_t -> string
 val is_iaddress: ctxt_iaddress_t -> bool
+val is_same_iaddress: doubleword_int -> ctxt_iaddress_t -> bool
 val symbol_to_ctxt_string: symbol_t -> ctxt_iaddress_t
 val ctxt_string_to_symbol: string -> ?atts:string list -> ctxt_iaddress_t -> symbol_t
 

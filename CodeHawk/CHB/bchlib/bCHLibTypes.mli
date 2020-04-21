@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -546,16 +546,32 @@ type base_location_t = {
     loc_iaddr: doubleword_int ;
   }
 
-type context_t = {
+type fcontext_t = {
     ctxt_faddr: doubleword_int ;
     ctxt_callsite: doubleword_int ;
     ctxt_returnsite: doubleword_int
   }
 
+type context_t =
+  | FunctionContext of fcontext_t
+  | BlockContext of doubleword_int
+
 (* ctxt_iaddress_t spec:
+
+   i  ( [], { faddr,iaddr } ) = iaddr
+   i  ( [ F{ fa,cs,rs } ], { faddr,iaddr }) = iaddr
+   i  ( [ B{ js } ], { faddr,iaddr }) = iaddr
+
+   f  ( [], { faddr,iaddr } ) = faddr
+   f  ( [ F{ fa,cs,rs }, _ ],  { faddr,iaddr } ) = fa
+   f  ( [ B{ js } ], { faddr,iaddr } ) = faddr
+   f  ( B{ js }::ctxt , { faddr,iaddr } ) = f (ctxt, {faddr,iaddr})
+
    ci ( [], { faddr,iaddr } ) = iaddr
-   ci ( [ { fa,cs,rs } ], { faddr,iaddr } ) = cs_iaddr
-   ci ( [ { fa1,cs1,rs1 },{ fa2,cs2,rs2 } ], { faddr,iaddr } ) = cs1_cs2_iaddr
+   ci ( [ F{ fa,cs,rs } ], { faddr,iaddr } ) = F:cs_iaddr
+   ci ( [ F{ fa1,cs1,rs1 },F{ fa2,cs2,rs2 } ], { faddr,iaddr } ) = F:cs1_F:cs2_iaddr
+   ci ( [ B{ js } ], { faddr,iaddr }) = B:js_iaddr
+   ci ( [ B{ js1 }, B{ js2 } ], { faddr,iaddr }) = B:js1_B:js2_iaddr
  *)
 type ctxt_iaddress_t = string
 
@@ -569,7 +585,7 @@ class type location_int =
     method ci: ctxt_iaddress_t       (* full context instruction address string *)
 
     method base_loc: base_location_t (* inner function address, instruction address *)
-    method base_f: doubleword_int    (* function address of inner conntext *)
+    method base_f: doubleword_int    (* function address of inner context *)
     method ctxt: context_t list
 
     method has_context: bool
@@ -661,11 +677,14 @@ class type function_data_int =
     method set_incomplete: unit
     method set_virtual: unit
     method set_inlined: unit
+    method set_library_stub: unit
     method set_class_info: classname:string -> isstatic:bool -> unit
+    method add_inlined_block: doubleword_int -> unit
 
     (* accessors *)
     method get_names: string list  (* raw names *)
     method get_function_name: string  (* demangled or combination of all names *)
+    method get_inlined_blocks: doubleword_int list
 
     (* predicates *)
     method has_name: bool
@@ -676,6 +695,9 @@ class type function_data_int =
     method is_user_provided: bool
     method is_virtual: bool
     method is_inlined: bool
+    method is_library_stub: bool
+    method is_inlined_block: doubleword_int -> bool
+    method has_inlined_blocks: bool
 
     (* save *)
     method to_rep_record: (string list * int list)
@@ -2468,7 +2490,7 @@ object
   method has_virtual_target      : ctxt_iaddress_t -> bool
   method has_jni_target          : ctxt_iaddress_t -> bool
   method has_unknown_target      : ctxt_iaddress_t -> bool
-
+  method has_no_call_target      : ctxt_iaddress_t -> bool
 
   method is_dll_jumptarget       : ctxt_iaddress_t -> bool
   method has_jump_target         : ctxt_iaddress_t -> bool
@@ -2508,6 +2530,7 @@ object
   (* set call targets  *)
   method set_application_target: doubleword_int -> unit
   method set_dll_target        : string -> string -> unit
+  method set_so_target         : string -> unit
   method set_jni_target        : int -> unit (* jni index *)
   method set_unknown_target    : unit
   method set_virtual_target    : variable_t -> unit   (* call via vtable pointer *)
@@ -2671,6 +2694,7 @@ object
   method has_indirect_target   : bool
   method has_virtual_target    : bool
   method has_unknown_target    : bool
+  method has_no_call_target    : bool
 
   method has_call_target_signature: bool
   method has_call_target_semantics: bool

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -180,7 +180,9 @@ object (self)
   method load_dll_library_function (dll:string) (fname:string) =
     let dll = self#get_internal_dll_name dll in
     let _ = self#add_requested_summary dll fname in
-    if H.mem dllsummaries (dll,fname) || H.mem nosummaries (dll,fname) then () else
+    if H.mem dllsummaries (dll,fname) || H.mem nosummaries (dll,fname) then
+      ()
+    else
       let path = system_settings#get_summary_paths in
       let filename = dll ^ "/" ^ fname in
       if has_summary_file path filename then
@@ -198,7 +200,9 @@ object (self)
 
   method load_so_function (fname:string) =
     let _ = requested_so_summaries#add fname in
-    if H.mem sosummaries fname || missing_so_summaries#has fname then () else
+    if H.mem sosummaries fname || missing_so_summaries#has fname then
+      ()
+    else
       let path = system_settings#get_summary_paths in
       let filename = "so_functions/" ^ fname in
       if has_summary_file path filename then
@@ -260,7 +264,12 @@ object (self)
     let dll = String.lowercase_ascii(dll) in
     let lib = if String.contains lib '.' then
 	string_replace '.' "_" lib else lib in
-    if dll = lib || dll = lib ^ "_dll" then () else
+    if dll = lib
+       || dll = lib ^ "_dll"
+       || dll = "so_functions"
+    then
+      ()
+    else
       raise_xml_error node
 	(LBLOCK [ STR "Dll in file " ; STR (node#getAttribute "name") ; 
 		  STR " does not correspond with lib listed: " ; STR lib ])

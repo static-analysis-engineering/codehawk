@@ -345,6 +345,8 @@ object (self)
 
   method set_dll_target (name:string) = self#f#set_dll_target self#cia name
 
+  method set_so_target (name:string) = self#f#set_so_target self#cia name
+
   method has_static_lib_target = self#f#has_static_lib_target self#cia
 
   method get_static_lib_target = self#f#get_static_lib_target self#cia
@@ -389,6 +391,8 @@ object (self)
   method set_unknown_target = self#f#set_unknown_target self#cia
 
   method has_unknown_target = self#f#has_unknown_target self#cia
+
+  method has_no_call_target = self#f#has_no_call_target self#cia
 
   method get_call_target_semantics = 
     get_call_target_semantics get_function_info self#get_call_target

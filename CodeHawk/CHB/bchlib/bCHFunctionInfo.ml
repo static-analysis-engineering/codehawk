@@ -1778,6 +1778,9 @@ object (self)
       | UnknownTarget -> true
       | IndirectTarget (_,[]) -> true
       | _ -> false)
+
+  method has_no_call_target (call_site:ctxt_iaddress_t) =
+    not (H.mem call_targets call_site)
     
   method get_call_target (callsite:ctxt_iaddress_t) =
     if H.mem call_targets callsite then

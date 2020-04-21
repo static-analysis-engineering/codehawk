@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -58,12 +58,19 @@ let nsplit (separator:char) (s:string):string list =
   end
 
 
-let context_compare (c1:context_t) (c2:context_t) =
+let fcontext_compare (c1:fcontext_t) (c2:fcontext_t) =
   let l0 = c1.ctxt_faddr#compare c2.ctxt_faddr in
   if l0 = 0 then
     c1.ctxt_callsite#compare c2.ctxt_callsite
   else
     l0
+
+let context_compare (c1:context_t) (c2:context_t) =
+  match (c1,c2) with
+  | (BlockContext b1,BlockContext b2) -> b1#compare b2
+  | (BlockContext _, _) -> 1
+  |  (_,BlockContext _) -> -1
+  | (FunctionContext f1,FunctionContext f2) -> fcontext_compare  f1 f2
 
 let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
   let length = List.length in
@@ -80,7 +87,7 @@ let ctxt_string_to_string (s:ctxt_iaddress_t):string = s
                                                      
 let contexts = H.create 3
 
-let add_ctxt_iaddress
+let add_function_ctxt_iaddress
       (faddr:doubleword_int)      (* outer function address *)
       (s:ctxt_iaddress_t)
       (basef:doubleword_int)      (* inner function address *)
@@ -134,6 +141,9 @@ let decompose_ctxt_string
 
 let is_iaddress (s:ctxt_iaddress_t) =
   let components = nsplit '_' s in (List.length components) = 1
+
+let is_same_iaddress (d:doubleword_int) (s:ctxt_iaddress_t) =
+  (is_iaddress s) && (d#to_hex_string = s)
     
 class location_t
         ?(ctxt=[])
@@ -146,10 +156,10 @@ object (self:'a)
     | ([],[]) ->
        let l0 = self#f#compare other#f in
        if l0 = 0 then self#i#compare other#i else l0
-    | ([],h::_) ->
+    | ([],(FunctionContext h)::_) ->
        let l0 = self#f#compare other#f in
        if l0 = 0 then self#i#compare h.ctxt_callsite else l0
-    | (h::_,[]) ->
+    | ((FunctionContext h)::_,[]) ->
        let l0 = self#f#compare other#f in
        if l0 = 0 then h.ctxt_callsite#compare other#i else l0
     | (ctx1,ctx2) ->
@@ -160,8 +170,10 @@ object (self:'a)
 
   (* ctxt_iaddress_t spec:
      ci ( [], { faddr,iaddr } ) = iaddr
-     ci ( [ { fa,cs,rs } ], { faddr,iaddr } ) = cs_iaddr
-     ci (  [ { fa1,cs1,rs1 },{ fa2,cs2,rs2 } ], { faddr,iaddr } ) = cs1_cs2_iaddr
+     ci ( [ F{ fa,cs,rs } ], { faddr,iaddr } ) = F:cs_iaddr
+     ci ( [ F{ fa1,cs1,rs1 },F{ fa2,cs2,rs2 } ], { faddr,iaddr } ) = F:cs1_F:cs2_iaddr
+     ci ( [ B{ js } ], { faddr,iaddr }) = B:js_iaddr
+     ci ( [ B{ js1 }, B{ js2 } ], { faddr,iaddr }) = B:js1_B:js2_iaddr
    *)
   method ci =
     match ctxt with
@@ -169,16 +181,24 @@ object (self:'a)
     | _ ->
        let ctxtstr =
          String.concat
-           "_" (List.map (fun c -> c.ctxt_callsite#to_hex_string) ctxt) in
+           "_" (List.map (fun c ->
+                    match c with
+                    | FunctionContext h ->
+                       "F:" ^ h.ctxt_callsite#to_hex_string
+                    | BlockContext js ->
+                       "B:" ^ js#to_hex_string) ctxt) in
        begin
-         add_ctxt_iaddress self#f ctxtstr self#base_f ctxt ;
+         add_function_ctxt_iaddress self#f ctxtstr self#base_f ctxt ;
          ctxtstr ^ "_" ^ self#i#to_hex_string
        end
 
   method f =      (* address of function analyzed *)
-    match ctxt with
-    | [] -> loc.loc_faddr
-    | h::_ -> h.ctxt_faddr   (* first ctxt element is the outer context *)
+    let rec aux c =
+      match c with
+      | [] -> loc.loc_faddr
+      | (FunctionContext h)::_ -> h.ctxt_faddr   (* first ctxt element is the outer context *)
+      | (BlockContext _)::tc -> aux tc in
+    aux ctxt
 
   method base_loc = loc
   method base_f = loc.loc_faddr         (* address of inner function *)
