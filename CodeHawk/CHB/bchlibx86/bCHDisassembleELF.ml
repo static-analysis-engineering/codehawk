@@ -562,9 +562,10 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       let returnsite = get_next_instr_address va in
       let _ = set_block_entry returnsite in
       let ctxt =
-        { ctxt_faddr = faddr ;
-          ctxt_callsite = a ;
-          ctxt_returnsite = returnsite } in
+        FunctionContext
+          { ctxt_faddr = faddr ;
+            ctxt_callsite = a ;
+            ctxt_returnsite = returnsite } in
       let callloc = make_location { loc_faddr = a ; loc_iaddr = a } in
       let ctxtcallloc = make_c_location callloc ctxt in
       let callsucc = ctxtcallloc#ci in 
