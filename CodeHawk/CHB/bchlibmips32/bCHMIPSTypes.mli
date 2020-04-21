@@ -443,6 +443,7 @@ class type mips_assembly_functions_int =
 
     (* setters *)
     method add_function: mips_assembly_function_int -> unit
+    method inline_blocks: unit
 
     (* accessors *)
     method get_callgraph: callgraph_int

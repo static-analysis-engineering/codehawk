@@ -50,3 +50,14 @@ val make_ctxt_mips_assembly_block:
   -> mips_assembly_block_int
   -> ctxt_iaddress_t list  (* new successor blocks *)
   -> mips_assembly_block_int
+
+val make_block_ctxt_mips_assembly_block:
+  context_t
+  -> mips_assembly_block_int
+  -> mips_assembly_block_int
+
+val update_mips_assembly_block_successors:
+  mips_assembly_block_int   (* original block *)
+  -> ctxt_iaddress_t        (* original successor *)
+  -> ctxt_iaddress_t        (* replacement successor *)
+  -> mips_assembly_block_int

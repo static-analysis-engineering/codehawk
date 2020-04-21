@@ -141,7 +141,7 @@ let make_mips_assembly_block = new mips_assembly_block_t
 let make_ctxt_mips_assembly_block
       (newctxt:context_t)            (* new context to be prepended *)
       (b:mips_assembly_block_int)         (* orginal assembly block *)
-      (newsucc:ctxt_iaddress_t list) (* new successors to be added *)
+      (newsucc:ctxt_iaddress_t list)  (* new successors to be added *)
     :mips_assembly_block_int =
   let bsucc = b#get_successors in
   let faddr = b#get_faddr in
@@ -151,6 +151,27 @@ let make_ctxt_mips_assembly_block
     b#get_faddr
     b#get_first_address
     b#get_last_address
-    succ
+    (succ @ newsucc)
   
- 
+let make_block_ctxt_mips_assembly_block
+      (newctxt:context_t)
+      (b:mips_assembly_block_int) =
+  make_mips_assembly_block
+    ~ctxt:(newctxt :: b#get_context)
+    b#get_faddr
+    b#get_first_address
+    b#get_last_address
+    b#get_successors
+  
+let update_mips_assembly_block_successors
+      (b:mips_assembly_block_int)
+      (s_old:ctxt_iaddress_t)
+      (s_new:ctxt_iaddress_t):mips_assembly_block_int =
+  let newsucc =
+    List.map (fun s -> if s = s_old then s_new else s) b#get_successors in
+  make_mips_assembly_block
+    ~ctxt:b#get_context
+    b#get_faddr
+    b#get_first_address
+    b#get_last_address
+    newsucc

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,3 +33,8 @@ open BCHMIPSTypes
 
 val make_mips_assembly_function: doubleword_int -> mips_assembly_block_int list -> 
   (ctxt_iaddress_t * ctxt_iaddress_t) list -> mips_assembly_function_int
+
+val inline_blocks_mips_assembly_function:
+  doubleword_int list  (* addresses of blocks to be inlined *)
+  -> mips_assembly_function_int    (* original function *)
+  -> mips_assembly_function_int    (* new instance *)

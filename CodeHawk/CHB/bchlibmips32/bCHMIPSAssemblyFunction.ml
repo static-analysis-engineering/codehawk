@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,7 @@ open BCHSystemInfo
 open BCHUtilities
 
 (* bchlibmips32 *)
+open BCHMIPSAssemblyBlock
 open BCHMIPSDisassemblyUtils
 open BCHMIPSOpcodeRecords   
 open BCHMIPSTypes
@@ -150,3 +151,56 @@ let make_mips_assembly_function
   let blocks = List.sort (fun b1 b2 -> P.compare b1#get_context_string b2#get_context_string)
                          blocks in
   new mips_assembly_function_t va blocks successors
+
+let inline_blocks
+      (baddrs:doubleword_int list)
+      (f:mips_assembly_function_int) =
+  let newblocks = H.create f#get_block_count in    (* ctxt_iaddr -> assemblyblock *)
+  let faddr = f#get_address in
+  let is_to_be_inlined s = List.exists (fun b -> is_same_iaddress b s) baddrs in
+  let rec process_block (baddr:ctxt_iaddress_t) =
+    if H.mem newblocks baddr then
+      ()
+    else
+      let block = f#get_block baddr in
+      begin
+        H.add newblocks baddr block ;
+        List.iter
+          (fun s ->
+            if is_to_be_inlined s then
+              let succblock = f#get_block s in
+              let ctxt = BlockContext block#get_first_address in
+              let newctxtstr = add_ctxt_to_ctxt_string faddr s ctxt in
+              let _ =
+                if H.mem newblocks newctxtstr then
+                  ()
+                else
+                  let newblock = make_block_ctxt_mips_assembly_block ctxt succblock in
+                  begin
+                    chlog#add
+                      "mips assembly block: add context"
+                      (LBLOCK [ faddr#toPretty ; STR ": " ; STR newctxtstr ]) ;
+                    H.add newblocks newctxtstr newblock
+                  end in
+              let thisnewblock = update_mips_assembly_block_successors block s newctxtstr in
+              begin
+                H.replace newblocks baddr thisnewblock ;
+                chlog#add
+                  "mips assembly block: replace successor"
+                  (LBLOCK [ faddr#toPretty ; STR ": " ; STR baddr ])
+              end) block#get_successors ;
+        List.iter process_block block#get_successors
+      end in
+  let _ = process_block faddr#to_hex_string in
+  let blocks = H.fold (fun _ v a -> v::a) newblocks [] in
+  let succ =
+    H.fold (fun k v a ->
+        (List.map (fun s -> (k,s)) v#get_successors) @ a) newblocks [] in
+  (blocks,succ)
+
+
+let inline_blocks_mips_assembly_function
+      (baddrs:doubleword_int list)
+      (f:mips_assembly_function_int) =
+  let (blocks,successors) = inline_blocks baddrs f in
+  new mips_assembly_function_t f#get_address blocks successors

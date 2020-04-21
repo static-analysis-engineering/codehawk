@@ -35,6 +35,8 @@ open CHLogger
 (* xprlib *)
 open Xprt
 open XprToPretty
+open XprTypes
+open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
@@ -65,6 +67,7 @@ open BCHMIPSAssemblyInstruction
 open BCHMIPSAssemblyInstructions
 
 open BCHDisassembleMIPSInstruction
+open BCHMIPSOperand
 open BCHMIPSTypes
 open BCHMIPSDisassemblyUtils
 
@@ -414,9 +417,10 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       let returnsite = get_next_instr_addr va in
       let _ = set_block_entry returnsite in
       let ctxt =
-        { ctxt_faddr = faddr ;
-          ctxt_callsite = a ;
-          ctxt_returnsite = returnsite } in
+        FunctionContext
+          { ctxt_faddr = faddr ;
+            ctxt_callsite = a ;
+            ctxt_returnsite = returnsite } in
       let callloc = make_location { loc_faddr = a ; loc_iaddr = a } in
       let ctxtcallloc = make_c_location callloc ctxt in
       let callsucc = ctxtcallloc#ci in 
@@ -501,17 +505,21 @@ let construct_functions f =
   let functionentrypoints = functions_data#get_function_entry_points in
   let count = ref 0 in
   List.iter (fun faddr ->
-      try
-        begin
-          count := !count + 1;
-          pverbose [ STR "Construct function " ; faddr#toPretty ; NL ] ;
-          construct_mips_assembly_function !count faddr
-        end
-      with
-      | BCH_failure p ->
-         ch_error_log#add
-           "construct functions"
-           (LBLOCK [ STR "function " ; faddr#toPretty ; STR ": " ; p ])
+      let fndata = functions_data#get_function faddr in
+      if fndata#is_library_stub then
+        ()
+      else
+        try
+          begin
+            count := !count + 1;
+            pverbose [ STR "Construct function " ; faddr#toPretty ; NL ] ;
+            construct_mips_assembly_function !count faddr
+          end
+        with
+        | BCH_failure p ->
+           ch_error_log#add
+             "construct functions"
+             (LBLOCK [ STR "function " ; faddr#toPretty ; STR ": " ; p ])
     ) functionentrypoints
 
 
@@ -566,11 +574,11 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
   let env = floc#f#env in
   let opExpr = op#to_expr floc in
   let opExpr = floc#inv#rewrite_expr opExpr env#get_variable_comparator in
+  let logerror msg = ch_error_log#add "set call address" msg in
   match opExpr with
   | XConst (IntConst c) ->
      let dw = numerical_to_doubleword c in
      if mips_assembly_functions#has_function_by_address dw then
-       let _ = pr_debug [ STR " set application target: " ; dw#toPretty ; NL ] in
        floc#set_application_target dw
      else
        ()
@@ -578,24 +586,27 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
      let gaddr =  env#get_global_variable_address v in
      if elf_header#is_program_address gaddr then
        let dw = elf_header#get_program_value gaddr in
-       if mips_assembly_functions#has_function_by_address dw then
-         if functions_data#has_function_name dw then
-           let name = (functions_data#get_function dw)#get_function_name in
-           if function_summary_library#has_so_function name then
-             let _ = pr_debug [ STR "  set library function: " ; STR name ; NL ] in
+       if functions_data#has_function_name dw then
+         let name = (functions_data#get_function dw)#get_function_name in
+         if function_summary_library#has_so_function name then
              floc#set_so_target name
-           else
-             floc#set_application_target dw
          else
-           floc#set_application_target dw
+           if mips_assembly_functions#has_function_by_address dw then
+             floc#set_application_target dw
+           else
+             logerror
+               (LBLOCK [ STR "Function name not associated with address: "  ;
+                         STR name ])
        else
-         ch_error_log#add
-           "set call address"
-           (LBLOCK [ STR "  reference does not resolve to function address: " ; dw#toPretty ])
+         if mips_assembly_functions#has_function_by_address dw then
+           floc#set_application_target dw
+         else
+           logerror
+             (LBLOCK [ STR "reference does not resolve to function address: " ;
+                       dw#toPretty ])
      else
-       ch_error_log#add
-         "set call address"
-         (LBLOCK [ STR "  reference is not in program space: " ; gaddr#toPretty ])
+       logerror
+         (LBLOCK [ STR "reference is not in program space: " ; gaddr#toPretty ])
   | _ ->
      ()
 
@@ -609,5 +620,21 @@ let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
            let floc = get_floc loc in
            if floc#has_unknown_target then
              set_call_address floc tgt
-        | _ -> ()) in
+        | JumpRegister tgt ->
+           let floc = get_floc loc in
+           let env = floc#f#env in
+           let ra_op = mips_register_op MRra RD in
+           let ra = floc#inv#rewrite_expr (ra_op#to_expr floc) floc#env#get_variable_comparator in
+           begin
+             match ra with
+             | XVar ra_var ->
+                if env#is_initial_register_value ra_var then
+                  if floc#has_unknown_target || floc#has_no_call_target then
+                    set_call_address floc tgt
+             | _ ->
+                pr_debug [ floc#l#toPretty ; STR ": ra = " ; x2p ra ; NL ]
+           end
+        | _ ->
+           ()) in
   ()
+

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,7 @@ open BCHMetricsHandler
 open BCHSystemInfo
 
 (* bchlibmips32 *)
+open BCHMIPSAssemblyFunction
 open BCHMIPSAssemblyInstructions
 open BCHMIPSOpcodeRecords   
 open BCHMIPSTypes
@@ -137,6 +138,21 @@ object (self)
 
   method add_function (f:mips_assembly_function_int) =
     H.add functions f#get_address#index f
+
+  method inline_blocks =
+    self#iter
+      (fun f ->
+        let fdata = functions_data#get_function f#get_address in
+        if fdata#has_inlined_blocks then
+          begin
+            H.replace
+              functions
+              f#get_address#index
+              (inline_blocks_mips_assembly_function
+                 fdata#get_inlined_blocks f) ;
+            chlog#add
+              "mips assembly function:inline blocks" f#get_address#toPretty
+          end)
 
   method get_functions = H.fold (fun _ v a -> v::a) functions []
 
@@ -271,5 +287,3 @@ let get_mips_disassembly_metrics () =
     dm_imports = imports ;
     dm_exports = get_export_metrics ()
   }
-
-                       
