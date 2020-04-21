@@ -58,7 +58,7 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs xanalyzer
+all: make_dirs xanalyzer inspect
 
 make_dirs:
 	@mkdir -p cmx

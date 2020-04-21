@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -120,7 +120,6 @@ let print_statistics () =
 	       STR "Errorpostconditions: " ; INT nErrorpostconditions ; NL ;
 	       STR "Sideeffects        : " ; INT nSideeffects ; NL ; 
 	       STR "Type definitions: " ; NL ; type_definitions#toPretty ; NL ;
-	       (* LBLOCK pRoles ; NL ; NL ; *)
                STR "IO action categories: " ; INT (List.length pActions) ; NL ;
                STR "Parameter roles     : " ; INT nParamRoles ; NL ;
 	       constant_statistics_to_pretty () ;  NL ]

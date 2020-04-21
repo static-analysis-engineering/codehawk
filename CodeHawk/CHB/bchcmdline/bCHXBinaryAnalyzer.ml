@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -370,6 +370,7 @@ let main () =
                 ((Unix.gettimeofday ()) -. !t) in
       let t = ref (Unix.gettimeofday ()) in
       let _ = construct_functions_mips () in
+      let _ = mips_assembly_functions#inline_blocks in
       let _ = disassembly_summary#record_construct_functions_time
                 ((Unix.gettimeofday ()) -. !t) in
       let _ = disassembly_summary#set_disassembly_metrics (get_mips_disassembly_metrics ()) in      
@@ -480,6 +481,7 @@ let main () =
       let logcmd = "analyze_" ^ (string_of_int index) in
       let _ = disassemble_mips_sections () in
       let _ = construct_functions_mips () in
+      let _ = mips_assembly_functions#inline_blocks in
       let _ = analyze_mips starttime in
       let _ = file_metrics#set_disassembly_results (get_mips_disassembly_metrics ()) in      
       begin

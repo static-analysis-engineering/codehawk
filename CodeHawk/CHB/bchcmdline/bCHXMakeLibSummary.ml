@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -73,7 +73,7 @@ let speclist = [
   
 let ccNode =
   xml_string
-    "copyright-notice" "Copyright 2012-2019, Kestrel Technology LLC, Palo Alto, CA 94304" 
+    "copyright-notice" "Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304" 
   
 let usage_msg = "mktemplate name"
 let read_args () = Arg.parse speclist (fun s -> name := s) usage_msg
@@ -127,7 +127,7 @@ let write_xml_api (node:xml_element_int) parameters =
   let append = node#appendChildren in
   let set = node#setAttribute in
   let seti = node#setIntAttribute in
-  let pars = List.rev (List.mapi (fun i name ->
+  let pars = List.mapi (fun i name ->
     let pNode = xmlElement "par" in
     let tNode = xml_string "type" " "  in
     let set = pNode#setAttribute in
@@ -138,7 +138,7 @@ let write_xml_api (node:xml_element_int) parameters =
       set "name" name ;
       seti "nr" (i+1) ;
       pNode
-    end) parameters) in
+    end) parameters in
   let rNode = xml_string "returntype" " " in
   begin
     append (pars @ [ rNode ]) ;
