@@ -20,6 +20,7 @@ _build/
 
 # binary analyzer executables
 CodeHawk/CHB/bchcmdline/chx86_analyze
+CodeHawk/CHB/bchcmdline/chx86_inspect_summaries
 
 # c analyzer executables
 CodeHawk/CHC/cchcmdline/canalyzer
@@ -45,6 +46,17 @@ CodeHawk/CHJ/jchstac/chj_translate_class
 CodeHawk/CHJ/jchstac/chj_template
 
 CodeHawk/CHJ/jchstacgui/chj_gui
+
+# unit test artifacts
+CodeHawk/CH_tests/CHB/testinputs/dnsmasq/dnsmasq.ch
+CodeHawk/CH_tests/CHB/testinputs/lighttpd/lighttpd.ch
+
+CodeHawk/CH_tests/CHB/bchlib/bCHApiParameterTest
+CodeHawk/CH_tests/CHB/bchlib/bCHDemanglerTest
+CodeHawk/CH_tests/CHB/bchlib/bCHDoublewordTest
+CodeHawk/CH_tests/CHB/bchlib/bCHFunctionInfoTest
+CodeHawk/CH_tests/CHB/bchlib/bCHImmediateTest
+CodeHawk/CH_tests/CHB/bchlib/bCHLocationTest
 
 # summaries
 cchsummaries.jar
@@ -77,6 +89,8 @@ CodeHawk/CHB/bchcmdline/chx86_make_class_summary
 CodeHawk/CHB/bchcmdline/chx86_make_const_summary
 CodeHawk/CHB/bchcmdline/chx86_make_lib_summary
 CodeHawk/CHB/bchcmdline/chx86_make_structdef
+CodeHawk/CHB/bchsummaries/bchsummaries.jar
 
 # CodeHawk logging
 *.chlog
+*.ch_error_log
