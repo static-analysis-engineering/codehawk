@@ -38,6 +38,7 @@ open BCHBasicTypes
 open BCHByteUtilities
 open BCHDoubleword
 open BCHFunctionData
+open BCHFunctionSummaryLibrary
 open BCHLibTypes
 open BCHStreamWrapper
 open BCHSystemInfo
@@ -198,7 +199,11 @@ object (self)
   method set_function_entry_points =
     H.iter (fun _ e ->
         if e#is_function && e#has_address_value then
-          ignore (functions_data#add_function e#get_st_value)) entries
+          let fndata = functions_data#add_function e#get_st_value in
+          if e#has_name && function_summary_library#has_so_function e#get_name then
+            fndata#set_library_stub
+          else
+            ()) entries
 
   method set_function_names =
     H.iter (fun _ e ->
