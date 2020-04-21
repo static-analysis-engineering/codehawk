@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-20 16:54:15"/>
+  <libfun lib="so_functions" name="lseek">
+    <documentation>
+      <desc>move the read/write file offset</desc>
+      <apidoc>
+        <pt>
+          <ll>off_t lseek(</ll>
+          <ld>int fildes</ld>
+          <ld>off_t offset</ld>
+          <ld>int whence</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="fildes">file descriptor</par>
+        <par name="offset">offset</par>
+        <par name="whence">TBD</par>
+        <return>
+          <rc cond="success">
+	    resulting offset, as measured in bytes from the beginning of the file
+	  </rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="lseek">
+      <par loc="stack" name="fildes" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="offset" nr="2">
+        <type>off_t</type>
+      </par>
+      <par loc="stack" name="whence" nr="3">
+        <type>int</type>
+      </par>
+      <returntype>off_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

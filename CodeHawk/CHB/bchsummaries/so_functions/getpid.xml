@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="03/20/2015 21:20:11"/>
+  <libfun lib="msvcrt" name="getpid">
+   <documentation>
+    <desc>Gets the process identification</desc>
+    <apidoc>
+     <pt>int getpid (void)</pt>
+     <return>the process ID obtained from the system</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="getpid">
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="system" desc="obtains the process identification"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

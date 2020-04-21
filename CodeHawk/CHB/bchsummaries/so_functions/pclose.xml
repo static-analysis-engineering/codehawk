@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-19 16:37:03"/>
+  <libfun lib="so_functions" name="pclose">
+    <documentation>
+      <desc>close a pipe stream to or from a process</desc>
+      <apidoc>
+        <pt>int pclose (FILE  *stream)</pt>
+        <par name="stream">stream opened by popen</par>
+        <return>
+          <rc cond="success">status code</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="pclose">
+      <par loc="stack" name="stream" nr="1">
+        <type><ptr>FILE</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

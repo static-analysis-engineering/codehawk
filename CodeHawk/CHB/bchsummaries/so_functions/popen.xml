@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-18 15:54:16"/>
+  <libfun lib="so_functions" name="popen">
+    <documentation>
+      <desc>initiate pipe streams to or from a process</desc>
+      <apidoc>
+        <pt>
+          <ll>FILE char *popen(</ll>
+          <ld>const char *command</ld>
+          <ld>const char *mode</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="command">command</par>
+        <par name="mode">specifies I/O command</par>
+        <return>
+          <rc cond="success">pointer to an open stream</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="popen">
+      <par loc="stack" name="command" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="mode" nr="2">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype><ptr>FILE</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

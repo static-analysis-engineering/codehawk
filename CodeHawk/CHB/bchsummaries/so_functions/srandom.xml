@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-19 18:27:44"/>
+  <libfun lib="so_functions" name="srandom">
+    <documentation>
+      <desc>pseudo-random number function</desc>
+      <apidoc>
+        <pt>void srandom (int seed)</pt>
+        <par name="seed">seed to initialize current array</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="srandom">
+      <par loc="stack" name="seed" nr="1">
+        <type>int</type>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

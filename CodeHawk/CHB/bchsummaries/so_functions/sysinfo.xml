@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-13 18:01:39"/>
+  <libfun lib="so_functions" name="sysinfo">
+    <documentation>
+      <desc>return system information</desc>
+      <apidoc>
+        <pt>int sysinfo (struct sysinfo *info)</pt>
+        <par name="info">buffer to receive system information</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="sysinfo">
+      <par loc="stack" name="info" nr="1">
+        <type><ptr>sysinfo</ptr></type>
+	<pre><deref-write/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

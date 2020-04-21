@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:36"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="fileno">
+   <documentation>
+    <desc>gets the file descriptor associated with a stream</desc>
+    <apidoc>
+     <pt>int fileno (FILE *stream)</pt>
+     <par name="stream">Pointer to the FILE structure</par>
+     <return>
+      <rc cond="success">file descriptor</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="fileno">
+    <returnbtype tname="int" ttag="tnamed"/>
+    <par loc="stack" name="stream" nr="1">
+      <type><ptr>FILE</ptr></type>
+      <pre><deref-read/></pre>
+      <roles>
+	<role rt="ioc:filesystem" rn="file"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="gets a file descriptor associated with a stream"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <sets-errno/>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

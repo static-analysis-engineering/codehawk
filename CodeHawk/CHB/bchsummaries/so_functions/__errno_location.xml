@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-13 16:13:30"/>
+  <libfun lib="so_functions" name="__errno_location">
+    <documentation>
+      <desc>address of errno variable</desc>
+      <apidoc>
+        <pt>int *__errno_location (void)</pt>
+        <return>
+          <rc cond="success">not null</rc>
+          <rc cond="failure">null</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="__errno_location">
+      <returntype><ptr>int</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

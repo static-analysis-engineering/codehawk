@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-13 17:56:56"/>
+  <libfun lib="so_functions" name="send">
+    <documentation>
+      <desc>send a message on a socket</desc>
+      <apidoc>
+        <pt>
+          <ll>ssize_t send(</ll>
+          <ld>int socket</ld>
+          <ld>const void *buffer</ld>
+          <ld>size_t length</ld>
+          <ld>int flags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="socket">Specifies the socket file descriptor</par>
+        <par name="buffer">Points to the buffer containing the message to send</par>
+        <par name="length">Specifies the length of the message in bytes</par>
+        <par name="flags">Specifies the type of message transmission</par>
+        <return>
+          <rc cond="success">number of bytes sent</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="send">
+      <par loc="stack" name="socket" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="buffer" nr="2">
+        <type><ptr>VOID</ptr></type>
+      </par>
+      <par loc="stack" name="length" nr="3">
+        <type>size_t</type>
+      </par>
+      <par loc="stack" name="flags" nr="4">
+        <type>int</type>
+      </par>
+      <returntype>ssize_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

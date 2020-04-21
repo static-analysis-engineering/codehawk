@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-20 16:05:55"/>
+  <libfun lib="so_functions" name="select">
+    <documentation>
+      <desc>synchronous I/O multiplexing</desc>
+      <apidoc>
+        <pt>
+          <ll>int select(</ll>
+          <ld>int nfds</ld>
+          <ld>fd_set *restrict readfds</ld>
+          <ld>fd_set *restrict writefds</ld>
+          <ld>fd_set *restrict errorfds</ld>
+          <ld>struct timeval *restrict timeout</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="nfds">specifies the range of descriptors to be tested</par>
+        <par name="readfds">
+	  specifies the file descriptors to be checked for being ready to read
+	</par>
+        <par name="writefds">
+	  specifies the file descriptors to be checked for being ready to write
+	</par>
+        <par name="errorfds">
+	  specifies the file descriptors to be checked for error conditions pending
+	</par>
+        <par name="timeout">
+	  controls how long the function shall take before timing out
+	</par>
+        <return>
+          <rc cond="success">
+	    the total number of bits set in the bit masks
+	  </rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="select">
+      <par loc="stack" name="nfds" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="readfds" nr="2">
+        <type><ptr>fd_set</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <par loc="stack" name="writefds" nr="3">
+        <type><ptr>fd_set</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <par loc="stack" name="errorfds" nr="4">
+        <type><ptr>fd_set</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <par loc="stack" name="timeout" nr="5">
+        <type><ptr>timeval</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<nonnegative-negative/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

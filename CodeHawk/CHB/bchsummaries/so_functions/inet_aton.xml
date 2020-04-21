@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-13 16:17:34"/>
+  <libfun lib="so_functions" name="inet_aton">
+    <documentation>
+      <desc>
+	converts the Internet host address cp from the IPv4
+	numbers-and-dots notation into binary form (in network byte
+	order) and stores it in the structure that inp points
+	to. inet_aton() returns nonzero if the address is valid, zero
+	if not.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>int inet_aton(</ll>
+          <ld>const char *cp</ld>
+          <ld>struct in_addr *inp</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="cp">address to be converted</par>
+        <par name="inp">struct to store result</par>
+        <return>
+          <rc cond="success">nonzero</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="inet_aton">
+      <par loc="stack" name="cp" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="inp" nr="2">
+        <type><ptr>in_addr</ptr></type>
+	<pre>deref-write</pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

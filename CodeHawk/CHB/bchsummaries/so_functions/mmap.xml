@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-20 16:40:53"/>
+  <libfun lib="so_functions" name="mmap">
+    <documentation>
+      <desc>map pages of memory</desc>
+      <apidoc>
+        <pt>
+          <ll>void *mmap(</ll>
+          <ld>void *addr</ld>
+          <ld>size_t len</ld>
+          <ld>int prot</ld>
+          <ld>int flags</ld>
+          <ld>int fildes</ld>
+          <ld>off_t off</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="addr">starting address of mapping</par>
+        <par name="len">number of bytes to be mapped </par>
+        <par name="prot">
+	  determines whether read, write, execute, or some combination of
+	  accesses are permitted to the data being mapped
+	</par>
+        <par name="flags">flags</par>
+        <par name="fildes">file descriptor</par>
+        <par name="off">TBD</par>
+        <return>
+          <rc cond="success">address at which the mapping was placed</rc>
+          <rc cond="failure">MAP_FAILED</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="mmap">
+      <par loc="stack" name="addr" nr="1">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="stack" name="len" nr="2">
+        <type>size_t</type>
+      </par>
+      <par loc="stack" name="prot" nr="3">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="flags" nr="4">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="fildes" nr="5">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="off" nr="6">
+        <type>off_t</type>
+      </par>
+      <returntype><ptr>void</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

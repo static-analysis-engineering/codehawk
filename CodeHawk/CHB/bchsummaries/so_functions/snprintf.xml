@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:36"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="snprintf">
+   <documentation>
+    <desc>writes formatted data to a string</desc>
+    <apidoc>
+     <pt>
+      <ll>int snprintf (</ll>
+      <ld>char *buffer,</ld>
+      <ld>size_t count,</ld>
+      <ld>const char *format,</ld>
+      <ld>[ arguments ]</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="buffer">storage location for the output</par>
+     <par name="count">maximum number of characters to store</par>
+     <par name="format">format-control string</par>
+     <par name="arguments">variable number of arguments</par>
+     <return>
+      <bind>
+       <ci>len</ci>
+       <body>length of the formatted data string (not including the null-terminator byte</body>
+      </bind>
+      <rc cond="len &lt; count">
+	len characters are stored, a null-terminator is appended and len is returned
+      </rc>
+      <rc cond="len=count">
+	len characters are stored, no null-terminator is appended and len is returned
+      </rc>
+      <rc cond="len &gt; count">
+	count characters are stored, no null-terminator is appended and a negative 
+	value is returned
+      </rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="snprintf">
+    <returntype>int</returntype>
+    <par loc="stack" desc="dest buffer" io="w" name="buffer" nr="1" rep="hex">
+      <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:memops" rn="dst-string:formatted data"/>
+        <role rt="ioc:outputs" rn="formatted data to string"/>
+     </roles>
+    </par>
+    <par loc="stack" desc="count" io="r" name="count" roles="none" nr="2">
+       <type>size_t</type>
+    </par>
+    <par loc="stack" desc="format" io="r" name="format" nr="3" rep="hex">
+      <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:outputs" rn="format string"/>
+     </roles>
+     <pre><deref-read-nt/><format-string/></pre>
+    </par>
+    <par loc="stack" desc="args" name="args" io="r" roles="none" nr="4">
+     <btype tname="var-arg" ttag="tnamed"/>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="outputs" desc="prints formatted data to string"/>
+    </io-actions>
+    <preconditions>
+     <pre>
+      <math>
+       <apply>
+	 <deref-write/>
+	 <type>char</type>
+	 <ci>buffer</ci>
+	 <ci>count</ci>
+       </apply>
+      </math>
+     </pre>
+    </preconditions>
+    <postconditions>
+     <post>
+      <math>
+       <apply>
+        <geq/>
+        <return-value/>
+        <cn>0</cn>
+       </apply>
+      </math>
+     </post>
+     <error-post>
+      <math>
+       <apply>
+        <lt/>
+        <return-value/>
+        <cn>0</cn>
+       </apply>
+      </math>
+     </error-post>
+    </postconditions>
+    <sideeffects>
+     <sideeffect>
+      <math>
+       <apply>
+        <block-write/>
+        <btype tname="char" ttag="tnamed"/>
+        <ci>buffer</ci>
+        <ci>count</ci>
+       </apply>
+      </math>
+     </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

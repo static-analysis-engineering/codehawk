@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-13 15:30:11"/>
+  <libfun lib="so_functions" name="waitpid">
+    <documentation>
+      <desc>wait for a child process to stop or terminate</desc>
+      <apidoc>
+        <pt>
+          <ll>pid_t waitpid(</ll>
+          <ld>pid_t pid</ld>
+          <ld>int *stat_loc</ld>
+          <ld>int options</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pid">
+	  specifies a set of child processes for which status is requested
+	</par>
+        <par name="stat_loc">
+	  pointer to location to store status
+	</par>
+        <par name="options">
+	  constructed from the bitwise-inclusive OR of zero or more flags
+	</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="waitpid">
+      <par loc="stack" name="options" nr="3">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="stat_loc" nr="2">
+        <type><ptr>int</ptr></type>
+	<pre><deref-write/></pre>
+      </par>
+      <par loc="stack" name="pid" nr="1">
+        <type>pid_t</type>
+      </par>
+      <returntype>pid_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<nonnegative-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

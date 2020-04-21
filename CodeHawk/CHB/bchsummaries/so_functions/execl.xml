@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-19 17:39:19"/>
+  <libfun lib="so_functions" name="execl">
+    <documentation>
+      <desc>execute a file</desc>
+      <apidoc>
+        <pt>
+          <ll>int execl(</ll>
+          <ld>const char *path</ld>
+          <ld>const char *arg0</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="path">
+	  pathname that identifies the new process image file
+	</par>
+        <par name="arg0">
+	  pointers to null-terminated character strings
+	</par>
+        <return>
+	  if the function returns to the caller an error has occurred
+	</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="execl">
+      <par loc="stack" name="path" nr="1">
+        <type><ptr>char</ptr></type>
+      </par>
+      <par loc="stack" name="arg0" nr="2">
+        <type><ptr>char</ptr></type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<non-returning/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

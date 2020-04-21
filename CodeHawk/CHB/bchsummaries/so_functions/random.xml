@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-19 17:35:08"/>
+  <libfun lib="so_functions" name="random">
+    <documentation>
+      <desc>pseudo-random number function</desc>
+      <apidoc>
+        <pt>long random (void)</pt>
+        <return>the generated pseudo-random number</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="random">
+      <returntype>long</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
