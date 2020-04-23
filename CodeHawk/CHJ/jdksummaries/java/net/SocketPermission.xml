@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-04-04 00:02:56"/>
-  <class final="yes" name="SocketPermission" package="java.net">
+  <class final="yes" immutable="yes" name="SocketPermission" package="java.net">
     <superclass>java.security.Permission</superclass>
     <interfaces>
       <implements>java.io.Serializable</implements>

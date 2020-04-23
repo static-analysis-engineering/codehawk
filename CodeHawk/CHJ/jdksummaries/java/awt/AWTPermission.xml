@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-23 15:01:00"/>
-  <class final="yes" name="AWTPermission" package="java.awt">
+  <class final="yes" immutable="yes" name="AWTPermission" package="java.awt">
     <superclass>java.security.BasicPermission</superclass>
     <interfaces>
       <implements>java.io.Serializable</implements>
@@ -21,23 +21,7 @@
         <exceptions>
           <throws>java.lang.IllegalArgumentException</throws>
           <c-throws>
-            <safety-condition>
-              <math>
-                <apply>
-                  <not-null/>
-                  <arg nr="1"/>
-                </apply>
-              </math>
-            </safety-condition>
-            <error-condition>
-              <math>
-                <apply>
-                  <null/>
-                  <arg nr="1"/>
-                </apply>
-              </math>
-            </error-condition>
-            <exn>java.lang.NullPointerException</exn>
+	    <cnp arg="1"/>
           </c-throws>
         </exceptions>
         <summary>
@@ -48,7 +32,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="AWT" form="permission" type="string"/>
+            <sink arg="1" dest="permission" form="not empty" type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
           </sinks>
         </summary>
       </constructor>
@@ -65,23 +51,7 @@
         <exceptions>
           <throws>java.lang.IllegalArgumentException</throws>
           <c-throws>
-            <safety-condition>
-              <math>
-                <apply>
-                  <not-null/>
-                  <arg nr="1"/>
-                </apply>
-              </math>
-            </safety-condition>
-            <error-condition>
-              <math>
-                <apply>
-                  <null/>
-                  <arg nr="1"/>
-                </apply>
-              </math>
-            </error-condition>
-            <exn>java.lang.NullPointerException</exn>
+	    <cnp arg="1"/>
           </c-throws>
         </exceptions>
         <summary>
@@ -92,7 +62,9 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="1" dest="AWT" form="permission" type="string"/>
+            <sink arg="1" dest="permission" form="not empty" type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
           </sinks>
         </summary>
       </constructor>

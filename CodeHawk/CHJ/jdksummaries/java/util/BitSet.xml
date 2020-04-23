@@ -142,7 +142,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ clear -->
-      <method access="public" name="clear" valid="no">
+      <method access="public" name="clear">
         <signature>
           <arg nr="1">
             <int/>
@@ -151,9 +151,49 @@
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <arg nr="1"/>
+		  <arg nr="2"/>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IndexOutOfBoundsException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ clear -->
@@ -208,19 +248,37 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ flip -->
-      <method access="public" name="flip" valid="no">
+      <method access="public" name="flip">
         <signature>
           <arg nr="1">
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IndexOutOfBoundsException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ flip -->
-      <method access="public" name="flip" valid="no">
+      <method access="public" name="flip">
         <signature>
           <arg nr="1">
             <int/>
@@ -229,9 +287,49 @@
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <arg nr="1"/>
+		  <arg nr="2"/>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IndexOutOfBoundsException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ get -->
@@ -245,7 +343,18 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.IndexOutOfBoundsException</throws>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+            <exn>java.lang.IndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -269,9 +378,53 @@
             <object>java.util.BitSet</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <arg nr="1"/>
+		  <arg nr="2"/>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IndexOutOfBoundsException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hashCode -->
@@ -611,7 +764,18 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.IndexOutOfBoundsException</throws>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+            <exn>java.lang.IndexOutOfBoundsException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -637,8 +801,37 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.IndexOutOfBoundsException</throws>
-        </exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <arg nr="1"/>
+		  <arg nr="2"/>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IndexOutOfBoundsException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -666,8 +859,37 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.IndexOutOfBoundsException</throws>
-        </exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <arg nr="1"/>
+		  <arg nr="2"/>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IndexOutOfBoundsException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -714,7 +936,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ stream -->
-      <method access="public" name="stream" valid="no">
+      <method access="public" name="stream">
         <signature>
           <return>
             <object>java.util.stream.IntStream</object>
@@ -722,11 +944,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toByteArray -->
-      <method access="public" name="toByteArray" valid="no">
+      <method access="public" name="toByteArray">
         <signature>
           <return>
             <array>
@@ -736,11 +963,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toLongArray -->
-      <method access="public" name="toLongArray" valid="no">
+      <method access="public" name="toLongArray">
         <signature>
           <return>
             <array>
@@ -750,7 +982,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toString -->
@@ -771,7 +1008,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ valueOf -->
-      <method access="public" name="valueOf" static="yes" valid="no">
+      <method access="public" name="valueOf" static="yes">
         <signature>
           <arg nr="1">
             <array>
@@ -784,11 +1021,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ valueOf -->
-      <method access="public" name="valueOf" static="yes" valid="no">
+      <method access="public" name="valueOf" static="yes">
         <signature>
           <arg nr="1">
             <object>java.nio.LongBuffer</object>
@@ -799,11 +1041,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ valueOf -->
-      <method access="public" name="valueOf" static="yes" valid="no">
+      <method access="public" name="valueOf" static="yes">
         <signature>
           <arg nr="1">
             <array>
@@ -816,11 +1063,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ valueOf -->
-      <method access="public" name="valueOf" static="yes" valid="no">
+      <method access="public" name="valueOf" static="yes">
         <signature>
           <arg nr="1">
             <object>java.nio.ByteBuffer</object>
@@ -831,7 +1083,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ xor -->

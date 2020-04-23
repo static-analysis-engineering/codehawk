@@ -549,15 +549,22 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRoundingMode -->
-      <method access="public" name="getRoundingMode" valid="no">
+      <method access="public" name="getRoundingMode">
         <signature>
           <return>
             <object>java.math.RoundingMode</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.UnsupportedOperationException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hashCode -->
@@ -660,6 +667,11 @@
               </math>
             </post>
           </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="parse" form="number" type="string">
+	      <throws>java.text.ParseException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ parseObject -->
@@ -677,7 +689,9 @@
         </signature>
         <exceptions>
           <throws>java.text.ParseException</throws>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -694,10 +708,15 @@
               <return/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1"  dest="parse" form="number" type="string">
+	      <throws>java.text.ParseException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setCurrency -->
-      <method access="public" name="setCurrency" valid="no">
+      <method access="public" name="setCurrency">
         <signature>
           <arg nr="1">
             <object>java.util.Currency</object>
@@ -705,7 +724,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setGroupingUsed -->
@@ -811,15 +835,25 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRoundingMode -->
-      <method access="public" name="setRoundingMode" valid="no">
+      <method access="public" name="setRoundingMode">
         <signature>
           <arg nr="1">
             <object>java.math.RoundingMode</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	  <throws>java.lang.UnsupportedOperationException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-04-02 23:15:08"/>
-  <class final="yes" name="FilePermission" package="java.io">
+  <class final="yes" immutable="yes" name="FilePermission" package="java.io">
     <superclass>java.security.Permission</superclass>
     <interfaces>
       <implements>java.io.Serializable</implements>
@@ -36,8 +36,10 @@
             </transfer>
           </taint>
           <sinks>
-            <sink arg="2" dest="file permission creation" form="file permissions" type="string"/>
-            <sink arg="1" dest="file permission creation" form="pathname" type="string">
+            <sink arg="2" dest="permission" form="file permission" type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
+            <sink arg="1" dest="permission" form="pathname" type="string">
 	      <throws>java.lang.IllegalArgumentException</throws>
 	    </sink>
           </sinks>
