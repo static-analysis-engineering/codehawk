@@ -68,6 +68,12 @@ let is_reflective_op cname mname =
 
 let reflectivepackages = [ "java.lang.reflect" ]
 
+let condition_substitution s =
+  if s = "randomNumberGeneratorInstance.nextDouble()" then
+    "p"
+  else
+    s
+
 
 let is_reflective_call (cn:class_name_int) (ms:method_signature_int) =
   List.mem cn#package_name  reflectivepackages ||
@@ -229,7 +235,8 @@ object (self)
 	  let edgeLabeling =
 	    let lastpc = b#get_lastpc in
 	    if is_conditional_jump mInfo lastpc then
-	      let (anntrue,annfalse) = get_cfg_tf_annotations mInfo lastpc in
+	      let (anntrue,annfalse) =
+                get_cfg_tf_annotations ~subst:condition_substitution mInfo lastpc in
 	      let offset = get_offset mInfo lastpc in
 	      let fsucc = mInfo#get_next_bytecode_offset lastpc in
 	      let tsucc = lastpc + offset in
