@@ -33,6 +33,8 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHFileIO
+open CHXmlDocument
 
 (* jchlib *)
 open JCHBasicTypes
@@ -49,6 +51,7 @@ open JCHSystemSettings
 
 let name = ref ""
 let target = ref ""
+let save_log = ref false
            
 let speclist =
   [ ("-classpath", Arg.String system_settings#add_classpath_unit,
@@ -58,7 +61,8 @@ let speclist =
     ("-profiles", Arg.String set_profile_summary_classpath,
      "profile-summary jar file");
     ("-supplements", Arg.String set_supplement_summary_classpath,
-     "supplement-summary jar file")
+     "supplement-summary jar file");
+    ("-log",Arg.Set save_log,"save log file")
   ]
   
 let usage_msg = "ch_integrate filename"
@@ -69,12 +73,28 @@ let main () =
     let _ = read_args () in
     let cn = make_cn !name in
     let _ = load_class_and_dependents cn in
-    save_xml_class_or_interface_summary cn
+    let logname = cn#name ^ "_integrate.chlog" in
+    begin
+      save_xml_class_or_interface_summary cn ;
+      file_output#saveFile logname chlog#toPretty
+    end
   with
   | CHFailure p
   | JCH_failure p ->
      begin
        pr_debug [ STR "Error in chj_template: " ; p ] ;
+       exit 1
+     end
+  | CHXmlReader.XmlParseError (l,c,p) ->
+     begin
+       pr_debug [ NL ; STR "Xml parse error at (" ; INT l ; STR "," ;
+                  INT c ; STR "): " ; p ; NL ] ;
+       exit 1
+     end
+  | XmlDocumentError(line, col, p) ->
+     begin
+       pr_debug [ NL ; STR "XML document error at (" ; INT line;
+                  STR ","; INT col; STR "): "; p; NL] ;
        exit 1
      end
 

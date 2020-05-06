@@ -118,8 +118,6 @@ let nSideEffects = ref 0
 let nPatterns = ref 0
 let patterns = ref []
 
-let packages = H.create 3
-
 let default_implementations_to_pretty () =
   let lst = ref [] in
   let _ = H.iter (fun k v -> lst := (k,v) :: !lst) default_implementations in
@@ -128,14 +126,96 @@ let default_implementations_to_pretty () =
     LBLOCK [ fixed_length_pretty (STR k) 32 ; STR ": " ; 
 	     pretty_print_list v (fun s -> s#toPretty) "" ", " "" ; NL ]) lst)
 
-let add_package (name:string) (methods:int) =
-  if H.mem packages name then
-    let (numClasses,numMethods) = H.find packages name in
-    H.replace packages name (numClasses + 1, numMethods + methods)
-  else
-    H.add packages name (1,methods)
+type pkg_rec_t = {
+    class_count: int ;
+    method_count: int ;
+    pre_count: int ;
+    post_count: int ;
+    stringsink_count: int ;
+    resourcesink_count: int
+  }
+
+let zero_pkg_rec = {
+    class_count = 0 ;
+    method_count = 0 ;
+    pre_count = 0 ;
+    post_count = 0 ;
+    stringsink_count = 0 ;
+    resourcesink_count = 0
+  }
+
+let update_pkg_rec (pkgrec:pkg_rec_t) (methods:function_summary_int list) =
+  let getpre (m:function_summary_int) =
+    let exninfos = m#get_exception_infos in
+    List.fold_left
+      (fun acc x -> acc + List.length x#get_safety_condition) 0 exninfos in
+  { class_count = pkgrec.class_count + 1 ;
+    method_count = pkgrec.method_count + List.length methods ;
+    pre_count =
+      pkgrec.pre_count + List.fold_left (fun acc m -> acc + getpre m) 0 methods ;
+    post_count =
+      pkgrec.post_count
+        + List.fold_left (fun acc m -> acc + (List.length m#get_post)) 0 methods ;
+    stringsink_count =
+      pkgrec.stringsink_count
+      + List.fold_left (fun acc m -> acc + (List.length m#get_string_sinks)) 0 methods ;
+    resourcesink_count =
+      pkgrec.resourcesink_count
+      + List.fold_left (fun acc m -> acc + (List.length m#get_resource_sinks)) 0 methods
+  }
+
+let packages = H.create 3  
+
+let add_class_to_package (name:string) (methods:function_summary_int list) =
+  let pkgrec =
+    if H.mem packages name then
+      H.find packages name
+    else
+      zero_pkg_rec in  
+  H.replace packages name (update_pkg_rec pkgrec methods)
+
+let pkg_recs_to_pretty () =
+  let pkg_header =
+    LBLOCK [ STR "| package | classes | methods | preconditions | postconditions " ;
+             STR "| string sinks | resource sinks | " ; NL ;
+             STR "| :--- | ---: | ---: | ---: | ---: | ---: | ---: | " ; NL ] in
+  let pkg_rec_to_pretty (r:pkg_rec_t) =
+    LBLOCK [ STR " | " ; INT r.class_count ;
+             STR " | " ; INT r.method_count ;
+             STR " | " ; INT r.pre_count ;
+             STR " | " ; INT r.post_count ;
+             STR " | " ; INT r.stringsink_count ;
+             STR " | " ; INT r.resourcesink_count ;
+             STR " | " ] in
+  let recs = H.fold (fun k v a -> (k,v) :: a) packages [] in
+  let recs = List.sort (fun (p1,_) (p2,_) -> P.compare p1 p2) recs in
+  let totals =
+    List.fold_left (fun acc (_,r) ->
+        { class_count = acc.class_count + r.class_count ;
+          method_count = acc.method_count + r.method_count ;
+          pre_count = acc.pre_count + r.pre_count ;
+          post_count = acc.post_count + r.post_count ;
+          stringsink_count = acc.stringsink_count + r.stringsink_count ;
+          resourcesink_count = acc.resourcesink_count + r.resourcesink_count
+      } ) zero_pkg_rec recs in
+  let totals_pretty =
+    LBLOCK [ STR "| total "  ;
+             STR " | " ; INT totals.class_count ;
+             STR " | " ; INT totals.method_count ;
+             STR " | " ; INT totals.pre_count ;
+             STR " | " ; INT totals.post_count ;
+             STR " | " ; INT totals.stringsink_count ;
+             STR " | " ; INT totals.resourcesink_count ;
+             STR " | " ; NL ] in
+  LBLOCK [ pkg_header ;
+           LBLOCK
+             (List.map (fun (p,r) ->
+                  LBLOCK [ STR p ; pkg_rec_to_pretty r ; NL ]) recs) ;
+           totals_pretty ]
+
 
 let exception_guards = H.create 3
+let exception_info_exns = H.create 3
 
 let add_guard name =
   if H.mem exception_guards name then
@@ -147,14 +227,29 @@ let classify_exception_guards (s:function_summary_int) =
   let infos = s#get_exception_infos in
   let conditions =
     List.fold_left (fun acc i -> i#get_safety_condition @ acc) [] infos in
-  List.iter
-    (fun c ->
-      match c with
-      | PreRelationalExpr _ -> add_guard "numeric"
-      | PreNull _ -> add_guard "null"
-      | PreNotNull _ -> add_guard "not-null" 
-      | PreValidString _ -> add_guard "valid string") conditions
-
+  begin
+    List.iter
+      (fun c ->
+        match c with
+        | PreRelationalExpr _ -> add_guard "numeric"
+        | PreNull _ -> add_guard "null"
+        | PreNotNull _ -> add_guard "not-null" 
+        | PreValidString _ -> add_guard "valid string") conditions ;
+    List.iter
+      (fun info ->
+        if (List.length info#get_safety_condition) > 0 then
+          let exn = info#get_exception#name in
+          let entry =
+            if H.mem exception_info_exns exn then
+              H.find exception_info_exns exn
+            else
+              0 in
+          H.replace
+            exception_info_exns
+            exn
+            (entry + (List.length info#get_safety_condition))) infos
+  end
+  
 let stringforms = H.create 5
 let stringdests = H.create 5
 let stringexceptions = H.create 5
@@ -200,26 +295,12 @@ let print_string_sinks () =
                   LBLOCK [ STR s ; NL ; INDENT (3, LBLOCK  (pl l)) ]) (sort exns)) ]
 
 
-let print_exception_guards () =
-  let pp = ref [] in
-  let _ =
-    H.iter (fun name num ->
-        pp := (LBLOCK [ STR name ; STR ": " ; INT num ; NL ]) :: !pp) exception_guards in
-  LBLOCK [ STR "Exception guards" ; NL ; LBLOCK !pp ]
-
-let print_package_statistics () =
-  let results = ref [] in
-  let _ = H.iter (fun name (nC,nM) -> results := (name,nC,nM) :: !results) packages in
-  let results = List.sort (fun (_,nC1,_) (_,nC2,_) -> Pervasives.compare nC1 nC2) !results in
-  let pp = ref [] in
-  let _ =
-    List.iter (fun (name,nC,nM) ->
-        let p =
-          LBLOCK [ STR (fixed_length_string name 30) ; STR "  " ; 
-		   fixed_length_pretty ~alignment:StrRight (INT nC) 8 ; STR "  " ;
-		   fixed_length_pretty ~alignment:StrRight (INT nM) 8 ; NL ] in
-        pp := p :: !pp) results in
-  LBLOCK [ STR "Package statistics: " ; NL ; LBLOCK !pp ; NL ]
+let exception_guards_to_pretty () =
+  let exns =  H.fold (fun k v a -> (k,v) :: a) exception_info_exns [] in
+  let exns = List.sort (fun (x1,_) (x2,_) -> P.compare x1 x2) exns in
+  LBLOCK
+    (List.map (fun (k,v) ->
+         LBLOCK [ STR "| " ; STR k ; STR " | " ; INT v ; STR " | " ; NL ]) exns)
 
 let get_statistics summaries =
   List.iter (fun (cms,_,summary) ->
@@ -260,6 +341,74 @@ let collect_range_postconditions summaries  =
           match post#get_predicate with
           | PostRelationalExpr r -> add classname r
           | _ -> ()) summary#get_post) summaries
+
+let costexprs = H.create 3
+let constantcost = ref 0
+let rangecost = ref 0
+let symboliccost = ref 0
+
+let categorize_cost (c:jterm_range_int) =
+  if c#is_constant then
+    constantcost := !constantcost + 1
+  else if c#is_interval then
+    rangecost := !rangecost + 1
+  else if c#is_top then
+    ()
+  else
+    symboliccost := !symboliccost + 1
+
+let add_cost_expr
+      (cn:class_name_int)
+      (cms:class_method_signature_int)
+      (cost:jterm_range_int) =
+  let _ = categorize_cost cost in
+  let package = String.concat "." cn#package in
+  let cnname = cn#simple_name in
+  let pkgentry =
+    if H.mem costexprs package then
+      H.find costexprs package
+    else
+      let e = H.create 3 in
+      begin
+        H.add costexprs package e ;
+        e
+      end in
+  let cnentry =
+    if H.mem pkgentry cnname then
+      H.find pkgentry cnname
+    else
+      let e = H.create 3 in
+      begin
+        H.add pkgentry cnname e ;
+        e
+      end in
+  H.add cnentry cms#class_method_signature_string cost
+
+let cost_exprs_to_pretty () =
+  let cost_to_pretty cms cost =
+    LBLOCK [ STR cms ; NL ; INDENT (3, cost#toPretty) ; NL ] in
+  let cn_to_pretty cn cnentry =
+    let entry_to_pretty =
+      H.fold (fun cms cost acc ->
+          LBLOCK [ acc ; cost_to_pretty cms cost ]) cnentry (STR "") in
+    LBLOCK [ STR cn ; STR " (" ; INT (H.length cnentry) ; STR ")" ;
+             NL ; entry_to_pretty ; NL ] in
+  let pkg_to_pretty pkg pkgentry =
+    H.fold (fun cn cnentry acc ->
+        LBLOCK [ acc ; cn_to_pretty cn cnentry ; NL ]) pkgentry (STR "") in
+  H.fold (fun pkg pkgentry acc ->
+      let pkg_count = H.fold (fun _ v a -> a + (H.length v)) pkgentry 0 in
+      LBLOCK [ acc ; STR (string_repeat "=" 80) ; NL ;
+               STR pkg ; STR " (" ; INT (H.length pkgentry) ; STR " classes; " ;
+               INT pkg_count ; STR " methods)" ; NL ;
+               STR (string_repeat "=" 80) ;
+               NL ;  pkg_to_pretty pkg pkgentry ])
+         costexprs (STR "")
+
+let cost_exprs_count () =
+  let cncount cn = H.length cn in
+  let pkgcount pkg = H.fold (fun _ v a -> a + (cncount v)) pkg 0 in
+  H.fold (fun _ v a -> a + (pkgcount v)) costexprs 0
   
 
 let inspect_summaries (name:string) =
@@ -270,7 +419,6 @@ let inspect_summaries (name:string) =
   let arrayArgumentCounter = ref 0 in
   let increment_counter () = arrayArgumentCounter := !arrayArgumentCounter + 1 in
   let iSummaries = ref [] in
-  let costexprs = ref [] in
   let classes_with_length = ref [] in
   let add_array_argument_summaries cn summary =
     let arguments = summary#get_cms#method_signature#descriptor#arguments in
@@ -340,11 +488,14 @@ let inspect_summaries (name:string) =
                  !dynamically_dispatched_methods + (List.length methodSummaries)) ;
 	    (if classSummary#is_interface then
 	       H.add default_implementations cn#name classSummary#get_default_implementations) ;
-	    add_package cn#package_name 
-	                (List.length
-                           (List.filter
-                              (fun (_,_,s) ->
-                                (not s#is_inherited) && s#is_valid) methodSummaries)) ;
+	    add_class_to_package
+              cn#package_name 
+              (List.fold_left
+                 (fun acc (_,_,s) ->
+                   if (not s#is_inherited) && s#is_valid then
+                     s :: acc
+                   else
+                     acc) [] methodSummaries) ;
 	    List.iter (fun (_,_,s) -> classify_exception_guards s) methodSummaries ;
 	    List.iter (fun (_,_,m) -> add_array_argument_summaries cn m) methodSummaries ;
 	    List.iter (fun (_,_,m) -> add_abstract_argument m) methodSummaries ;
@@ -353,7 +504,8 @@ let inspect_summaries (name:string) =
             List.iter (fun (_,_,m) ->
                 let  cost = m#get_time_cost in
                 if not cost#is_top then
-                  costexprs := (m#get_cms,cost) :: !costexprs) methodSummaries ;       
+                   add_cost_expr cn m#get_cms cost) methodSummaries ;
+                (*  costexprs := (m#get_cms,cost) :: !costexprs) methodSummaries ;  *)
 	    get_statistics methodSummaries ;
             collect_range_postconditions methodSummaries ;
 	  end) (fun _ _ -> ()) name ;
@@ -364,8 +516,8 @@ let inspect_summaries (name:string) =
       (pretty_print_list
          abstractedArguments#toList (fun cms -> LBLOCK [ cms#toPretty  ; NL ]) "" "" "") ;
     file_output#saveFile "jdk_summaries.ch_some_summaries" (LBLOCK !iSummaries) ; 
-    file_output#saveFile "jdk_package_statistics" (print_package_statistics ()) ;
-    file_output#saveFile "jdk_exception_guard_statistics" (print_exception_guards ()) ;
+    file_output#saveFile "jdk_package_statistics" (pkg_recs_to_pretty ()) ;
+    file_output#saveFile "jdk_exception_guard_statistics" (exception_guards_to_pretty ()) ;
     pr_debug [ function_summary_library#statistics_to_pretty ; NL ;
 	       STR "Number of distinct classes referenced: " ; INT cnSet#size ; NL ;
 	       STR "Names not recognized: " ; 
@@ -384,10 +536,13 @@ let inspect_summaries (name:string) =
                    STR " (" ; ms#toPretty ; STR ")" ; NL ]) !classes_with_length ;
                
     pr_debug [ NL ; STR "Cost expressions (" ;
-               INT (List.length !costexprs) ; STR "):" ; NL ;
-               STR (string_repeat "-" 80) ; NL ];
-    List.iter (fun (cms,x) ->
-        pr_debug [ cms#toPretty ; NL ; INDENT (3,x#toPretty) ; NL ]) !costexprs ;
+               INT (cost_exprs_count ()) ; STR "; " ;
+               INT !constantcost ; STR " constants, " ;
+               INT !rangecost ; STR " ranges, " ;
+               INT !symboliccost ; STR " symbolic):" ; NL ;
+               STR (string_repeat "-" 80) ; NL  ; cost_exprs_to_pretty () ];
+    (* List.iter (fun (cms,x) ->
+        pr_debug [ cms#toPretty ; NL ; INDENT (3,x#toPretty) ; NL ]) !costexprs ;  *)
 
     (if !showinvalid || !showinvalidfinal then
        let comparesummaries s1 s2 =
@@ -403,7 +558,7 @@ let inspect_summaries (name:string) =
                  |  _ -> true)) summaries in
        let summaries =
          if !showinvalidfinal then
-           List.filter (fun v -> v#is_final) summaries
+           List.filter (fun v -> v#is_final || v#is_static) summaries
          else
            summaries in
        let summaries = List.sort comparesummaries summaries in
