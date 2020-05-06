@@ -176,7 +176,11 @@ let _ =
   List.iter (fun (name,tval) ->
       H.add macroconstants name (mkNumericalFromString tval))
             [ ("MAXCHAR", "65535");
-              ("MAXCODEPOINT", "1114111") ]
+              ("MAXCODEPOINT", "1114111");
+              ("MAXINT", "2147483647");
+              ("MININT", "-2147483648");
+              ("MAXLONG", "9223372036854775807");
+              ("MINLONG", "-9223372036854775808") ]
 
 let is_macro_constant (name:string) = H.mem macroconstants name
 
@@ -616,20 +620,23 @@ let read_xmlx_simple_jterm (node:xml_element_int) (cms:class_method_signature_in
   | "this" ->
     if ms#is_static then
       raise_xml_error node (STR "Static function cannot have a this argument")
-    else if has "field" then
+    (* else if has "field" then
       let fname = get "field" in
       let cnix =
         if has "cn" then
           (make_cn (get "cn"))#index
         else
           cms#class_name#index in
-      JObjectFieldValue (cms#index, 0, cnix, fname)
+      JObjectFieldValue (cms#index, 0, cnix, fname)  *)
     else
       JLocalVar 0
   | "arg" ->
      let nr = node#getIntAttribute "nr" in
      let arg = if ms#is_static then nr - 1 else nr in
-     let _ = if arg < 0 || arg > (List.length ms#descriptor#arguments)  then
+     let _ =
+       if (arg < 0)
+          || arg > (List.length ms#descriptor#arguments)
+          || (ms#is_static && arg >= List.length ms#descriptor#arguments) then
 	       raise_xml_error
                  node 
 	         (LBLOCK [ STR "Term " ; INT arg ; STR " is not part of signature" ]) in
