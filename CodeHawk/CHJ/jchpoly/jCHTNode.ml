@@ -32,6 +32,7 @@ open CHPretty
 
 (* chutil *)
 open CHFileIO
+open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
    
@@ -271,38 +272,48 @@ object (self:'a)
   (* transfer taint from this to node *)
   (* returns true if new taint was added *)
   method propagate_taint (node: 'a) =
-    match (node_type, node#get_node_type) with
-    | (TN_REF_EQUAL, _) 
-    | (_, TN_REF_EQUAL) -> self#add_all_untrusted_origins node 
-    | (TN_SIZE (_, array, _), _) -> 
-       if node#get_var#equal array then
-         (* transmission length -> array *)
-         (* TN_SIZE has untrusted_origins set not the size_origins *)
-	  node#add_size_untrusted_origins self#get_untrusted_origins
-	else (* transmission array -> length *)
-	  node#add_untrusted_origins (self#get_untrusted_origins)
-    | (_, TN_SIZE (_, array, _)) ->
-	if self#get_var#equal array then (* transmission array -> length *)
-	  node#add_untrusted_origins self#get_size_untrusted_origins
-	else (* transmission length -> array *)
-	  node#add_untrusted_origins (self#get_untrusted_origins)	
-    | (TN_OBJECT_FIELD (_, var, cfsix, _), _) ->
-       if node#get_var#equal var then
-         (* transmission field -> object *)
-         (* TN_OBJECT_FIELD has untrusted_origins set not a field_origin *)
-	  node#add_field_untrusted_origins cfsix (self#get_untrusted_origins)
-	else (* transmission object -> field *)
-	  node#add_untrusted_origins self#get_untrusted_origins
-    | (_, TN_OBJECT_FIELD (_, var, cfsix, _)) ->
-	if self#get_var#equal var then (* transmission object -> field *)
-	  node#add_untrusted_origins (self#get_field_untrusted_origins cfsix)
-	else (* transmission field -> object *)
-	  node#add_untrusted_origins self#get_untrusted_origins
-    | (TN_UNKNOWN_CALL _, _) ->
-	self#add_untrusted_origins_to_all node
-    | (_, TN_UNKNOWN_CALL _) ->
-	self#add_all_untrusted_origins_to_untrusted node
-    | _ -> node#add_untrusted_origins (self#get_untrusted_origins)
+    try
+      match (node_type, node#get_node_type) with
+      | (TN_REF_EQUAL, _)
+        | (_, TN_REF_EQUAL) -> self#add_all_untrusted_origins node
+      | (TN_SIZE (_, array, _), _) ->
+         if node#get_var#equal array then
+           (* transmission length -> array *)
+           (* TN_SIZE has untrusted_origins set not the size_origins *)
+	   node#add_size_untrusted_origins self#get_untrusted_origins
+	 else (* transmission array -> length *)
+	   node#add_untrusted_origins (self#get_untrusted_origins)
+      | (_, TN_SIZE (_, array, _)) ->
+	 if self#get_var#equal array then (* transmission array -> length *)
+	   node#add_untrusted_origins self#get_size_untrusted_origins
+	 else (* transmission length -> array *)
+	   node#add_untrusted_origins (self#get_untrusted_origins)
+      | (TN_OBJECT_FIELD (_, var, cfsix, _), _) ->
+         if node#get_var#equal var then
+           (* transmission field -> object *)
+           (* TN_OBJECT_FIELD has untrusted_origins set not a field_origin *)
+	   node#add_field_untrusted_origins cfsix (self#get_untrusted_origins)
+	 else (* transmission object -> field *)
+	   node#add_untrusted_origins self#get_untrusted_origins
+      | (_, TN_OBJECT_FIELD (_, var, cfsix, _)) ->
+	 if self#get_var#equal var then (* transmission object -> field *)
+	   node#add_untrusted_origins (self#get_field_untrusted_origins cfsix)
+	 else (* transmission field -> object *)
+	   node#add_untrusted_origins self#get_untrusted_origins
+      | (TN_UNKNOWN_CALL _, _) ->
+	 self#add_untrusted_origins_to_all node
+      | (_, TN_UNKNOWN_CALL _) ->
+	 self#add_all_untrusted_origins_to_untrusted node
+      | _ -> node#add_untrusted_origins (self#get_untrusted_origins)
+    with
+    | JCH_failure p ->
+       let msg = LBLOCK [ STR "propagate_taint: " ; node#toPretty ;
+                          STR ": " ; p ] in
+       begin
+         ch_error_log#add "propagate_taint" msg ;
+         (* raise (JCH_failure msg) *)
+         self#add_untrusted_origins (self#get_untrusted_origins)
+       end
 	
 
   method get_call_vars =

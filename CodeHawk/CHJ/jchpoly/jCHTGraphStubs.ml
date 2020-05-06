@@ -124,13 +124,16 @@ let mk_lib_stub stub_name cms:JCHTGraph.taint_graph_t =
       | JLocalVar i -> 
 	  (try
 	    List.nth nodes (i + !arg_offset) 
-	   with _ ->
-             begin
-               pr__debug [STR "mkLibStub "; stub_name#toPretty; STR " ";
-                          cms#toPretty; STR " List.nth failed for "; INT i; NL; 
-			  fsum#toPretty; NL] ;
-	       raise (JCH_failure (STR "List.nth"))
-             end)
+	   with
+           | _ ->
+              let msg =
+                LBLOCK [ STR "mkLibStub "; stub_name#toPretty; STR " ";
+                         cms#toPretty; STR " List.nth failed for "; INT i; STR ": " ;
+			 fsum#toPretty ] in
+              begin
+                ch_error_log#add "GraphStubs:add_edges" msg ;
+	        raise (JCH_failure msg)
+              end)
       | JObjectFieldValue (cmsix,varindex,cnix,fieldname) ->
          let cn = retrieve_cn cnix in
          let cInfo =
@@ -160,15 +163,18 @@ let mk_lib_stub stub_name cms:JCHTGraph.taint_graph_t =
                              STR " (using variable only now)" ; NL ] in
          (try
             List.nth nodes (varindex + !arg_offset)
-	  with _ ->
-            begin
-              pr__debug [STR "mkLibStub "; stub_name#toPretty; STR " ";
-                         cms#toPretty; STR " List.nth failed for ";
-                         INT varindex; NL; 
-		         fsum#toPretty; STR " (field value " ; STR fieldname ;
-                         STR ")" ; NL] ;
-	      raise (JCHBasicTypes.JCH_failure (STR "List.nth: mk_lib_stub"))
-            end)
+	  with
+          | _ ->
+             let msg =
+               LBLOCK [ STR "mkLibStub "; stub_name#toPretty; STR " ";
+                        cms#toPretty; STR " List.nth failed for ";
+                        INT varindex; NL;
+		        fsum#toPretty; STR " (field value " ; STR fieldname ;
+                        STR ")" ] in
+             begin
+               ch_error_log#add "GraphStubs:add_edges" msg ;
+	       raise (JCH_failure msg)
+             end)
       | JStaticFieldValue (cnix,fieldname) ->
          let cn = retrieve_cn cnix in
          let cInfo =
