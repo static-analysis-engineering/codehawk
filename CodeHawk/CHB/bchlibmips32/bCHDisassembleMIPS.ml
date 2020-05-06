@@ -618,7 +618,7 @@ let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
         match instr#get_opcode with
         | JumpLinkRegister (ra,tgt) ->
            let floc = get_floc loc in
-           if floc#has_unknown_target then
+           if floc#has_unknown_target || floc#has_no_call_target then
              set_call_address floc tgt
         | JumpRegister tgt ->
            let floc = get_floc loc in

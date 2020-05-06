@@ -44,6 +44,7 @@ open BCHDoubleword
 open BCHGlobalState
 open BCHMetrics
 open BCHPreFileIO
+open BCHSpecializations
 open BCHSystemInfo
 open BCHSystemSettings
 open BCHXmlUtil
@@ -153,7 +154,9 @@ let speclist =
     ("-verbose", Arg.Unit (fun () -> system_settings#set_verbose),
      "print out analysis intermediate results and progress messages") ;
     ("-show_chif", Arg.String (fun s -> set_chif s),
-     "print out CHIF code")
+     "print out CHIF code") ;
+    ("-specialization", Arg.String specializations#activate_specialization,
+     "apply named specialization")
   ]
 
 let usage_msg = "chx86_analyze <options> <name of executable file>"
@@ -428,7 +431,8 @@ let main () =
 	          (STR ((BCHAssemblyFunctions.assembly_functions#dark_matter_to_string))) ;
                 file_output#saveFile
                   (get_duplicate_coverage_filename ())
-                  (STR (BCHAssemblyFunctions.assembly_functions#duplicates_to_string)) ;                        save_log_files !cmd ;
+                  (STR (BCHAssemblyFunctions.assembly_functions#duplicates_to_string)) ;
+                save_log_files !cmd ;
 	      end) ;
             exit 0
 	  end
@@ -477,7 +481,7 @@ let main () =
       let _ = global_system_state#initialize in
       let _ = file_metrics#load_xml in
       let _ = load_elf_files () in
-      let index =  file_metrics#get_index in
+      let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
       let _ = disassemble_mips_sections () in
       let _ = construct_functions_mips () in

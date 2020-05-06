@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +49,7 @@ open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
 open BCHPreFileIO
+open BCHSpecializations
 
 (* bchlibmips32 *)
 open BCHMIPSDisassemblyUtils
@@ -70,16 +71,23 @@ object (self)
   val vard = (get_function_info fn#get_address)#env#varmgr#vard
   val id = mk_mips_opcode_dictionary
              fn#get_address (get_function_info fn#get_address)#env#varmgr#vard
+  val specialization =
+    let fa = fn#get_address#to_hex_string in
+    if specializations#has_specialization fa then
+      Some (specializations#get_specialization fa)
+    else
+      None
 
   method private write_xml_instruction
                    (node:xml_element_int) (ctxtiaddr:ctxt_iaddress_t)
-                   (instr:mips_assembly_instruction_int) =
+                   (instr:mips_assembly_instruction_int)
+                   (restriction:block_restriction_t option) =
     let loc = ctxt_string_to_location faddr ctxtiaddr in
     let floc = get_floc loc in
     let espoffset = floc#get_stackpointer_offset "mips" in
     begin
       mips_dictionary#write_xml_mips_opcode node instr#get_opcode ;
-      id#write_xml_instr node instr floc;
+      id#write_xml_instr node instr floc restriction;
       id#write_xml_sp_offset node espoffset ;
       mips_dictionary#write_xml_mips_bytestring
         node (byte_string_to_printed_string instr#get_instruction_bytes) ;
@@ -89,12 +97,21 @@ object (self)
 
   method private write_xml_instructions (node:xml_element_int) =
     fn#itera (fun baddr block ->
-        let bNode = xmlElement "bl"  in
+        let bNode = xmlElement "bl" in
+        let restriction =
+          let fa = fn#get_address#to_hex_string in
+          match specialization with
+          | Some s ->
+             if s#has_block_restriction fa baddr then
+               Some (s#get_block_restriction fa baddr)
+             else
+               None
+          | _ -> None in
         begin
           block#itera  (fun ctxtiaddr instr ->
               let iNode = xmlElement "i" in
               begin
-                self#write_xml_instruction iNode ctxtiaddr instr ;
+                self#write_xml_instruction iNode ctxtiaddr instr restriction ;
                 bNode#appendChildren [ iNode ] ;
                 iNode#setAttribute "ia" ctxtiaddr
               end);

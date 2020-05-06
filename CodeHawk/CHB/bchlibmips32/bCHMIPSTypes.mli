@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -513,7 +513,11 @@ class type mips_opcode_dictionary_int =
   object
 
     method index_sp_offset: int * interval_t -> int
-    method index_instr: mips_assembly_instruction_int -> floc_int -> int
+    method index_instr:
+             mips_assembly_instruction_int
+             -> floc_int
+             -> block_restriction_t option
+             -> int
 
     method get_sp_offset: int -> (int * interval_t)
 
@@ -523,6 +527,7 @@ class type mips_opcode_dictionary_int =
              -> xml_element_int
              -> mips_assembly_instruction_int
              -> floc_int
+             -> block_restriction_t option
              -> unit
 
     method write_xml: xml_element_int -> unit

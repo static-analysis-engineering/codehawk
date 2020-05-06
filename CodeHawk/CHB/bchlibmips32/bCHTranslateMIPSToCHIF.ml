@@ -56,6 +56,7 @@ open BCHLibTypes
 open BCHLocation
 open BCHLocationInvariant
 open BCHMemoryReference
+open BCHSpecializations
 open BCHSystemInfo
 open BCHSystemSettings
 open BCHUtilities
@@ -78,6 +79,7 @@ open BCHMIPSOpcodeRecords
 module LF = CHOnlineCodeSet.LanguageFactory
 
 let valueset_domain = "valuesets"
+let x2p = xpr_formatter#pr_expr
 
 let rec pow a = function
   | 0 -> 1
@@ -120,7 +122,8 @@ let package_transaction
 let make_tests
       ~(testloc:location_int)
       ~(jumploc:location_int)
-      ~(testexpr:xpr_t) =
+      ~(testexpr:xpr_t)
+      ~(restriction:block_restriction_t option) =
   let testfloc = get_floc testloc in
   let jumpfloc = get_floc jumploc in
   let env = testfloc#f#env in
@@ -143,7 +146,7 @@ let make_tests
   let convert_to_chif expr =
     let (cmds,bxpr) = xpr_to_boolexpr reqN reqC expr in
     cmds @ [ ASSERT bxpr ] in
-  let convert_to_assert expr =
+  let convert_to_assert (expr:xpr_t) =
     let vars = variables_in_expr expr in
     let varssize = List.length vars in
     let get_external_exprs v =
@@ -177,23 +180,23 @@ let make_tests
       else
         [ expr ] in
     List.concat (List.map convert_to_chif xprs) in
-  let make_asserts exprs =
+  let make_asserts (exprs:xpr_t list) =
     let _ = env#start_transaction in
     let cmds = List.concat (List.map convert_to_assert exprs) in
     let constassigns = env#end_transaction in
     constassigns  @ cmds in
-  let make_branch_assert exprs =
+  let make_branch_assert (exprs:xpr_t list) =
     let _ = env#start_transaction in
     let cmds = List.map convert_to_assert exprs in
     let br = BRANCH (List.map LF.mkCode cmds) in
     let constassigns = env#end_transaction in
     constassigns @ [ br ] in
-  let make_assert expr =
+  let make_assert (expr:xpr_t) =
     let _ = env#start_transaction in
     let cmds = convert_to_assert expr in
     let constassigns = env#end_transaction in
     constassigns @ cmds in
-  let make_test_code expr =
+  let make_test_code (expr:xpr_t) =
     if is_conjunction expr then
       let conjuncts = get_conjuncts expr in
       make_asserts conjuncts
@@ -202,8 +205,27 @@ let make_tests
       make_branch_assert disjuncts
     else
       make_assert expr in
-  let thencode = make_test_code ftestexpr in
-  let elsecode = make_test_code (simplify_xpr (XOp (XLNot, [ ftestexpr ]))) in
+  let thenexpr =
+    match restriction with
+    | Some (BranchAssert false) ->   (* assert false branch *)
+       let _ =
+         chlog#add
+           "restriction"
+           (LBLOCK [ x2p ftestexpr ; STR " -> false" ]) in
+       false_constant_expr
+    | _ -> ftestexpr in
+  let elseexpr =
+    match restriction with
+    | Some (BranchAssert true) ->   (* assert true branch *)
+       let _ =
+         chlog#add
+           "restriction"
+           (LBLOCK [ x2p (simplify_xpr (XOp (XLNot, [ ftestexpr ]))) ;
+                     STR " -> false " ]) in
+       false_constant_expr
+    | _ -> simplify_xpr (XOp (XLNot, [ ftestexpr ])) in
+  let thencode = make_test_code thenexpr in
+  let elsecode = make_test_code elseexpr in
   (frozenvars#listOfValues, thencode, elsecode)
   
 
@@ -213,10 +235,11 @@ let make_condition
       ~(theniaddr:ctxt_iaddress_t)
       ~(elseiaddr:ctxt_iaddress_t)
       ~(blocklabel:symbol_t)
-      ~(testexpr:xpr_t) =
+      ~(testexpr:xpr_t)
+      ~(restriction:block_restriction_t option) =
   let thensucclabel = make_code_label theniaddr in
   let elsesucclabel = make_code_label elseiaddr in
-  let (frozenvars,thentest,elsetest) = make_tests ~testloc ~jumploc ~testexpr in
+  let (frozenvars,thentest,elsetest) = make_tests ~testloc ~jumploc ~testexpr ~restriction in
   let make_node_and_label testcode tgtaddr modifier =
     let src = jumploc#i in
     let nextlabel = make_code_label ~src ~modifier tgtaddr in
@@ -845,10 +868,26 @@ object (self)
       ~modifier:"exit"
       (make_location { loc_faddr = f#get_address ; loc_iaddr = f#get_address })#ci
   val codegraph = make_code_graph ()
+  val specialization =
+    let faddr = f#get_address#to_hex_string in
+    if specializations#has_specialization faddr then
+      Some (specializations#get_specialization faddr)
+    else
+      None
 
   method translate_block (block:mips_assembly_block_int) =
     let codepc = make_mips_code_pc block in
     let blocklabel = make_code_label block#get_context_string in
+    let restriction =
+      let faddr = f#get_address#to_hex_string in
+      let baddr = block#get_context_string in
+      match specialization with
+      | Some s ->
+         if s#has_block_restriction faddr baddr then
+           Some (s#get_block_restriction faddr baddr)
+         else
+           None
+      | _ -> None in
     let rec aux cmds =
       let (nodes,edges,newcmds) =
         try
@@ -871,7 +910,7 @@ object (self)
            let transaction = package_transaction finfo blocklabel newcmds in
            let (nodes,edges) =
              make_condition
-               ~testloc ~jumploc ~theniaddr ~elseiaddr ~blocklabel ~testexpr in
+               ~testloc ~jumploc ~theniaddr ~elseiaddr ~blocklabel ~testexpr ~restriction in
            ((blocklabel, [ transaction ])::nodes, edges)
          else
            let transaction = package_transaction finfo blocklabel newcmds in
