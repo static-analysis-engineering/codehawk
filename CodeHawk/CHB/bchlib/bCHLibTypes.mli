@@ -2712,6 +2712,30 @@ object
 
 end
 
+(* ========================================================= Specializations === *)
+
+type block_restriction_t =
+  | BranchAssert of bool
+
+class type specialization_int =
+  object
+    method get_name: string
+    method get_functions: string list
+    method get_blocks: string -> string list
+    method get_block_restriction: string -> string -> block_restriction_t
+    method has_block_restriction: string -> string -> bool
+    method toPretty: pretty_t
+  end
+
+class type specializations_int =
+  object
+    method activate_specialization: string -> unit
+    method get_specialization: string -> specialization_int  (* function address *)
+    method has_specialization: string -> bool  (* function address *)
+    method read_xml: xml_element_int -> unit
+    method toPretty: pretty_t
+  end
+
 
 (* ============================================================= System info === *)
 

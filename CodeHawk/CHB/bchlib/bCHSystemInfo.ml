@@ -71,6 +71,7 @@ open BCHJumpTable
 open BCHLibTypes
 open BCHMemoryReference
 open BCHPreFileIO
+open BCHSpecializations
 open BCHStreamWrapper
 open BCHStrings
 open BCHSystemData
@@ -586,6 +587,8 @@ object (self)
       (if hasc "inlined-blocks" then
          let inode = getc "inlined-blocks" in
          self#read_xml_inlined_blocks inode) ;
+      (if hasc "specializations" then
+         specializations#read_xml (getc "specializations")) ;
       (if hasc "esp-adjustments-i" then
 	  let enode = getc "esp-adjustments-i" in
 	  self#read_xml_esp_adjustments_i enode) ;

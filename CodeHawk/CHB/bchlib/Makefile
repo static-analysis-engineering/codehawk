@@ -71,6 +71,7 @@ MLIS := \
 	bCHDataBlock \
 	bCHJumpTable \
 	bCHPreFileIO \
+	bCHSpecializations \
 	bCHUserProvidedDirections \
 	bCHJni \
 	bCHCStruct \
@@ -137,6 +138,7 @@ SOURCES := \
 	bCHDataBlock \
 	bCHJumpTable \
 	bCHPreFileIO \
+	bCHSpecializations \
 	bCHUserProvidedDirections \
 	bCHJni \
 	bCHCStruct \
