@@ -76,17 +76,17 @@ let get_opcode_cost (opc:opcode_t):int =
   | OpNeg _       -> 2
 
   | OpIShl  -> 3
-  | OpLShl  -> 3  (* TBD *)
-  | OpIShr  -> 2  (* TBD *)
-  | OpLShr  -> 2  (* TBD *)
-  | OpIUShr -> 2  (* TBD *)
-  | OpLUShr -> 2  (* TBD *)
+  | OpLShl  -> 1
+  | OpIShr  -> 1
+  | OpLShr  -> 1
+  | OpIUShr -> 1
+  | OpLUShr -> 1
   | OpIAnd  -> 2
-  | OpLAnd  -> 4  (* TBD *)
+  | OpLAnd  -> 1
   | OpIOr   -> 2
-  | OpLOr   -> 4  (* TBD *)
+  | OpLOr   -> 1
   | OpIXor  -> 2
-  | OpLXor  -> 4  (* TBD *)
+  | OpLXor  -> 1
 
   (* Conversion *)
   | OpI2L   -> 1
@@ -131,12 +131,12 @@ let get_opcode_cost (opc:opcode_t):int =
   | OpGoto _      -> 0
   | OpJsr _       -> 10   (* Deprecated *)
   | OpRet _       -> 10   (* Deprecated *)
-  | OpTableSwitch _ -> 10  (* TBD *)
+  | OpTableSwitch _ -> 15
   | OpLookupSwitch _ -> 10 (* TBD *)
 
   | OpNew _        -> 10 (* TBD *)
-  | OpNewArray _   -> 151 
-  | OpAMultiNewArray _  -> 151  (* TBD *)
+  | OpNewArray _   -> 180
+  | OpAMultiNewArray _  -> 400
   | OpCheckCast _     -> 10 (* TBD *)
   | OpInstanceOf _    -> 6
   | OpGetStatic _     -> 6
@@ -152,7 +152,7 @@ let get_opcode_cost (opc:opcode_t):int =
   | OpInvokeStatic _    -> 158
   | OpInvokeInterface _ -> 12   (* TBD *)
   | OpInvokeDynamic _   -> 200  (* TBD *)
-  | OpReturn _          -> 0
+  | OpReturn _          -> 6
 
   | OpThrow -> 354
   | OpMonitorEnter -> 100 (* TBD *)
