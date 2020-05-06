@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -120,7 +120,10 @@ object (self)
           a: address xpr; x: xpr; v: variable ; l: literal int ; s: string
    *)
 
-  method index_instr (instr:mips_assembly_instruction_int) (floc:floc_int) =
+  method index_instr
+           (instr:mips_assembly_instruction_int)
+           (floc:floc_int)
+           (restriction:block_restriction_t option) =
     let rewrite_expr x:xpr_t =
       let rec expand x =
         match x with
@@ -130,6 +133,11 @@ object (self)
         | _ -> x in
       let xpr = floc#inv#rewrite_expr (expand x) floc#env#get_variable_comparator in      
       simplify_xpr (expand xpr) in
+    let get_condition_exprs thenxpr elsexpr =
+      match restriction with
+      | Some (BranchAssert false) -> (false_constant_expr,elsexpr)
+      | Some (BranchAssert true) -> (thenxpr,false_constant_expr)
+      | _ -> (thenxpr,elsexpr) in
     let key =
       match instr#get_opcode with
       | Add (dst,src,imm) ->
@@ -180,12 +188,13 @@ object (self)
                           xd#index_xpr result ; xd#index_xpr rresult ])
 
       | BranchEqual (src1,src2,tgt) ->
-          let rhs1 = src1#to_expr floc in
-          let rhs2 = src2#to_expr floc in
-          let result = XOp (XEq, [ rhs1 ; rhs2 ]) in
-          let rresult = rewrite_expr result in
-          let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
-          ([ "a:xxxxx" ],[ xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
+         let rhs1 = src1#to_expr floc in
+         let rhs2 = src2#to_expr floc in
+         let result = XOp (XEq, [ rhs1 ; rhs2 ]) in
+         let rresult = rewrite_expr result in
+         let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
+         let (rresult,negresult) = get_condition_exprs rresult negresult in
+         ([ "a:xxxxx" ],[ xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
                           xd#index_xpr result ; xd#index_xpr rresult ;
                           xd#index_xpr negresult ])
 
@@ -194,6 +203,7 @@ object (self)
          let result = XOp (XGe, [ rhs ; zero_constant_expr ]) in
          let rresult = rewrite_expr result in
          let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
+         let (rresult,negresult) = get_condition_exprs rresult negresult in
          ([ "a:xxxx" ], [ xd#index_xpr rhs ; xd#index_xpr result ;
                           xd#index_xpr rresult ; xd#index_xpr negresult ])
 
@@ -209,6 +219,7 @@ object (self)
          let result = XOp (XGt, [ rhs ; zero_constant_expr ]) in
          let rresult = rewrite_expr result in
          let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
+         let (rresult,negresult) = get_condition_exprs rresult negresult in
          ([ "a:xxxx" ], [ xd#index_xpr rhs ; xd#index_xpr result ;
                           xd#index_xpr rresult ; xd#index_xpr negresult ])
 
@@ -217,6 +228,7 @@ object (self)
          let result = XOp (XLe, [ rhs ; zero_constant_expr ]) in
          let rresult = rewrite_expr result in
          let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
+         let (rresult,negresult) = get_condition_exprs rresult negresult in
          ([ "a:xxxx" ], [ xd#index_xpr rhs ; xd#index_xpr result ;
                           xd#index_xpr rresult ; xd#index_xpr negresult ])
 
@@ -225,6 +237,7 @@ object (self)
          let result = XOp (XLt, [ rhs ; zero_constant_expr ]) in
          let rresult = rewrite_expr result in
          let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
+         let (rresult,negresult) = get_condition_exprs rresult negresult in
          ([ "a:xxxx" ], [ xd#index_xpr rhs ; xd#index_xpr result ;
                           xd#index_xpr rresult ; xd#index_xpr negresult ])
 
@@ -233,7 +246,8 @@ object (self)
          let rhs2 = src2#to_expr floc in
          let result = XOp (XNe, [ rhs1 ; rhs2 ]) in
          let rresult = rewrite_expr result in
-         let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in         
+         let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
+         let (rresult,negresult) = get_condition_exprs rresult negresult in
          ([ "a:xxxxx" ],[ xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
                           xd#index_xpr result ; xd#index_xpr rresult ;
                           xd#index_xpr negresult ])
@@ -603,9 +617,10 @@ object (self)
            ?(tag="iopx")
            (node:xml_element_int)
            (instr:mips_assembly_instruction_int)
-           (floc:floc_int) =
+           (floc:floc_int)
+           (restriction:block_restriction_t option) =
     try
-      node#setIntAttribute tag (self#index_instr instr floc)
+      node#setIntAttribute tag (self#index_instr instr floc restriction)
     with
     | BCH_failure p ->
        raise (BCH_failure
