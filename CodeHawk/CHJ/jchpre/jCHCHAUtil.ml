@@ -83,6 +83,7 @@ let startup_classes = [
 
 let main_method_names =
   [ "main" ; "doGet" ; "doPut" ; "doPost" ; "doDelete" ; "run" ; "call" ;
+    "handle" ;     (* for AbstractHttpHandler *)
     "startDocument" ;
     "endDocument" ;
     "startElement" (* for sitemap transformers *) ;

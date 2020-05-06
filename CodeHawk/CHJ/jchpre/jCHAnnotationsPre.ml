@@ -359,17 +359,20 @@ let is_switch_table (mInfo:method_info_int) pc =
   | OpTableSwitch _ | OpLookupSwitch _ -> true
   | _ -> false
 
-let get_cfg_tf_annotations (mInfo:method_info_int) pc = 
+let get_cfg_tf_annotations
+      ?(subst=fun s -> s)
+      (mInfo:method_info_int)
+      (pc:int) = 
   let cmps t f =
     let topslots = get_stack_top_slots mInfo pc 2 in
     let topslot = List.nth topslots 0 in
     let sndslot = List.nth topslots 1 in
-    let sv1 = get_slot_value mInfo pc sndslot in
+    let sv1 = subst (get_slot_value mInfo pc sndslot) in
     let sv2 = get_slot_value mInfo pc topslot in
     (sv1 ^ t ^ sv2, sv1 ^ f ^ sv2) in
   let cmpz t f =
     let slot = get_stack_top_slot mInfo pc in
-    let sv = get_slot_value mInfo pc slot in
+    let sv = subst (get_slot_value mInfo pc slot) in
     let default () =
       if is_boolean_type slot then
 	match t with
@@ -384,8 +387,8 @@ let get_cfg_tf_annotations (mInfo:method_info_int) pc =
 	let topslots = get_stack_top_slots mInfo opSrc 2 in
 	let topslot = List.nth topslots 0 in
 	let sndslot = List.nth topslots 1 in
-	let sv1 = get_slot_value mInfo opSrc sndslot in
-	let sv2 = get_slot_value mInfo opSrc topslot in
+	let sv1 = subst (get_slot_value mInfo opSrc sndslot) in
+	let sv2 = subst (get_slot_value mInfo opSrc topslot) in
 	(sv1,sv2) in
       (match mInfo#get_opcode opSrc with
       | OpCmpL | OpCmpFL | OpCmpFG | OpCmpDL | OpCmpDG ->

@@ -340,8 +340,11 @@ let write_xml_method_summary (node:xml_element_int) (mInfo:method_info_int) =
                   end) rl) in
          append [ ssnode ] in
     () in
-  match (apisummary,supplementsummary) with
+  (* match (apisummary,supplementsummary) with
   | (None,None) -> false
+  | _ -> true *)
+  match apisummary with
+  | None -> false
   | _ -> true
        
   

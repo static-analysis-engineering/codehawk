@@ -343,6 +343,13 @@ let read_xml_method_summary
         read_xmlx_timecost cNode cms
     else
       top_jterm_range in
+  let _ =
+    if time_cost#is_top then
+      ()
+    else
+      chlog#add
+        "time cost"
+        (LBLOCK [ cms#toPretty ; STR ": " ; time_cost#toPretty ])  in
   let taint =
     if hasc "taint" then
       read_xml_taint (getc "taint") cms
@@ -552,9 +559,19 @@ let read_xml_constructor (node:xml_element_int) (cn:class_name_int) =
 	if hasc "calls" then read_xml_calls (getc "calls") else ([],[]) in
       let visibility = read_xml_access_modifier node in
       let loops = [] in
-      let summary = read_xml_method_summary ~node:(getc "summary") ~cms ~exception_infos
-	~virtual_calls ~interface_calls ~is_static:false ~is_final:false
-	~is_default:false ~is_abstract:false ~is_bridge:false ~visibility in
+      let summary =
+        read_xml_method_summary
+          ~node:(getc "summary")
+          ~cms
+          ~exception_infos
+	  ~virtual_calls
+          ~interface_calls
+          ~is_static:false
+          ~is_final:false
+	  ~is_default:false
+          ~is_abstract:false
+          ~is_bridge:false
+          ~visibility in
       (cms,loops,summary)
   with
   | XmlParseError (line,column,p)

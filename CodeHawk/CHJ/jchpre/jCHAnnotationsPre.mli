@@ -34,7 +34,12 @@ open JCHBasicTypesAPI
 (* jchpre *)
 open JCHPreAPI
 
-val get_cfg_tf_annotations: method_info_int -> int -> (string * string)
+val get_cfg_tf_annotations:
+  ?subst:(string->string)      (* substitution on terms *)
+  -> method_info_int
+  -> int                       (* program counter *)
+  -> (string * string)         (* true condition, false condition *)
+
 val get_offset: method_info_int -> int -> int
 val get_static_call_value:
   method_info_int -> int -> class_name_int -> method_signature_int -> string
