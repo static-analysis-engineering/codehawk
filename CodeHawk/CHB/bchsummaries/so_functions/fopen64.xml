@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:36"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="msvcrt" name="fopen64">
+   <documentation>
+    <desc>opens a file</desc>
+    <apidoc>
+     <pt>FILE *fopen (const char *filename, const char *mode)</pt>
+     <par name="filename">pointer to a filename</par>
+     <par name="mode">pointer to kind of access enabled</par>
+     <return>
+      <rc cond="success">pointer to the open file</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="fopen64">
+    <returntype><ptr>FILE</ptr></returntype>
+    <par loc="stack" io="r" name="filename" rep="hex" nr="1">
+      <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:filesystem" rn="name:file"/>
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="mode" rep="hex" roles="none" nr="2">
+      <type><ptr>char</ptr></type>
+     <pre><deref-read/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="filesystem" desc="opens a file"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+     <notnull-null/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

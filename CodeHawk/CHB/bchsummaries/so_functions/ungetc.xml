@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="11/10/2015 13:43:02"/>
+  <libfun lib="so_functions" name="ungetc">
+   <documentation>
+    <desc>push byte back into input stream</desc>
+    <apidoc>
+     <pt>
+      <ll>int ungetc(</ll>
+      <ld>int c</ld>
+      <ld>FILE *stream</ld>
+      <ll>)</ll>
+     </pt>
+     <par name="c">byte to be pushed back on the stream</par>
+     <par name="stream">stream to write back to</par>
+     <return>
+      <rc cond="success">byte pushed back after conversion</rc>
+      <rc cond="failure">EOF</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="ungetc">
+    <par loc="stack" name="c" io="r" roles="none" nr="1">
+     <type>int</type>
+    </par>
+    <par loc="stack" name="stream" io="r" rep="hex"  nr="2">
+     <type><ptr>FILE</ptr></type>
+     <roles>
+       <role rt="ioc:filesystem" rn="file"/>
+     </roles>
+    </par>
+    <returntype>int</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+     <io-action cat="filesystem" 
+		desc="pushes a byte back into an input stream"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

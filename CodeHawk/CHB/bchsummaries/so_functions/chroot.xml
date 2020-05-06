@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-28 23:34:18"/>
+  <libfun lib="so_functions" name="chroot">
+    <documentation>
+      <desc>change root directory</desc>
+      <apidoc>
+        <pt>int chroot (char *path)</pt>
+        <par name="path">name of directory</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="chroot">
+      <par loc="stack" name="path" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="https://git.busybox.net/uClibc/tree/libc/misc/internals/__uClibc_main.c"/>
+  <header date="2020-05-04 17:35:23"/>
+  <libfun lib="so-functions" name="__uClibc_main">
+    <documentation>
+      <desc>main stub for uClibc</desc>
+      <apidoc>
+        <pt>
+          <ll>void __uClibc_main(</ll>
+          <ld>int  (*main)(int, char **, char **)</ld>
+          <ld>int argc</ld>
+          <ld>char **argv</ld>
+          <ld>void (*app_init)(void)</ld>
+          <ld>void (*app_fini)(void)</ld>
+          <ld>void (*rtld_fini)(void)</ld>
+          <ld>void *stack_end</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="main">main function</par>
+        <par name="argc">number of arguments</par>
+        <par name="argv">command-line arguments</par>
+        <par name="app_init">application initialization function</par>
+        <par name="app_fini">application finalization function</par>
+        <par name="rtld_fini">run-time load library finalization function</par>
+        <par name="stack_end">not used</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="__uClibc_main">
+      <par loc="stack" name="main" nr="1">
+        <type><ptr>function-pointer</ptr></type>
+	<pre><function-pointer/></pre>
+      </par>
+      <par loc="stack" name="argc" nr="2">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="argv" nr="3">
+        <type><ptr><ptr>char</ptr></ptr></type>
+      </par>
+      <par loc="stack" name="app_init" nr="4">
+        <type><ptr>function-pointer</ptr></type>
+	<pre><function-pointer/></pre>
+      </par>
+      <par loc="stack" name="app_fini" nr="5">
+        <type><ptr>function-pointer</ptr></type>
+	<pre><function-pointer/></pre>
+      </par>
+      <par loc="stack" name="rtld_fini" nr="6">
+        <type><ptr>function-pointer</ptr></type>
+	<pre><function-pointer/></pre>
+      </par>
+      <par loc="stack" name="stack_end" nr="7">
+        <type><ptr>void</ptr></type>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<post>
+	  <math>
+	    <non-returning/>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

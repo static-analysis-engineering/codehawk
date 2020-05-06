@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-05-04 17:23:53"/>
+  <libfun lib="so_functions" name="inet_ntoa">
+    <documentation>
+      <desc>IPv4 address manipulation</desc>
+      <apidoc>
+        <pt>char *inet_ntoa (struct in_addr in)</pt>
+        <par name="in">Internet host addres</par>
+        <return>
+	  pointer to the network address in Internet standard dot notation
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="inet_ntoa">
+      <par loc="stack" name="in" nr="1">
+        <type>in_addr</type>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

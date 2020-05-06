@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-28 13:04:42"/>
+  <libfun lib="so_functions" name="fstat64">
+    <documentation>
+      <desc>get file status</desc>
+      <apidoc>
+        <pt>
+          <ll>int fstat(</ll>
+          <ld>int fildes</ld>
+          <ld>struct stat *buf</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="fildes">file descriptor</par>
+        <par name="buf">
+	  pointer to buffer to write the status of the open file
+	</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="fstat64">
+      <par loc="stack" name="fildes" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="buf" nr="2">
+        <type><ptr>stat</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

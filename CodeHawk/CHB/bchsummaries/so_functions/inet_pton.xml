@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-28 16:27:40"/>
+  <libfun lib="so_functions" name="inet_pton">
+    <documentation>
+      <desc>convert IPv4 and IPv6 addresses between binary and text form</desc>
+      <apidoc>
+        <pt>
+          <ll>int inet_pton(</ll>
+          <ld>int af</ld>
+          <ld>const char *restrict src</ld>
+          <ld>void *restrict dst</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="af">the family of the address</par>
+        <par name="src">
+	  points to the string being passed in
+	</par>
+        <par name="dst">
+	  points to a buffer into which the function stores the
+	  numeric address; this shall be large enough to hold the
+	  numeric address (32 bits for AF_INET,
+	  128 bits for AF_INET6)
+	</par>
+        <return>
+          <rc cond="success">1</rc>
+          <rc cond="failure">0 or -1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="inet_pton">
+      <par loc="stack" name="af" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="src" nr="2">
+        <type><ptr>char</ptr></type>
+      </par>
+      <par loc="stack" name="dst" nr="3">
+        <type><ptr>int</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

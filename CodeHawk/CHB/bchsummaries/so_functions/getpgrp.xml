@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-28 12:37:30"/>
+  <libfun lib="so_functions" name="getpgrp">
+    <documentation>
+      <desc>get the process group ID of the calling process</desc>
+      <apidoc>
+        <pt>pid_t getpgrp (void)</pt>
+        <return>
+	  ID of the calling process
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getpgrp">
+      <returntype>pid_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

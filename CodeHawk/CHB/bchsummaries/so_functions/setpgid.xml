@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-28 13:16:39"/>
+  <libfun lib="so_functions" name="setpgid">
+    <documentation>
+      <desc>set process group ID for job control</desc>
+      <apidoc>
+        <pt>
+          <ll>int setpgid(</ll>
+          <ld>pid_t pid</ld>
+          <ld>pid_t pgid</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pid">process ID</par>
+        <par name="pgid">process group ID</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="setpgid">
+      <par loc="stack" name="pid" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="pgid" nr="2">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

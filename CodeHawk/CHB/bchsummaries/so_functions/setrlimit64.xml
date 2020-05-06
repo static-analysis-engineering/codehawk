@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-28 23:45:01"/>
+  <libfun lib="so_functions" name="setrlimit64">
+    <documentation>
+      <desc>control maximum resource consumption</desc>
+      <apidoc>
+        <pt>
+          <ll>int setrlimit(</ll>
+          <ld>int resource</ld>
+          <ld>const struct rlimit *rlp</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="resource">
+	  identifies a specific resource to be operated upon
+	</par>
+        <par name="rlp">pointer to resource limit structure</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="setrlimit64">
+      <par loc="stack" name="resource" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="rlp" nr="2">
+        <type><ptr>rlimit</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

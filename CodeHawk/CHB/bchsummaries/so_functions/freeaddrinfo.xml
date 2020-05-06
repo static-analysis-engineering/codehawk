@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-28 16:23:40"/>
+  <libfun lib="so_functions" name="freeaddrinfo">
+    <documentation>
+      <desc>free address information</desc>
+      <apidoc>
+        <pt>void freeaddrinfo (struct addrinfo *ai)</pt>
+        <par name="ai">
+	  linked list of addrinfo structures
+	</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="freeaddrinfo">
+      <par loc="stack" name="ai" nr="1">
+        <type><ptr>addrinfo</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

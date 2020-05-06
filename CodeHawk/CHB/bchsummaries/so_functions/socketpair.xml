@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-28 21:45:19"/>
+  <libfun lib="so_functions" name="socketpair">
+    <documentation>
+      <desc>create a pair of connected sockets</desc>
+      <apidoc>
+        <pt>
+          <ll>int socketpair(</ll>
+          <ld>int domain</ld>
+          <ld>int type</ld>
+          <ld>int  protocol</ld>
+          <ld>int socket_vector[2]</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="domain">
+	  Specifies the communications domain in which the sockets are to be created
+	</par>
+        <par name="type">
+	  Specifies the type of sockets to be created
+	</par>
+        <par name="protocol">
+	  Specifies a particular protocol to be used with the sockets.
+	  Specifying a protocol of 0 causes socketpair() to use an
+	  unspecified default protocol appropriate for the requested
+	  socket type
+	</par>
+        <par name="socket_vector">
+	  Specifies a 2-integer array to hold the file descriptors of
+	  the created socket pair.
+	</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="socketpair">
+      <par loc="stack" name="domain" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="type" nr="2">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="protocol" nr="3">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="socket_vector" nr="4">
+        <type><ptr>int</ptr></type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>int</type>
+	      <ci>socket_vector</ci>
+	      <cn>2</cn>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>int</type>
+	      <ci>socket_vector</ci>
+	      <cn>2</cn>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

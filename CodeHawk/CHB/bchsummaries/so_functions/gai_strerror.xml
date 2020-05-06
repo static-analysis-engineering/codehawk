@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-28 21:28:16"/>
+  <libfun lib="so_functions" name="gai_strerror">
+    <documentation>
+      <desc>address and name information error description</desc>
+      <apidoc>
+        <pt>const char  *gai_strerror (int ecode)</pt>
+        <par name="ecode">error code</par>
+        <return>
+          <rc cond="success">
+	    a pointer to an implementation-defined string.
+	  </rc>
+          <rc cond="failure">unknown error</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="gai_strerror">
+      <par loc="stack" name="ecode" nr="1">
+        <type>int</type>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="11/26/2014 15:07:42"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="so_functions" name="atol">
+   <documentation>
+    <desc>Convert a string to a long integer</desc>
+    <apidoc>
+     <pt>long atol (const char* str)</pt>
+     <return>
+       The function returns the long value produced by interpreting the 
+       input characters as a number. The return value is 0L for atol 
+       if the input cannot be converted to a value of that type.
+    </return>
+     <par name="str">String to be converted.</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="atol">
+     <returntype>long</returntype>
+     <par loc="stack" name="str" nr="1">
+       <type><ptr>char</ptr></type>
+       <pre><deref-read-nt/></pre>
+       <roles>
+	 <role rt="ioc:memops" rn="src-string:convert"/>
+       </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="inputs" desc="converts a string to a long"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+ </codehawk-binary-analyzer>

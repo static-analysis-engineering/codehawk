@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-28 21:09:52"/>
+  <libfun lib="so_functions" name="getsockopt">
+    <documentation>
+      <desc>get the socket options</desc>
+      <apidoc>
+        <pt>
+          <ll>int getsockopt(</ll>
+          <ld>int socket</ld>
+          <ld>int level</ld>
+          <ld>int option_name</ld>
+          <ld>void *restrict option_value</ld>
+          <ld>socklen_t *restrict option_len</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="socket">socket</par>
+        <par name="level">specifies the protocol level at which the option resides</par>
+        <par name="option_name">name of option to retrieve</par>
+        <par name="option_value">pointer to buffer to store the option value</par>
+        <par name="option_len">length of the option_value buffer</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getsockopt">
+      <par loc="stack" name="socket" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="level" nr="2">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="option_name" nr="3">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="option_value" nr="4">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="stack" name="option_len" nr="5">
+        <type><ptr>socklen_t</ptr></type>
+	<pre><deref-read/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>byte</type>
+	      <ci>option_value</ci>
+	      <apply>
+		<addressed-value/>
+		<ci>option_len</ci>
+		<cn>0</cn>
+	      </apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>byte</type>
+	      <ci>option_value</ci>
+	      <apply>
+		<addressed-value/>
+		<ci>option_len</ci>
+		<cn>0</cn>
+	      </apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

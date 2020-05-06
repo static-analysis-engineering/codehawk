@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-28 21:34:06"/>
+  <libfun lib="so_functions" name="sigaction">
+    <documentation>
+      <desc>examine and change a signal action</desc>
+      <apidoc>
+        <pt>
+          <ll>int sigaction(</ll>
+          <ld>int sig</ld>
+          <ld>const struct sigaction *restrict act</ld>
+          <ld>struct sigaction *restrict oact</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="sig">signal</par>
+        <par name="act">
+	  points to a structure specifying the action to be associated
+	  with the specified signal
+	</par>
+        <par name="oact">
+	  points to location to store the action associated with the
+	  specified signal
+	</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="sigaction">
+      <par loc="stack" name="sig" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="act" nr="2">
+        <type><ptr>sigaction</ptr></type>
+	<pre><deref-read-null/></pre>
+      </par>
+      <par loc="stack" name="oact" nr="3">
+        <type><ptr>sigaction</ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-04-28 22:03:06"/>
+  <libfun lib="so_functions" name="strtoumax">
+    <documentation>
+      <desc>convert string to integer type</desc>
+      <apidoc>
+        <pt>
+          <ll>uintmax_t strtoumax(</ll>
+          <ld>const char *restrict nptr</ld>
+          <ld>char **restrict endptr</ld>
+          <ld>int base</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="nptr">pointer to string to be converted</par>
+        <par name="endptr">pointer to store pointer to final string in conversion</par>
+        <par name="base">base os number</par>
+        <return>
+          <rc cond="success">converted value</rc>
+          <rc cond="failure">0</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="strtoumax">
+      <par loc="stack" name="nptr" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="endptr" nr="2">
+        <type><ptr><ptr>char</ptr></ptr></type>
+	<pre><deref-write-null/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <par loc="stack" name="base" nr="3">
+        <type>int</type>
+      </par>
+      <returntype>uintmax_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

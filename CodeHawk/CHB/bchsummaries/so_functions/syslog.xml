@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-05-02 10:31:22"/>
+  <libfun lib="so_functions" name="syslog">
+    <documentation>
+      <desc>control system log</desc>
+      <apidoc>
+        <pt>
+          <ll>void syslog(</ll>
+          <ld>int priority,</ld>
+          <ld>const char *message,</ld>
+	  <ld>...</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="priority">
+	  Values of the priority argument are formed by OR'ing
+	  together a severity-level value and an optional facility
+	  value
+	</par>
+        <par name="message">
+	  The message body is generated from the message and following
+	  arguments in the same manner as if these were arguments to
+	  printf(), except that the additional conversion
+	  specification %m shall be recognized; it shall convert no
+	  arguments, shall cause the output of the error message
+	  string associated with the value of errno on entry to
+	  syslog(), and may be mixed with argument specifications of
+	  the "%n$" form. If a complete conversion specification with
+	  the m conversion specifier character is not just %m, the
+	  behavior is undefined
+	</par>
+	<par name="arguments">variable list of arguments</par>	
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="syslog">
+      <par loc="stack" name="priority" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="message" nr="2">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/><format-string/></pre>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+     <io-actions>
+       <io-action cat="outputs"
+		  desc="prints a formatted string to the system log"/>
+     </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
