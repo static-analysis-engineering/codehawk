@@ -192,10 +192,10 @@
         <exceptions/>
         <summary>
           <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
+	     <transfer>
+	       <this/>
+	       <return/>
+	     </transfer>
           </taint>
         </summary>
       </method>

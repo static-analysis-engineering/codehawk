@@ -811,12 +811,7 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint>
-	    <transfer>
-	      <arg nr="1"/>
-	      <return/>
-	    </transfer>
-	  </taint>
+          <taint/>
 	  <postconditions>
 	    <post>
 	      <math>

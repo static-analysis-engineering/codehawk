@@ -27,7 +27,7 @@
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.Object,java.lang.String) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -38,11 +38,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	  </taint>
+	  <sinks>
+	    <sink arg="2" form="mime type" dest="command conversion" type="string"/>
+	  </sinks>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.net.URL) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.net.URL</object>
@@ -50,7 +62,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
     </constructors>
@@ -213,7 +230,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getOutputStream -->
-      <method access="public" name="getOutputStream" valid="no">
+      <method access="public" name="getOutputStream">
         <signature>
           <return>
             <object>java.io.OutputStream</object>
@@ -223,7 +240,12 @@
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPreferredCommands -->
@@ -273,7 +295,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getTransferDataFlavors -->
-      <method access="public" name="getTransferDataFlavors" valid="no">
+      <method access="public" name="getTransferDataFlavors">
         <signature>
           <return>
             <array>
@@ -283,7 +305,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isDataFlavorSupported -->
@@ -311,7 +338,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setCommandMap -->
-      <method access="public" name="setCommandMap" valid="no">
+      <method access="public" name="setCommandMap">
         <signature>
           <arg nr="1">
             <object>javax.activation.CommandMap</object>
@@ -319,11 +346,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setDataContentHandlerFactory -->
-      <method access="public" name="setDataContentHandlerFactory" static="yes" valid="no">
+      <method access="public" name="setDataContentHandlerFactory" static="yes">
         <signature>
           <arg nr="1">
             <object>javax.activation.DataContentHandlerFactory</object>

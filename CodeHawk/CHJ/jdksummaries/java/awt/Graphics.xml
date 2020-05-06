@@ -57,7 +57,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ clipRect -->
-      <method abstract="yes" access="public" name="clipRect" valid="no">
+      <method abstract="yes" access="public" name="clipRect">
         <signature>
           <arg nr="1">
             <int/>
@@ -74,11 +74,28 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ copyArea -->
-      <method abstract="yes" access="public" name="copyArea" valid="no">
+      <method abstract="yes" access="public" name="copyArea">
         <signature>
           <arg nr="1">
             <int/>
@@ -101,11 +118,36 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+	    <transfer>
+	      <arg nr="5"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="6"/>
+	      <this/>
+	    </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ create -->
-      <method abstract="yes" access="public" name="create" valid="no">
+      <method abstract="yes" access="public" name="create">
         <signature>
           <return>
             <object>java.awt.Graphics</object>
@@ -113,7 +155,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ create -->
@@ -215,7 +262,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawArc -->
-      <method abstract="yes" access="public" name="drawArc" valid="no">
+      <method abstract="yes" access="public" name="drawArc">
         <signature>
           <arg nr="1">
             <int/>
@@ -238,11 +285,36 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+	    <transfer>
+	      <arg nr="5"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="6"/>
+	      <this/>
+	    </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawBytes -->
-      <method access="public" name="drawBytes" valid="no">
+      <method access="public" name="drawBytes">
         <signature>
           <arg nr="1">
             <array>
@@ -262,9 +334,35 @@
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	  <throws>java.lang.IndexOutOfBoundsException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+	    <transfer>
+	      <arg nr="5"/>
+	      <this/>
+	    </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawChars -->
@@ -289,7 +387,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.IndexOutOfBoundsException</throws>
         </exceptions>
         <summary>
@@ -338,7 +438,24 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawImage -->
@@ -368,7 +485,32 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="5"/>
+              <this/>
+            </transfer>
+	    <transfer>
+	      <arg nr="6"/>
+	      <this/>
+	    </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawImage -->
@@ -395,7 +537,28 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="5"/>
+              <this/>
+            </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawImage -->
@@ -428,7 +591,36 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="5"/>
+              <this/>
+            </transfer>
+	    <transfer>
+	      <arg nr="6"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="7"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawImage -->
@@ -470,7 +662,48 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="5"/>
+              <this/>
+            </transfer>
+	    <transfer>
+	      <arg nr="6"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="7"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="8"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="9"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="10"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawImage -->
@@ -515,11 +748,56 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="5"/>
+              <this/>
+            </transfer>
+	    <transfer>
+	      <arg nr="6"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="7"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="8"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="9"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="10"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="11"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawLine -->
-      <method abstract="yes" access="public" name="drawLine" valid="no">
+      <method abstract="yes" access="public" name="drawLine">
         <signature>
           <arg nr="1">
             <int/>
@@ -536,11 +814,28 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawOval -->
-      <method abstract="yes" access="public" name="drawOval" valid="no">
+      <method abstract="yes" access="public" name="drawOval">
         <signature>
           <arg nr="1">
             <int/>
@@ -557,11 +852,28 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawPolygon -->
-      <method abstract="yes" access="public" name="drawPolygon" valid="no">
+      <method abstract="yes" access="public" name="drawPolygon">
         <signature>
           <arg nr="1">
             <array>
@@ -579,11 +891,24 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawPolygon -->
-      <method access="public" name="drawPolygon" valid="no">
+      <method access="public" name="drawPolygon">
         <signature>
           <arg nr="1">
             <object>java.awt.Polygon</object>
@@ -591,11 +916,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawPolyline -->
-      <method abstract="yes" access="public" name="drawPolyline" valid="no">
+      <method abstract="yes" access="public" name="drawPolyline">
         <signature>
           <arg nr="1">
             <array>
@@ -613,7 +943,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawRect -->
@@ -655,7 +998,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawRoundRect -->
-      <method abstract="yes" access="public" name="drawRoundRect" valid="no">
+      <method abstract="yes" access="public" name="drawRoundRect">
         <signature>
           <arg nr="1">
             <int/>
@@ -678,7 +1021,32 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+	    <transfer>
+	      <arg nr="5"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="6"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ drawString -->
@@ -789,7 +1157,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fillArc -->
-      <method abstract="yes" access="public" name="fillArc" valid="no">
+      <method abstract="yes" access="public" name="fillArc">
         <signature>
           <arg nr="1">
             <int/>
@@ -812,11 +1180,36 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="5"/>
+              <this/>
+            </transfer>
+	    <transfer>
+	      <arg nr="6"/>
+	      <this/>
+	    </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fillOval -->
-      <method abstract="yes" access="public" name="fillOval" valid="no">
+      <method abstract="yes" access="public" name="fillOval">
         <signature>
           <arg nr="1">
             <int/>
@@ -833,11 +1226,28 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fillPolygon -->
-      <method abstract="yes" access="public" name="fillPolygon" valid="no">
+      <method abstract="yes" access="public" name="fillPolygon">
         <signature>
           <arg nr="1">
             <array>
@@ -855,7 +1265,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fillPolygon -->
@@ -914,7 +1337,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fillRoundRect -->
-      <method abstract="yes" access="public" name="fillRoundRect" valid="no">
+      <method abstract="yes" access="public" name="fillRoundRect">
         <signature>
           <arg nr="1">
             <int/>
@@ -937,7 +1360,32 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="5"/>
+              <this/>
+            </transfer>
+	    <transfer>
+	      <arg nr="6"/>
+	      <this/>
+	    </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ finalize -->
@@ -1024,7 +1472,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColor -->
-      <method abstract="yes" access="public" name="getColor" valid="no">
+      <method abstract="yes" access="public" name="getColor">
         <signature>
           <return>
             <object>java.awt.Color</object>
@@ -1032,11 +1480,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFont -->
-      <method abstract="yes" access="public" name="getFont" valid="no">
+      <method abstract="yes" access="public" name="getFont">
         <signature>
           <return>
             <object>java.awt.Font</object>
@@ -1065,7 +1518,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFontMetrics -->
-      <method abstract="yes" access="public" name="getFontMetrics" valid="no">
+      <method abstract="yes" access="public" name="getFontMetrics">
         <signature>
           <arg nr="1">
             <object>java.awt.Font</object>
@@ -1076,7 +1529,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hitClip -->
@@ -1125,7 +1587,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setClip -->
-      <method abstract="yes" access="public" name="setClip" valid="no">
+      <method abstract="yes" access="public" name="setClip">
         <signature>
           <arg nr="1">
             <int/>
@@ -1142,11 +1604,28 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setClip -->
-      <method abstract="yes" access="public" name="setClip" valid="no">
+      <method abstract="yes" access="public" name="setClip">
         <signature>
           <arg nr="1">
             <object>java.awt.Shape</object>
@@ -1154,7 +1633,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setColor -->
@@ -1192,7 +1676,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setPaintMode -->
-      <method abstract="yes" access="public" name="setPaintMode" valid="no">
+      <method abstract="yes" access="public" name="setPaintMode">
         <signature/>
         <exceptions/>
         <summary>
@@ -1200,7 +1684,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setXORMode -->
-      <method abstract="yes" access="public" name="setXORMode" valid="no">
+      <method abstract="yes" access="public" name="setXORMode">
         <signature>
           <arg nr="1">
             <object>java.awt.Color</object>
@@ -1208,7 +1692,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toString -->
@@ -1229,7 +1718,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ translate -->
-      <method abstract="yes" access="public" name="translate" valid="no">
+      <method abstract="yes" access="public" name="translate">
         <signature>
           <arg nr="1">
             <int/>
@@ -1240,7 +1729,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->

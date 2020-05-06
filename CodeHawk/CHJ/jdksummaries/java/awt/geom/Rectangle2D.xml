@@ -84,7 +84,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ add -->
-      <method access="public" name="add" valid="no">
+      <method access="public" name="add">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Point2D</object>
@@ -92,11 +92,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ add -->
-      <method access="public" name="add" valid="no">
+      <method access="public" name="add">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Rectangle2D</object>
@@ -104,7 +109,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ contains -->
@@ -184,7 +194,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createIntersection -->
-      <method abstract="yes" access="public" name="createIntersection" valid="no">
+      <method abstract="yes" access="public" name="createIntersection">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Rectangle2D</object>
@@ -195,11 +205,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createUnion -->
-      <method abstract="yes" access="public" name="createUnion" valid="no">
+      <method abstract="yes" access="public" name="createUnion">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Rectangle2D</object>
@@ -210,7 +229,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ equals -->
@@ -334,7 +362,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ intersect -->
-      <method access="public" name="intersect" static="yes" valid="no">
+      <method access="public" name="intersect" static="yes">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Rectangle2D</object>
@@ -348,7 +376,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <arg nr="3"/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <arg nr="3"/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ intersects -->
@@ -442,7 +479,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ intersectsLine -->
-      <method access="public" name="intersectsLine" valid="no">
+      <method access="public" name="intersectsLine">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Line2D</object>
@@ -453,11 +490,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ outcode -->
-      <method abstract="yes" access="public" name="outcode" valid="no">
+      <method abstract="yes" access="public" name="outcode">
         <signature>
           <arg nr="1">
             <double/>
@@ -471,11 +517,24 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ outcode -->
-      <method access="public" name="outcode" valid="no">
+      <method access="public" name="outcode">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Point2D</object>
@@ -486,7 +545,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFrame -->
@@ -528,7 +596,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRect -->
-      <method abstract="yes" access="public" name="setRect" valid="no">
+      <method abstract="yes" access="public" name="setRect">
         <signature>
           <arg nr="1">
             <double/>
@@ -545,7 +613,24 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="4"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRect -->
@@ -566,7 +651,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ union -->
-      <method access="public" name="union" static="yes" valid="no">
+      <method access="public" name="union" static="yes">
         <signature>
           <arg nr="1">
             <object>java.awt.geom.Rectangle2D</object>
@@ -580,7 +665,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <arg nr="3"/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <arg nr="3"/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
