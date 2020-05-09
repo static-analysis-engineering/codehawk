@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
-  <header info="class" time="2020-03-18 15:45:01"/>
-  <class final="yes" immutable="yes" name="TypeKind" package="javax.lang.model.type">
+  <header info="class" time="2020-05-08 19:06:26"/>
+  <class final="yes" immutable="yes" name="SourceVersion" package="javax.lang.model">
     <superclass>java.lang.Enum</superclass>
     <interfaces>
       <implements>java.lang.Comparable</implements>
@@ -9,130 +9,58 @@
     </interfaces>
     <!-- =============================== FIELDS ===============================  -->
     <fields>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BOOLEAN -->
-      <field access="public" final="yes" name="BOOLEAN" not-null="yes" static="yes">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RELEASE_0 -->
+      <field access="public" final="yes" name="RELEASE_0" not-null="yes" static="yes">
         <signature>
-          <object>javax.lang.model.type.TypeKind</object>
+          <object>javax.lang.model.SourceVersion</object>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:BYTE -->
-      <field access="public" final="yes" name="BYTE" not-null="yes" static="yes">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RELEASE_1 -->
+      <field access="public" final="yes" name="RELEASE_1" not-null="yes" static="yes">
         <signature>
-          <object>javax.lang.model.type.TypeKind</object>
+          <object>javax.lang.model.SourceVersion</object>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SHORT -->
-      <field access="public" final="yes" name="SHORT" not-null="yes" static="yes">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RELEASE_2 -->
+      <field access="public" final="yes" name="RELEASE_2" not-null="yes" static="yes">
         <signature>
-          <object>javax.lang.model.type.TypeKind</object>
+          <object>javax.lang.model.SourceVersion</object>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:INT -->
-      <field access="public" final="yes" name="INT" not-null="yes" static="yes">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RELEASE_3 -->
+      <field access="public" final="yes" name="RELEASE_3" not-null="yes" static="yes">
         <signature>
-          <object>javax.lang.model.type.TypeKind</object>
+          <object>javax.lang.model.SourceVersion</object>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LONG -->
-      <field access="public" final="yes" name="LONG" not-null="yes" static="yes">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RELEASE_4 -->
+      <field access="public" final="yes" name="RELEASE_4" not-null="yes" static="yes">
         <signature>
-          <object>javax.lang.model.type.TypeKind</object>
+          <object>javax.lang.model.SourceVersion</object>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CHAR -->
-      <field access="public" final="yes" name="CHAR" not-null="yes" static="yes">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RELEASE_5 -->
+      <field access="public" final="yes" name="RELEASE_5" not-null="yes" static="yes">
         <signature>
-          <object>javax.lang.model.type.TypeKind</object>
+          <object>javax.lang.model.SourceVersion</object>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:FLOAT -->
-      <field access="public" final="yes" name="FLOAT" not-null="yes" static="yes">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RELEASE_6 -->
+      <field access="public" final="yes" name="RELEASE_6" not-null="yes" static="yes">
         <signature>
-          <object>javax.lang.model.type.TypeKind</object>
+          <object>javax.lang.model.SourceVersion</object>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:DOUBLE -->
-      <field access="public" final="yes" name="DOUBLE" not-null="yes" static="yes">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RELEASE_7 -->
+      <field access="public" final="yes" name="RELEASE_7" not-null="yes" static="yes">
         <signature>
-          <object>javax.lang.model.type.TypeKind</object>
+          <object>javax.lang.model.SourceVersion</object>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VOID -->
-      <field access="public" final="yes" name="VOID" not-null="yes" static="yes">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RELEASE_8 -->
+      <field access="public" final="yes" name="RELEASE_8" not-null="yes" static="yes">
         <signature>
-          <object>javax.lang.model.type.TypeKind</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:NONE -->
-      <field access="public" final="yes" name="NONE" not-null="yes" static="yes">
-        <signature>
-          <object>javax.lang.model.type.TypeKind</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:NULL -->
-      <field access="public" final="yes" name="NULL" not-null="yes" static="yes">
-        <signature>
-          <object>javax.lang.model.type.TypeKind</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ARRAY -->
-      <field access="public" final="yes" name="ARRAY" not-null="yes" static="yes">
-        <signature>
-          <object>javax.lang.model.type.TypeKind</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:DECLARED -->
-      <field access="public" final="yes" name="DECLARED" not-null="yes" static="yes">
-        <signature>
-          <object>javax.lang.model.type.TypeKind</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ERROR -->
-      <field access="public" final="yes" name="ERROR" not-null="yes" static="yes">
-        <signature>
-          <object>javax.lang.model.type.TypeKind</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TYPEVAR -->
-      <field access="public" final="yes" name="TYPEVAR" not-null="yes" static="yes">
-        <signature>
-          <object>javax.lang.model.type.TypeKind</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:WILDCARD -->
-      <field access="public" final="yes" name="WILDCARD" not-null="yes" static="yes">
-        <signature>
-          <object>javax.lang.model.type.TypeKind</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:PACKAGE -->
-      <field access="public" final="yes" name="PACKAGE" not-null="yes" static="yes">
-        <signature>
-          <object>javax.lang.model.type.TypeKind</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:EXECUTABLE -->
-      <field access="public" final="yes" name="EXECUTABLE" not-null="yes" static="yes">
-        <signature>
-          <object>javax.lang.model.type.TypeKind</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:OTHER -->
-      <field access="public" final="yes" name="OTHER" not-null="yes" static="yes">
-        <signature>
-          <object>javax.lang.model.type.TypeKind</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:UNION -->
-      <field access="public" final="yes" name="UNION" not-null="yes" static="yes">
-        <signature>
-          <object>javax.lang.model.type.TypeKind</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:INTERSECTION -->
-      <field access="public" final="yes" name="INTERSECTION" not-null="yes" static="yes">
-        <signature>
-          <object>javax.lang.model.type.TypeKind</object>
+          <object>javax.lang.model.SourceVersion</object>
         </signature>
       </field>
     </fields>
@@ -140,21 +68,162 @@
     <constructors/>
     <!-- ============================== METHODS ==============================  -->
     <methods>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isPrimitive -->
-      <method access="public" name="isPrimitive">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isIdentifier -->
+      <method access="public" name="isIdentifier" static="yes">
         <signature>
+          <arg nr="1">
+            <object>java.lang.CharSequence</object>
+          </arg>
           <return>
             <boolean/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <not-null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </safety-condition>
+            <error-condition>
+              <math>
+                <apply>
+                  <null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </error-condition>
+            <exn>java.lang.NullPointerException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
           <taint>
             <transfer>
-              <this/>
+              <arg nr="1"/>
               <return/>
             </transfer>
           </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isKeyword -->
+      <method access="public" name="isKeyword" static="yes">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <not-null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </safety-condition>
+            <error-condition>
+              <math>
+                <apply>
+                  <null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </error-condition>
+            <exn>java.lang.NullPointerException</exn>
+          </c-throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isName -->
+      <method access="public" name="isName" static="yes">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.CharSequence</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <not-null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </safety-condition>
+            <error-condition>
+              <math>
+                <apply>
+                  <null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </error-condition>
+            <exn>java.lang.NullPointerException</exn>
+          </c-throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ latest -->
+      <method access="public" name="latest" static="yes">
+        <signature>
+          <return>
+            <object>javax.lang.model.SourceVersion</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ latestSupported -->
+      <method access="public" name="latestSupported" static="yes">
+        <signature>
+          <return>
+            <object>javax.lang.model.SourceVersion</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ valueOf -->
@@ -164,14 +233,30 @@
             <object>java.lang.String</object>
           </arg>
           <return>
-            <object>javax.lang.model.type.TypeKind</object>
+            <object>javax.lang.model.SourceVersion</object>
           </return>
         </signature>
         <exceptions>
-	  <c-throws>
-	    <cnp arg="1"/>
-	  </c-throws>
-          <throws>java.lang.NullPointerException</throws>
+          <throws>java.lang.IllegalArgumentException</throws>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <not-null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </safety-condition>
+            <error-condition>
+              <math>
+                <apply>
+                  <null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </error-condition>
+            <exn>java.lang.NullPointerException</exn>
+          </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -180,13 +265,6 @@
               <return/>
             </transfer>
           </taint>
-          <postconditions>
-            <post>
-              <math>
-                <not-null/>
-              </math>
-            </post>
-          </postconditions>
           <sinks>
             <sink arg="1" dest="enum value" form="enum constant" type="string">
 	      <throws>java.lang.IllegalArgumentException</throws>
@@ -199,7 +277,7 @@
         <signature>
           <return>
             <array>
-              <object>javax.lang.model.type.TypeKind</object>
+              <object>javax.lang.model.SourceVersion</object>
             </array>
           </return>
         </signature>

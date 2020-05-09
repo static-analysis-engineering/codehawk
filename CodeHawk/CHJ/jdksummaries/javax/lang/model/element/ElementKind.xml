@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-18 15:43:47"/>
-  <class final="yes" name="ElementKind" package="javax.lang.model.element">
+  <class final="yes" immutable="yes" name="ElementKind" package="javax.lang.model.element">
     <superclass>java.lang.Enum</superclass>
     <interfaces>
       <implements>java.lang.Comparable</implements>
@@ -178,7 +178,9 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.lang.IllegalArgumentException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
@@ -196,7 +198,9 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="enum conversion" form="element kind" type="string"/>
+            <sink arg="1" dest="enum value" form="enum constant" type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
           </sinks>
         </summary>
       </method>

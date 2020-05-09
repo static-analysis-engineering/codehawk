@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-18 15:44:01"/>
-  <class final="yes" name="Modifier" package="javax.lang.model.element">
+  <class final="yes" immutable="yes" name="Modifier" package="javax.lang.model.element">
     <superclass>java.lang.Enum</superclass>
     <interfaces>
       <implements>java.lang.Comparable</implements>
@@ -139,7 +139,9 @@
             </post>
           </postconditions>
           <sinks>
-            <sink arg="1" dest="enum conversion" form="modifier" type="string"/>
+            <sink arg="1" dest="enum value" form="enum constant" type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>	      
           </sinks>
         </summary>
       </method>
