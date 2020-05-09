@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-05-08 23:03:47"/>
+  <interface name="InitialContextFactory" package="javax.naming.spi">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInitialContext -->
+      <method abstract="yes" access="public" name="getInitialContext" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.Hashtable</object>
+          </arg>
+          <return>
+            <object>javax.naming.Context</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>javax.naming.NamingException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
