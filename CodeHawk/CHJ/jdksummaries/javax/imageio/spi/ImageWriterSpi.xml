@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-05-08 18:17:25"/>
+  <class abstract="yes" name="ImageWriterSpi" package="javax.imageio.spi">
+    <superclass>javax.imageio.spi.ImageReaderWriterSpi</superclass>
+    <interfaces>
+      <implements>javax.imageio.spi.RegisterableService</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:STANDARD_OUTPUT_TYPE -->
+      <field access="public" final="yes" name="STANDARD_OUTPUT_TYPE" not-null="yes" static="yes">
+        <signature>
+          <array>
+            <object>java.lang.Class</object>
+          </array>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:outputTypes -->
+      <field access="protected" name="outputTypes">
+        <signature>
+          <array>
+            <object>java.lang.Class</object>
+          </array>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:readerSpiNames -->
+      <field access="protected" name="readerSpiNames">
+        <signature>
+          <array>
+            <object>java.lang.String</object>
+          </array>
+        </signature>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ () -->
+      <constructor access="protected">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+      <!--  (java.lang.String,java.lang.String,java.lang.String[],java.lang.String[],java.lang.String[],java.lang.String,java.lang.Class[],java.lang.String[],boolean,java.lang.String,java.lang.String,java.lang.String[],java.lang.String[],boolean,java.lang.String,java.lang.String,java.lang.String[],java.lang.String[]) -->
+      <constructor access="public" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="3">
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </arg>
+          <arg nr="4">
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </arg>
+          <arg nr="5">
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </arg>
+          <arg nr="6">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="7">
+            <array>
+              <object>java.lang.Class</object>
+            </array>
+          </arg>
+          <arg nr="8">
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </arg>
+          <arg nr="9">
+            <boolean/>
+          </arg>
+          <arg nr="10">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="11">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="12">
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </arg>
+          <arg nr="13">
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </arg>
+          <arg nr="14">
+            <boolean/>
+          </arg>
+          <arg nr="15">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="16">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="17">
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </arg>
+          <arg nr="18">
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ canEncodeImage -->
+      <method abstract="yes" access="public" name="canEncodeImage" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.imageio.ImageTypeSpecifier</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ canEncodeImage -->
+      <method access="public" name="canEncodeImage" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.image.RenderedImage</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createWriterInstance -->
+      <method access="public" name="createWriterInstance">
+        <signature>
+          <return>
+            <object>javax.imageio.ImageWriter</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createWriterInstance -->
+      <method abstract="yes" access="public" name="createWriterInstance" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <object>javax.imageio.ImageWriter</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.io.IOException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getImageReaderSpiNames -->
+      <method access="public" name="getImageReaderSpiNames" valid="no">
+        <signature>
+          <return>
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getOutputTypes -->
+      <method access="public" name="getOutputTypes">
+        <signature>
+          <return>
+            <array>
+              <object>java.lang.Class</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isFormatLossless -->
+      <method access="public" name="isFormatLossless" valid="no">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isOwnWriter -->
+      <method access="public" name="isOwnWriter" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.imageio.ImageWriter</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDescription -->
+      <method from="javax.imageio.spi.IIOServiceProvider" inherited="yes" name="getDescription">
+        <signature>
+          <arg nr="1">
+            <object>java.util.Locale</object>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getExtraImageMetadataFormatNames -->
+      <method from="javax.imageio.spi.ImageReaderWriterSpi" inherited="yes" name="getExtraImageMetadataFormatNames">
+        <signature>
+          <return>
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getExtraStreamMetadataFormatNames -->
+      <method from="javax.imageio.spi.ImageReaderWriterSpi" inherited="yes" name="getExtraStreamMetadataFormatNames">
+        <signature>
+          <return>
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFileSuffixes -->
+      <method from="javax.imageio.spi.ImageReaderWriterSpi" inherited="yes" name="getFileSuffixes">
+        <signature>
+          <return>
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFormatNames -->
+      <method from="javax.imageio.spi.ImageReaderWriterSpi" inherited="yes" name="getFormatNames">
+        <signature>
+          <return>
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getImageMetadataFormat -->
+      <method from="javax.imageio.spi.ImageReaderWriterSpi" inherited="yes" name="getImageMetadataFormat">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>javax.imageio.metadata.IIOMetadataFormat</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMIMETypes -->
+      <method from="javax.imageio.spi.ImageReaderWriterSpi" inherited="yes" name="getMIMETypes">
+        <signature>
+          <return>
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getNativeImageMetadataFormatName -->
+      <method from="javax.imageio.spi.ImageReaderWriterSpi" inherited="yes" name="getNativeImageMetadataFormatName">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getNativeStreamMetadataFormatName -->
+      <method from="javax.imageio.spi.ImageReaderWriterSpi" inherited="yes" name="getNativeStreamMetadataFormatName">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPluginClassName -->
+      <method from="javax.imageio.spi.ImageReaderWriterSpi" inherited="yes" name="getPluginClassName">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getStreamMetadataFormat -->
+      <method from="javax.imageio.spi.ImageReaderWriterSpi" inherited="yes" name="getStreamMetadataFormat">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>javax.imageio.metadata.IIOMetadataFormat</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getVendorName -->
+      <method from="javax.imageio.spi.IIOServiceProvider" inherited="yes" name="getVendorName">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getVersion -->
+      <method from="javax.imageio.spi.IIOServiceProvider" inherited="yes" name="getVersion">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~ (inherited) isStandardImageMetadataFormatSupported -->
+      <method from="javax.imageio.spi.ImageReaderWriterSpi" inherited="yes" name="isStandardImageMetadataFormatSupported">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~ (inherited) isStandardStreamMetadataFormatSupported -->
+      <method from="javax.imageio.spi.ImageReaderWriterSpi" inherited="yes" name="isStandardStreamMetadataFormatSupported">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) onDeregistration -->
+      <method from="javax.imageio.spi.IIOServiceProvider" inherited="yes" name="onDeregistration">
+        <signature>
+          <arg nr="1">
+            <object>javax.imageio.spi.ServiceRegistry</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Class</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) onRegistration -->
+      <method from="javax.imageio.spi.IIOServiceProvider" inherited="yes" name="onRegistration">
+        <signature>
+          <arg nr="1">
+            <object>javax.imageio.spi.ServiceRegistry</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Class</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.lang.Object" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
