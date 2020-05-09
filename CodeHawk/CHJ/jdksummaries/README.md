@@ -14,14 +14,14 @@ the size of a particular resource, usually memory.
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | 
 com.sun.net.httpserver | 10 | 64 | 0 | 0 | 0 | 0 | 
 java.applet | 2 | 26 | 0 | 1 | 0 | 0 | 
-java.awt | 82 | 1278 | 67 | 158 | 10 | 0 | 
+java.awt | 82 | 1337 | 69 | 158 | 11 | 0 | 
 java.awt.color | 1 | 12 | 0 | 1 | 0 | 0 | 
 java.awt.datatransfer | 7 | 55 | 3 | 13 | 5 | 0 | 
 java.awt.dnd | 1 | 0 | 0 | 0 | 0 | 0 | 
 java.awt.event | 29 | 74 | 3 | 8 | 0 | 0 | 
 java.awt.font | 9 | 73 | 4 | 11 | 0 | 0 | 
-java.awt.geom | 30 | 431 | 34 | 30 | 0 | 0 | 
-java.awt.image | 37 | 402 | 57 | 87 | 0 | 12 | 
+java.awt.geom | 30 | 441 | 34 | 30 | 0 | 0 | 
+java.awt.image | 37 | 406 | 57 | 97 | 0 | 12 | 
 java.awt.image.renderable | 3 | 32 | 0 | 0 | 0 | 0 | 
 java.awt.print | 4 | 21 | 0 | 0 | 0 | 0 | 
 java.beans | 27 | 165 | 5 | 24 | 18 | 4 | 
@@ -49,7 +49,7 @@ java.security.cert | 32 | 236 | 23 | 40 | 22 | 0 |
 java.security.spec | 14 | 55 | 11 | 11 | 0 | 0 | 
 java.sql | 40 | 198 | 0 | 25 | 22 | 0 | 
 java.text | 28 | 326 | 35 | 44 | 14 | 0 | 
-java.time | 8 | 138 | 3 | 92 | 1 | 0 | 
+java.time | 8 | 139 | 5 | 93 | 1 | 0 | 
 java.time.chrono | 3 | 0 | 0 | 0 | 0 | 0 | 
 java.time.format | 1 | 0 | 0 | 0 | 0 | 0 | 
 java.time.temporal | 4 | 0 | 0 | 0 | 0 | 0 | 
@@ -63,19 +63,25 @@ java.util.logging | 9 | 122 | 2 | 16 | 53 | 0 |
 java.util.regex | 3 | 36 | 0 | 9 | 3 | 0 | 
 java.util.stream | 7 | 36 | 0 | 0 | 0 | 0 | 
 java.util.zip | 12 | 111 | 6 | 24 | 0 | 0 | 
-javax.accessibility | 2 | 21 | 0 | 13 | 2 | 0 | 
-javax.activation | 2 | 13 | 0 | 0 | 0 | 0 | 
+javax.accessibility | 10 | 35 | 0 | 14 | 2 | 0 | 
+javax.activation | 2 | 19 | 0 | 0 | 1 | 0 | 
 javax.annotation.processing | 7 | 34 | 0 | 4 | 0 | 0 | 
-javax.crypto | 9 | 85 | 1 | 18 | 6 | 0 | 
-javax.crypto.spec | 3 | 10 | 0 | 3 | 0 | 0 | 
-javax.imageio | 1 | 31 | 17 | 24 | 9 | 0 | 
-javax.imageio.plugins.jpeg | 1 | 4 | 0 | 2 | 0 | 0 | 
-javax.imageio.stream | 1 | 0 | 0 | 0 | 0 | 0 | 
-javax.lang.model | 1 | 3 | 0 | 0 | 0 | 0 | 
-javax.lang.model.element | 7 | 31 | 0 | 5 | 2 | 0 | 
-javax.lang.model.type | 2 | 8 | 0 | 2 | 1 | 0 | 
-javax.lang.model.util | 1 | 15 | 0 | 0 | 0 | 0 | 
-javax.naming | 4 | 21 | 0 | 8 | 2 | 0 | 
+javax.crypto | 14 | 115 | 4 | 25 | 13 | 0 | 
+javax.crypto.spec | 8 | 35 | 7 | 9 | 0 | 0 | 
+javax.imageio | 8 | 171 | 20 | 36 | 9 | 0 | 
+javax.imageio.metadata | 2 | 32 | 0 | 0 | 1 | 0 | 
+javax.imageio.plugins.jpeg | 3 | 21 | 2 | 8 | 0 | 0 | 
+javax.imageio.spi | 5 | 24 | 0 | 0 | 1 | 0 | 
+javax.imageio.stream | 2 | 0 | 0 | 0 | 0 | 0 | 
+javax.lang.model | 3 | 11 | 4 | 3 | 2 | 0 | 
+javax.lang.model.element | 9 | 37 | 2 | 9 | 3 | 0 | 
+javax.lang.model.type | 2 | 8 | 1 | 2 | 1 | 0 | 
+javax.lang.model.util | 2 | 25 | 0 | 10 | 0 | 0 | 
+javax.management | 21 | 142 | 27 | 15 | 26 | 0 | 
+javax.management.openmbean | 4 | 28 | 1 | 12 | 1 | 0 | 
+javax.naming | 18 | 96 | 22 | 20 | 21 | 0 | 
+javax.naming.event | 5 | 0 | 0 | 0 | 0 | 0 | 
+javax.naming.spi | 6 | 0 | 0 | 0 | 0 | 0 | 
 javax.net | 2 | 13 | 0 | 0 | 0 | 0 | 
 javax.net.ssl | 18 | 89 | 2 | 9 | 0 | 0 | 
 javax.security.auth | 1 | 0 | 0 | 0 | 0 | 0 | 
@@ -99,7 +105,7 @@ org.xml.sax.helpers | 3 | 44 | 0 | 15 | 46 | 0 |
 sun.net.www | 2 | 0 | 0 | 0 | 0 | 0 | 
 sun.net.www.protocol.file | 1 | 0 | 0 | 0 | 0 | 0 | 
 sun.security.util | 1 | 0 | 0 | 0 | 0 | 0 | 
-| total  | 1184 | 11142 | 1033 | 2408 | 470 | 100 | 
+| total  | 1274 | 11773 | 1109 | 2507 | 530 | 100 | 
 
 
 ### Preconditions
@@ -113,16 +119,18 @@ exceptions covered.
 | :--- |  ---: |
 | java.awt.image.RasterFormatException | 2 | 
 | java.lang.ArithmeticException | 24 | 
-| java.lang.ArrayIndexOutOfBoundsException | 55 | 
+| java.lang.ArrayIndexOutOfBoundsException | 67 | 
 | java.lang.ArrayStoreException | 1 | 
-| java.lang.IllegalArgumentException | 212 | 
+| java.lang.IllegalArgumentException | 222 | 
 | java.lang.IndexOutOfBoundsException | 147 | 
 | java.lang.NegativeArraySizeException | 17 | 
-| java.lang.NullPointerException | 497 | 
+| java.lang.NullPointerException | 548 | 
 | java.lang.StringIndexOutOfBoundsException | 74 | 
 | java.net.MalformedURLException | 1 | 
 | java.security.InvalidParameterException | 1 | 
+| java.time.DateTimeException | 2 | 
 | java.util.EmptyStackException | 2 | 
+| javax.management.MalformedObjectNameException | 1 | 
 
 ### Summary Content
 
@@ -185,6 +193,7 @@ following have been used.
 - *character encoding*: name of a character encoding
 - *class name*: fully qualified name of a java class
 - *column label*: as used in SQL
+- *composite name*: as used in javax/naming
 - *cryptographic service*: e.g., Signature, MessageDigest, Mac, Cipher
 - *description*: free-form description of entity
 - *element tag*: tag of an XML element

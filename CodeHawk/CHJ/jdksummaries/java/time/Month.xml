@@ -520,7 +520,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ of -->
-      <method access="public" name="of" static="yes" valid="no">
+      <method access="public" name="of" static="yes">
         <signature>
           <arg nr="1">
             <int/>

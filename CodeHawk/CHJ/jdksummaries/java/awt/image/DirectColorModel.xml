@@ -128,7 +128,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAlpha -->
-      <method access="public" final="yes" name="getAlpha" valid="no">
+      <method access="public" final="yes" name="getAlpha">
         <signature>
           <arg nr="1">
             <int/>
@@ -139,7 +139,36 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>255</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAlpha -->
@@ -188,10 +217,34 @@
         <summary>
           <taint>
 	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
 	      <this/>
 	      <return/>
 	    </transfer>
 	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>255</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getBlue -->
@@ -347,7 +400,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getGreen -->
-      <method access="public" final="yes" name="getGreen" valid="no">
+      <method access="public" final="yes" name="getGreen">
         <signature>
           <arg nr="1">
             <int/>
@@ -358,7 +411,36 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>255</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getGreen -->
@@ -394,7 +476,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRGB -->
-      <method access="public" final="yes" name="getRGB" valid="no">
+      <method access="public" final="yes" name="getRGB">
         <signature>
           <arg nr="1">
             <int/>
@@ -405,7 +487,36 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>255</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRGB -->
@@ -424,7 +535,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRed -->
-      <method access="public" final="yes" name="getRed" valid="no">
+      <method access="public" final="yes" name="getRed">
         <signature>
           <arg nr="1">
             <int/>
@@ -435,7 +546,36 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>255</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRed -->
