@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-05-12 22:33:45"/>
+  <libfun lib="so_functions" name="listen">
+    <documentation>
+      <desc>
+	listen for socket connections and limit the queue of incoming connections
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>int listen(</ll>
+          <ld>int socket</ld>
+          <ld>int backlog</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="socket">connection-mode socket</par>
+        <par name="backlog">
+	  hint to the implementation which the implementation shall
+	  use to limit the number of outstanding connections in the
+	  socket's listen queue
+	</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="listen">
+      <par loc="stack" name="socket" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="backlog" nr="2">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

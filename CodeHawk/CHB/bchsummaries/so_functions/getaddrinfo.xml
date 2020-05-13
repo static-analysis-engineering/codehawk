@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-05-12 22:39:42"/>
+  <libfun lib="so_functions" name="getaddrinfo">
+    <documentation>
+      <desc>get address information</desc>
+      <apidoc>
+        <pt>
+          <ll>int getaddrinfo(</ll>
+          <ld>const char *restrict nodename</ld>
+          <ld>const char *restrict servname</ld>
+          <ld>const struct addrinfo *restrict hints</ld>
+          <ld>struct addrinfo **res</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="nodename">name of service location; may be null</par>
+        <par name="servname">name of service; may be null </par>
+        <par name="hints">
+	  refers to a structure containing input values that directs
+	  the operation by providing options and by limiting the
+	  returned information to a specific socket type, address
+	  family, and/or protocol
+	</par>
+        <par name="res">
+	    points shall refer to a linked list of addrinfo
+	    structures, each of which shall specify a socket address
+	    and information for use in creating a socket with which to
+	    use that socket address. The list shall include at least
+	    one addrinfo structure. The ai_next field of each
+	    structure contains a pointer to the next structure on the
+	    list, or a null pointer if it is the last structure on the
+	    list
+	</par>
+        <return>
+          <rc cond="success">zero</rc>
+          <rc cond="failure">nonzero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getaddrinfo">
+      <par loc="stack" name="nodename" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-null-nt/></pre>
+      </par>
+      <par loc="stack" name="servname" nr="2">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-null-nt/></pre>
+      </par>
+      <par loc="stack" name="hints" nr="3">
+        <type><ptr>addrinfo</ptr></type>
+	<pre><deref-read-null/></pre>
+      </par>
+      <par loc="stack" name="res" nr="4">
+        <type><ptr><ptr>addrinfo</ptr></ptr></type>
+	<pre><deref-write/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-nonzero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

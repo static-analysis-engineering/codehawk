@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-05-12 14:14:17"/>
+  <libfun lib="so_functions" name="if_nametoindex">
+    <documentation>
+      <desc>map a network interface name to its corresponding index</desc>
+      <apidoc>
+        <pt>unsigned int if_nametoindex (const char *ifname)</pt>
+        <par name="ifname">interface name</par>
+        <return>
+          <rc cond="success">index of ifname</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="if_nametoindex">
+      <par loc="stack" name="ifname" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>UINT</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

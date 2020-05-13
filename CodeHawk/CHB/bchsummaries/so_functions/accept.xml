@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-05-12 22:25:07"/>
+  <libfun lib="so_functions" name="accept">
+    <documentation>
+      <desc>accept a new connection on a socket</desc>
+      <apidoc>
+        <pt>
+          <ll>int accept(</ll>
+          <ld>int socket</ld>
+          <ld>struct sockaddr *restrict address</ld>
+          <ld>socklen_t *restrict address_len</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="socket">
+	  a socket that was created with socket(), has been bound to
+	  an address with bind(), and has issued a successful call to
+	  listen()
+	</par>
+        <par name="address">
+	  Either a null pointer, or a pointer to a sockaddr structure
+	  where the address of the connecting socket shall be returned
+	</par>
+        <par name="address_len">
+	  Either a null pointer, if address is a null pointer, or a
+	  pointer to a socklen_t object which on input specifies the
+	  length of the supplied sockaddr structure, and on output
+	  specifies the length of the stored address
+	</par>
+        <return>
+          <rc cond="success">
+	    non-negative file descriptor of the accepted socket
+	  </rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="accept">
+      <par loc="stack" name="socket" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="address" nr="2">
+        <type><ptr>sockaddr</ptr></type>
+      </par>
+      <par loc="stack" name="address_len" nr="3">
+        <type><ptr>socklen_t</ptr></type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write-null/>
+	      <type>sockaddr</type>
+	      <ci>address</ci>
+	      <ci>address_len</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<nonnegative-negone/>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>sockaddr</type>
+	      <ci>address</ci>
+	      <ci>address_len</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
