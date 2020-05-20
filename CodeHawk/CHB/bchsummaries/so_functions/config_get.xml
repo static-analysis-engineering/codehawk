@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-05-18 21:38:04"/>
+  <libfun lib="so_functions" name="config_get">
+    <documentation>
+      <desc>get configuration value (openWRT)</desc>
+      <apidoc>
+        <pt>char *config_get (const char *varname)</pt>
+        <par name="varname">name of configuration variable (e.g., access1)</par>
+        <return>
+          <rc cond="success">pointer to configuration value</rc>
+          <rc cond="failure">null</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="config_get">
+      <par loc="stack" name="varname" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

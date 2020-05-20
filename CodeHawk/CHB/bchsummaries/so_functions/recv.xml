@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-05-19 10:24:04"/>
+  <libfun lib="so_functions" name="recv">
+    <documentation>
+      <desc>receive a message from a connected socket</desc>
+      <apidoc>
+        <pt>
+          <ll>ssize_t recv(</ll>
+          <ld>int socket</ld>
+          <ld>void *buffer</ld>
+          <ld>size_t length</ld>
+          <ld>int flags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="socket">Specifies the socket file descriptor</par>
+        <par name="buffer">
+	  Points to a buffer where the message should be stored
+	</par>
+        <par name="length">
+	  Specifies the length in bytes of the buffer pointed to by
+	  the buffer argument
+	</par>
+        <par name="flags">Specifies the type of message reception</par>
+        <return>
+          <rc cond="success">the length of the message in bytes</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="recv">
+      <par loc="stack" name="socket" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="buffer" nr="2">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="stack" name="length" nr="3">
+        <type>size_t</type>
+      </par>
+      <par loc="stack" name="flags" nr="4">
+        <type>int</type>
+      </par>
+      <returntype>ssize_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>byte</type>
+	      <ci>buffer</ci>
+	      <ci>length</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <geq/>
+	      <return/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</post>
+	<error-post>
+	  <math>
+	    <apply>
+	      <eq/>
+	      <return/>
+	      <cn>-1</cn>
+	    </apply>
+	  </math>
+	</error-post>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>byte</type>
+	      <ci>buffer</ci>
+	      <ci>length</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

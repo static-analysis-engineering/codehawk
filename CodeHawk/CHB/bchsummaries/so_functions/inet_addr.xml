@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-05-19 10:18:31"/>
+  <libfun lib="so_functions" name="inet_addr">
+    <documentation>
+      <desc>IPv4 address manipulation</desc>
+      <apidoc>
+        <pt>in_addr_t inet_addr (const char *cp)</pt>
+        <par name="cp">string to be converted to an internet address</par>
+        <return>
+          <rc cond="success">internet address</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="inet_addr">
+      <par loc="stack" name="cp" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>in_addr_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
