@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -71,6 +71,7 @@ open BCHJumpTable
 open BCHLibTypes
 open BCHMemoryReference
 open BCHPreFileIO
+open BCHSectionHeadersInfo
 open BCHSpecializations
 open BCHStreamWrapper
 open BCHStrings
@@ -111,6 +112,7 @@ object (self)
   val mutable has_file = false
   val mutable filename = ""
   val mutable is_elf = false
+  val mutable is_mips = false
 
   val mutable jumptables = []
   val data_blocks = new DataBlockCollections.set_t
@@ -421,8 +423,12 @@ object (self)
 
   method set_filename s = begin filename <- s ; system_data#set_filename s end
   method get_filename = filename
+
   method set_elf = is_elf <- true
   method is_elf = is_elf
+
+  method set_mips = is_mips <- true
+  method is_mips = is_mips
 
   (* system initialization :
      - load system_file (application specific, created by previous round)
@@ -589,6 +595,8 @@ object (self)
          self#read_xml_inlined_blocks inode) ;
       (if hasc "specializations" then
          specializations#read_xml (getc "specializations")) ;
+      (if hasc "section-headers" then
+         section_header_infos#read_xml (getc "section-headers")) ;
       (if hasc "esp-adjustments-i" then
 	  let enode = getc "esp-adjustments-i" in
 	  self#read_xml_esp_adjustments_i enode) ;

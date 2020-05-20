@@ -76,6 +76,7 @@ MLIS := \
 	bCHJni \
 	bCHCStruct \
 	bCHCppClass \
+	bCHSectionHeadersInfo \
 	bCHSystemInfo \
 	bCHFunctionSummaryLibrary \
 	bCHCallTargetSemantics \
@@ -143,6 +144,7 @@ SOURCES := \
 	bCHJni \
 	bCHCStruct \
 	bCHCppClass \
+	bCHSectionHeadersInfo \
 	bCHSystemInfo \
 	bCHFunctionSummaryLibrary \
 	bCHCallTargetSemantics \

@@ -243,6 +243,10 @@ let get_section_filename (sname:string) =
   let sname = if has_control_characters sname then hex_string sname else sname in
   get_disassembly_filename ("section_" ^ sname ^ ".xml")
 
+let get_segment_filename (index:int) =
+  let sname = "segment_" ^ (string_of_int index) ^ ".xml" in
+  get_disassembly_filename sname
+
 let get_pe_header_filename () =
   get_disassembly_filename "pe_header.xml"
 
@@ -573,6 +577,10 @@ let load_elf_header_file () =
 let load_section_file (sname:string) =
   let filename = get_section_filename sname in 
   load_xml_file filename "raw-section"
+
+let load_segment_file (index:int) =
+  let filename = get_segment_filename index in
+  load_xml_file filename "raw-segment"
 
 let save_bdictionary () =
   let filename = get_bdictionary_filename () in

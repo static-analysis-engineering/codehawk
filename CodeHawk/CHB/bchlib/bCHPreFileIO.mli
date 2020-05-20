@@ -51,6 +51,7 @@ val get_jni_calls_filename   : unit -> string
 val get_resultmetrics_filename: unit -> string   (* analysis round statistics *)
 val get_resultdata_filename  : unit -> string    (* application data digest *)
 val get_section_filename     : string -> string
+val get_segment_filename     : int -> string
 val get_pe_header_filename   : unit -> string
 val get_elf_header_filename  : unit -> string
 val get_elf_dictionary_filename: unit -> string
@@ -73,9 +74,10 @@ val load_userdata_cpp_class_file: string -> xml_element_int option
 val load_userdata_jumptable_file: string -> xml_element_int option
 val load_ida_dbfe_file          : unit -> xml_element_int option
 
-val load_pe_header_file      : unit -> xml_element_int option
-val load_elf_header_file     : unit -> xml_element_int option
-val load_section_file        : string -> xml_element_int option
+val load_pe_header_file: unit -> xml_element_int option
+val load_elf_header_file: unit -> xml_element_int option
+val load_segment_file: int -> xml_element_int option
+val load_section_file: string -> xml_element_int option
 val extract_function_info_file: string -> xml_element_int option
 val extract_inferred_function_summary_file: string -> xml_element_int option
 val extract_inferred_function_arguments_from_summary_file:string -> xml_element_int option

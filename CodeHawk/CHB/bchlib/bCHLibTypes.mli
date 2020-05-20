@@ -2736,6 +2736,50 @@ class type specializations_int =
     method toPretty: pretty_t
   end
 
+(* ===================================================== Section header info === *)
+
+class type section_header_info_int =
+  object
+    (* accessors *)
+    method get_name: string
+    method get_addr: doubleword_int
+    method get_offset: doubleword_int
+    method get_size: doubleword_int
+    method get_type: doubleword_int
+    method get_link: doubleword_int
+    method get_info: doubleword_int
+    method get_addralign: doubleword_int
+    method get_entsize: doubleword_int
+
+    (* predicates *)
+    method has_addr: bool
+    method has_offset: bool
+    method has_size: bool
+    method has_type: bool
+    method has_link: bool
+    method has_info: bool
+    method has_addralign: bool
+    method has_entsize: bool
+
+    (* i/o *)
+    method read_xml: xml_element_int -> unit
+    method toPretty: pretty_t
+  end
+
+class type section_header_infos_int  =
+  object
+    (* accessors *)
+    method get_section_header_names: string list
+    method get_section_header_info: string -> section_header_info_int
+
+    (* predicates *)
+    method has_section_header_info: string -> bool   (* section name *)
+
+    (* i/o *)
+    method read_xml: xml_element_int -> unit
+    method toPretty: pretty_t
+  end
+
 
 (* ============================================================= System info === *)
 
@@ -2750,14 +2794,15 @@ object
   method initialize_type_definitions     : unit
     
   (* setters *)
-  method set_filename              : string -> unit
-  method set_file_string           : string -> unit
-  method set_elf                   : unit
-  method set_big_endian            : unit
-  method set_image_base            : doubleword_int -> unit
-  method set_base_of_code_rva      : doubleword_int -> unit
-  method set_elf_is_code_address   : doubleword_int -> doubleword_int -> unit
-  method set_code_size             : doubleword_int -> unit
+  method set_filename: string -> unit
+  method set_file_string: string -> unit
+  method set_elf: unit
+  method set_mips: unit
+  method set_big_endian: unit
+  method set_image_base: doubleword_int -> unit
+  method set_base_of_code_rva: doubleword_int -> unit
+  method set_elf_is_code_address: doubleword_int -> doubleword_int -> unit
+  method set_code_size: doubleword_int -> unit
   method set_address_of_entry_point: doubleword_int -> unit
   method set_thread_start_address  : 
     doubleword_int -> ctxt_iaddress_t -> doubleword_int -> bterm_t list -> unit
@@ -2822,15 +2867,16 @@ object
   method get_user_class_count         : int
 
   (* predicates *)
-  method is_elf                    : bool
-  method is_little_endian          : bool
-  method is_nonreturning_call      : doubleword_int -> doubleword_int -> bool
-  method is_fixed_true_branch      : doubleword_int -> bool
-  method is_thread_start_address   : doubleword_int -> bool
-  method is_class_member_function  : doubleword_int -> bool
-  method has_call_target           : doubleword_int -> doubleword_int -> bool
-  method has_jump_table_target     : doubleword_int -> doubleword_int -> bool
-  method has_esp_adjustment        : doubleword_int -> doubleword_int -> bool
+  method is_elf: bool
+  method is_mips: bool
+  method is_little_endian: bool
+  method is_nonreturning_call: doubleword_int -> doubleword_int -> bool
+  method is_fixed_true_branch: doubleword_int -> bool
+  method is_thread_start_address: doubleword_int -> bool
+  method is_class_member_function: doubleword_int -> bool
+  method has_call_target: doubleword_int -> doubleword_int -> bool
+  method has_jump_table_target: doubleword_int -> doubleword_int -> bool
+  method has_esp_adjustment: doubleword_int -> doubleword_int -> bool
   method has_exported_item_name    : doubleword_int -> bool
   method has_exported_data_spec    : string -> bool
   method has_data_block            : doubleword_int -> bool
