@@ -83,25 +83,25 @@ let print_statistics () =
   let pActions = List.map (fun (fname, cats) ->
     LBLOCK [ STR fname  ; STR ": " ;
 	     pretty_print_list cats (fun c -> STR c) "" ", " "" ; NL ]) fActions in
-  let paramRoles = List.fold_left (fun acc s ->
+  (* let paramRoles = List.fold_left (fun acc s ->
     let name = s#get_name in
     let params = s#get_function_api.fapi_parameters in
     let roles = List.fold_left (fun acc1 p -> match p.apar_roles with [] -> acc1 | l ->
       let roles = List.sort P.compare p.apar_roles in
       (p.apar_name,roles) :: acc1) [] params in
-    match roles with [] -> acc | _ -> (name,roles) :: acc) [] summaries in
+    match roles with [] -> acc | _ -> (name,roles) :: acc) [] summaries in *)
   let nParamRoles = List.fold_left (fun acc s ->
     let nRoles = List.fold_left (fun acc1 p -> acc1 + List.length (p.apar_roles)) 
       0 s#get_function_api.fapi_parameters in
     acc + nRoles) 0 summaries in
-  let pRoles = List.map (fun (fname,froles) ->
+  (* let pRoles = List.map (fun (fname,froles) ->
     LBLOCK [ STR fname ; NL ;
 	     INDENT (3, LBLOCK (List.map (fun (pname,proles) ->
 	       LBLOCK [ STR pname ; STR ": " ; 
 			pretty_print_list proles (fun (rt,rn) ->
 			  LBLOCK [ STR "(" ; STR rt ; STR "," ; STR rn ; STR ")" ])
-			    "" "; " "" ; NL ]) froles)) ; NL ]) paramRoles in
-	       let count_sideeffects s = List.length s#get_sideeffects in
+			    "" "; " "" ; NL ]) froles)) ; NL ]) paramRoles in *)
+  let count_sideeffects s = List.length s#get_sideeffects in 
   let count_preconditions s = List.length s#get_preconditions in
   let count_postconditions s = List.length s#get_postconditions in
   let count_errorpostconditions s = List.length s#get_errorpostconditions in

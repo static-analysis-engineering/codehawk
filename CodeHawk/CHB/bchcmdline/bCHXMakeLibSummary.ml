@@ -180,7 +180,6 @@ let write_xml_sideeffects (node:xml_element_int) =
 
 let write_xml_io_actions (node:xml_element_int) parameters =
   if !iox_cat = "" then () else
-    let append = node#appendChildren in
     let ioNode = xmlElement "io-action" in
     begin
       node#appendChildren [ ioNode ] ;

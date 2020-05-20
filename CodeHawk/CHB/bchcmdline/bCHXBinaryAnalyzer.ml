@@ -98,6 +98,9 @@ let savecfgs = ref false
 let save_xml = ref false
 let save_asm = ref false
 
+let architecture = ref "x86"
+let fileformat = ref "pe"
+
 let stream_start_address = ref wordzero
 let set_stream_start_address s =
   stream_start_address := string_to_doubleword s
@@ -117,10 +120,10 @@ let speclist =
      "stream disassemble a hex-encoded stream of bytes") ;
     ("-startaddress",  Arg.String set_stream_start_address,
      "start address of the code stream") ;
+    ("-mips", Arg.Unit (fun () -> architecture := "mips"), "mips executable") ;
+    ("-elf", Arg.Unit (fun () -> fileformat := "elf"), "ELF executable") ;
     ("-extract", Arg.Unit (fun () -> cmd := "extract"),
      "extract executable content from executable and save in xml format") ;
-    ("-extract_elf", Arg.Unit (fun () -> cmd := "extract_elf"),
-     "extract executable content from executable ELF file and save in xml format") ;
     ("-dump", Arg.Unit (fun () -> cmd := "dump"),
      "dump entire executable to xml (max size 1MB)") ;
     ("-disassemble", Arg.Unit (fun () -> cmd := "disassemble"),
@@ -130,8 +133,6 @@ let speclist =
      "disassemble and save xml summary") ;
     ("-disassemble_elf", Arg.Unit (fun () -> cmd := "disassemble_elf"),
      "save an assembly listing of the executable ELF file in text format") ;
-    ("-disassemble_mips", Arg.Unit (fun () -> cmd := "disassemble_mips"),
-     "save an assembly listing fo the MIPS executable in text format") ;
     ("-analyze", Arg.Unit (fun () -> cmd := "analyze"),
      "analyze the executable and save intermediate results in xml format (applicable to xml rep only)") ;
     ("-analyze_a", Arg.Unit (fun () ->
@@ -141,8 +142,6 @@ let speclist =
      "continue analyzing functions that have stabilized") ;
     ("-analyze_elf", Arg.Unit (fun () -> cmd := "analyze_elf"),
      "analyze the executable ELF file (x86 architecture)") ;
-    ("-analyze_mips", Arg.Unit (fun () -> cmd := "analyze_mips"),
-     "analyze the executable MIPS file (ELF format only)") ;
     ("-save_cfgs", Arg.Unit (fun () -> savecfgs := true),
      "save basic blocks and loops (applicable to .exe file)") ;
     ("-summaries", Arg.String system_settings#set_summary_jar,
@@ -261,7 +260,7 @@ let main () =
       else
         exit_with_error !cmd msg
 	
-    else if !cmd = "extract" then
+    else if !cmd = "extract" && !architecture = "x86" && !fileformat = "pe" then
       let _ = register_hashed_functions () in
       let (success,msg) = read_pe_file system_info#get_filename version#get_maxfilesize in
       if success then
@@ -274,7 +273,9 @@ let main () =
       else 
 	exit_with_error !cmd msg
 
-    else if !cmd = "extract_elf" then
+    else if !cmd = "extract" && !fileformat = "elf" then
+      let _ = if !architecture = "mips" then system_info#set_mips in
+      let _ = system_info#initialize in
       let (success,msg) = read_elf_file system_info#get_filename in
       if success then
         begin
@@ -289,7 +290,7 @@ let main () =
     else if !cmd = "dump" then
       dump_pe_file system_info#get_filename
 
-    else if !cmd = "disassemble" then
+    else if !cmd = "disassemble" && !architecture = "pe" then
       let _ = register_hashed_functions () in
       let t = ref (Unix.gettimeofday ()) in
       let _ = system_info#initialize in
@@ -323,7 +324,8 @@ let main () =
 	        (STR ((BCHAssemblyFunctions.assembly_functions#dark_matter_to_string))) ;
               file_output#saveFile
                 (get_duplicate_coverage_filename ())
-                (STR (BCHAssemblyFunctions.assembly_functions#duplicates_to_string)) ;                        save_log_files !cmd ;
+                (STR (BCHAssemblyFunctions.assembly_functions#duplicates_to_string)) ;
+              save_log_files !cmd ;
 	      exit 0
 	    end
 	else
@@ -331,7 +333,7 @@ let main () =
       else
 	exit_with_error !cmd msg
 
-    else if !cmd = "disassemble_elf" then
+    else if !cmd = "disassemble" && !architecture = "x86" && !fileformat = "elf" then
       let _ = system_info#set_elf in
       let _ = load_bdictionary () in      
       let _ = system_info#initialize in
@@ -361,8 +363,9 @@ let main () =
           save_log_files "disassemble" 
       end
 
-    else if !cmd = "disassemble_mips" then
+    else if !cmd = "disassemble" && !architecture = "mips" && !fileformat = "elf" then
       let _ = system_info#set_elf in
+      let _ = system_info#set_mips in
       let _ = system_info#initialize in
       let t = ref (Unix.gettimeofday ()) in
       let _ = pr_debug [ STR "Load MIPS file ..." ; NL ] in
@@ -389,7 +392,7 @@ let main () =
       end
                 
 
-    else if !cmd = "analyze" then
+    else if !cmd = "analyze" && !architecture = "pe" then
       let _ = register_hashed_functions () in
       let starttime = Unix.gettimeofday () in
       let _ = load_bdictionary () in
@@ -441,7 +444,7 @@ let main () =
       else
 	exit_with_error logcmd msg	    
       
-    else if !cmd = "analyze_elf" then
+    else if !cmd = "analyze" && !architecture = "x86" && !fileformat = "elf" then
       let _ = register_hashed_elf_functions () in
       let starttime = Unix.gettimeofday () in
       let _ = system_info#set_elf in
@@ -471,9 +474,10 @@ let main () =
 	exit 0
       end
 
-    else if !cmd = "analyze_mips" then
+    else if !cmd = "analyze" && !architecture = "mips" && !fileformat="elf" then
       let starttime = Unix.gettimeofday () in
       let _ = system_info#set_elf in
+      let _ = system_info#set_mips in
       let _ = load_bdictionary () in
       let _ = system_info#initialize in
       let _ = load_interface_dictionary () in
