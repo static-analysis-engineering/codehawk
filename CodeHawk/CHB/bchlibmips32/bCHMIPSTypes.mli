@@ -168,6 +168,7 @@ type mips_opcode_t =
   | BranchLTZeroLink of mips_operand_int * mips_operand_int
   | BranchGEZeroLink of mips_operand_int * mips_operand_int
   | BranchEqual of mips_operand_int * mips_operand_int * mips_operand_int
+  | BranchEqualLikely of mips_operand_int * mips_operand_int * mips_operand_int
   | BranchNotEqual of mips_operand_int * mips_operand_int * mips_operand_int
   | Branch of mips_operand_int
   (* I-type: arithmetic/logic *)

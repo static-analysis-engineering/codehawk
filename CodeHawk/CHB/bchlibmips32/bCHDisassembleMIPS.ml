@@ -153,7 +153,11 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
       while ch#pos < size do
         let prevPos = ch#pos in
         let instrbytes = ch#read_doubleword in
-        let opcode = disassemble_mips_instruction ch base instrbytes in
+        let opcode =
+          try
+            disassemble_mips_instruction ch base instrbytes
+          with
+          | _ -> OpInvalid in
         let currentPos = ch#pos in
         let instrLen = currentPos - prevPos in
         let instrBytes = Bytes.make instrLen ' ' in
@@ -173,30 +177,37 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
 
 let disassemble_mips_sections () =
   let xSections = elf_header#get_executable_sections in
-  let headers = List.sort (fun (h1,_) (h2,_) -> h1#get_addr#compare h2#get_addr) xSections in
-  let (lowest,_) = List.hd headers in
-  let (highest,_) = List.hd (List.rev headers) in
-  let _ =
-    chlog#add
-      "disassembly"
-      (LBLOCK [ pretty_print_list
-                  headers
-                  (fun (s,_) ->
-                    LBLOCK [ STR s#get_section_name ; STR ":" ; s#get_addr#toPretty ;
-                             STR " (" ; s#get_size#toPretty ; STR ")" ])
-                  "[" " ; " "]" ]) in                                                     
-  let startOfCode = lowest#get_addr in
-  let endOfCode = highest#get_addr#add highest#get_size in
+  let (startOfCode,endOfCode) =
+    if (List.length xSections) = 0 then
+      raise (BCH_failure (STR "Executable does not have section headers"))
+    else
+      let headers =
+        List.sort (fun (h1,_) (h2,_) -> h1#get_addr#compare h2#get_addr) xSections in
+      let (lowest,_) = List.hd headers in
+      let (highest,_) = List.hd (List.rev headers) in
+      let _ =
+        chlog#add
+          "disassembly"
+          (LBLOCK [ pretty_print_list
+                      headers
+                      (fun (s,_) ->
+                        LBLOCK [ STR s#get_section_name ; STR ":" ; s#get_addr#toPretty ;
+                                 STR " (" ; s#get_size#toPretty ; STR ")" ])
+                      "[" " ; " "]" ]) in
+      let startOfCode = lowest#get_addr in
+      let endOfCode = highest#get_addr#add highest#get_size in
+      (startOfCode,endOfCode) in
   let sizeOfCode = endOfCode#subtract startOfCode in
   let _ = initialize_mips_instructions (sizeOfCode#to_int / 4) in   (* only 4-byte aligned *)
   let _ = pverbose 
             [ STR "Create space for " ; sizeOfCode#toPretty ; STR " (" ;
 	      INT sizeOfCode#to_int ; STR ")" ; STR "instructions" ] in
   let _ = initialize_mips_assembly_instructions sizeOfCode#to_int startOfCode in
-  let _ = List.iter
-            (fun (h,x) ->
-              let displacement = (h#get_addr#subtract startOfCode)#to_int in
-              disassemble h#get_addr displacement x) xSections in
+  let _ =
+    List.iter
+      (fun (h,x) ->
+        let displacement = (h#get_addr#subtract startOfCode)#to_int in
+        disassemble h#get_addr displacement x) xSections in
   sizeOfCode
 
   (* returns the address of the location holding the relocation symbol
@@ -583,7 +594,7 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
      else
        ()
   | XVar v when env#is_global_variable v ->
-     let gaddr =  env#get_global_variable_address v in
+     let gaddr = env#get_global_variable_address v in
      if elf_header#is_program_address gaddr then
        let dw = elf_header#get_program_value gaddr in
        if functions_data#has_function_name dw then

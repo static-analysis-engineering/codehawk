@@ -843,6 +843,7 @@ let translate_mips_instruction
     | BranchLTZeroLink _
     | BranchGEZeroLink _
     | BranchEqual _
+    | BranchEqualLikely _
     | BranchNotEqual _
     | Jump _
     | JumpRegister _

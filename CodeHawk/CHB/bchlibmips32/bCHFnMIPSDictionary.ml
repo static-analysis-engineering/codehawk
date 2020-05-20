@@ -198,6 +198,17 @@ object (self)
                           xd#index_xpr result ; xd#index_xpr rresult ;
                           xd#index_xpr negresult ])
 
+      | BranchEqualLikely (src1,src2,tgt) ->
+         let rhs1 = src1#to_expr floc in
+         let rhs2 = src2#to_expr floc in
+         let result = XOp (XEq, [ rhs1 ; rhs2 ]) in
+         let rresult = rewrite_expr result in
+         let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
+         let (rresult,negresult) = get_condition_exprs rresult negresult in
+         ([ "a:xxxxx" ],[ xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
+                          xd#index_xpr result ; xd#index_xpr rresult ;
+                          xd#index_xpr negresult ])
+
       | BranchGEZero (src,tgt) ->
          let rhs = src#to_expr floc in
          let result = XOp (XGe, [ rhs ; zero_constant_expr ]) in

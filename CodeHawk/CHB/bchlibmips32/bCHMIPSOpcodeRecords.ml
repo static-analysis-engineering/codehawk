@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -195,6 +195,12 @@ let get_record (opc:mips_opcode_t) =
       operands   = [ src1 ; src2 ; target ] ;
       delay_slot = true ;
       ida_asm    = (fun f -> f#ops "beq" [ src1 ; src2 ; target ])
+    }
+  | BranchEqualLikely (src1,src2,target) -> {    (* TBD: change delay slot behavior *)
+      mnemonic   = "beql" ;
+      operands   = [ src1 ; src2 ; target ] ;
+      delay_slot = true ;
+      ida_asm    = (fun f -> f#ops "beql" [ src1 ; src2 ; target ])
     }
   | BranchNotEqual (src1,src2,target) -> {
       mnemonic   = "bne" ;

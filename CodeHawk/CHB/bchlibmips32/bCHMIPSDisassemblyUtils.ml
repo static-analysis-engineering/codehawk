@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -127,7 +127,7 @@ let decompose_instr (dw:doubleword_int):mips_instr_format_t =
      let addr = dwlow + (upper lsl 16) in
      JType (opcode,addr)
   (* opcode:6, rs:5, rt:5, immediate:16 *)
-  | 1 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15
+  | 1 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 20
     | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42
     | 43 | 44 | 45 | 46 | 48 | 49 | 53 | 56 | 57 | 61 ->
      let rs = (dwhigh lsr 5) mod 32 in
@@ -215,6 +215,7 @@ let is_conditional_jump_instruction opcode =
     | BranchGEZero _
     | BranchGTZero _
     | BranchEqual _
+    | BranchEqualLikely _
     | BranchNotEqual _ -> true
   | _ -> false
 
@@ -227,6 +228,7 @@ let get_conditional_jump_expr floc opcode:xpr_t =
   | BranchGEZero (r,_) -> XOp (XGe, [ mkxpr r ; zero ])
   | BranchGTZero (r,_) -> XOp (XGt, [ mkxpr r ; zero ])
   | BranchEqual (r1,r2,_) ->  XOp (XEq, [ mkxpr r1 ; mkxpr r2 ])
+  | BranchEqualLikely (r1,r2,_) -> XOp (XEq, [ mkxpr r1 ; mkxpr r2 ])
   | BranchNotEqual (r1,r2,_) -> XOp (XNe, [ mkxpr r1 ; mkxpr r2 ])
   | _ ->
      raise (BCH_failure
@@ -274,6 +276,7 @@ let get_direct_jump_target_address opcode =
     | BranchGEZero (_,op)
     | BranchGTZero (_,op)
     | BranchEqual (_,_,op)
+    | BranchEqualLikely (_,_,op)
     | BranchNotEqual (_,_,op)
     | BranchFPFalse (_,op)
     | BranchFPTrue (_,op)

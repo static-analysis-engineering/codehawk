@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -100,6 +100,7 @@ let parse_I_opcode
   | 14 -> XorImmediate (r_op rt WR,r_op rs RD,imm_op false 2 imm)
   | 15 when rrs = 0 -> LoadUpperImmediate (r_op rt WR,imm_op false 2 imm)
   | 15 -> AddUpperImmediate (r_op rt WR,r_op rs RD, imm_op true 2 imm)
+  | 20 -> BranchEqualLikely (r_op rs RD,r_op rt RD,tgt_op ())
   | 32 -> LoadByte (r_op rt WR,i_op rs imm RD)
   | 33 -> LoadHalfWord (r_op rt WR,i_op rs imm RD)
   | 34 -> LoadWordLeft (r_op rt WR,i_op rs imm RD)
@@ -308,7 +309,10 @@ let parse_opcode
     | BCH_failure p ->
        let msg = LBLOCK [ STR "Error in parse opcode at address: " ; addr#toPretty ;
                           STR ": " ;  p ] in
-       raise (BCH_failure msg) in
+       begin
+         ch_error_log#add "parse opcode" msg ;
+         FPRMCType (0,0,0,0,0,0,0)
+       end in
   let opcode =
     match instr with
     | IType (opc,rs,rt,imm) -> parse_I_opcode ch base opc rs rt imm
