@@ -53,8 +53,8 @@ module H = Hashtbl
 class elf_dynamic_table_entry_t (index:int):elf_dynamic_table_entry_int =
 object (self)
 
-  val mutable d_tag = numerical_zero
-  val mutable d_un = wordzero
+  val mutable d_tag = wordzero
+  val mutable d_un = numerical_zero
 
   method id = index
 
@@ -64,7 +64,7 @@ object (self)
         (* 0,4, Tag ------------------------------------------------------------
            Dynamic Array Tag
            --------------------------------------------------------------------- *)
-        d_tag <- ch#read_num_signed_doubleword ;
+        d_tag <- ch#read_doubleword ;
 
         (* 4, 4, Value/Address -------------------------------------------------
            d_val These Elf32_Word objects represent integer values with various 
@@ -78,7 +78,7 @@ object (self)
                   files do not contain relocation entries to ‘‘correct’’ addresses 
                   in the dynamic structure.
             ----------------------------------------------------------------------- *)
-        d_un <- ch#read_doubleword
+        d_un <- ch#read_num_signed_doubleword
       end
     with
     | IO.No_more_input ->
@@ -89,44 +89,39 @@ object (self)
 
   method get_d_tag = d_tag
 
-  method get_tag = num_to_dynamic_tag d_tag
+  method get_tag = doubleword_to_dynamic_tag d_tag
+
+  method get_tag_name = doubleword_to_dynamic_tag_name d_tag
 
   method get_d_un = d_un
 
   method get_d_ptr =
-    match self#get_tag with
-    | DT_PltGot
-      | DT_Hash
-      | DT_StrTab
-      | DT_SymTab
-      | DT_Rela
-      | DT_Init
-      | DT_Fini
-      | DT_Rel
-      | DT_Debug
-      | DT_JmpRel -> d_un
+    let tagval = doubleword_to_dynamic_tag_value d_tag in
+    match tagval with
+    | DTV_d_ptr | DTV_d_none -> numerical_to_doubleword d_un
     | _ ->
-       raise (BCH_failure (LBLOCK [ STR "Value cannot be interpreted as pointer" ]))
+       raise
+         (BCH_failure
+            (LBLOCK [ STR "Value of " ; STR self#get_tag_name ;
+                      STR " cannot be interpreted as pointer" ]))
 
   method get_d_val =
-    match self#get_tag with
-    | DT_Needed
-      | DT_PltRelSz
-      | DT_RelaSz
-      | DT_RelaEnt
-      | DT_StrSz
-      | DT_SymEnt
-      | DT_SoName
-      | DT_RPath
-      | DT_RelSz
-      | DT_RelEnt
-      | DT_PltRel -> d_un
+    let tagval = doubleword_to_dynamic_tag_value d_tag in
+    match tagval with
+    | DTV_d_val | DTV_d_none -> d_un
     | _ ->
-       raise (BCH_failure (LBLOCK [ STR "Value cannot be interpreted as value" ]))
+       raise
+         (BCH_failure
+            (LBLOCK [ STR "Value of " ; STR self#get_tag_name ;
+                      STR " cannot be interpreted as value" ]))
 
   method to_rep_record =
+    let tagval =
+      match doubleword_to_dynamic_tag_value d_tag with
+      | DTV_d_ptr | DTV_d_none -> (numerical_to_doubleword d_un)#to_hex_string
+      | DTV_d_val -> d_un#toString in
     let args = [ ] in
-    let tags = [ d_tag#toString ;  d_un#to_hex_string ] in
+    let tags = [ self#get_tag_name ;  tagval ] in
     (tags,args)
 
 end

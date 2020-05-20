@@ -60,6 +60,32 @@ object (self)
   val mutable sh_entsize = wordzero
   val mutable name = ""
 
+  method set_fields
+           ?(sname=wordzero)
+           ?(stype=wordzero)
+           ?(flags=wordzero)
+           ?(addr=wordzero)
+           ?(offset=wordzero)
+           ?(size=wordzero)
+           ?(link=wordzero)
+           ?(info=wordzero)
+           ?(addralign=wordzero)
+           ?(entsize=wordzero)
+           ~(sectionname:string) () =
+    begin
+      sh_name <- sname ;
+      sh_type <- stype ;
+      sh_flags <- flags ;
+      sh_addr <- addr ;
+      sh_offset <- offset ;
+      sh_size <- size ;
+      sh_link <- link ;
+      sh_info <- info ;
+      sh_addralign <- addralign ;
+      sh_entsize <- entsize ;
+      name <- sectionname
+    end
+
   method read (offset:doubleword_int) (size:int) =
     let input = system_info#get_file_input ~hexSize:(int_to_doubleword size) offset in
     begin
@@ -410,7 +436,7 @@ object (self)
     STR "Name             : " ; STR name ;
     STR " (" ; STR sh_name#to_fixed_length_hex_string ; STR ")" ;  NL ;
     STR "Type             : " ; 
-    STR (elf_section_header_type_to_string self#get_section_type) ; NL ;
+    STR (doubleword_to_elf_section_header_string sh_type) ; NL ;
     STR "Flags            : " ; STR sh_flags#to_fixed_length_hex_string ; NL ;
     self#characteristics_to_pretty ; NL ;
     STR "Address          : " ; STR sh_addr#to_fixed_length_hex_string ; NL ;

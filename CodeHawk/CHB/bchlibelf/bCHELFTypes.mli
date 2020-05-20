@@ -62,7 +62,11 @@ type elf_section_header_type_t =
   | SHT_FiniArray
   | SHT_PreinitArray 
   | SHT_Group 
-  | SHT_SymTabShndx 
+  | SHT_SymTabShndx
+  | SHT_GNU_verdef
+  | SHT_GNU_verneed
+  | SHT_GNU_versym
+  | SHT_MIPS_RegInfo
   | SHT_OSSection of doubleword_int 
   | SHT_ProcSection of doubleword_int 
   | SHT_UserSection of doubleword_int 
@@ -75,9 +79,12 @@ type elf_program_header_type_t =
   | PT_Interpreter 
   | PT_Note 
   | PT_Reference 
-  | PT_ThreadLocalStorage 
+  | PT_ThreadLocalStorage
+  | PT_RegInfo
   | PT_OSSpecific of doubleword_int 
   | PT_ProcSpecific of doubleword_int
+
+type elf_dynamic_tag_value_t = DTV_d_val | DTV_d_ptr | DTV_d_none
                      
 type elf_dynamic_tag_t =
   | DT_Null
@@ -104,9 +111,23 @@ type elf_dynamic_tag_t =
   | DT_Debug
   | DT_TextRel
   | DT_JmpRel
+  | DT_VerSym
+  | DT_VerNeed
+  | DT_VerNeedNum
   | DT_LoProc
   | DT_HiProc
-  
+  (* MIPS-specific dynamic tags *)
+  | DT_MIPS_Rld_Version
+  | DT_MIPS_Flags
+  | DT_MIPS_Base_Address
+  | DT_MIPS_LocalGotNo
+  | DT_MIPS_SymTabNo
+  | DT_MIPS_UnrefExtNo
+  | DT_MIPS_GotSym
+  | DT_MIPS_Rld_Map
+  (* Unknown *)
+  | DT_Unknown of string
+
 
 class type elf_dictionary_int =
   object
@@ -121,6 +142,16 @@ class type elf_dictionary_int =
   end
          
 class type elf_raw_section_int =
+  object
+    method get_xstring: string
+    method get_vaddr: doubleword_int
+    method get_string_reference: doubleword_int -> string option
+    method includes_VA: doubleword_int -> bool
+    method write_xml: xml_element_int -> unit
+    method toPretty : pretty_t
+  end
+
+class type elf_raw_segment_int =
   object
     method get_xstring: string
     method get_vaddr: doubleword_int
@@ -212,10 +243,11 @@ class type elf_dynamic_table_entry_int =
     method id: int
     method read: pushback_stream_int -> unit
     method get_tag: elf_dynamic_tag_t
-    method get_d_tag: numerical_t
+    method get_tag_name: string
+    method get_d_tag: doubleword_int
     method get_d_ptr: doubleword_int
-    method get_d_val: doubleword_int
-    method get_d_un: doubleword_int
+    method get_d_val: numerical_t
+    method get_d_un: numerical_t
     method to_rep_record: string list * int list
   end
 
@@ -226,6 +258,97 @@ class type elf_dynamic_table_int =
     method get_vaddr: doubleword_int
     method get_string_reference: doubleword_int -> string option
     method includes_VA: doubleword_int -> bool
+    method write_xml: xml_element_int -> unit
+    method write_xml_entries: xml_element_int -> unit
+    method toPretty: pretty_t
+  end
+
+class type elf_dynamic_segment_entry_int =
+  object
+    method id: int
+    method read: pushback_stream_int -> unit
+
+    (* accessors *)
+    method get_tag: elf_dynamic_tag_t
+    method get_tag_name: string
+    method get_d_tag: doubleword_int
+    method get_d_ptr: doubleword_int
+    method get_d_val: numerical_t
+    method get_d_un: numerical_t
+
+    method get_string_table: doubleword_int
+    method get_string_table_size: numerical_t
+    method get_symbol_table: doubleword_int
+    method get_hash_table: doubleword_int
+    method get_init: doubleword_int
+    method get_fini: doubleword_int
+    method get_rld_map: doubleword_int
+    method get_got: doubleword_int
+    method get_syment: numerical_t
+    method get_symtabno: numerical_t
+    method get_gnu_symbol_version_table: doubleword_int
+    method get_gnu_symbol_version_reqts: doubleword_int
+    method get_gnu_symbol_version_reqts_no: numerical_t
+
+    (* predicates *)
+    method is_string_table: bool
+    method is_string_table_size: bool
+    method is_symbol_table: bool
+    method is_hash_table: bool
+    method is_init: bool
+    method is_fini: bool
+    method is_rld_map: bool
+    method is_got: bool
+    method is_syment: bool
+    method is_symtabno: bool
+    method is_gnu_symbol_version_table: bool
+    method is_gnu_symbol_version_reqts: bool
+    method is_gnu_symbol_version_reqts_no: bool
+
+    (* printing *)
+    method to_rep_record: string list * int list
+    method toPretty: pretty_t
+  end
+
+class type elf_dynamic_segment_int =
+  object
+    method read: unit
+
+    (* accessors  *)
+    method get_xstring: string
+    method get_vaddr: doubleword_int
+    method get_string_reference: doubleword_int -> string option
+    method get_hash_address: doubleword_int
+    method get_symtab_address: doubleword_int
+    method get_strtab_address: doubleword_int
+    method get_init_address: doubleword_int
+    method get_fini_address: doubleword_int
+    method get_rld_map_address: doubleword_int
+    method get_got_address: doubleword_int
+    method get_syment: numerical_t
+    method get_symtabno: numerical_t
+    method get_string_table_size: numerical_t
+    method get_gnu_symbol_version_table: doubleword_int
+    method get_gnu_symbol_version_reqts: doubleword_int
+    method get_gnu_symbol_version_reqts_no: numerical_t
+
+    (* predicates *)
+    method includes_VA: doubleword_int -> bool
+    method has_hash_address: bool
+    method has_symtab_address: bool
+    method has_strtab_address: bool
+    method has_init_address: bool
+    method has_fini_address: bool
+    method has_rld_map_address: bool
+    method has_got_address: bool
+    method has_syment: bool
+    method has_symtabno: bool
+    method has_string_table_size: bool
+    method has_gnu_symbol_version_table: bool
+    method has_gnu_symbol_version_reqts: bool
+    method has_gnu_symbol_version_reqts_no: bool
+
+    (* printing *)
     method write_xml: xml_element_int -> unit
     method write_xml_entries: xml_element_int -> unit
     method toPretty: pretty_t
@@ -250,6 +373,10 @@ type elf_section_t =
 | ElfDynamicTable of elf_dynamic_table_int
 | ElfProgramSection of elf_program_section_int
 | ElfOtherSection of elf_raw_section_int
+
+type elf_segment_t  =
+  | ElfDynamicSegment of elf_dynamic_segment_int
+  | ElfOtherSegment of elf_raw_segment_int
 
 class type elf_file_header_int =
 object
@@ -298,6 +425,10 @@ object
 
   method get_program_header_type: elf_program_header_type_t
 
+  (* predicates *)
+  method is_loaded: bool
+  method is_executable: bool
+
   (* xml *)
   method write_xml: xml_element_int -> unit
   method read_xml : xml_element_int -> unit
@@ -311,8 +442,22 @@ class type elf_section_header_int =
 object
 
   (* setters *)
-  method read    : doubleword_int -> int -> unit
+  method read: doubleword_int -> int -> unit
   method set_name: string -> unit
+  method set_fields:
+           ?sname:doubleword_int
+           -> ?stype:doubleword_int
+           -> ?flags:doubleword_int
+           -> ?addr:doubleword_int
+           -> ?offset:doubleword_int
+           -> ?size:doubleword_int
+           -> ?link:doubleword_int
+           -> ?info:doubleword_int
+           -> ?addralign:doubleword_int
+           -> ?entsize:doubleword_int
+           -> sectionname:string
+           -> unit
+           -> unit
 
   (* accessors *)
   method get_name      : doubleword_int
@@ -353,14 +498,18 @@ object
   method initialize_jump_tables: unit
 
   (* accessors *)
+  method get_program_entry_point: doubleword_int
   method get_sections: (int * elf_section_header_int * elf_section_t) list
+  method get_program_segments: (int * elf_program_header_int * elf_segment_t) list
   method get_executable_sections: (elf_section_header_int * string) list
+  method get_executable_segments: (elf_program_header_int * string) list
   method get_string_at_address: doubleword_int -> string option
   method get_relocation: doubleword_int -> string option
   method get_containing_section: doubleword_int -> elf_raw_section_int option
   method get_program_value: doubleword_int -> doubleword_int
 
   (* predicates *)
+  method has_sections: bool
   method is_program_address: doubleword_int -> bool
 
   (* xml *)

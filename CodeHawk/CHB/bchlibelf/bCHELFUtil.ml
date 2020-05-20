@@ -37,9 +37,12 @@ open CHXmlDocument
 open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
+open BCHSystemInfo
 
 (* bchlibelf *)
 open BCHELFTypes
+
+module H = Hashtbl
 
 let makeOffsetString
       ?(hexSize=wordzero) (hexOffset:doubleword_int) (file_as_string: string) () =
@@ -142,110 +145,153 @@ let decodeSignedLEB128 input =
   then !result lor -(1 lsl !shift)
   else !result
 
+let section_header_tag_table = H.create 31
+let mips_section_header_tag_table = H.create 3
 
-let doubleword_to_elf_section_header_type v =
-  match v#to_int with
-  | 0 -> SHT_NullSection
-  | 1 -> SHT_ProgBits
-  | 2 -> SHT_SymTab
-  | 3 -> SHT_StrTab
-  | 4 -> SHT_Rela
-  | 5 -> SHT_Hash
-  | 6 -> SHT_Dynamic
-  | 7 -> SHT_Note
-  | 8 -> SHT_NoBits
-  | 9 -> SHT_Rel
-  | 10 -> SHT_ShLib
-  | 11 -> SHT_DynSym
-  | 14 -> SHT_InitArray
-  | 15 -> SHT_FiniArray
-  | 16 -> SHT_PreinitArray
-  | 17 -> SHT_Group
-  | 18 -> SHT_SymTabShndx
-  | _ -> 
-    if (string_to_doubleword "0x60000000")#le v &&
-      v#lt (string_to_doubleword "0x70000000") then SHT_OSSection v
-    else if (string_to_doubleword "0x70000000")#le v &&
-	v#lt (string_to_doubleword "0x80000000") then SHT_ProcSection v
-    else if (string_to_doubleword "0x80000000")#le v &&
-	v#le (string_to_doubleword "0xffffffff") then SHT_UserSection v
-    else SHT_UnknownType v
+let _ =
+  List.iter (fun (dw,tag,tagstr) ->
+      H.add section_header_tag_table dw (tag,tagstr))
+            [ ("0x0", SHT_NullSection, "SHT_NULL")
+            ; ("0x1", SHT_ProgBits, "SHT_PROGBITS")
+            ; ("0x2", SHT_SymTab, "SHT_SYMTAB")
+            ; ("0x3", SHT_StrTab, "SHT_STRTAB")
+            ; ("0x4", SHT_Rela, "SHT_RELA")
+            ; ("0x5", SHT_Hash, "SHT_HASH")
+            ; ("0x6", SHT_Dynamic, "SHT_DYNAMIC")
+            ; ("0x7", SHT_Note, "SHT_Note")
+            ; ("0x8", SHT_NoBits, "SHT_NOBITS")
+            ; ("0x9", SHT_Rel, "SHT_REL")
+            ; ("0xa", SHT_ShLib, "SHT_SHLIB")
+            ; ("0xb", SHT_DynSym, "SHT_DYNSYM")
+            ; ("0xe", SHT_InitArray, "SHT_INITARRAY")
+            ; ("0xf", SHT_FiniArray, "SHT_FINIARRAY")
+            ; ("0x10", SHT_PreinitArray, "SHT_PREINITARRAY")
+            ; ("0x11", SHT_Group, "SHT_GROUP")
+            ; ("0x12", SHT_SymTabShndx, "SHT_SYMTAB_SHNDX")
+            ; ("0x6ffffffd", SHT_GNU_verdef, "SHT_GNU_verdef")
+            ; ("0x6ffffffe", SHT_GNU_verneed, "SHT_GNU_verneed")
+            ; ("0x6fffffff", SHT_GNU_versym, "SHT_GNU_versym")
+            ]
 
-let num_to_dynamic_tag i = DT_Needed      (* TBD *)
+let _ =
+  List.iter (fun (dw,tag,tagstr) ->
+      H.add mips_section_header_tag_table dw (tag,tagstr))
+            [ ("0x70000006", SHT_MIPS_RegInfo, "SHT_MIPS_REGINFO")
+            ]
 
-let elf_section_header_type_to_string = function
-  | SHT_NullSection -> "SHT_NULL"
-  | SHT_ProgBits -> "SHT_PROGBITS"
-  | SHT_SymTab -> "SHT_SYMTAB"
-  | SHT_StrTab -> "SHT_STRTAB"
-  | SHT_Rela -> "SHT_RELA"
-  | SHT_Hash -> "SHT_HASH"
-  | SHT_Dynamic -> "SHT_DYNAMIC"
-  | SHT_Note -> "SHT_NOTE"
-  | SHT_NoBits -> "SHT_NOBITS"
-  | SHT_Rel -> "SHT_REL"
-  | SHT_ShLib -> "SHT_SHLIB"
-  | SHT_DynSym -> "SHT_DYNSYM"
-  | SHT_InitArray -> "SHT_INIT_ARRAY"
-  | SHT_FiniArray -> "SHT_FINI_ARRAY"
-  | SHT_PreinitArray -> "SHT_PREINIT_ARRAY"
-  | SHT_Group -> "SHT_GROUP"
-  | SHT_SymTabShndx -> "SHT_SYMTAB_SHNDX"
-  | SHT_OSSection v -> "SHT_OS(" ^ v#to_fixed_length_hex_string ^ ")"
-  | SHT_ProcSection v -> "SHT_PROC(" ^ v#to_fixed_length_hex_string ^ ")"
-  | SHT_UserSection v -> "SHT_USER(" ^ v#to_fixed_length_hex_string ^ ")"
-  | SHT_UnknownType v -> "SHT_UNKNOWN(" ^ v#to_fixed_length_hex_string ^ ")"
-                       
-let string_to_elf_section_header_type (s:string) =
-  match s with
-  | "SHT_NULL" -> SHT_NullSection
-  | "SHT_PROGBITS" -> SHT_ProgBits
-  | "SHT_SYMTAB" -> SHT_SymTab
-  | "SHT_STRTAB" -> SHT_StrTab
-  | "SHT_RELA"   -> SHT_Rela
-  | "SHT_HASH"   -> SHT_Hash
-  | "SHT_DYNAMIC" -> SHT_Dynamic
-  | "SHT_NOTE"    -> SHT_Note
-  | "SHT_NOBITS"  -> SHT_NoBits
-  | "SHT_REL"     -> SHT_Rel
-  | "SHT_SHLIB"   -> SHT_ShLib
-  | "SHT_DYNSYM"  -> SHT_DynSym
-  | "SHT_INIT_ARRAY" -> SHT_InitArray
-  | "SHT_FINI_ARRAY" -> SHT_FiniArray
-  | "SHT_PREINIT_ARRAY" -> SHT_PreinitArray
-  | "SHT_GROUP" -> SHT_Group
-  | "SHT_SYMTAB_SHNDX" -> SHT_SymTabShndx
-  | _ -> SHT_UnknownType wordzero
+let doubleword_to_elf_section_header_tag_record (v:doubleword_int) =
+  let tag = v#to_hex_string in
+  let default sht shtstr =
+    (sht, shtstr ^ "(" ^ v#to_fixed_length_hex_string ^ ")") in
+  if H.mem section_header_tag_table tag then
+    H.find section_header_tag_table tag
+  else if system_info#is_mips then
+    if H.mem mips_section_header_tag_table tag then
+      H.find mips_section_header_tag_table tag
+    else
+      if (string_to_doubleword "0x60000000")#le v
+         && v#lt (string_to_doubleword "0x70000000") then
+        default (SHT_OSSection v) "SHT_OS"
+      else if (string_to_doubleword "0x70000000")#le v
+              && v#lt (string_to_doubleword "0x80000000") then
+        default (SHT_ProcSection v) "SHT_PROC"
+      else if (string_to_doubleword "0x80000000")#le v
+              && v#le (string_to_doubleword "0xffffffff") then
+        default (SHT_UserSection v) "SHT_USER"
+      else
+        default (SHT_UnknownType v) "SHT_MIPS_UNKNOWN"
+  else
+    default (SHT_UnknownType v) "SHT_UNKNOWN"
 
-let write_xml_elf_section_header_type (node:xml_element_int) (t:elf_section_header_type_t) =
-  let sett = node#setAttribute "type" in
-  let setx x = node#setAttribute "value" x#to_hex_string in
-  match t with
-  | SHT_OSSection v   -> begin sett "SHT_OS"   ; setx v end
-  | SHT_ProcSection v -> begin sett "SHT_PROC" ; setx v end
-  | SHT_UserSection v -> begin sett "SHT_USER" ; setx v end
-  | SHT_UnknownType v -> begin sett "SHT_UNKNOWN" ; setx v end
-  | _ -> sett (elf_section_header_type_to_string t)
+let doubleword_to_elf_section_header_type (v:doubleword_int) =
+  let (shtag,_) = doubleword_to_elf_section_header_tag_record v in shtag
 
-let read_xml_elf_section_header_type (node:xml_element_int):elf_section_header_type_t =
-  let getx () = string_to_doubleword (node#getAttribute "value") in
-  let sType = node#getAttribute "type" in
-  match sType with
-  | "SHT_OS" -> SHT_OSSection (getx ())
-  | "SHT_PROC" -> SHT_ProcSection (getx ())
-  | "SHT_USER" -> SHT_UserSection (getx ())
-  | "SHT_UNKNOWN" -> SHT_UnknownType (getx ())
-  | _ -> string_to_elf_section_header_type sType
+let doubleword_to_elf_section_header_string (v:doubleword_int) =
+  let (_,s) = doubleword_to_elf_section_header_tag_record v in s
+
+let dynamic_tag_table = H.create 31
+let mips_dynamic_tag_table = H.create 31
+
+let _ =
+  List.iter
+    (fun (dw,tag,tagvalue,tagstr) ->
+      H.add dynamic_tag_table dw (tag,tagvalue,tagstr))
+    [ ("0x0", DT_Null, DTV_d_none, "DT_NULL")
+    ; ("0x1", DT_Needed, DTV_d_val, "DT_NEEDED")
+    ; ("0x2", DT_PltRelSz, DTV_d_val, "DT_PLTRELSZ")
+    ; ("0x3", DT_PltGot, DTV_d_ptr, "DT_PLTGOT")
+    ; ("0x4", DT_Hash, DTV_d_ptr, "DT_HASH")
+    ; ("0x5", DT_StrTab, DTV_d_ptr, "DT_STRTAB")
+    ; ("0x6", DT_SymTab, DTV_d_ptr, "DT_SYMTAB")
+    ; ("0x7", DT_Rela, DTV_d_ptr, "DT_RELA")
+    ; ("0x8", DT_RelaSz, DTV_d_val, "DT_RELASZ")
+    ; ("0x9", DT_RelaEnt, DTV_d_val, "DT_RELAENT")
+    ; ("0xa", DT_StrSz, DTV_d_val, "DT_STRSZ")
+    ; ("0xb", DT_SymEnt, DTV_d_val, "DT_SYMENT")
+    ; ("0xc", DT_Init, DTV_d_ptr, "DT_INIT")
+    ; ("0xd", DT_Fini, DTV_d_ptr, "DT_FINI")
+    ; ("0xe", DT_SoName, DTV_d_val, "DT_SONAME")
+    ; ("0xf", DT_RPath, DTV_d_val, "DT_RPATH")
+    ; ("0x10", DT_Symbolic, DTV_d_none, "DT_SYMBOLIC")
+    ; ("0x11", DT_Rel, DTV_d_ptr, "DT_REL")
+    ; ("0x12", DT_RelSz, DTV_d_val, "DT_RELSZ")
+    ; ("0x13", DT_RelEnt, DTV_d_val, "DT_RELENT")
+    ; ("0x14", DT_PltRel, DTV_d_val, "DT_PLTREL")
+    ; ("0x15", DT_Debug, DTV_d_ptr, "DT_DEBUG")
+    ; ("0x16", DT_TextRel, DTV_d_none, "DT_TEXTREL")
+    ; ("0x17", DT_JmpRel, DTV_d_ptr, "DT_JMPREL")
+    ; ("0x6ffffff0", DT_VerSym, DTV_d_ptr, "DT_VERSYM") 
+    ; ("0x6ffffffe", DT_VerNeed, DTV_d_ptr, "DT_VERNEED")
+    ; ("0x6fffffff", DT_VerNeedNum, DTV_d_val, "DT_VERNEEDNUM")
+    ; ("0x70000000", DT_LoProc, DTV_d_none, "DT_LOPROC")
+    ; ("0x7fffffff", DT_HiProc, DTV_d_none, "DT_HIPROC")
+    ]
+
+let _ =
+  List.iter
+    (fun (dw,tag,tagvalue,tagstr) ->
+      H.add mips_dynamic_tag_table dw (tag,tagvalue,tagstr))
+    [ ("0x70000001", DT_MIPS_Rld_Version, DTV_d_val, "DT_MIPS_RLD_VERSION")
+    ; ("0x70000005", DT_MIPS_Flags, DTV_d_val, "DT_MIPS_FLAGS")
+    ; ("0x70000006", DT_MIPS_Base_Address, DTV_d_ptr, "DT_MIPS_BASE_ADDRESS")
+    ; ("0x7000000a", DT_MIPS_LocalGotNo, DTV_d_val, "DT_MIPS_LOCALGOTNO")
+    ; ("0x70000011", DT_MIPS_SymTabNo, DTV_d_val, "DT_MIPS_SYMTABNO")
+    ; ("0x70000012", DT_MIPS_UnrefExtNo, DTV_d_val, "DT_MIPS_UNREFEXTNO")
+    ; ("0x70000013", DT_MIPS_GotSym,DTV_d_val, "DT_MIPS_GOTSYM")
+    ; ("0x70000016", DT_MIPS_Rld_Map, DTV_d_ptr, "DT_MIPS_RLD_MAP")
+    ]
+
+let doubleword_to_dynamic_tag_record (tag:doubleword_int) =
+  let s_tag = tag#to_hex_string in  
+  let default = (DT_Unknown s_tag, DTV_d_none, "DT_Unknown:" ^ s_tag) in
+  if H.mem dynamic_tag_table s_tag then
+    H.find dynamic_tag_table s_tag
+  else if system_info#is_mips then
+    if H.mem mips_dynamic_tag_table s_tag then
+      H.find mips_dynamic_tag_table s_tag
+    else default
+  else
+    default
+
+let doubleword_to_dynamic_tag (tag:doubleword_int) =
+  let (dtag,_,_) = doubleword_to_dynamic_tag_record tag in dtag
+
+let doubleword_to_dynamic_tag_name (tag:doubleword_int) =
+  let (_,_,s_tag) = doubleword_to_dynamic_tag_record tag in s_tag
+
+let doubleword_to_dynamic_tag_value (tag:doubleword_int) =
+  let (_,dval,_) = doubleword_to_dynamic_tag_record tag in dval
 
 let doubleword_to_elf_program_header_type v =
-  match v#to_int with
-  | 0 -> PT_Null
-  | 1 -> PT_Load
-  | 2 -> PT_Dynamic
-  | 3 -> PT_Interpreter
-  | 4 -> PT_Note
-  | 6 -> PT_Reference
-  | 7 -> PT_ThreadLocalStorage
+  match v#to_hex_string with
+  | "0x0" -> PT_Null
+  | "0x1" -> PT_Load
+  | "0x2" -> PT_Dynamic
+  | "0x3" -> PT_Interpreter
+  | "0x4" -> PT_Note
+  | "0x6" -> PT_Reference
+  | "0x7" -> PT_ThreadLocalStorage
+  | "0x70000000" -> PT_RegInfo
   | _ ->
     if (string_to_doubleword "0x70000000")#le v then
       PT_ProcSpecific v
@@ -254,7 +300,7 @@ let doubleword_to_elf_program_header_type v =
     else
       raise (BCH_failure 
 	       (LBLOCK [ STR "invalid program header type: " ; v#toPretty]))
-	
+
 
 let elf_program_header_type_to_string = function
   | PT_Null -> "PT_NULL"
@@ -264,8 +310,14 @@ let elf_program_header_type_to_string = function
   | PT_Note -> "PT_NOTE"
   | PT_Reference -> "PT_PHDR"
   | PT_ThreadLocalStorage -> "PT_TLS"
+  | PT_RegInfo -> "PT_REGINFO"
   | PT_OSSpecific v -> "PT_OS_" ^ v#to_hex_string
   | PT_ProcSpecific v -> "PT_PROC_" ^ v#to_hex_string
+
+let elf_segment_to_raw_segment (s:elf_segment_t):elf_raw_segment_int =
+  match s with
+  | ElfDynamicSegment t ->  (t :> elf_raw_segment_int)
+  | ElfOtherSegment t -> (t :> elf_raw_segment_int)
 
 let elf_section_to_raw_section (s:elf_section_t):elf_raw_section_int =
   match s with
@@ -305,3 +357,10 @@ let elf_section_to_dynamic_table (s:elf_section_t):elf_dynamic_table_int =
   | _ ->
      raise (BCH_failure
            (LBLOCK [ STR "section is not a dynamic table" ]))
+
+let elf_segment_to_dynamic_segment (s:elf_segment_t):elf_dynamic_segment_int =
+  match s with
+  | ElfDynamicSegment t -> t
+  | _ ->
+     raise (BCH_failure
+           (LBLOCK [ STR "segment is not a dynamic segment"  ]))

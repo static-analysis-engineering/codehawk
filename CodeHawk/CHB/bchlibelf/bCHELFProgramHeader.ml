@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -172,6 +172,13 @@ object (self)
   method get_align = p_align
 
   method get_program_header_type = doubleword_to_elf_program_header_type p_type
+
+  method is_loaded =
+    match self#get_program_header_type with
+    | PT_Load -> true
+    | _ -> false
+
+  method is_executable = p_flags#is_nth_bit_set 0
 
   method write_xml (node:xml_element_int) =
     let set = node#setAttribute in

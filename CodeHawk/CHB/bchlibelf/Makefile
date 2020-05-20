@@ -37,13 +37,16 @@ MLIS := \
 	bCHELFUtil \
 	bCHELFDictionary \
 	bCHELFSection \
+	bCHELFSegment \
 	bCHELFProgramSection \
 	bCHELFStringTable \
 	bCHELFSymbolTable \
 	bCHELFDynamicTable \
+	bCHELFDynamicSegment \
 	bCHELFRelocationTable \
 	bCHELFProgramHeader \
 	bCHELFSectionHeader \
+	bCHELFSectionHeaderCreator \
 	bCHELFHeader \
 
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
@@ -53,13 +56,16 @@ SOURCES := \
 	bCHELFUtil \
 	bCHELFDictionary \
 	bCHELFSection \
+	bCHELFSegment \
 	bCHELFProgramSection \
 	bCHELFStringTable \
 	bCHELFSymbolTable \
 	bCHELFRelocationTable \
 	bCHELFDynamicTable \
+	bCHELFDynamicSegment \
 	bCHELFProgramHeader \
 	bCHELFSectionHeader \
+	bCHELFSectionHeaderCreator \
 	bCHELFHeader \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))

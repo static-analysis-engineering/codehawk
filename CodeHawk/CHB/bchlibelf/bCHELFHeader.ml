@@ -57,13 +57,16 @@ open BCHSystemInfo
 (* bchlibelf *)
 open BCHELFTypes
 open BCHELFDictionary
+open BCHELFDynamicSegment
 open BCHELFDynamicTable
 open BCHELFUtil
 open BCHELFProgramHeader
 open BCHELFProgramSection
 open BCHELFRelocationTable
 open BCHELFSection
+open BCHELFSegment
 open BCHELFSectionHeader
+open BCHELFSectionHeaderCreator
 open BCHELFStringTable
 open BCHELFSymbolTable
 open BCHELFPrettyStrings
@@ -126,6 +129,19 @@ let read_xml_elf_section (sh:elf_section_header_int) (node:xml_element_int) =
   | SHT_Dynamic -> ElfDynamicTable (read_xml_elf_dynamic_table node)
   | SHT_ProgBits  -> ElfProgramSection (read_xml_elf_program_section node)
   | _ -> ElfOtherSection (read_xml_elf_raw_section node)
+
+let read_xml_elf_segment (ph:elf_program_header_int) (node:xml_element_int) =
+  let t =  ph#get_program_header_type in
+  match t with
+  | PT_Dynamic -> ElfDynamicSegment (read_xml_elf_dynamic_segment node)
+  | _ -> ElfOtherSegment (read_xml_elf_raw_segment node)
+
+let make_elf_segment (ph:elf_program_header_int) (s:string) =
+  let t = ph#get_program_header_type in
+  let vaddr = ph#get_vaddr in
+  match t with
+  | PT_Dynamic -> ElfDynamicSegment (mk_elf_dynamic_segment s ph vaddr)
+  | _ -> ElfOtherSegment (new elf_raw_segment_t s vaddr)
 
     
 class elf_file_header_t:elf_file_header_int =
@@ -345,6 +361,9 @@ object(self)
   val program_header_table = H.create 3
   val section_header_table = H.create 3
   val section_table = H.create 3
+  val segment_table = H.create 3
+
+  method get_program_entry_point = elf_file_header#get_program_entry_point
 
   method read =
     let fileString = system_info#get_file_string wordzero in
@@ -354,13 +373,27 @@ object(self)
       self#check_elf ;
       self#set_endianness ;
       elf_file_header#read ;
+      pr_debug [ STR "File header" ; NL ; elf_file_header#toPretty ; NL ] ;
       self#read_program_headers ;
-      self#read_section_headers ;
+      H.iter (fun k v -> pr_debug [ v#toPretty ; NL ]) program_header_table ;
+      (if elf_file_header#get_section_header_table_entry_num = 0 then
+         self#create_section_headers
+       else
+         self#read_section_headers) ;
+      pr_debug [ STR "Number of sections: " ; INT (H.length section_header_table) ; NL ] ;
       self#set_section_header_names ;
       self#set_symbol_names ;
       self#set_dynamic_symbol_names ;
       self#set_relocation_symbols ;
     end
+
+  method has_sections = (H.length section_header_table) > 0
+
+  method private create_section_headers =
+    let segments = self#get_program_segments in
+    let sectionheaders = create_section_headers segments elf_file_header in
+    List.iter (fun (index, sh) -> H.add section_header_table index sh)
+              sectionheaders
 
   method get_sections =
     let result = ref [] in
@@ -369,6 +402,14 @@ object(self)
     let result = List.sort compare !result in
     List.map (fun (index,sh) -> 
         (index, sh, self#get_section index)) result
+
+  method get_program_segments =
+    let result = ref [] in
+    let _ = H.iter (fun k v -> result := (k,v) :: !result) program_header_table in
+    let compare = fun (i1,_) (i2,_) -> P.compare i1 i2 in
+    let result = List.sort compare !result in
+    List.map (fun (index,ph)  ->
+        (index, ph, self#get_segment index)) result
 
   method get_relocation (dw:doubleword_int) =
     let relocationsections =
@@ -420,6 +461,14 @@ object(self)
       section_header_table in
     List.map (fun (index,sh) -> 
         (sh, (elf_section_to_raw_section (self#get_section index))#get_xstring)) !result
+
+  method get_executable_segments =
+    let result = ref []  in
+    let _ =
+      H.iter (fun k v -> if v#is_executable && v#is_loaded then result := (k,v) :: !result)
+             program_header_table in
+    List.map (fun (index,ph) ->
+        (ph, (elf_segment_to_raw_segment (self#get_segment index))#get_xstring)) !result
 
   method private has_string_table =
     H.fold (fun _ v r -> r || v#get_section_name = ".strtab") section_header_table false
@@ -596,15 +645,25 @@ object(self)
   method private get_section (index:int):elf_section_t =
     let _ = self#add_section index in (H.find section_table index)
 
+  method private get_segment (index:int):elf_segment_t =
+    let _ = self#add_segment index in (H.find segment_table index)
+
   method private set_section_header_names =
-    let s = self#get_section elf_file_header#get_section_header_string_table_index in
-    let get_name = match s with
-      | ElfStringTable t -> t#get_string 
-      | _ ->
-	raise (BCH_failure 
-		 (LBLOCK [ STR "Unexpected section type; string table expected" ])) in
-    H.iter (fun _ sh ->
-        sh#set_name (get_name sh#get_name#to_int)) section_header_table
+    if (H.length section_header_table) > 0 then
+      let strindex  = elf_file_header#get_section_header_string_table_index in
+      if strindex > 0 then
+        let s = self#get_section strindex in
+        let get_name = match s with
+          | ElfStringTable t -> t#get_string 
+          | _ ->
+	     raise (BCH_failure 
+		      (LBLOCK [ STR "Unexpected section type; string table expected" ])) in
+        H.iter (fun _ sh ->
+            sh#set_name (get_name sh#get_name#to_int)) section_header_table
+      else
+        pr_debug [ STR "String table index is zero" ; NL ]
+    else
+      pr_debug [ STR "No section headers present." ; NL ]
       
 
   method private check_elf =
@@ -641,6 +700,7 @@ object(self)
     let shoff = elf_file_header#get_section_header_table_offset in
     let shentsize = elf_file_header#get_section_header_table_entry_size in
     let shnum = elf_file_header#get_section_header_table_entry_num in
+    let _ =  pr_debug [ STR  "Number of section headers: " ; INT shnum ; NL ] in
     for i=0 to (shnum - 1) do
       let sh = mk_elf_section_header () in
       let offset = shoff#add_int (shentsize * i) in
@@ -661,6 +721,23 @@ object(self)
       else
 	raise (BCH_failure
                  (LBLOCK [ STR "No section header found for " ; INT index ]))
+
+  method private add_segment (index:int) =
+    if H.mem segment_table index then
+      ()
+    else
+      if H.mem program_header_table index then
+        let ph = H.find program_header_table index  in
+        let xString =
+          if ph#get_file_size#equal wordzero then
+            ""
+          else
+            system_info#get_file_string ~hexSize:ph#get_file_size ph#get_offset in
+        let segment = make_elf_segment ph xString in
+        H.add segment_table index segment
+      else
+        raise (BCH_failure
+              (LBLOCK [ STR "No segment header found for index " ; INT index ]))
 
   method private write_xml_program_headers (node:xml_element_int) =
     let headers = ref [] in
@@ -719,7 +796,20 @@ object(self)
 	   H.add section_table index section
 	| _ -> 
 	  pr_debug [ STR "Section " ; STR h#get_section_name ; STR " not found" ; NL ]) 
-      section_header_table 
+           section_header_table
+
+  method private read_xml_segments =
+    H.iter (fun index h ->
+        if h#get_file_size#equal wordzero then
+          ()
+        else
+          match load_segment_file index with
+          | Some node  ->
+             let segment = read_xml_elf_segment h node in
+             H.add segment_table index segment
+          | _ ->
+             pr_debug [ STR "Segment " ; INT index ; STR " not found" ; NL ])
+           program_header_table
 
   method write_xml (node:xml_element_int) =
     let set = node#setAttribute in
@@ -747,7 +837,19 @@ object(self)
       elf_file_header#read_xml hNode ;
       self#read_xml_program_headers pNode ;
       self#read_xml_section_headers sNode ;
-      self#read_xml_sections ;
+      (if (H.length section_header_table > 0) then
+         self#read_xml_sections
+       else
+         begin
+           self#read_xml_segments;
+           H.iter (fun index ph ->
+               match ph#get_program_header_type with
+               | PT_Dynamic ->
+                  (match self#get_segment index with
+                  | ElfDynamicSegment t -> pr_debug [ t#toPretty ]
+                  | _ -> ())
+               | _ -> ()) program_header_table
+         end);
       self#set_symbol_names ;
       self#set_dynamic_symbol_names ;
       self#set_relocation_symbols 
@@ -865,11 +967,50 @@ let save_elf_section (index:int) (header:elf_section_header_int) (s:elf_section_
     file_output#saveFile filename doc#toPretty
   end
 
+let save_elf_program_segment
+      (header:elf_program_header_int) (index:int) (s:elf_segment_t) =
+  let filename = get_segment_filename index in
+  let doc = xmlDocument () in
+  let rawsegment = elf_segment_to_raw_segment s in
+  let root = get_bch_root "raw-segment" in
+  let sNode = xmlElement "raw-segment" in
+  let hNode = xmlElement "program-header" in
+  let add_dynamic_table () =
+    let dNode = xmlElement "data" in
+    let rNode = xmlElement "dynamic-table" in
+    let dynamictable = elf_segment_to_dynamic_segment s in
+    begin
+      dynamictable#write_xml_entries rNode ;
+      dNode#appendChildren [ rNode ] ;
+      sNode#appendChildren [ dNode ]
+    end in
+  begin
+    rawsegment#write_xml sNode ;
+    header#write_xml hNode ;
+    sNode#setIntAttribute "index" index ;
+    sNode#appendChildren [ hNode ]  ;
+    (match header#get_program_header_type with
+     | PT_Dynamic -> add_dynamic_table  ()
+     | _ -> ()) ;
+    doc#setNode root ;
+    root#appendChildren [ sNode ] ;
+    file_output#saveFile filename doc#toPretty
+  end
+
+
+let save_elf_program_segments () =
+  List.iter (fun (index,header,segment) ->
+      save_elf_program_segment header index segment) elf_header#get_program_segments
+  
+
 let save_elf_files () =
   begin
     save_elf_header () ;
-    List.iter (fun (index,header,s) ->
-        save_elf_section index header s) elf_header#get_sections ;
+    (if elf_header#has_sections then
+       List.iter (fun (index,header,s) ->
+           save_elf_section index header s) elf_header#get_sections
+     else
+       save_elf_program_segments ()) ;
     save_elf_dictionary ()
   end
 
