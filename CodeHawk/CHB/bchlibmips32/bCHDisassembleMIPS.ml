@@ -618,6 +618,38 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
      else
        logerror
          (LBLOCK [ STR "reference is not in program space: " ; gaddr#toPretty ])
+  | XOp (XPlus, [ XVar v ; XConst (IntConst n) ]) when env#is_global_variable v ->
+     let gaddr = env#get_global_variable_address v in
+     if elf_header#is_program_address gaddr then
+       let dw = elf_header#get_program_value gaddr in
+       let dwfun = dw#add (numerical_to_doubleword n) in
+       let _ = chlog#add "resolve gv-expr" (x2p opExpr) in
+       if functions_data#has_function_name dwfun then
+         let name = (functions_data#get_function dwfun)#get_function_name in
+         if function_summary_library#has_so_function name then
+             floc#set_so_target name
+         else
+           if mips_assembly_functions#has_function_by_address dwfun then
+             floc#set_application_target dwfun
+           else
+             logerror
+               (LBLOCK [ STR "Function name not associated with address: "  ;
+                         STR name ])
+       else
+         if mips_assembly_functions#has_function_by_address dwfun then
+           floc#set_application_target dwfun
+         else
+           begin
+             ignore (functions_data#add_function dwfun) ;
+             floc#set_application_target dwfun ;
+             chlog#add
+               "add gv-based function"
+               (LBLOCK [ STR "Addr expr: " ; x2p opExpr ; STR " resolves to " ;
+                         dwfun#toPretty ])
+           end
+     else
+       logerror
+         (LBLOCK [ STR "reference is not in program space: " ; gaddr#toPretty ])
   | _ ->
      ()
 
