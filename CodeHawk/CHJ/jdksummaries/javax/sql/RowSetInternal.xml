@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-05-24 18:24:00"/>
+  <interface name="RowSetInternal" package="javax.sql">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getConnection -->
+      <method abstract="yes" access="public" name="getConnection" valid="no">
+        <signature>
+          <return>
+            <object>java.sql.Connection</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.sql.SQLException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getOriginal -->
+      <method abstract="yes" access="public" name="getOriginal" valid="no">
+        <signature>
+          <return>
+            <object>java.sql.ResultSet</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.sql.SQLException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getOriginalRow -->
+      <method abstract="yes" access="public" name="getOriginalRow" valid="no">
+        <signature>
+          <return>
+            <object>java.sql.ResultSet</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.sql.SQLException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getParams -->
+      <method abstract="yes" access="public" name="getParams" valid="no">
+        <signature>
+          <return>
+            <array>
+              <object>java.lang.Object</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.sql.SQLException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setMetaData -->
+      <method abstract="yes" access="public" name="setMetaData" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.sql.RowSetMetaData</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>java.sql.SQLException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

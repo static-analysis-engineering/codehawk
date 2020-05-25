@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-05-25 11:39:59"/>
+  <interface name="ErrorListener" package="javax.xml.transform">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ error -->
+      <method abstract="yes" access="public" name="error" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.xml.transform.TransformerException</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>javax.xml.transform.TransformerException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fatalError -->
+      <method abstract="yes" access="public" name="fatalError" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.xml.transform.TransformerException</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>javax.xml.transform.TransformerException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ warning -->
+      <method abstract="yes" access="public" name="warning" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.xml.transform.TransformerException</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>javax.xml.transform.TransformerException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

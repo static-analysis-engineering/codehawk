@@ -1,0 +1,1084 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-05-24 21:39:27"/>
+  <class name="MetalLookAndFeel" package="javax.swing.plaf.metal">
+    <superclass>javax.swing.plaf.basic.BasicLookAndFeel</superclass>
+    <interfaces>
+      <implements>java.io.Serializable</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ () -->
+      <constructor access="public">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createDefaultTheme -->
+      <method access="protected" name="createDefaultTheme">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAcceleratorForeground -->
+      <method access="public" name="getAcceleratorForeground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAcceleratorSelectedForeground -->
+      <method access="public" name="getAcceleratorSelectedForeground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getBlack -->
+      <method access="public" name="getBlack" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getControl -->
+      <method access="public" name="getControl" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getControlDarkShadow -->
+      <method access="public" name="getControlDarkShadow" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getControlDisabled -->
+      <method access="public" name="getControlDisabled" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getControlHighlight -->
+      <method access="public" name="getControlHighlight" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getControlInfo -->
+      <method access="public" name="getControlInfo" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getControlShadow -->
+      <method access="public" name="getControlShadow" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getControlTextColor -->
+      <method access="public" name="getControlTextColor" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getControlTextFont -->
+      <method access="public" name="getControlTextFont" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.FontUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getCurrentTheme -->
+      <method access="public" name="getCurrentTheme" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.metal.MetalTheme</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDefaults -->
+      <method access="public" name="getDefaults">
+        <signature>
+          <return>
+            <object>javax.swing.UIDefaults</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDescription -->
+      <method access="public" name="getDescription" valid="no">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDesktopColor -->
+      <method access="public" name="getDesktopColor" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDisabledIcon -->
+      <method access="public" name="getDisabledIcon" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.JComponent</object>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.Icon</object>
+          </arg>
+          <return>
+            <object>javax.swing.Icon</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDisabledSelectedIcon -->
+      <method access="public" name="getDisabledSelectedIcon" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.JComponent</object>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.Icon</object>
+          </arg>
+          <return>
+            <object>javax.swing.Icon</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFocusColor -->
+      <method access="public" name="getFocusColor" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getHighlightedTextColor -->
+      <method access="public" name="getHighlightedTextColor" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getID -->
+      <method access="public" name="getID" valid="no">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInactiveControlTextColor -->
+      <method access="public" name="getInactiveControlTextColor" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInactiveSystemTextColor -->
+      <method access="public" name="getInactiveSystemTextColor" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getLayoutStyle -->
+      <method access="public" name="getLayoutStyle" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.LayoutStyle</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMenuBackground -->
+      <method access="public" name="getMenuBackground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMenuDisabledForeground -->
+      <method access="public" name="getMenuDisabledForeground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMenuForeground -->
+      <method access="public" name="getMenuForeground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMenuSelectedBackground -->
+      <method access="public" name="getMenuSelectedBackground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMenuSelectedForeground -->
+      <method access="public" name="getMenuSelectedForeground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMenuTextFont -->
+      <method access="public" name="getMenuTextFont" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.FontUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getName -->
+      <method access="public" name="getName" valid="no">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPrimaryControl -->
+      <method access="public" name="getPrimaryControl" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPrimaryControlDarkShadow -->
+      <method access="public" name="getPrimaryControlDarkShadow" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPrimaryControlHighlight -->
+      <method access="public" name="getPrimaryControlHighlight" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPrimaryControlInfo -->
+      <method access="public" name="getPrimaryControlInfo" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPrimaryControlShadow -->
+      <method access="public" name="getPrimaryControlShadow" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSeparatorBackground -->
+      <method access="public" name="getSeparatorBackground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSeparatorForeground -->
+      <method access="public" name="getSeparatorForeground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSubTextFont -->
+      <method access="public" name="getSubTextFont" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.FontUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSupportsWindowDecorations -->
+      <method access="public" name="getSupportsWindowDecorations" valid="no">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSystemTextColor -->
+      <method access="public" name="getSystemTextColor" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSystemTextFont -->
+      <method access="public" name="getSystemTextFont" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.FontUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getTextHighlightColor -->
+      <method access="public" name="getTextHighlightColor" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getUserTextColor -->
+      <method access="public" name="getUserTextColor" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getUserTextFont -->
+      <method access="public" name="getUserTextFont" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.FontUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWhite -->
+      <method access="public" name="getWhite" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWindowBackground -->
+      <method access="public" name="getWindowBackground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWindowTitleBackground -->
+      <method access="public" name="getWindowTitleBackground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWindowTitleFont -->
+      <method access="public" name="getWindowTitleFont" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.FontUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWindowTitleForeground -->
+      <method access="public" name="getWindowTitleForeground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWindowTitleInactiveBackground -->
+      <method access="public" name="getWindowTitleInactiveBackground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getWindowTitleInactiveForeground -->
+      <method access="public" name="getWindowTitleInactiveForeground" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.plaf.ColorUIResource</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ initClassDefaults -->
+      <method access="protected" name="initClassDefaults">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.UIDefaults</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <not-null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.NullPointerException</exn>
+          </c-throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ initComponentDefaults -->
+      <method access="protected" name="initComponentDefaults">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.UIDefaults</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <not-null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.NullPointerException</exn>
+          </c-throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ initSystemColorDefaults -->
+      <method access="protected" name="initSystemColorDefaults">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.UIDefaults</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <not-null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.NullPointerException</exn>
+          </c-throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isNativeLookAndFeel -->
+      <method access="public" name="isNativeLookAndFeel" valid="no">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isSupportedLookAndFeel -->
+      <method access="public" name="isSupportedLookAndFeel" valid="no">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ provideErrorFeedback -->
+      <method access="public" name="provideErrorFeedback" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Component</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setCurrentTheme -->
+      <method access="public" name="setCurrentTheme" static="yes" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.plaf.metal.MetalTheme</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) createAudioAction -->
+      <method from="javax.swing.plaf.basic.BasicLookAndFeel" inherited="yes" name="createAudioAction">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <object>javax.swing.Action</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAudioActionMap -->
+      <method from="javax.swing.plaf.basic.BasicLookAndFeel" inherited="yes" name="getAudioActionMap">
+        <signature>
+          <return>
+            <object>javax.swing.ActionMap</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDesktopPropertyValue -->
+      <method from="javax.swing.LookAndFeel" inherited="yes" name="getDesktopPropertyValue">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) initialize -->
+      <method from="javax.swing.plaf.basic.BasicLookAndFeel" inherited="yes" name="initialize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) installBorder -->
+      <method from="javax.swing.LookAndFeel" inherited="yes" name="installBorder">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.JComponent</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) installColors -->
+      <method from="javax.swing.LookAndFeel" inherited="yes" name="installColors">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.JComponent</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="3">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) installColorsAndFont -->
+      <method from="javax.swing.LookAndFeel" inherited="yes" name="installColorsAndFont">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.JComponent</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="3">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="4">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) installProperty -->
+      <method from="javax.swing.LookAndFeel" inherited="yes" name="installProperty">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.JComponent</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="3">
+            <object>java.lang.Object</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) loadKeyBindings -->
+      <method from="javax.swing.LookAndFeel" inherited="yes" name="loadKeyBindings">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.InputMap</object>
+          </arg>
+          <arg nr="2">
+            <array>
+              <object>java.lang.Object</object>
+            </array>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) loadSystemColors -->
+      <method from="javax.swing.plaf.basic.BasicLookAndFeel" inherited="yes" name="loadSystemColors">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.UIDefaults</object>
+          </arg>
+          <arg nr="2">
+            <array>
+              <object>java.lang.String</object>
+            </array>
+          </arg>
+          <arg nr="3">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) makeComponentInputMap -->
+      <method from="javax.swing.LookAndFeel" inherited="yes" name="makeComponentInputMap">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.JComponent</object>
+          </arg>
+          <arg nr="2">
+            <array>
+              <object>java.lang.Object</object>
+            </array>
+          </arg>
+          <return>
+            <object>javax.swing.ComponentInputMap</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) makeIcon -->
+      <method from="javax.swing.LookAndFeel" inherited="yes" name="makeIcon">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Class</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) makeInputMap -->
+      <method from="javax.swing.LookAndFeel" inherited="yes" name="makeInputMap">
+        <signature>
+          <arg nr="1">
+            <array>
+              <object>java.lang.Object</object>
+            </array>
+          </arg>
+          <return>
+            <object>javax.swing.InputMap</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) makeKeyBindings -->
+      <method from="javax.swing.LookAndFeel" inherited="yes" name="makeKeyBindings">
+        <signature>
+          <arg nr="1">
+            <array>
+              <object>java.lang.Object</object>
+            </array>
+          </arg>
+          <return>
+            <array>
+              <object>javax.swing.text.JTextComponent$KeyBinding</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) playSound -->
+      <method from="javax.swing.plaf.basic.BasicLookAndFeel" inherited="yes" name="playSound">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.Action</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="javax.swing.LookAndFeel" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) uninitialize -->
+      <method from="javax.swing.plaf.basic.BasicLookAndFeel" inherited="yes" name="uninitialize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) uninstallBorder -->
+      <method from="javax.swing.LookAndFeel" inherited="yes" name="uninstallBorder">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.JComponent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

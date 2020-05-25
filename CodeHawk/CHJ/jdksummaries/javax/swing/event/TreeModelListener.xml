@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-05-24 19:24:09"/>
+  <interface name="TreeModelListener" package="javax.swing.event">
+    <superinterfaces>
+      <superinterface>java.util.EventListener</superinterface>
+    </superinterfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ treeNodesChanged -->
+      <method abstract="yes" access="public" name="treeNodesChanged" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TreeModelEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ treeNodesInserted -->
+      <method abstract="yes" access="public" name="treeNodesInserted" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TreeModelEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ treeNodesRemoved -->
+      <method abstract="yes" access="public" name="treeNodesRemoved" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TreeModelEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ treeStructureChanged -->
+      <method abstract="yes" access="public" name="treeStructureChanged" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TreeModelEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

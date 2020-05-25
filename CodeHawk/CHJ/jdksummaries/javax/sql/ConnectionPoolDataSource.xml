@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-05-24 18:23:00"/>
+  <interface name="ConnectionPoolDataSource" package="javax.sql">
+    <superinterfaces>
+      <superinterface>javax.sql.CommonDataSource</superinterface>
+    </superinterfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPooledConnection -->
+      <method abstract="yes" access="public" name="getPooledConnection" valid="no">
+        <signature>
+          <return>
+            <object>javax.sql.PooledConnection</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.sql.SQLException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPooledConnection -->
+      <method abstract="yes" access="public" name="getPooledConnection" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>javax.sql.PooledConnection</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>java.sql.SQLException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

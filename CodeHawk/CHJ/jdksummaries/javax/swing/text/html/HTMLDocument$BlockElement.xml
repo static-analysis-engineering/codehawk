@@ -1,0 +1,529 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-05-24 21:53:50"/>
+  <class name="HTMLDocument$BlockElement" package="javax.swing.text.html">
+    <superclass>javax.swing.text.AbstractDocument$BranchElement</superclass>
+    <interfaces>
+      <implements>javax.swing.text.Element</implements>
+      <implements>javax.swing.text.MutableAttributeSet</implements>
+      <implements>java.io.Serializable</implements>
+      <implements>javax.swing.tree.TreeNode</implements>
+      <implements>javax.swing.text.AttributeSet</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!--  (javax.swing.text.html.HTMLDocument,javax.swing.text.Element,javax.swing.text.AttributeSet) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.html.HTMLDocument</object>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.text.Element</object>
+          </arg>
+          <arg nr="3">
+            <object>javax.swing.text.AttributeSet</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <not-null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </safety-condition>
+            <error-condition>
+              <math>
+                <apply>
+                  <null/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </error-condition>
+            <exn>java.lang.NullPointerException</exn>
+          </c-throws>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <not-null/>
+                  <arg nr="2"/>
+                </apply>
+              </math>
+            </safety-condition>
+            <error-condition>
+              <math>
+                <apply>
+                  <null/>
+                  <arg nr="2"/>
+                </apply>
+              </math>
+            </error-condition>
+            <exn>java.lang.NullPointerException</exn>
+          </c-throws>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <not-null/>
+                  <arg nr="3"/>
+                </apply>
+              </math>
+            </safety-condition>
+            <error-condition>
+              <math>
+                <apply>
+                  <null/>
+                  <arg nr="3"/>
+                </apply>
+              </math>
+            </error-condition>
+            <exn>java.lang.NullPointerException</exn>
+          </c-throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getName -->
+      <method access="public" name="getName">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getResolveParent -->
+      <method access="public" name="getResolveParent">
+        <signature>
+          <return>
+            <object>javax.swing.text.AttributeSet</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+          <postconditions>
+            <post>
+              <math>
+                <null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addAttribute -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="addAttribute">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addAttributes -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="addAttributes">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.AttributeSet</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) children -->
+      <method from="javax.swing.text.AbstractDocument$BranchElement" inherited="yes" name="children">
+        <signature>
+          <return>
+            <object>java.util.Enumeration</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) containsAttribute -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="containsAttribute">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) containsAttributes -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="containsAttributes">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.AttributeSet</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) copyAttributes -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="copyAttributes">
+        <signature>
+          <return>
+            <object>javax.swing.text.AttributeSet</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) dump -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="dump">
+        <signature>
+          <arg nr="1">
+            <object>java.io.PrintStream</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAllowsChildren -->
+      <method from="javax.swing.text.AbstractDocument$BranchElement" inherited="yes" name="getAllowsChildren">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAttribute -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="getAttribute">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAttributeCount -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="getAttributeCount">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAttributeNames -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="getAttributeNames">
+        <signature>
+          <return>
+            <object>java.util.Enumeration</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAttributes -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="getAttributes">
+        <signature>
+          <return>
+            <object>javax.swing.text.AttributeSet</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getChildAt -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="getChildAt">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>javax.swing.tree.TreeNode</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getChildCount -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="getChildCount">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDocument -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="getDocument">
+        <signature>
+          <return>
+            <object>javax.swing.text.Document</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getElement -->
+      <method from="javax.swing.text.AbstractDocument$BranchElement" inherited="yes" name="getElement">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>javax.swing.text.Element</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getElementCount -->
+      <method from="javax.swing.text.AbstractDocument$BranchElement" inherited="yes" name="getElementCount">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getElementIndex -->
+      <method from="javax.swing.text.AbstractDocument$BranchElement" inherited="yes" name="getElementIndex">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getEndOffset -->
+      <method from="javax.swing.text.AbstractDocument$BranchElement" inherited="yes" name="getEndOffset">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getIndex -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="getIndex">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreeNode</object>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getParent -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="getParent">
+        <signature>
+          <return>
+            <object>javax.swing.tree.TreeNode</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getParentElement -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="getParentElement">
+        <signature>
+          <return>
+            <object>javax.swing.text.Element</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getStartOffset -->
+      <method from="javax.swing.text.AbstractDocument$BranchElement" inherited="yes" name="getStartOffset">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isDefined -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="isDefined">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isEqual -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="isEqual">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.AttributeSet</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isLeaf -->
+      <method from="javax.swing.text.AbstractDocument$BranchElement" inherited="yes" name="isLeaf">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) positionToElement -->
+      <method from="javax.swing.text.AbstractDocument$BranchElement" inherited="yes" name="positionToElement">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>javax.swing.text.Element</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeAttribute -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="removeAttribute">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeAttributes -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="removeAttributes">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.AttributeSet</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeAttributes -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="removeAttributes">
+        <signature>
+          <arg nr="1">
+            <object>java.util.Enumeration</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) replace -->
+      <method from="javax.swing.text.AbstractDocument$BranchElement" inherited="yes" name="replace">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <array>
+              <object>javax.swing.text.Element</object>
+            </array>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setResolveParent -->
+      <method from="javax.swing.text.AbstractDocument$AbstractElement" inherited="yes" name="setResolveParent">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.AttributeSet</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="javax.swing.text.AbstractDocument$BranchElement" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

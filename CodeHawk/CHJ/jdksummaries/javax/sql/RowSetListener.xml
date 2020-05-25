@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-05-24 18:24:12"/>
+  <interface name="RowSetListener" package="javax.sql">
+    <superinterfaces>
+      <superinterface>java.util.EventListener</superinterface>
+    </superinterfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ cursorMoved -->
+      <method abstract="yes" access="public" name="cursorMoved" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.sql.RowSetEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ rowChanged -->
+      <method abstract="yes" access="public" name="rowChanged" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.sql.RowSetEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ rowSetChanged -->
+      <method abstract="yes" access="public" name="rowSetChanged" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.sql.RowSetEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+    </methods>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

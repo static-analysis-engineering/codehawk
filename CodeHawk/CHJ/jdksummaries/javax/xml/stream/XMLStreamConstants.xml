@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="interface" time="2020-05-25 11:35:06"/>
+  <interface name="XMLStreamConstants" package="javax.xml.stream">
+    <superinterfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:START_ELEMENT -->
+      <field access="public" final="yes" name="START_ELEMENT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="1"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:END_ELEMENT -->
+      <field access="public" final="yes" name="END_ELEMENT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="2"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:PROCESSING_INSTRUCTION -->
+      <field access="public" final="yes" name="PROCESSING_INSTRUCTION" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="3"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CHARACTERS -->
+      <field access="public" final="yes" name="CHARACTERS" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="4"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:COMMENT -->
+      <field access="public" final="yes" name="COMMENT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="5"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SPACE -->
+      <field access="public" final="yes" name="SPACE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="6"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:START_DOCUMENT -->
+      <field access="public" final="yes" name="START_DOCUMENT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="7"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:END_DOCUMENT -->
+      <field access="public" final="yes" name="END_DOCUMENT" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="8"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ENTITY_REFERENCE -->
+      <field access="public" final="yes" name="ENTITY_REFERENCE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="9"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ATTRIBUTE -->
+      <field access="public" final="yes" name="ATTRIBUTE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="10"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:DTD -->
+      <field access="public" final="yes" name="DTD" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="11"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CDATA -->
+      <field access="public" final="yes" name="CDATA" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="12"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:NAMESPACE -->
+      <field access="public" final="yes" name="NAMESPACE" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="13"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:NOTATION_DECLARATION -->
+      <field access="public" final="yes" name="NOTATION_DECLARATION" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="14"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ENTITY_DECLARATION -->
+      <field access="public" final="yes" name="ENTITY_DECLARATION" static="yes">
+        <signature>
+          <int/>
+        </signature>
+        <value>
+          <int value="15"/>
+        </value>
+      </field>
+    </fields>
+    <!-- ============================== METHODS ==============================  -->
+    <methods/>
+  </interface>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

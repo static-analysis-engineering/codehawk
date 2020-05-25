@@ -1,91 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
-  <header info="class" time="2020-03-17 16:06:53"/>
-  <class name="JTable" package="javax.swing">
+  <header info="class" time="2020-05-24 21:32:11"/>
+  <class name="JTree" package="javax.swing">
     <superclass>javax.swing.JComponent</superclass>
     <interfaces>
-      <implements>javax.swing.event.TableModelListener</implements>
       <implements>javax.swing.Scrollable</implements>
-      <implements>javax.swing.event.TableColumnModelListener</implements>
-      <implements>javax.swing.event.ListSelectionListener</implements>
-      <implements>javax.swing.event.CellEditorListener</implements>
       <implements>javax.accessibility.Accessible</implements>
-      <implements>javax.swing.event.RowSorterListener</implements>
       <implements>java.io.Serializable</implements>
       <implements>javax.swing.TransferHandler$HasGetTransferHandler</implements>
       <implements>java.awt.image.ImageObserver</implements>
       <implements>java.awt.MenuContainer</implements>
-      <implements>java.util.EventListener</implements>
     </interfaces>
     <!-- =============================== FIELDS ===============================  -->
     <fields>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:AUTO_RESIZE_OFF -->
-      <field access="public" final="yes" name="AUTO_RESIZE_OFF" static="yes">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:treeModel -->
+      <field access="protected" name="treeModel">
         <signature>
-          <int/>
-        </signature>
-        <value>
-          <int value="0"/>
-        </value>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:AUTO_RESIZE_NEXT_COLUMN -->
-      <field access="public" final="yes" name="AUTO_RESIZE_NEXT_COLUMN" static="yes">
-        <signature>
-          <int/>
-        </signature>
-        <value>
-          <int value="1"/>
-        </value>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:AUTO_RESIZE_SUBSEQUENT_COLUMNS -->
-      <field access="public" final="yes" name="AUTO_RESIZE_SUBSEQUENT_COLUMNS" static="yes">
-        <signature>
-          <int/>
-        </signature>
-        <value>
-          <int value="2"/>
-        </value>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:AUTO_RESIZE_LAST_COLUMN -->
-      <field access="public" final="yes" name="AUTO_RESIZE_LAST_COLUMN" static="yes">
-        <signature>
-          <int/>
-        </signature>
-        <value>
-          <int value="3"/>
-        </value>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:AUTO_RESIZE_ALL_COLUMNS -->
-      <field access="public" final="yes" name="AUTO_RESIZE_ALL_COLUMNS" static="yes">
-        <signature>
-          <int/>
-        </signature>
-        <value>
-          <int value="4"/>
-        </value>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:dataModel -->
-      <field access="protected" name="dataModel">
-        <signature>
-          <object>javax.swing.table.TableModel</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:columnModel -->
-      <field access="protected" name="columnModel">
-        <signature>
-          <object>javax.swing.table.TableColumnModel</object>
+          <object>javax.swing.tree.TreeModel</object>
         </signature>
       </field>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:selectionModel -->
       <field access="protected" name="selectionModel">
         <signature>
-          <object>javax.swing.ListSelectionModel</object>
+          <object>javax.swing.tree.TreeSelectionModel</object>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:tableHeader -->
-      <field access="protected" name="tableHeader">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:rootVisible -->
+      <field access="protected" name="rootVisible">
         <signature>
-          <object>javax.swing.table.JTableHeader</object>
+          <boolean/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:cellRenderer -->
+      <field access="protected" name="cellRenderer">
+        <signature>
+          <object>javax.swing.tree.TreeCellRenderer</object>
         </signature>
       </field>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:rowHeight -->
@@ -94,107 +43,209 @@
           <int/>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:rowMargin -->
-      <field access="protected" name="rowMargin">
-        <signature>
-          <int/>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:gridColor -->
-      <field access="protected" name="gridColor">
-        <signature>
-          <object>java.awt.Color</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:showHorizontalLines -->
-      <field access="protected" name="showHorizontalLines">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:showsRootHandles -->
+      <field access="protected" name="showsRootHandles">
         <signature>
           <boolean/>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:showVerticalLines -->
-      <field access="protected" name="showVerticalLines">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:selectionRedirector -->
+      <field access="protected" name="selectionRedirector">
         <signature>
-          <boolean/>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:autoResizeMode -->
-      <field access="protected" name="autoResizeMode">
-        <signature>
-          <int/>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:autoCreateColumnsFromModel -->
-      <field access="protected" name="autoCreateColumnsFromModel">
-        <signature>
-          <boolean/>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:preferredViewportSize -->
-      <field access="protected" name="preferredViewportSize">
-        <signature>
-          <object>java.awt.Dimension</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:rowSelectionAllowed -->
-      <field access="protected" name="rowSelectionAllowed">
-        <signature>
-          <boolean/>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:cellSelectionEnabled -->
-      <field access="protected" name="cellSelectionEnabled">
-        <signature>
-          <boolean/>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:editorComp -->
-      <field access="protected" name="editorComp">
-        <signature>
-          <object>java.awt.Component</object>
+          <object>javax.swing.JTree$TreeSelectionRedirector</object>
         </signature>
       </field>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:cellEditor -->
       <field access="protected" name="cellEditor">
         <signature>
-          <object>javax.swing.table.TableCellEditor</object>
+          <object>javax.swing.tree.TreeCellEditor</object>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:editingColumn -->
-      <field access="protected" name="editingColumn">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:editable -->
+      <field access="protected" name="editable">
+        <signature>
+          <boolean/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:largeModel -->
+      <field access="protected" name="largeModel">
+        <signature>
+          <boolean/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:visibleRowCount -->
+      <field access="protected" name="visibleRowCount">
         <signature>
           <int/>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:editingRow -->
-      <field access="protected" name="editingRow">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:invokesStopCellEditing -->
+      <field access="protected" name="invokesStopCellEditing">
+        <signature>
+          <boolean/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:scrollsOnExpand -->
+      <field access="protected" name="scrollsOnExpand">
+        <signature>
+          <boolean/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:toggleClickCount -->
+      <field access="protected" name="toggleClickCount">
         <signature>
           <int/>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:defaultRenderersByColumnClass -->
-      <field access="protected" name="defaultRenderersByColumnClass">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:treeModelListener -->
+      <field access="protected" name="treeModelListener">
         <signature>
-          <object>java.util.Hashtable</object>
+          <object>javax.swing.event.TreeModelListener</object>
         </signature>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:defaultEditorsByColumnClass -->
-      <field access="protected" name="defaultEditorsByColumnClass">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CELL_RENDERER_PROPERTY -->
+      <field access="public" final="yes" name="CELL_RENDERER_PROPERTY" not-null="yes" static="yes">
         <signature>
-          <object>java.util.Hashtable</object>
+          <object>java.lang.String</object>
         </signature>
+        <value>
+          <string value="cellRenderer"/>
+        </value>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:selectionForeground -->
-      <field access="protected" name="selectionForeground">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TREE_MODEL_PROPERTY -->
+      <field access="public" final="yes" name="TREE_MODEL_PROPERTY" not-null="yes" static="yes">
         <signature>
-          <object>java.awt.Color</object>
+          <object>java.lang.String</object>
         </signature>
+        <value>
+          <string value="model"/>
+        </value>
       </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:selectionBackground -->
-      <field access="protected" name="selectionBackground">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ROOT_VISIBLE_PROPERTY -->
+      <field access="public" final="yes" name="ROOT_VISIBLE_PROPERTY" not-null="yes" static="yes">
         <signature>
-          <object>java.awt.Color</object>
+          <object>java.lang.String</object>
         </signature>
+        <value>
+          <string value="rootVisible"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SHOWS_ROOT_HANDLES_PROPERTY -->
+      <field access="public" final="yes" name="SHOWS_ROOT_HANDLES_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="showsRootHandles"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ROW_HEIGHT_PROPERTY -->
+      <field access="public" final="yes" name="ROW_HEIGHT_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="rowHeight"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:CELL_EDITOR_PROPERTY -->
+      <field access="public" final="yes" name="CELL_EDITOR_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="cellEditor"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:EDITABLE_PROPERTY -->
+      <field access="public" final="yes" name="EDITABLE_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="editable"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LARGE_MODEL_PROPERTY -->
+      <field access="public" final="yes" name="LARGE_MODEL_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="largeModel"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SELECTION_MODEL_PROPERTY -->
+      <field access="public" final="yes" name="SELECTION_MODEL_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="selectionModel"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:VISIBLE_ROW_COUNT_PROPERTY -->
+      <field access="public" final="yes" name="VISIBLE_ROW_COUNT_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="visibleRowCount"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:INVOKES_STOP_CELL_EDITING_PROPERTY -->
+      <field access="public" final="yes" name="INVOKES_STOP_CELL_EDITING_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="invokesStopCellEditing"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SCROLLS_ON_EXPAND_PROPERTY -->
+      <field access="public" final="yes" name="SCROLLS_ON_EXPAND_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="scrollsOnExpand"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:TOGGLE_CLICK_COUNT_PROPERTY -->
+      <field access="public" final="yes" name="TOGGLE_CLICK_COUNT_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="toggleClickCount"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:LEAD_SELECTION_PATH_PROPERTY -->
+      <field access="public" final="yes" name="LEAD_SELECTION_PATH_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="leadSelectionPath"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:ANCHOR_SELECTION_PATH_PROPERTY -->
+      <field access="public" final="yes" name="ANCHOR_SELECTION_PATH_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="anchorSelectionPath"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:EXPANDS_SELECTED_PATHS_PROPERTY -->
+      <field access="public" final="yes" name="EXPANDS_SELECTED_PATHS_PROPERTY" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="expandsSelectedPaths"/>
+        </value>
       </field>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:RIGHT_ALIGNMENT -->
       <field from="java.awt.Component" inherited="yes" name="RIGHT_ALIGNMENT">
@@ -267,123 +318,10 @@
           <taint/>
         </summary>
       </constructor>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (javax.swing.table.TableModel) -->
-      <constructor access="public" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.table.TableModel</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </constructor>
-      <!-- ~~~ (javax.swing.table.TableModel,javax.swing.table.TableColumnModel) -->
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.Object[]) -->
       <constructor access="public">
         <signature>
           <arg nr="1">
-            <object>javax.swing.table.TableModel</object>
-          </arg>
-          <arg nr="2">
-            <object>javax.swing.table.TableColumnModel</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-	    <transfer>
-	      <arg nr="1"/>
-	      <this/>
-	    </transfer>
-	    <transfer>
-	      <arg nr="2"/>
-	      <this/>
-	    </transfer>
-	  </taint>
-        </summary>
-      </constructor>
-      <!--  (javax.swing.table.TableModel,javax.swing.table.TableColumnModel,javax.swing.ListSelectionModel) -->
-      <constructor access="public" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.table.TableModel</object>
-          </arg>
-          <arg nr="2">
-            <object>javax.swing.table.TableColumnModel</object>
-          </arg>
-          <arg nr="3">
-            <object>javax.swing.ListSelectionModel</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </constructor>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (int,int) -->
-      <constructor access="public">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <arg nr="2">
-            <int/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-	    <transfer>
-	      <arg nr="1"/>
-	      <this/>
-	    </transfer>
-	    <transfer>
-	      <arg nr="2"/>
-	      <this/>
-	    </transfer>
-	  </taint>
-	  <sinks>
-	    <sink arg="1" form="memory" type="resource"/>
-	    <sink arg="2" form="memory" type="resource"/>
-	  </sinks>
-        </summary>
-      </constructor>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.util.Vector,java.util.Vector) -->
-      <constructor access="public">
-        <signature>
-          <arg nr="1">
-            <object>java.util.Vector</object>
-          </arg>
-          <arg nr="2">
-            <object>java.util.Vector</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-	    <transfer>
-	      <arg nr="1"/>
-	      <this/>
-	    </transfer>
-	    <transfer>
-	      <arg nr="2"/>
-	      <this/>
-	    </transfer>
-	  </taint>
-        </summary>
-      </constructor>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.lang.Object[][],java.lang.Object[]) -->
-      <constructor access="public">
-        <signature>
-          <arg nr="1">
-            <array>
-              <array>
-                <object>java.lang.Object</object>
-              </array>
-            </array>
-          </arg>
-          <arg nr="2">
             <array>
               <object>java.lang.Object</object>
             </array>
@@ -392,34 +330,100 @@
         <exceptions/>
         <summary>
           <taint>
-	    <transfer>
-	      <arg nr="1"/>
-	      <this/>
-	    </transfer>
-	    <transfer>
-	      <arg nr="2"/>
-	      <this/>
-	    </transfer>
-	  </taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </constructor>
-    </constructors>
-    <!-- ============================== METHODS ==============================  -->
-    <methods>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addColumn -->
-      <method access="public" name="addColumn" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.util.Vector) -->
+      <constructor access="public" valid="no">
         <signature>
           <arg nr="1">
-            <object>javax.swing.table.TableColumn</object>
+            <object>java.util.Vector</object>
           </arg>
         </signature>
         <exceptions/>
         <summary>
           <taint/>
         </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addColumnSelectionInterval -->
-      <method access="public" name="addColumnSelectionInterval" valid="no">
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.util.Hashtable) -->
+      <constructor access="public" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.util.Hashtable</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (javax.swing.tree.TreeNode) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreeNode</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (javax.swing.tree.TreeNode,boolean) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreeNode</object>
+          </arg>
+          <arg nr="2">
+            <boolean/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (javax.swing.tree.TreeModel) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreeModel</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addSelectionInterval -->
+      <method access="public" name="addSelectionInterval" valid="no">
         <signature>
           <arg nr="1">
             <int/>
@@ -433,21 +437,162 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addNotify -->
-      <method access="public" name="addNotify" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addSelectionPath -->
+      <method access="public" name="addSelectionPath">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addSelectionPaths -->
+      <method access="public" name="addSelectionPaths" valid="no">
+        <signature>
+          <arg nr="1">
+            <array>
+              <object>javax.swing.tree.TreePath</object>
+            </array>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addSelectionRow -->
+      <method access="public" name="addSelectionRow" valid="no">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addSelectionRows -->
+      <method access="public" name="addSelectionRows" valid="no">
+        <signature>
+          <arg nr="1">
+            <array>
+              <int/>
+            </array>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addTreeExpansionListener -->
+      <method access="public" name="addTreeExpansionListener">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TreeExpansionListener</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <arg nr="1"/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addTreeSelectionListener -->
+      <method access="public" name="addTreeSelectionListener">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TreeSelectionListener</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <arg nr="1"/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addTreeWillExpandListener -->
+      <method access="public" name="addTreeWillExpandListener" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TreeWillExpandListener</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ cancelEditing -->
+      <method access="public" name="cancelEditing" valid="no">
         <signature/>
         <exceptions/>
         <summary>
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addRowSelectionInterval -->
-      <method access="public" name="addRowSelectionInterval" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ clearSelection -->
+      <method access="public" name="clearSelection">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ clearToggledPaths -->
+      <method access="protected" name="clearToggledPaths">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ collapsePath -->
+      <method access="public" name="collapsePath">
         <signature>
           <arg nr="1">
-            <int/>
+            <object>javax.swing.tree.TreePath</object>
           </arg>
-          <arg nr="2">
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ collapseRow -->
+      <method access="public" name="collapseRow" valid="no">
+        <signature>
+          <arg nr="1">
             <int/>
           </arg>
         </signature>
@@ -456,14 +601,14 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ changeSelection -->
-      <method access="public" name="changeSelection" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ convertValueToText -->
+      <method access="public" name="convertValueToText">
         <signature>
           <arg nr="1">
-            <int/>
+            <object>java.lang.Object</object>
           </arg>
           <arg nr="2">
-            <int/>
+            <boolean/>
           </arg>
           <arg nr="3">
             <boolean/>
@@ -471,541 +616,11 @@
           <arg nr="4">
             <boolean/>
           </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ clearSelection -->
-      <method access="public" name="clearSelection" valid="no">
-        <signature/>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ columnAdded -->
-      <method access="public" name="columnAdded" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.event.TableColumnModelEvent</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ columnAtPoint -->
-      <method access="public" name="columnAtPoint" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>java.awt.Point</object>
-          </arg>
-          <return>
-            <int/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ columnMarginChanged -->
-      <method access="public" name="columnMarginChanged" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.event.ChangeEvent</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ columnMoved -->
-      <method access="public" name="columnMoved" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.event.TableColumnModelEvent</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ columnRemoved -->
-      <method access="public" name="columnRemoved" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.event.TableColumnModelEvent</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ columnSelectionChanged -->
-      <method access="public" name="columnSelectionChanged" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.event.ListSelectionEvent</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ configureEnclosingScrollPane -->
-      <method access="protected" name="configureEnclosingScrollPane" valid="no">
-        <signature/>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ convertColumnIndexToModel -->
-      <method access="public" name="convertColumnIndexToModel">
-        <signature>
-          <arg nr="1">
+          <arg nr="5">
             <int/>
           </arg>
-          <return>
-            <int/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
-            <transfer>
-              <arg nr="1"/>
-              <return/>
-            </transfer>
-          </taint>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ convertColumnIndexToView -->
-      <method access="public" name="convertColumnIndexToView" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <return>
-            <int/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ convertRowIndexToModel -->
-      <method access="public" name="convertRowIndexToModel" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <return>
-            <int/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ convertRowIndexToView -->
-      <method access="public" name="convertRowIndexToView" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <return>
-            <int/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createDefaultColumnModel -->
-      <method access="protected" name="createDefaultColumnModel" valid="no">
-        <signature>
-          <return>
-            <object>javax.swing.table.TableColumnModel</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createDefaultColumnsFromModel -->
-      <method access="public" name="createDefaultColumnsFromModel" valid="no">
-        <signature/>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createDefaultDataModel -->
-      <method access="protected" name="createDefaultDataModel" valid="no">
-        <signature>
-          <return>
-            <object>javax.swing.table.TableModel</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createDefaultEditors -->
-      <method access="protected" name="createDefaultEditors" valid="no">
-        <signature/>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createDefaultRenderers -->
-      <method access="protected" name="createDefaultRenderers" valid="no">
-        <signature/>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createDefaultSelectionModel -->
-      <method access="protected" name="createDefaultSelectionModel" valid="no">
-        <signature>
-          <return>
-            <object>javax.swing.ListSelectionModel</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createDefaultTableHeader -->
-      <method access="protected" name="createDefaultTableHeader" valid="no">
-        <signature>
-          <return>
-            <object>javax.swing.table.JTableHeader</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createScrollPaneForTable -->
-      <method access="public" name="createScrollPaneForTable" static="yes" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.JTable</object>
-          </arg>
-          <return>
-            <object>javax.swing.JScrollPane</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ doLayout -->
-      <method access="public" name="doLayout" valid="no">
-        <signature/>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ editCellAt -->
-      <method access="public" name="editCellAt" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <arg nr="2">
-            <int/>
-          </arg>
-          <return>
+          <arg nr="6">
             <boolean/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ editCellAt -->
-      <method access="public" name="editCellAt" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <arg nr="2">
-            <int/>
-          </arg>
-          <arg nr="3">
-            <object>java.util.EventObject</object>
-          </arg>
-          <return>
-            <boolean/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ editingCanceled -->
-      <method access="public" name="editingCanceled" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.event.ChangeEvent</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ editingStopped -->
-      <method access="public" name="editingStopped" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.event.ChangeEvent</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAccessibleContext -->
-      <method access="public" name="getAccessibleContext" valid="no">
-        <signature>
-          <return>
-            <object>javax.accessibility.AccessibleContext</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAutoCreateColumnsFromModel -->
-      <method access="public" name="getAutoCreateColumnsFromModel" valid="no">
-        <signature>
-          <return>
-            <boolean/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAutoCreateRowSorter -->
-      <method access="public" name="getAutoCreateRowSorter" valid="no">
-        <signature>
-          <return>
-            <boolean/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAutoResizeMode -->
-      <method access="public" name="getAutoResizeMode" valid="no">
-        <signature>
-          <return>
-            <int/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getCellEditor -->
-      <method access="public" name="getCellEditor">
-        <signature>
-          <return>
-            <object>javax.swing.table.TableCellEditor</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
-          </taint>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getCellEditor -->
-      <method access="public" name="getCellEditor">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <arg nr="2">
-            <int/>
-          </arg>
-          <return>
-            <object>javax.swing.table.TableCellEditor</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
-            <transfer>
-              <arg nr="1"/>
-              <return/>
-            </transfer>
-            <transfer>
-              <arg nr="2"/>
-              <return/>
-            </transfer>
-          </taint>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getCellRect -->
-      <method access="public" name="getCellRect" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <arg nr="2">
-            <int/>
-          </arg>
-          <arg nr="3">
-            <boolean/>
-          </arg>
-          <return>
-            <object>java.awt.Rectangle</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getCellRenderer -->
-      <method access="public" name="getCellRenderer" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <arg nr="2">
-            <int/>
-          </arg>
-          <return>
-            <object>javax.swing.table.TableCellRenderer</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getCellSelectionEnabled -->
-      <method access="public" name="getCellSelectionEnabled" valid="no">
-        <signature>
-          <return>
-            <boolean/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColumn -->
-      <method access="public" name="getColumn" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>java.lang.Object</object>
-          </arg>
-          <return>
-            <object>javax.swing.table.TableColumn</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColumnClass -->
-      <method access="public" name="getColumnClass" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <return>
-            <object>java.lang.Class</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColumnCount -->
-      <method access="public" name="getColumnCount" valid="no">
-        <signature>
-          <return>
-            <int/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColumnModel -->
-      <method access="public" name="getColumnModel">
-        <signature>
-          <return>
-            <object>javax.swing.table.TableColumnModel</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
-          </taint>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColumnName -->
-      <method access="public" name="getColumnName">
-        <signature>
-          <arg nr="1">
-            <int/>
           </arg>
           <return>
             <object>java.lang.String</object>
@@ -1018,6 +633,207 @@
               <arg nr="1"/>
               <return/>
             </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createTreeModel -->
+      <method access="protected" name="createTreeModel" static="yes">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <object>javax.swing.tree.TreeModel</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createTreeModelListener -->
+      <method access="protected" name="createTreeModelListener">
+        <signature>
+          <return>
+            <object>javax.swing.event.TreeModelListener</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ expandPath -->
+      <method access="public" name="expandPath">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ expandRow -->
+      <method access="public" name="expandRow" valid="no">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fireTreeCollapsed -->
+      <method access="public" name="fireTreeCollapsed">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fireTreeExpanded -->
+      <method access="public" name="fireTreeExpanded">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fireTreeWillCollapse -->
+      <method access="public" name="fireTreeWillCollapse">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>javax.swing.tree.ExpandVetoException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fireTreeWillExpand -->
+      <method access="public" name="fireTreeWillExpand">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+        </signature>
+        <exceptions>
+          <throws>javax.swing.tree.ExpandVetoException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ fireValueChanged -->
+      <method access="protected" name="fireValueChanged">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TreeSelectionEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAccessibleContext -->
+      <method access="public" name="getAccessibleContext">
+        <signature>
+          <return>
+            <object>javax.accessibility.AccessibleContext</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getAnchorSelectionPath -->
+      <method access="public" name="getAnchorSelectionPath" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.tree.TreePath</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getCellEditor -->
+      <method access="public" name="getCellEditor">
+        <signature>
+          <return>
+            <object>javax.swing.tree.TreeCellEditor</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
             <transfer>
               <this/>
               <return/>
@@ -1025,11 +841,34 @@
           </taint>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getColumnSelectionAllowed -->
-      <method access="public" name="getColumnSelectionAllowed" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getCellRenderer -->
+      <method access="public" name="getCellRenderer">
         <signature>
           <return>
-            <boolean/>
+            <object>javax.swing.tree.TreeCellRenderer</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getClosestPathForLocation -->
+      <method access="public" name="getClosestPathForLocation">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <object>javax.swing.tree.TreePath</object>
           </return>
         </signature>
         <exceptions/>
@@ -1037,14 +876,17 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDefaultEditor -->
-      <method access="public" name="getDefaultEditor" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getClosestRowForLocation -->
+      <method access="public" name="getClosestRowForLocation" valid="no">
         <signature>
           <arg nr="1">
-            <object>java.lang.Class</object>
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
           </arg>
           <return>
-            <object>javax.swing.table.TableCellEditor</object>
+            <int/>
           </return>
         </signature>
         <exceptions/>
@@ -1052,14 +894,26 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDefaultRenderer -->
-      <method access="public" name="getDefaultRenderer" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDefaultTreeModel -->
+      <method access="protected" name="getDefaultTreeModel" static="yes" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.tree.TreeModel</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDescendantToggledPaths -->
+      <method access="protected" name="getDescendantToggledPaths" valid="no">
         <signature>
           <arg nr="1">
-            <object>java.lang.Class</object>
+            <object>javax.swing.tree.TreePath</object>
           </arg>
           <return>
-            <object>javax.swing.table.TableCellRenderer</object>
+            <object>java.util.Enumeration</object>
           </return>
         </signature>
         <exceptions/>
@@ -1080,15 +934,20 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDropLocation -->
-      <method access="public" final="yes" name="getDropLocation" valid="no">
+      <method access="public" final="yes" name="getDropLocation">
         <signature>
           <return>
-            <object>javax.swing.JTable$DropLocation</object>
+            <object>javax.swing.JTree$DropLocation</object>
           </return>
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDropMode -->
@@ -1103,11 +962,11 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getEditingColumn -->
-      <method access="public" name="getEditingColumn" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getEditingPath -->
+      <method access="public" name="getEditingPath" valid="no">
         <signature>
           <return>
-            <int/>
+            <object>javax.swing.tree.TreePath</object>
           </return>
         </signature>
         <exceptions/>
@@ -1115,11 +974,14 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getEditingRow -->
-      <method access="public" name="getEditingRow" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getExpandedDescendants -->
+      <method access="public" name="getExpandedDescendants" valid="no">
         <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
           <return>
-            <int/>
+            <object>java.util.Enumeration</object>
           </return>
         </signature>
         <exceptions/>
@@ -1127,20 +989,8 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getEditorComponent -->
-      <method access="public" name="getEditorComponent" valid="no">
-        <signature>
-          <return>
-            <object>java.awt.Component</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getFillsViewportHeight -->
-      <method access="public" name="getFillsViewportHeight" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getExpandsSelectedPaths -->
+      <method access="public" name="getExpandsSelectedPaths" valid="no">
         <signature>
           <return>
             <boolean/>
@@ -1151,11 +1001,11 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getGridColor -->
-      <method access="public" name="getGridColor" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getInvokesStopCellEditing -->
+      <method access="public" name="getInvokesStopCellEditing" valid="no">
         <signature>
           <return>
-            <object>java.awt.Color</object>
+            <boolean/>
           </return>
         </signature>
         <exceptions/>
@@ -1163,11 +1013,23 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getIntercellSpacing -->
-      <method access="public" name="getIntercellSpacing">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getLastSelectedPathComponent -->
+      <method access="public" name="getLastSelectedPathComponent" valid="no">
         <signature>
           <return>
-            <object>java.awt.Dimension</object>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getLeadSelectionPath -->
+      <method access="public" name="getLeadSelectionPath">
+        <signature>
+          <return>
+            <object>javax.swing.tree.TreePath</object>
           </return>
         </signature>
         <exceptions/>
@@ -1180,11 +1042,47 @@
           </taint>
         </summary>
       </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getLeadSelectionRow -->
+      <method access="public" name="getLeadSelectionRow" valid="no">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMaxSelectionRow -->
+      <method access="public" name="getMaxSelectionRow" valid="no">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMinSelectionRow -->
+      <method access="public" name="getMinSelectionRow" valid="no">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getModel -->
       <method access="public" name="getModel">
         <signature>
           <return>
-            <object>javax.swing.table.TableModel</object>
+            <object>javax.swing.tree.TreeModel</object>
           </return>
         </signature>
         <exceptions/>
@@ -1192,6 +1090,118 @@
           <taint>
             <transfer>
               <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getNextMatch -->
+      <method access="public" name="getNextMatch" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <object>javax.swing.text.Position$Bias</object>
+          </arg>
+          <return>
+            <object>javax.swing.tree.TreePath</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPathBetweenRows -->
+      <method access="protected" name="getPathBetweenRows" valid="no">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <array>
+              <object>javax.swing.tree.TreePath</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPathBounds -->
+      <method access="public" name="getPathBounds">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+          <return>
+            <object>java.awt.Rectangle</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPathForLocation -->
+      <method access="public" name="getPathForLocation">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <object>javax.swing.tree.TreePath</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPathForRow -->
+      <method access="public" name="getPathForRow">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>javax.swing.tree.TreePath</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
               <return/>
             </transfer>
           </taint>
@@ -1209,20 +1219,14 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getPrintable -->
-      <method access="public" name="getPrintable" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRowBounds -->
+      <method access="public" name="getRowBounds" valid="no">
         <signature>
           <arg nr="1">
-            <object>javax.swing.JTable$PrintMode</object>
-          </arg>
-          <arg nr="2">
-            <object>java.text.MessageFormat</object>
-          </arg>
-          <arg nr="3">
-            <object>java.text.MessageFormat</object>
+            <int/>
           </arg>
           <return>
-            <object>java.awt.print.Printable</object>
+            <object>java.awt.Rectangle</object>
           </return>
         </signature>
         <exceptions/>
@@ -1242,22 +1246,13 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRowHeight -->
-      <method access="public" name="getRowHeight" valid="no">
-        <signature>
-          <return>
-            <int/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRowHeight -->
-      <method access="public" name="getRowHeight" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRowForLocation -->
+      <method access="public" name="getRowForLocation">
         <signature>
           <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
             <int/>
           </arg>
           <return>
@@ -1266,38 +1261,47 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <return/>
+            </transfer>
+          </taint>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRowMargin -->
-      <method access="public" name="getRowMargin" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRowForPath -->
+      <method access="public" name="getRowForPath">
         <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
           <return>
             <int/>
           </return>
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRowSelectionAllowed -->
-      <method access="public" name="getRowSelectionAllowed" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRowHeight -->
+      <method access="public" name="getRowHeight" valid="no">
         <signature>
           <return>
-            <boolean/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getRowSorter -->
-      <method access="public" name="getRowSorter" valid="no">
-        <signature>
-          <return>
-            <object>javax.swing.RowSorter</object>
+            <int/>
           </return>
         </signature>
         <exceptions/>
@@ -1371,8 +1375,20 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectedColumn -->
-      <method access="public" name="getSelectedColumn" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getScrollsOnExpand -->
+      <method access="public" name="getScrollsOnExpand" valid="no">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectionCount -->
+      <method access="public" name="getSelectionCount" valid="no">
         <signature>
           <return>
             <int/>
@@ -1381,131 +1397,13 @@
         <exceptions/>
         <summary>
           <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectedColumnCount -->
-      <method access="public" name="getSelectedColumnCount">
-        <signature>
-          <return>
-            <int/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-            <defput>
-              <return/>
-            </defput>
-          </taint>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectedColumns -->
-      <method access="public" name="getSelectedColumns">
-        <signature>
-          <return>
-            <array>
-              <int/>
-            </array>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-            <defput>
-              <return/>
-            </defput>
-          </taint>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectedRow -->
-      <method access="public" name="getSelectedRow">
-        <signature>
-          <return>
-            <int/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-            <defput>
-              <return/>
-            </defput>
-          </taint>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectedRowCount -->
-      <method access="public" name="getSelectedRowCount">
-        <signature>
-          <return>
-            <int/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-            <defput>
-              <return/>
-            </defput>
-          </taint>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectedRows -->
-      <method access="public" name="getSelectedRows">
-        <signature>
-          <return>
-            <array>
-              <int/>
-            </array>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-            <defput>
-              <return/>
-            </defput>
-          </taint>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectionBackground -->
-      <method access="public" name="getSelectionBackground">
-        <signature>
-          <return>
-            <object>java.awt.Color</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
-          </taint>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectionForeground -->
-      <method access="public" name="getSelectionForeground">
-        <signature>
-          <return>
-            <object>java.awt.Color</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
-          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectionModel -->
       <method access="public" name="getSelectionModel">
         <signature>
           <return>
-            <object>javax.swing.ListSelectionModel</object>
+            <object>javax.swing.tree.TreeSelectionModel</object>
           </return>
         </signature>
         <exceptions/>
@@ -1518,8 +1416,48 @@
           </taint>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getShowHorizontalLines -->
-      <method access="public" name="getShowHorizontalLines" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectionPath -->
+      <method access="public" name="getSelectionPath" valid="no">
+        <signature>
+          <return>
+            <object>javax.swing.tree.TreePath</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectionPaths -->
+      <method access="public" name="getSelectionPaths" valid="no">
+        <signature>
+          <return>
+            <array>
+              <object>javax.swing.tree.TreePath</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSelectionRows -->
+      <method access="public" name="getSelectionRows" valid="no">
+        <signature>
+          <return>
+            <array>
+              <int/>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getShowsRootHandles -->
+      <method access="public" name="getShowsRootHandles" valid="no">
         <signature>
           <return>
             <boolean/>
@@ -1530,45 +1468,16 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getShowVerticalLines -->
-      <method access="public" name="getShowVerticalLines" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getToggleClickCount -->
+      <method access="public" name="getToggleClickCount" valid="no">
         <signature>
           <return>
-            <boolean/>
+            <int/>
           </return>
         </signature>
         <exceptions/>
         <summary>
           <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSurrendersFocusOnKeystroke -->
-      <method access="public" name="getSurrendersFocusOnKeystroke" valid="no">
-        <signature>
-          <return>
-            <boolean/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getTableHeader -->
-      <method access="public" name="getTableHeader">
-        <signature>
-          <return>
-            <object>javax.swing.table.JTableHeader</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
-          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getToolTipText -->
@@ -1595,11 +1504,53 @@
           </taint>
         </summary>
       </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getTreeExpansionListeners -->
+      <method access="public" name="getTreeExpansionListeners" valid="no">
+        <signature>
+          <return>
+            <array>
+              <object>javax.swing.event.TreeExpansionListener</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getTreeSelectionListeners -->
+      <method access="public" name="getTreeSelectionListeners" valid="no">
+        <signature>
+          <return>
+            <array>
+              <object>javax.swing.event.TreeSelectionListener</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getTreeWillExpandListeners -->
+      <method access="public" name="getTreeWillExpandListeners" valid="no">
+        <signature>
+          <return>
+            <array>
+              <object>javax.swing.event.TreeWillExpandListener</object>
+            </array>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getUI -->
       <method access="public" name="getUI">
         <signature>
           <return>
-            <object>javax.swing.plaf.TableUI</object>
+            <object>javax.swing.plaf.TreeUI</object>
           </return>
         </signature>
         <exceptions/>
@@ -1621,19 +1572,21 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint>
-            <transfer>
-              <this/>
-              <return/>
-            </transfer>
-          </taint>
+          <taint/>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getUpdateSelectionOnSort -->
-      <method access="public" name="getUpdateSelectionOnSort" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getVisibleRowCount -->
+      <method access="public" name="getVisibleRowCount" valid="no">
         <signature>
           <return>
-            <boolean/>
+            <int/>
           </return>
         </signature>
         <exceptions/>
@@ -1641,40 +1594,11 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getValueAt -->
-      <method access="public" name="getValueAt" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasBeenExpanded -->
+      <method access="public" name="hasBeenExpanded" valid="no">
         <signature>
           <arg nr="1">
-            <int/>
-          </arg>
-          <arg nr="2">
-            <int/>
-          </arg>
-          <return>
-            <object>java.lang.Object</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ initializeLocalVars -->
-      <method access="protected" name="initializeLocalVars" valid="no">
-        <signature/>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isCellEditable -->
-      <method access="public" name="isCellEditable" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <arg nr="2">
-            <int/>
+            <object>javax.swing.tree.TreePath</object>
           </arg>
           <return>
             <boolean/>
@@ -1685,13 +1609,25 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isCellSelected -->
-      <method access="public" name="isCellSelected" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isCollapsed -->
+      <method access="public" name="isCollapsed" valid="no">
         <signature>
           <arg nr="1">
-            <int/>
+            <object>javax.swing.tree.TreePath</object>
           </arg>
-          <arg nr="2">
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isCollapsed -->
+      <method access="public" name="isCollapsed" valid="no">
+        <signature>
+          <arg nr="1">
             <int/>
           </arg>
           <return>
@@ -1703,12 +1639,9 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isColumnSelected -->
-      <method access="public" name="isColumnSelected" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isEditable -->
+      <method access="public" name="isEditable" valid="no">
         <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
           <return>
             <boolean/>
           </return>
@@ -1719,7 +1652,130 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isEditing -->
-      <method access="public" name="isEditing">
+      <method access="public" name="isEditing" valid="no">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isExpanded -->
+      <method access="public" name="isExpanded">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isExpanded -->
+      <method access="public" name="isExpanded">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isFixedRowHeight -->
+      <method access="public" name="isFixedRowHeight" valid="no">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isLargeModel -->
+      <method access="public" name="isLargeModel" valid="no">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isPathEditable -->
+      <method access="public" name="isPathEditable" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isPathSelected -->
+      <method access="public" name="isPathSelected">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isRootVisible -->
+      <method access="public" name="isRootVisible">
         <signature>
           <return>
             <boolean/>
@@ -1749,25 +1805,67 @@
         <summary>
           <taint>
             <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
               <this/>
               <return/>
             </transfer>
           </taint>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ moveColumn -->
-      <method access="public" name="moveColumn" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isSelectionEmpty -->
+      <method access="public" name="isSelectionEmpty" valid="no">
         <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <arg nr="2">
-            <int/>
-          </arg>
+          <return>
+            <boolean/>
+          </return>
         </signature>
         <exceptions/>
         <summary>
           <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isVisible -->
+      <method access="public" name="isVisible">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ makeVisible -->
+      <method access="public" name="makeVisible">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ paramString -->
@@ -1782,184 +1880,13 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepareEditor -->
-      <method access="public" name="prepareEditor" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeDescendantSelectedPaths -->
+      <method access="protected" name="removeDescendantSelectedPaths">
         <signature>
           <arg nr="1">
-            <object>javax.swing.table.TableCellEditor</object>
+            <object>javax.swing.tree.TreePath</object>
           </arg>
           <arg nr="2">
-            <int/>
-          </arg>
-          <arg nr="3">
-            <int/>
-          </arg>
-          <return>
-            <object>java.awt.Component</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepareRenderer -->
-      <method access="public" name="prepareRenderer" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.table.TableCellRenderer</object>
-          </arg>
-          <arg nr="2">
-            <int/>
-          </arg>
-          <arg nr="3">
-            <int/>
-          </arg>
-          <return>
-            <object>java.awt.Component</object>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ print -->
-      <method access="public" name="print" valid="no">
-        <signature>
-          <return>
-            <boolean/>
-          </return>
-        </signature>
-        <exceptions>
-          <throws>java.awt.print.PrinterException</throws>
-        </exceptions>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ print -->
-      <method access="public" name="print" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.JTable$PrintMode</object>
-          </arg>
-          <return>
-            <boolean/>
-          </return>
-        </signature>
-        <exceptions>
-          <throws>java.awt.print.PrinterException</throws>
-        </exceptions>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ print -->
-      <method access="public" name="print" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.JTable$PrintMode</object>
-          </arg>
-          <arg nr="2">
-            <object>java.text.MessageFormat</object>
-          </arg>
-          <arg nr="3">
-            <object>java.text.MessageFormat</object>
-          </arg>
-          <return>
-            <boolean/>
-          </return>
-        </signature>
-        <exceptions>
-          <throws>java.awt.print.PrinterException</throws>
-        </exceptions>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ print -->
-      <method access="public" name="print" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.JTable$PrintMode</object>
-          </arg>
-          <arg nr="2">
-            <object>java.text.MessageFormat</object>
-          </arg>
-          <arg nr="3">
-            <object>java.text.MessageFormat</object>
-          </arg>
-          <arg nr="4">
-            <boolean/>
-          </arg>
-          <arg nr="5">
-            <object>javax.print.attribute.PrintRequestAttributeSet</object>
-          </arg>
-          <arg nr="6">
-            <boolean/>
-          </arg>
-          <return>
-            <boolean/>
-          </return>
-        </signature>
-        <exceptions>
-          <throws>java.awt.print.PrinterException</throws>
-          <throws>java.awt.HeadlessException</throws>
-        </exceptions>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ print -->
-      <method access="public" name="print" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.JTable$PrintMode</object>
-          </arg>
-          <arg nr="2">
-            <object>java.text.MessageFormat</object>
-          </arg>
-          <arg nr="3">
-            <object>java.text.MessageFormat</object>
-          </arg>
-          <arg nr="4">
-            <boolean/>
-          </arg>
-          <arg nr="5">
-            <object>javax.print.attribute.PrintRequestAttributeSet</object>
-          </arg>
-          <arg nr="6">
-            <boolean/>
-          </arg>
-          <arg nr="7">
-            <object>javax.print.PrintService</object>
-          </arg>
-          <return>
-            <boolean/>
-          </return>
-        </signature>
-        <exceptions>
-          <throws>java.awt.print.PrinterException</throws>
-          <throws>java.awt.HeadlessException</throws>
-        </exceptions>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ processKeyBinding -->
-      <method access="protected" name="processKeyBinding" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.KeyStroke</object>
-          </arg>
-          <arg nr="2">
-            <object>java.awt.event.KeyEvent</object>
-          </arg>
-          <arg nr="3">
-            <int/>
-          </arg>
-          <arg nr="4">
             <boolean/>
           </arg>
           <return>
@@ -1968,14 +1895,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeColumn -->
-      <method access="public" name="removeColumn" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeDescendantToggledPaths -->
+      <method access="protected" name="removeDescendantToggledPaths" valid="no">
         <signature>
           <arg nr="1">
-            <object>javax.swing.table.TableColumn</object>
+            <object>java.util.Enumeration</object>
           </arg>
         </signature>
         <exceptions/>
@@ -1983,8 +1919,8 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeColumnSelectionInterval -->
-      <method access="public" name="removeColumnSelectionInterval" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeSelectionInterval -->
+      <method access="public" name="removeSelectionInterval" valid="no">
         <signature>
           <arg nr="1">
             <int/>
@@ -1998,29 +1934,36 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeEditor -->
-      <method access="public" name="removeEditor" valid="no">
-        <signature/>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeNotify -->
-      <method access="public" name="removeNotify" valid="no">
-        <signature/>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeRowSelectionInterval -->
-      <method access="public" name="removeRowSelectionInterval" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeSelectionPath -->
+      <method access="public" name="removeSelectionPath" valid="no">
         <signature>
           <arg nr="1">
-            <int/>
+            <object>javax.swing.tree.TreePath</object>
           </arg>
-          <arg nr="2">
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeSelectionPaths -->
+      <method access="public" name="removeSelectionPaths" valid="no">
+        <signature>
+          <arg nr="1">
+            <array>
+              <object>javax.swing.tree.TreePath</object>
+            </array>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeSelectionRow -->
+      <method access="public" name="removeSelectionRow" valid="no">
+        <signature>
+          <arg nr="1">
             <int/>
           </arg>
         </signature>
@@ -2029,42 +1972,78 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ resizeAndRepaint -->
-      <method access="protected" name="resizeAndRepaint" valid="no">
-        <signature/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeSelectionRows -->
+      <method access="public" name="removeSelectionRows" valid="no">
+        <signature>
+          <arg nr="1">
+            <array>
+              <int/>
+            </array>
+          </arg>
+        </signature>
         <exceptions/>
         <summary>
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ rowAtPoint -->
-      <method access="public" name="rowAtPoint" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeTreeExpansionListener -->
+      <method access="public" name="removeTreeExpansionListener" valid="no">
         <signature>
           <arg nr="1">
-            <object>java.awt.Point</object>
+            <object>javax.swing.event.TreeExpansionListener</object>
           </arg>
-          <return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeTreeSelectionListener -->
+      <method access="public" name="removeTreeSelectionListener" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TreeSelectionListener</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ removeTreeWillExpandListener -->
+      <method access="public" name="removeTreeWillExpandListener" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.TreeWillExpandListener</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ scrollPathToVisible -->
+      <method access="public" name="scrollPathToVisible">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ scrollRowToVisible -->
+      <method access="public" name="scrollRowToVisible" valid="no">
+        <signature>
+          <arg nr="1">
             <int/>
-          </return>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ selectAll -->
-      <method access="public" name="selectAll" valid="no">
-        <signature/>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setAutoCreateColumnsFromModel -->
-      <method access="public" name="setAutoCreateColumnsFromModel" valid="no">
-        <signature>
-          <arg nr="1">
-            <boolean/>
           </arg>
         </signature>
         <exceptions/>
@@ -2072,23 +2051,11 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setAutoCreateRowSorter -->
-      <method access="public" name="setAutoCreateRowSorter" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setAnchorSelectionPath -->
+      <method access="public" name="setAnchorSelectionPath" valid="no">
         <signature>
           <arg nr="1">
-            <boolean/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setAutoResizeMode -->
-      <method access="public" name="setAutoResizeMode" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
+            <object>javax.swing.tree.TreePath</object>
           </arg>
         </signature>
         <exceptions/>
@@ -2100,7 +2067,7 @@
       <method access="public" name="setCellEditor" valid="no">
         <signature>
           <arg nr="1">
-            <object>javax.swing.table.TableCellEditor</object>
+            <object>javax.swing.tree.TreeCellEditor</object>
           </arg>
         </signature>
         <exceptions/>
@@ -2108,80 +2075,11 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setCellSelectionEnabled -->
-      <method access="public" name="setCellSelectionEnabled" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setCellRenderer -->
+      <method access="public" name="setCellRenderer">
         <signature>
           <arg nr="1">
-            <boolean/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setColumnModel -->
-      <method access="public" name="setColumnModel" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.table.TableColumnModel</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setColumnSelectionAllowed -->
-      <method access="public" name="setColumnSelectionAllowed" valid="no">
-        <signature>
-          <arg nr="1">
-            <boolean/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setColumnSelectionInterval -->
-      <method access="public" name="setColumnSelectionInterval" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <arg nr="2">
-            <int/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setDefaultEditor -->
-      <method access="public" name="setDefaultEditor" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>java.lang.Class</object>
-          </arg>
-          <arg nr="2">
-            <object>javax.swing.table.TableCellEditor</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setDefaultRenderer -->
-      <method access="public" name="setDefaultRenderer" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>java.lang.Class</object>
-          </arg>
-          <arg nr="2">
-            <object>javax.swing.table.TableCellRenderer</object>
+            <object>javax.swing.tree.TreeCellRenderer</object>
           </arg>
         </signature>
         <exceptions/>
@@ -2213,32 +2111,8 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setEditingColumn -->
-      <method access="public" name="setEditingColumn" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setEditingRow -->
-      <method access="public" name="setEditingRow" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setFillsViewportHeight -->
-      <method access="public" name="setFillsViewportHeight" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setEditable -->
+      <method access="public" name="setEditable" valid="no">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -2249,11 +2123,14 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setGridColor -->
-      <method access="public" name="setGridColor" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setExpandedState -->
+      <method access="protected" name="setExpandedState" valid="no">
         <signature>
           <arg nr="1">
-            <object>java.awt.Color</object>
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+          <arg nr="2">
+            <boolean/>
           </arg>
         </signature>
         <exceptions/>
@@ -2261,11 +2138,47 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setIntercellSpacing -->
-      <method access="public" name="setIntercellSpacing" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setExpandsSelectedPaths -->
+      <method access="public" name="setExpandsSelectedPaths" valid="no">
         <signature>
           <arg nr="1">
-            <object>java.awt.Dimension</object>
+            <boolean/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setInvokesStopCellEditing -->
+      <method access="public" name="setInvokesStopCellEditing" valid="no">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setLargeModel -->
+      <method access="public" name="setLargeModel" valid="no">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setLeadSelectionPath -->
+      <method access="public" name="setLeadSelectionPath" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
           </arg>
         </signature>
         <exceptions/>
@@ -2274,27 +2187,41 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setModel -->
-      <method access="public" name="setModel" valid="no">
+      <method access="public" name="setModel">
         <signature>
           <arg nr="1">
-            <object>javax.swing.table.TableModel</object>
+            <object>javax.swing.tree.TreeModel</object>
           </arg>
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <this/>
+              <arg nr="1"/>
+            </transfer>
+          </taint>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setPreferredScrollableViewportSize -->
-      <method access="public" name="setPreferredScrollableViewportSize" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRootVisible -->
+      <method access="public" name="setRootVisible">
         <signature>
           <arg nr="1">
-            <object>java.awt.Dimension</object>
+            <boolean/>
           </arg>
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRowHeight -->
@@ -2309,35 +2236,8 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRowHeight -->
-      <method access="public" name="setRowHeight" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-          <arg nr="2">
-            <int/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRowMargin -->
-      <method access="public" name="setRowMargin" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRowSelectionAllowed -->
-      <method access="public" name="setRowSelectionAllowed" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setScrollsOnExpand -->
+      <method access="public" name="setScrollsOnExpand" valid="no">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -2348,61 +2248,13 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRowSelectionInterval -->
-      <method access="public" name="setRowSelectionInterval" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSelectionInterval -->
+      <method access="public" name="setSelectionInterval" valid="no">
         <signature>
           <arg nr="1">
             <int/>
           </arg>
           <arg nr="2">
-            <int/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setRowSorter -->
-      <method access="public" name="setRowSorter" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.RowSorter</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSelectionBackground -->
-      <method access="public" name="setSelectionBackground" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>java.awt.Color</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSelectionForeground -->
-      <method access="public" name="setSelectionForeground" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>java.awt.Color</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSelectionMode -->
-      <method access="public" name="setSelectionMode" valid="no">
-        <signature>
-          <arg nr="1">
             <int/>
           </arg>
         </signature>
@@ -2415,7 +2267,7 @@
       <method access="public" name="setSelectionModel" valid="no">
         <signature>
           <arg nr="1">
-            <object>javax.swing.ListSelectionModel</object>
+            <object>javax.swing.tree.TreeSelectionModel</object>
           </arg>
         </signature>
         <exceptions/>
@@ -2423,8 +2275,65 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setShowGrid -->
-      <method access="public" name="setShowGrid" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSelectionPath -->
+      <method access="public" name="setSelectionPath">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSelectionPaths -->
+      <method access="public" name="setSelectionPaths" valid="no">
+        <signature>
+          <arg nr="1">
+            <array>
+              <object>javax.swing.tree.TreePath</object>
+            </array>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSelectionRow -->
+      <method access="public" name="setSelectionRow" valid="no">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSelectionRows -->
+      <method access="public" name="setSelectionRows" valid="no">
+        <signature>
+          <arg nr="1">
+            <array>
+              <int/>
+            </array>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setShowsRootHandles -->
+      <method access="public" name="setShowsRootHandles">
         <signature>
           <arg nr="1">
             <boolean/>
@@ -2432,50 +2341,19 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setShowHorizontalLines -->
-      <method access="public" name="setShowHorizontalLines" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setToggleClickCount -->
+      <method access="public" name="setToggleClickCount" valid="no">
         <signature>
           <arg nr="1">
-            <boolean/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setShowVerticalLines -->
-      <method access="public" name="setShowVerticalLines" valid="no">
-        <signature>
-          <arg nr="1">
-            <boolean/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setSurrendersFocusOnKeystroke -->
-      <method access="public" name="setSurrendersFocusOnKeystroke" valid="no">
-        <signature>
-          <arg nr="1">
-            <boolean/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setTableHeader -->
-      <method access="public" name="setTableHeader" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.table.JTableHeader</object>
+            <int/>
           </arg>
         </signature>
         <exceptions/>
@@ -2484,10 +2362,27 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setUI -->
-      <method access="public" name="setUI" valid="no">
+      <method access="public" name="setUI">
         <signature>
           <arg nr="1">
-            <object>javax.swing.plaf.TableUI</object>
+            <object>javax.swing.plaf.TreeUI</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setVisibleRowCount -->
+      <method access="public" name="setVisibleRowCount" valid="no">
+        <signature>
+          <arg nr="1">
+            <int/>
           </arg>
         </signature>
         <exceptions/>
@@ -2495,86 +2390,32 @@
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setUpdateSelectionOnSort -->
-      <method access="public" name="setUpdateSelectionOnSort" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ startEditingAtPath -->
+      <method access="public" name="startEditingAtPath" valid="no">
         <signature>
           <arg nr="1">
+            <object>javax.swing.tree.TreePath</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ stopEditing -->
+      <method access="public" name="stopEditing" valid="no">
+        <signature>
+          <return>
             <boolean/>
-          </arg>
+          </return>
         </signature>
         <exceptions/>
         <summary>
           <taint/>
         </summary>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ setValueAt -->
-      <method access="public" name="setValueAt" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>java.lang.Object</object>
-          </arg>
-          <arg nr="2">
-            <int/>
-          </arg>
-          <arg nr="3">
-            <int/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ sizeColumnsToFit -->
-      <method access="public" name="sizeColumnsToFit" valid="no">
-        <signature>
-          <arg nr="1">
-            <boolean/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ sizeColumnsToFit -->
-      <method access="public" name="sizeColumnsToFit" valid="no">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ sorterChanged -->
-      <method access="public" name="sorterChanged" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.event.RowSorterEvent</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ tableChanged -->
-      <method access="public" name="tableChanged" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.event.TableModelEvent</object>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ unconfigureEnclosingScrollPane -->
-      <method access="protected" name="unconfigureEnclosingScrollPane" valid="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ treeDidChange -->
+      <method access="public" name="treeDidChange" valid="no">
         <signature/>
         <exceptions/>
         <summary>
@@ -2582,20 +2423,8 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ updateUI -->
-      <method access="public" name="updateUI" valid="no">
+      <method access="public" name="updateUI">
         <signature/>
-        <exceptions/>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ valueChanged -->
-      <method access="public" name="valueChanged" valid="no">
-        <signature>
-          <arg nr="1">
-            <object>javax.swing.event.ListSelectionEvent</object>
-          </arg>
-        </signature>
         <exceptions/>
         <summary>
           <taint/>
@@ -2789,13 +2618,9 @@
           </arg>
         </signature>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addPropertyChangeListener -->
-      <method from="java.awt.Container" inherited="yes" name="addPropertyChangeListener">
-        <signature>
-          <arg nr="1">
-            <object>java.beans.PropertyChangeListener</object>
-          </arg>
-        </signature>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addNotify -->
+      <method from="javax.swing.JComponent" inherited="yes" name="addNotify">
+        <signature/>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addPropertyChangeListener -->
       <method from="java.awt.Container" inherited="yes" name="addPropertyChangeListener">
@@ -2804,6 +2629,14 @@
             <object>java.lang.String</object>
           </arg>
           <arg nr="2">
+            <object>java.beans.PropertyChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addPropertyChangeListener -->
+      <method from="java.awt.Container" inherited="yes" name="addPropertyChangeListener">
+        <signature>
+          <arg nr="1">
             <object>java.beans.PropertyChangeListener</object>
           </arg>
         </signature>
@@ -3032,6 +2865,10 @@
           </arg>
         </signature>
       </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) doLayout -->
+      <method from="java.awt.Container" inherited="yes" name="doLayout">
+        <signature/>
+      </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) enable -->
       <method from="java.awt.Component" inherited="yes" name="enable">
         <signature>
@@ -3191,10 +3028,10 @@
             <object>java.lang.String</object>
           </arg>
           <arg nr="2">
-            <boolean/>
+            <int/>
           </arg>
           <arg nr="3">
-            <boolean/>
+            <int/>
           </arg>
         </signature>
       </method>
@@ -3205,10 +3042,10 @@
             <object>java.lang.String</object>
           </arg>
           <arg nr="2">
-            <int/>
+            <boolean/>
           </arg>
           <arg nr="3">
-            <int/>
+            <boolean/>
           </arg>
         </signature>
       </method>
@@ -3776,19 +3613,19 @@
         </signature>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getLocation -->
-      <method from="javax.swing.JComponent" inherited="yes" name="getLocation">
+      <method from="java.awt.Component" inherited="yes" name="getLocation">
         <signature>
-          <arg nr="1">
-            <object>java.awt.Point</object>
-          </arg>
           <return>
             <object>java.awt.Point</object>
           </return>
         </signature>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getLocation -->
-      <method from="java.awt.Component" inherited="yes" name="getLocation">
+      <method from="javax.swing.JComponent" inherited="yes" name="getLocation">
         <signature>
+          <arg nr="1">
+            <object>java.awt.Point</object>
+          </arg>
           <return>
             <object>java.awt.Point</object>
           </return>
@@ -4918,6 +4755,26 @@
           </arg>
         </signature>
       </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) processKeyBinding -->
+      <method from="javax.swing.JComponent" inherited="yes" name="processKeyBinding">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.KeyStroke</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.event.KeyEvent</object>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <boolean/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) processKeyEvent -->
       <method from="javax.swing.JComponent" inherited="yes" name="processKeyEvent">
         <signature>
@@ -5108,13 +4965,9 @@
           </arg>
         </signature>
       </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removePropertyChangeListener -->
-      <method from="java.awt.Component" inherited="yes" name="removePropertyChangeListener">
-        <signature>
-          <arg nr="1">
-            <object>java.beans.PropertyChangeListener</object>
-          </arg>
-        </signature>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeNotify -->
+      <method from="javax.swing.JComponent" inherited="yes" name="removeNotify">
+        <signature/>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removePropertyChangeListener -->
       <method from="java.awt.Component" inherited="yes" name="removePropertyChangeListener">
@@ -5123,6 +4976,14 @@
             <object>java.lang.String</object>
           </arg>
           <arg nr="2">
+            <object>java.beans.PropertyChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removePropertyChangeListener -->
+      <method from="java.awt.Component" inherited="yes" name="removePropertyChangeListener">
+        <signature>
+          <arg nr="1">
             <object>java.beans.PropertyChangeListener</object>
           </arg>
         </signature>
@@ -5147,6 +5008,14 @@
       <method from="javax.swing.JComponent" inherited="yes" name="repaint">
         <signature>
           <arg nr="1">
+            <object>java.awt.Rectangle</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) repaint -->
+      <method from="javax.swing.JComponent" inherited="yes" name="repaint">
+        <signature>
+          <arg nr="1">
             <long/>
           </arg>
           <arg nr="2">
@@ -5160,14 +5029,6 @@
           </arg>
           <arg nr="5">
             <int/>
-          </arg>
-        </signature>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) repaint -->
-      <method from="javax.swing.JComponent" inherited="yes" name="repaint">
-        <signature>
-          <arg nr="1">
-            <object>java.awt.Rectangle</object>
           </arg>
         </signature>
       </method>

@@ -1,0 +1,818 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-05-24 21:53:06"/>
+  <class name="FormView" package="javax.swing.text.html">
+    <superclass>javax.swing.text.ComponentView</superclass>
+    <interfaces>
+      <implements>java.awt.event.ActionListener</implements>
+      <implements>javax.swing.SwingConstants</implements>
+      <implements>java.util.EventListener</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:SUBMIT -->
+      <field access="public" final="yes" name="SUBMIT" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:RESET -->
+      <field access="public" final="yes" name="RESET" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:Y_AXIS -->
+      <field from="javax.swing.text.View" inherited="yes" name="Y_AXIS">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:X_AXIS -->
+      <field from="javax.swing.text.View" inherited="yes" name="X_AXIS">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:ForcedBreakWeight -->
+      <field from="javax.swing.text.View" inherited="yes" name="ForcedBreakWeight">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:ExcellentBreakWeight -->
+      <field from="javax.swing.text.View" inherited="yes" name="ExcellentBreakWeight">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:GoodBreakWeight -->
+      <field from="javax.swing.text.View" inherited="yes" name="GoodBreakWeight">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:BadBreakWeight -->
+      <field from="javax.swing.text.View" inherited="yes" name="BadBreakWeight">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (javax.swing.text.Element) -->
+      <constructor access="public">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.Element</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ actionPerformed -->
+      <method access="public" name="actionPerformed">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.ActionEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ createComponent -->
+      <method access="protected" name="createComponent">
+        <signature>
+          <return>
+            <object>java.awt.Component</object>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMaximumSpan -->
+      <method access="public" name="getMaximumSpan" valid="no">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <float/>
+          </return>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ imageSubmit -->
+      <method access="protected" name="imageSubmit" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ submitData -->
+      <method access="protected" name="submitData" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) append -->
+      <method from="javax.swing.text.View" inherited="yes" name="append">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.View</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) breakView -->
+      <method from="javax.swing.text.View" inherited="yes" name="breakView">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <float/>
+          </arg>
+          <arg nr="4">
+            <float/>
+          </arg>
+          <return>
+            <object>javax.swing.text.View</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) changedUpdate -->
+      <method from="javax.swing.text.View" inherited="yes" name="changedUpdate">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.DocumentEvent</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.Shape</object>
+          </arg>
+          <arg nr="3">
+            <object>javax.swing.text.ViewFactory</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) createFragment -->
+      <method from="javax.swing.text.View" inherited="yes" name="createFragment">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <object>javax.swing.text.View</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) forwardUpdate -->
+      <method from="javax.swing.text.View" inherited="yes" name="forwardUpdate">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.DocumentEvent$ElementChange</object>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.event.DocumentEvent</object>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.Shape</object>
+          </arg>
+          <arg nr="4">
+            <object>javax.swing.text.ViewFactory</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) forwardUpdateToView -->
+      <method from="javax.swing.text.View" inherited="yes" name="forwardUpdateToView">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.View</object>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.event.DocumentEvent</object>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.Shape</object>
+          </arg>
+          <arg nr="4">
+            <object>javax.swing.text.ViewFactory</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAlignment -->
+      <method from="javax.swing.text.ComponentView" inherited="yes" name="getAlignment">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <float/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAttributes -->
+      <method from="javax.swing.text.View" inherited="yes" name="getAttributes">
+        <signature>
+          <return>
+            <object>javax.swing.text.AttributeSet</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getBreakWeight -->
+      <method from="javax.swing.text.View" inherited="yes" name="getBreakWeight">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <float/>
+          </arg>
+          <arg nr="3">
+            <float/>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getChildAllocation -->
+      <method from="javax.swing.text.View" inherited="yes" name="getChildAllocation">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.Shape</object>
+          </arg>
+          <return>
+            <object>java.awt.Shape</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getComponent -->
+      <method from="javax.swing.text.ComponentView" inherited="yes" name="getComponent">
+        <signature>
+          <return>
+            <object>java.awt.Component</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getContainer -->
+      <method from="javax.swing.text.View" inherited="yes" name="getContainer">
+        <signature>
+          <return>
+            <object>java.awt.Container</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDocument -->
+      <method from="javax.swing.text.View" inherited="yes" name="getDocument">
+        <signature>
+          <return>
+            <object>javax.swing.text.Document</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getElement -->
+      <method from="javax.swing.text.View" inherited="yes" name="getElement">
+        <signature>
+          <return>
+            <object>javax.swing.text.Element</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getEndOffset -->
+      <method from="javax.swing.text.View" inherited="yes" name="getEndOffset">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getGraphics -->
+      <method from="javax.swing.text.View" inherited="yes" name="getGraphics">
+        <signature>
+          <return>
+            <object>java.awt.Graphics</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMinimumSpan -->
+      <method from="javax.swing.text.ComponentView" inherited="yes" name="getMinimumSpan">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <float/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getNextVisualPositionFrom -->
+      <method from="javax.swing.text.View" inherited="yes" name="getNextVisualPositionFrom">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.text.Position$Bias</object>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.Shape</object>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+          <arg nr="5">
+            <array>
+              <object>javax.swing.text.Position$Bias</object>
+            </array>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getParent -->
+      <method from="javax.swing.text.View" inherited="yes" name="getParent">
+        <signature>
+          <return>
+            <object>javax.swing.text.View</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPreferredSpan -->
+      <method from="javax.swing.text.ComponentView" inherited="yes" name="getPreferredSpan">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <float/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getResizeWeight -->
+      <method from="javax.swing.text.View" inherited="yes" name="getResizeWeight">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getStartOffset -->
+      <method from="javax.swing.text.View" inherited="yes" name="getStartOffset">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getToolTipText -->
+      <method from="javax.swing.text.View" inherited="yes" name="getToolTipText">
+        <signature>
+          <arg nr="1">
+            <float/>
+          </arg>
+          <arg nr="2">
+            <float/>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.Shape</object>
+          </arg>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getView -->
+      <method from="javax.swing.text.View" inherited="yes" name="getView">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <return>
+            <object>javax.swing.text.View</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getViewCount -->
+      <method from="javax.swing.text.View" inherited="yes" name="getViewCount">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getViewFactory -->
+      <method from="javax.swing.text.View" inherited="yes" name="getViewFactory">
+        <signature>
+          <return>
+            <object>javax.swing.text.ViewFactory</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getViewIndex -->
+      <method from="javax.swing.text.View" inherited="yes" name="getViewIndex">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.text.Position$Bias</object>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getViewIndex -->
+      <method from="javax.swing.text.View" inherited="yes" name="getViewIndex">
+        <signature>
+          <arg nr="1">
+            <float/>
+          </arg>
+          <arg nr="2">
+            <float/>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.Shape</object>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) insert -->
+      <method from="javax.swing.text.View" inherited="yes" name="insert">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.text.View</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) insertUpdate -->
+      <method from="javax.swing.text.View" inherited="yes" name="insertUpdate">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.DocumentEvent</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.Shape</object>
+          </arg>
+          <arg nr="3">
+            <object>javax.swing.text.ViewFactory</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isVisible -->
+      <method from="javax.swing.text.View" inherited="yes" name="isVisible">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) modelToView -->
+      <method from="javax.swing.text.View" inherited="yes" name="modelToView">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.Shape</object>
+          </arg>
+          <return>
+            <object>java.awt.Shape</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) modelToView -->
+      <method from="javax.swing.text.View" inherited="yes" name="modelToView">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.text.Position$Bias</object>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <object>javax.swing.text.Position$Bias</object>
+          </arg>
+          <arg nr="5">
+            <object>java.awt.Shape</object>
+          </arg>
+          <return>
+            <object>java.awt.Shape</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) modelToView -->
+      <method from="javax.swing.text.ComponentView" inherited="yes" name="modelToView">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.Shape</object>
+          </arg>
+          <arg nr="3">
+            <object>javax.swing.text.Position$Bias</object>
+          </arg>
+          <return>
+            <object>java.awt.Shape</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) paint -->
+      <method from="javax.swing.text.ComponentView" inherited="yes" name="paint">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Graphics</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.Shape</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) preferenceChanged -->
+      <method from="javax.swing.text.View" inherited="yes" name="preferenceChanged">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.View</object>
+          </arg>
+          <arg nr="2">
+            <boolean/>
+          </arg>
+          <arg nr="3">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) remove -->
+      <method from="javax.swing.text.View" inherited="yes" name="remove">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeAll -->
+      <method from="javax.swing.text.View" inherited="yes" name="removeAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeUpdate -->
+      <method from="javax.swing.text.View" inherited="yes" name="removeUpdate">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.DocumentEvent</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.Shape</object>
+          </arg>
+          <arg nr="3">
+            <object>javax.swing.text.ViewFactory</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) replace -->
+      <method from="javax.swing.text.View" inherited="yes" name="replace">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <array>
+              <object>javax.swing.text.View</object>
+            </array>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setParent -->
+      <method from="javax.swing.text.ComponentView" inherited="yes" name="setParent">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.View</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setSize -->
+      <method from="javax.swing.text.View" inherited="yes" name="setSize">
+        <signature>
+          <arg nr="1">
+            <float/>
+          </arg>
+          <arg nr="2">
+            <float/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.lang.Object" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) updateChildren -->
+      <method from="javax.swing.text.View" inherited="yes" name="updateChildren">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.DocumentEvent$ElementChange</object>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.event.DocumentEvent</object>
+          </arg>
+          <arg nr="3">
+            <object>javax.swing.text.ViewFactory</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) updateLayout -->
+      <method from="javax.swing.text.View" inherited="yes" name="updateLayout">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.DocumentEvent$ElementChange</object>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.event.DocumentEvent</object>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.Shape</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) viewToModel -->
+      <method from="javax.swing.text.View" inherited="yes" name="viewToModel">
+        <signature>
+          <arg nr="1">
+            <float/>
+          </arg>
+          <arg nr="2">
+            <float/>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.Shape</object>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) viewToModel -->
+      <method from="javax.swing.text.ComponentView" inherited="yes" name="viewToModel">
+        <signature>
+          <arg nr="1">
+            <float/>
+          </arg>
+          <arg nr="2">
+            <float/>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.Shape</object>
+          </arg>
+          <arg nr="4">
+            <array>
+              <object>javax.swing.text.Position$Bias</object>
+            </array>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

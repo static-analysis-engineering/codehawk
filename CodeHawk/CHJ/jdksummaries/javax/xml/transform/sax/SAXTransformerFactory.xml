@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-05-25 11:41:32"/>
+  <class abstract="yes" name="SAXTransformerFactory" package="javax.xml.transform.sax">
+    <superclass>javax.xml.transform.TransformerFactory</superclass>
+    <interfaces/>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:FEATURE -->
+      <field access="public" final="yes" name="FEATURE" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="http://javax.xml.transform.sax.SAXTransformerFactory/feature"/>
+        </value>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:FEATURE_XMLFILTER -->
+      <field access="public" final="yes" name="FEATURE_XMLFILTER" not-null="yes" static="yes">
+        <signature>
+          <object>java.lang.String</object>
+        </signature>
+        <value>
+          <string value="http://javax.xml.transform.sax.SAXTransformerFactory/feature/xmlfilter"/>
+        </value>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ () -->
+      <constructor access="protected">
+        <signature/>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </constructor>
+    </constructors>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newTemplatesHandler -->
+      <method abstract="yes" access="public" name="newTemplatesHandler" valid="no">
+        <signature>
+          <return>
+            <object>javax.xml.transform.sax.TemplatesHandler</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>javax.xml.transform.TransformerConfigurationException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newTransformerHandler -->
+      <method abstract="yes" access="public" name="newTransformerHandler" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.xml.transform.Source</object>
+          </arg>
+          <return>
+            <object>javax.xml.transform.sax.TransformerHandler</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>javax.xml.transform.TransformerConfigurationException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newTransformerHandler -->
+      <method abstract="yes" access="public" name="newTransformerHandler">
+        <signature>
+          <arg nr="1">
+            <object>javax.xml.transform.Templates</object>
+          </arg>
+          <return>
+            <object>javax.xml.transform.sax.TransformerHandler</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>javax.xml.transform.TransformerConfigurationException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newTransformerHandler -->
+      <method abstract="yes" access="public" name="newTransformerHandler">
+        <signature>
+          <return>
+            <object>javax.xml.transform.sax.TransformerHandler</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>javax.xml.transform.TransformerConfigurationException</throws>
+        </exceptions>
+        <summary>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <not-null/>
+              </math>
+            </post>
+          </postconditions>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newXMLFilter -->
+      <method abstract="yes" access="public" name="newXMLFilter" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.xml.transform.Source</object>
+          </arg>
+          <return>
+            <object>org.xml.sax.XMLFilter</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>javax.xml.transform.TransformerConfigurationException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newXMLFilter -->
+      <method abstract="yes" access="public" name="newXMLFilter" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.xml.transform.Templates</object>
+          </arg>
+          <return>
+            <object>org.xml.sax.XMLFilter</object>
+          </return>
+        </signature>
+        <exceptions>
+          <throws>javax.xml.transform.TransformerConfigurationException</throws>
+        </exceptions>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.lang.Object" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="java.lang.Object" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAssociatedStylesheet -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="getAssociatedStylesheet">
+        <signature>
+          <arg nr="1">
+            <object>javax.xml.transform.Source</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="3">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="4">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>javax.xml.transform.Source</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getAttribute -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="getAttribute">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getErrorListener -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="getErrorListener">
+        <signature>
+          <return>
+            <object>javax.xml.transform.ErrorListener</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFeature -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="getFeature">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getURIResolver -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="getURIResolver">
+        <signature>
+          <return>
+            <object>javax.xml.transform.URIResolver</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.lang.Object" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) newInstance -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="newInstance">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.ClassLoader</object>
+          </arg>
+          <return>
+            <object>javax.xml.transform.TransformerFactory</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) newInstance -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="newInstance">
+        <signature>
+          <return>
+            <object>javax.xml.transform.TransformerFactory</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) newTemplates -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="newTemplates">
+        <signature>
+          <arg nr="1">
+            <object>javax.xml.transform.Source</object>
+          </arg>
+          <return>
+            <object>javax.xml.transform.Templates</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) newTransformer -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="newTransformer">
+        <signature>
+          <return>
+            <object>javax.xml.transform.Transformer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) newTransformer -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="newTransformer">
+        <signature>
+          <arg nr="1">
+            <object>javax.xml.transform.Source</object>
+          </arg>
+          <return>
+            <object>javax.xml.transform.Transformer</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setAttribute -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="setAttribute">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <object>java.lang.Object</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setErrorListener -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="setErrorListener">
+        <signature>
+          <arg nr="1">
+            <object>javax.xml.transform.ErrorListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFeature -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="setFeature">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.String</object>
+          </arg>
+          <arg nr="2">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setURIResolver -->
+      <method from="javax.xml.transform.TransformerFactory" inherited="yes" name="setURIResolver">
+        <signature>
+          <arg nr="1">
+            <object>javax.xml.transform.URIResolver</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="java.lang.Object" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>

@@ -1,0 +1,1275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-java-analyzer>
+  <header info="class" time="2020-05-25 00:04:23"/>
+  <class name="JTextComponent$ComposedTextCaret" package="javax.swing.text">
+    <superclass>javax.swing.text.DefaultCaret</superclass>
+    <interfaces>
+      <implements>java.io.Serializable</implements>
+      <implements>javax.swing.text.Caret</implements>
+      <implements>java.awt.event.FocusListener</implements>
+      <implements>java.awt.event.MouseListener</implements>
+      <implements>java.awt.event.MouseMotionListener</implements>
+      <implements>java.awt.Shape</implements>
+      <implements>java.lang.Cloneable</implements>
+      <implements>java.util.EventListener</implements>
+    </interfaces>
+    <!-- =============================== FIELDS ===============================  -->
+    <fields>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:OUT_BOTTOM -->
+      <field from="java.awt.geom.Rectangle2D" inherited="yes" name="OUT_BOTTOM">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:OUT_RIGHT -->
+      <field from="java.awt.geom.Rectangle2D" inherited="yes" name="OUT_RIGHT">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:OUT_TOP -->
+      <field from="java.awt.geom.Rectangle2D" inherited="yes" name="OUT_TOP">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:OUT_LEFT -->
+      <field from="java.awt.geom.Rectangle2D" inherited="yes" name="OUT_LEFT">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:ALWAYS_UPDATE -->
+      <field from="javax.swing.text.DefaultCaret" inherited="yes" name="ALWAYS_UPDATE">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:NEVER_UPDATE -->
+      <field from="javax.swing.text.DefaultCaret" inherited="yes" name="NEVER_UPDATE">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:UPDATE_WHEN_ON_EDT -->
+      <field from="javax.swing.text.DefaultCaret" inherited="yes" name="UPDATE_WHEN_ON_EDT">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:width -->
+      <field from="java.awt.Rectangle" inherited="yes" name="width">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:height -->
+      <field from="java.awt.Rectangle" inherited="yes" name="height">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:y -->
+      <field from="java.awt.Rectangle" inherited="yes" name="y">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) field:x -->
+      <field from="java.awt.Rectangle" inherited="yes" name="x">
+        <signature>
+          <int/>
+        </signature>
+      </field>
+    </fields>
+    <!-- ============================ CONSTRUCTORS ============================  -->
+    <constructors/>
+    <!-- ============================== METHODS ==============================  -->
+    <methods>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ install -->
+      <method access="public" name="install" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.JTextComponent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ paint -->
+      <method access="public" name="paint" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Graphics</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ positionCaret -->
+      <method access="protected" name="positionCaret" valid="no">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+        <exceptions/>
+        <summary>
+          <taint/>
+        </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) add -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="add">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) add -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="add">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) add -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="add">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) add -->
+      <method from="java.awt.Rectangle" inherited="yes" name="add">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Rectangle</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) add -->
+      <method from="java.awt.Rectangle" inherited="yes" name="add">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Point</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) add -->
+      <method from="java.awt.Rectangle" inherited="yes" name="add">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) addChangeListener -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="addChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.ChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) adjustVisibility -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="adjustVisibility">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Rectangle</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="clone">
+        <signature>
+          <return>
+            <object>java.lang.Object</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.Rectangle" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Point</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.Rectangle" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.Rectangle" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) contains -->
+      <method from="java.awt.Rectangle" inherited="yes" name="contains">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Rectangle</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) createIntersection -->
+      <method from="java.awt.Rectangle" inherited="yes" name="createIntersection">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <return>
+            <object>java.awt.geom.Rectangle2D</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) createUnion -->
+      <method from="java.awt.Rectangle" inherited="yes" name="createUnion">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <return>
+            <object>java.awt.geom.Rectangle2D</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) damage -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="damage">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Rectangle</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) deinstall -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="deinstall">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.text.JTextComponent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="equals">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Object</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) finalize -->
+      <method from="java.lang.Object" inherited="yes" name="finalize">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) fireStateChanged -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="fireStateChanged">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) focusGained -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="focusGained">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.FocusEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) focusLost -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="focusLost">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.FocusEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getBlinkRate -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="getBlinkRate">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getBounds -->
+      <method from="java.awt.Rectangle" inherited="yes" name="getBounds">
+        <signature>
+          <return>
+            <object>java.awt.Rectangle</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getBounds2D -->
+      <method from="java.awt.Rectangle" inherited="yes" name="getBounds2D">
+        <signature>
+          <return>
+            <object>java.awt.geom.Rectangle2D</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getCenterX -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getCenterX">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getCenterY -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getCenterY">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getChangeListeners -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="getChangeListeners">
+        <signature>
+          <return>
+            <array>
+              <object>javax.swing.event.ChangeListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getClass -->
+      <method from="java.lang.Object" inherited="yes" name="getClass">
+        <signature>
+          <return>
+            <object>java.lang.Class</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getComponent -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="getComponent">
+        <signature>
+          <return>
+            <object>javax.swing.text.JTextComponent</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDot -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="getDot">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getDotBias -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="getDotBias">
+        <signature>
+          <return>
+            <object>javax.swing.text.Position$Bias</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getFrame -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getFrame">
+        <signature>
+          <return>
+            <object>java.awt.geom.Rectangle2D</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getHeight -->
+      <method from="java.awt.Rectangle" inherited="yes" name="getHeight">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getListeners -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="getListeners">
+        <signature>
+          <arg nr="1">
+            <object>java.lang.Class</object>
+          </arg>
+          <return>
+            <array>
+              <object>java.util.EventListener</object>
+            </array>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getLocation -->
+      <method from="java.awt.Rectangle" inherited="yes" name="getLocation">
+        <signature>
+          <return>
+            <object>java.awt.Point</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMagicCaretPosition -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="getMagicCaretPosition">
+        <signature>
+          <return>
+            <object>java.awt.Point</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMark -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="getMark">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMarkBias -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="getMarkBias">
+        <signature>
+          <return>
+            <object>javax.swing.text.Position$Bias</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMaxX -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getMaxX">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMaxY -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getMaxY">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMinX -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getMinX">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getMinY -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="getMinY">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPathIterator -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="getPathIterator">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.AffineTransform</object>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <return>
+            <object>java.awt.geom.PathIterator</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getPathIterator -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="getPathIterator">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.AffineTransform</object>
+          </arg>
+          <return>
+            <object>java.awt.geom.PathIterator</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getSelectionPainter -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="getSelectionPainter">
+        <signature>
+          <return>
+            <object>javax.swing.text.Highlighter$HighlightPainter</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getSize -->
+      <method from="java.awt.Rectangle" inherited="yes" name="getSize">
+        <signature>
+          <return>
+            <object>java.awt.Dimension</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getUpdatePolicy -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="getUpdatePolicy">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getWidth -->
+      <method from="java.awt.Rectangle" inherited="yes" name="getWidth">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getX -->
+      <method from="java.awt.Rectangle" inherited="yes" name="getX">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) getY -->
+      <method from="java.awt.Rectangle" inherited="yes" name="getY">
+        <signature>
+          <return>
+            <double/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) grow -->
+      <method from="java.awt.Rectangle" inherited="yes" name="grow">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) hashCode -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="hashCode">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) inside -->
+      <method from="java.awt.Rectangle" inherited="yes" name="inside">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) intersect -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="intersect">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) intersection -->
+      <method from="java.awt.Rectangle" inherited="yes" name="intersection">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Rectangle</object>
+          </arg>
+          <return>
+            <object>java.awt.Rectangle</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) intersects -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="intersects">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) intersects -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="intersects">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) intersects -->
+      <method from="java.awt.Rectangle" inherited="yes" name="intersects">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Rectangle</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) intersectsLine -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="intersectsLine">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Line2D</object>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) intersectsLine -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="intersectsLine">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isActive -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="isActive">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isEmpty -->
+      <method from="java.awt.Rectangle" inherited="yes" name="isEmpty">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isSelectionVisible -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="isSelectionVisible">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) isVisible -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="isVisible">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mouseClicked -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="mouseClicked">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mouseDragged -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="mouseDragged">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mouseEntered -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="mouseEntered">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mouseExited -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="mouseExited">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mouseMoved -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="mouseMoved">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mousePressed -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="mousePressed">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mouseReleased -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="mouseReleased">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) move -->
+      <method from="java.awt.Rectangle" inherited="yes" name="move">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) moveCaret -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="moveCaret">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.event.MouseEvent</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) moveDot -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="moveDot">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) moveDot -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="moveDot">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.text.Position$Bias</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
+      <method from="java.lang.Object" inherited="yes" name="notify">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notifyAll -->
+      <method from="java.lang.Object" inherited="yes" name="notifyAll">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) outcode -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="outcode">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) outcode -->
+      <method from="java.awt.Rectangle" inherited="yes" name="outcode">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) removeChangeListener -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="removeChangeListener">
+        <signature>
+          <arg nr="1">
+            <object>javax.swing.event.ChangeListener</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) repaint -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="repaint">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) reshape -->
+      <method from="java.awt.Rectangle" inherited="yes" name="reshape">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) resize -->
+      <method from="java.awt.Rectangle" inherited="yes" name="resize">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setBlinkRate -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="setBlinkRate">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setBounds -->
+      <method from="java.awt.Rectangle" inherited="yes" name="setBounds">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Rectangle</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setBounds -->
+      <method from="java.awt.Rectangle" inherited="yes" name="setBounds">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+          <arg nr="3">
+            <int/>
+          </arg>
+          <arg nr="4">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setDot -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="setDot">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setDot -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="setDot">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <object>javax.swing.text.Position$Bias</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrame -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="setFrame">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrame -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="setFrame">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.geom.Dimension2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrame -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="setFrame">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrameFromCenter -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="setFrameFromCenter">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrameFromCenter -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="setFrameFromCenter">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrameFromDiagonal -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="setFrameFromDiagonal">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.geom.Point2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setFrameFromDiagonal -->
+      <method from="java.awt.geom.RectangularShape" inherited="yes" name="setFrameFromDiagonal">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setLocation -->
+      <method from="java.awt.Rectangle" inherited="yes" name="setLocation">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Point</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setLocation -->
+      <method from="java.awt.Rectangle" inherited="yes" name="setLocation">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setMagicCaretPosition -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="setMagicCaretPosition">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Point</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setRect -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="setRect">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setRect -->
+      <method from="java.awt.Rectangle" inherited="yes" name="setRect">
+        <signature>
+          <arg nr="1">
+            <double/>
+          </arg>
+          <arg nr="2">
+            <double/>
+          </arg>
+          <arg nr="3">
+            <double/>
+          </arg>
+          <arg nr="4">
+            <double/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setSelectionVisible -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="setSelectionVisible">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setSize -->
+      <method from="java.awt.Rectangle" inherited="yes" name="setSize">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Dimension</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setSize -->
+      <method from="java.awt.Rectangle" inherited="yes" name="setSize">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setUpdatePolicy -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="setUpdatePolicy">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) setVisible -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="setVisible">
+        <signature>
+          <arg nr="1">
+            <boolean/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
+      <method from="javax.swing.text.DefaultCaret" inherited="yes" name="toString">
+        <signature>
+          <return>
+            <object>java.lang.String</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) translate -->
+      <method from="java.awt.Rectangle" inherited="yes" name="translate">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) union -->
+      <method from="java.awt.geom.Rectangle2D" inherited="yes" name="union">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <arg nr="2">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+          <arg nr="3">
+            <object>java.awt.geom.Rectangle2D</object>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) union -->
+      <method from="java.awt.Rectangle" inherited="yes" name="union">
+        <signature>
+          <arg nr="1">
+            <object>java.awt.Rectangle</object>
+          </arg>
+          <return>
+            <object>java.awt.Rectangle</object>
+          </return>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature/>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+          <arg nr="2">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) wait -->
+      <method from="java.lang.Object" inherited="yes" name="wait">
+        <signature>
+          <arg nr="1">
+            <long/>
+          </arg>
+        </signature>
+      </method>
+    </methods>
+  </class>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-java-analyzer>
