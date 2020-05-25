@@ -54,6 +54,9 @@ open BCHSystemSettings
 open BCHUserProvidedDirections
 open BCHXmlUtil
 
+(* bchlibelf *)
+open BCHELFHeader
+
 (* bchlibmips32 *)
 open BCHMIPSTypes
 
@@ -123,6 +126,8 @@ object (self:'a)
     match kind with
     | MIPSImmediate imm -> big_int_constant_expr imm#to_big_int
     | MIPSReg MRzero -> zero_constant_expr
+    | MIPSAbsolute a when elf_header#is_program_address a ->
+       num_constant_expr (elf_header#get_program_value a)#to_numerical
     | _ -> XVar (self#to_variable floc)
 
   method to_lhs (floc:floc_int) =

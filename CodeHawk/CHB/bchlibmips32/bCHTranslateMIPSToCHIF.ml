@@ -940,6 +940,12 @@ object (self)
     let freeze_external_memory_values (v:variable_t) =
       let initVar = env#mk_initial_memory_value v in
       ASSERT (EQ (v, initVar)) in
+    let t9Assign =
+      let t9Var = env#mk_mips_register_variable MRt9 in
+      let reqN () = env#mk_num_temp in
+      let reqC = env#request_num_constant in
+      let (rhsCmds,rhs) = xpr_to_numexpr reqN reqC (num_constant_expr f#get_address#to_numerical)  in
+      rhsCmds @ [ ASSIGN_NUM (t9Var, rhs) ] in
     let rAsserts = List.map freeze_initial_register_value mips_regular_registers in
     let externalMemVars = env#get_external_memory_variables in
     let externalMemVars = List.filter env#has_constant_offset externalMemVars in
@@ -958,7 +964,7 @@ object (self)
 			     op_args = [ (base#getName#getBaseName, base, READ) ] } ))
 	finfo#get_base_pointers in
     let constantAssigns = env#end_transaction in
-    let cmds = constantAssigns @ rAsserts @ mAsserts @ [ initializeScalar ] @ 
+    let cmds = constantAssigns @ t9Assign @ rAsserts @ mAsserts @ [ initializeScalar ] @ 
       initializeBasePointerOperations  in
     TRANSACTION ( new symbol_t "entry", LF.mkCode cmds, None)                       
 

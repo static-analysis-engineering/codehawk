@@ -56,6 +56,9 @@ open BCHLocation
 open BCHPreFileIO
 open BCHSystemInfo
 
+(* bchlibelf *)
+open BCHELFHeader
+
 (* bchlibmips32 *)
 open BCHMIPSAssemblyInstructions
 open BCHMIPSDisassemblyUtils
@@ -127,6 +130,9 @@ object (self)
     let rewrite_expr x:xpr_t =
       let rec expand x =
         match x with
+        | XVar v when floc#env#is_global_variable v
+                      && elf_header#is_program_address (floc#env#get_global_variable_address v) ->
+           num_constant_expr (elf_header#get_program_value (floc#env#get_global_variable_address v))#to_numerical 
         | XVar v when floc#env#is_symbolic_value v ->
            expand (floc#env#get_symbolic_value_expr v)
         | XOp (op,l) -> XOp (op, List.map expand l)
@@ -279,6 +285,7 @@ object (self)
 
       | JumpLinkRegister _ when floc#has_call_target_signature ->
          let args = List.map snd floc#get_mips_call_arguments in
+         let args = List.map rewrite_expr args in
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
          if (List.length  args) > 0 then
            ([ xtag ], (List.map xd#index_xpr args)
