@@ -278,19 +278,25 @@ object (self)
   (* inputs: from dynamic table, program header, type PT_Load (1)
    * - addr: DT_HASH
    * - offset: DT_HASH - ph#get_vaddr
-   * - size: ?
+   * - size: DT_SYMTAB - DT_HASH
    * - link: to be set to .dynsym index
    *)
   method private create_hash_header =
     let sectionname = ".hash" in    
-    if dynamicsegment#has_hash_address then
+    if dynamicsegment#has_hash_address
+       && dynamicsegment#has_symtab_address then
+      let symtabaddr = dynamicsegment#get_symtab_address in
       let vaddr = dynamicsegment#get_hash_address in
       let sh = mk_elf_section_header () in
       let stype = s2d "0x5" in
       let flags = s2d "0x2" in
       let addr =  vaddr in
       let offset = self#get_offset_1 vaddr in
-      let size = s2d "0xac" in
+      let size = try
+          symtabaddr#subtract vaddr
+        with
+        | _ ->
+           assumption_violation  (STR "DT_SYMTAB < DT_HASH") in
       let entsize = s2d "0x4" in
       let addralign = s2d "0x4" in
       let link = s2d "0x5" in
@@ -298,6 +304,8 @@ object (self)
         sh#set_fields ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~link~sectionname () ;
         section_headers <- sh :: section_headers
       end
+    else
+      assumption_violation (STR "DT_HASH or DT_SYMTAB not present")
       
   (* inputs: from dynamic table, program header, type PT_Load (1)
    * - addr: DT_SYMTAB
@@ -498,32 +506,44 @@ object (self)
       assumption_violation (STR "DT_FINI not present")
 
   (* inputs: from program header, type PT_Load (1)
-   * - addr: ?
+   * - addr: DT_FINI + 0x50
    * - offset: addr - ph#get_vaddr
-   * - size: ?
+   * - size: PT_Load(end) - DT_FINI - 0x50
    *)
   method private create_rodata_header =
-    let sectionname = ".rodata" in    
-    if has_user_data sectionname then
-      let userdata = get_user_data sectionname in
-      if userdata#has_addr && userdata#has_size then
-        let vaddr = userdata#get_addr in
-        let sh = mk_elf_section_header () in
-        let stype = s2d "0x1" in
-        let flags = s2d "0x2" in
-        let addr = vaddr in
-        let offset = self#get_offset_1 vaddr in
-        let size = userdata#get_size in
-        let addralign = s2d "0x10" in
-        begin
-          sh#set_fields
-            ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
-          section_headers <- sh :: section_headers
-        end
+    let sectionname = ".rodata" in
+    let (vaddr,size) =
+      if has_user_data sectionname
+         && (let userdata = get_user_data sectionname in
+             userdata#has_addr && userdata#has_size) then
+        let userdata = get_user_data sectionname in
+        (userdata#get_addr,userdata#get_size)
       else
-        assumption_violation (STR "No addr/size information for .rodata")
-    else
-      assumption_violation (STR "No section header info for .rodata")
+        if dynamicsegment#has_fini_address then
+          let finiaddr = dynamicsegment#get_fini_address in
+          let (_,ph,_) = List.hd loadsegments in
+          let phend = ph#get_vaddr#add ph#get_file_size in
+          let vaddr = finiaddr#add (s2d "0x4c") in
+          let size =
+            try
+              (phend#subtract finiaddr)#subtract (s2d "0x50")
+            with
+            | _ ->
+               assumption_violation (STR "PT_Load(end) < finiaddr")  in
+          (vaddr,size)
+        else
+          assumption_violation  (STR "No addr/size information for .rodata")  in
+    let sh = mk_elf_section_header () in
+    let stype = s2d "0x1" in
+    let flags = s2d "0x2" in
+    let addr = vaddr in
+    let offset = self#get_offset_1 vaddr in
+    let addralign = s2d "0x10" in
+    begin
+      sh#set_fields
+        ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+      section_headers <- sh :: section_headers
+    end
 
   (* inputs: from program header, type PT_Load (1)
    * - addr: ph#get_vaddr + ph#get_file_size - 4
@@ -652,15 +672,21 @@ object (self)
    *)
   method private create_data_header =
     let sectionname = ".data" in    
-    if (List.length loadsegments) > 1 then
+    if (List.length loadsegments) > 1
+    && dynamicsegment#has_rld_map_address then
       let (_,ph,_) = List.hd (List.tl loadsegments) in
+      let rldmapaddr = dynamicsegment#get_rld_map_address in
       let vaddr = ph#get_vaddr#add_int 24 in
       let sh = mk_elf_section_header () in
       let stype = s2d "0x1" in
       let flags = s2d "0x2" in
       let addr = vaddr in
       let offset = self#get_offset_2 vaddr in
-      let size = s2d "0x10" in
+      let size = try
+          rldmapaddr#subtract vaddr
+        with
+        | _ ->
+           assumption_violation  (STR "DT_MIPS_RLD_MAP < data header address") in
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
