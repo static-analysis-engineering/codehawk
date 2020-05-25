@@ -856,6 +856,11 @@
 	      </math>
 	    </post>
 	  </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="parse" form="time" type="string">
+	      <throws>java.time.format.DateTimeFormatException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ plus -->

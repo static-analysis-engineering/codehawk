@@ -118,7 +118,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ compareTo -->
-      <method access="public" name="compareTo" valid="no">
+      <method access="public" name="compareTo">
         <signature>
           <arg nr="1">
             <object>java.time.chrono.ChronoLocalDateTime</object>
@@ -129,11 +129,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ compareTo -->
-      <method access="public" bridge="yes" name="compareTo" valid="no">
+      <method access="public" bridge="yes" name="compareTo">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -144,7 +153,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ equals -->
@@ -236,6 +254,26 @@
               <return/>
             </transfer>
           </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>31</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getDayOfWeek -->
@@ -270,6 +308,26 @@
               <return/>
             </transfer>
           </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>366</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getHour -->
@@ -287,6 +345,26 @@
               <return/>
             </transfer>
           </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>23</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getLong -->
@@ -324,6 +402,26 @@
               <return/>
             </transfer>
           </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>59</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getMonth -->
@@ -358,6 +456,26 @@
               <return/>
             </transfer>
           </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>12</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getNano -->
@@ -375,6 +493,26 @@
               <return/>
             </transfer>
           </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>999999999</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSecond -->
@@ -392,6 +530,26 @@
               <return/>
             </transfer>
           </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>59</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getYear -->
@@ -1152,7 +1310,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ parse -->
-      <method access="public" name="parse" static="yes" valid="no">
+      <method access="public" name="parse" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.CharSequence</object>
@@ -1161,13 +1319,35 @@
             <object>java.time.LocalDateTime</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.time.format.DateTimeParseException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="parse" form="time format" type="string">
+	      <throws>java.time.format.DateTimeParseException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ parse -->
-      <method access="public" name="parse" static="yes" valid="no">
+      <method access="public" name="parse" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.CharSequence</object>
@@ -1179,9 +1359,36 @@
             <object>java.time.LocalDateTime</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.time.format.DateTimeParseException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="parse" form="time format" type="string">
+	      <throws>java.time.format.DateTimeParseException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ plus -->
@@ -1444,7 +1651,7 @@
         <summary>
           <taint>
             <transfer>
-              <this field="date"/>
+              <this/>
               <return/>
             </transfer>
           </taint>
@@ -1473,14 +1680,14 @@
         <summary>
           <taint>
             <transfer>
-              <this field="time"/>
+              <this/>
               <return/>
             </transfer>
           </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toString -->
-      <method access="public" name="toString" valid="no">
+      <method access="public" name="toString">
         <signature>
           <return>
             <object>java.lang.String</object>
@@ -1488,7 +1695,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ truncatedTo -->
@@ -1654,7 +1866,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ withHour -->
-      <method access="public" name="withHour" valid="no">
+      <method access="public" name="withHour">
         <signature>
           <arg nr="1">
             <int/>
@@ -1663,13 +1875,51 @@
             <object>java.time.LocalDateTime</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <arg nr="1"/>
+		  <cn>23</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.time.DateTimeException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ withMinute -->
-      <method access="public" name="withMinute" valid="no">
+      <method access="public" name="withMinute">
         <signature>
           <arg nr="1">
             <int/>
@@ -1678,13 +1928,51 @@
             <object>java.time.LocalDateTime</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <arg nr="1"/>
+		  <cn>59</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.time.DateTimeException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ withMonth -->
-      <method access="public" name="withMonth" valid="no">
+      <method access="public" name="withMonth">
         <signature>
           <arg nr="1">
             <int/>
@@ -1693,13 +1981,51 @@
             <object>java.time.LocalDateTime</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <arg nr="1"/>
+		  <cn>12</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.time.DateTimeException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ withNano -->
-      <method access="public" name="withNano" valid="no">
+      <method access="public" name="withNano">
         <signature>
           <arg nr="1">
             <int/>
@@ -1708,13 +2034,51 @@
             <object>java.time.LocalDateTime</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <arg nr="1"/>
+		  <cn>999999999</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.time.DateTimeException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ withSecond -->
-      <method access="public" name="withSecond" valid="no">
+      <method access="public" name="withSecond">
         <signature>
           <arg nr="1">
             <int/>
@@ -1723,9 +2087,47 @@
             <object>java.time.LocalDateTime</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <leq/>
+		  <arg nr="1"/>
+		  <cn>59</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.time.DateTimeException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ withYear -->

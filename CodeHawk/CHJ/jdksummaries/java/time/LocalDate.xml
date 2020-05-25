@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-17 23:37:26"/>
-  <class final="yes" name="LocalDate" package="java.time">
+  <class final="yes" immutable="yes" name="LocalDate" package="java.time">
     <interfaces>
       <implements>java.time.temporal.Temporal</implements>
       <implements>java.time.temporal.TemporalAdjuster</implements>
@@ -985,7 +985,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ parse -->
-      <method access="public" name="parse" static="yes" valid="no">
+      <method access="public" name="parse" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.CharSequence</object>
@@ -994,13 +994,35 @@
             <object>java.time.LocalDate</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.time.format.DateTimeParseException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="parse" form="time format" type="string">
+	      <throws>java.time.format.DateTimeParseException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ parse -->
-      <method access="public" name="parse" static="yes" valid="no">
+      <method access="public" name="parse" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.CharSequence</object>
@@ -1012,9 +1034,36 @@
             <object>java.time.LocalDate</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.time.format.DateTimeParseException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="parse" form="time format" type="string">
+	      <throws>java.time.format.DateTimeParseException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ plus -->

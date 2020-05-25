@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-17 23:37:53"/>
-  <class final="yes" name="DateTimeFormatter" package="java.time.format">
+  <class final="yes" immutable="yes" name="DateTimeFormatter" package="java.time.format">
     <interfaces/>
     <!-- =============================== FIELDS ===============================  -->
     <fields>
@@ -388,7 +388,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ parsedExcessDays -->
-      <method access="public" final="yes" name="parsedExcessDays" static="yes" valid="no">
+      <method access="public" final="yes" name="parsedExcessDays" static="yes">
         <signature>
           <return>
             <object>java.time.temporal.TemporalQuery</object>
@@ -397,10 +397,17 @@
         <exceptions/>
         <summary>
           <taint/>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ parsedLeapSecond -->
-      <method access="public" final="yes" name="parsedLeapSecond" static="yes" valid="no">
+      <method access="public" final="yes" name="parsedLeapSecond" static="yes">
         <signature>
           <return>
             <object>java.time.temporal.TemporalQuery</object>
@@ -409,10 +416,17 @@
         <exceptions/>
         <summary>
           <taint/>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toFormat -->
-      <method access="public" name="toFormat" valid="no">
+      <method access="public" name="toFormat">
         <signature>
           <return>
             <object>java.text.Format</object>
@@ -420,7 +434,19 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toFormat -->
@@ -439,7 +465,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toString -->
-      <method access="public" name="toString" valid="no">
+      <method access="public" name="toString">
         <signature>
           <return>
             <object>java.lang.String</object>
@@ -447,7 +473,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ withChronology -->

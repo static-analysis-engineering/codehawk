@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
   <header info="class" time="2020-03-23 23:42:58"/>
-  <class final="yes" name="Duration" package="java.time">
+  <class final="yes" immutable="yes" name="Duration" package="java.time">
     <interfaces>
       <implements>java.time.temporal.TemporalAmount</implements>
       <implements>java.lang.Comparable</implements>
@@ -21,19 +21,26 @@
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ abs -->
-      <method access="public" name="abs" valid="no">
+      <method access="public" name="abs">
         <signature>
           <return>
             <object>java.time.Duration</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ArithmeticException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ addTo -->
-      <method access="public" name="addTo" valid="no">
+      <method access="public" name="addTo">
         <signature>
           <arg nr="1">
             <object>java.time.temporal.Temporal</object>
@@ -42,13 +49,28 @@
             <object>java.time.temporal.Temporal</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	  <throws>java.time.DateTimeException</throws>
+	  <throws>java.lang.ArithmeticException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ between -->
-      <method access="public" name="between" static="yes" valid="no">
+      <method access="public" name="between" static="yes">
         <signature>
           <arg nr="1">
             <object>java.time.temporal.Temporal</object>
@@ -60,13 +82,36 @@
             <object>java.time.Duration</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
+	  <throws>java.time.DateTimeException</throws>
+	  <throws>java.lang.ArithmeticException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ compareTo -->
-      <method access="public" name="compareTo" valid="no">
+      <method access="public" name="compareTo">
         <signature>
           <arg nr="1">
             <object>java.time.Duration</object>
@@ -77,11 +122,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ compareTo -->
-      <method access="public" bridge="yes" name="compareTo" valid="no">
+      <method access="public" bridge="yes" name="compareTo">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -92,11 +146,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ dividedBy -->
-      <method access="public" name="dividedBy" valid="no">
+      <method access="public" name="dividedBy">
         <signature>
           <arg nr="1">
             <long/>
@@ -105,13 +168,31 @@
             <object>java.time.Duration</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ArithmeticException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ equals -->
-      <method access="public" name="equals" valid="no">
+      <method access="public" name="equals">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -122,11 +203,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ from -->
-      <method access="public" name="from" static="yes" valid="no">
+      <method access="public" name="from" static="yes">
         <signature>
           <arg nr="1">
             <object>java.time.temporal.TemporalAmount</object>
@@ -135,13 +225,28 @@
             <object>java.time.Duration</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ArithmeticException</throws>
+	  <throws>java.time.DateTimeException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ get -->
-      <method access="public" name="get" valid="no">
+      <method access="public" name="get">
         <signature>
           <arg nr="1">
             <object>java.time.temporal.TemporalUnit</object>
@@ -150,13 +255,25 @@
             <long/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.time.DateTimeException</throws>
+	  <throws>java.time.temporal.UnsupportedTemporalTypeException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getNano -->
-      <method access="public" name="getNano" valid="no">
+      <method access="public" name="getNano">
         <signature>
           <return>
             <int/>
@@ -164,11 +281,36 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	    <post>
+	      <math>
+		<apply>
+		  <leq/>
+		  <return/>
+		  <cn>999999999</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getSeconds -->
-      <method access="public" name="getSeconds" valid="no">
+      <method access="public" name="getSeconds">
         <signature>
           <return>
             <long/>
@@ -176,11 +318,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getUnits -->
-      <method access="public" name="getUnits" valid="no">
+      <method access="public" name="getUnits">
         <signature>
           <return>
             <object>java.util.List</object>
@@ -188,11 +335,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hashCode -->
-      <method access="public" name="hashCode" valid="no">
+      <method access="public" name="hashCode">
         <signature>
           <return>
             <int/>
@@ -200,11 +359,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isNegative -->
-      <method access="public" name="isNegative" valid="no">
+      <method access="public" name="isNegative">
         <signature>
           <return>
             <boolean/>
@@ -212,11 +376,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isZero -->
-      <method access="public" name="isZero" valid="no">
+      <method access="public" name="isZero">
         <signature>
           <return>
             <boolean/>
@@ -224,7 +393,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ minus -->
@@ -366,19 +540,33 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ negated -->
-      <method access="public" name="negated" valid="no">
+      <method access="public" name="negated">
         <signature>
           <return>
             <object>java.time.Duration</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ArithmeticException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ of -->
-      <method access="public" name="of" static="yes" valid="no">
+      <method access="public" name="of" static="yes">
         <signature>
           <arg nr="1">
             <long/>
@@ -390,13 +578,32 @@
             <object>java.time.Duration</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ArithmeticException</throws>
+	  <throws>java.time.DateTimeException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ofDays -->
-      <method access="public" name="ofDays" static="yes" valid="no">
+      <method access="public" name="ofDays" static="yes">
         <signature>
           <arg nr="1">
             <long/>
@@ -405,13 +612,27 @@
             <object>java.time.Duration</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ArithmeticException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ofHours -->
-      <method access="public" name="ofHours" static="yes" valid="no">
+      <method access="public" name="ofHours" static="yes">
         <signature>
           <arg nr="1">
             <long/>
@@ -420,13 +641,27 @@
             <object>java.time.Duration</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ArithmeticException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ofMillis -->
-      <method access="public" name="ofMillis" static="yes" valid="no">
+      <method access="public" name="ofMillis" static="yes">
         <signature>
           <arg nr="1">
             <long/>
@@ -437,11 +672,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ofMinutes -->
-      <method access="public" name="ofMinutes" static="yes" valid="no">
+      <method access="public" name="ofMinutes" static="yes">
         <signature>
           <arg nr="1">
             <long/>
@@ -450,13 +697,27 @@
             <object>java.time.Duration</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ArithmeticException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ofNanos -->
-      <method access="public" name="ofNanos" static="yes" valid="no">
+      <method access="public" name="ofNanos" static="yes">
         <signature>
           <arg nr="1">
             <long/>
@@ -467,11 +728,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ofSeconds -->
-      <method access="public" name="ofSeconds" static="yes" valid="no">
+      <method access="public" name="ofSeconds" static="yes">
         <signature>
           <arg nr="1">
             <long/>
@@ -482,11 +755,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ofSeconds -->
-      <method access="public" name="ofSeconds" static="yes" valid="no">
+      <method access="public" name="ofSeconds" static="yes">
         <signature>
           <arg nr="1">
             <long/>
@@ -498,13 +783,31 @@
             <object>java.time.Duration</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ArithmeticException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ parse -->
-      <method access="public" name="parse" static="yes" valid="no">
+      <method access="public" name="parse" static="yes">
         <signature>
           <arg nr="1">
             <object>java.lang.CharSequence</object>
@@ -513,9 +816,28 @@
             <object>java.time.Duration</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.time.format.DateTimeParseException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<not-null/>
+	      </math>
+	    </post>
+	  </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="parse" form="time format" type="string">
+	      <throws>java.time.format.DateTimeParseException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ plus -->
@@ -657,7 +979,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toDays -->
-      <method access="public" name="toDays" valid="no">
+      <method access="public" name="toDays">
         <signature>
           <return>
             <long/>
@@ -665,11 +987,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toHours -->
-      <method access="public" name="toHours" valid="no">
+      <method access="public" name="toHours">
         <signature>
           <return>
             <long/>
@@ -677,11 +1004,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toMillis -->
-      <method access="public" name="toMillis" valid="no">
+      <method access="public" name="toMillis">
         <signature>
           <return>
             <long/>
@@ -689,11 +1021,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toMinutes -->
-      <method access="public" name="toMinutes" valid="no">
+      <method access="public" name="toMinutes">
         <signature>
           <return>
             <long/>
@@ -701,23 +1038,35 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toNanos -->
-      <method access="public" name="toNanos" valid="no">
+      <method access="public" name="toNanos">
         <signature>
           <return>
             <long/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.ArithmeticException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toString -->
-      <method access="public" name="toString" valid="no">
+      <method access="public" name="toString">
         <signature>
           <return>
             <object>java.lang.String</object>
@@ -725,7 +1074,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ withNanos -->

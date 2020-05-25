@@ -860,7 +860,7 @@
           </return>
         </signature>
         <exceptions>
-	  <throws>java.time.DateTimeException</throws>
+	  <throws>java.time.format.DateTimeParseException</throws>
 	</exceptions>
         <summary>
           <taint>
@@ -876,6 +876,11 @@
 	      </math>
 	    </post>
 	  </postconditions>
+	  <sinks>
+	    <sink arg="1" dest="parse" form="time format" type="string">
+	      <throws>java.time.format.DateTimeParseException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ plus -->
