@@ -8,6 +8,15 @@
       <implements>java.io.Serializable</implements>
       <implements>java.util.Map</implements>
     </interfaces>
+    <class-properties>
+      <cprop method="size" name="size">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </cprop>
+    </class-properties>
     <!-- =============================== FIELDS ===============================  -->
     <fields/>
     <!-- ============================ CONSTRUCTORS ============================  -->
@@ -27,7 +36,20 @@
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <c-throws>
+            <safety-condition>
+              <math>
+                <apply>
+                  <geq/>
+                  <arg nr="1"/>
+                  <cn>1</cn>
+                </apply>
+              </math>
+            </safety-condition>
+            <exn>java.lang.IllegalArgumentException</exn>
+          </c-throws>
+        </exceptions>
         <summary>
           <taint>
             <transfer>
@@ -41,7 +63,7 @@
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.util.Map) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.util.Map</object>
@@ -49,7 +71,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (int,float) -->
@@ -62,7 +89,29 @@
             <float/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <gt/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -92,7 +141,38 @@
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <gt/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="3"/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -308,7 +388,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ equals -->
-      <method access="public" name="equals" valid="no">
+      <method access="public" name="equals">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -319,7 +399,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ forEach -->
@@ -525,7 +614,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hashCode -->
-      <method access="public" name="hashCode" valid="no">
+      <method access="public" name="hashCode">
         <signature>
           <return>
             <int/>
@@ -533,7 +622,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ isEmpty -->
@@ -554,7 +648,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ keySet -->
-      <method access="public" name="keySet" valid="no">
+      <method access="public" name="keySet">
         <signature>
           <return>
             <object>java.util.concurrent.ConcurrentHashMap$KeySetView</object>
@@ -562,11 +656,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ keySet -->
-      <method access="public" name="keySet" valid="no">
+      <method access="public" name="keySet">
         <signature>
           <arg nr="1">
             <object>java.lang.Object</object>
@@ -577,7 +676,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ keySet -->
@@ -626,7 +734,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mappingCount -->
-      <method access="public" name="mappingCount" valid="no">
+      <method access="public" name="mappingCount">
         <signature>
           <return>
             <long/>
@@ -634,7 +742,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ merge -->
@@ -659,7 +783,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newKeySet -->
-      <method access="public" name="newKeySet" static="yes" valid="no">
+      <method access="public" name="newKeySet" static="yes">
         <signature>
           <return>
             <object>java.util.concurrent.ConcurrentHashMap$KeySetView</object>
@@ -671,7 +795,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ newKeySet -->
-      <method access="public" name="newKeySet" static="yes" valid="no">
+      <method access="public" name="newKeySet" static="yes">
         <signature>
           <arg nr="1">
             <int/>
@@ -682,7 +806,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ put -->

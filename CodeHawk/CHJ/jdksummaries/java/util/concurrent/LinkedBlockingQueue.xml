@@ -10,6 +10,15 @@
       <implements>java.util.Collection</implements>
       <implements>java.lang.Iterable</implements>
     </interfaces>
+    <class-properties>
+      <cprop method="size" name="size">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </cprop>
+    </class-properties>
     <!-- =============================== FIELDS ===============================  -->
     <fields/>
     <!-- ============================ CONSTRUCTORS ============================  -->
@@ -63,7 +72,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>

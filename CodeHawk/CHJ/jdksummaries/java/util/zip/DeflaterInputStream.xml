@@ -27,19 +27,28 @@
     <!-- ============================ CONSTRUCTORS ============================  -->
     <constructors>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.InputStream) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.io.InputStream</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.InputStream,java.util.zip.Deflater) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.io.InputStream</object>
@@ -48,13 +57,27 @@
             <object>java.util.zip.Deflater</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~ (java.io.InputStream,java.util.zip.Deflater,int) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.io.InputStream</object>
@@ -66,9 +89,42 @@
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	    <cnp arg="2"/>
+	  </c-throws>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	  </taint>
+	  <sinks>
+	    <sink arg="3" form="memory" type="resource"/>
+	  </sinks>
         </summary>
       </constructor>
     </constructors>

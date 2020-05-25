@@ -6,6 +6,15 @@
     <interfaces>
       <implements>java.util.Map</implements>
     </interfaces>
+    <class-properties>
+      <cprop method="size" name="size">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </cprop>
+    </class-properties>
     <!-- =============================== FIELDS ===============================  -->
     <fields/>
     <!-- ============================ CONSTRUCTORS ============================  -->
@@ -20,7 +29,29 @@
             <float/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <gt/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -44,7 +75,20 @@
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -409,7 +453,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ replaceAll -->
-      <method access="public" name="replaceAll" valid="no">
+      <method access="public" name="replaceAll">
         <signature>
           <arg nr="1">
             <object>java.util.function.BiFunction</object>
@@ -417,7 +461,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ size -->

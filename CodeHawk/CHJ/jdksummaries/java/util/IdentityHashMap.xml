@@ -8,6 +8,15 @@
       <implements>java.io.Serializable</implements>
       <implements>java.lang.Cloneable</implements>
     </interfaces>
+    <class-properties>
+      <cprop method="size" name="size">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </cprop>
+    </class-properties>
     <!-- =============================== FIELDS ===============================  -->
     <fields/>
     <!-- ============================ CONSTRUCTORS ============================  -->
@@ -27,7 +36,20 @@
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>	    
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -35,6 +57,9 @@
               <this/>
             </transfer>
           </taint>
+          <sinks>
+            <sink arg="1" form="memory" type="resource"/>
+          </sinks>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.util.Map) -->
@@ -45,8 +70,10 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.lang.ClassCastException</throws>
-          <throws>java.lang.NullPointerException</throws>
         </exceptions>
         <summary>
           <taint>

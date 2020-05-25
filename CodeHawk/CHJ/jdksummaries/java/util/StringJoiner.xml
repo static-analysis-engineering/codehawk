@@ -3,6 +3,15 @@
   <header info="class" time="2020-03-23 23:59:39"/>
   <class final="yes" name="StringJoiner" package="java.util">
     <interfaces/>
+    <class-properties>
+      <cprop method="length" name="size">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </cprop>
+    </class-properties>
     <!-- =============================== FIELDS ===============================  -->
     <fields/>
     <!-- ============================ CONSTRUCTORS ============================  -->
@@ -56,7 +65,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ length -->
-      <method access="public" name="length" valid="no">
+      <method access="public" name="length">
         <signature>
           <return>
             <int/>
@@ -64,7 +73,23 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <geq/>
+		  <return/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ merge -->
@@ -98,7 +123,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toString -->
-      <method access="public" name="toString" valid="no">
+      <method access="public" name="toString">
         <signature>
           <return>
             <object>java.lang.String</object>
@@ -106,7 +131,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->

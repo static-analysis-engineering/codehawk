@@ -10,6 +10,15 @@
       <implements>java.util.Collection</implements>
       <implements>java.lang.Iterable</implements>
     </interfaces>
+    <class-properties>
+      <cprop method="size" name="size">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </cprop>
+    </class-properties>
     <!-- =============================== FIELDS ===============================  -->
     <fields/>
     <!-- ============================ CONSTRUCTORS ============================  -->
@@ -96,15 +105,24 @@
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.util.Collection) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.util.Collection</object>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
     </constructors>
@@ -382,7 +400,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ peek -->
-      <method access="public" name="peek" valid="no">
+      <method access="public" name="peek">
         <signature>
           <return>
             <object>java.lang.Object</object>
@@ -390,7 +408,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ poll -->
@@ -462,6 +485,17 @@
               <return/>
             </transfer>
           </taint>
+	  <postconditions>
+	    <post>
+	      <math>
+		<apply>
+		  <eq/>
+		  <return/>
+		  <ci>MAXINT</ci>
+		</apply>
+	      </math>
+	    </post>
+	  </postconditions>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ remove -->
@@ -529,7 +563,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ spliterator -->
-      <method access="public" name="spliterator" valid="no">
+      <method access="public" name="spliterator">
         <signature>
           <return>
             <object>java.util.Spliterator</object>
@@ -537,7 +571,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ take -->

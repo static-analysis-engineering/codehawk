@@ -52,6 +52,10 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="1" form="filename" dest="file access"
+		  type="string"/>
+	  </sinks>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.File,int) -->

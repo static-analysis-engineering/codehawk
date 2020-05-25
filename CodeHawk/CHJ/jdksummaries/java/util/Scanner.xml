@@ -1163,7 +1163,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ nextInt -->
-      <method access="public" name="nextInt" valid="no">
+      <method access="public" name="nextInt">
         <signature>
           <arg nr="1">
             <int/>

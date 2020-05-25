@@ -10,6 +10,15 @@
       <implements>java.util.Collection</implements>
       <implements>java.lang.Iterable</implements>
     </interfaces>
+    <class-properties>
+      <cprop method="size" name="size">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </cprop>
+    </class-properties>
     <!-- =============================== FIELDS ===============================  -->
     <fields/>
     <!-- ============================ CONSTRUCTORS ============================  -->
@@ -25,7 +34,27 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.IllegalArgumentException</throws>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <gt/>
+		  <arg nr="2"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -51,7 +80,18 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.IllegalArgumentException</throws>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+            <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -81,7 +121,9 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.NullPointerException</throws>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -108,7 +150,7 @@
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ spliterator -->
-      <method access="public" name="spliterator" valid="no">
+      <method access="public" name="spliterator">
         <signature>
           <return>
             <object>java.util.Spliterator</object>
@@ -116,7 +158,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) add -->

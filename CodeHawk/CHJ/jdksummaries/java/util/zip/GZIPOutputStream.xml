@@ -31,6 +31,18 @@
         </signature>
         <exceptions>
           <throws>java.io.IOException</throws>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>
@@ -39,10 +51,13 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="2" form="memory" type="resource"/>
+	  </sinks>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.OutputStream,int,boolean) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.io.OutputStream</object>
@@ -55,10 +70,34 @@
           </arg>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="3"/>
+	      <this/>
+	    </transfer>
+	  </taint>
+	  <sinks>
+	    <sink arg="2" form="memory" type="resource"/>
+	  </sinks>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.OutputStream) -->
@@ -76,7 +115,7 @@
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.OutputStream,boolean) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.io.OutputStream</object>
@@ -89,7 +128,12 @@
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="2"/>
+	      <this/>
+	    </transfer>
+	  </taint>
         </summary>
       </constructor>
     </constructors>

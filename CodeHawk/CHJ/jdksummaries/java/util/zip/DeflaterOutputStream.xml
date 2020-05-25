@@ -28,7 +28,7 @@
     <!-- ============================ CONSTRUCTORS ============================  -->
     <constructors>
       <!-- ~~~~~~~~~~~ (java.io.OutputStream,java.util.zip.Deflater,int,boolean) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.io.OutputStream</object>
@@ -43,9 +43,38 @@
             <boolean/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="3"/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+	    <transfer>
+	      <arg nr="4"/>
+	      <this/>
+	    </transfer>
+          </taint>
+	  <sinks>
+	    <sink arg="3" form="memory" type="resource"/>
+	  </sinks>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~ (java.io.OutputStream,java.util.zip.Deflater,int) -->
@@ -61,7 +90,20 @@
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="3"/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -73,10 +115,13 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="3" form="memory" type="resource"/>
+	  </sinks>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~ (java.io.OutputStream,java.util.zip.Deflater,boolean) -->
-      <constructor access="public" valid="no">
+      <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.io.OutputStream</object>
@@ -90,7 +135,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="3"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~ (java.io.OutputStream,java.util.zip.Deflater) -->
