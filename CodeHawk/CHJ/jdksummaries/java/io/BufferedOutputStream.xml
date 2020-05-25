@@ -49,7 +49,20 @@
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+            <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+        </exceptions>
         <summary>
           <taint>
             <transfer>

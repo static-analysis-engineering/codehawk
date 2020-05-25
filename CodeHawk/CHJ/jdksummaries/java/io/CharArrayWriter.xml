@@ -9,6 +9,15 @@
       <implements>java.io.Flushable</implements>
       <implements>java.lang.AutoCloseable</implements>
     </interfaces>
+    <class-properties>
+      <cprop method="size" name="size">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
+      </cprop>
+    </class-properties>
     <!-- =============================== FIELDS ===============================  -->
     <fields>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:buf -->
@@ -44,7 +53,18 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.lang.IllegalArgumentException</throws>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="1"/>
+		  <cn>0</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+            <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
         </exceptions>
         <summary>
           <taint>

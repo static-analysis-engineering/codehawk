@@ -22,7 +22,20 @@
             <int/>
           </arg>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <safety-condition>
+	      <math>
+		<apply>
+		  <geq/>
+		  <arg nr="2"/>
+		  <cn>1</cn>
+		</apply>
+	      </math>
+	    </safety-condition>
+	    <exn>java.lang.IllegalArgumentException</exn>
+	  </c-throws>
+	</exceptions>
         <summary>
           <taint>
             <transfer>
@@ -34,6 +47,9 @@
               <this/>
             </transfer>
           </taint>
+	  <sinks>
+	    <sink arg="2" form="memory" type="resource"/>
+	  </sinks>
         </summary>
       </constructor>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.Reader) -->
@@ -61,7 +77,6 @@
         <signature/>
         <exceptions>
           <throws>java.io.IOException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint/>
@@ -75,7 +90,6 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.io.IOException</throws>
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
@@ -113,7 +127,6 @@
         </signature>
         <exceptions>
           <throws>java.io.IOException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -144,7 +157,6 @@
         </signature>
         <exceptions>
           <throws>java.io.IOException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -172,7 +184,6 @@
         </signature>
         <exceptions>
           <throws>java.io.IOException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -187,7 +198,6 @@
       <method access="public" name="reset">
         <signature/>
         <exceptions>
-          <throws>java.io.IOException</throws>
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
@@ -205,7 +215,6 @@
           </return>
         </signature>
         <exceptions>
-          <throws>java.io.IOException</throws>
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
@@ -225,7 +234,6 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.io.IOException</throws>
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
@@ -254,7 +262,6 @@
         </signature>
         <exceptions>
           <throws>java.io.IOException</throws>
-          <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
           <taint>
@@ -283,7 +290,6 @@
           </arg>
         </signature>
         <exceptions>
-          <throws>java.io.IOException</throws>
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>

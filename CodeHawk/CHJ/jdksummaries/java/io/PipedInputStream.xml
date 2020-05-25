@@ -78,7 +78,7 @@
                 <apply>
                   <geq/>
                   <arg nr="1"/>
-                  <cn>0</cn>
+                  <cn>1</cn>
                 </apply>
               </math>
             </safety-condition>
@@ -123,7 +123,7 @@
                 <apply>
                   <geq/>
                   <arg nr="1"/>
-                  <cn>0</cn>
+                  <cn>1</cn>
                 </apply>
               </math>
             </safety-condition>
