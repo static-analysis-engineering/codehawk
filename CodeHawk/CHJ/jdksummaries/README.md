@@ -25,7 +25,7 @@ java.awt.image | 37 | 406 | 57 | 97 | 0 | 12 |
 java.awt.image.renderable | 3 | 32 | 0 | 0 | 0 | 0 | 
 java.awt.print | 4 | 21 | 0 | 0 | 0 | 0 | 
 java.beans | 27 | 165 | 5 | 24 | 18 | 4 | 
-java.io | 74 | 689 | 28 | 161 | 26 | 10 | 
+java.io | 74 | 689 | 37 | 161 | 26 | 13 | 
 java.lang | 89 | 1240 | 323 | 471 | 76 | 13 | 
 java.lang.annotation | 4 | 5 | 2 | 3 | 2 | 0 | 
 java.lang.invoke | 5 | 87 | 48 | 35 | 7 | 0 | 
@@ -49,12 +49,12 @@ java.security.cert | 32 | 236 | 23 | 40 | 22 | 0 |
 java.security.spec | 14 | 55 | 11 | 11 | 0 | 0 | 
 java.sql | 40 | 198 | 0 | 25 | 22 | 0 | 
 java.text | 28 | 326 | 35 | 44 | 14 | 0 | 
-java.time | 8 | 139 | 5 | 93 | 1 | 0 | 
+java.time | 8 | 182 | 24 | 132 | 8 | 0 | 
 java.time.chrono | 3 | 0 | 0 | 0 | 0 | 0 | 
-java.time.format | 1 | 0 | 0 | 0 | 0 | 0 | 
+java.time.format | 1 | 4 | 0 | 3 | 0 | 0 | 
 java.time.temporal | 4 | 0 | 0 | 0 | 0 | 0 | 
-java.util | 78 | 1110 | 123 | 350 | 11 | 19 | 
-java.util.concurrent | 31 | 298 | 53 | 89 | 1 | 33 | 
+java.util | 78 | 1117 | 151 | 351 | 11 | 20 | 
+java.util.concurrent | 31 | 309 | 61 | 91 | 1 | 33 | 
 java.util.concurrent.atomic | 10 | 56 | 0 | 5 | 1 | 0 | 
 java.util.concurrent.locks | 5 | 40 | 0 | 15 | 0 | 1 | 
 java.util.function | 13 | 2 | 0 | 0 | 0 | 0 | 
@@ -62,7 +62,7 @@ java.util.jar | 2 | 14 | 3 | 4 | 3 | 0 |
 java.util.logging | 9 | 122 | 2 | 16 | 53 | 0 | 
 java.util.regex | 3 | 36 | 0 | 9 | 3 | 0 | 
 java.util.stream | 7 | 36 | 0 | 0 | 0 | 0 | 
-java.util.zip | 12 | 111 | 6 | 24 | 0 | 0 | 
+java.util.zip | 12 | 118 | 17 | 24 | 1 | 6 | 
 javax.accessibility | 10 | 35 | 0 | 14 | 2 | 0 | 
 javax.activation | 2 | 19 | 0 | 0 | 1 | 0 | 
 javax.annotation.processing | 7 | 34 | 0 | 4 | 0 | 0 | 
@@ -83,29 +83,47 @@ javax.naming | 18 | 96 | 22 | 20 | 21 | 0 |
 javax.naming.event | 5 | 0 | 0 | 0 | 0 | 0 | 
 javax.naming.spi | 6 | 0 | 0 | 0 | 0 | 0 | 
 javax.net | 2 | 13 | 0 | 0 | 0 | 0 | 
-javax.net.ssl | 18 | 89 | 2 | 9 | 0 | 0 | 
-javax.security.auth | 1 | 0 | 0 | 0 | 0 | 0 | 
+javax.net.ssl | 29 | 101 | 4 | 18 | 2 | 0 | 
+javax.security.auth | 6 | 33 | 10 | 11 | 5 | 0 | 
+javax.security.auth.callback | 3 | 18 | 0 | 0 | 7 | 0 | 
+javax.security.auth.kerberos | 6 | 65 | 4 | 10 | 8 | 0 | 
+javax.security.auth.login | 1 | 6 | 0 | 0 | 3 | 0 | 
+javax.security.auth.x500 | 1 | 9 | 1 | 0 | 1 | 0 | 
 javax.sound.sampled | 7 | 24 | 0 | 7 | 0 | 0 | 
-javax.swing | 63 | 1095 | 28 | 147 | 28 | 0 | 
+javax.sql | 16 | 7 | 0 | 0 | 0 | 0 | 
+javax.swing | 98 | 1440 | 47 | 170 | 33 | 4 | 
 javax.swing.border | 3 | 8 | 0 | 0 | 0 | 0 | 
-javax.swing.event | 16 | 26 | 0 | 4 | 0 | 0 | 
-javax.swing.plaf | 1 | 14 | 2 | 6 | 0 | 0 | 
-javax.swing.table | 7 | 58 | 0 | 3 | 0 | 0 | 
-javax.swing.text | 6 | 108 | 0 | 10 | 0 | 0 | 
+javax.swing.event | 25 | 51 | 0 | 4 | 0 | 0 | 
+javax.swing.filechooser | 1 | 1 | 0 | 0 | 0 | 0 | 
+javax.swing.plaf | 2 | 14 | 2 | 6 | 0 | 0 | 
+javax.swing.plaf.basic | 1 | 8 | 3 | 1 | 0 | 0 | 
+javax.swing.plaf.metal | 1 | 6 | 3 | 1 | 0 | 0 | 
+javax.swing.table | 9 | 85 | 0 | 6 | 0 | 0 | 
+javax.swing.text | 32 | 200 | 3 | 22 | 0 | 0 | 
+javax.swing.text.html | 7 | 66 | 5 | 5 | 0 | 0 | 
 javax.swing.tree | 6 | 77 | 6 | 35 | 0 | 0 | 
-javax.tools | 3 | 8 | 0 | 0 | 0 | 0 | 
-javax.xml.bind | 1 | 0 | 0 | 0 | 0 | 0 | 
-javax.xml.parsers | 5 | 39 | 4 | 7 | 4 | 0 | 
-javax.xml.transform | 5 | 35 | 0 | 6 | 0 | 0 | 
-javax.xml.transform.dom | 1 | 7 | 0 | 0 | 2 | 0 | 
-javax.xml.transform.stream | 1 | 12 | 0 | 3 | 2 | 0 | 
+javax.tools | 6 | 21 | 1 | 2 | 1 | 0 | 
+javax.transaction.xa | 1 | 3 | 0 | 0 | 0 | 0 | 
+javax.xml.bind | 6 | 1 | 0 | 0 | 1 | 0 | 
+javax.xml.datatype | 4 | 22 | 5 | 3 | 0 | 0 | 
+javax.xml.namespace | 1 | 10 | 4 | 0 | 7 | 0 | 
+javax.xml.parsers | 6 | 45 | 4 | 7 | 4 | 0 | 
+javax.xml.stream | 12 | 38 | 0 | 1 | 0 | 0 | 
+javax.xml.transform | 11 | 48 | 0 | 8 | 0 | 0 | 
+javax.xml.transform.dom | 2 | 18 | 0 | 0 | 5 | 0 | 
+javax.xml.transform.sax | 4 | 19 | 7 | 5 | 2 | 0 | 
+javax.xml.transform.stream | 2 | 28 | 5 | 6 | 6 | 0 | 
+javax.xml.validation | 1 | 6 | 3 | 0 | 0 | 0 | 
+javax.xml.xpath | 1 | 4 | 0 | 0 | 0 | 0 | 
+org.ietf.jgss | 2 | 10 | 0 | 1 | 0 | 0 | 
 org.w3c.dom | 10 | 40 | 2 | 18 | 0 | 0 | 
-org.xml.sax | 12 | 56 | 0 | 16 | 6 | 0 | 
-org.xml.sax.helpers | 3 | 44 | 0 | 15 | 46 | 0 | 
+org.xml.sax | 15 | 61 | 4 | 16 | 6 | 0 | 
+org.xml.sax.ext | 1 | 4 | 0 | 1 | 5 | 0 | 
+org.xml.sax.helpers | 8 | 102 | 1 | 20 | 47 | 0 | 
 sun.net.www | 2 | 0 | 0 | 0 | 0 | 0 | 
 sun.net.www.protocol.file | 1 | 0 | 0 | 0 | 0 | 0 | 
 sun.security.util | 1 | 0 | 0 | 0 | 0 | 0 | 
-| total  | 1274 | 11773 | 1109 | 2507 | 530 | 100 | 
+| total  | 1452 | 12804 | 1264 | 2650 | 593 | 114 | 
 
 
 ### Preconditions
@@ -117,18 +135,19 @@ exceptions covered.
 
 | exception | number of preconditions |
 | :--- |  ---: |
+| java.awt.IllegalComponentStateException | 3 | 
 | java.awt.image.RasterFormatException | 2 | 
 | java.lang.ArithmeticException | 24 | 
-| java.lang.ArrayIndexOutOfBoundsException | 67 | 
+| java.lang.ArrayIndexOutOfBoundsException | 68 | 
 | java.lang.ArrayStoreException | 1 | 
-| java.lang.IllegalArgumentException | 222 | 
+| java.lang.IllegalArgumentException | 272 | 
 | java.lang.IndexOutOfBoundsException | 147 | 
 | java.lang.NegativeArraySizeException | 17 | 
-| java.lang.NullPointerException | 548 | 
+| java.lang.NullPointerException | 639 | 
 | java.lang.StringIndexOutOfBoundsException | 74 | 
 | java.net.MalformedURLException | 1 | 
 | java.security.InvalidParameterException | 1 | 
-| java.time.DateTimeException | 2 | 
+| java.time.DateTimeException | 12 | 
 | java.util.EmptyStackException | 2 | 
 | javax.management.MalformedObjectNameException | 1 | 
 
@@ -164,7 +183,7 @@ summary except that it does not have a name.
 Postconditions are represented in MathML.
 
 ### Safety conditions
-Expressions thrown can be associated with safety conditions, whose
+Exceptions thrown can be associated with safety conditions, whose
 conjunction, if true, ensures that the exception is not thrown.
 Safety conditions are also expressed in MathML.
 
