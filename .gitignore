@@ -21,6 +21,7 @@ _build/
 # binary analyzer executables
 CodeHawk/CHB/bchcmdline/chx86_analyze
 CodeHawk/CHB/bchcmdline/chx86_inspect_summaries
+CodeHawk/CHB/bchgui/chx86_gui
 
 # c analyzer executables
 CodeHawk/CHC/cchcmdline/canalyzer
@@ -46,6 +47,7 @@ CodeHawk/CHJ/jchstac/chj_translate_class
 CodeHawk/CHJ/jchstac/chj_template
 
 CodeHawk/CHJ/jchstacgui/chj_gui
+CodeHawk/CHJ/jdksummaries/jdk.jar
 
 # unit test artifacts
 CodeHawk/CH_tests/CHB/testinputs/dnsmasq/dnsmasq.ch
