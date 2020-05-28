@@ -129,9 +129,10 @@ object (self)
   val callees = H.create 3              (* cms-ix -> pc -> cms list *)
   val nopreplacements = H.create 3      (* cms-ix -> pc list *)
   val constants = H.create 11           (* name -> jterm_t *)
+  val interfacetargets = H.create 3     (* cms-ix -> cnix -> cnix *)
 
   val edges = H.create 3                (* (cmsix,pc) -> class_name_int *)
-
+(*
   method add_userdata (node:xml_element_int) =
     begin
       (if node#hasOneTaggedChild "constants" then
@@ -139,6 +140,33 @@ object (self)
                    ((node#getTaggedChild "constants")#getTaggedChildren "c")) ;
       List.iter self#add_user_class_data (node#getTaggedChildren "class")
     end
+ *)
+
+  method private add_interface_target
+                   (cmsix:int) (interface:string) (target:string)  =
+    let cni = make_cn interface in
+    let cntgt = make_cn target in
+    let cmsixentry =
+      if H.mem interfacetargets cmsix then
+        H.find interfacetargets cmsix
+      else
+        let e = H.create 3 in
+        let _ = H.add interfacetargets cmsix e in
+        e in
+    H.add cmsixentry cni#index cntgt
+
+  method has_interface_target (cmsix:int) (cniix:int) =
+    H.mem interfacetargets cmsix
+    && (H.mem (H.find interfacetargets cmsix) cniix)
+
+  method get_interface_target (cmsix:int) (cniix:int) =
+    if self#has_interface_target cmsix cniix then
+      H.find (H.find interfacetargets cmsix) cniix
+    else
+      raise
+        (JCH_failure
+           (LBLOCK [ STR "No interface targets found for cmsix " ;
+                     INT cmsix ; STR " and cniix " ; INT cniix ]))
 
   method private add_user_constant (node:xml_element_int) =
     let get = node#getAttribute in
@@ -149,12 +177,6 @@ object (self)
     let jterm = JSymbolicConstant (TBasic Int, lbopt, ubopt, name) in
     H.add constants name jterm 
 
-  method private add_user_class_data (node:xml_element_int) =
-    let name = node#getAttribute "name" in
-    let cn = make_cn name in
-    List.iter (fun n ->
-        self#add_user_method_data cn n) (node#getTaggedChildren "method")
-
   method has_edge (src:(int * int)) = H.mem edges src
 
   method get_edge (src:(int * int)) =
@@ -163,56 +185,6 @@ object (self)
     else
       raise (JCH_failure (LBLOCK [ STR "No edge found for " ;
                                    INT (fst src) ; STR " at pc = " ; INT (snd src) ]))
-
-  method private add_user_method_data (cn:class_name_int) (node:xml_element_int) =
-    let getc = node#getTaggedChild in
-    let hasc = node#hasOneTaggedChild in
-    let name = node#getAttribute "name" in
-    let ssig = node#getAttribute "sig" in
-    let msix = method_signature_implementations#get_ms_index name ssig in
-    let ms = retrieve_ms msix in
-    let cms = make_cms cn ms in
-    let _ =
-      List.iter (fun n ->
-          let geti = n#getIntAttribute in
-          let get = n#getAttribute in
-          let has = n#hasNamedAttribute in
-          let pc = geti "pc" in
-          let count =
-            let jterm =
-              if has "kind" && n#getAttribute "kind" = "symbolic" then
-                let name = get "iteration-count" in
-                if H.mem constants name then
-                  H.find constants name
-                else
-                  let lbopt = if has "lb" then Some (mkNumericalFromString (get "lb")) else None in
-                  let ubopt = if has "ub" then Some (mkNumericalFromString (get "ub")) else None in
-                  JSymbolicConstant (TBasic Int, lbopt, ubopt, name) 
-              else
-                JConstant (mkNumerical (geti "iteration-count")) in
-            mk_jterm_jterm_range jterm in
-          self#add_bound cms#index pc count) (node#getTaggedChildren "loop") in
-    let _ =
-      if hasc "edges" then
-        let xedges = getc "edges" in
-        List.iter (fun n ->
-            let geti = n#getIntAttribute in
-            let get = n#getAttribute in
-            let pc = geti "pc" in
-            let tgt = get "tgt" in
-            let cn = make_cn tgt in
-            H.add edges (cms#index, pc) cn) (xedges#getTaggedChildren "edge") in
-    if hasc "side-channel-checks" then
-      let xscs =
-        List.map (fun n ->
-            let geti = n#getIntAttribute in
-            let has = n#hasNamedAttribute in
-            let decisionpc = if has "decision-pc" then geti "decision-pc" else 0 in
-            let observationpc = geti "observation-pc" in
-            (decisionpc,observationpc))
-                 ((getc "side-channel-checks")#getTaggedChildren "scc") in
-      H.add sidechannelchecks cms#index xscs
-      
 
   method register_constants (node:xml_element_int) =
     List.iter (fun n ->
@@ -274,12 +246,12 @@ object (self)
   method private add_constructor_data (cn:class_name_int) (node:xml_element_int) =
     (* let cms = read_xmlx_constructor_signature node cn in *)
     let cms = self#get_constructor_sig_signature node cn in
-    self#add_user_data cms node 
+    self#add_user_method_data cms node 
 
   method private add_method_data (cn:class_name_int) (node:xml_element_int) =
     (* let cms = read_xmlx_class_method_signature node cn in *)
     let cms = self#get_sig_signature node cn in
-    self#add_user_data cms node
+    self#add_user_method_data cms node
 
   method private add_bound (cmsix:int) (pc:int) (v:jterm_range_int) =
     let _ = if H.mem bounds cmsix then () else H.add bounds cmsix (H.create 3) in
@@ -421,9 +393,16 @@ object (self)
       | s -> 
 	raise_xml_error node
 	  (LBLOCK [ STR "callee kind " ; STR s ; STR " not recognized" ]))
-      (node#getTaggedChildren "callee")
+              (node#getTaggedChildren "callee")
 
-  method private add_user_data 
+  method private add_interface_targets (cmsix:int) (node:xml_element_int) =
+    List.iter (fun inode ->
+        let get = inode#getAttribute in
+        let cni = get "i" in
+        let cntgt = get "t" in
+        self#add_interface_target cmsix cni cntgt) (node#getTaggedChildren "tgt")
+
+  method private add_user_method_data 
     (cms:class_method_signature_int) 
     (node:xml_element_int) =
     let getc = node#getTaggedChild in
@@ -439,7 +418,9 @@ object (self)
       (if hasc "method-cost" then
 	  self#add_method_cost cmsix (getc "method-cost")) ;
       (if hasc "callees" then
-	  self#add_callees cmsix (getc "callees")) ;
+	 self#add_callees cmsix (getc "callees")) ;
+      (if hasc "interface-targets" then
+         self#add_interface_targets cmsix (getc "interface-targets")) ;
       (if hasc "nops" then
 	  let nops = List.map (fun nnode -> 
 	    nnode#getIntAttribute "pc") ((getc "nops")#getTaggedChildren "nop") in

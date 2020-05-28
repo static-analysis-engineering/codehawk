@@ -656,16 +656,6 @@ let read_user_constants_file xfile =
 	raise (JCH_failure msg)
       end
 
-let load_xml_user_data () =
-  let dir = get_stac_analysis_userdata_directory_name () in
-  let filename = dir ^ "/userdata.xml" in
-  if Sys.file_exists filename then
-    let doc = readXmlDocument filename in
-    let node = doc#getRoot#getTaggedChild "userdata" in
-    userdata#add_userdata node
-  else
-    ()
-  
 let load_user_class_files () =
   let dir = get_stac_analysis_userdata_directory_name () in
   if Sys.file_exists dir then

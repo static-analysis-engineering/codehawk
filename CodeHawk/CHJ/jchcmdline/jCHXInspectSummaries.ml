@@ -86,8 +86,11 @@ let showinvalidfinal = ref false
 let showimmutable = ref false
 let showranges = ref false
 let showstringsinks = ref false
+let showinputsources = ref false
 let name = ref ""
 let cn = make_cn "java.lang.Object"
+
+let allsummaries = ref []
 
 let dynamically_dispatched_methods = ref 0
 let default_implementations = H.create 3
@@ -302,6 +305,44 @@ let exception_guards_to_pretty () =
     (List.map (fun (k,v) ->
          LBLOCK [ STR "| " ; STR k ; STR " | " ; INT v ; STR " | " ; NL ]) exns)
 
+let get_input_sources summaries =
+  let sources = ref [] in
+  begin
+    List.iter (fun (cms,_,summary) ->
+        List.iter (fun taintelement ->
+            match taintelement with
+            | TDefPut term ->
+               sources := (cms,term) :: !sources
+            | _ -> ()) summary#get_taint_elements) summaries ;
+    !sources
+  end
+
+let print_input_sources sources =
+  let packages = H.create 11 in
+  let add_pkg pkg =
+    let entry =
+      if H.mem packages pkg then
+        H.find packages pkg
+      else
+        0 in
+    H.replace packages pkg (entry + 1) in
+  begin
+    pr_debug [ NL ; STR "Input sources (" ; INT (List.length sources) ; STR ")" ; NL ;
+               STR "------------------------------------------------------------" ; NL  ] ;
+    List.iter (fun (cms,term) ->
+        add_pkg cms#class_name#package_name ;
+        pr_debug [ cms#toPretty ; STR ": " ; jterm_to_pretty term ; NL ]) sources ;
+    let packages =
+      List.sort
+        (fun (_,c1) (_,c2) -> P.compare c2 c1)
+        (H.fold (fun k v a -> (k,v)::a) packages []) in
+    pr_debug [ NL ; STR "Input sources per package: " ; NL ;
+               STR "------------------------------------------------------------" ; NL  ] ;
+    List.iter (fun (pkg,count) ->
+        pr_debug [ fixed_length_pretty ~alignment:StrRight (INT count) 5 ; STR "  " ;
+                   STR pkg ; NL ]) packages
+  end
+
 let get_statistics summaries =
   List.iter (fun (cms,_,summary) ->
     begin
@@ -496,6 +537,8 @@ let inspect_summaries (name:string) =
                      s :: acc
                    else
                      acc) [] methodSummaries) ;
+
+            allsummaries := methodSummaries @ !allsummaries ;
 	    List.iter (fun (_,_,s) -> classify_exception_guards s) methodSummaries ;
 	    List.iter (fun (_,_,m) -> add_array_argument_summaries cn m) methodSummaries ;
 	    List.iter (fun (_,_,m) -> add_abstract_argument m) methodSummaries ;
@@ -556,11 +599,11 @@ let inspect_summaries (name:string) =
              && (match v#get_visibility with
                  | Private | Default -> false
                  |  _ -> true)) summaries in
-       let summaries =
+       (* let summaries =
          if !showinvalidfinal then
            List.filter (fun v -> v#is_final || v#is_static) summaries
          else
-           summaries in
+           summaries in *)
        let summaries = List.sort comparesummaries summaries in
        let numSummaries = List.length summaries in
        begin
@@ -599,7 +642,8 @@ let inspect_summaries (name:string) =
                                                               relational_expr_to_pretty r ;
                                                               NL  ]) l)  ]) rangepost) ] ) ;
 
-    (if !showstringsinks then print_string_sinks ())
+    (if !showstringsinks then print_string_sinks ()) ;
+    (if !showinputsources then print_input_sources (get_input_sources !allsummaries))
 
   end
 
@@ -615,7 +659,9 @@ let speclist =
    ("-showranges", Arg.Set showranges,
     "prints list of range post conditions");
    ("-showstringsinks", Arg.Set showstringsinks,
-    "prints list of string sinks") ]
+    "prints list of string sinks");
+   ("-showinputsources", Arg.Set showinputsources,
+    "prints list of input sources")]
 
 let usage_msg = "inspect_summaries filename"
 let read_args () = Arg.parse speclist   (fun s -> name := s) usage_msg

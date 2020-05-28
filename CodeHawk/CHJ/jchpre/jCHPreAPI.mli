@@ -971,7 +971,6 @@ object
   method register_constants  : xml_element_int -> unit
   method add_default_costdata: xml_element_int -> unit
   method add_class_data      : xml_element_int -> unit
-  method add_userdata        : xml_element_int -> unit
 
   (* accessors *)
   method get_loopbound       : int -> int -> jterm_range_int
@@ -984,6 +983,7 @@ object
   method get_nopreplacements : int -> int list
   method get_sidechannelchecks : (int * (int * int) list) list
   method get_edge            : (int * int) -> class_name_int
+  method get_interface_target: int -> int -> class_name_int  (* cmsix -> cni-ix *)
 
   (* predicates *)
   method has_loopbound      : int -> int -> bool
@@ -992,6 +992,7 @@ object
   method has_methodcost     : int -> bool
   method has_run_method     : int -> int -> bool
   method has_edge           : (int * int) -> bool
+  method has_interface_target: int -> int -> bool   (* cmsix -> cni-ix *)
 
   (* printing *)
   method toPretty: pretty_t

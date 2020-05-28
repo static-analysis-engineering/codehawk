@@ -89,4 +89,3 @@ val load_user_class_files: unit -> unit
 
 val load_defaultcostdata_file: unit -> unit
 
-val load_xml_user_data: unit -> unit

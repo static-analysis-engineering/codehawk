@@ -365,8 +365,10 @@ let main () =
 	     pr_debug [ STR "Start initializing method signature implementation ..." ; NL ] ;
 	     method_signature_implementations#initialize ;
              load_user_class_files () ;                          
+             read_callgraph_file () ;
+             set_main_method () ;
+             set_method_targets () ;
              pr_debug [ STR "User-provided data: " ; NL ; userdata#toPretty ; NL ] ;
-	     read_callgraph_file () ;
              JCHNumericAnalysis.load_xml_class_cost_support ();
 	     pr_debug [ STR "Creating cost models ..." ; NL ] ;
 	     JCHCostBoundsAnalysis.create_bounds_cost_model !use_symbolic_defaults ; 

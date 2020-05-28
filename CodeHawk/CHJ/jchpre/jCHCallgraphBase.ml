@@ -239,28 +239,33 @@ object (self)
                 self#add cms pc ms (ConstrainedVirtualTargets ("user",tgts))
            end
 	| OpInvokeInterface (cn,ms) ->
-           begin
-             match userdata#get_callees cms#index pc with
-             | [] -> 
-                begin
-                  match self#get_instruction_target mInfo pc with
-                  | Some tgt -> self#add cms pc ms tgt
-                  | _ ->
-                     if app#has_class cn then
-	               let cInfo = app#get_class cn in
-	               let defaultImpls = cInfo#get_default_implementations in
-	               let targets = List.map (fun cn -> cn#index) defaultImpls in
-	               self#add_virtual_tgt cms pc cn ms true targets
-                     else
-                       begin
-                         ch_error_log#add "callgraph: missing interface" cn#toPretty ;
-                         ()
-                       end
-                end
-             | l ->
-                let tgts = List.map (fun cms -> cms#class_name#index) l in
-                self#add cms pc ms (ConstrainedVirtualTargets ("user",tgts))
-           end
+           if userdata#has_interface_target cms#index cn#index then
+             let cntgt = userdata#get_interface_target cms#index cn#index in
+             let targets = ConstrainedVirtualTargets ("user",[ cntgt#index ]) in
+             self#add cms pc ms targets
+           else
+             begin
+               match userdata#get_callees cms#index pc with
+               | [] -> 
+                  begin
+                    match self#get_instruction_target mInfo pc with
+                    | Some tgt -> self#add cms pc ms tgt
+                    | _ ->
+                       if app#has_class cn then
+	                 let cInfo = app#get_class cn in
+	                 let defaultImpls = cInfo#get_default_implementations in
+	                 let targets = List.map (fun cn -> cn#index) defaultImpls in
+	                 self#add_virtual_tgt cms pc cn ms true targets
+                       else
+                         begin
+                           ch_error_log#add "callgraph: missing interface" cn#toPretty ;
+                           ()
+                         end
+                  end
+               | l ->
+                  let tgts = List.map (fun cms -> cms#class_name#index) l in
+                  self#add cms pc ms (ConstrainedVirtualTargets ("user",tgts))
+             end
 	| _ -> ())
     else
       ()

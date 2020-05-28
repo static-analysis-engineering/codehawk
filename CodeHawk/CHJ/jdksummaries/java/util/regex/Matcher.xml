@@ -143,7 +143,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end -->
-      <method access="public" name="end" valid="no">
+      <method access="public" name="end">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -152,9 +152,26 @@
             <int/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalArgumentException</throws>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <sinks>
+	    <sink arg="1" dest="matcher" form="group name" type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ find -->
@@ -260,7 +277,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ group -->
-      <method access="public" name="group" valid="no">
+      <method access="public" name="group">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -269,9 +286,26 @@
             <object>java.lang.String</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <throws>java.lang.IllegalArgumentException</throws>
+	  <throws>java.lang.IllegalStateException</throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <sinks>
+	    <sink arg="1" dest="regex" form="group name" type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ groupCount -->
@@ -303,7 +337,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasAnchoringBounds -->
-      <method access="public" name="hasAnchoringBounds" valid="no">
+      <method access="public" name="hasAnchoringBounds">
         <signature>
           <return>
             <boolean/>
@@ -311,11 +345,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hasTransparentBounds -->
-      <method access="public" name="hasTransparentBounds" valid="no">
+      <method access="public" name="hasTransparentBounds">
         <signature>
           <return>
             <boolean/>
@@ -323,11 +362,16 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ hitEnd -->
-      <method access="public" name="hitEnd" valid="no">
+      <method access="public" name="hitEnd">
         <signature>
           <return>
             <boolean/>
@@ -335,7 +379,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ lookingAt -->
@@ -410,7 +459,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ region -->
-      <method access="public" name="region" valid="no">
+      <method access="public" name="region">
         <signature>
           <arg nr="1">
             <int/>
@@ -424,7 +473,20 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="2"/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ regionEnd -->
@@ -518,7 +580,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ requireEnd -->
-      <method access="public" name="requireEnd" valid="no">
+      <method access="public" name="requireEnd">
         <signature>
           <return>
             <boolean/>
@@ -526,7 +588,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ reset -->
@@ -647,7 +714,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ start -->
-      <method access="public" name="start" valid="no">
+      <method access="public" name="start">
         <signature>
           <arg nr="1">
             <object>java.lang.String</object>
@@ -656,13 +723,30 @@
             <int/>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+          <throws>java.lang.IndexOutOfBoundsException</throws>
+          <throws>java.lang.IllegalStateException</throws>
+        </exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
+	  <sinks>
+	    <sink arg="1" dest="matcher" form="group name" type="string">
+	      <throws>java.lang.IllegalArgumentException</throws>
+	    </sink>
+	  </sinks>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toMatchResult -->
-      <method access="public" name="toMatchResult" valid="no">
+      <method access="public" name="toMatchResult">
         <signature>
           <return>
             <object>java.util.regex.MatchResult</object>
@@ -670,7 +754,12 @@
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ toString -->
@@ -730,7 +819,7 @@
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ usePattern -->
-      <method access="public" name="usePattern" valid="no">
+      <method access="public" name="usePattern">
         <signature>
           <arg nr="1">
             <object>java.util.regex.Pattern</object>
@@ -739,9 +828,22 @@
             <object>java.util.regex.Matcher</object>
           </return>
         </signature>
-        <exceptions/>
+        <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
+	</exceptions>
         <summary>
-          <taint/>
+          <taint>
+	    <transfer>
+	      <this/>
+	      <return/>
+	    </transfer>
+	    <transfer>
+	      <arg nr="1"/>
+	      <return/>
+	    </transfer>
+	  </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ useTransparentBounds -->

@@ -3,6 +3,9 @@
   <header info="interface" time="2020-03-12 14:40:37"/>
   <interface name="Map$Entry" package="java.util">
     <superinterfaces/>
+    <default-implementations>
+      <class>AbstractMap$SimpleEntry</class>
+    </default-implementations>
     <!-- ============================== METHODS ==============================  -->
     <methods>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ $deserializeLambda$ -->
