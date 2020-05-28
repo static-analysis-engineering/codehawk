@@ -459,6 +459,9 @@ object
            -> unit
            -> unit
 
+  (* setters *)
+  method set_link: doubleword_int -> unit
+
   (* accessors *)
   method get_name      : doubleword_int
   method get_type      : doubleword_int

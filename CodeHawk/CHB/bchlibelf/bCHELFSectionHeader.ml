@@ -338,6 +338,8 @@ object (self)
 
   method set_name s = name <- s
 
+  method set_link d = sh_link <- d
+
   method get_name = sh_name 
 
   method get_type = sh_type

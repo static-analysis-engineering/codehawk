@@ -174,6 +174,27 @@ object (self)
       (List.sort
          (fun sh1 sh2 -> sh1#get_addr#compare sh2#get_addr) section_headers)
 
+  method private set_links =
+    let i2d = int_to_doubleword in
+    let dynstr_index = ref wordzero in
+    let dynsym_index = ref wordzero in
+    let headers = self#get_section_headers in
+    begin
+      List.iter (fun (i,h) ->
+          match h#get_section_name with
+          | ".dynsym" -> dynsym_index := i2d i
+          | ".dynstr" -> dynstr_index := i2d i
+          | _ -> ()) headers ;
+      List.iter (fun (_,h) ->
+          match h#get_section_name with
+          | ".dynamic" -> h#set_link !dynstr_index
+          | ".hash" -> h#set_link  !dynsym_index
+          | ".dynsym" -> h#set_link !dynstr_index
+          | ".gnu.version"  -> h#set_link !dynsym_index
+          | ".gnu.version_r" -> h#set_link !dynstr_index
+          | _ -> ()) headers
+    end
+
   method create_section_headers =
     begin
       self#create_null_header ;
@@ -197,6 +218,7 @@ object (self)
       self#create_data_header ;
       self#create_rld_map_header ;
       self#create_got_header ;
+      self#set_links ;
     end
 
   (* fixed *)
@@ -268,10 +290,9 @@ object (self)
     let size = ph#get_file_size in
     let entsize = s2d "0x8" in
     let addralign = ph#get_align in
-    let link = s2d "0x6" in
     begin
       sh#set_fields
-        ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~link ~sectionname () ;
+        ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~sectionname () ;
       section_headers <- sh :: section_headers
     end
 
@@ -299,9 +320,8 @@ object (self)
            assumption_violation  (STR "DT_SYMTAB < DT_HASH") in
       let entsize = s2d "0x4" in
       let addralign = s2d "0x4" in
-      let link = s2d "0x5" in
       begin
-        sh#set_fields ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~link~sectionname () ;
+        sh#set_fields ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~sectionname () ;
         section_headers <- sh :: section_headers
       end
     else
@@ -331,11 +351,10 @@ object (self)
       let size = symtabsize in
       let entsize = numerical_to_doubleword syment in
       let addralign = s2d "0x4" in
-      let link = s2d "0x6" in
       let info = s2d "0x1" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~info ~link ~sectionname () ;
+          ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~info ~sectionname () ;
         section_headers <- sh :: section_headers
       end
     else
@@ -388,11 +407,10 @@ object (self)
           ((symtabno#add numerical_one)#mult (mkNumerical 2)) in
       let addralign = s2d "0x2" in
       let info = s2d "0x1" in
-      let link = s2d "0x5" in
       let entsize = s2d "0x2" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~entsize ~link ~info ~sectionname () ;
+          ~stype ~flags ~addr ~offset ~size ~addralign ~entsize ~info ~sectionname () ;
         section_headers <- sh :: section_headers
       end
 
@@ -416,11 +434,10 @@ object (self)
       let offset = self#get_offset_1 vaddr in
       let size = numerical_to_doubleword (neednum#mult (mkNumerical 32)) in
       let addralign = s2d "0x4" in
-      let link = s2d "0x6" in
       let info = s2d "0x1" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~link ~info ~sectionname () ;
+          ~stype ~flags ~addr ~offset ~size ~addralign ~info ~sectionname () ;
         section_headers <- sh :: section_headers
       end
 
@@ -764,7 +781,7 @@ object (self)
                (h#get_addr, h#get_size, gap, neg) :: a) [] headers) in
     LBLOCK [
         LBLOCK (List.map (fun (i,h) ->
-                    LBLOCK [ STR "section hedaer " ;  INT i ; NL ;
+                    LBLOCK [ STR "section header " ; INT i ; NL ;
                              h#toPretty ; NL ]) headers) ; NL ;
         STR "Address Map" ; NL ;
         LBLOCK (List.map (fun (addr,size,gap,  neg) ->
