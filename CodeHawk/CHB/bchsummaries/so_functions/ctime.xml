@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-05-26 09:22:35"/>
+  <libfun lib="so_functions" name="ctime">
+    <documentation>
+      <desc>convert a time value to a date and time string</desc>
+      <apidoc>
+        <pt>char *ctime (const time_t *clock)</pt>
+        <par name="clock">pointer to time</par>
+        <return>
+          <rc cond="success">pointer returned by asctime</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="ctime">
+      <par loc="stack" name="clock" nr="1">
+        <type><ptr>time_t</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

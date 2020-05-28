@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-05-26 09:19:35"/>
+  <libfun lib="so_functions" name="closedir">
+    <documentation>
+      <desc>close a directory stream</desc>
+      <apidoc>
+        <pt>int closedir (DIR *dirp)</pt>
+        <par name="dirp">pointer to directory</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="closedir">
+      <par loc="stack" name="dirp" nr="1">
+        <type><ptr>DIR</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

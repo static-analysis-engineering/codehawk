@@ -39,7 +39,7 @@
     <api adj="0" cc="cdecl" name="execve">
       <par loc="stack" name="path" nr="1">
         <type><ptr>char</ptr></type>
-	<pre><deref-read/></pre>
+	<pre><deref-read-nt/></pre>
       </par>
       <par loc="stack" name="argv" nr="2">
         <type><ptr><ptr>char</ptr></ptr></type>
