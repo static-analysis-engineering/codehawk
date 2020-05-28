@@ -252,6 +252,7 @@ let op_strings =
     (XLt, "XLt") ; (XGt, "XGt") ; (XGe, "XGe") ; (XLe, "XLe") ; (XEq, "XEq") ; (XNe, "XNe") ;
     (XSubset, "XSubset") ; (XDisjoint, "XDisjoint") ;
     (XBAnd, "XBAnd") ; (XBXor, "XBXOr") ; (XLAnd, "XLAnd") ; (XLOr, "XLOr") ;
+    (XBOr, "XBOr") ; (XBNor, "XBNor") ;
     (XNumJoin, "XNumJoin") ; (XNumRange, "XNumRange") ; (Xf "","Xf")  ]
 
 let get_op_string op = 
