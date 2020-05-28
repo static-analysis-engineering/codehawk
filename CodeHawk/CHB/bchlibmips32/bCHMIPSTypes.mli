@@ -162,14 +162,19 @@ type mips_opcode_t =
   (* I-type: branch/function call *)
   | BranchLink of mips_operand_int
   | BranchLEZero of mips_operand_int * mips_operand_int
+  | BranchLEZeroLikely of mips_operand_int * mips_operand_int
   | BranchLTZero of mips_operand_int * mips_operand_int
+  | BranchLTZeroLikely of mips_operand_int * mips_operand_int
   | BranchGEZero of mips_operand_int * mips_operand_int
+  | BranchGEZeroLikely of mips_operand_int * mips_operand_int
   | BranchGTZero of mips_operand_int * mips_operand_int
+  | BranchGTZeroLikely of mips_operand_int * mips_operand_int
   | BranchLTZeroLink of mips_operand_int * mips_operand_int
   | BranchGEZeroLink of mips_operand_int * mips_operand_int
   | BranchEqual of mips_operand_int * mips_operand_int * mips_operand_int
   | BranchEqualLikely of mips_operand_int * mips_operand_int * mips_operand_int
   | BranchNotEqual of mips_operand_int * mips_operand_int * mips_operand_int
+  | BranchNotEqualLikely of mips_operand_int * mips_operand_int * mips_operand_int
   | Branch of mips_operand_int
   (* I-type: arithmetic/logic *)
   | AddImmediate of mips_operand_int * mips_operand_int * mips_operand_int (* dest, src1, src2 *)
@@ -234,7 +239,9 @@ type mips_opcode_t =
   | SetLTUnsigned of mips_operand_int * mips_operand_int * mips_operand_int
   | TrapIfEqual of int * mips_operand_int * mips_operand_int
   (* R2-type *)
+  | CountLeadingZeros of mips_operand_int * mips_operand_int
   | MultiplyWordToGPR of mips_operand_int * mips_operand_int * mips_operand_int
+  | MultiplyAddWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
   (* FPCM-type *)
   | MovF of int * mips_operand_int * mips_operand_int   (* cc, dst, src *)
   | MovT of int * mips_operand_int * mips_operand_int   (* cc, dst, src *)

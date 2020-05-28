@@ -322,7 +322,13 @@ let translate_mips_instruction
      let rhs2 = src2#to_expr floc in
      let (lhs,lhscmds) = dst#to_lhs floc in
      let cmds = floc#get_assign_commands lhs (XOp (XPlus, [ rhs1 ; rhs2 ])) in
-     default (lhscmds @ cmds)     
+     default (lhscmds @ cmds)
+
+  | CountLeadingZeros (dst,src) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
      
   | And (dst,src1,src2) ->
      let floc = get_floc loc in
@@ -504,6 +510,30 @@ let translate_mips_instruction
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
+  | MovN (dst,src,cond) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | MovZ (dst,src,cond) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | MovF (cc,dst,src) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | MovT (cc,dst,src) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
   | Move (dst,src) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = dst#to_lhs floc in
@@ -558,6 +588,18 @@ let translate_mips_instruction
      let rhs1 = rs#to_expr floc in
      let rhs2 = rt#to_expr floc in
      let cmd1 = floc#get_assign_commands lhs2 (XOp (XMult, [ rhs1 ; rhs2 ])) in
+     let cmd2 = floc#get_abstract_commands lhs1 () in
+     default (lhs1cmds @ lhs2cmds @ cmd1 @ cmd2 )
+
+  | MultiplyAddWord (hi,lo,rs,rt) ->
+     let floc = get_floc loc in
+     let (lhs1,lhs1cmds) = hi#to_lhs floc in
+     let (lhs2,lhs2cmds) = lo#to_lhs floc in
+     let rhs1 = rs#to_expr floc in
+     let rhs2 = rt#to_expr floc in
+     let rhslo = lo#to_expr floc in
+     let xpr = XOp (XPlus, [ rhslo ; XOp (XMult, [ rhs1 ; rhs2 ]) ])  in
+     let cmd1 = floc#get_assign_commands lhs2 xpr in
      let cmd2 = floc#get_abstract_commands lhs1 () in
      default (lhs1cmds @ lhs2cmds @ cmd1 @ cmd2 )
 
@@ -838,13 +880,20 @@ let translate_mips_instruction
 
   | Return
     | Branch _
+    | BranchLEZero _
+    | BranchLEZeroLikely _
     | BranchLTZero _
+    | BranchLTZeroLikely _
     | BranchGEZero _
+    | BranchGEZeroLikely _
     | BranchLTZeroLink _
     | BranchGEZeroLink _
+    | BranchGTZero _
+    | BranchGTZeroLikely _
     | BranchEqual _
     | BranchEqualLikely _
     | BranchNotEqual _
+    | BranchNotEqualLikely _
     | Jump _
     | JumpRegister _
     | TrapIfEqual _ -> default []

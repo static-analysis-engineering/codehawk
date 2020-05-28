@@ -193,6 +193,12 @@ object (self)
          ([ "a:vxxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
                           xd#index_xpr result ; xd#index_xpr rresult ])
 
+      | CountLeadingZeros (dst,src) ->
+         let rhs = src#to_expr floc in
+         let lhs = dst#to_variable floc in
+         let rrhs = rewrite_expr rhs in
+         ([ "a:vxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ; xd#index_xpr rrhs ])
+
       | BranchEqual (src1,src2,tgt) ->
          let rhs1 = src1#to_expr floc in
          let rhs2 = src2#to_expr floc in
@@ -224,6 +230,15 @@ object (self)
          ([ "a:xxxx" ], [ xd#index_xpr rhs ; xd#index_xpr result ;
                           xd#index_xpr rresult ; xd#index_xpr negresult ])
 
+      | BranchGEZeroLikely (src,tgt) ->
+         let rhs = src#to_expr floc in
+         let result = XOp (XGe, [ rhs ; zero_constant_expr ]) in
+         let rresult = rewrite_expr result in
+         let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
+         let (rresult,negresult) = get_condition_exprs rresult negresult in
+         ([ "a:xxxx" ], [ xd#index_xpr rhs ; xd#index_xpr result ;
+                          xd#index_xpr rresult ; xd#index_xpr negresult ])
+
       | BranchGEZeroLink (src,tgt) ->
          let rhs = src#to_expr floc in
          let result = XOp (XGe, [ rhs ; zero_constant_expr ]) in
@@ -232,6 +247,15 @@ object (self)
                         xd#index_xpr rresult ])
 
       | BranchGTZero (src,tgt) ->
+         let rhs = src#to_expr floc in
+         let result = XOp (XGt, [ rhs ; zero_constant_expr ]) in
+         let rresult = rewrite_expr result in
+         let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
+         let (rresult,negresult) = get_condition_exprs rresult negresult in
+         ([ "a:xxxx" ], [ xd#index_xpr rhs ; xd#index_xpr result ;
+                          xd#index_xpr rresult ; xd#index_xpr negresult ])
+
+      | BranchGTZeroLikely (src,tgt) ->
          let rhs = src#to_expr floc in
          let result = XOp (XGt, [ rhs ; zero_constant_expr ]) in
          let rresult = rewrite_expr result in
@@ -249,6 +273,15 @@ object (self)
          ([ "a:xxxx" ], [ xd#index_xpr rhs ; xd#index_xpr result ;
                           xd#index_xpr rresult ; xd#index_xpr negresult ])
 
+      | BranchLEZeroLikely (src,tgt) ->
+         let rhs = src#to_expr floc in
+         let result = XOp (XLe, [ rhs ; zero_constant_expr ]) in
+         let rresult = rewrite_expr result in
+         let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
+         let (rresult,negresult) = get_condition_exprs rresult negresult in
+         ([ "a:xxxx" ], [ xd#index_xpr rhs ; xd#index_xpr result ;
+                          xd#index_xpr rresult ; xd#index_xpr negresult ])
+
       | BranchLTZero (src,tgt) ->
          let rhs = src#to_expr floc in
          let result = XOp (XLt, [ rhs ; zero_constant_expr ]) in
@@ -258,7 +291,27 @@ object (self)
          ([ "a:xxxx" ], [ xd#index_xpr rhs ; xd#index_xpr result ;
                           xd#index_xpr rresult ; xd#index_xpr negresult ])
 
+      | BranchLTZeroLikely (src,tgt) ->
+         let rhs = src#to_expr floc in
+         let result = XOp (XLt, [ rhs ; zero_constant_expr ]) in
+         let rresult = rewrite_expr result in
+         let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
+         let (rresult,negresult) = get_condition_exprs rresult negresult in
+         ([ "a:xxxx" ], [ xd#index_xpr rhs ; xd#index_xpr result ;
+                          xd#index_xpr rresult ; xd#index_xpr negresult ])
+
       | BranchNotEqual (src1,src2,tgt) ->
+         let rhs1 = src1#to_expr floc in
+         let rhs2 = src2#to_expr floc in
+         let result = XOp (XNe, [ rhs1 ; rhs2 ]) in
+         let rresult = rewrite_expr result in
+         let negresult = rewrite_expr (XOp (XLNot, [ rresult ])) in
+         let (rresult,negresult) = get_condition_exprs rresult negresult in
+         ([ "a:xxxxx" ],[ xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
+                          xd#index_xpr result ; xd#index_xpr rresult ;
+                          xd#index_xpr negresult ])
+
+      | BranchNotEqualLikely (src1,src2,tgt) ->
          let rhs1 = src1#to_expr floc in
          let rhs2 = src2#to_expr floc in
          let result = XOp (XNe, [ rhs1 ; rhs2 ]) in
@@ -396,6 +449,20 @@ object (self)
          let rresult = rewrite_expr result in
          ([ "a:vvxxxx" ],[ xd#index_variable lhshi ; xd#index_variable lhslo ;
                            xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
+                           xd#index_xpr result ; xd#index_xpr rresult ])
+
+      | MultiplyAddWord (hi,lo,rs,rt) ->
+         let lhshi = hi#to_variable floc in
+         let lhslo = lo#to_variable floc in
+         let rhshi = hi#to_expr floc in
+         let rhslo = lo#to_expr floc in
+         let rhs1 = rs#to_expr floc in
+         let rhs2 = rt#to_expr floc in
+         let result = XOp (XMult, [ rhs1 ; rhs2 ]) in
+         let rresult = rewrite_expr result in
+         ([ "a:vvxxxxxx" ],[ xd#index_variable lhshi ; xd#index_variable lhslo ;
+                           xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
+                           xd#index_xpr rhslo ; xd#index_xpr rhshi  ;
                            xd#index_xpr result ; xd#index_xpr rresult ])
 
       | Nor (dst,src1,src2) ->

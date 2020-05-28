@@ -127,7 +127,7 @@ let decompose_instr (dw:doubleword_int):mips_instr_format_t =
      let addr = dwlow + (upper lsl 16) in
      JType (opcode,addr)
   (* opcode:6, rs:5, rt:5, immediate:16 *)
-  | 1 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 20
+  | 1 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 20 | 21 | 22 | 23
     | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42
     | 43 | 44 | 45 | 46 | 48 | 49 | 53 | 56 | 57 | 61 ->
      let rs = (dwhigh lsr 5) mod 32 in
@@ -211,12 +211,17 @@ let instr_format_to_string (fmt:mips_instr_format_t) =
 let is_conditional_jump_instruction opcode =
   match opcode with
   | BranchLTZero _
+    | BranchLTZeroLikely _
     | BranchLEZero _
+    | BranchLEZeroLikely _
     | BranchGEZero _
+    | BranchGEZeroLikely _
     | BranchGTZero _
+    | BranchGTZeroLikely _
     | BranchEqual _
     | BranchEqualLikely _
-    | BranchNotEqual _ -> true
+    | BranchNotEqual _
+    | BranchNotEqualLikely _-> true
   | _ -> false
 
 let get_conditional_jump_expr floc opcode:xpr_t =
@@ -224,12 +229,17 @@ let get_conditional_jump_expr floc opcode:xpr_t =
   let zero = zero_constant_expr in
   match opcode with
   | BranchLTZero (r,_) -> XOp (XLt, [ mkxpr r ; zero ])
+  | BranchLTZeroLikely (r,_) -> XOp (XLt, [ mkxpr r ; zero ])
   | BranchLEZero (r,_) -> XOp (XGt, [ mkxpr r ; zero ])
+  | BranchLEZeroLikely (r,_) -> XOp (XGt, [ mkxpr r ; zero ])
   | BranchGEZero (r,_) -> XOp (XGe, [ mkxpr r ; zero ])
+  | BranchGEZeroLikely (r,_) -> XOp (XGe, [ mkxpr r ; zero ])
   | BranchGTZero (r,_) -> XOp (XGt, [ mkxpr r ; zero ])
+  | BranchGTZeroLikely (r,_) -> XOp (XGt, [ mkxpr r ; zero ])
   | BranchEqual (r1,r2,_) ->  XOp (XEq, [ mkxpr r1 ; mkxpr r2 ])
   | BranchEqualLikely (r1,r2,_) -> XOp (XEq, [ mkxpr r1 ; mkxpr r2 ])
   | BranchNotEqual (r1,r2,_) -> XOp (XNe, [ mkxpr r1 ; mkxpr r2 ])
+  | BranchNotEqualLikely (r1,r2,_) -> XOp (XNe, [ mkxpr r1 ; mkxpr r2 ])
   | _ ->
      raise (BCH_failure
               (LBLOCK [ STR "Opcode " ; STR (mips_opcode_to_string opcode) ;
@@ -272,12 +282,17 @@ let is_return_instruction opcode =
 let get_direct_jump_target_address opcode =
   match opcode with
   | BranchLTZero (_,op)
+    | BranchLTZeroLikely (_,op)
     | BranchLEZero (_,op)
+    | BranchLEZeroLikely (_,op)
     | BranchGEZero (_,op)
+    | BranchGEZeroLikely (_,op)
     | BranchGTZero (_,op)
+    | BranchGTZeroLikely (_,op)
     | BranchEqual (_,_,op)
     | BranchEqualLikely (_,_,op)
     | BranchNotEqual (_,_,op)
+    | BranchNotEqualLikely  (_,_,op)
     | BranchFPFalse (_,op)
     | BranchFPTrue (_,op)
     | BranchFPFalseLikely (_,op)

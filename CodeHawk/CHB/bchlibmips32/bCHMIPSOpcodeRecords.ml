@@ -90,11 +90,23 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = true ;
       ida_asm  = (fun f -> f#ops "blez" [ src ; target ])
     }
+  | BranchLEZeroLikely (src,target) -> {
+      mnemonic   = "blezl" ;
+      operands   = [ src ; target ] ;
+      delay_slot = true ;
+      ida_asm  = (fun f -> f#ops "blezl" [ src ; target ])
+    }
   | BranchLTZero (src,target) -> {
       mnemonic   = "bltz" ;
       operands   = [ src ; target ] ;
       delay_slot  = true ;
       ida_asm  = (fun f -> f#ops "bltz" [ src ; target ])
+    }
+  | BranchLTZeroLikely (src,target) -> {
+      mnemonic   = "bltzl" ;
+      operands   = [ src ; target ] ;
+      delay_slot  = true ;
+      ida_asm  = (fun f -> f#ops "bltzl" [ src ; target ])
     }
   | BranchGEZero (src,target) ->  {
       mnemonic   = "bgez" ;
@@ -102,11 +114,23 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = true ;
       ida_asm    = (fun f -> f#ops "bgez" [ src ; target ])
     }
+  | BranchGEZeroLikely (src,target) ->  {
+      mnemonic   = "bgezl" ;
+      operands   = [ src ; target ] ;
+      delay_slot = true ;
+      ida_asm    = (fun f -> f#ops "bgezl" [ src ; target ])
+    }
   | BranchGTZero (src,target) ->  {
       mnemonic   = "bgtz" ;
       operands   = [ src ; target ] ;
       delay_slot = true ;
       ida_asm    = (fun f -> f#ops "bgtz" [ src ; target ])
+    }
+  | BranchGTZeroLikely  (src,target) ->  {
+      mnemonic   = "bgtzl" ;
+      operands   = [ src ; target ] ;
+      delay_slot = true ;
+      ida_asm    = (fun f -> f#ops "bgtzl" [ src ; target ])
     }
   | BranchLTZeroLink (src,target) -> {
       mnemonic   =  "bltzal" ;
@@ -207,6 +231,12 @@ let get_record (opc:mips_opcode_t) =
       operands   = [ src1 ; src2 ; target ] ;
       delay_slot = true ;
       ida_asm    = (fun f -> f#ops "bne" [ src1 ; src2 ; target ])
+    }
+  | BranchNotEqualLikely (src1,src2,target) -> {
+      mnemonic   = "bnel" ;
+      operands   = [ src1 ; src2 ; target ] ;
+      delay_slot = true ;
+      ida_asm    = (fun f -> f#ops "bnel" [ src1 ; src2 ; target ])
     }
                                    
   (* ----------------------------------------------- I-type arithmetic/logic  *)
@@ -750,6 +780,48 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = false ;
       ida_asm    = (fun f -> f#ops "mtlo" [ rs ])
     }
+
+  (* ---------------------------------------------------------------------------
+   * Format: MOVN rd,rs,rt
+   * Description: if GPR[rt] != 0 then GPR[rd] <- GPR[rs]
+   * ---------------------------------------------------------------------------
+   * If the value in GPR rt is not equal to zero, then the contents of GPR rs 
+   * are placed into GPR rd.
+   * --------------------------------------------------------------------------- *)
+  | MovN (rd,rs,rt) -> {
+      mnemonic = "movn" ;
+      operands = [ rd ; rs ; rt ] ;
+      delay_slot = false ;
+      ida_asm = (fun f -> f#ops "movn" [ rd ; rs ; rt ])
+    }
+
+  (* ---------------------------------------------------------------------------
+   * Format: MOVZ rd,rs,rt
+   * Description: if GPR[rt] = 0 then GPR[rd] <- GPR[rs]
+   * ---------------------------------------------------------------------------
+   * If the value in GPR rt is equal to zero, then the contents of GPR rs 
+   * are placed into GPR rd.
+   * --------------------------------------------------------------------------- *)
+  | MovZ (rd,rs,rt) -> {
+      mnemonic = "movz" ;
+      operands = [ rd ; rs ; rt ] ;
+      delay_slot = false ;
+      ida_asm = (fun f -> f#ops "movz" [ rd ; rs ; rt ])
+    }
+
+  (* ---------------------------------------------------------------------------
+   * Format: CLZ rd, rs
+   * Description: GPR[rd] <- count_leading_zeros GPR[rs]
+   * ---------------------------------------------------------------------------
+   * Count the number of leading zeros in a word.
+   * --------------------------------------------------------------------------- *)
+  | CountLeadingZeros (rd,rs) -> {
+      mnemonic  = "clz"  ;
+      operands  = [ rd ; rs ] ;
+      delay_slot = false ;
+      ida_asm = (fun f  -> f#ops "clz" [ rd ; rs ])
+    }
+
   (* ---------------------------------------------------------------------------
    * Format: MULT rs, rt
    * Description: (HI, LO) <- GPR[rs] x GPR[rt]
@@ -770,6 +842,28 @@ let get_record (opc:mips_opcode_t) =
       operands   = [ hi ; lo ; rs ; rt ] ;
       delay_slot = false ;
       ida_asm    = (fun f -> f#ops "mult" [ rs ; rt ])
+    }
+  (* ---------------------------------------------------------------------------
+   * Format: MADD rs, rt
+   * Description: (HI, LO) <- (HI, LO) + GPR[rs] x GPR[rt]
+   * ---------------------------------------------------------------------------
+   * The 32-bit word value in GPR rs is multiplied by the 32-bit word value in 
+   * GPR rt, treating both operands as signed values, to produce a 64-bit result.
+   * The product is added to the 64-bit concatenated values of HI and LO. The 
+   * most sig- nificant 32 bits of the result are written into HI and the least 
+   * significant 32 bits are written into LO. No arithmetic exception occurs 
+   * under any circumstances.
+   * ---------------------------------------------------------------------------
+   * Operation
+   *   temp <- (HI || LO) + (GPR[rs] x GPR[rt]) 
+   * HI <- temp[63..32]
+   * LO <- temp[31..0]
+   * --------------------------------------------------------------------------- *)
+  | MultiplyAddWord (hi,lo,rs,rt) -> {
+      mnemonic   = "madd" ;
+      operands   = [ hi ; lo ; rs ; rt ] ;
+      delay_slot = false ;
+      ida_asm    = (fun f -> f#ops "madd" [ rs ; rt ])
     }
 
   (* ---------------------------------------------------------------------------
@@ -1348,9 +1442,8 @@ let get_record (opc:mips_opcode_t) =
       operands   = [] ;
       delay_slot = true ;
       ida_asm    = (fun f -> f#no_ops "<hlt>")
-    }
-      
-  | _  -> {
+    }   
+  | _  ->  {
       mnemonic   = "generic" ;
       operands   = [] ;
       delay_slot = false ;

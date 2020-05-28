@@ -57,6 +57,8 @@ let parse_branch
   match rrt with
   | 0 -> BranchLTZero (r_op rs RD, tgtop)
   | 1 -> BranchGEZero (r_op rs RD, tgtop)
+  | 2 -> BranchLTZeroLikely (r_op rs RD, tgtop)
+  | 3 -> BranchGEZeroLikely (r_op rs RD, tgtop)
   | 16 -> BranchLTZeroLink (r_op rs RD, tgtop)
   | 17 when rrs = 0 -> BranchLink tgtop
   | 17 -> BranchGEZeroLink (r_op rs RD, tgtop)
@@ -101,6 +103,9 @@ let parse_I_opcode
   | 15 when rrs = 0 -> LoadUpperImmediate (r_op rt WR,imm_op false 2 imm)
   | 15 -> AddUpperImmediate (r_op rt WR,r_op rs RD, imm_op true 2 imm)
   | 20 -> BranchEqualLikely (r_op rs RD,r_op rt RD,tgt_op ())
+  | 21 -> BranchNotEqualLikely (r_op rs RD,r_op rt RD,tgt_op ())
+  | 22 -> BranchLEZeroLikely (r_op rs RD,tgt_op ())
+  | 23 -> BranchGTZeroLikely (r_op rs RD,tgt_op ())
   | 32 -> LoadByte (r_op rt WR,i_op rs imm RD)
   | 33 -> LoadHalfWord (r_op rt WR,i_op rs imm RD)
   | 34 -> LoadWordLeft (r_op rt WR,i_op rs imm RD)
@@ -189,7 +194,9 @@ let parse_R2_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int
   let rd = select_mips_reg rrd in
   let r_op = mips_register_op in
   match fnct with
+  | 0 -> MultiplyAddWord (mips_hi_op RW, mips_lo_op RW, r_op rs RD, r_op rt RD)
   | 2 -> MultiplyWordToGPR (r_op rd WR, r_op rs RD, r_op rt RD)
+  | 32 -> CountLeadingZeros (r_op rd WR, r_op rs RD)
   | _ ->
      begin
        pverbose [ STR "    R2-opcode: " ; INT fnct ; NL ] ;
