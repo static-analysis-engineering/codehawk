@@ -129,7 +129,7 @@ let main () =
        pr_debug [ STR "Loaded " ; INT (List.length bcmethods) ; STR " methods with bytecode" ;
                   STR " in " ; INT (List.length classnames) ; STR " classes" ; NL ]) ;
       method_signature_implementations#initialize ;
-      load_xml_user_data () ;
+      load_user_class_files () ;
       costvalues#load ;
       read_taint_origins () ;
       set_main_method () ;
