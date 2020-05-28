@@ -1,211 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-java-analyzer>
-  <header info="class" time="2020-03-17 23:14:38"/>
-  <class name="DeflaterInputStream" package="java.util.zip">
+  <header info="class" time="2020-05-28 13:06:23"/>
+  <class name="CheckedInputStream" package="java.util.zip">
     <superclass>java.io.FilterInputStream</superclass>
     <interfaces>
       <implements>java.io.Closeable</implements>
       <implements>java.lang.AutoCloseable</implements>
     </interfaces>
     <!-- =============================== FIELDS ===============================  -->
-    <fields>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:def -->
-      <field access="protected" final="yes" name="def">
-        <signature>
-          <object>java.util.zip.Deflater</object>
-        </signature>
-      </field>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ field:buf -->
-      <field access="protected" final="yes" name="buf">
-        <signature>
-          <array>
-            <byte/>
-          </array>
-        </signature>
-      </field>
-    </fields>
+    <fields/>
     <!-- ============================ CONSTRUCTORS ============================  -->
     <constructors>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.InputStream) -->
-      <constructor access="public">
-        <signature>
-          <arg nr="1">
-            <object>java.io.InputStream</object>
-          </arg>
-        </signature>
-        <exceptions>
-	  <c-throws>
-	    <cnp arg="1"/>
-	  </c-throws>
-	</exceptions>
-        <summary>
-          <taint>
-	    <transfer>
-	      <arg nr="1"/>
-	      <this/>
-	    </transfer>
-	  </taint>
-        </summary>
-      </constructor>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.InputStream,java.util.zip.Deflater) -->
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ (java.io.InputStream,java.util.zip.Checksum) -->
       <constructor access="public">
         <signature>
           <arg nr="1">
             <object>java.io.InputStream</object>
           </arg>
           <arg nr="2">
-            <object>java.util.zip.Deflater</object>
+            <object>java.util.zip.Checksum</object>
           </arg>
         </signature>
-        <exceptions>
-	  <c-throws>
-	    <cnp arg="1"/>
-	    <cnp arg="2"/>
-	  </c-throws>
-	</exceptions>
+        <exceptions/>
         <summary>
           <taint>
-	    <transfer>
-	      <arg nr="1"/>
-	      <this/>
-	    </transfer>
-	    <transfer>
-	      <arg nr="2"/>
-	      <this/>
-	    </transfer>
-	  </taint>
-        </summary>
-      </constructor>
-      <!-- ~~~~~~~~~~~~~~~~~~~~ (java.io.InputStream,java.util.zip.Deflater,int) -->
-      <constructor access="public">
-        <signature>
-          <arg nr="1">
-            <object>java.io.InputStream</object>
-          </arg>
-          <arg nr="2">
-            <object>java.util.zip.Deflater</object>
-          </arg>
-          <arg nr="3">
-            <int/>
-          </arg>
-        </signature>
-        <exceptions>
-	  <c-throws>
-	    <cnp arg="1"/>
-	    <cnp arg="2"/>
-	  </c-throws>
-	  <c-throws>
-	    <safety-condition>
-	      <math>
-		<apply>
-		  <geq/>
-		  <arg nr="1"/>
-		  <cn>1</cn>
-		</apply>
-	      </math>
-	    </safety-condition>
-	    <exn>java.lang.IllegalArgumentException</exn>
-	  </c-throws>
-	</exceptions>
-        <summary>
-          <taint>
-	    <transfer>
-	      <arg nr="1"/>
-	      <this/>
-	    </transfer>
-	    <transfer>
-	      <arg nr="2"/>
-	      <this/>
-	    </transfer>
-	    <transfer>
-	      <arg nr="3"/>
-	      <this/>
-	    </transfer>
-	  </taint>
-	  <sinks>
-	    <sink arg="3" form="memory" type="resource"/>
-	  </sinks>
+            <transfer>
+              <arg nr="1"/>
+              <this/>
+            </transfer>
+            <transfer>
+              <arg nr="2"/>
+              <this/>
+            </transfer>
+          </taint>
         </summary>
       </constructor>
     </constructors>
     <!-- ============================== METHODS ==============================  -->
     <methods>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ available -->
-      <method access="public" name="available">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ getChecksum -->
+      <method access="public" name="getChecksum">
         <signature>
           <return>
-            <int/>
-          </return>
-        </signature>
-        <exceptions>
-          <throws>java.io.IOException</throws>
-        </exceptions>
-        <summary>
-          <taint>
-	    <transfer>
-	      <this/>
-	      <return/>
-	    </transfer>
-	  </taint>
-	  <postconditions>
-	    <post>
-	      <math>
-		<apply>
-		  <geq/>
-		  <return/>
-		  <cn>0</cn>
-		</apply>
-	      </math>
-	    </post>
-	    <post>
-	      <math>
-		<apply>
-		  <leq/>
-		  <return/>
-		  <cn>1</cn>
-		</apply>
-	      </math>
-	    </post>
-	  </postconditions>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ close -->
-      <method access="public" name="close">
-        <signature/>
-        <exceptions>
-          <throws>java.io.IOException</throws>
-        </exceptions>
-        <summary>
-          <taint/>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mark -->
-      <method access="public" name="mark">
-        <signature>
-          <arg nr="1">
-            <int/>
-          </arg>
-        </signature>
-        <exceptions/>
-        <summary>
-          <taint>
-	    <transfer>
-	      <arg nr="1"/>
-	      <this/>
-	    </transfer>
-	  </taint>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ markSupported -->
-      <method access="public" name="markSupported">
-        <signature>
-          <return>
-            <boolean/>
+            <object>java.util.zip.Checksum</object>
           </return>
         </signature>
         <exceptions/>
         <summary>
-          <taint/>
+          <taint>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ read -->
@@ -216,6 +63,7 @@
           </return>
         </signature>
         <exceptions>
+          <throws>java.lang.NullPointerException</throws>
           <throws>java.io.IOException</throws>
         </exceptions>
         <summary>
@@ -223,7 +71,7 @@
 	    <defput>
 	      <return/>
 	    </defput>
-	  </taint>
+          </taint>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ read -->
@@ -245,27 +93,60 @@
           </return>
         </signature>
         <exceptions>
+	  <c-throws>
+	    <cnp arg="1"/>
+	  </c-throws>
           <throws>java.io.IOException</throws>
+          <throws>java.lang.IndexOutOfBoundsException</throws>
         </exceptions>
         <summary>
           <taint>
 	    <defput>
-	      <return/>
-	    </defput>
-	    <defput>
 	      <arg nr="1"/>
 	    </defput>
-	  </taint>
-        </summary>
-      </method>
-      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ reset -->
-      <method access="public" name="reset">
-        <signature/>
-        <exceptions>
-          <throws>java.io.IOException</throws>
-        </exceptions>
-        <summary>
-          <taint/>
+	    <defput>
+	      <return/>
+	    </defput>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <geq/>
+                  <return/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </post>
+            <post>
+              <math>
+                <apply>
+                  <leq/>
+                  <return/>
+                  <arg nr="3"/>
+                </apply>
+              </math>
+            </post>
+            <error-post>
+              <math>
+                <apply>
+                  <eq/>
+                  <return/>
+                  <cn>-1</cn>
+                </apply>
+              </math>
+            </error-post>
+          </postconditions>
+          <side-effects>
+            <side-effect>
+              <math>
+                <apply>
+                  <numeric-abstract/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </side-effect>
+          </side-effects>
         </summary>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ skip -->
@@ -283,23 +164,44 @@
         </exceptions>
         <summary>
           <taint>
-	    <transfer>
-	      <arg nr="1"/>
-	      <this/>
-	    </transfer>
-	  </taint>
-	  <postconditions>
-	    <post>
-	      <math>
-		<apply>
-		  <geq/>
-		  <return/>
-		  <cn>0</cn>
-		</apply>
-	      </math>
-	    </post>
-	  </postconditions>
+            <transfer>
+              <this/>
+              <return/>
+            </transfer>
+            <transfer>
+              <arg nr="1"/>
+              <return/>
+            </transfer>
+          </taint>
+          <postconditions>
+            <post>
+              <math>
+                <apply>
+                  <geq/>
+                  <return/>
+                  <cn>0</cn>
+                </apply>
+              </math>
+            </post>
+            <post>
+              <math>
+                <apply>
+                  <leq/>
+                  <return/>
+                  <arg nr="1"/>
+                </apply>
+              </math>
+            </post>
+          </postconditions>
         </summary>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) available -->
+      <method from="java.io.FilterInputStream" inherited="yes" name="available">
+        <signature>
+          <return>
+            <int/>
+          </return>
+        </signature>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) clone -->
       <method from="java.lang.Object" inherited="yes" name="clone">
@@ -308,6 +210,10 @@
             <object>java.lang.Object</object>
           </return>
         </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) close -->
+      <method from="java.io.FilterInputStream" inherited="yes" name="close">
+        <signature/>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) equals -->
       <method from="java.lang.Object" inherited="yes" name="equals">
@@ -340,6 +246,22 @@
           </return>
         </signature>
       </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) mark -->
+      <method from="java.io.FilterInputStream" inherited="yes" name="mark">
+        <signature>
+          <arg nr="1">
+            <int/>
+          </arg>
+        </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) markSupported -->
+      <method from="java.io.FilterInputStream" inherited="yes" name="markSupported">
+        <signature>
+          <return>
+            <boolean/>
+          </return>
+        </signature>
+      </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) notify -->
       <method from="java.lang.Object" inherited="yes" name="notify">
         <signature/>
@@ -360,6 +282,10 @@
             <int/>
           </return>
         </signature>
+      </method>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) reset -->
+      <method from="java.io.FilterInputStream" inherited="yes" name="reset">
+        <signature/>
       </method>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (inherited) toString -->
       <method from="java.lang.Object" inherited="yes" name="toString">

@@ -53,16 +53,18 @@ java.time | 8 | 182 | 24 | 132 | 8 | 0 |
 java.time.chrono | 3 | 0 | 0 | 0 | 0 | 0 | 
 java.time.format | 1 | 4 | 0 | 3 | 0 | 0 | 
 java.time.temporal | 4 | 0 | 0 | 0 | 0 | 0 | 
-java.util | 78 | 1117 | 151 | 351 | 11 | 20 | 
-java.util.concurrent | 31 | 309 | 61 | 91 | 1 | 33 | 
+java.util | 97 | 1178 | 162 | 360 | 12 | 20 | 
+java.util.concurrent | 43 | 452 | 109 | 142 | 1 | 40 | 
 java.util.concurrent.atomic | 10 | 56 | 0 | 5 | 1 | 0 | 
-java.util.concurrent.locks | 5 | 40 | 0 | 15 | 0 | 1 | 
+java.util.concurrent.locks | 10 | 81 | 4 | 20 | 0 | 3 | 
 java.util.function | 13 | 2 | 0 | 0 | 0 | 0 | 
-java.util.jar | 2 | 14 | 3 | 4 | 3 | 0 | 
-java.util.logging | 9 | 122 | 2 | 16 | 53 | 0 | 
-java.util.regex | 3 | 36 | 0 | 9 | 3 | 0 | 
+java.util.jar | 8 | 63 | 9 | 10 | 3 | 1 | 
+java.util.logging | 12 | 139 | 4 | 20 | 53 | 0 | 
+java.util.prefs | 1 | 8 | 1 | 3 | 0 | 0 | 
+java.util.regex | 4 | 51 | 1 | 9 | 6 | 0 | 
+java.util.spi | 1 | 1 | 0 | 0 | 0 | 0 | 
 java.util.stream | 7 | 36 | 0 | 0 | 0 | 0 | 
-java.util.zip | 12 | 118 | 17 | 24 | 1 | 6 | 
+java.util.zip | 17 | 152 | 20 | 33 | 1 | 6 | 
 javax.accessibility | 10 | 35 | 0 | 14 | 2 | 0 | 
 javax.activation | 2 | 19 | 0 | 0 | 1 | 0 | 
 javax.annotation.processing | 7 | 34 | 0 | 4 | 0 | 0 | 
@@ -123,7 +125,7 @@ org.xml.sax.helpers | 8 | 102 | 1 | 20 | 47 | 0 |
 sun.net.www | 2 | 0 | 0 | 0 | 0 | 0 | 
 sun.net.www.protocol.file | 1 | 0 | 0 | 0 | 0 | 0 | 
 sun.security.util | 1 | 0 | 0 | 0 | 0 | 0 | 
-| total  | 1452 | 12804 | 1264 | 2650 | 593 | 114 | 
+| total  | 1505 | 13173 | 1340 | 2737 | 597 | 124 | 
 
 
 ### Preconditions
@@ -140,15 +142,16 @@ exceptions covered.
 | java.lang.ArithmeticException | 24 | 
 | java.lang.ArrayIndexOutOfBoundsException | 68 | 
 | java.lang.ArrayStoreException | 1 | 
-| java.lang.IllegalArgumentException | 272 | 
+| java.lang.IllegalArgumentException | 275 | 
 | java.lang.IndexOutOfBoundsException | 147 | 
 | java.lang.NegativeArraySizeException | 17 | 
-| java.lang.NullPointerException | 639 | 
+| java.lang.NullPointerException | 711 | 
 | java.lang.StringIndexOutOfBoundsException | 74 | 
 | java.net.MalformedURLException | 1 | 
 | java.security.InvalidParameterException | 1 | 
 | java.time.DateTimeException | 12 | 
 | java.util.EmptyStackException | 2 | 
+| java.util.concurrent.RejectedExecutionException | 1 | 
 | javax.management.MalformedObjectNameException | 1 | 
 
 ### Summary Content
