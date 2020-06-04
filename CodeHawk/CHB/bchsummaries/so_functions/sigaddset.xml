@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 23:34:39"/>
+  <libfun lib="so_functions" name="sigaddset">
+    <documentation>
+      <desc>add a signal to a signal set</desc>
+      <apidoc>
+        <pt>
+          <ll>int sigaddset(</ll>
+          <ld>sigset_t *set</ld>
+          <ld>int signo</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="set">set to add signal to</par>
+        <par name="signo">signal to be added</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="sigaddset">
+      <par loc="stack" name="set" nr="1">
+        <type><ptr>sigset_t</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="signo" nr="2">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

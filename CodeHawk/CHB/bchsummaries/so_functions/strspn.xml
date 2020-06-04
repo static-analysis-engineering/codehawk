@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 23:13:52"/>
+  <libfun lib="so_functions" name="strspn">
+    <documentation>
+      <desc>get length of a substring</desc>
+      <apidoc>
+        <pt>
+          <ll>int strspn(</ll>
+          <ld>const char *s1</ld>
+          <ld>const char *s2</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="s1">string to be matched with the characters</par>
+        <par name="s2">string of charachters to be matched</par>
+        <return>the computed length</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="strspn">
+      <par loc="stack" name="s1" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="s2" nr="2">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <geq/>
+	      <return/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

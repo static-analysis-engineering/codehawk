@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 22:07:54"/>
+  <libfun lib="so_functions" name="setgid">
+    <documentation>
+      <desc>set-group-ID</desc>
+      <apidoc>
+        <pt>int setgid (gid_t gid)</pt>
+        <par name="gid">
+	  gid to be set tp the real group ID, effective group ID, and the saved
+	  set-group-ID of the calling process
+	</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="setgid">
+      <par loc="stack" name="gid" nr="1">
+        <type>gid_t</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

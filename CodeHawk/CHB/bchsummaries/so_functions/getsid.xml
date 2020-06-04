@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 17:15:46"/>
+  <libfun lib="so_functions" name="getsid">
+    <documentation>
+      <desc>get the process group ID of a session leader</desc>
+      <apidoc>
+        <pt>pid_t getsid (pid_t pid)</pt>
+        <par name="pid">process ID</par>
+        <return>
+          <rc cond="success">
+	    the process group ID of the session leader of the specified process
+	  </rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getsid">
+      <par loc="stack" name="pid" nr="1">
+        <type>pid_t</type>
+      </par>
+      <returntype>pid_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <geq/>
+	      <return/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</post>
+	<error-post>
+	  <math>
+	    <apply>
+	      <eq/>
+	      <return/>
+	      <cn>-1</cn>
+	    </apply>
+	  </math>
+	</error-post>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

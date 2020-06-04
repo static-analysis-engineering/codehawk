@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 15:36:26"/>
+  <libfun lib="so_functions" name="fchown">
+    <documentation>
+      <desc>change owner and group of a file</desc>
+      <apidoc>
+        <pt>
+          <ll>int fchown(</ll>
+          <ld>int fildes</ld>
+          <ld>uid_t owner</ld>
+          <ld>gid_t group</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="fildes">file descriptor</par>
+        <par name="owner">user ID</par>
+        <par name="group">group ID</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="fchown">
+      <par loc="stack" name="fildes" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="owner" nr="2">
+        <type>uid_t</type>
+      </par>
+      <par loc="stack" name="group" nr="3">
+        <type>gid_t</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

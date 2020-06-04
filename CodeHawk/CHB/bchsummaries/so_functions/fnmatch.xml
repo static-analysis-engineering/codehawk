@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 15:40:44"/>
+  <libfun lib="so_functions" name="fnmatch">
+    <documentation>
+      <desc>match a filename string or a pathname</desc>
+      <apidoc>
+        <pt>
+          <ll>int fnmatch(</ll>
+          <ld>const char *pattern</ld>
+          <ld>const char *string</ld>
+          <ld>int flags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pattern">pattern to be matched</par>
+        <par name="string">string to match the pattern</par>
+        <par name="flags">modifies the interpretation of pattern and string</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">non-zero value</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="fnmatch">
+      <par loc="stack" name="pattern" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="string" nr="2">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="flags" nr="3">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-notzero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 15:03:11"/>
+  <libfun lib="so_functions" name="bsearch">
+    <documentation>
+      <desc>binary search a sorted table</desc>
+      <apidoc>
+        <pt>
+          <ll>void *bsearch(</ll>
+          <ld>const void *key</ld>
+          <ld>const void *base</ld>
+          <ld>size_t nel</ld>
+          <ld>size_t width</ld>
+          <ld>int (*compar)(const void *,const void *))</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="key">object to be found</par>
+        <par name="base">base of array  of objects</par>
+        <par name="nel">number of elements in array</par>
+        <par name="width">size of each element</par>
+        <par name="compar">comparison function</par>
+        <return>
+          <rc cond="success">a pointer to a matching member of the array</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="bsearch">
+      <par loc="stack" name="key" nr="1">
+        <type><ptr>void</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="base" nr="2">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="stack" name="nel" nr="3">
+        <type>size_t</type>
+      </par>
+      <par loc="stack" name="width" nr="4">
+        <type>size_t</type>
+      </par>
+      <par loc="stack" name="compar" nr="5">
+        <type><ptr>function-pointer</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype><ptr>void</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>byte</type>
+	      <ci>base</ci>
+	      <apply>
+		<times/>
+		<ci>nel</ci>
+		<ci>width</ci>
+	      </apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

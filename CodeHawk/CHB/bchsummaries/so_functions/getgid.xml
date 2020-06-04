@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 16:04:03"/>
+  <libfun lib="so_functions" name="getgid">
+    <documentation>
+      <desc>get the real group ID</desc>
+      <apidoc>
+        <pt>gid_t getgid (void)</pt>
+        <return>real group ID</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getgid">
+      <returntype>gid_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

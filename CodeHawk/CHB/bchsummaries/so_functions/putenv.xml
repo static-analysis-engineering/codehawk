@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 21:55:26"/>
+  <libfun lib="so_functions" name="putenv">
+    <documentation>
+      <desc>change or add a value to an environment</desc>
+      <apidoc>
+        <pt>int putenv (char *string)</pt>
+        <par name="string">
+	  the string argument to set environment variable values. The
+	  string argument should point to a string of the form name=
+	  value. The putenv() function shall make the value of the
+	  environment variable name equal to value by altering an
+	  existing variable or creating a new one. In either case, the
+	  string pointed to by string shall become part of the
+	  environment, so altering the string shall change the
+	  environment.
+	</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">nonzero value</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="putenv">
+      <par loc="stack" name="string" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 17:25:17"/>
+  <libfun lib="so_functions" name="getuid">
+    <documentation>
+      <desc>get a real user ID</desc>
+      <apidoc>
+        <pt>uid_t getuid (void)</pt>
+        <return>real user ID</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getuid">
+      <returntype>uid_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

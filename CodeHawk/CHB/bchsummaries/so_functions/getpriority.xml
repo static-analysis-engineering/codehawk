@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 17:56:02"/>
+  <libfun lib="so_functions" name="getpriority">
+    <documentation>
+      <desc>get the nice value</desc>
+      <apidoc>
+        <pt>
+          <ll>int getpriority(</ll>
+          <ld>int which</ld>
+          <ld>id_t who</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="which">
+	  one of the following values: PRIO_PROCESS, PRIO_PGRP, or PRIO_USER
+	</par>
+        <par name="who">
+	  a process ID, a process group ID, or an effective user ID
+	</par>
+        <return>
+          <rc cond="success">
+	    an integer in the range -{NZERO} to {NZERO}-1
+	  </rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getpriority">
+      <par loc="stack" name="which" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="who" nr="2">
+        <type>id_t</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

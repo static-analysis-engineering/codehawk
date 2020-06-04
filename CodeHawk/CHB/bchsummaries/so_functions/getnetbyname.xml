@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 17:43:57"/>
+  <libfun lib="so_functions" name="getnetbyname">
+    <documentation>
+      <desc>network database functions</desc>
+      <apidoc>
+        <pt>struct netent *getnetbyname (const char *name)</pt>
+        <par name="name">network name</par>
+        <return>
+          <rc cond="success">a pointer to a netent structure</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getnetbyname">
+      <par loc="stack" name="name" nr="1">
+        <type><ptr>name</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype><ptr>netent</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

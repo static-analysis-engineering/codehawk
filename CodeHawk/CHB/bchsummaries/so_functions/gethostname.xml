@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 17:07:49"/>
+  <libfun lib="so_functions" name="gethostname">
+    <documentation>
+      <desc>get name of current host</desc>
+      <apidoc>
+        <pt>
+          <ll>int gethostname(</ll>
+          <ld>char *name</ld>
+          <ld>int namelen</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="name">
+	  buffer to receive the standard host name for the current machine
+	</par>
+        <par name="namelen">size of the buffer in bytes</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="gethostname">
+      <par loc="stack" name="name" nr="1">
+        <type><ptr>char</ptr></type>
+      </par>
+      <par loc="stack" name="namelen" nr="2">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>name</ci>
+	      <ci>namelen</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>char</type>
+	      <ci>name</ci>
+	      <ci>namelen</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

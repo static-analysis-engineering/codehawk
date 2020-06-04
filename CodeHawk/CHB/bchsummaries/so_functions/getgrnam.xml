@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 17:27:06"/>
+  <libfun lib="so_functions" name="getgrnam">
+    <documentation>
+      <desc>search group database for a name</desc>
+      <apidoc>
+        <pt>struct group *getgrnam (const char *name)</pt>
+        <par name="name">name to search for</par>
+        <return>
+          <rc cond="success">
+	    a pointer to a struct group for a matching entry
+	  </rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getgrnam">
+      <par loc="stack" name="name" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype><ptr>group</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 21:02:33"/>
+  <libfun lib="so_functions" name="isprint">
+    <documentation>
+      <desc>test for a printable character</desc>
+      <apidoc>
+        <pt>int isprint (int c)</pt>
+        <par name="c">
+	  value to be tested if it is a character of class print in the current locale
+	</par>
+        <return>
+          <rc cond="success">nonzero value</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="isprint">
+      <par loc="stack" name="c" nr="1">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

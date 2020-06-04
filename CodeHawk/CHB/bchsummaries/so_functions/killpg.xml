@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 21:12:05"/>
+  <libfun lib="so_functions" name="killpg">
+    <documentation>
+      <desc>send a signal to a process group</desc>
+      <apidoc>
+        <pt>
+          <ll>int killpg(</ll>
+          <ld>pid_t pgrp</ld>
+          <ld>int sig</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pgrp">process group</par>
+        <par name="sig">signal to be sent</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="killpg">
+      <par loc="stack" name="pgrp" nr="1">
+        <type>pid_t</type>
+      </par>
+      <par loc="stack" name="sig" nr="2">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <gt/>
+	      <ci>pgrp</ci>
+	      <cn>1</cn>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 14:56:42"/>
+  <libfun lib="so_functions" name="alarm">
+    <documentation>
+      <desc>schedule an alarm signal</desc>
+      <apidoc>
+        <pt>unsigned alarm (unsigned seconds)</pt>
+        <par name="seconds">
+	  time to elapse in seconds before a system alarm (SIGALARM)
+	  is generated
+	</par>
+        <return>
+	  If there is a previous alarm() request with time remaining,
+	  alarm() shall return a non-zero value that is the number of
+	  seconds until the previous request would have generated a
+	  SIGALRM signal. Otherwise, alarm() shall return 0.
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="alarm">
+      <par loc="stack" name="seconds" nr="1">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <geq/>
+	      <return/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

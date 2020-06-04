@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 22:12:13"/>
+  <libfun lib="so_functions" name="setuid">
+    <documentation>
+      <desc>set user ID</desc>
+      <apidoc>
+        <pt>int setuid (uid_t uid)</pt>
+        <par name="uid">
+	  value to be set to the real user ID, effective user ID, and the saved
+	  set-user-ID of the calling process
+	</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="setuid">
+      <par loc="stack" name="uid" nr="1">
+        <type>uid_t</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

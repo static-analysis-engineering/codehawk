@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 17:13:23"/>
+  <libfun lib="so_functions" name="getppid">
+    <documentation>
+      <desc>get the parent process ID</desc>
+      <apidoc>
+        <pt>pid_t getppid (void)</pt>
+        <return>
+	  parent process ID
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getppid">
+      <returntype>pid_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

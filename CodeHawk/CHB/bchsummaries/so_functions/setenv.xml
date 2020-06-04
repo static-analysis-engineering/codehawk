@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 22:02:13"/>
+  <libfun lib="so_functions" name="setenv">
+    <documentation>
+      <desc>add or change environment variable</desc>
+      <apidoc>
+        <pt>
+          <ll>int setenv(</ll>
+          <ld>const char  *envname</ld>
+          <ld>const char *envval</ld>
+          <ld>int overwrite</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="envname">
+	  pointer to a string containing the name of an environment
+	  variable to be added or altered
+	</par>
+        <par name="envval">
+	  pointer to the value to be set
+	</par>
+        <par name="overwrite">
+	  if non-zero the value is to be overwritten if the variable
+	  already exists; if zero the value is not to be updated if
+	  the variable already exists
+	</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="setenv">
+      <par loc="stack" name="envname" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="envval" nr="2">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="overwrite" nr="3">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

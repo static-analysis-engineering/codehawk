@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 15:24:44"/>
+  <libfun lib="so_functions" name="dprintf">
+    <documentation>
+      <desc>print formatted output</desc>
+      <apidoc>
+        <pt>
+          <ll>int dprintf(</ll>
+          <ld>int fildes</ld>
+          <ld>const char *restrict format</ld>
+	  <ld>varargs</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="fildes">file descriptor to write output to</par>
+        <par name="format">format string</par>
+        <return>
+          <rc cond="success">number of bytes transmitted</rc>
+          <rc cond="failure">negative value</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="dprintf">
+      <par loc="stack" name="fildes" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="format" nr="2">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read/><format-string/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <geq/>
+	      <return/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</post>
+	<error-post>
+	  <math>
+	    <apply>
+	      <lt/>
+	      <return/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</error-post>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

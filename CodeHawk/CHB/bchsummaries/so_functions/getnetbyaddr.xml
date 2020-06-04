@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 17:40:14"/>
+  <libfun lib="so_functions" name="getnetbyaddr">
+    <documentation>
+      <desc>network database functions</desc>
+      <apidoc>
+        <pt>
+          <ll>struct netent *getnetbyaddr(</ll>
+          <ld>uint32_t net</ld>
+          <ld>int type</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="net">network number</par>
+        <par name="type">address family</par>
+        <return>
+          <rc cond="success">a pointer to a netent structure</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getnetbyaddr">
+      <par loc="stack" name="net" nr="1">
+        <type>uint32_t</type>
+      </par>
+      <par loc="stack" name="type" nr="2">
+        <type>int</type>
+      </par>
+      <returntype><ptr>netent<ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

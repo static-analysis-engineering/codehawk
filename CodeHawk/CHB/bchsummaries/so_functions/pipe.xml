@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 21:48:10"/>
+  <libfun lib="so_functions" name="pipe">
+    <documentation>
+      <desc>create an interprocess channel</desc>
+      <apidoc>
+        <pt>int pipe (int fildes[2])</pt>
+        <par name="fildes">array of 2 file descriptors (write, read)</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="pipe">
+      <par loc="stack" name="fildes" nr="1">
+        <type><ptr>int</ptr></type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>int</type>
+	      <ci>fildes</ci>
+	      <apply>
+		<indexsize/>
+		<cn>2</cn>
+	      </apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

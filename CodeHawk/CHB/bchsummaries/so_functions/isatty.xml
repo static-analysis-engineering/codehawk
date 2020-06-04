@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 21:09:00"/>
+  <libfun lib="so_functions" name="isatty">
+    <documentation>
+      <desc>test for a terminal device</desc>
+      <apidoc>
+        <pt>int isatty (int fildes)</pt>
+        <par name="fildes">
+	  file descriptor to be tested if it is associated with a terminal device.
+	</par>
+        <return>
+          <rc cond="success">nonzero value</rc>
+          <rc cond="failure">zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="isatty">
+      <par loc="stack" name="fildes" nr="1">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 19:25:24"/>
+  <libfun lib="so_functions" name="kill">
+    <documentation>
+      <desc>send a signal to a process or a group of processes</desc>
+      <apidoc>
+        <pt>
+          <ll>int kill(</ll>
+          <ld>pid_t pid</ld>
+          <ld>int sig</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pid">
+	  process or a group of processes
+	</par>
+        <par name="sig">signal to be sent</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="kill">
+      <par loc="stack" name="pid" nr="1">
+        <type>pid_t</type>
+      </par>
+      <par loc="stack" name="sig" nr="2">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

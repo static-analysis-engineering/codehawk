@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-06-03 23:18:36"/>
+  <libfun lib="so_functions" name="strtod">
+    <documentation>
+      <desc>convert a string to a double-precision number</desc>
+      <apidoc>
+        <pt>
+          <ll>double strtod(</ll>
+          <ld>const char *restrict nptr</ld>
+          <ld>char **restrict endptr</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="nptr">pointer to string to be converted</par>
+        <par name="endptr">pointer to return remaining part of string</par>
+        <return>
+          <rc cond="success">the converted value</rc>
+          <rc cond="failure">0</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="strtod">
+      <par loc="stack" name="nptr" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="endptr" nr="2">
+        <type><ptr><ptr>char</ptr></ptr></type>
+	<pre><deref-write-null/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>double</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>
