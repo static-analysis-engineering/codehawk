@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-06-06 13:51:13"/>
+  <function-summary name="__open_missing_mode">
+    <parameters/>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+</codehawk-summary-file>

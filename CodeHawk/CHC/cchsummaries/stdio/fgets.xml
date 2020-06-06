@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-summary-file>
+  <header date="2020-06-06 10:54:32"/>
   <function-summary name="fgets">
     <parameters>
       <par name="s" nr="1"/>

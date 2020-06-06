@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-06-06 13:41:20"/>
+  <function-summary name="__builtin_memset">
+    <parameters>
+      <par name="s" nr="1"></par>
+      <par name="len" nr="3"/>
+    </parameters>
+    <preconditions>
+      <pre name="buffersize">
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <ci>s</ci>
+	    <apply>
+	      <index-size/>
+	      <ci>len</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <initializes-range/>
+	    <ci>s</ci>
+	    <ci>len</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+</codehawk-summary-file>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-06-06 14:04:36"/>
+  <function-summary name="strlcpy">
+    <parameters>
+      <par name="destination" nr="1"></par>
+      <par name="source" nr="2"></par>
+      <par name="size" nr="3"/>
+    </parameters>
+    <preconditions>
+      <pre name="no-overlap">
+	<math>
+	  <apply>
+	    <no-overlap/>
+	    <ci>destination</ci>
+	    <ci>source</ci>
+	  </apply>
+	</math>
+      </pre>
+      <pre name="buffersize">
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <ci>destination</ci>
+	    <apply>
+	      <index-size/>
+	      <ci>size</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre name="buffersize">
+	<math>
+	  <apply>
+	    <deref-read/>
+	    <ci>source</ci>
+	    <apply>
+	      <index-size/>
+	      <ci>size</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <geq/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <const/>
+	    <ci>source</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+</codehawk-summary-file>

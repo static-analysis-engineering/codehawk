@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2020-06-06 14:02:12"/>
+  <function-summary name="strcasestr">
+    <parameters>
+      <par name="haystack" nr="1">
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par name="needle" nr="2">
+	<pre><deref-read-nt/></pre>
+      </par>
+    </parameters>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+</codehawk-summary-file>
