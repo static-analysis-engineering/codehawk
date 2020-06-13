@@ -24,8 +24,8 @@ jobs:
         ocaml-version: 4.07.1
     - name: Install dependencies
       run: |
-        opam install zarith
-        opam install ocamlbuild
+        sudo apt-get install -y libgtksourceview2.0-dev libgnomecanvas2-dev
+        opam install zarith ocamlbuild conf-gtksourceview conf-gnomecanvas lablgtk
     - name: Compile CodeHawk
       run: eval $(opam env) && cd codehawk/CodeHawk && ./full_make.sh
     - name: Replace prebuilt codehawk ocaml binaries
