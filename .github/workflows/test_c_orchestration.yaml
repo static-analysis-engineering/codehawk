@@ -1,0 +1,38 @@
+name: CI_c_orchestration
+
+on: [pull_request, push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        path: codehawk
+    - uses: actions/checkout@v2
+      with:
+        repository: static-analysis-engineering/CodeHawk-C
+        path: CodeHawk-C
+    - name: Delete prebuilt codehawk ocaml binaries
+      run: |
+        rm CodeHawk-C/chc/bin/linux/canalyzer
+        rm CodeHawk-C/chc/bin/linux/parseFile
+    - uses: avsm/setup-ocaml@v1.0
+      with:
+        ocaml-version: 4.07.1
+    - name: Install dependencies
+      run: |
+        opam install zarith
+        opam install ocamlbuild
+    - name: Compile CodeHawk
+      run: eval $(opam env) && cd codehawk/CodeHawk && ./full_make.sh
+    - name: Replace prebuilt codehawk ocaml binaries
+      run: |
+        cp codehawk/CodeHawk/CHC/cchcil/parseFile CodeHawk-C/chc/bin/linux/parseFile
+        cp codehawk/CodeHawk/CHC/cchcmdline/canalyzer CodeHawk-C/chc/bin/linux/canalyzer
+    - name: Run kendra test suite
+      run: |
+        PYTHONPATH=$PWD/CodeHawk-C python CodeHawk-C/chc/cmdline/kendra/chc_test_kendrasets.py | tee kendra_output.txt
+        diff kendra_output.txt CodeHawk-C/tests/kendra/example_output/test_kendrasets.txt
