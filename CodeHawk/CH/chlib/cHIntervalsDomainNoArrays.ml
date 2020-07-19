@@ -92,6 +92,10 @@ object (self: 'a)
 	 let y_i = self#getValue' y in
 	 self#setValue' table' v (x_i#sub y_i);
 	 default ()
+      | ASSIGN_NUM (v, MULT (x, y)) when x#equal y  ->
+         let x_i = self#getValue' x in
+         self#setValue' table' v x_i#square;
+         default ()
       | ASSIGN_NUM (v, MULT (x, y)) ->
 	 let x_i = self#getValue' x in
 	 let y_i = self#getValue' y in
