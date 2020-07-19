@@ -151,6 +151,19 @@ object (self : 'a)
     
   method sub (a: 'a) =
     self#add (a#neg)
+
+  method square =
+    if bottom then
+      self#mkBottom
+    else
+      match min#polarity max with
+      | POS -> self#mkInterval (min#mult min) (max#mult max)
+      | NEG -> self#mkInterval (max#mult max) (min#mult min)
+      | _ ->
+         if min#leq max then
+           self#mkInterval (bound_of_num (numerical_zero)) (max#mult max)
+         else
+           self#mkInterval (bound_of_num (numerical_zero)) (min#mult min)
     
   method mult (a: 'a) =
     match (bottom, a#isBottom) with

@@ -54,6 +54,7 @@ class interval_t :
     method narrowing : 'a -> 'a
     method neg : 'a
     method singleton : CHNumerical.numerical_t option
+    method square: 'a
     method strictLowerBound : CHBounds.bound_t -> 'a
     method strictUpperBound : CHBounds.bound_t -> 'a
     method sub : 'a -> 'a
