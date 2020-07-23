@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -112,7 +112,96 @@ object (self)
     else
       PIntOverflow (PlusA, e1, e2, k)
 
+  method private get_base_invariants e =
+    match e with
+    | Lval (Mem e, _) -> poq#get_exp_invariants e
+    | _ -> []
+
+  method private get_struct_field e =
+    match e with
+    | Lval (Mem e, Field ((name,_),NoOffset)) -> Some name
+    | _ -> None
+
+  method private get_struct_field_upper_bound arg v name =
+    if poq#env#is_function_return_value v then
+      let callee = poq#env#get_callvar_callee v in
+      let (pcs,epcs) = poq#get_postconditions v in
+      match epcs with
+      | [] | [ (XNull _,_) ]  ->
+         List.fold_left
+           (fun acc (pc,_) ->
+             match acc with
+             | Some _ -> acc
+             | _ ->
+                match pc with
+                | XTainted
+                  (ArgAddressedValue
+                     (ReturnValue,ArgFieldOffset (fname,ArgNoOffset)), lb, ub)
+                     when name = fname ->
+                   let _ = poq#set_diagnostic_arg arg ("tainted field value: " ^ fname) in      
+                   (match ub with
+                    | Some (NumConstant n) ->
+                       let msg =
+                         "field " ^ name ^ " returned by " ^ callee.vname
+                         ^ " is tainted with upperbound " ^ n#toString in
+                       Some ([],msg,num_constant_expr n)
+                    | _ -> None)
+                | _ -> None) None pcs
+      | _ ->
+         let _ =
+           poq#set_diagnostic_arg arg ("error postconditions on " ^ (p2s v#toPretty)) in
+         None
+    else
+      None
+
+  method private get_deref_field_upper_bound arg e name =
+    let invs = self#get_base_invariants e in
+    List.fold_left
+      (fun acc inv ->
+        match acc with
+        | Some _ -> acc
+        | _ ->
+           match inv#symbolic_expr with
+           | Some (XVar v) when poq#env#is_memory_address v ->
+              let (memref,offset) = poq#env#get_memory_address v in
+              begin
+                match memref#get_base with
+                | CBaseVar bv ->
+                   let _ = poq#set_diagnostic_arg arg ("base var: " ^ (p2s bv#toPretty)) in
+                   begin
+                     match self#get_struct_field_upper_bound arg bv name with
+                     | Some (deps,msg,ub) ->
+                        let deps = deps @ [ inv#index ] in
+                        Some (deps,msg,ub)
+                     | _ -> None
+                   end
+                | _ -> None
+              end
+           | _ -> None) None invs
+
+
   (* ----------------------------- safe ------------------------------------- *)
+
+  method private check_struct_field_invariants_1 inv2 =
+    match self#get_struct_field e1 with
+    | Some name ->
+       begin
+         match (self#get_deref_field_upper_bound 2 e1 name,inv2#upper_bound_xpr) with
+         | (Some (fdeps,fmsg,ub1), Some ub2) ->
+            let safeconstraint = self#mk_safe_constraint ub1 ub2 in
+            let simconstraint = simplify_xpr safeconstraint in
+            let _ = poq#set_diagnostic_arg 2 ("UB: " ^ (x2s ub1) ^ (self#global_str ub1)) in
+            let _ = poq#set_diagnostic_arg 3 ("UB: " ^ (x2s ub2) ^ (self#global_str ub2)) in
+            if is_true simconstraint then
+              let deps = DLocal (fdeps @ [ inv2#index ]) in
+              let msg2 = "upper bound on " ^ (e2s e2) ^ ": " ^ (x2s ub2) in
+              let msg = fmsg ^ "; " ^ msg2 ^ "; " ^ (x2s safeconstraint) in
+              Some (deps,msg)
+            else
+              None
+         | _ -> None
+       end
+    | _ -> None
 
   method private inv_implies_safe inv1 inv2 =
     match (inv1#upper_bound_xpr, inv2#upper_bound_xpr) with
@@ -187,7 +276,14 @@ object (self)
                        poq#record_safe_result deps msg ;
                        true
                      end
-                  | _ -> false) false invs2
+                  | _ ->
+                     match self#check_struct_field_invariants_1 inv with
+                     | Some (deps,msg) ->
+                        begin
+                          poq#record_safe_result deps msg;
+                          true;
+                        end
+                     | _ -> false) false invs2
        end
     | _ ->
        match invs2 with
