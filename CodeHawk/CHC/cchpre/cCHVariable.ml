@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -177,7 +177,7 @@ let constant_value_variable_to_pretty c =
               opt_args_to_pretty opt_args ; STR ")#sideeffect" ]
   | ExpSideEffectValue (loc,_,f,opt_args,arg,_) ->
      LBLOCK [ STR "(" ; pr_expr f ; STR "[arg:" ; INT arg ; STR "](" ;
-              opt_args_to_pretty opt_args ; STR ")#sideeffect" ]
+              opt_args_to_pretty opt_args ; STR "))#sideeffect" ]
   | SymbolicValue (x,_) -> LBLOCK [ STR "(" ; pr_expr x ; STR ")#fixed" ]
   | TaintedValue (v,optx1,optx2,_) ->
      LBLOCK [ STR "tainted-value(" ; v#toPretty ; STR "_lb:" ;
@@ -185,14 +185,12 @@ let constant_value_variable_to_pretty c =
               optx_to_pretty optx2 ;  STR  ")" ]
   | ByteSequence (v,optlen) ->
      LBLOCK [ STR "byte-sequence(" ; v#toPretty ; STR "_len:" ;
-              optx_to_pretty optlen ;
-              STR ")" ]
+              optx_to_pretty optlen ; STR ")" ]
   | MemoryAddress (i,o) ->
      match o with
-     | NoOffset ->  LBLOCK [ STR "(memref-" ; INT i ; STR "):address" ]
+     | NoOffset ->  LBLOCK [ STR "memaddr-" ; INT i ]
      | _ ->
-        LBLOCK [ STR "(memref-" ; INT i ; STR ":" ;
-                 offset_to_pretty o ; STR ")address" ] 
+        LBLOCK [ STR "memaddr-" ; INT i ; STR ":" ; offset_to_pretty o ] 
       
 let c_variable_denotation_to_pretty v =
   match v with
@@ -452,11 +450,10 @@ object (self)
        let getc = node#getTaggedChild in
        begin
          vard#read_xml (getc "var-dictionary") ;
-         memregmgr#read_xml (getc "memory-regions") ;
-         memrefmgr#read_xml (getc "memory-references") ;
-         List.iter (fun (index,denotation) ->
-                        H.add vartable index (new c_variable_t ~vard ~index ~denotation))
-                   vard#get_indexed_variables
+         List.iter
+           (fun (index,denotation) ->
+             H.add vartable index (new c_variable_t ~vard ~index ~denotation))
+           vard#get_indexed_variables
        end
     | _ -> ()
 
@@ -890,13 +887,9 @@ object (self)
 
   method write_xml (node:xml_element_int) =
     let dnode = xmlElement "var-dictionary" in
-    let gnode = xmlElement "memory-regions" in
-    let fnode = xmlElement "memory-references" in
     begin
-      memregmgr#write_xml gnode ;
-      memrefmgr#write_xml fnode ;
       vard#write_xml dnode ;
-      node#appendChildren [ dnode ; gnode ; fnode ]
+      node#appendChildren [ dnode ]
     end
       
 end

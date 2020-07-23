@@ -129,10 +129,6 @@ class type memory_region_manager_int =
     method is_string_region: int -> bool
     method is_uninterpreted: int -> bool
 
-    (* xml *)
-    method write_xml : xml_element_int -> unit
-    method read_xml  : xml_element_int -> unit
-         
   end
               
 
@@ -183,21 +179,14 @@ end
 class type memory_reference_manager_int =
 object ('a)
 
-  (* reset *)
-  method reset: unit
-
   (* object creators *)
-  method mk_string_reference  : string -> typ -> memory_reference_int
-  method mk_stack_reference   : variable_t -> typ -> memory_reference_int
-  method mk_global_reference  : variable_t -> typ -> memory_reference_int
+  method mk_string_reference: string -> typ -> memory_reference_int
+  method mk_stack_reference: variable_t -> typ -> memory_reference_int
+  method mk_global_reference: variable_t -> typ -> memory_reference_int
   method mk_external_reference: variable_t -> typ -> memory_reference_int
 
   (* accessors *)
   method get_memory_reference: int -> memory_reference_int
-
-  (* xml *)
-  method write_xml: xml_element_int -> unit
-  method read_xml : xml_element_int -> unit
 
 end
 
@@ -232,7 +221,7 @@ type c_variable_denotation_t =
   | LocalVariable of varinfo * offset       (* stack variable, type of variable *)
   | GlobalVariable of varinfo * offset                       (* global variable *)
   | MemoryVariable of int * offset  (* variable identified by memory reference index *)
-  | MemoryRegionVariable of int (* variable used for valid-mem region analysis *)
+  | MemoryRegionVariable of int       (* variable used for valid-mem region analysis *)
   | ReturnVariable of typ
   | FieldVariable of fielduse   (* variable that denotes the collection of all fields with the given name *)
   | CheckVariable of (bool * int * int) list * typ  (* is_ppo, proof obligation id, exp seq number *)
@@ -255,7 +244,10 @@ class type vardictionary_int =
     method get_memory_reference_data: int -> memory_reference_data_t
     method get_constant_value_variable: int -> constant_value_variable_t
     method get_c_variable_denotation: int -> c_variable_denotation_t
+
     method get_indexed_variables: (int * c_variable_denotation_t) list
+    method get_indexed_memory_bases: (int * memory_base_t) list
+    method get_indexed_memory_reference_data: (int * memory_reference_data_t) list
 
     method write_xml_memory_base:
              ?tag:string -> xml_element_int -> memory_base_t -> unit

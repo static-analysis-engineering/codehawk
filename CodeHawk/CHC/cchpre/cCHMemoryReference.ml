@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,7 @@ open CCHPreTypes
 open CCHIndexedCollections
 open CCHMemoryBase
 
+module H = Hashtbl
 module P = Pervasives
 
 let cd = CCHDictionary.cdictionary
@@ -126,75 +127,56 @@ object (self:'a)
   method toPretty = STR self#get_name 
     
 end
+
   
-let read_xml_memory_reference
-      (vard:vardictionary_int) (node:xml_element_int):memory_reference_int =
-  let data = vard#read_xml_memory_reference_data node in
-  let index = node#getIntAttribute "index" in
-  new memory_reference_t ~vard ~index ~data
-  
-module MemoryReferenceDataCollections = CHCollections.Make
-  (struct
-    type t = memory_reference_data_t
-    let compare m1 m2 = memory_base_compare m1.memrefbase m2.memrefbase 
-    let toPretty m =
-      LBLOCK [ STR "(" ; memory_base_to_pretty m.memrefbase ; STR ")" ]
-   end)
-  
-class memory_reference_table_t =
+class memory_reference_manager_t
+        (vard:vardictionary_int):memory_reference_manager_int =
 object (self)
   
-  inherit [ memory_reference_data_t, memory_reference_int ] indexed_table_with_retrieval_t as super
-    
-  val map = new MemoryReferenceDataCollections.table_t
-    
-  method insert = map#set
-  method lookup = map#get
-  method values = map#listOfValues
-    
-  method reset = begin map#removeList map#listOfKeys ; super#reset end
-    
-end
-  	
-class memory_reference_manager_t (vard:vardictionary_int):memory_reference_manager_int =
-object (self)
-  
-  val table = new memory_reference_table_t
-    
-  method reset = table#reset
+  val table = H.create 3
+  val vard = vard
+
+  initializer
+    List.iter
+      (fun (index,data) ->
+        H.add table index (new memory_reference_t ~vard ~index ~data))
+      vard#get_indexed_memory_reference_data
+
+  method get_memory_reference (index:int) =
+    if H.mem table index then
+      H.find table index
+    else
+      raise
+        (CCHFailure
+           (LBLOCK [ STR "No memory reference found with index: "  ; INT index ]))
+
+  method private mk_memory_reference (data:memory_reference_data_t) =
+    let index = vard#index_memory_reference_data data in
+    if H.mem table index then
+      H.find table index
+    else
+      let memref = new memory_reference_t ~vard ~index ~data in
+      begin
+        H.add table index memref;
+        memref
+      end
 
   method mk_string_reference (s:string) (typ:typ) =
     let data = { memrefbase = CStringLiteral s ; memreftype = typ } in
-    table#add data (fun index -> new memory_reference_t ~vard ~index ~data)
+    self#mk_memory_reference data
     
   method mk_stack_reference (v:variable_t) (typ:typ) =
     let data = { memrefbase = CStackAddress v ; memreftype = typ } in
-    table#add data (fun index -> new memory_reference_t ~vard ~index ~data)
+    self#mk_memory_reference data
 
   method mk_global_reference (v:variable_t) (typ:typ) =
     let data = { memrefbase = CGlobalAddress v ; memreftype = typ } in
-    table#add data (fun index -> new memory_reference_t ~vard ~index ~data)
+    self#mk_memory_reference data
       
   method mk_external_reference (v:variable_t) (typ:typ) =
     let data = { memrefbase = CBaseVar v ; memreftype = typ } in
-    table#add data (fun index -> new memory_reference_t ~vard ~index ~data)
-      
-  method get_memory_reference (index:int) =
-    try
-      table#retrieve index
-    with
-      CCHFailure p ->
-      raise (CCHFailure (LBLOCK [ STR "Memory reference not found: " ; p ]))
+    self#mk_memory_reference data
 
-  method write_xml (node:xml_element_int) =
-    table#write_xml node "reference" (fun node r -> r#write_xml node)
-
-  method read_xml (node:xml_element_int) =
-    let get_value = read_xml_memory_reference vard in
-    let get_key r = r#get_data in
-    let get_index r = r#index in
-    table#read_xml node get_value get_key get_index
-	  
 end
   
 let mk_memory_reference_manager = new memory_reference_manager_t

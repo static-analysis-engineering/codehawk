@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,17 +44,10 @@ open CCHPreTypes
 open CCHIndexedCollections
 open CCHMemoryBase
 
+module H = Hashtbl
 module P = Pervasives
 
 let pr2s = CHPrettyUtil.pretty_to_string
-
-module MemoryBaseCollections =
-  CHCollections.Make (
-      struct
-        type t = memory_base_t
-        let compare = memory_base_compare
-        let toPretty = memory_base_to_pretty
-      end)
 
 class memory_region_t
         ~(vard:vardictionary_int)
@@ -131,74 +124,60 @@ object (self:'a)
   method toPretty = memory_base_to_pretty memory_base
 end
 
-let read_xml_memory_region
-      (vard:vardictionary_int) (node:xml_element_int):memory_region_int =
-  let memory_base = vard#read_xml_memory_base node in
-  let index = node#getIntAttribute "index" in
-  new memory_region_t ~vard ~index ~memory_base
 
-class memory_region_table_t =
+class memory_region_manager_t
+        (vard:vardictionary_int):memory_region_manager_int =
 object (self)
 
-  inherit [ memory_base_t, memory_region_int ] indexed_table_with_retrieval_t as super
+  val table = H.create 3
+  val vard = vard
 
-  val map = new MemoryBaseCollections.table_t
-
-  method insert = map#set
-  method lookup = map#get
-  method values = map#listOfValues
-
-  method reset = begin map#removeList map#listOfKeys ; super#reset end
-
-end
-
-class memory_region_manager_t (vard:vardictionary_int):memory_region_manager_int =
-object (self)
-
-  val table = new memory_region_table_t
+  initializer
+    List.iter
+      (fun (index,memory_base) ->
+        H.add table index (new memory_region_t ~vard ~index ~memory_base))
+      vard#get_indexed_memory_bases
 
   method get_memory_region (index:int) =
-    try
-      table#retrieve index
-    with
-      _ -> raise (CCHFailure
-                    (LBLOCK [ STR "No memory region found with index " ;
-                              INT index ]))
+    if H.mem table index then
+      H.find table index
+    else
+      raise
+        (CCHFailure
+           (LBLOCK [ STR "No memory region found with index: " ; INT index ]))
 
-  method mk_base_region memory_base  =
-    table#add memory_base (fun index ->
-                new memory_region_t ~vard ~index ~memory_base)
+  method private mk_memory_region (memory_base:memory_base_t) =
+    let index = vard#index_memory_base memory_base in
+    if H.mem table index then
+      H.find table index
+    else
+      let region = new memory_region_t ~vard ~index ~memory_base in
+      begin
+        H.add table index region;
+        region
+      end
+
+  method mk_base_region memory_base =
+    self#mk_memory_region memory_base
 
   method mk_null i =
-    let memory_base = CNull i in
-    table#add memory_base (fun index ->
-                new memory_region_t ~vard ~index ~memory_base)
+    self#mk_memory_region (CNull i)
 
-  method mk_string_region (s:string)  =
-    let memory_base = CStringLiteral s in
-    table#add memory_base (fun index ->
-                new memory_region_t ~vard ~index ~memory_base)
+  method mk_string_region (s:string) =
+    self#mk_memory_region (CStringLiteral s)
 
   method mk_stack_region (v:variable_t) =
-    let memory_base = CStackAddress v in
-    table#add memory_base (fun index ->
-                new memory_region_t ~vard ~index ~memory_base)
+    self#mk_memory_region (CStackAddress v)
 
   method mk_global_region (v:variable_t) =
-    let memory_base = CGlobalAddress v in
-    table#add memory_base (fun index ->
-                new memory_region_t ~vard ~index ~memory_base)
+    self#mk_memory_region (CGlobalAddress v)
 
   method mk_external_region (v:variable_t) =
-    let memory_base = CBaseVar v in
-    table#add memory_base (fun index ->
-                new memory_region_t ~vard ~index ~memory_base)
+    self#mk_memory_region (CBaseVar v)
 
   method mk_uninterpreted_region (s:string) =
     let s = if s = "" then "none" else s in
-    let memory_base = CUninterpreted s in
-    table#add memory_base (fun index ->
-                new memory_region_t ~vard ~index ~memory_base)
+    self#mk_memory_region (CUninterpreted s)
 
   method private mk_sym r =
     new symbol_t ~seqnr:r#index (pr2s r#toPretty)
@@ -225,13 +204,17 @@ object (self)
     self#mk_sym (self#mk_uninterpreted_region s)
 
   method get_null_syms =
-    List.fold_left (fun acc v ->
+    H.fold (fun k v acc ->
         match v#get_memory_base with
         | CNull i -> (self#mk_null_sym i) :: acc
-        | _ -> acc) [] table#values
+        | _ -> acc) table []
 
   method get_basevar_regions =
-    List.filter (fun r -> r#is_basevar_region) table#values
+    H.fold (fun k v acc ->
+        if v#is_basevar_region then
+          v :: acc
+        else
+          acc) table []
 
   method is_null (index:int) =
     (self#get_memory_region index)#is_null
@@ -247,16 +230,6 @@ object (self)
 
   method is_uninterpreted (index:int) =
     (self#get_memory_region index)#is_uninterpreted
-
-  method write_xml (node:xml_element_int) =
-    table#write_xml node "region" (fun node r -> r#write_xml node)
-
-  method read_xml (node:xml_element_int) =
-    let get_value = read_xml_memory_region vard in
-    let get_key r = r#get_memory_base in
-    let get_index r = r#index in
-    table#read_xml node get_value get_key get_index
-
 
 end
 
