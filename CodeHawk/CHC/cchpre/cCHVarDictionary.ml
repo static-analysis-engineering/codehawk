@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -89,8 +89,19 @@ object (self)
   method fdecls = fdecls
 
   method get_indexed_variables =
-    List.map (fun (_,index) -> (index,self#get_c_variable_denotation index))
-             c_variable_denotation_table#items
+    List.map
+      (fun (_,index) -> (index,self#get_c_variable_denotation index))
+      c_variable_denotation_table#items
+
+  method get_indexed_memory_bases =
+    List.map
+      (fun (_,index) -> (index,self#get_memory_base index))
+      memory_base_table#items
+
+  method get_indexed_memory_reference_data =
+    List.map
+      (fun (_,index) -> (index,self#get_memory_reference_data index))
+      memory_reference_data_table#items
 
   method index_memory_base (b:memory_base_t) =
     let tags = [ memory_base_mcts#ts b ] in
