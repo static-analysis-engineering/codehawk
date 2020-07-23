@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -297,7 +297,7 @@ object
   
   method translate (f:fundec) =
     let context = mk_program_context () in
-    let _ = env#register_program_locals f.sdecls#get_locals in
+    let _ = env#register_program_locals f.sdecls#get_locals NUM_VAR_TYPE in
     let _ = env#register_function_return f.svar.vtype NUM_VAR_TYPE in
     let formals = env#register_formals f.sdecls#get_formals NUM_VAR_TYPE in
     let preamble =
