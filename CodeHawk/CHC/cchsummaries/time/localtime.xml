@@ -46,7 +46,33 @@
       <post>
 	<math>
 	  <apply>
+	    <tainted lb="0" ub="11"/>
+	    <apply>
+	      <addressed-value>
+		<field name="tm_mon"/>
+	      </addressed-value>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
 	    <initialized/>
+	    <apply>
+	      <addressed-value>
+		<field name="tm_hour"/>
+	      </addressed-value>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <tainted lb="0" ub="23"/>
 	    <apply>
 	      <addressed-value>
 		<field name="tm_hour"/>
@@ -72,6 +98,19 @@
       <post>
 	<math>
 	  <apply>
+	    <tainted lb="1" ub="31"/>
+	    <apply>
+	      <addressed-value>
+		<field name="tm_mday"/>
+	      </addressed-value>
+	    <return/>	      
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
 	    <initialized/>
 	    <apply>
 	      <addressed-value>
@@ -85,7 +124,59 @@
       <post>
 	<math>
 	  <apply>
+	    <tainted lb="0" ub="6"/>
+	    <apply>
+	      <addressed-value>
+		<field name="tm_wday"/>
+	      </addressed-value>
+	      <return/>
+	    </apply>	      
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
 	    <initialized/>
+	    <apply>
+	      <addressed-value>
+		<field name="tm_yday"/>
+	      </addressed-value>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <tainted lb="0" ub="365"/>
+	    <apply>
+	      <addressed-value>
+		<field name="tm_yday"/>
+	      </addressed-value>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <initialized/>
+	    <apply>
+	      <addressed-value>
+		<field name="tm_min"/>
+	      </addressed-value>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <tainted lb="0" ub="59"/>
 	    <apply>
 	      <addressed-value>
 		<field name="tm_min"/>
@@ -112,6 +203,19 @@
 	<math>
 	  <apply>
 	    <initialized/>
+	    <apply>
+	      <addressed-value>
+		<field name="tm_sec"/>
+	      </addressed-value>
+	      <return/>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <tainted lb="0" ub="61"/>
 	    <apply>
 	      <addressed-value>
 		<field name="tm_sec"/>
