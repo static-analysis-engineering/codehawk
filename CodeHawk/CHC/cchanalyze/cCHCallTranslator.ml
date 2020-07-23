@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -278,9 +278,16 @@ object (self)
            else
              let ty = fenv#get_type_unrolled (env#get_variable_type rvar) in
              match ty with
-             | TComp  _ ->
+             | TPtr _ ->
+                (* problem: rvar is not a registered memory variable, so env will 
+                   return all memory variables, which will all be abstracted,
+                   causing loss of precision *)
                 let memoryvars = env#get_memory_variables_with_base rvar in
-                [ make_c_cmd (ABSTRACT_VARS memoryvars) ]
+                let fieldcode = make_c_cmd (ABSTRACT_VARS memoryvars) in
+                let (rcode,rval) = self#get_arg_post_value postconditions fnargs frVar returntype in
+                let assign = make_c_cmd (ASSIGN_NUM (rvar, rval)) in
+                let postassert = self#get_post_assert postconditions fname fvid rvar fnargs in
+                [ fieldcode ; rcode ; assign ; postassert ]
              | _ ->
                 let (rcode,rval) = self#get_arg_post_value postconditions fnargs frVar returntype in
                 let assign = make_c_cmd (ASSIGN_NUM (rvar, rval)) in
@@ -354,7 +361,8 @@ object (self)
                    (returntype:typ) =
     let rval = 
       match postconditions with
-      | (l,[]) ->
+      | (l,[])
+        | (l, [ (XNull _, _) ]) ->
          List.fold_left (fun acc (pc,_) ->
              match acc with
              | Some _ -> acc
@@ -381,7 +389,7 @@ object (self)
     | Some (c,r) -> (c,r)
     | _ ->
        match returntype with
-       | TPtr  (t,_) ->
+       | TPtr (t,_) ->
           let basevar = env#mk_base_address_value returnvalue NoOffset t in
           (make_c_cmd SKIP, NUM_VAR basevar)
        | _ ->
