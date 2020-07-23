@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -130,7 +130,7 @@ object(self)
   method get_current_location = current_location
     
   (* requests for proper program variables ------------------------------------- *)
-    
+
   val chifvars = Hashtbl.create 5        (* indexed by c_variable index *)
     
   method private add_chifvar (v:c_variable_int) (vt:variable_type_t) =
@@ -340,7 +340,7 @@ object(self)
   method mk_stack_address_value (vinfo:varinfo) (offset:offset) (t:typ) =
     let lvar = vmgr#mk_local_variable vinfo NoOffset in
     let cvar = self#add_chifvar lvar NUM_VAR_TYPE in
-    let memref = vmgr#memrefmgr#mk_stack_reference cvar t in
+    let memref = vmgr#memrefmgr#mk_stack_reference cvar vinfo.vtype in
     let addrvar = vmgr#mk_memory_address memref#index offset in
     self#add_chifvar addrvar NUM_VAR_TYPE
 
@@ -486,11 +486,11 @@ object(self)
 
   method get_memory_variables_with_base (v:variable_t) =
     let memvars = self#get_memory_variables in
-    if self#is_memory_variable v then
+    if self#is_memory_address v then
       let memref = self#get_memory_reference v in
       List.filter (fun mv ->
           memref#index = (self#get_memory_reference mv)#index) memvars
-    else
+    else 
       memvars
 
   method get_parameters =
