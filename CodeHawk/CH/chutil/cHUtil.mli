@@ -48,3 +48,5 @@ val remove_duplicates: 'a list -> 'a list
 val remove_duplicates_f: 'a list -> ('a ->'a -> bool) -> 'a list
 
 val array_fold_lefti: ('b -> int -> 'a -> 'b) -> 'b ->  'a array -> 'b
+
+val xproduct: 'a list -> 'a list -> ('a * 'a) list
