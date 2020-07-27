@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -63,6 +63,12 @@ let arg_io_to_string (i:arg_io_t) =
   | ArgRead -> "r"
   | ArgWrite -> "w"
   | ArgReadWrite -> "rw"
+
+let formatstring_type_to_string (t:formatstring_type_t) =
+  match t with
+  | NoFormat -> "no"
+  | PrintFormat -> "print"
+  | ScanFormat -> "scan"
 
 let parameter_location_to_string = function
   | StackParameter i -> "s_arg " ^ (string_of_int i)
@@ -128,7 +134,8 @@ let write_xml_api_parameter (node:xml_element_int) (p:api_parameter_t) =
     (match p.apar_desc with "" -> () | s -> set "desc" s) ;
     set "io" (arg_io_to_string p.apar_io) ;
     set "name" p.apar_name ;
-    seti "size" p.apar_size
+    seti "size" p.apar_size ;
+    set "fmt" (formatstring_type_to_string p.apar_fmt)
   end
 
 (* ----------------------------------------------------------------- read xml *)
@@ -139,6 +146,16 @@ let read_xml_arg_io (s:string) =
   | "w" -> ArgWrite
   | "rw" -> ArgReadWrite
   | _ -> raise (BCH_failure (LBLOCK [ STR "Arg io " ; STR s ; STR " not recognized" ]))
+
+let read_xml_formatstring_type (s:string) =
+  match s with
+  | "no" -> NoFormat
+  | "print" -> PrintFormat
+  | "scan" -> ScanFormat
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK [ STR "Formatstring type " ; STR s ; STR " not recognized" ]))
 
 let read_xml_roles (node:xml_element_int) =
   List.map (fun n -> 
@@ -173,6 +190,8 @@ let read_xml_api_parameter (node:xml_element_int):api_parameter_t =
     apar_size = (if has "size" then geti "size" else 4) ;
     apar_type = read_xml_type tNode ;
     apar_location = read_xml_parameter_location node ;
+    apar_fmt =
+      (if has "fmt" then read_xml_formatstring_type (get "fmt") else NoFormat)
   }
 
 (* --------------------------------------------------------------- predicates *)
@@ -189,6 +208,11 @@ let is_register_parameter (p:api_parameter_t) =
 let is_arg_parameter (p:api_parameter_t) =
   is_register_parameter p || is_stack_parameter p
 
+let is_formatstring_parameter (p:api_parameter_t) =
+  match p.apar_fmt with
+  | NoFormat -> false
+  | _ -> true
+
 (* ---------------------------------------------------------------- operators *)
 
 let default_api_parameter = {
@@ -199,6 +223,7 @@ let default_api_parameter = {
   apar_io = ArgReadWrite;
   apar_size = 4 ;
   apar_location = UnknownParameterLocation ;
+  apar_fmt = NoFormat
 }
 
 let modify_types_par (f:type_transformer_t) (p:api_parameter_t) =
@@ -210,6 +235,7 @@ let mk_global_parameter
       ?(roles=[])
       ?(io=ArgReadWrite)
       ?(size=4)
+      ?(fmt=NoFormat)
       (gaddr:doubleword_int) =
   {  apar_name = "gv_" ^ gaddr#to_hex_string ;
      apar_type = btype ;
@@ -217,7 +243,8 @@ let mk_global_parameter
      apar_roles = roles ;
      apar_io = io ;
      apar_size = size ;
-     apar_location = GlobalParameter gaddr
+     apar_location = GlobalParameter gaddr ;
+     apar_fmt = fmt
   }
 
 let mk_stack_parameter
@@ -226,6 +253,7 @@ let mk_stack_parameter
       ?(roles=[])
       ?(io=ArgReadWrite)
       ?(size=4)
+      ?(fmt=NoFormat)
       (arg_index:int) =
   { apar_name = "arg_" ^ (string_of_int arg_index) ;
     apar_type = btype ;
@@ -233,6 +261,7 @@ let mk_stack_parameter
     apar_roles = roles ;
     apar_io = io ;
     apar_size = size ;
+    apar_fmt = fmt ;
     apar_location = StackParameter arg_index
   }
 
@@ -242,6 +271,7 @@ let mk_register_parameter
       ?(roles=[])
       ?(io=ArgReadWrite)
       ?(size=4)
+      ?(fmt=NoFormat)
       (reg:register_t) =
   { apar_name = "reg_" ^ (register_to_string reg) ;
     apar_type = btype ;
@@ -249,5 +279,6 @@ let mk_register_parameter
     apar_roles = roles ;
     apar_io = io ;
     apar_size = size ;
+    apar_fmt = fmt ;
     apar_location = RegisterParameter reg
   }
