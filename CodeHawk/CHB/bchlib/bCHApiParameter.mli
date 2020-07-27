@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,39 +37,70 @@ open BCHLibTypes
 val default_api_parameter: api_parameter_t
 
 val mk_global_parameter:
-  ?btype:btype_t -> ?desc:string -> ?roles:(string * string) list
-  -> ?io:arg_io_t -> ?size:int -> doubleword_int -> api_parameter_t
+  ?btype:btype_t
+  -> ?desc:string
+  -> ?roles:(string * string) list
+  -> ?io:arg_io_t
+  -> ?size:int
+  -> ?fmt:formatstring_type_t
+  -> doubleword_int
+  -> api_parameter_t
 
 (* stack parameters are numbered starting from 1 
    (located at 4 bytes above the return address) *)
 val mk_stack_parameter:
-  ?btype:btype_t -> ?desc:string -> ?roles:(string * string) list
-  -> ?io:arg_io_t -> ?size:int -> int -> api_parameter_t
+  ?btype:btype_t
+  -> ?desc:string
+  -> ?roles:(string * string) list
+  -> ?io:arg_io_t
+  -> ?size:int
+  -> ?fmt:formatstring_type_t
+  -> int
+  -> api_parameter_t
 
 val mk_register_parameter:
-  ?btype:btype_t -> ?desc:string -> ?roles:(string * string) list
-  -> ?io:arg_io_t -> ?size:int -> register_t -> api_parameter_t
+  ?btype:btype_t
+  -> ?desc:string
+  -> ?roles:(string * string) list
+  -> ?io:arg_io_t
+  -> ?size:int
+  -> ?fmt:formatstring_type_t
+  -> register_t
+  -> api_parameter_t
 
 val calling_convention_to_string: calling_convention_t -> string
-val api_parameter_to_pretty     : api_parameter_t -> pretty_t
 
-val parameter_location_compare  : parameter_location_t -> parameter_location_t -> int
-val api_parameter_compare       : api_parameter_t -> api_parameter_t -> int
+val api_parameter_to_pretty: api_parameter_t -> pretty_t
 
-val write_xml_roles             : xml_element_int -> (string * string) list -> unit
-val read_xml_roles              : xml_element_int -> (string * string) list
+val parameter_location_compare:
+  parameter_location_t -> parameter_location_t -> int
 
-val write_xml_parameter_location: xml_element_int -> parameter_location_t -> unit
-val read_xml_parameter_location : xml_element_int -> parameter_location_t
+val api_parameter_compare: api_parameter_t -> api_parameter_t -> int
 
-val write_xml_api_parameter     : xml_element_int -> api_parameter_t -> unit
-val read_xml_api_parameter      : xml_element_int -> api_parameter_t
+val write_xml_roles: xml_element_int -> (string * string) list -> unit
 
-val modify_types_par            : type_transformer_t -> api_parameter_t -> api_parameter_t
+val read_xml_roles: xml_element_int -> (string * string) list
+
+val write_xml_parameter_location:
+  xml_element_int -> parameter_location_t -> unit
+
+val read_xml_parameter_location :
+  xml_element_int -> parameter_location_t
+
+val write_xml_api_parameter: xml_element_int -> api_parameter_t -> unit
+
+val read_xml_api_parameter: xml_element_int -> api_parameter_t
+
+val modify_types_par: type_transformer_t -> api_parameter_t -> api_parameter_t
 
 val is_global_parameter: api_parameter_t -> bool
+
 val is_stack_parameter: api_parameter_t -> bool
+
 val is_register_parameter: api_parameter_t -> bool
+
 val is_arg_parameter: api_parameter_t -> bool
+
+val is_formatstring_parameter: api_parameter_t -> bool
 
 
