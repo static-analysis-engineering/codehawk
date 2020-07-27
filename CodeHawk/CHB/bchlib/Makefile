@@ -64,6 +64,7 @@ MLIS := \
 	bCHPrecondition \
 	bCHPostcondition \
 	bCHSideeffect \
+	bCHFunctionSemantics \
 	bCHFunctionSummary \
 	bCHVariable \
 	bCHLocationInvariant \
@@ -79,8 +80,9 @@ MLIS := \
 	bCHSectionHeadersInfo \
 	bCHSystemInfo \
 	bCHFunctionSummaryLibrary \
-	bCHCallTargetSemantics \
+	bCHCallTargetInfo \
 	bCHFunctionInfo \
+	bCHMakeCallTargetInfo \
 	bCHGlobalState \
 	bCHFloc \
 	bCHCallgraph \
@@ -132,6 +134,7 @@ SOURCES := \
 	bCHPrecondition \
 	bCHPostcondition \
 	bCHSideeffect \
+	bCHFunctionSemantics \
 	bCHFunctionSummary \
 	bCHVariable \
 	bCHLocationInvariant \
@@ -147,8 +150,9 @@ SOURCES := \
 	bCHSectionHeadersInfo \
 	bCHSystemInfo \
 	bCHFunctionSummaryLibrary \
-	bCHCallTargetSemantics \
+	bCHCallTargetInfo \
 	bCHFunctionInfo \
+	bCHMakeCallTargetInfo \
 	bCHGlobalState \
 	bCHFloc \
 	bCHCallgraph \

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,25 +25,18 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chutil *)
+open CHXmlDocument
+
 (* bchlib *)
 open BCHLibTypes
 
+val mk_call_target_info:
+  function_api_t
+  -> function_semantics_t
+  -> call_target_t
+  -> call_target_info_int
 
-val has_call_target_name : call_target_t -> bool
-  
-val get_call_target_name : call_target_t -> string
+val read_xml_call_target_info: xml_element_int -> call_target_info_int
 
-val has_call_target_signature: call_target_t -> bool
-  
-val get_call_target_signature: 
-  (doubleword_int -> function_info_int) -> call_target_t -> function_api_t
 
-val has_call_target_semantics: call_target_t -> bool
-  
-val get_call_target_semantics:
-  (doubleword_int -> function_info_int) -> call_target_t -> function_semantics_t
-
-val has_call_target_summary  : call_target_t -> bool
-  
-val get_call_target_summary  : 
-  (doubleword_int -> function_info_int) -> call_target_t -> function_summary_int
