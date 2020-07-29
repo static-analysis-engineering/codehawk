@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -147,8 +147,8 @@ let create_annotation_aux (floc:floc_int) =
 	    memref#toPretty
 	  else
 	    pr_expr ~typespec ~partype:p.apar_type xpr in
-  let pr_sum_argument_expr (fsum:function_summary_int) (p:api_parameter_t) (xpr:xpr_t) =
-    let typespec = fsum#get_enum_type p in
+  let pr_sum_argument_expr (ct:call_target_info_int) (p:api_parameter_t) (xpr:xpr_t) =
+    let typespec = ct#get_enum_type p in
     match get_xpr_symbolic_name ~typespec xpr with
     | Some name -> STR name
     | _ -> pr_argument_expr ~typespec p  xpr in
@@ -215,8 +215,9 @@ let create_annotation_aux (floc:floc_int) =
   | Mov ( _, _,src) when src#is_function_argument ->
     let (callSite, argIndex) = src#get_function_argument in
     let callSiteFloc = get_floc (ctxt_string_to_location floc#fa callSite) in
-    if callSiteFloc#has_call_target_signature then
-      let api = callSiteFloc#get_call_target_signature in
+    if callSiteFloc#has_call_target
+       && callSiteFloc#get_call_target#is_signature_valid then
+      let api = callSiteFloc#get_call_target#get_signature in
       let functionName = api.fapi_name in
       let param = 
 	try
@@ -702,11 +703,12 @@ let create_annotation_aux (floc:floc_int) =
     make_annotation (ApplicationCall op#get_absolute_address) 
       (semantics#get_annotation floc)
       
-  | DirectCall _ | IndirectCall _ when floc#has_call_target_signature ->
-    let api = floc#get_call_target_signature in
+  | DirectCall _ | IndirectCall _
+       when floc#has_call_target && floc#get_call_target#is_signature_valid ->
+    let api = floc#get_call_target#get_signature in
     let fn = api.fapi_name in
     let pStackAdjustment = 
-      if floc#f#is_nonreturning_call floc#cia then STR " (nonreturning)" 
+      if floc#get_call_target#is_nonreturning then STR " (nonreturning)" 
       else if system_info#has_esp_adjustment floc#fa floc#ia then 
 	LBLOCK [ STR " (adj " ; INT (system_info#get_esp_adjustment floc#fa floc#ia) ; 
 		 STR ")" ]
@@ -714,8 +716,8 @@ let create_annotation_aux (floc:floc_int) =
       match api.fapi_stack_adjustment with
       | Some adj -> if adj = 0 then STR "" else LBLOCK [ STR " (adj " ; INT adj ; STR ")" ]
       | _ -> STR " (?adj?)" in
-    let pr_arg = if floc#has_call_target_summary then
-	pr_sum_argument_expr floc#get_call_target_summary
+    let pr_arg = if floc#get_call_target#is_semantics_valid then
+	pr_sum_argument_expr floc#get_call_target
       else
 	pr_argument_expr ~typespec:None in
     let pp = LBLOCK [ STR (demangle fn) ;  
@@ -731,7 +733,7 @@ let create_annotation_aux (floc:floc_int) =
 
   | DirectCall _ | IndirectCall _ when floc#has_call_target -> 
      let calltgt = floc#get_call_target in
-     let pp = call_target_to_pretty calltgt in
+     let pp = call_target_to_pretty calltgt#get_target in
     make_annotation Call pp
 
   | IndirectCall op ->
@@ -768,8 +770,8 @@ let create_annotation_aux (floc:floc_int) =
     let rhs = get_rhs op floc in
     let (callSite, argIndex) = op#get_function_argument in
     let callSiteFloc = get_floc (ctxt_string_to_location floc#fa callSite) in
-    if callSiteFloc#has_call_target_signature then
-      let api = callSiteFloc#get_call_target_signature in
+    if callSiteFloc#has_call_target && floc#get_call_target#is_signature_valid then
+      let api = callSiteFloc#get_call_target#get_signature in
 	let fName = api.fapi_name in
 	let param = 
 	  try
@@ -924,8 +926,8 @@ let create_annotation_aux (floc:floc_int) =
     make_annotation (Jump op#get_absolute_address) pp
 
   | IndirectJmp op when floc#f#is_dll_jumptarget floc#cia ->
-    if floc#has_call_target_signature then
-      let api = floc#get_call_target_signature in
+    if floc#has_call_target && floc#get_call_target#is_signature_valid then
+      let api = floc#get_call_target#get_signature in
       let fn = api.fapi_name in
       let pStackAdjustment = 
 	match api.fapi_stack_adjustment with
@@ -934,8 +936,9 @@ let create_annotation_aux (floc:floc_int) =
 	  else 
 	    LBLOCK [ STR " (adjust " ; INT adj ; STR ")" ]
 	| _ -> STR " (?adj?)" in
-      let pr_arg = if floc#has_call_target_summary then
-	  pr_sum_argument_expr floc#get_call_target_summary
+      let pr_arg =
+        if floc#has_call_target && floc#get_call_target#is_semantics_valid then
+	  pr_sum_argument_expr floc#get_call_target
 	else
 	  pr_argument_expr ~typespec:None in
       let pp = LBLOCK [ STR (demangle fn) ;  
@@ -950,12 +953,13 @@ let create_annotation_aux (floc:floc_int) =
       make_annotation (LibraryCall fn) pp 
     else
       let calltgt = floc#get_call_target in
-      let pp = call_target_to_pretty calltgt in
+      let pp = call_target_to_pretty calltgt#get_target in
       make_annotation Call pp
 
   | IndirectJmp op when floc#has_jump_target ->
     let ppdefault = LBLOCK [ STR "goto ?" ] in
-    let pr_targets tgts = pretty_print_list tgts (fun tgt -> tgt#toPretty) "[" "; " "]" in
+    let pr_targets tgts =
+      pretty_print_list tgts (fun tgt -> tgt#toPretty) "[" "; " "]" in
     let tgt = floc#get_jump_target in
     let pp = match tgt with
       | JumptableTarget (base,jt,reg) ->
