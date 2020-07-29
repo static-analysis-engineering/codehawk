@@ -22,7 +22,7 @@
      </return>
     </apidoc>
    </documentation>
-   <api adj="0" cc="cdecl" name="fprintf">
+   <api adj="0" cc="cdecl" name="fprintf" varargs="yes">
      <returntype>int</returntype>
      <par loc="stack" name="stream" io="r" nr="1">
        <type><ptr>FILE</ptr></type>
@@ -31,7 +31,7 @@
 	 <role rt="ioc:filesystem" rn="file"/>
        </roles>
     </par>
-    <par loc="stack" desc="format" io="r" name="format" nr="2">
+    <par loc="stack" desc="format" io="r" fmt="print" name="format" nr="2">
       <type><ptr>char</ptr></type>
       <pre><deref-read-nt/><format-string/></pre>
      <roles>

@@ -23,12 +23,12 @@
         </return>
       </apidoc>
     </documentation>
-    <api adj="0" cc="cdecl" name="fscanf">
+    <api adj="0" cc="cdecl" name="fscanf" varargs="yes">
       <par loc="stack" name="stream" nr="1">
         <type><ptr>FILE</ptr></type>
 	<pre><deref-read/></pre>
       </par>
-      <par loc="stack" name="format" nr="2">
+      <par loc="stack" name="format"fmt="scan" nr="2">
         <type><ptr>char</ptr></type>
 	<pre><deref-read-nt/><format-string/></pre>
       </par>

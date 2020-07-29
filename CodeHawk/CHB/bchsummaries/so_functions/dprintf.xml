@@ -21,11 +21,11 @@
         </return>
       </apidoc>
     </documentation>
-    <api adj="0" cc="cdecl" name="dprintf">
+    <api adj="0" cc="cdecl" name="dprintf" varargs="yes">
       <par loc="stack" name="fildes" nr="1">
         <type>int</type>
       </par>
-      <par loc="stack" name="format" nr="2">
+      <par loc="stack" name="format" fmt="print" nr="2">
         <type><ptr>char</ptr></type>
 	<pre><deref-read/><format-string/></pre>
       </par>

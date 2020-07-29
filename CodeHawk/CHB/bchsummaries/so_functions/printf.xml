@@ -16,9 +16,9 @@
      </return>
     </apidoc>
    </documentation>
-   <api adj="0" cc="cdecl" name="printf">
+   <api adj="0" cc="cdecl" name="printf" varargs="yes">
     <returntype>int</returntype>
-    <par loc="stack" io="r" name="format" nr="1" rep="hex">
+    <par loc="stack" io="r" name="format" fmt="print" nr="1" rep="hex">
       <type><ptr>char</ptr></type>
       <pre><deref-read-nt/><format-string/></pre>
       <roles>

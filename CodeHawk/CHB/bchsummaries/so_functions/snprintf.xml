@@ -17,7 +17,6 @@
      <par name="buffer">storage location for the output</par>
      <par name="count">maximum number of characters to store</par>
      <par name="format">format-control string</par>
-     <par name="arguments">variable number of arguments</par>
      <return>
       <bind>
        <ci>len</ci>
@@ -36,7 +35,7 @@
      </return>
     </apidoc>
    </documentation>
-   <api adj="0" cc="cdecl" name="snprintf">
+   <api adj="0" cc="cdecl" name="snprintf" varargs="yes">
     <returntype>int</returntype>
     <par loc="stack" desc="dest buffer" io="w" name="buffer" nr="1" rep="hex">
       <type><ptr>char</ptr></type>
@@ -48,15 +47,12 @@
     <par loc="stack" desc="count" io="r" name="count" roles="none" nr="2">
        <type>size_t</type>
     </par>
-    <par loc="stack" desc="format" io="r" name="format" nr="3" rep="hex">
+    <par loc="stack" desc="format" io="r" fmt="print" name="format" nr="3" rep="hex">
       <type><ptr>char</ptr></type>
      <roles>
         <role rt="ioc:outputs" rn="format string"/>
      </roles>
      <pre><deref-read-nt/><format-string/></pre>
-    </par>
-    <par loc="stack" desc="args" name="args" io="r" roles="none" nr="4">
-     <btype tname="var-arg" ttag="tnamed"/>
     </par>
    </api>
    <semantics>
