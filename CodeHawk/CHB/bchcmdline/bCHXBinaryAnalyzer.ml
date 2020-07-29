@@ -290,7 +290,7 @@ let main () =
     else if !cmd = "dump" then
       dump_pe_file system_info#get_filename
 
-    else if !cmd = "disassemble" && !architecture = "pe" then
+    else if !cmd = "disassemble" && !architecture = "x86" && !fileformat = "pe" then
       let _ = register_hashed_functions () in
       let t = ref (Unix.gettimeofday ()) in
       let _ = system_info#initialize in
@@ -392,7 +392,7 @@ let main () =
       end
                 
 
-    else if !cmd = "analyze" && !architecture = "pe" then
+    else if !cmd = "analyze" && !architecture = "x86" && !fileformat = "pe" then
       let _ = register_hashed_functions () in
       let starttime = Unix.gettimeofday () in
       let _ = load_bdictionary () in
