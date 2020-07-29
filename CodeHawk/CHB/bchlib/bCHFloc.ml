@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ open CHNumerical
 open CHPretty
 
 (* chutil *)
+open CHFormatStringParser
 open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
@@ -50,7 +51,6 @@ open BCHApiParameter
 open BCHBasicTypes
 open BCHBTerm
 open BCHCallTarget
-open BCHCallTargetSemantics
 open BCHCPURegisters
 open BCHDemangler
 open BCHDoubleword
@@ -63,6 +63,7 @@ open BCHJumpTable
 open BCHLibTypes
 open BCHLocation
 open BCHLocationInvariant
+open BCHMakeCallTargetInfo
 open BCHMemoryReference
 open BCHPostcondition
 open BCHPrecondition
@@ -281,19 +282,81 @@ object (self)
    *                                                                      call targets *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
+  method set_call_target (ctinfo:call_target_info_int) =
+    self#f#set_call_target self#cia ctinfo
+
   method has_call_target = self#f#has_call_target self#cia
 
   method get_call_target = self#f#get_call_target self#cia
-    
-  method has_call_target_signature =
-    self#has_call_target && has_call_target_signature (self#get_call_target)
 
-  method get_call_target_signature =
-    get_call_target_signature get_function_info (finfo#get_call_target self#cia)
+  method update_call_target =
+    if self#has_call_target then
+      let ctinfo = self#get_call_target in
+      if ctinfo#is_signature_valid then
+        match self#update_varargs ctinfo#get_signature with
+        | Some fapi ->
+           let _ =
+             chlog#add
+               "update call target api"
+               (LBLOCK [ self#l#toPretty ; STR ": " ;
+                         STR fapi.fapi_name ; STR ": " ;
+                         INT (List.length fapi.fapi_parameters) ]) in
+           self#set_call_target (update_target_api ctinfo fapi)
+        | _ -> ()
+      else
+        ()
+    else
+      ()
 
-    (* experience so far:
-       the first four arguments are passed in $a0-$a3, remaining arguments are passed
-       via the stack, with the fifth argument starting at offset sp+16 *)
+  method private update_x86_varargs (s:function_api_t) = None
+
+  method private update_mips_varargs (s:function_api_t) =
+    let args = self#get_mips_call_arguments in
+    let argcount = List.length args in
+    let arg =
+      List.fold_left
+        (fun acc (p,x) ->
+          match acc with
+          | Some _  -> acc
+          | _ -> if is_formatstring_parameter p then Some x else None) None args in
+    match arg with
+    | Some (XConst (IntConst n)) ->
+       let addr = numerical_to_doubleword n in
+       if string_table#has_string addr then
+         let fmtstring = string_table#get_string addr in
+         let _ = pverbose [ STR "Parse formatstring: " ; STR fmtstring ; NL ] in
+         let fmtspec = parse_formatstring fmtstring false in
+         if fmtspec#has_arguments then
+           let args = fmtspec#get_arguments in
+           let pars =
+             List.mapi
+               (fun i arg -> convert_fmt_spec_arg (argcount + i) arg) args in
+           let newpars = s.fapi_parameters @ pars in
+           begin
+             chlog#add
+               "format args"
+               (LBLOCK [ self#l#toPretty ; STR ": " ;
+                         STR s.fapi_name ; STR ": " ; INT (List.length args) ]) ;
+             Some { s with fapi_parameters = newpars }
+           end
+         else
+           None
+       else
+         None
+    | _ -> None
+
+  method private update_varargs (s:function_api_t) =
+    match s.fapi_va_list with
+    | Some _ -> None
+    | _ ->
+       if system_info#is_mips then
+         self#update_mips_varargs s 
+       else
+         self#update_x86_varargs s
+
+  (* experience so far:
+     the first four arguments are passed in $a0-$a3, remaining arguments are passed
+     via the stack, with the fifth argument starting at offset sp+16 *)
   method get_mips_call_arguments =
     let get_regargs pars =
       List.mapi
@@ -320,9 +383,10 @@ object (self)
           | _ ->
              raise (BCH_failure (LBLOCK [ STR "Unexpected parameter type in " ;
                                           self#l#toPretty ])))
-      pars in
-    if self#has_call_target_signature then
-      let fapi = self#get_call_target_signature in
+        pars in
+    let ctinfo = self#get_call_target in
+    if ctinfo#is_signature_valid then
+      let fapi = ctinfo#get_signature in
       let npars = List.length fapi.fapi_parameters in
       if npars < 5 then
         get_regargs fapi.fapi_parameters
@@ -331,87 +395,14 @@ object (self)
         List.concat [ (get_regargs regpars);  (get_stackargs stackpars) ]
     else
       []
-    
-  method private target_error (tag:string) =
-    if self#has_call_target then
-      LBLOCK [ self#l#toPretty ; STR ": " ; STR " no call target of type " ;
-	       STR tag ; STR " (" ; call_target_to_pretty self#get_call_target ]
-    else
-      LBLOCK [ self#l#toPretty ; STR ": " ; STR " no call target found" ]
 
   method set_instruction_bytes (b:string) = self#f#set_instruction_bytes self#cia b
 
   method get_instruction_bytes = self#f#get_instruction_bytes self#cia
 
-  method set_dll_target (name:string) = self#f#set_dll_target self#cia name
-
-  method set_so_target (name:string) = self#f#set_so_target self#cia name
-
-  method has_static_lib_target = self#f#has_static_lib_target self#cia
-
-  method get_static_lib_target = self#f#get_static_lib_target self#cia
-
-  method has_inlined_target = self#f#has_inlined_target self#cia
-
-  method get_inlined_target = self#f#get_inlined_target self#cia
-	
-  method has_dll_target = self#f#has_dll_target self#cia
-
-  method get_dll_target = self#f#get_dll_target self#cia
-
-  method has_wrapped_target = self#f#has_wrapped_target self#cia
-
-  method get_wrapped_target = self#f#get_wrapped_target self#cia
-
-  method set_application_target (dw:doubleword_int) = self#f#set_app_target self#cia dw
-	
-  method has_application_target = self#f#has_application_target self#cia
-
-  method get_application_target = self#f#get_application_target self#cia
-
-  method set_jni_target (index:int) = self#f#set_jni_target self#cia index
-    
-  method has_jni_target = self#f#has_jni_target self#cia
-
-  method get_jni_target = self#f#get_jni_target self#cia
-
-  method get_indirect_target = self#f#get_indirect_target self#cia
-
-  method has_indirect_target = self#f#has_indirect_target self#cia
-
-  method set_indirect_call_target (v:variable_t) (l:call_target_t list) =
-    self#f#set_indirect_call_target self#cia v l
-
-  method set_virtual_target (v:variable_t) = self#f#set_virtual_call_target self#cia v
-
-  method has_virtual_target = self#f#has_virtual_target self#cia
-
-  method get_virtual_target = self#f#get_virtual_target self#cia
-
-  method set_unknown_target = self#f#set_unknown_target self#cia
-
-  method has_unknown_target = self#f#has_unknown_target self#cia
-
-  method has_no_call_target = self#f#has_no_call_target self#cia
-
-  method get_call_target_semantics = 
-    get_call_target_semantics get_function_info self#get_call_target
-
-  method has_call_target_semantics =
-    self#has_call_target && has_call_target_semantics self#get_call_target
-
-  method get_call_target_summary =
-    get_call_target_summary get_function_info self#get_call_target
-
-  method has_call_target_summary =
-    self#has_call_target && has_call_target_summary self#get_call_target
-
-  method has_call_sideeffects =
-    self#has_call_target_semantics &&
-      (match self#get_call_target_semantics.fsem_sideeffects with [] -> false | _ -> true)
-
   method private get_wrapped_call_args =
-    let (_,_,_,argmapping) = self#get_wrapped_target in
+    let ctinfo = self#get_call_target in
+    let argmapping = ctinfo#get_wrapped_app_parameter_mapping in
     List.map (fun (p,t) -> 
       let x = match t with
       | ArgValue p -> self#evaluate_api_argument p
@@ -420,10 +411,11 @@ object (self)
       (p,x)) argmapping
 
   method get_call_args =
-    if self#has_wrapped_target then
+    let ctinfo = self#get_call_target in
+    if ctinfo#is_wrapped_app_call then
       self#get_wrapped_call_args
-    else if self#has_call_target_signature then
-      let api = self#get_call_target_signature in
+    else if ctinfo#is_signature_valid then
+      let api = ctinfo#get_signature in
       let pcompare p1 p2 = 
 	parameter_location_compare p1.apar_location p2.apar_location in
       let parameters = List.sort pcompare api.fapi_parameters in 
@@ -434,21 +426,12 @@ object (self)
       let indices = 
 	let rec add acc n = if n <= 0 then acc else add (n::acc) (n-1) in add [] adj in
       List.map (fun p ->
-	let par = {
-	  apar_name = "arg_" ^ (string_of_int p) ;
-	  apar_type = TUnknown [] ;
-	  apar_desc = "" ;
-	  apar_roles = [] ;
-	  apar_io = ArgReadWrite ;
-	  apar_size = 4 ;
-	  apar_location = StackParameter p } in
+	let par = mk_stack_parameter p in
 	let argvar = self#f#env#mk_bridge_value self#cia p in
 	let argval = self#get_bridge_variable_value p argvar in
 	(par,argval)) indices
     else
       []
-	
-	
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save IndReg (cpureg, offset)   (memrefs1)
@@ -460,7 +443,8 @@ object (self)
               (LBLOCK [ STR "get_memory_variable_1: " ;  var#toPretty ; STR  " @ " ;
                         offset#toPretty]) in
     let default () =
-        self#env#mk_memory_variable (self#env#mk_unknown_memory_reference "memref-1") offset in      
+      self#env#mk_memory_variable
+        (self#env#mk_unknown_memory_reference "memref-1") offset in
     let inv = self#inv in
     let get_base_offset_constant inv =
       if inv#is_base_offset_constant var then
@@ -755,16 +739,15 @@ object (self)
       				
   method has_jump_target = self#f#has_jump_target self#cia 
     
-  method set_nonreturning_call = self#f#set_nonreturning_call self#cia
-  method is_nonreturning_call = self#f#is_nonreturning_call self#cia
-    
   method set_test_expr (x:xpr_t) = self#f#set_test_expr self#cia x
+
   method set_test_variables (l:(variable_t * variable_t) list) = 
     self#f#set_test_variables self#cia l
     
   method has_test_expr = self#f#has_test_expr self#cia
         
   method get_function_arg_value (argIndex:int) = random_constant_expr
+
   method get_api_parameter_expr (api_parameter_int) = None
     
   method private get_offset ox = 
@@ -1239,13 +1222,18 @@ object (self)
      ABSTRACT_VARS (List.map self#env#mk_register_variable regs)
 
    method get_operation_commands 
-     (lhs:variable_t) ?(size=random_constant_expr) ?(vtype=t_unknown)
-     (opname:symbol_t) (args:op_arg_t list) = 
+            (lhs:variable_t)
+            ?(size=random_constant_expr)
+            ?(vtype=t_unknown)
+            (opname:symbol_t)
+            (args:op_arg_t list) =
      [ ABSTRACT_VARS [ lhs ] ]
      
-   method private assert_post (name:string) 
-     (post:postcondition_t) (returnvar:variable_t) 
-     (string_retriever:doubleword_int -> string option) =
+   method private assert_post
+                    (name:string)
+                    (post:postcondition_t)
+                    (returnvar:variable_t)
+                    (string_retriever:doubleword_int -> string option) =
      let get_zero () = self#env#request_num_constant numerical_zero in
      let reqN () = self#env#mk_num_temp in
      let reqC = self#env#request_num_constant in
@@ -1317,12 +1305,15 @@ object (self)
      | PostNotNull term -> get_not_null_commands term
      | PostRelationalExpr (op, t1, t2) -> get_post_expr_commands op t1 t2
      | PostFalse ->
-        if self#is_nonreturning_call then
-          [] (* was known during translation *)
+        let ctinfo = self#get_call_target in
+        if ctinfo#is_nonreturning then
+          [] (* was known during translation, or has been established earlier *)
         else
 	  begin
-	    self#set_nonreturning_call ;
-	    chlog#add "function retracing" (LBLOCK [ self#l#toPretty ; STR ": " ; STR name ]) ;
+	    (* ctinfo#set_nonreturning ; *)
+	    chlog#add
+              "function retracing"
+              (LBLOCK [ self#l#toPretty ; STR ": " ; STR name ]) ;
 	    raise Request_function_retracing
 	  end
      | _ ->
@@ -1536,11 +1527,9 @@ object (self)
 	 end
        | _ -> ()) pres
 
-   method get_call_commands (string_retriever:doubleword_int -> string option) = 
-     let api = if self#has_call_target_signature then 
-	 self#get_call_target_signature
-       else
-	 (default_summary "default")#get_function_api in
+   method get_call_commands (string_retriever:doubleword_int -> string option) =
+     let ctinfo = self#get_call_target in
+     let api = ctinfo#get_signature in
      (* ------------------------------------------------------------ abstract registers *)
      let eax = self#env#mk_cpu_register_variable Eax in
      let esp = self#env#mk_cpu_register_variable Esp in
@@ -1550,18 +1539,16 @@ object (self)
 
      (* ----------------------------------------------------------- get return variable *)
 
-     let _ = if self#has_call_target_signature then self#record_call_argument_types api in
-
      let returnAssign = 
        let rvar = self#env#mk_return_value self#cia in
-       let rty = api.fapi_returntype in
-       if self#has_call_target_signature then
+       if ctinfo#is_signature_valid then
+         let rty = ctinfo#get_returntype in
 	 if is_void rty then
 	   SKIP
 	 else
-	   let name = api.fapi_name ^ "_rtn_" ^ self#cia in
+	   let name = ctinfo#get_name ^ "_rtn_" ^ self#cia in
 	   let _ = self#env#set_variable_name rvar name in
-	   let rty = api.fapi_returntype in
+	   let rty = ctinfo#get_returntype in
 	   begin
 	     self#f#ftinv#add_function_var_fact rvar rty ;
 	     self#add_var_type_fact eax rty ;
@@ -1570,26 +1557,23 @@ object (self)
        else
 	 ASSIGN_NUM (eax, NUM_VAR rvar) in
 
-     (* ----------------------------------------------------------- assign side effects *)
-     let sideEffectAssigns = if self#has_call_target_semantics then
-	 self#get_sideeffect_assigns self#get_call_target_semantics
-       else
-	 [] in 
-     let _ = if self#has_call_target_semantics then
-	 self#record_precondition_effects self#get_call_target_semantics in
+     (* ------------------------------------------------- assign side effects *)
+     let sideEffectAssigns =
+	 self#get_sideeffect_assigns self#get_call_target#get_semantics  in
+     let _ =
+	 self#record_precondition_effects self#get_call_target#get_semantics in
 
-     (* ----------------------------------------------------------- record memory reads *)
-     let _ = if self#has_call_target_semantics then
-	 self#record_memory_reads self#get_call_target_semantics.fsem_pre in
+     (* ------------------------------------------------- record memory reads *)
+     let _ =
+	 self#record_memory_reads self#get_call_target#get_semantics.fsem_pre in
 
-     (* ---------------------------------------------------------- adjust stack pointer *)
+     (* ------------------------------------------------ adjust stack pointer *)
      let espAdjustment = 
        let oAdj =
 	 if system_info#has_esp_adjustment self#l#base_f self#l#i then
 	   Some (system_info#get_esp_adjustment self#l#base_f self#l#i)
-	 else if self#has_call_target_signature then 
-	   api.fapi_stack_adjustment
-	 else None in
+	 else
+           self#get_call_target#get_stack_adjustment in
        match oAdj with
        | Some adj ->
 	 if adj > 0 then
@@ -1614,30 +1598,27 @@ object (self)
          [ ABSTRACT_VARS bridgeVars ]
 
    method get_mips_call_commands =
-     let api =
-       if self#has_call_target_signature then
-         self#get_call_target_signature
-       else
-         (default_summary "default")#get_function_api in
+     let ctinfo = self#get_call_target in
      let v0 = self#env#mk_mips_register_variable MRv0 in
      (* v1 may be an additional return value from the callee, abstract it for now *)
      let v1 = self#env#mk_mips_register_variable MRv1 in
-     let opname = new symbol_t ~atts:["CALL"] api.fapi_name in
+     let opname = new symbol_t ~atts:["CALL"] ctinfo#get_name in
      let returnassign =
        let rvar = self#env#mk_return_value self#cia in
        let _ =
-         if self#has_call_target_signature then
-           let name = api.fapi_name ^ "_rtn_" ^ self#cia in
+         if ctinfo#is_signature_valid then
+           let name = ctinfo#get_name ^ "_rtn_" ^ self#cia in
            self#env#set_variable_name rvar name in
        ASSIGN_NUM (v0, NUM_VAR rvar) in
      let defClobbered = List.map (fun r -> (MIPSRegister r)) mips_temporaries in
      let abstrRegs = List.map self#env#mk_register_variable defClobbered in
      [ OPERATION { op_name = opname ; op_args = [] } ;
        ABSTRACT_VARS (v1::abstrRegs) ; returnassign ]
-       
-       
+
    method is_constant (var:variable_t) = self#inv#is_constant var
+
    method is_interval (var:variable_t) = self#inv#is_interval var
+
    method is_base_offset (var:variable_t) = self#inv#is_base_offset var
      
    method get_constant (var:variable_t) =
