@@ -50,6 +50,7 @@ open BCHFunctionSummaryLibrary
 open BCHJumpTable
 open BCHLibTypes
 open BCHLocation
+open BCHMakeCallTargetInfo
 open BCHStreamWrapper
 open BCHSystemInfo
 open BCHSystemSettings
@@ -236,11 +237,18 @@ let extract_so_symbol (opcodes:mips_opcode_t list) =
 
 let get_so_target (instr:mips_assembly_instruction_int) =
   let check_so_target tgtaddr =
-    let get_tgtopc a = (!mips_assembly_instructions#at_address a)#get_opcode in
-    let tgtopc1 = get_tgtopc tgtaddr in
-    let tgtopc2 = get_tgtopc (tgtaddr#add_int 4) in
-    let tgtopc3 = get_tgtopc (tgtaddr#add_int 8) in
-    extract_so_symbol [ tgtopc1; tgtopc2; tgtopc3 ] in
+    try
+      let get_tgtopc a = (!mips_assembly_instructions#at_address a)#get_opcode in
+      let tgtopc1 = get_tgtopc tgtaddr in
+      let tgtopc2 = get_tgtopc (tgtaddr#add_int 4) in
+      let tgtopc3 = get_tgtopc (tgtaddr#add_int 8) in
+      extract_so_symbol [ tgtopc1; tgtopc2; tgtopc3 ]
+    with
+    | BCH_failure p ->
+       raise (BCH_failure
+                (LBLOCK [ STR "Error in get_so_target on instr: " ;
+                          instr#get_address#toPretty ;  STR ": " ;
+                          instr#toPretty ; STR ": " ;  p ])) in
   match instr#get_opcode with
   | JumpLink op
   | BranchLink op when op#is_absolute_address ->
@@ -269,6 +277,7 @@ let is_nr_call_instruction (instr:mips_assembly_instruction_int) =
 let collect_function_entry_points () =
   let addresses = new DoublewordCollections.set_t in
   begin
+    addresses#addList functions_data#get_function_entry_points;
     !mips_assembly_instructions#itera
      (fun va instr ->
        match instr#get_opcode with
@@ -326,19 +335,24 @@ let set_block_boundaries () =
     (* ~~~~~~~~~~~~~~~~~~ add block entries due to previous block-ending instruction *)
     !mips_assembly_instructions#itera
      (fun va instr ->
-       let opcode = instr#get_opcode in
-       if is_jump_instruction opcode || is_halt_instruction opcode then
-         begin
-           set_delay_slot (va#add_int 4) ;
-           set_block_entry (va#add_int 8)
-         end
-       else if is_nr_call_instruction instr then
-         begin
-           set_delay_slot (va#add_int 4) ;
-           set_block_entry (va#add_int 8)
-         end
-       else
-         ())
+       try
+         let opcode = instr#get_opcode in
+         if is_jump_instruction opcode || is_halt_instruction opcode then
+           begin
+             set_delay_slot (va#add_int 4) ;
+             set_block_entry (va#add_int 8)
+           end
+         else if is_nr_call_instruction instr then
+           begin
+             set_delay_slot (va#add_int 4) ;
+             set_block_entry (va#add_int 8)
+           end
+         else
+           ()
+       with
+       | BCH_failure p ->
+          raise (BCH_failure
+                   (LBLOCK [ STR "Error in set_block_boundaries: "  ; p ])))
   end
 
 let is_so_jump_target (target_address:doubleword_int) =
@@ -350,33 +364,46 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int)  =
   if system_info#is_nonreturning_call faddr iaddr then
     []
   else
-    let instr = !mips_assembly_instructions#at_address iaddr in
-    let opcode = instr#get_opcode in
-    let next () = [ iaddr#add_int 4 ] in
-    let delaynext () = [ iaddr#add_int 8 ] in
-    let successors =
-      if is_conditional_jump_instruction opcode then
-        (delaynext ()) @ [ get_direct_jump_target_address opcode ]
-      else if is_direct_jump_instruction opcode then
-        [ get_direct_jump_target_address opcode ]
-      else
-        next () in
-    List.map
-      (fun va -> (make_location { loc_faddr = faddr ; loc_iaddr = va })#ci)
-      successors
+    try
+      let instr = !mips_assembly_instructions#at_address iaddr in
+      let opcode = instr#get_opcode in
+      let next () = [ iaddr#add_int 4 ] in
+      let delaynext () = [ iaddr#add_int 8 ] in
+      let successors =
+        if is_conditional_jump_instruction opcode then
+          (delaynext ()) @ [ get_direct_jump_target_address opcode ]
+        else if is_direct_jump_instruction opcode then
+          [ get_direct_jump_target_address opcode ]
+        else
+          next () in
+      List.map
+        (fun va -> (make_location { loc_faddr = faddr ; loc_iaddr = va })#ci)
+        successors
+    with
+    | BCH_failure p ->
+       raise (BCH_failure
+                (LBLOCK [ STR "Error in get_successors: " ;  p ]))
     
 
 let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
-  let set_block_entry a = (!mips_assembly_instructions#at_address a)#set_block_entry in    
+  let set_block_entry a =
+    try
+      (!mips_assembly_instructions#at_address a)#set_block_entry
+    with
+    | BCH_failure p ->
+       let msg = LBLOCK [ STR "Error in trace_block: set_block_entry: " ;
+                          STR "(" ; faddr#toPretty ; STR "," ;
+                          baddr#toPretty ; STR "): " ; p ] in
+       raise (BCH_failure msg) in
   let get_instr iaddr =
     try
       !mips_assembly_instructions#at_address iaddr
     with
     | BCH_failure p ->
-       begin
-         pr_debug [ STR "  Error: trace block: get_instr: " ; iaddr#toPretty ; NL ] ;
-         raise (BCH_failure p)
-       end in
+       let msg =
+         LBLOCK [ STR "Error: trace block: get_instr: " ; iaddr#toPretty ;
+                  STR  ": " ; p ] in
+       raise (BCH_failure msg) in
   let get_next_instr_addr a = a#add_int 4 in
   let mk_ci_succ l =
     List.map
@@ -502,8 +529,7 @@ let construct_mips_assembly_function (count:int) (faddr:doubleword_int) =
   try
     let _ = pverbose [ STR "  trace function " ; faddr#toPretty ; NL ] in
     let fn = trace_function faddr in
-    let _ = pverbose [ STR "  add function " ; faddr#toPretty ; NL ;
-                       fn#toPretty ; NL ] in
+    let _ = pverbose [ STR "  add function " ; faddr#toPretty ; NL ] in
     mips_assembly_functions#add_function fn
   with
   | BCH_failure p ->
@@ -550,16 +576,18 @@ let record_call_targets () =
                  else
                    begin
                      match get_so_target instr with
-                     | Some tgt -> finfo#set_so_target ctxtiaddr tgt
+                     | Some tgt ->
+                        finfo#set_call_target ctxtiaddr (mk_so_target tgt)
                      | _ ->
                         if op#is_absolute_address then
-                          finfo#set_app_target ctxtiaddr op#get_absolute_address
+                          finfo#set_call_target
+                            ctxtiaddr (mk_app_target op#get_absolute_address)
                    end
               | JumpLinkRegister (ra,op) ->
                  if finfo#has_call_target ctxtiaddr then
                    ()
                  else
-                   finfo#set_unknown_target ctxtiaddr
+                   finfo#set_call_target ctxtiaddr (mk_unknown_target ())
               | _ -> ())
         end
       with
@@ -590,7 +618,7 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
   | XConst (IntConst c) ->
      let dw = numerical_to_doubleword c in
      if mips_assembly_functions#has_function_by_address dw then
-       floc#set_application_target dw
+       floc#set_call_target (mk_app_target dw)
      else
        ()
   | XVar v when env#is_global_variable v ->
@@ -600,17 +628,17 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
        if functions_data#has_function_name dw then
          let name = (functions_data#get_function dw)#get_function_name in
          if function_summary_library#has_so_function name then
-             floc#set_so_target name
+             floc#set_call_target (mk_so_target name)
          else
            if mips_assembly_functions#has_function_by_address dw then
-             floc#set_application_target dw
+             floc#set_call_target (mk_app_target dw)
            else
              logerror
                (LBLOCK [ STR "Function name not associated with address: "  ;
                          STR name ])
        else
          if mips_assembly_functions#has_function_by_address dw then
-           floc#set_application_target dw
+           floc#set_call_target (mk_app_target dw)
          else
            logerror
              (LBLOCK [ STR "reference does not resolve to function address: " ;
@@ -627,21 +655,21 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
        if functions_data#has_function_name dwfun then
          let name = (functions_data#get_function dwfun)#get_function_name in
          if function_summary_library#has_so_function name then
-             floc#set_so_target name
+             floc#set_call_target (mk_so_target name)
          else
            if mips_assembly_functions#has_function_by_address dwfun then
-             floc#set_application_target dwfun
+             floc#set_call_target (mk_app_target dwfun)
            else
              logerror
                (LBLOCK [ STR "Function name not associated with address: "  ;
                          STR name ])
        else
          if mips_assembly_functions#has_function_by_address dwfun then
-           floc#set_application_target dwfun
+           floc#set_call_target (mk_app_target dwfun)
          else
            begin
              ignore (functions_data#add_function dwfun) ;
-             floc#set_application_target dwfun ;
+             floc#set_call_target (mk_app_target dwfun) ;
              chlog#add
                "add gv-based function"
                (LBLOCK [ STR "Addr expr: " ; x2p opExpr ; STR " resolves to " ;
@@ -661,18 +689,22 @@ let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
         match instr#get_opcode with
         | JumpLinkRegister (ra,tgt) ->
            let floc = get_floc loc in
-           if floc#has_unknown_target || floc#has_no_call_target then
+           if (floc#has_call_target && floc#get_call_target#is_unknown)
+              || not floc#has_call_target then
              set_call_address floc tgt
         | JumpRegister tgt ->
            let floc = get_floc loc in
            let env = floc#f#env in
            let ra_op = mips_register_op MRra RD in
-           let ra = floc#inv#rewrite_expr (ra_op#to_expr floc) floc#env#get_variable_comparator in
+           let ra =
+             floc#inv#rewrite_expr
+               (ra_op#to_expr floc) floc#env#get_variable_comparator in
            begin
              match ra with
              | XVar ra_var ->
                 if env#is_initial_register_value ra_var then
-                  if floc#has_unknown_target || floc#has_no_call_target then
+                  if (floc#has_call_target && floc#get_call_target#is_unknown)
+                     || not floc#has_call_target then
                     set_call_address floc tgt
              | _ ->
                 pr_debug [ floc#l#toPretty ; STR ": ra = " ; x2p ra ; NL ]
