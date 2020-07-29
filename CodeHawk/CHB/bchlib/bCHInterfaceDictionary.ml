@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -136,7 +136,8 @@ object (self)
     List.map self#get_role args
 
   method index_api_parameter (p:api_parameter_t) =
-    let tags = [ arg_io_mfts#ts p.apar_io ] in
+    let tags = [ arg_io_mfts#ts p.apar_io ;
+                 formatstring_type_mfts#ts p.apar_fmt ] in
     let args = [ bd#index_string p.apar_name ;
                  bd#index_btype p.apar_type ;
                  bd#index_string p.apar_desc ;
@@ -154,6 +155,7 @@ object (self)
       apar_desc = bd#get_string (a 2) ;
       apar_roles = self#get_roles (a 3) ;
       apar_io = arg_io_mfts#fs (t 0) ;
+      apar_fmt = formatstring_type_mfts#fs (t 1) ;
       apar_size = a 4 ;
       apar_location = self#get_parameter_location (a 5) }
 
@@ -216,14 +218,19 @@ object (self)
 
   method index_function_api (a:function_api_t) =
     let tags = [ a.fapi_calling_convention ] in
-    let args = [ bd#index_string a.fapi_name ;
-                 self#index_api_parameter_list a.fapi_parameters;
-                 bd#index_btype a.fapi_returntype ;
-                 self#index_roles a.fapi_rv_roles ;
-                 (match a.fapi_stack_adjustment with Some n -> n | _ -> (-1)) ;
-                 (match a.fapi_jni_index with Some n -> n | _ -> (-1)) ;
-                 (if a.fapi_inferred then 1 else 0) ]
-               @ (List.map bd#index_register a.fapi_registers_preserved) in
+    let args = [
+        bd#index_string a.fapi_name ;                         (* 0 *)
+        self#index_api_parameter_list a.fapi_parameters;      (* 1 *)
+        if a.fapi_varargs  then 1 else 0 ;                    (* 2 *)
+        (match a.fapi_va_list with
+         | Some l -> self#index_api_parameter_list l
+         | _ -> (-1));                                        (* 3 *)
+        bd#index_btype a.fapi_returntype ;                    (* 4 *)
+        self#index_roles a.fapi_rv_roles ;                    (* 5 *)
+        (match a.fapi_stack_adjustment with Some n -> n | _ -> (-1)) ;  (* 6 *)
+        (match a.fapi_jni_index with Some n -> n | _ -> (-1)) ;  (* 7 *)
+        (if a.fapi_inferred then 1 else 0)                       (* 8 *)
+      ] @ (List.map bd#index_register a.fapi_registers_preserved) in
     function_api_table#add (tags,args)
 
   method get_function_api (index:int) =
@@ -233,14 +240,20 @@ object (self)
     let a = a name args in
     { fapi_name = bd#get_string (a 0) ;
       fapi_parameters = self#get_api_parameter_list (a 1) ;
-      fapi_returntype = bd#get_btype (a 2) ;
-      fapi_rv_roles = self#get_roles (a 3) ;
-      fapi_stack_adjustment = if (a 4) = (-1) then None else Some (a 4) ;
-      fapi_jni_index = if (a 5) = (-1) then None else Some (a 5) ;
+      fapi_varargs = (a 2) = 1 ;
+      fapi_va_list =
+        if (a 3) = (-1) then
+          None
+        else
+          Some (self#get_api_parameter_list (a 3)) ;
+      fapi_returntype = bd#get_btype (a 4) ;
+      fapi_rv_roles = self#get_roles (a 5) ;
+      fapi_stack_adjustment = if (a 6) = (-1) then None else Some (a 6) ;
+      fapi_jni_index = if (a 7) = (-1) then None else Some (a 7) ;
       fapi_calling_convention = t 0 ;
       fapi_registers_preserved =
-        (List.map bd#get_register  (get_list_suffix args 7)) ;
-      fapi_inferred = (a 6) = 1 }
+        (List.map bd#get_register  (get_list_suffix args 9)) ;
+      fapi_inferred = (a 8) = 1 }
                  
 
   method index_function_stub (fstub:function_stub_t) =
