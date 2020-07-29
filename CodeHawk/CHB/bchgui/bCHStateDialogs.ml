@@ -1355,8 +1355,13 @@ let show_callees_dialog
 	let _ = GMisc.label ~text:(pp_str annotation#toPretty) ~xalign:0.0
 	  ~packing:(table#attach ~top:!row ~left:1) () in
 	row := !row+1) (List.rev callees) in
-    let callees = List.fold_left (fun acc floc ->
-      if floc#has_application_target then floc#get_application_target :: acc else acc)
+    let callees =
+      List.fold_left (fun acc floc ->
+          if floc#has_call_target && floc#get_call_target#is_app_call then
+            let ctinfo = floc#get_call_target in
+            ctinfo#get_application_target :: acc
+          else
+            acc)
       [] callees in
     let addButton =
       GButton.button ~label:"Add to list" ~packing:dialog#action_area#add () in

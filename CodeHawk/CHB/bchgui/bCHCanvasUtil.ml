@@ -133,7 +133,7 @@ let record_cfg_dead_ends (faddr:doubleword_int) =
 		pr_debug [ faddr#toPretty ;
                            STR "; add unresolved " ; STR baddr ; NL ]
 	      end) ;
-	  (if finfo#is_nonreturning_call iaddr then
+	  (if (finfo#get_call_target iaddr)#is_nonreturning then
 	      begin
 		H.add nonreturning baddr true ;
 		pr_debug [ faddr#toPretty ;
@@ -142,7 +142,7 @@ let record_cfg_dead_ends (faddr:doubleword_int) =
 	end
       | DirectCall _ | IndirectCall _ ->
 	let finfo = get_function_info faddr in
-	if finfo#is_nonreturning_call iaddr then 
+	if (finfo#get_call_target iaddr)#is_nonreturning then 
 	  begin
 	    H.add nonreturning baddr true ;
 	    pr_debug [ faddr#toPretty ;
