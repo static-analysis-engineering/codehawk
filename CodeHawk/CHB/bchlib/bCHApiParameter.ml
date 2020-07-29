@@ -29,6 +29,7 @@
 open CHPretty
 
 (* chutil *)
+open CHFormatStringParser
 open CHLogger
 open CHXmlDocument
 open CHXmlReader
@@ -40,6 +41,7 @@ open BCHDoubleword
 open BCHLibTypes
 open BCHUtilities
 open BCHVariableType
+open BCHVariableTypeUtil
 open BCHXmlUtil
 
 
@@ -229,6 +231,9 @@ let default_api_parameter = {
 let modify_types_par (f:type_transformer_t) (p:api_parameter_t) =
   { p with apar_type = modify_type f p.apar_type }
 
+let modify_name_par (name:string) (p:api_parameter_t) =
+  { p with apar_name = name }
+
 let mk_global_parameter
       ?(btype=t_unknown)
       ?(desc="")
@@ -281,4 +286,21 @@ let mk_register_parameter
     apar_size = size ;
     apar_fmt = fmt ;
     apar_location = RegisterParameter reg
+  }
+
+(* Convert a format string specification to an api_parameter *)
+let convert_fmt_spec_arg
+      (index:int)         (* index of argument, zero-based *)
+      (spec:argspec_int):api_parameter_t =
+  { apar_name = "vararg_" ^ (string_of_int) index;
+    apar_type = get_fmt_spec_type spec;
+    apar_desc = "vararg";
+    apar_roles = [];
+    apar_io =
+      (match spec#get_conversion with
+      | OutputArgument -> ArgWrite
+      | _ -> ArgRead);
+    apar_fmt = NoFormat;
+    apar_size = 4;
+    apar_location = StackParameter (index)
   }

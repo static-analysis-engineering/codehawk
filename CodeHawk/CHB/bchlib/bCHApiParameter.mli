@@ -29,6 +29,7 @@
 open CHPretty
 
 (* chutil *)
+open CHFormatStringParser
 open CHXmlDocument
 
 (* bchlib *)
@@ -68,6 +69,8 @@ val mk_register_parameter:
   -> register_t
   -> api_parameter_t
 
+val convert_fmt_spec_arg: int -> argspec_int -> api_parameter_t
+
 val calling_convention_to_string: calling_convention_t -> string
 
 val api_parameter_to_pretty: api_parameter_t -> pretty_t
@@ -92,6 +95,8 @@ val write_xml_api_parameter: xml_element_int -> api_parameter_t -> unit
 val read_xml_api_parameter: xml_element_int -> api_parameter_t
 
 val modify_types_par: type_transformer_t -> api_parameter_t -> api_parameter_t
+
+val modify_name_par: string -> api_parameter_t -> api_parameter_t
 
 val is_global_parameter: api_parameter_t -> bool
 
