@@ -276,6 +276,9 @@ class type elf_dynamic_segment_entry_int =
     method get_d_val: numerical_t
     method get_d_un: numerical_t
 
+    method get_relocation_table: doubleword_int
+    method get_relocation_table_size: numerical_t
+    method get_relocation_table_entry: numerical_t
     method get_string_table: doubleword_int
     method get_string_table_size: numerical_t
     method get_symbol_table: doubleword_int
@@ -291,6 +294,9 @@ class type elf_dynamic_segment_entry_int =
     method get_gnu_symbol_version_reqts_no: numerical_t
 
     (* predicates *)
+    method is_relocation_table: bool
+    method is_relocation_table_size: bool
+    method is_relocation_table_entry: bool
     method is_string_table: bool
     method is_string_table_size: bool
     method is_symbol_table: bool
@@ -319,6 +325,9 @@ class type elf_dynamic_segment_int =
     method get_vaddr: doubleword_int
     method get_string_reference: doubleword_int -> string option
     method get_hash_address: doubleword_int
+    method get_reltab_address: doubleword_int
+    method get_reltab_size: numerical_t
+    method get_reltab_ent: numerical_t
     method get_symtab_address: doubleword_int
     method get_strtab_address: doubleword_int
     method get_init_address: doubleword_int
@@ -335,6 +344,9 @@ class type elf_dynamic_segment_int =
     (* predicates *)
     method includes_VA: doubleword_int -> bool
     method has_hash_address: bool
+    method has_reltab_address: bool
+    method has_reltab_size: bool
+    method has_reltab_ent: bool
     method has_symtab_address: bool
     method has_strtab_address: bool
     method has_init_address: bool

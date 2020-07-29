@@ -126,6 +126,36 @@ object (self)
             (LBLOCK [ STR "Value of " ; STR self#get_tag_name ;
                       STR " cannot be interpreted as value" ]))
 
+  method is_relocation_table =
+    match self#get_tag with DT_Rel -> true | _ -> false
+
+  method get_relocation_table =
+    if self#is_relocation_table then
+      self#get_d_ptr
+    else
+      raise_dynamic_entry_error
+        self#get_tag_name d_un (STR "get_relocation_table")
+
+  method is_relocation_table_size =
+    match self#get_tag with DT_RelSz -> true | _ -> false
+
+  method get_relocation_table_size  =
+    if self#is_relocation_table_size then
+      self#get_d_val
+    else
+      raise_dynamic_entry_error
+        self#get_tag_name d_un (STR "get_relocation_table_size")
+
+  method is_relocation_table_entry =
+    match self#get_tag with  DT_RelEnt -> true | _ -> false
+
+  method get_relocation_table_entry  =
+    if self#is_relocation_table_entry then
+      self#get_d_val
+    else
+      raise_dynamic_entry_error
+        self#get_tag_name d_un (STR "get_relocationn_table_entry")
+
   method is_string_table =
     match self#get_tag with DT_StrTab -> true | _ -> false
 
@@ -295,6 +325,42 @@ object (self)
     | IO.No_more_input ->
        ch_error_log#add "no more input"
                         (LBLOCK [ STR "Unable to read the dynamic segment" ])
+
+  method has_reltab_address =
+    List.exists (fun e -> e#is_relocation_table) entries
+
+  method get_reltab_address =
+    try
+      let e = List.find (fun e -> e#is_relocation_table) entries in
+      e#get_relocation_table
+    with
+    | Not_found ->
+       raise
+         (BCH_failure (LBLOCK [ STR "DT_RELA not found in Dynamic Segment" ]))
+
+  method has_reltab_size =
+    List.exists (fun e -> e#is_relocation_table_size) entries
+
+  method get_reltab_size =
+    try
+      let e = List.find (fun e -> e#is_relocation_table_size) entries in
+      e#get_relocation_table_size
+    with
+    | Not_found ->
+       raise
+         (BCH_failure (LBLOCK [ STR "DT_RELASZ not found in Dynamic Segment" ]))
+
+  method has_reltab_ent =
+    List.exists (fun e -> e#is_relocation_table_entry) entries
+
+  method get_reltab_ent =
+    try
+      let e = List.find (fun e -> e#is_relocation_table_entry) entries in
+      e#get_relocation_table_entry
+    with
+    | Not_found ->
+       raise
+         (BCH_failure (LBLOCK [ STR  "DT_RELAENT not found in Dynamic Segment" ]))
 
   method has_hash_address = List.exists (fun e -> e#is_hash_table) entries
 

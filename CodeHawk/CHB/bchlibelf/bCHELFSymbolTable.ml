@@ -199,11 +199,7 @@ object (self)
   method set_function_entry_points =
     H.iter (fun _ e ->
         if e#is_function && e#has_address_value then
-          let fndata = functions_data#add_function e#get_st_value in
-          if e#has_name && function_summary_library#has_so_function e#get_name then
-            fndata#set_library_stub
-          else
-            ()) entries
+          ignore (functions_data#add_function e#get_st_value)) entries
 
   method set_function_names =
     H.iter (fun _ e ->
