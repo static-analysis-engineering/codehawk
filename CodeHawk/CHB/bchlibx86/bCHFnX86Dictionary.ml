@@ -147,7 +147,7 @@ object (self)
          let _ =
            List.iter (fun x -> ignore (get_string_reference floc x)) (List.map snd args) in
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
-         ([ xtag ],xargs @ [ixd#index_call_target floc#get_call_target ])
+         ([ xtag ],xargs @ [ixd#index_call_target floc#get_call_target#get_target ])
 
       | IndirectCall op ->
          let opx = op#to_expr floc in

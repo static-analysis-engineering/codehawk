@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-20120 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,4 +39,4 @@ val register_hashed_elf_functions: unit -> unit
 val register_predefined_callsemantics: string -> string -> int -> doubleword_int -> unit
 val has_callsemantics: doubleword_int -> bool
 val get_callsemantics: doubleword_int -> predefined_callsemantics_int
-val get_callsemantics_target: doubleword_int -> call_target_t
+val get_callsemantics_target: doubleword_int -> call_target_info_int
