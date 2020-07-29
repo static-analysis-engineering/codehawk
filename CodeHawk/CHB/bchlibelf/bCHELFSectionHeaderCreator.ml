@@ -190,6 +190,7 @@ object (self)
           | ".dynamic" -> h#set_link !dynstr_index
           | ".hash" -> h#set_link  !dynsym_index
           | ".dynsym" -> h#set_link !dynstr_index
+          | ".reldata" -> h#set_link !dynsym_index
           | ".gnu.version"  -> h#set_link !dynsym_index
           | ".gnu.version_r" -> h#set_link !dynstr_index
           | _ -> ()) headers
@@ -206,6 +207,7 @@ object (self)
       self#create_dynstr_header ;
       self#create_gnu_version_header ;
       self#create_gnu_version_r_header ;
+      self#create_relocation_header ;
       self#create_init_header ;
       self#create_text_header ;
       self#create_fini_header ;
@@ -441,6 +443,31 @@ object (self)
         section_headers <- sh :: section_headers
       end
 
+  (* inputs: from dynamic table,  type PT_Load (1)
+   * - addr: DT_RELA
+   * - offset: DT_RELA - ph#get_vaddr
+   * - size: DT_RELASZ
+   *)
+  method private create_relocation_header =
+    let sectionname = ".reldata" in
+    if dynamicsegment#has_reltab_address then
+      let vaddr = dynamicsegment#get_reltab_address in
+      let sh = mk_elf_section_header () in
+      let stype = s2d "0x9" in
+      let flags = s2d "0x0" in (* TBD *)
+      let addr = vaddr in
+      let offset = self#get_offset_1 vaddr in
+      let size = numerical_to_doubleword (dynamicsegment#get_reltab_size) in
+      let entsize = numerical_to_doubleword (dynamicsegment#get_reltab_ent) in
+      let addralign = s2d "0x4" in
+      begin
+        sh#set_fields
+          ~stype ~flags ~addr ~offset ~size ~addralign ~entsize ~sectionname () ;
+        section_headers <- sh :: section_headers
+      end
+    else
+      pr_debug [ STR "No relocation table found" ; NL ]
+      
   (* inputs: from dynamic table, program header, type PT_Load (1)
    * - addr: DT_INIT
    * - offset: DT_INIT - ph#get_vaddr
@@ -456,10 +483,31 @@ object (self)
       let addr = vaddr in
       let offset = self#get_offset_1 vaddr in
       let size =
-        try
-          fileheader#get_program_entry_point#subtract vaddr
-        with
-        | _ -> assumption_violation (STR "program entry point < DT_INIT") in
+        if has_user_data sectionname
+           && (get_user_data sectionname)#has_size then
+          (get_user_data sectionname)#get_size
+        else
+          let entrypoint = fileheader#get_program_entry_point in
+          if vaddr#lt entrypoint then
+            fileheader#get_program_entry_point#subtract vaddr
+          else
+            let (_,ph,_) = List.hd loadsegments in
+            let phend = ph#get_vaddr#add ph#get_file_size in
+            phend#subtract vaddr in
+      (*  assumption_violation
+             (L BLOCK [ STR "program entry point < DT_INIT. " ;
+             STR "program entry point: " ;
+             fileheader#get_program_entry_point#toPretty ;
+             STR "; dynamic segment initial address: " ;
+             vaddr#toPretty ]) in  *)
+      (*let _ =
+        pr_debug [ STR "Assumption violation: " ;
+        STR "program entry point < DT_INIT. " ;
+        STR "program entry point: " ;
+        fileheader#get_program_entry_point#toPretty ;
+        STR "; dynamic segment initial address: " ;
+        vaddr#toPretty ; NL ; NL ] in
+        wordzero in *)
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
@@ -476,27 +524,31 @@ object (self)
    *)
   method private create_text_header =
     let sectionname = ".text" in    
-    if dynamicsegment#has_fini_address then
-      let vaddr = fileheader#get_program_entry_point in
-      let finiaddr = dynamicsegment#get_fini_address in
-      let sh = mk_elf_section_header () in
-      let stype = s2d "0x1" in
-      let flags = s2d "0x6" in
-      let addr = vaddr in
-      let offset = self#get_offset_1 vaddr in
-      let size =
+    let vaddr = fileheader#get_program_entry_point in
+    let sh = mk_elf_section_header () in
+    let stype = s2d "0x1" in
+    let flags = s2d "0x6" in
+    let addr = vaddr in
+    let offset = self#get_offset_1 vaddr in
+    let size =
+      if dynamicsegment#has_fini_address then
+        let finiaddr = dynamicsegment#get_fini_address in
         try
           finiaddr#subtract vaddr
         with
-        | _ -> assumption_violation (STR "DT_FINI < program entry point") in
-      let addralign = s2d "0x4" in
-      begin
-        sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
-        section_headers <- sh :: section_headers
-      end
-    else
-      assumption_violation (STR "DT_FINI not present")
+        | _ -> assumption_violation (STR "DT_FINI < program entry point")
+      else
+        let initaddress = dynamicsegment#get_init_address in
+        try
+          initaddress#subtract vaddr
+        with
+        | _ -> assumption_violation (STR "DT_INIT < program entry point") in            
+    let addralign = s2d "0x4" in
+    begin
+      sh#set_fields
+        ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+      section_headers <- sh :: section_headers
+    end
 
   (* inputs: from dynamic table, program header, type PT_Load (1)
    * - addr: DT_FINI
@@ -520,7 +572,8 @@ object (self)
         section_headers <- sh :: section_headers
       end
     else
-      assumption_violation (STR "DT_FINI not present")
+      pr_debug [ STR "Assumption violation: DT_FINI not present" ; NL ; NL ]      
+  (*  assumption_violation (STR "DT_FINI not present") *)
 
   (* inputs: from program header, type PT_Load (1)
    * - addr: DT_FINI + 0x50
@@ -549,7 +602,12 @@ object (self)
                assumption_violation (STR "PT_Load(end) < finiaddr")  in
           (vaddr,size)
         else
-          assumption_violation  (STR "No addr/size information for .rodata")  in
+          begin
+            pr_debug [ STR "Assumption violation: No addr/size information for .rodata" ;
+                       NL ; NL ];
+            (wordmax,wordzero)
+          end in
+            (*assumption_violation  (STR "No addr/size information for .rodata")  in *)
     let sh = mk_elf_section_header () in
     let stype = s2d "0x1" in
     let flags = s2d "0x2" in
