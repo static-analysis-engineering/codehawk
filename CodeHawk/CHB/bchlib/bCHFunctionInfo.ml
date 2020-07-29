@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ open BCHApiParameter
 open BCHBasicTypes
 open BCHBTerm
 open BCHCallTarget
-open BCHCallTargetSemantics
+open BCHCallTargetInfo
 open BCHCPURegisters
 open BCHConstantDefinitions
 open BCHCppClass
@@ -58,6 +58,7 @@ open BCHCStruct
 open BCHDoubleword
 open BCHFunctionApi
 open BCHFunctionData
+open BCHFunctionSemantics
 open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
 open BCHJavaSignatures
@@ -362,15 +363,20 @@ object (self)
     (classinfos:(string * function_api_t * bool) list) =
     match classinfos with
     | [ (classname,api,isStatic) ] ->
-      let stackParams = List.fold_left (fun a p ->
-	match p.apar_location with StackParameter i -> (i,p.apar_name) :: a | _ -> a) 
+       let stackParams =
+         List.fold_left (fun a p ->
+	     match p.apar_location with
+             | StackParameter i -> (i,p.apar_name) :: a | _ -> a)
 	[] api.fapi_parameters in
-      let regParams = List.fold_left (fun a p ->
-	match p.apar_location with RegisterParameter r -> (r,p.apar_name) :: a | _ -> a)
+       let regParams =
+         List.fold_left (fun a p ->
+	     match p.apar_location with
+             | RegisterParameter r -> (r,p.apar_name) :: a | _ -> a)
 	[] api.fapi_parameters in
       let stackVars = List.map (fun (i,name) ->
 	let memref = self#mk_local_stack_reference in
-	let memvar = self#mk_memory_variable ~save_name:false memref (mkNumerical (i * 4)) in
+	let memvar =
+          self#mk_memory_variable ~save_name:false memref (mkNumerical (i * 4)) in
 	let memInitVar = self#mk_initial_memory_value memvar in
 	(name,memInitVar)) stackParams in
       let regVars = List.map (fun (r,name) ->
@@ -381,9 +387,11 @@ object (self)
       if isStatic then () else
       let (_,thisVar) = 
 	try List.find (fun (name,_) -> name = "this") paramVars with Not_found ->
-	  raise (BCH_failure (LBLOCK [ STR "No this variable found in function " ; 
-				       faddr#toPretty ; STR " in class " ;
-				       STR classname ])) in
+	  raise
+            (BCH_failure
+               (LBLOCK [ STR "No this variable found in function " ;
+			 faddr#toPretty ; STR " in class " ;
+			 STR classname ])) in
       let cppClass = get_cpp_class classname in
       let add_dm_class_members (ty:btype_t) (basevar:variable_t) =
 	if is_class_type ty then
@@ -393,14 +401,18 @@ object (self)
 	  begin
 	    cls#dm_iter (fun dm ->
 	      let memref = self#mk_base_variable_reference basevar in
-	      let memberVar = self#mk_memory_variable ~save_name:false memref (mkNumerical dm.cppdm_offset) in
+	      let memberVar =
+                self#mk_memory_variable
+                  ~save_name:false memref (mkNumerical dm.cppdm_offset) in
 	      let memberInitVar = self#mk_initial_memory_value memberVar in
 	      let mName = self#variable_name_to_string basevar in
 	      let name = mName ^ "->" ^ dm.cppdm_name in
 	      self#set_variable_name memberInitVar name ) ;
 	    cls#vf_iter (fun vf ->
 	      let memref = self#mk_base_variable_reference basevar in
-	      let vfptrVar = self#mk_memory_variable ~save_name:false memref (mkNumerical vf.cppvf_offset) in
+	      let vfptrVar =
+                self#mk_memory_variable
+                  ~save_name:false memref (mkNumerical vf.cppvf_offset) in
 	      let vfptrInitVar = self#mk_initial_memory_value vfptrVar in
 	      let mName = self#variable_name_to_string basevar in
 	      let vfptrName = mName ^ "->vtableptr" in
@@ -408,7 +420,9 @@ object (self)
 	      begin
 		List.iter (fun (vfOffset,summary) ->
 		  let vfmemref = self#mk_base_variable_reference vfptrInitVar in
-		  let vfVar = self#mk_memory_variable ~save_name:false vfmemref (mkNumerical vfOffset) in
+		  let vfVar =
+                    self#mk_memory_variable
+                      ~save_name:false vfmemref (mkNumerical vfOffset) in
 		  let vfInitVar = self#mk_initial_memory_value vfVar in
 		  self#register_virtual_call vfInitVar summary) vfsummaries ;
 		self#set_variable_name vfptrInitVar vfptrName
@@ -419,7 +433,9 @@ object (self)
       begin
 	cppClass#dm_iter (fun dm ->
 	  let memref = self#mk_base_variable_reference thisVar in
-	  let memberVar = self#mk_memory_variable ~save_name:false memref (mkNumerical dm.cppdm_offset) in
+	  let memberVar =
+            self#mk_memory_variable
+              ~save_name:false memref (mkNumerical dm.cppdm_offset) in
 	  let memberInitVar = self#mk_initial_memory_value memberVar in
 	  let name = "this->" ^ dm.cppdm_name in
 	  begin
@@ -428,14 +444,18 @@ object (self)
 	  end) ;
 	cppClass#vf_iter (fun vf ->
 	  let memref = self#mk_base_variable_reference thisVar in
-	  let vfptrVar = self#mk_memory_variable ~save_name:false memref (mkNumerical vf.cppvf_offset) in
+	  let vfptrVar =
+            self#mk_memory_variable
+              ~save_name:false memref (mkNumerical vf.cppvf_offset) in
 	  let vfptrInitVar = self#mk_initial_memory_value vfptrVar in
 	  let vfptrVarName = "this->" ^ "vtableptr" in
 	  let vfsummaries = get_vtable_summaries vf.cppvf_table in
 	  begin
 	    List.iter (fun (vfOffset,summary) ->
 	      let vfmemref = self#mk_base_variable_reference vfptrInitVar in
-	      let vfVar = self#mk_memory_variable ~save_name:false vfmemref (mkNumerical vfOffset) in
+	      let vfVar =
+                self#mk_memory_variable
+                  ~save_name:false vfmemref (mkNumerical vfOffset) in
 	      let vfInitVar = self#mk_initial_memory_value vfVar in
 	      self#register_virtual_call vfInitVar summary) vfsummaries ;
 	    self#set_variable_name vfptrInitVar vfptrVarName 
@@ -459,7 +479,9 @@ object (self)
     begin
       List.iter (fun (offset,name,ty) ->
 	let memref = self#mk_local_stack_reference  in
-	let v = self#mk_memory_variable ~save_name:false memref (mkNumerical (4*offset)) in
+	let v =
+          self#mk_memory_variable
+            ~save_name:false memref (mkNumerical (4*offset)) in
         let iv = self#mk_initial_memory_value v in
 	let vname = name ^ "$" ^ (string_of_int offset) in
 	begin
@@ -519,7 +541,8 @@ object (self)
   method get_variable (index:int) = 
     if H.mem chifvars index then H.find chifvars index else
       raise  (BCH_failure (LBLOCK [ STR "Variable not found: " ; INT index ;
-                                    STR "; variables: " ; pretty_print_list self#get_variables
+                                    STR "; variables: " ;
+                                    pretty_print_list self#get_variables
              (fun v -> v#toPretty) " [" "," "]" ]))
 
 
@@ -830,7 +853,8 @@ object (self)
 
   method get_se_argument_descriptor = varmgr#get_se_argument_descriptor
 
-  method get_global_sideeffect_target_address = varmgr#get_global_sideeffect_target_address
+  method get_global_sideeffect_target_address =
+    varmgr#get_global_sideeffect_target_address
 
   method is_global_sideeffect = varmgr#is_global_sideeffect
 
@@ -887,9 +911,11 @@ object (self)
 
   method is_unknown_memory_variable = varmgr#is_unknown_memory_variable
 
-  method is_unknown_base_memory_variable = varmgr#is_unknown_base_memory_variable
+  method is_unknown_base_memory_variable =
+    varmgr#is_unknown_base_memory_variable
 
-  method is_unknown_offset_memory_variable = varmgr#is_unknown_offset_memory_variable
+  method is_unknown_offset_memory_variable =
+    varmgr#is_unknown_offset_memory_variable
 
   method get_memory_reference (v:variable_t) = 
     if self#is_initial_memory_value v then
@@ -960,7 +986,8 @@ object (self)
                (LBLOCK [ STR "variable is nnot a register arg deref value: " ;
                          v#toPretty ]))
 
-  method private get_argbasevar_with_offsets_aux (v:variable_t) (offsets:numerical_t list) =
+  method private get_argbasevar_with_offsets_aux
+                   (v:variable_t) (offsets:numerical_t list) =
     if self#is_initial_memory_value v then
       let iv = varmgr#get_initial_memory_value_variable v in
       if self#is_basevar_memory_variable iv then
@@ -982,7 +1009,8 @@ object (self)
   method get_argbasevar_with_offsets (v:variable_t) =
     self#get_argbasevar_with_offsets_aux v []
 
-  method private get_globalbasevar_with_offsets_aux (v:variable_t) (offsets:numerical_t list) =
+  method private get_globalbasevar_with_offsets_aux
+                   (v:variable_t) (offsets:numerical_t list) =
     if self#is_initial_memory_value v then
       let iv = varmgr#get_initial_memory_value_variable v in
       if self#is_basevar_memory_variable iv then
@@ -1098,7 +1126,7 @@ object (self)
   
   val env = new function_environment_t faddr varmgr
   val constant_table = new VariableCollections.table_t
-  val call_targets = H.create 5
+  val calltargets = H.create 5       (* ctxt_iaddress_t -> call_target_info_int *)
   val jump_targets = H.create 5  
   val mutable base_pointers = new VariableCollections.set_t 
   val memory_access_record = make_memory_access_record ()
@@ -1132,9 +1160,11 @@ object (self)
     if H.mem instrbytes ia then
       H.find instrbytes ia
     else
-      raise (BCH_failure (LBLOCK [ STR "No instruction bytes found for " ;
-                                   STR ia ; STR " in function " ;
-                                   faddr#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [ STR "No instruction bytes found for " ;
+                     STR ia ; STR " in function " ;
+                     faddr#toPretty ]))
 
   method set_dynlib_stub (t:call_target_t) = dynlib_stub <- Some t
 
@@ -1144,7 +1174,9 @@ object (self)
     match dynlib_stub with
     | Some t -> t
     | _ ->
-       raise (BCH_failure (LBLOCK [ STR "Function is not known to be dynamic library stub" ]))
+       raise
+         (BCH_failure
+            (LBLOCK [ STR "Function is not known to be dynamic library stub" ]))
 
   method sideeffects_changed = sideeffects_changed
 
@@ -1186,7 +1218,9 @@ object (self)
   method get_memory_access_record = memory_access_record
 
   method get_local_stack_accesses = []
+
   method get_stack_accesses = []
+
   method get_global_accesses =  []
 
   method set_incomplete = complete <- false
@@ -1243,12 +1277,16 @@ object (self)
 
   method saved_registers_to_pretty =
     let p = ref [] in
-    let _ = H.iter (fun _ s -> p := (LBLOCK [ s#toPretty ; NL ]) :: !p) saved_registers in
+    let _ =
+      H.iter (fun _ s -> p := (LBLOCK [ s#toPretty ; NL ]) :: !p) saved_registers in
     match !p with
-      [] -> LBLOCK [ STR (string_repeat "~" 80) ; NL ; STR "No saved registers" ; NL ;
-		     STR (string_repeat "~" 80) ; NL ]
-    | l -> LBLOCK [ STR "Saved Registers" ; NL ; STR (string_repeat "~" 80) ; NL ; LBLOCK l ; NL ;
-		    STR (string_repeat "~" 80) ; NL]
+      [] ->
+      LBLOCK [ STR (string_repeat "~" 80) ; NL ; STR "No saved registers" ; NL ;
+	       STR (string_repeat "~" 80) ; NL ]
+    | l ->
+       LBLOCK [ STR "Saved Registers" ; NL ; STR (string_repeat "~" 80) ; NL ;
+                LBLOCK l ; NL ;
+		STR (string_repeat "~" 80) ; NL]
       
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * record return values                                                                 *
@@ -1309,29 +1347,12 @@ object (self)
     let _ = H.iter (fun _ v -> l := v :: !l) api_parameters in
     !l
      
-  method set_global_par (gaddr:doubleword_int) (ty:btype_t) =
-    let par = {
-      apar_name = "gv_" ^ gaddr#to_hex_string ;
-      apar_size = 4 ;
-      apar_type = ty ;
-      apar_roles = [] ;
-      apar_desc = "" ;
-      apar_io = ArgReadWrite ;
-      apar_location = GlobalParameter gaddr ;
-    } in
-    self#add_api_parameter par 
+  method set_global_par (gaddr:doubleword_int) (btype:btype_t) =
+    self#add_api_parameter (mk_global_parameter ~btype gaddr)
 
-  method set_stack_par (index:int) (ty:btype_t) =
-    let set_defaultpar () = 
-      let par = {
-	apar_name = "arg_" ^ (string_of_int index) ;
-	apar_size = 4 ;
-	apar_type = ty ;
-	apar_roles = [] ;
-	apar_desc = "" ;
-	apar_io = ArgReadWrite ;
-	apar_location = StackParameter index ;
-      } in
+  method set_stack_par (index:int) (btype:btype_t) =
+    let set_defaultpar () =
+      let par = mk_stack_parameter ~btype index in
       begin ignore(self#add_api_parameter par) ; par end in
     match user_summary with 
     | Some summary ->
@@ -1345,18 +1366,9 @@ object (self)
       end
     | _ -> set_defaultpar ()
 
-  method set_register_par (reg:register_t) (ty:btype_t) =
-    let par = {
-      apar_name = "reg_" ^ (register_to_string reg) ;
-      apar_size = 4 ;
-      apar_type = ty ;
-      apar_roles = [] ;
-      apar_io = ArgReadWrite ;
-      apar_desc = "" ;
-      apar_location = RegisterParameter reg ;
-    } in
-    self#add_api_parameter par
-       
+  method set_register_par (reg:register_t) (btype:btype_t) =
+    self#add_api_parameter (mk_register_parameter ~btype reg)
+
   method set_nonreturning = 
     if nonreturning then () else
       let fa = self#get_address in
@@ -1418,15 +1430,7 @@ object (self)
       let parameters =
         List.fold_left (fun acc (nr,v) ->
             match env#get_stack_parameter_index v with
-            | Some ix -> 
-	       { apar_name = "arg_" ^ (string_of_int ix) ;
-	         apar_type = t_unknown ;
-	         apar_desc = "" ;
-	         apar_roles = [] ;
-	         apar_io = ArgReadWrite ;
-	         apar_location = StackParameter nr ;
-	         apar_size = 4 
-	       } :: acc
+            | Some ix -> (mk_stack_parameter ix) :: acc
             | _ -> acc) [] parameters in  
       let adj = self#get_stack_adjustment in  
       let cc = match adj with
@@ -1437,6 +1441,8 @@ object (self)
       {  fapi_name = self#get_name ;
          fapi_jni_index = None ;
          fapi_parameters = self#get_api_parameters ;
+         fapi_varargs = false ;
+         fapi_va_list = None ;
          fapi_returntype = t_unknown ;
          fapi_rv_roles = [] ;
          fapi_calling_convention = cc ;
@@ -1492,18 +1498,15 @@ object (self)
       let name = (get_java_type_name_prefix ty) ^ "_" ^ (string_of_int count) in
       (count+1, off + (get_java_type_length ty), 
        (off, name, (get_java_type_btype ty)) :: pars)) (3,12,stackPars) args in
-    let mkparam (offset, name, bty) = {
-      apar_name = name ;
-      apar_type = bty ;
-      apar_desc = if offset = 0 then "JNI interface pointer" else "" ;
-      apar_roles = [] ;
-      apar_io = ArgRead ;
-      apar_size = 4 ;
-      apar_location = StackParameter (offset/4)
-    } in      
+    let mkparam (offset, name, btype) =
+      let desc = if offset = 0 then "JNI interface pointer" else "" in
+      let par = mk_stack_parameter ~btype ~desc (offset/4) in
+      modify_name_par name par in
     let fapi = {
       fapi_name = api.jnm_signature#name ;
       fapi_parameters = List.map mkparam stackPars ;
+      fapi_varargs = false ;
+      fapi_va_list = None ;
       fapi_returntype = 
 	(match api.jnm_signature#descriptor#return_value with
 	| Some ty -> get_java_type_btype ty
@@ -1520,7 +1523,7 @@ object (self)
     begin
       user_summary <- Some summary ;
       List.iter (fun p -> ignore (self#add_api_parameter p))
-	summary#get_function_api.fapi_parameters ;
+	summary#get_function_api.fapi_parameters
     end      
 
   method summary_to_pretty = self#get_summary#toPretty
@@ -1611,433 +1614,41 @@ object (self)
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * call targets                                                             *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-    
-  method set_nonreturning_call (callsite:ctxt_iaddress_t) = 
-    nonreturning_calls#add callsite
-    
-  method is_nonreturning_call (callsite:ctxt_iaddress_t) = 
-    nonreturning_calls#has callsite
 
-  method set_call_target (callsite:ctxt_iaddress_t) (tgt:call_target_t) =
+  method set_call_target (iaddr:ctxt_iaddress_t) (ctinfo:call_target_info_int) =
     begin
       call_targets_set <- true ;
       track_function
-        ~iaddr:callsite self#a
-	(LBLOCK [ STR "set call target: " ; call_target_to_pretty tgt ]) ;
-      H.replace call_targets callsite tgt
+        ~iaddr
+        self#a
+        (LBLOCK [ STR "set call target: " ; ctinfo#toPretty ]);
+      H.replace calltargets iaddr ctinfo
     end
 
-  method set_dll_target (callsite:ctxt_iaddress_t) (dll:string) (name:string) =
-    begin
-      call_targets_set <- true ;
-      track_function
-        ~iaddr:callsite self#a
-	(LBLOCK [ STR "set dll target: " ;
-		  STR dll ; STR ":" ; STR name ]) ;
-      H.replace call_targets callsite (StubTarget (DllFunction (dll,name)))
-    end
-
-  method set_so_target (callsite:ctxt_iaddress_t) (fname:string) =
-    begin
-      call_targets_set <- true ;
-      track_function
-        ~iaddr:callsite self#a
-        (LBLOCK [ STR "set so target: " ; STR fname ]) ;
-      H.replace call_targets callsite (StubTarget (SOFunction fname))
-    end
-
-  method set_static_dll_target (callsite:ctxt_iaddress_t) (fa:doubleword_int)
-    (dll:string) (name:string) =
-    begin
-      call_targets_set <- true ;
-      track_function
-        ~iaddr:callsite self#a
-	(LBLOCK [ STR "set static dll target: " ;
-		  STR dll ; STR ":" ; STR name ]) ;
-      H.replace call_targets callsite (StaticStubTarget (fa,(DllFunction(dll,name))))
-    end
-          
-  method set_app_target (callsite:ctxt_iaddress_t) (tgt_address:doubleword_int) =
-    begin
-      track_function
-        ~iaddr:callsite self#a
-        (LBLOCK [ STR "set app target: " ; tgt_address#toPretty ]) ;
-      call_targets_set <- true ;
-      H.replace call_targets callsite (AppTarget tgt_address) 
-    end
-
-  method set_inlined_app_target (callsite:ctxt_iaddress_t) (tgt_address:doubleword_int)
-    (name:string) =
-    begin
-      call_targets_set <- true ;
-      track_function
-        ~iaddr:callsite self#a
-	(LBLOCK [ STR "set inlined app target: " ;
-		  tgt_address#toPretty ; STR " (" ; STR name ; STR ")" ]) ;
-      H.replace call_targets callsite (InlinedAppTarget (tgt_address,name))
-    end
-      
-  method set_jni_target (call_site:ctxt_iaddress_t) (index:int) =
-    begin
-      call_targets_set <- true ;
-      chlog#add "set jni target"
-	(LBLOCK [ self#a#toPretty ; STR "," ; STR call_site ; STR ": " ; 
-		  INT index ]) ;
-      H.replace call_targets call_site (StubTarget (JniFunction index))
-    end
-      
-  method set_unknown_target (callsite:ctxt_iaddress_t) =
-    let _ = track_function
-              ~iaddr:callsite self#a
-              (LBLOCK [ STR "set unknown target" ]) in
-    H.replace call_targets callsite UnknownTarget
-
-  method set_virtual_call_target (call_site:ctxt_iaddress_t) (v:variable_t) =
-    let summary = env#get_virtual_target v in
-    H.replace call_targets call_site (VirtualTarget summary)
-
-  method set_indirect_call_target
-           (call_site:ctxt_iaddress_t)
-           (v:variable_t)
-           (l:call_target_t list) = ()     (* replace variable with  bterm *)
-
-  method has_call_target (callsite:ctxt_iaddress_t) = 
-    H.mem call_targets callsite &&
-      (match H.find call_targets callsite with
-      | UnknownTarget -> false
-      | _ -> true)
-
-  method has_dll_target (callsite:ctxt_iaddress_t) =
-    let rec is_dll_target t =
-      match t with
-      | StubTarget fs | StaticStubTarget (_,fs) ->
-         (match fs with DllFunction _ -> true | _ -> false)
-      | WrappedTarget (_, _, tt,_) -> is_dll_target tt
-      | _ -> false in
-    (H.mem call_targets callsite) && 
-      (is_dll_target (H.find call_targets callsite))
-
-  method has_static_dll_target (callsite:ctxt_iaddress_t) =
-    let rec is_static_dll_target t =
-      match t with
-      | StaticStubTarget (_,fs) ->
-         (match fs with DllFunction _ -> true | _ -> false)
-      | WrappedTarget (_, _, tt, _) -> is_static_dll_target tt
-      | _ -> false in
-    (H.mem call_targets callsite) &&
-      (is_static_dll_target (H.find call_targets callsite))
-
-  method has_static_lib_target (callsite:ctxt_iaddress_t) =
-    let rec is_static_lib_target t =
-      match t with
-      | StaticStubTarget (_,PckFunction _) -> true
-      | WrappedTarget (_, _, tt, _) -> is_static_lib_target tt
-      | _ -> false in
-    (H.mem call_targets callsite) &&
-      (is_static_lib_target (H.find call_targets callsite))
-
-  method has_jni_target (callsite:ctxt_iaddress_t) =
-    (H.mem call_targets callsite) &&
-      (match H.find call_targets callsite with
-      | StubTarget (JniFunction _) -> true | _ -> false)
-
-  method has_application_target (callsite:ctxt_iaddress_t) =
-    let rec is_app_target t =
-      match t with
-      | StaticStubTarget _ -> true
-      | AppTarget _ -> true
-      | InlinedAppTarget _ -> true
-      | WrappedTarget _ -> true
-      | _ -> false in
-    (H.mem call_targets callsite) &&
-      (is_app_target (H.find call_targets callsite))
-
-  method has_inlined_target (callsite:ctxt_iaddress_t) =
-    (H.mem call_targets callsite) &&
-      (match H.find call_targets callsite with
-      | InlinedAppTarget _ -> true | _ -> false)
-
-  method has_wrapped_target (callsite:ctxt_iaddress_t) =
-    (H.mem call_targets callsite) &&
-      (match H.find call_targets callsite with
-      | WrappedTarget _ -> true | _ -> false)
-
-  method has_indirect_target (callsite:ctxt_iaddress_t) =
-    (H.mem call_targets callsite) &&
-      (match H.find call_targets callsite with 
-      | IndirectTarget _ -> true | _ -> false)
-
-  method has_virtual_target (call_site:ctxt_iaddress_t) =
-    (H.mem call_targets call_site) &&
-      (match H.find call_targets call_site with
-      | VirtualTarget _ -> true | _ -> false)
-
-  method has_unknown_target (call_site:ctxt_iaddress_t) =
-    (H.mem call_targets call_site) &&
-      (match H.find call_targets call_site with
-      | UnknownTarget -> true
-      | IndirectTarget (_,[]) -> true
-      | _ -> false)
-
-  method has_no_call_target (call_site:ctxt_iaddress_t) =
-    not (H.mem call_targets call_site)
-    
-  method get_call_target (callsite:ctxt_iaddress_t) =
-    if H.mem call_targets callsite then
-      H.find call_targets callsite
+  method get_call_target (i:ctxt_iaddress_t) =
+    if H.mem calltargets i then
+      H.find calltargets i
     else
-      let msg =  LBLOCK [ 
-	STR "Function info call site: " ; STR callsite ; STR " not found"  ] in
-      begin
-	ch_error_log#add "get call target" msg ;
-	raise (BCH_failure msg)
-      end
+      raise
+        (BCH_failure
+           (LBLOCK [ STR "Function " ; self#a#toPretty ;
+                     STR "No call-target-info found at " ; STR i ]))
 
-  method get_inlined_target (callsite:ctxt_iaddress_t) =
-    let msg = LBLOCK [
-      STR "Function call site: " ; STR callsite ;
-      STR " no inlined target found" ] in
-    if H.mem call_targets callsite then
-      match H.find call_targets callsite with
-      | InlinedAppTarget (a,name) -> (a,name)
-      | _ ->
-	begin
-	  ch_error_log#add "get_inlined_target" msg ;
-	  raise (BCH_failure msg)
-	end
-    else
-      begin
-	ch_error_log#add "get_inlined_target" msg ;
-	raise (BCH_failure msg)
-      end
-
-  method get_static_lib_target (callsite:ctxt_iaddress_t) =
-    let msg = LBLOCK [
-      STR "Function call site: " ; STR callsite ;
-      STR " no static library target found" ] in
-    if H.mem call_targets callsite then
-      match H.find call_targets callsite with
-      | StaticStubTarget (a,PckFunction (lib,pkgs,name)) -> (a,lib,pkgs,name)
-      | _ ->
-	begin
-	  ch_error_log#add "get_inlined_target" msg ;
-	  raise (BCH_failure msg)
-	end
-    else
-      begin
-	ch_error_log#add "get_inlined_target" msg ;
-	raise (BCH_failure msg)
-      end
+  method has_call_target (i:ctxt_iaddress_t) =  H.mem calltargets i
 	
-  method get_dll_target (callsite:ctxt_iaddress_t) =
-    let msg = LBLOCK [
-      STR "Function call site: " ; STR callsite ; 
-      STR " no dll target found" ] in
-    let error () =
-      begin
-        ch_error_log#add "get dll target" msg ;
-        raise (BCH_failure msg)
-      end in   
-    let rec get_dll_target t =
-      match t with
-      | StubTarget fs | StaticStubTarget (_,fs) ->
-         (match fs with
-          | DllFunction (dll,name) -> (dll,name)
-          | _ -> error ())
-      | WrappedTarget (_, _, tt, _) -> get_dll_target tt
-      | _ -> error () in
-    if H.mem call_targets callsite then
-      get_dll_target (H.find call_targets callsite)
-    else
-      error ()      
-
-  method get_wrapped_target (callsite:ctxt_iaddress_t) =
-    let msg = LBLOCK [
-      STR "Function call site: " ; STR callsite ; 
-      STR " no wrapped target found" ] in
-    if H.mem call_targets callsite then
-      match H.find call_targets callsite with
-      | WrappedTarget (a, fapi, wtgt, argmapping) -> (a, fapi, wtgt, argmapping)
-      | _ -> 
-	begin
-	  ch_error_log#add "get wrapped target" msg ;
-	  raise (BCH_failure msg)
-	end
-    else
-      begin
-	ch_error_log#add "get wrapped target" msg ;
-	raise (BCH_failure msg)
-      end
-
-  method get_application_target (callsite:ctxt_iaddress_t) =
-    let rec get_app_target t =
-      match t with
-      | StaticStubTarget (a,_) -> a
-      | AppTarget a | InlinedAppTarget (a,_) -> a
-      | WrappedTarget (a,_,_,_) -> a
-      | _ ->
-         raise (BCH_failure 
-		  (LBLOCK [ STR "Target at " ; STR callsite ; 
-			    STR " is not an application target: " ; 
-			    call_target_to_pretty t ])) in
-    if H.mem call_targets callsite then
-      get_app_target (H.find call_targets callsite) 
-    else
-      raise (BCH_failure
-	       (LBLOCK [ STR "No call target found at " ; STR callsite ]))
-
-  method get_jni_target (call_site:ctxt_iaddress_t) =
-    if H.mem call_targets call_site then
-      match H.find call_targets call_site with
-      | StubTarget (JniFunction i) -> i
-      | tgt -> raise (BCH_failure
-			(LBLOCK [ STR "Target at " ; STR call_site ;
-				  STR " is not a jni target: " ;
-				  call_target_to_pretty tgt ]))
-    else
-      raise (BCH_failure
-	       (LBLOCK [ STR "No call target found at " ; STR call_site ]))
-
-  method get_virtual_target (call_site:ctxt_iaddress_t) =
-    if H.mem call_targets call_site then
-      match H.find call_targets call_site with
-      | VirtualTarget api -> api
-      | tgt -> raise (BCH_failure
-			(LBLOCK [ STR "Target at " ; STR call_site ;
-				  STR " is not a virtual target: " ;
-				  call_target_to_pretty tgt ]))
-    else
-      raise (BCH_failure
-	       (LBLOCK [ STR "No call target found at " ; STR call_site ]))
-
-  method get_indirect_target (callsite:ctxt_iaddress_t) =
-    if H.mem call_targets callsite then
-      match H.find call_targets callsite with
-      | IndirectTarget (_,tgts) -> tgts
-      | tgt -> raise (BCH_failure
-		      (LBLOCK [ STR "Target at " ; STR callsite;
-				STR " is not an indirect target: " ; 
-				call_target_to_pretty tgt ]))
-    else
-      raise (BCH_failure
-	       (LBLOCK [ STR "No call target found at " ; STR callsite ]))
-      
-	
-  method get_callees =	H.fold (fun _ v a -> v::a) call_targets []
+  method get_callees =	H.fold (fun _ v a -> v::a) calltargets []
     
   method get_callees_located = 
-    H.fold (fun k v a -> (k,v)::a) call_targets []
+    H.fold (fun k v a -> (k,v)::a) calltargets []
 
-  method get_call_count = H.length call_targets
+  method get_call_count = H.length calltargets
 
-  method get_dll_call_count = 
-    List.length
-      (List.filter
-         (fun t -> 
-           match t with
-           | StubTarget fs | StaticStubTarget (_,fs) ->
-              (match fs with DllFunction _ -> true | _ -> false)
-           | _ -> false) self#get_callees)
+  method get_call_category_count (cat:string) =
+    H.fold
+      (fun _ ctinfo acc ->
+        if ctinfo#is_call_category cat then acc+1 else acc)
+      calltargets 0
 
-  method get_staticdll_call_count =
-    List.length (List.filter (fun t ->
-      match t with
-      | StaticStubTarget (_, DllFunction _) -> true | _ -> false) self#get_callees)
-
-  method get_staticlib_call_count =
-    List.length (List.filter (fun t ->
-      match t with
-      | StaticStubTarget (_, PckFunction _) -> true | _ -> false) self#get_callees)
-
-  method get_dll_no_sum_call_count =
-    let rec get_dll_target t =
-      match t with
-      | StubTarget fs | StaticStubTarget (_,fs) ->
-         (match fs with
-          | DllFunction (dll,name) -> Some (dll,name)
-          | _ -> None)
-      | WrappedTarget (_, _, tt, _) -> get_dll_target tt
-      | _ -> None in
-    let rec aux targets =
-      List.fold_left (fun acc t ->
-	  match get_dll_target t with
-          | Some (dll,fname) ->
-	     if function_summary_library#has_dll_function dll fname then 
-	       acc else acc + 1
-          | _ ->
-             match t with
-	     | IndirectTarget (_,tgts) -> acc + aux tgts
-	     | _ -> acc) 0 targets in
-    aux self#get_callees
-
-  method get_app_call_count =
-    List.length (List.filter (fun t -> 
-      match t with 
-      | AppTarget _ -> true 
-      | InlinedAppTarget _ -> true
-      | WrappedTarget (_,_,AppTarget _,_) -> true
-      | _ -> false) self#get_callees)
-
-  method get_jni_call_count = 
-    List.length (List.filter (fun t -> 
-      match t with StubTarget (JniFunction _) -> true | _ -> false) self#get_callees)
-
-
-  method get_arg_call_count =
-    List.length (List.filter (fun t ->
-      match t with 
-      | IndirectTarget (v,_) when is_stack_parameter_term v -> true
-      | _ -> false) self#get_callees)
-
-  method get_arg_call_no_targets_count =
-    List.length (List.filter (fun t ->
-      match t with 
-      | IndirectTarget (v,[]) when is_stack_parameter_term v -> true
-      | _ -> false) self#get_callees)
-
-  method get_global_call_count =
-    List.length (List.filter (fun t ->
-      match t with
-      | IndirectTarget (v,_) when is_global_parameter_term v -> true
-      | _ -> false) self#get_callees)
-
-  method get_global_call_no_targets_count =
-    List.length (List.filter (fun t ->
-      match t with
-      | IndirectTarget (v,[]) when is_global_parameter_term v -> true
-      | _ -> false) self#get_callees)
-
-  method get_indirect_call_count =
-    List.length (List.filter (fun t ->
-      match t with IndirectTarget _ -> true | _ -> false) self#get_callees)
-
-  method get_indirect_call_no_targets_count =
-    List.length (List.filter (fun t ->
-      match t with IndirectTarget (_,[]) -> true | _ -> false) self#get_callees)
-
-  method get_unr_call_count =
-    List.length (List.filter (fun t -> 
-      match t with 
-      | UnknownTarget 
-      | IndirectTarget (_,[]) -> true
-      | _ -> false) self#get_callees)
-
-  method get_inlined_call_count =
-    List.length (List.filter (fun t ->
-      match t with | InlinedAppTarget _ -> true | _ -> false) self#get_callees)
-
-  method get_appwrapped_call_count =
-    List.length (List.filter (fun t ->
-      match t with 
-      | WrappedTarget (_,_,AppTarget _,_) -> true 
-      | _ -> false) self#get_callees)
-
-  method get_dllwrapped_call_count =
-    List.length (List.filter (fun t ->
-      match t with
-      | WrappedTarget (_,_,StubTarget _,_) -> true
-      | WrappedTarget (_,_,StaticStubTarget _,_) -> true
-      | _ -> false) self#get_callees)
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * base pointers                                                                        *
@@ -2121,23 +1732,28 @@ object (self)
     | BCH_failure p ->
        raise (BCH_failure (LBLOCK [ STR "Finfo:set-argument-jumptarget: " ; p ]))
 
-  method set_so_jumptarget (jumpAddr:ctxt_iaddress_t) (fname:string) =
+  method set_so_jumptarget
+           (jumpAddr:ctxt_iaddress_t) (fname:string) (ctinfo:call_target_info_int) =
     begin
       track_function
         ~iaddr:jumpAddr self#a
         (LBLOCK [ STR "set so jumptarget: " ; STR fname ]) ;
       H.replace jump_targets jumpAddr (SOJumpTarget fname) ;
-      H.replace call_targets jumpAddr (StubTarget (SOFunction fname))
+      self#set_call_target jumpAddr ctinfo
     end
 
-  method set_dll_jumptarget (jumpAddr:ctxt_iaddress_t) (lib:string) (fname:string) =
+  method set_dll_jumptarget
+           (jumpAddr:ctxt_iaddress_t)
+           (lib:string)
+           (fname:string)
+           (ctinfo:call_target_info_int) =
     begin
       track_function
         ~iaddr:jumpAddr self#a
         (LBLOCK [ STR "set dll jumptarget: " ; STR lib ;
                   STR  ", " ;  STR fname ]) ;
       H.replace jump_targets jumpAddr (DllJumpTarget (lib,fname)) ;
-      H.replace call_targets jumpAddr (StubTarget (DllFunction (lib,fname)))
+      self#set_call_target jumpAddr ctinfo
     end
 
   method is_dll_jumptarget (iaddr:ctxt_iaddress_t) =
@@ -2211,22 +1827,22 @@ object (self)
         acc || match v with UnknownJumpTarget -> true | _ -> acc) jump_targets false
 
   method private write_xml_call_targets (node:xml_element_int) =
-    let l = H.fold (fun k v a -> (k,v)::a)  call_targets [] in
+    let calltargets = H.fold (fun k v a -> (k,v)::a) calltargets [] in
     node#appendChildren
       (List.map
          (fun (k,v) ->
-           let cnode = xmlElement "ctgt" in
+           let ctnode = xmlElement "ctinfo" in
            begin
-             id#write_xml_call_target cnode v ;
-             cnode#setAttribute "a" k ;
-             cnode
-           end) l)
+             v#write_xml ctnode ;
+             ctnode#setAttribute "a" k ;
+             ctnode
+           end) calltargets)
 
   method private read_xml_call_targets (node:xml_element_int) =
     List.iter (fun cnode ->
         let a = cnode#getAttribute "a" in
-        H.add call_targets a (id#read_xml_call_target cnode))
-              (node#getTaggedChildren "ctgt")
+        H.add calltargets a (read_xml_call_target_info cnode))
+              (node#getTaggedChildren "ctinfo")
     
   method private write_xml_constants (node:xml_element_int) =
     let var_to_xml (v,n) =
@@ -2444,10 +2060,12 @@ let get_jni_calls () =
       H.replace table faddr#index ((iaddr,jniindex) :: (H.find table faddr#index))
     else
       H.add table faddr#index [ (iaddr,jniindex) ] in
-  let _ = List.iter (fun finfo ->
-    List.iter (fun (iaddr,c) -> match c with
-    | StubTarget (JniFunction i) -> add finfo#get_address iaddr i
-    | _ -> ()) finfo#get_callees_located) (get_function_infos ()) in
+  let _ =
+    List.iter (fun finfo ->
+        List.iter (fun (iaddr,ctinfo) ->
+            if ctinfo#is_jni_call then
+              add finfo#get_address iaddr ctinfo#get_jni_index)
+                  finfo#get_callees_located) (get_function_infos ()) in
   let _ = H.iter (fun k v -> result := (index_to_doubleword k,v) :: !result) table in
   !result
 
