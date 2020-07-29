@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -111,6 +111,7 @@ let read_xml_function_api (node:xml_element_int):function_api_t =
   let getcc = node#getTaggedChildren in
   let hasc = node#hasOneTaggedChild in
   let parameters = List.map read_xml_api_parameter (getcc "par") in
+  let varargs = has "varargs" && ((get "varargs") = "yes") in
   let cc = get "cc" in
   let stackadj = if cc = "stdcall" || cc = "cdecl" then
       Some (get_stack_adjustment cc (List.length parameters))
@@ -121,6 +122,8 @@ let read_xml_function_api (node:xml_element_int):function_api_t =
       if hasc s then read_xml_returntype (getc s) else acc) default l in
   { fapi_name = get "name" ;
     fapi_parameters = parameters ;
+    fapi_varargs = varargs ;
+    fapi_va_list = None ;
     fapi_returntype = find [ "returntype" ; "returnbtype" ] t_void ;
     fapi_rv_roles =
       (if hasc "rv-roles" then read_xml_roles (getc "rv-roles") else []) ;
@@ -171,6 +174,24 @@ let is_stack_parameter (p:api_parameter_t) (n:int) =
   | StackParameter i -> i = n
   | _ -> false
 
+let has_fmt_parameter (api:function_api_t) =
+  List.exists is_formatstring_parameter api.fapi_parameters
+
+let get_fmt_parameter_index (api:function_api_t) =
+  let (result,_) =
+    List.fold_left
+      (fun (acc,c) p ->
+        match acc with
+        | Some _ -> (acc,0)
+        | _ ->
+           if is_formatstring_parameter p then (Some c,0) else (None,c+1))
+      (None,0) api.fapi_parameters in
+  match result with
+  | Some c -> c
+  | _ ->
+     raise (BCH_failure
+              (LBLOCK [ STR "no format argument found in function api" ]))
+
 let demangled_name_to_function_api (dm:demangled_name_t) = 
   let stack_adjustment = match dm.dm_calling_convention with
     | "__cdecl" -> Some 0
@@ -187,9 +208,12 @@ let demangled_name_to_function_api (dm:demangled_name_t) =
     apar_io = ArgReadWrite ;
     apar_location = StackParameter (index + 1) ;
     apar_size = (match (get_size_of_btype ty) with Some s -> s | _ -> 4) ;
+    apar_fmt = NoFormat
   } in
   { fapi_name = tname_to_string dm.dm_name ;
     fapi_parameters = List.mapi make_parameter dm.dm_parameter_types ;
+    fapi_varargs = false ;   (* TBD: to be investigated *)
+    fapi_va_list = None ;
     fapi_returntype = returntype ;
     fapi_rv_roles = [] ;
     fapi_stack_adjustment = stack_adjustment ;
@@ -200,14 +224,21 @@ let demangled_name_to_function_api (dm:demangled_name_t) =
   }
 
 let default_function_api 
-    ?(cc="cdecl") ?(adj=0) (name:string) (pars:api_parameter_t list) = {
-  fapi_name = name ;
-  fapi_parameters = pars ;
-  fapi_returntype = t_unknown ;
-  fapi_rv_roles = [] ;
-  fapi_stack_adjustment = Some adj ;
-  fapi_jni_index = None ;
-  fapi_calling_convention = cc ;
-  fapi_registers_preserved = [] ;
-  fapi_inferred = false
-}
+      ?(cc="cdecl")
+      ?(adj=0)
+      ?(returntype=t_unknown)
+      (name:string)
+      (pars:api_parameter_t list) =
+  {
+    fapi_name = name ;
+    fapi_parameters = pars ;
+    fapi_varargs = false ;
+    fapi_va_list = None ;
+    fapi_returntype = t_unknown ;
+    fapi_rv_roles = [] ;
+    fapi_stack_adjustment = Some adj ;
+    fapi_jni_index = None ;
+    fapi_calling_convention = cc ;
+    fapi_registers_preserved = [] ;
+    fapi_inferred = false
+  }
