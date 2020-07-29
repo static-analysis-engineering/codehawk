@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,25 +35,41 @@ open CHXmlDocument
 open BCHLibTypes
 
    
-val function_api_to_prototype_string: ?fullname:string option -> function_api_t -> string
-val function_api_to_pretty          : function_api_t -> pretty_t
+val function_api_to_prototype_string:
+  ?fullname:string option -> function_api_t -> string
+
+val function_api_to_pretty: function_api_t -> pretty_t
 
 val function_api_compare: function_api_t -> function_api_t -> int
 
-val read_xml_function_api      : xml_element_int -> function_api_t
+val read_xml_function_api: xml_element_int -> function_api_t
 
-val modify_types_api: type_transformer_t -> string -> function_api_t -> function_api_t
+val modify_types_api:
+  type_transformer_t -> string -> function_api_t -> function_api_t
 
 val is_stack_parameter: api_parameter_t -> int -> bool
 
-val get_stack_parameter      : function_api_t -> int -> api_parameter_t (* index starts at 1 *)
-val get_stack_parameter_name : function_api_t -> int -> string          (* index starts at 1 *)
+val get_stack_parameter:
+  function_api_t -> int -> api_parameter_t (* index starts at 1 *)
+
+val get_stack_parameter_name :
+  function_api_t -> int -> string          (* index starts at 1 *)
+
 val get_stack_parameter_names: function_api_t -> (int * string) list
 
 val get_stack_parameter_count: function_api_t -> int
 
+val has_fmt_parameter: function_api_t -> bool
+
+val get_fmt_parameter_index: function_api_t -> int
+
 val demangled_name_to_function_api: demangled_name_t -> function_api_t
 
 val default_function_api:
-  ?cc:string -> ?adj:int -> string -> api_parameter_t list -> function_api_t
+  ?cc:string
+  -> ?adj:int
+  -> ?returntype:btype_t
+  -> string
+  -> api_parameter_t list
+  -> function_api_t
 
