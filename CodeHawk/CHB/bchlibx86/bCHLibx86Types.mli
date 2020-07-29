@@ -437,17 +437,18 @@ class type predefined_callsemantics_int =
 object
 
   (* accessors *)
-  method get_name           : string                   (* name of the function *)
-  method get_md5hash        : string                   (* md5 hash of hex representation *)
-  method get_annotation     : floc_int -> pretty_t     (* printed annotation *)
-  method get_commands       : floc_int -> cmd_t list   (* chif *)
-  method get_parametercount : int                      (* number of stack parameters *)
-  method get_instrcount     : int                      (* number of instructions *)
-  method get_description    : string                   (* description of functionality *)
-  method get_call_target    : doubleword_int -> call_target_t   (* type of call target *)
+  method get_name: string                          (* name of the function *)
+  method get_md5hash: string             (* md5 hash of hex representation *)
+  method get_annotation: floc_int -> pretty_t        (* printed annotation *)
+  method get_commands: floc_int -> cmd_t list                      (* chif *)
+  method get_parametercount: int             (* number of stack parameters *)
+  method get_instrcount: int                     (* number of instructions *)
+  method get_description: string           (* description of functionality *)
+  method get_call_target:
+           doubleword_int -> call_target_info_int   (* type of call target *)
 
   (* printing *)
-  method toPretty           : pretty_t
+  method toPretty: pretty_t
 end
 
 type patternrhs_t = 

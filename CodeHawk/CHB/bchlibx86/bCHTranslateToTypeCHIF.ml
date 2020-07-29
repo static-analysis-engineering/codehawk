@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -110,9 +110,10 @@ let translate_instruction
     let cmd = match rhs with
       | XVar v -> ASSERT (SUBSET (v, [ fptrSym ]))
       | _ -> SKIP in
-    let retcmd = if floc#has_call_target_signature then
-	let api = floc#get_call_target_signature in
-	match api.fapi_returntype with
+    let retcmd =
+      if floc#has_call_target
+         && floc#get_call_target#is_signature_valid then
+	match floc#get_call_target#get_returntype with
 	| TPtr _ -> ASSIGN_SYM (eax, SYM fptrSym)
 	| _ -> SKIP 
       else

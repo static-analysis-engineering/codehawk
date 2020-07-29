@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -55,7 +55,8 @@ let record_argument_reads (acc:memory_accesses_int) (floc:floc_int) = ()
 let record_known_pointer_argument_accesses (acc:memory_accesses_int) (floc:floc_int) = ()
 
 let record_call_memory_accesses (acc:memory_accesses_int) (floc:floc_int) = 
-  if floc#has_call_target && floc#has_call_target_semantics then
+  if floc#has_call_target
+     && floc#get_call_target#is_semantics_valid then
     begin
       record_argument_reads acc floc ;
       record_known_pointer_argument_accesses acc floc

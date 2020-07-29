@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -94,10 +94,10 @@ val get_adjustment_commands: int -> floc_int -> cmd_t list
 
 val get_wrapped_call_commands: floc_int -> floc_int -> cmd_t list
 
-val isnamed_app_call    : doubleword_int -> int -> string -> bool
-val isnamed_dll_call    : doubleword_int -> int -> string -> bool
-val isnamed_inlined_call: doubleword_int -> int -> string -> bool
-val isnamed_lib_call    : doubleword_int -> int -> string -> bool
+val is_named_app_call: doubleword_int -> int -> string -> bool
+val is_named_dll_call: doubleword_int -> int -> string -> bool
+val is_named_inlined_call: doubleword_int -> int -> string -> bool
+val is_named_lib_call: doubleword_int -> int -> string -> bool
 
 val sometemplate: 
   ?msg:pretty_t -> predefined_callsemantics_int -> predefined_callsemantics_int option
@@ -120,12 +120,12 @@ class virtual predefined_callsemantics_base_t:
     string -> int ->
 object
   method virtual get_name: string
-  method get_md5hash    : string
-  method get_annotation : floc_int -> pretty_t
-  method get_commands   : floc_int -> cmd_t list
+  method get_md5hash: string
+  method get_annotation: floc_int -> pretty_t
+  method get_commands: floc_int -> cmd_t list
   method virtual get_parametercount: int
-  method get_instrcount : int
-  method get_call_target: doubleword_int -> call_target_t
+  method get_instrcount: int
+  method get_call_target: doubleword_int -> call_target_info_int
   method get_description: string
-  method toPretty       : pretty_t
+  method toPretty: pretty_t
 end

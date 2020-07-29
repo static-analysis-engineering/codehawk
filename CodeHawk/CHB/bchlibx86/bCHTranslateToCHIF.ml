@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -126,12 +126,10 @@ let get_invariant_label (loc:location_int) =
 let is_invariant_opname (name:symbol_t) = name#getBaseName = "invariant"
 
 let is_eh_prolog (finfo:function_info_int) (iaddr:ctxt_iaddress_t) =
-  ((finfo#has_dll_target iaddr) && ((snd (finfo#get_dll_target iaddr)) = "_EH_prolog")) ||
-    (finfo#has_application_target iaddr) &&
-    (let tgt = finfo#get_application_target iaddr in
-     functions_data#has_function_name tgt
-     && (functions_data#get_function tgt)#get_function_name = "_EH_prolog")
-
+  let loc = ctxt_string_to_location finfo#a iaddr in
+  let floc = get_floc loc in
+  floc#has_call_target && floc#get_call_target#get_name = "_EH_prolog"
+  
 let package_transaction (finfo:function_info_int) (label:symbol_t) (commands:cmd_t list) =
   let commands = List.filter (fun cmd -> match cmd with SKIP -> false | _ -> true) commands in
   let constantAssignments = finfo#env#end_transaction in
@@ -258,7 +256,7 @@ let check_pic_target (floc:floc_int) instr =
     begin
       chlog#add "attempt resolve pic" floc#l#toPretty ;
       BCHDisassembleELF.resolve_pic_target floc instr ;
-      if floc#is_nonreturning_call then
+      if floc#has_call_target && floc#get_call_target#is_nonreturning then
         let _ = chlog#add "request retrace" floc#l#toPretty in
         raise Request_function_retracing
     end
@@ -509,7 +507,8 @@ let translate_instruction
      let floc =  get_floc loc in
      begin
        (if (not floc#has_call_target) ||
-             floc#has_unknown_target then check_pic_target floc instruction) ;
+             floc#get_call_target#is_unknown then
+          check_pic_target floc instruction) ;
        let string_retriever = FFU.get_string_reference in
        default (floc#get_call_commands string_retriever)
      end
