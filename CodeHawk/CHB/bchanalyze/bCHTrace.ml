@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -91,7 +91,8 @@ let se_address_is_referenced
   if floc#is_address x then
     let (memref,memoffset) = floc#decompose_address x in
     if is_constant_offset memoffset then
-      let memv = finfo#env#mk_memory_variable memref (get_total_constant_offset memoffset) in
+      let memv =
+        finfo#env#mk_memory_variable memref (get_total_constant_offset memoffset) in
       let memx = floc#rewrite_variable_to_external memv in
       var_is_referenced finfo memx v
     else
@@ -101,14 +102,21 @@ let se_address_is_referenced
 
 let get_callers (faddr:doubleword_int) =
   let callers = ref [] in
-  let _ = assembly_functions#itera
-    (fun _ f -> f#iter_calls (fun iaddr floc ->
-      if floc#has_application_target && floc#get_application_target#equal faddr then
+  let _ =
+    assembly_functions#itera
+      (fun _ f ->
+        f#iter_calls (fun iaddr floc ->
+            if floc#has_call_target
+               && floc#get_call_target#is_app_call
+               && floc#get_call_target#get_app_address#equal faddr then
 	callers := floc :: !callers
-      else if floc#has_wrapped_target then
-	match floc#get_wrapped_target with
-	| (_,_,AppTarget a,_) when a#equal faddr -> callers := floc :: !callers
-	| _ -> ())) in
+            else
+              if floc#has_call_target
+                 && floc#get_call_target#is_wrapped_app_call
+	         && floc#get_call_target#get_wrapped_app_address#equal faddr then
+	        callers := floc :: !callers
+              else
+                ())) in
   !callers
 
 let get_callees (faddr:doubleword_int) =
@@ -119,8 +127,8 @@ let get_callees (faddr:doubleword_int) =
 
 let get_app_callees (faddr:doubleword_int):doubleword_int list =
   List.fold_left (fun acc floc ->
-    if floc#has_application_target then
-      floc#get_application_target :: acc 
+    if floc#has_call_target && floc#get_call_target#is_app_call then
+      floc#get_call_target#get_app_address :: acc 
     else
       acc) [] (get_callees faddr)
 
@@ -129,7 +137,7 @@ let record_fpcallback_arguments (f:assembly_function_int) =
     try system_info#is_code_address (numerical_to_doubleword n) with
       Invalid_argument _ -> false in
   f#iter_calls (fun _ floc ->
-    if floc#has_call_target_signature then
+    if floc#has_call_target && floc#get_call_target#is_signature_valid then
       List.iter (fun (p,x) ->
 	if is_function_type p.apar_type then
 	  match x with
@@ -138,30 +146,32 @@ let record_fpcallback_arguments (f:assembly_function_int) =
 	  | _ -> ()) floc#get_call_args)
 
 let rec trace_fwd faddr op =
-  let fname = if functions_data#has_function_name faddr then
-                (functions_data#get_function faddr)#get_function_name
-              else faddr#to_hex_string in
+  let fname =
+    if functions_data#has_function_name faddr then
+      (functions_data#get_function faddr)#get_function_name
+    else
+      faddr#to_hex_string in
   let finfo = get_function_info faddr in
   let callees = get_callees faddr in
   let _ = pr_debug [ STR "--> Trace " ; STR fname ; STR " with operand " ; INT op ; NL ] in
   List.iter (fun callee ->
-    if callee#has_call_target_signature then
-      let call_args = callee#get_call_args in
-      List.iter (fun (p,e) ->
-	match p.apar_location with
-	| StackParameter par ->
-	  let argIndices = get_xarg_indices finfo e in
-	  if List.mem op argIndices then
-	    begin
-	      pr_debug [ STR "    " ; callee#l#toPretty ; STR ": " ; 
-			 (create_annotation callee)#toPretty ; NL ] ;
-	      if callee#has_application_target then
-		let target = callee#get_application_target in
-		trace_fwd target par  
-	    end
-	| _ -> ()) call_args
-    else
-      ()) callees
+      if callee#has_call_target && callee#get_call_target#is_signature_valid then
+        let call_args = callee#get_call_args in
+        List.iter (fun (p,e) ->
+	    match p.apar_location with
+	    | StackParameter par ->
+	       let argIndices = get_xarg_indices finfo e in
+	       if List.mem op argIndices then
+	         begin
+	           pr_debug [ STR "    " ; callee#l#toPretty ; STR ": " ; 
+			      (create_annotation callee)#toPretty ; NL ] ;
+	           if callee#has_call_target && callee#get_call_target#is_app_call then
+		     let target = callee#get_call_target#get_app_address in
+		     trace_fwd target par  
+	         end
+	    | _ -> ()) call_args
+      else
+        ()) callees
 
 let rec trace_bwd floc op =
   let fname = get_fname floc#l#f in
@@ -169,7 +179,7 @@ let rec trace_bwd floc op =
   let iann = create_annotation floc in
   let default () = pr_debug [ STR "  " ; iann#toPretty ;  STR " in " ; 
 			      STR fname ; NL ] in
-  if floc#has_call_target_signature then
+  if floc#has_call_target && floc#get_call_target#is_signature_valid then
     let (_,e) = List.nth floc#get_call_args (op-1) in
     let argIndices = get_xarg_indices finfo e in
     match argIndices with
@@ -187,15 +197,18 @@ let get_lib_calls (libfun:string) =
   try
     let _ = assembly_functions#itera (fun faddr f ->
       f#iter_calls (fun _ floc ->
-	if floc#has_dll_target then 
-	  let (_,fname) = floc#get_dll_target in
+	if floc#has_call_target && floc#get_call_target#is_dll_call then 
+	  let fname = floc#get_call_target#get_name in
 	  if fname = libfun then
 	    flocs := floc :: !flocs
 	  else
 	    ()
-	else if floc#has_application_target && 
+	else if floc#has_call_target
+                && floc#get_call_target#is_app_call
+                && floc#get_call_target#get_name = libfun then
+          (*
 	    (functions_data#has_function_name floc#get_application_target) &&
-	    ((functions_data#get_function floc#get_application_target)#get_function_name = libfun) then
+	    ((functions_data#get_function floc#get_application_target)#get_function_name = libfun) then *)
 	  flocs := floc :: !flocs
 	else ())) in
     !flocs
@@ -210,7 +223,7 @@ let get_jni_calls () =
   let flocs = ref [] in
   let _ = assembly_functions#itera (fun faddr f ->
     f#iter_calls (fun _ floc ->
-      if floc#has_jni_target then
+      if floc#has_call_target && floc#get_call_target#is_jni_call then
 	flocs := floc :: !flocs
       else
 	())) in

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -162,8 +162,8 @@ let analyze starttime =
 	try
 	  begin
 	    f#iter_calls (fun _ floc ->
-	      if floc#has_application_target then
-		let tgtaddr = floc#get_application_target in
+	      if floc#has_call_target && floc#get_call_target#is_app_call then
+		let tgtaddr = floc#get_call_target#get_app_address in
 		let tgtfinfo = get_function_info tgtaddr in
 		begin
 		  save_function_info tgtfinfo
