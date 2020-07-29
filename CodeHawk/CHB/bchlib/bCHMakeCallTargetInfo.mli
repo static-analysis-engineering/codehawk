@@ -58,4 +58,7 @@ val mk_wrapped_target:
   -> (api_parameter_t * bterm_t) list
   -> call_target_info_int
 
+val update_target_api:
+  call_target_info_int -> function_api_t -> call_target_info_int
+
 
