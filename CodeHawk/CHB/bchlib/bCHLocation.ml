@@ -83,7 +83,8 @@ let context_list_compare (lst1:context_t list) (lst2:context_t list) =
 
 let ctxt_string_to_string (s:ctxt_iaddress_t):string = s
 
-
+let mk_base_location (faddr:doubleword_int) (iaddr:doubleword_int) =
+  { loc_faddr = faddr ; loc_iaddr = iaddr }
                                                      
 let contexts = H.create 3
 

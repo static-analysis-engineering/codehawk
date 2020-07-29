@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ open BCHVariable
  *                                   analysis/name_ext_orphan.log
  *                                   analysis/name_ext_bdict.xml
  *                                   analysis/functions/name_ext_<address>/name_ext_address_finfo.xml
- *                                                                name_ext_address_fsum.xml
+ *                                                                name_ext_address_vars.xml
  *                                                                name_ext_address_invs.xml
  *                                                                name_ext_address_tinvs.xml
  * - results artifacts:  name.ext.ch/results/name_ext_app.xml

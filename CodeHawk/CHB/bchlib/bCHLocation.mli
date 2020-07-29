@@ -35,6 +35,8 @@ open CHXmlDocument
 (* bchlib *)
 open BCHLibTypes
 
+val mk_base_location: doubleword_int -> doubleword_int -> base_location_t
+
 val make_location:
   ?ctxt:context_t list  (* context: outer context first *)
   -> base_location_t    (* address of inner function, instruction address *)
