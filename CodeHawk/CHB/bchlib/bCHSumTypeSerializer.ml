@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,11 @@ let calling_convention_mfts: calling_convention_t mfts_int =
 let arg_io_mfts: arg_io_t mfts_int =
   mk_mfts  "arg_io_t" [ (ArgRead, "r"); (ArgReadWrite, "rw"); (ArgWrite, "w") ]
 
+let formatstring_type_mfts: formatstring_type_t mfts_int  =
+  mk_mfts
+    "formatstring_type_t"
+    [ (NoFormat, "n"); (PrintFormat, "p"); (ScanFormat, "s") ]
+
 let eflag_mfts: eflag_t mfts_int =
   mk_mfts
     "eflag_t"
@@ -73,7 +78,6 @@ let mips_reg_mfts: mips_reg_t mfts_int =
                                                               
 let mips_special_reg_mfts: mips_special_reg_t mfts_int =
   mk_mfts "mips_special_reg_t" [ (MMHi,"hi") ;  (MMLo,"lo") ]
-
 
 let segment_mfts: segment_t mfts_int =
   mk_mfts

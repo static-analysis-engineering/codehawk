@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,6 @@ open XprXml
 (* bchlib*)
 open BCHBasicTypes
 open BCHCallTarget
-open BCHCallTargetSemantics
 open BCHConstantDefinitions
 open BCHDoubleword
 open BCHFunctionInfo

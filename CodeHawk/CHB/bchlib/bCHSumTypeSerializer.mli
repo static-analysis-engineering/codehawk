@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ open BCHLibTypes
    
 val calling_convention_mfts: calling_convention_t mfts_int
 val arg_io_mfts: arg_io_t mfts_int
+val formatstring_type_mfts: formatstring_type_t mfts_int
 val eflag_mfts: eflag_t mfts_int
 val cpureg_mfts: cpureg_t mfts_int
 val segment_mfts: segment_t mfts_int
