@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -239,12 +239,16 @@ object (self)
 	    let floc = get_floc iloc in
 	    begin
 	      nCalls := !nCalls + 1 ;
-	      if floc#has_unknown_target then () else nResolved := !nResolved + 1
+	      if floc#has_call_target
+                 && floc#get_call_target#is_unknown then
+                ()
+              else
+                nResolved := !nResolved + 1
 	    end
 	  | _ -> ()) in
     (!nCalls, !nResolved) 
       
-  method populate_callgraph (callgraph:callgraph_int) =
+  method populate_callgraph (callgraph:callgraph_int) = 
     let finfo = get_function_info faddr in
     self#iteri (fun _ ctxtiaddr instr ->
         let iloc = ctxt_string_to_location faddr ctxtiaddr in
@@ -252,8 +256,10 @@ object (self)
 	  DirectCall _ | IndirectCall _ | IndirectJmp _ ->
 	  let floc = get_floc iloc in
 	  let env = floc#f#env in
-	  let argExprs = if floc#has_call_target_signature then
-	      let api = floc#get_call_target_signature in
+	  let argExprs =
+            if floc#has_call_target
+               && floc#get_call_target#is_signature_valid then
+	      let api = floc#get_call_target#get_signature in
 	      let parNames = get_stack_parameter_names api in
 	      let argExprs =
 		List.map (fun (index,name) ->
@@ -283,7 +289,7 @@ object (self)
 	      | VirtualTarget s -> callgraph#add_virtual_edge faddr s ctxtiaddr argExprs
 	      | UnknownTarget -> callgraph#add_unresolved_edge faddr (-1) ctxtiaddr argExprs
 	      | IndirectTarget (_,tgts) -> List.iter add_call_target tgts in
-	    add_call_target (finfo#get_call_target ctxtiaddr)
+	    add_call_target (finfo#get_call_target ctxtiaddr)#get_target
 	  else 
 	    begin 
 	      match instr#get_opcode with 
