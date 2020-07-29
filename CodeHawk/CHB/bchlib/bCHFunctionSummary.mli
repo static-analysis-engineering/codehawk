@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,21 +39,14 @@ open Xprt
 open BCHLibTypes
 
 
-val function_semantics_to_pretty    : function_semantics_t -> pretty_t
-
 val read_xml_function_summary: xml_element_int -> function_summary_int
 
 val make_function_summary: api:function_api_t -> sem:function_semantics_t ->
   doc:function_documentation_t -> function_summary_int
 
-val default_function_semantics    : function_semantics_t
-  
 val default_function_documentation: function_documentation_t
 
 val default_summary: string -> function_summary_int
-
-val join_semantics :
-  function_semantics_t -> function_semantics_t option -> function_semantics_t
 
 
 
