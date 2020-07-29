@@ -25,6 +25,9 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHPretty
+
 (* chutil *)
 open CHLogger
 open CHXmlDocument
@@ -42,6 +45,12 @@ open BCHFunctionSummaryLibrary
 open BCHLibTypes
 open BCHVariableType
 
+let raise_error tgt msg =
+  begin
+    ch_error_log#add "call target" msg ;
+    raise (BCH_failure  (LBLOCK [ msg ; STR ": " ; call_target_to_pretty tgt ]))
+  end
+
 class call_target_info_t
         (api:function_api_t)
         (sem:function_semantics_t)
@@ -56,19 +65,62 @@ object (self)
     match tgt with
     | AppTarget a -> a
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [ STR "Call target is not an application target: " ;
-                      call_target_to_pretty tgt ]))
-      
+       let msg = STR "Call target is not an application target" in
+       raise_error tgt msg
+
+  method get_application_target =
+    match tgt with
+    | StaticStubTarget (a,_)  -> a
+    | AppTarget a -> a
+    | InlinedAppTarget (a,_) -> a
+    | WrappedTarget (a,_,_,_) -> a
+    | _ ->
+       let msg = STR "Call target does not correspond to an application target" in
+       raise_error tgt msg
+
+  method get_dll_target =
+    let msg = STR "Call target is not a dll target" in
+    match tgt with
+    | StubTarget fs | StaticStubTarget (_,fs) ->
+       (match fs with
+        | DllFunction (dll,name) -> (dll,name)
+        | _ -> raise_error tgt msg)
+    | _ -> raise_error tgt msg
+
   method get_wrapped_app_address =
     match tgt with
     | WrappedTarget (_, _, AppTarget a, _) -> a
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [ STR "Call target is not a wrapped application target: " ;
-                      call_target_to_pretty tgt ]))
+       let msg = STR "Call target is a wrapped application target" in
+       raise_error tgt msg
+
+  method get_wrapped_app_parameter_mapping =
+    match tgt with
+    | WrappedTarget (_, _, _, mapping) -> mapping
+    | _ ->
+       let msg = STR "Call target is not a wrapped application target" in
+       raise_error tgt msg
+
+  method get_inlined_target =
+    match tgt with
+    | InlinedAppTarget (a,name) -> (a,name)
+    | _ ->
+       let msg = STR "Call target is not an inlined target" in
+       raise_error tgt msg
+
+  method get_static_lib_target =
+    match tgt with
+    | StaticStubTarget (a,PckFunction (lib,pkgs,name)) -> (a,lib,pkgs,name)
+    | _ ->
+       let msg = STR "Call target is not a static library function" in
+       raise_error tgt msg
+
+  method  get_jni_target_index =
+    match tgt with
+    | StubTarget (JniFunction i) -> i
+    | _ ->
+       let msg = STR "Call target is not a JNI function" in
+       raise_error tgt msg
 
   method get_signature = api
 
@@ -135,17 +187,41 @@ object (self)
     | [] -> false
     | _ -> true
 
-  method is_signature_valid = not api.fapi_inferred
+  method is_signature_valid = (* not api.fapi_inferred *) true
                             
   method is_semantics_valid = not api.fapi_inferred
                             
   method is_app_call = match tgt with AppTarget _ -> true | _ -> false
+
+  method is_in_application_call =
+    match tgt with
+    | StaticStubTarget _ -> true
+    | AppTarget _ -> true
+    | InlinedAppTarget _ -> true
+    | WrappedTarget _ -> true
+    | _ -> false
                                                                 
   method is_dll_call =
     match tgt with
     | StubTarget fs | StaticStubTarget (_,fs) ->
        (match fs with DllFunction _  -> true | _ -> false)
     | _ -> false
+
+  method is_static_dll_call =
+    match tgt with
+    | StaticStubTarget (_, fs) ->
+       (match fs with DllFunction _ -> true | _ -> false)
+    | _ -> false
+
+  method is_wrapped_dll_call =
+    match tgt with
+    | WrappedTarget (_, _, tt, _) ->
+       (match tt with
+        | StubTarget fs | StaticStubTarget (_, fs) -> true
+        | _ -> false)
+    | _ -> false
+
+  method has_dll_target = self#is_dll_call || self#is_wrapped_dll_call
          
   method is_inlined_call =
     match tgt with InlinedAppTarget _ -> true | _  -> false
@@ -165,14 +241,41 @@ object (self)
          
   method is_jni_call =
     match tgt with
-    | StubTarget (JniFunction _) -> true
-    | _ -> false
+    | StubTarget (JniFunction _) -> true | _ -> false
+
+  method is_indirect_call =
+    match tgt with IndirectTarget _ -> true | _ -> false
+
+  method is_virtual_call =
+    match tgt with VirtualTarget _ -> true | _ -> false
          
-  method is_unknown = match tgt with UnknownTarget -> true | _ -> false
-                     
+  method is_unknown =
+    match tgt with
+    | UnknownTarget -> true
+    | IndirectTarget (_,[]) -> true
+    | _ -> false
+
+  (* categories supported:
+   * - so
+   * - dll
+   * - app
+   * - jni
+   * - arg (indirect call on stack argument)
+   * - arg-no-targets
+   * - global
+   * - global-no-targets
+   * - unresolved
+   * - dll-no-sum
+   * - inlined
+   * - static-dll
+   * - static-lib
+   * - app-wrapped
+   * - dll-wrapped
+   *)
   method is_call_category (cat:string) =
     let rec aux rtgt =
       match (rtgt,cat) with
+      | (StubTarget (SOFunction _), "so") -> true
       | (StubTarget (DllFunction _), "dll") -> true
       | (AppTarget _, "app") -> true
       | (StubTarget (JniFunction _), "jni") -> true
@@ -195,6 +298,8 @@ object (self)
     aux tgt
 
   method write_xml (node:xml_element_int) = ()
+
+  method toPretty = call_target_to_pretty tgt
 end
 
 let mk_call_target_info = new call_target_info_t
