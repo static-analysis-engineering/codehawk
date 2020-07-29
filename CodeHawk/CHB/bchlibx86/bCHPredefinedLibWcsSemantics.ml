@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ open Xprt
 
 (* bchlib *)
 open BCHLibTypes
+open BCHMakeCallTargetInfo
 
 (* bchlibx86 *)
 open BCHLibx86Types
@@ -145,7 +146,7 @@ object (self)
   method get_parametercount = 3
 
   method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a,DllFunction ("msvcrt.dll","_wcsnicmp"))
+    mk_static_dll_stub_target a "msvcrt.dll" "_wcsnicmp"
 
   method get_description = "compares two string"
 

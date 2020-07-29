@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ open Xprt
 (* bchlib *)
 open BCHCPURegisters
 open BCHLibTypes
+open BCHMakeCallTargetInfo
 
 (* bchlibx86 *)
 open BCHLibx86Types
@@ -85,7 +86,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "no observable effect"
 
@@ -122,7 +124,8 @@ object (self)
 
   method get_instrcount = instrs
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "no observable effect except using Ecx"
 
@@ -159,7 +162,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "returns " ^ (string_of_int n)
 
@@ -209,7 +213,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "returns a register value"
 
@@ -240,7 +245,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "retrieves value of global variable"
 
@@ -295,7 +301,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "returns value at offset from register"
 
@@ -342,7 +349,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "returns reg[offset1][offset2]"
 
@@ -378,7 +386,8 @@ object (self)
 
   method get_parametercount = paramcount
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "returns argument value"
     

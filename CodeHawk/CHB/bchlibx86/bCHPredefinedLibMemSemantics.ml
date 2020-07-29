@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,7 @@ open BCHFloc
 open BCHFunctionData
 open BCHFunctionSummaryLibrary
 open BCHLibTypes
+open BCHMakeCallTargetInfo
 open BCHSystemInfo
 open BCHVariableType
 
@@ -59,7 +60,8 @@ let table = H.create 11
 
 let load_mem_functions () =
   List.iter (fun m -> add_dllfun table "pe-vs-static" m) 
-    [ "memchr0" ; "memchr"; "memcmp" ; "memcpy" ; "memmove" ; "memset" ; "memset0"; "wmemset" ]
+            [ "memchr0" ; "memchr"; "memcmp" ; "memcpy" ; "memmove" ;
+              "memset" ; "memset0"; "wmemset" ]
 
 
 
@@ -303,8 +305,8 @@ object (self)
 
     method get_parametercount = 3
 
-    method get_call_target (a:doubleword_int) = 
-      StaticStubTarget (a,DllFunction ("msvcrt.dll","wmemset"))
+    method get_call_target (a:doubleword_int) =
+      mk_static_dll_stub_target a "msvcrt.dll" "wmemset"
 
     method get_description = "wmemset library function"
 
@@ -330,15 +332,16 @@ let memcpyvec_matcher faddr fnbytes fnhash =
     let vecaddr = (faddr#add_int 71)#add_int jmpoff in
     let loc = make_location { loc_faddr = faddr ; loc_iaddr = vecaddr#add_int 77 } in
     let cfloc = get_floc loc in
-    if cfloc#has_application_target then
-      let appa = cfloc#get_application_target in
-      if functions_data#has_function_name appa &&
-	(functions_data#get_function appa)#get_function_name = "__fastcopy_I__" then
-	let sem = (mk_dllfun_semantics dll name) fnhash 263 in
-	let msg = LBLOCK [ STR " with checkpoint " ; checkpoint#toPretty ] in
-	sometemplate ~msg sem
-      else None
-    else None
+    if cfloc#has_call_target
+       && cfloc#get_call_target#is_app_call
+       && (let tgtaddr = cfloc#get_call_target#get_app_address in
+           (functions_data#get_function tgtaddr)#get_function_name =
+             "__fastcopy_I__") then
+      let sem = (mk_dllfun_semantics dll name) fnhash 263 in
+      let msg = LBLOCK [ STR " with checkpoint " ; checkpoint#toPretty ] in
+      sometemplate ~msg sem
+    else
+      None
   else
     None
 
@@ -350,14 +353,15 @@ let memsetvec_matcher faddr fnbytes fnhash =
     let vecaddr = (faddr#add_int 44)#add_int jmpoff in
     let loc = make_location { loc_faddr = faddr ; loc_iaddr = vecaddr#add_int 49 } in    
     let cfloc = get_floc loc in
-    if cfloc#has_application_target then
-      let appa = cfloc#get_application_target in
-      if functions_data#has_function_name appa &&
-	(functions_data#get_function appa)#get_function_name = "__fastzero_I__" then
-	let sem = (mk_dllfun_semantics dll fname) fnhash 107 in
-	sometemplate sem
-      else None
-    else None
+    if cfloc#has_call_target
+       && cfloc#get_call_target#is_app_call
+       && (let tgtaddr = cfloc#get_call_target#get_app_address in
+           (functions_data#get_function tgtaddr)#get_function_name =
+             "__fastzero_I__") then
+      let sem = (mk_dllfun_semantics dll fname) fnhash 107 in
+      sometemplate sem
+    else
+      None
   else
     None
 

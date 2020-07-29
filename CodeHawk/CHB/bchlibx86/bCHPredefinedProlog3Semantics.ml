@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@ open Xprt
 (* bchlib *)
 open BCHBasicTypes
 open BCHLibTypes
+open BCHMakeCallTargetInfo
 
 (* bchlibx86 *)
 open BCHLibx86Types
@@ -113,7 +114,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "sets up exception handling frame"
 
@@ -220,7 +222,8 @@ object (self)
 
   method get_parametercount = 2
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "sets up exception handling"
 
@@ -281,7 +284,8 @@ object (self)
 
   method get_parametercount = 3
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "restores registers and stack pointer"
 
@@ -405,7 +409,8 @@ object(self)
 
   method get_parametercount = 1
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "sets up exception handling and allocates stack memory"
 
@@ -448,7 +453,8 @@ object (self)
 
   method get_parametercount = 1
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "sets up exception handling and allocates memory on the stack"
 
@@ -491,7 +497,8 @@ object (self)
 
   method get_parametercount = 1
 
-  method get_call_target (a:doubleword_int) =  InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "sets up exception handling and allocates memory on the stack"
 
@@ -536,7 +543,8 @@ object (self)
 
   method get_parametercount = 1
 
-  method get_call_target (a:doubleword_int) =  InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "sets up exectpion handling and allocates memory on the stack"
 
@@ -603,7 +611,8 @@ object (self)
 
   method get_parametercount = 4
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "restores registers and stack pointer"
 

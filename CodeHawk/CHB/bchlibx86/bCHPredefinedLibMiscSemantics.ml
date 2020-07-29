@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,10 @@ open Xprt
 
 (* bchlib *)
 open BCHFloc
+open BCHFunctionApi
 open BCHLibTypes
 open BCHLocation
+open BCHMakeCallTargetInfo
 open BCHVariableType
 
 (* bchlibx86 *)
@@ -232,19 +234,9 @@ object (self)
   method get_call_target (a:doubleword_int) =
     let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 6 } in
     let tgtfloc = get_floc tgtloc in
-    let wtgt = tgtfloc#get_call_target in
-    let fapi = {
-      fapi_name = self#get_name ;
-      fapi_parameters = [] ;
-      fapi_returntype = t_void ;
-      fapi_rv_roles = [] ;
-      fapi_stack_adjustment = Some 0 ;
-      fapi_jni_index = None ;
-      fapi_calling_convention = "cdecl" ;
-      fapi_registers_preserved = [] ;
-      fapi_inferred = false
-    } in
-    WrappedTarget(a,fapi,wtgt,[])
+    let wtgt = tgtfloc#get_call_target#get_target in
+    let fapi = default_function_api ~returntype:t_void self#get_name [] in
+    mk_wrapped_target a fapi wtgt []
 
   method get_description = "wraps CxxThrowException"
 
@@ -587,7 +579,8 @@ object (self)
 
   method get_parametercount = 2
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "return second argument"
 
@@ -627,7 +620,7 @@ let libmisc_patterns = [
 
     regex_f = fun faddr fnbytes fnhash ->
       let base = todw (Str.matched_group 1 fnbytes) in
-      if isnamed_dll_call faddr 46 "RaiseException" then
+      if is_named_dll_call faddr 46 "RaiseException" then
 	let sem = new cxxthrowexception_semantics_t fnhash faddr base 20 in
 	let msg = LBLOCK [ STR " with base " ; base#toPretty ] in
 	sometemplate ~msg sem
@@ -641,7 +634,7 @@ let libmisc_patterns = [
     regex_f = fun faddr fnbytes fnhash ->
       let arg1 = todw (Str.matched_group 1 fnbytes) in
       let arg2 = todw (Str.matched_group 2 fnbytes) in
-      if isnamed_dll_call faddr 10 "_controlfp" then
+      if is_named_dll_call faddr 10 "_controlfp" then
 	let sem = new controlfp_call_semantics_t fnhash arg1 arg2 6 in
 	let msg = LBLOCK [ STR " with arguments " ; arg1#toPretty ; STR " and " ; 
 			   arg2#toPretty ] in
@@ -665,7 +658,7 @@ let libmisc_patterns = [
 
     regex_f = fun faddr fnbytes fnhash ->
       let gv = todw (Str.matched_group 1 fnbytes) in
-      if isnamed_dll_call faddr 13 "LeaveCriticalSection" then
+      if is_named_dll_call faddr 13 "LeaveCriticalSection" then
 	let sem = mk_dllfun_semantics "msvcrt.dll" "_unlock" fnhash 7 in
 	let msg = LBLOCK [ STR " with base address " ; gv#toPretty ] in
 	sometemplate ~msg sem
@@ -678,7 +671,7 @@ let libmisc_patterns = [
       "6a406800100000ff7424106a00ff742414ff15\\(........\\)c3$" ;
 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_dll_call faddr 17 "VirtualAllocEx" then
+      if is_named_dll_call faddr 17 "VirtualAllocEx" then
 	let sem = new virtualallocex_call_semantics_t fnhash 7 in
 	sometemplate sem
       else None
@@ -689,7 +682,7 @@ let libmisc_patterns = [
 
     regex_f = fun faddr fnbytes fnhash ->
       let hheap = todw (Str.matched_group 1 fnbytes) in
-      if isnamed_dll_call faddr 9 "HeapAlloc" then
+      if is_named_dll_call faddr 9 "HeapAlloc" then
 	let sem = new heapalloc_call_semantics_t fnhash hheap 5 in
 	sometemplate sem
       else None

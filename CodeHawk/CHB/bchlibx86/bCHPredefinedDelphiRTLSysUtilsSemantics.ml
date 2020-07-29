@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -233,7 +233,7 @@ let delphi_rtl_sysutils_patterns = [
     regex_f = fun faddr fnbytes fnhash ->
       let flags = toimm2 (Str.matched_group 1 fnbytes) in
       let locale = todw (Str.matched_group 2 fnbytes) in
-      if isnamed_dll_call faddr 20 "CompareStringA" then
+      if is_named_dll_call faddr 20 "CompareStringA" then
 	let fname = "AnsiStrLIComp" in
 	if function_summary_library#has_lib_function pkgs fname then
 	  let sem = mk_libfun_semantics pkgs fname fnhash 18 in
@@ -249,8 +249,8 @@ let delphi_rtl_sysutils_patterns = [
       ("538bd86a008bc3e8\\(........\\)50e8\\(........\\)83f8011bc0405bc3$") ;
 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_inlined_call faddr 7 "__System::LStrToPChar__" &&
-	isnamed_dll_call faddr 13 "CreateDirectoryA" then
+      if is_named_inlined_call faddr 7 "__System::LStrToPChar__" &&
+	is_named_dll_call faddr 13 "CreateDirectoryA" then
 	let fname = "CreateDir" in
 	if function_summary_library#has_lib_function pkgs fname then
 	  let sem = mk_libfun_semantics pkgs fname fnhash 12 in
@@ -272,8 +272,8 @@ let delphi_rtl_sysutils_patterns = [
       let secr = toimm2 (Str.matched_group 3 fnbytes) in
       let fmConst1 = todw (Str.matched_group 4 fnbytes) in
       let fmConst2 = todw (Str.matched_group 5 fnbytes) in
-      if isnamed_inlined_call faddr 72 "__System::LStrToPChar__" &&
-	isnamed_dll_call faddr 78 "CreateFileA" then
+      if is_named_inlined_call faddr 72 "__System::LStrToPChar__" &&
+	is_named_dll_call faddr 78 "CreateFileA" then
 	let fname = "FileOpen" in
 	if function_summary_library#has_lib_function pkgs fname then
 	  let sem = mk_libfun_semantics pkgs fname fnhash 33 in
@@ -293,7 +293,7 @@ let delphi_rtl_sysutils_patterns = [
        "ffffffff8b04245a5f5e5bc3$") ;
 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_dll_call faddr 20 "WriteFile" then
+      if is_named_dll_call faddr 20 "WriteFile" then
 	let fname = "FileWrite" in
 	if function_summary_library#has_lib_function pkgs fname then
 	  let sem = mk_libfun_semantics pkgs fname fnhash 23 in
@@ -308,7 +308,7 @@ let delphi_rtl_sysutils_patterns = [
        "028bc35a5f5e5bc3$") ;
 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_dll_call faddr 19 "GetLocaleInfoA" then
+      if is_named_dll_call faddr 19 "GetLocaleInfoA" then
 	let fname = "GetLocaleChar" in
 	if function_summary_library#has_lib_function pkgs fname then
 	  let sem = mk_libfun_semantics pkgs fname fnhash 23 in
@@ -322,7 +322,7 @@ let delphi_rtl_sysutils_patterns = [
       ("538bd8803d50\\(........\\)740a53e8\\(........\\)2bc35bc3b8010000005bc3$") ;
 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_dll_call faddr 13 "CharNextA" then
+      if is_named_dll_call faddr 13 "CharNextA" then
 	let cmpsite = todw (Str.matched_group 1 fnbytes) in
 	let fname = "StrCharLength" in
 	if function_summary_library#has_lib_function pkgs fname then
@@ -337,7 +337,7 @@ let delphi_rtl_sysutils_patterns = [
   { regex_s = Str.regexp ("568bf092e8\\(........\\)8bc65ec3$") ;
 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_lib_call faddr 4 "Move" then
+      if is_named_lib_call faddr 4 "Move" then
 	let fname = "StrMove" in
 	if function_summary_library#has_lib_function pkgs fname then
 	  let sem = mk_libfun_semantics pkgs fname fnhash 7 in
@@ -349,7 +349,7 @@ let delphi_rtl_sysutils_patterns = [
   (* StrMove (V1da:0x408a60) *)
   { regex_s = Str.regexp ("5189042492e8\\(........\\)8b04245ac3$") ; 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_lib_call faddr 5 "Move" then
+      if is_named_lib_call faddr 5 "Move" then
 	let fname = "StrMove" in
 	if function_summary_library#has_lib_function pkgs fname then
 	  let sem = mk_libfun_semantics pkgs fname fnhash 7 in
@@ -364,7 +364,7 @@ let delphi_rtl_sysutils_patterns = [
   { regex_s = Str.regexp "50e8\\(........\\)c3$" ;
 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_dll_call faddr 1 "CharNextA" then
+      if is_named_dll_call faddr 1 "CharNextA" then
 	let fname = "StrNextChar" in
 	if function_summary_library#has_lib_function pkgs fname then
 	  let sem = mk_libfun_semantics pkgs fname fnhash 3 in

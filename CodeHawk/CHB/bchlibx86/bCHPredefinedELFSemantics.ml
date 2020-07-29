@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ open Xprt
 (* bchlib *)
 open BCHCPURegisters
 open BCHLibTypes
+open BCHMakeCallTargetInfo
 
 (* bchlibx86 *)
 open BCHLibx86Types
@@ -61,7 +62,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "records the instruction pointer in register"
 
@@ -69,11 +71,18 @@ end
     
 
 let thunk_functions = [
-    new get_pc_thunk_semantics_t "01b2660bfccc528787dbd1910ebd6014" Eax 2 ; (*  __x86_get_pc_thunk_ax *)
-    new get_pc_thunk_semantics_t "4b0f79ed52ddee49a395b2f505a67bf6" Ebx 2 ; (*  __x86_get_pc_thunk_bx *)
-    new get_pc_thunk_semantics_t "caff9e88cc5e02718b4348dd56da751a" Ecx 2 ; (*  __x86_get_pc_thunk_cx *)
-    new get_pc_thunk_semantics_t "36eb98d44bd8912a4212e9822a0b134d" Edx 2 ; (*  __x86_get_pc_thunk_dx *)
-    new get_pc_thunk_semantics_t "e05fa5134fb6f41539578de453f9eb0d" Ebp 2 ; (*  __x86_get_pc_thunk_bp *)
-    new get_pc_thunk_semantics_t "55d115c49cb2eded6a865e967cabadd8" Edi 2 ; (*  __x86_get_pc_thunk_di *)
-    new get_pc_thunk_semantics_t "5fcec57dfdde48d2ecec7107a7e5ff10" Esi 2 ; (*  __x86_get_pc_thunk_si *)
+    new get_pc_thunk_semantics_t
+        "01b2660bfccc528787dbd1910ebd6014" Eax 2 ; (*  __x86_get_pc_thunk_ax *)
+    new get_pc_thunk_semantics_t
+        "4b0f79ed52ddee49a395b2f505a67bf6" Ebx 2 ; (*  __x86_get_pc_thunk_bx *)
+    new get_pc_thunk_semantics_t
+        "caff9e88cc5e02718b4348dd56da751a" Ecx 2 ; (*  __x86_get_pc_thunk_cx *)
+    new get_pc_thunk_semantics_t
+        "36eb98d44bd8912a4212e9822a0b134d" Edx 2 ; (*  __x86_get_pc_thunk_dx *)
+    new get_pc_thunk_semantics_t
+        "e05fa5134fb6f41539578de453f9eb0d" Ebp 2 ; (*  __x86_get_pc_thunk_bp *)
+    new get_pc_thunk_semantics_t
+        "55d115c49cb2eded6a865e967cabadd8" Edi 2 ; (*  __x86_get_pc_thunk_di *)
+    new get_pc_thunk_semantics_t
+        "5fcec57dfdde48d2ecec7107a7e5ff10" Esi 2 ; (*  __x86_get_pc_thunk_si *)
   ]

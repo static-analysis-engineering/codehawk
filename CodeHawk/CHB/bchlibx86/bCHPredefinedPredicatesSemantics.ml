@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,7 @@ open Xsimplify
 
 (* bchlib *)
 open BCHLibTypes
+open BCHMakeCallTargetInfo
 open BCHPrecondition
 
 (* bchlibx86 *)
@@ -113,7 +114,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "predicate on the value of a register"
 
@@ -172,7 +174,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "predicate on the value of a field"
 
