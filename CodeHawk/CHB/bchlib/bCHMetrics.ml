@@ -70,20 +70,20 @@ let get_vars_metrics (env:function_environment_int) = {
 
 let get_calls_metrics (finfo:function_info_int) = {
     mcalls_count = finfo#get_call_count ;
-    mcalls_dll = finfo#get_dll_call_count ;
-    mcalls_app = finfo#get_app_call_count ;
-    mcalls_jni = finfo#get_jni_call_count ;
-    mcalls_arg = finfo#get_indirect_call_count ;
-    mcalls_arg_x = finfo#get_indirect_call_no_targets_count ;
-    mcalls_global = finfo#get_global_call_count ;
-    mcalls_global_x = finfo#get_global_call_no_targets_count ; 
-    mcalls_unr = finfo#get_unr_call_count ;
-    mcalls_nosum = finfo#get_dll_no_sum_call_count ;
-    mcalls_inlined = finfo#get_inlined_call_count ;
-    mcalls_staticdll = finfo#get_staticdll_call_count ;
-    mcalls_staticlib = finfo#get_staticlib_call_count ;
-    mcalls_appwrapped = finfo#get_appwrapped_call_count ;
-    mcalls_dllwrapped = finfo#get_dllwrapped_call_count
+    mcalls_dll = finfo#get_call_category_count "dll" ;
+    mcalls_app = finfo#get_call_category_count "app"  ;
+    mcalls_jni = finfo#get_call_category_count "jni" ;
+    mcalls_arg = finfo#get_call_category_count "arg" ;
+    mcalls_arg_x = finfo#get_call_category_count "arg-no-targets" ;
+    mcalls_global = finfo#get_call_category_count "global"  ;
+    mcalls_global_x = finfo#get_call_category_count "global-no-targets" ;
+    mcalls_unr = finfo#get_call_category_count "unresolved" ;
+    mcalls_nosum = finfo#get_call_category_count "dll-no-sum" ;
+    mcalls_inlined = finfo#get_call_category_count "inlined" ;
+    mcalls_staticdll = finfo#get_call_category_count "static-dll" ;
+    mcalls_staticlib = finfo#get_call_category_count "static-lib";
+    mcalls_appwrapped = finfo#get_call_category_count "app-wrapped" ;
+    mcalls_dllwrapped = finfo#get_call_category_count "dll_wrapped"
   }
                                                 
 let get_jumps_metrics (finfo:function_info_int) = 
@@ -228,7 +228,6 @@ object (self)
            (memacc_metrics:memacc_metrics_t)
            (cfg_metrics:cfg_metrics_t) =
     let _ = fns_analyzed <- fns_analyzed + 1 in
-    (* let faddr = f#get_address#to_hex_string in *)
     let finfo = get_function_info faddr in
     let faddr = faddr#to_hex_string in
     let function_results_handler = mk_function_results_handler faddr in
