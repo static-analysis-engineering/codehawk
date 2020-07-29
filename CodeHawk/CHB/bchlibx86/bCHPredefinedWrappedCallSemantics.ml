@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,7 @@ open BCHFunctionApi
 open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
+open BCHMakeCallTargetInfo
 
 (* bchlibx86 *)
 open BCHDisassemblyUtils
@@ -103,11 +104,11 @@ object (self)
     let fapi = default_function_api faddr#to_hex_string [ par1 ] in
     let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 8 } in
     let tgtfloc = get_floc tgtloc in
-    let wtgt = tgtfloc#get_call_target in
+    let wtgt = tgtfloc#get_call_target#get_target in
     let t1 = ArgValue par1 in
     let t2 = NumConstant numerical_zero in
     let argmapping = [ (par1,t1) ; (par2,t2) ] in
-    WrappedTarget(a,fapi,wtgt,argmapping)
+    mk_wrapped_target a fapi wtgt argmapping
       
   method get_description = "wraps a call to another function"
 
@@ -156,11 +157,11 @@ object (self)
     let fapi = default_function_api faddr#to_hex_string [ regpar ] in
     let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 1 } in    
     let tgtfloc = get_floc tgtloc in
-    let wtgt = tgtfloc#get_call_target in
+    let wtgt = tgtfloc#get_call_target#get_target in
     let par1 = mk_stack_parameter 1 in
     let t1 = ArgValue regpar in
     let argmapping = [ (par1,t1) ] in
-    WrappedTarget(a,fapi,wtgt,argmapping)
+    mk_wrapped_target a fapi wtgt argmapping
 
   method get_description = "wraps a call to another function"
 
@@ -189,12 +190,12 @@ object (self)
     let gvv = get_gv_value argloc floc in
     let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 6 } in    
     let tgtfloc = get_floc tgtloc in
-    let name = if tgtfloc#has_call_target then
-	match tgtfloc#get_call_target with
-	| StubTarget (DllFunction (_,name)) -> name
-	| _ -> "(*" ^ funloc#to_hex_string ^ ")" 
+    let name =
+      if tgtfloc#has_call_target
+         && tgtfloc#get_call_target#is_dll_call then
+        tgtfloc#get_call_target#get_name
       else
-	"(*?)" in
+        "(*" ^ funloc#to_hex_string ^ ")" in
     LBLOCK [ STR name ; STR "(" ; xpr_to_pretty floc gvv ; STR ")" ]
 
   method get_commands (floc:floc_int) =
@@ -209,10 +210,10 @@ object (self)
     let fapi =  default_function_api faddr#to_hex_string [ tpar ] in
     let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 6 } in        
     let tgtfloc = get_floc tgtloc in
-    let wtgt = tgtfloc#get_call_target in
+    let wtgt = tgtfloc#get_call_target#get_target in
     let par1 = mk_stack_parameter 1 in
     let t1 = ArgValue tpar in
-    WrappedTarget(a,fapi,wtgt,[ (par1,t1) ])
+    mk_wrapped_target a fapi wtgt [ (par1,t1) ]
 
   method get_description = "wraps a dll call"
 
@@ -241,12 +242,11 @@ object (self)
   method get_annotation (floc:floc_int) =
     let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 5 } in        
     let tgtfloc = get_floc tgtloc in
-    let name = if tgtfloc#has_call_target then
-	match tgtfloc#get_call_target with
-	| StubTarget (DllFunction (_,name)) -> name
-	| _ -> "(*" ^ funloc#to_hex_string ^ ")" 
-      else
-	"(*?)" in
+    let name =
+      if tgtfloc#has_call_target
+         && tgtfloc#get_call_target#is_dll_call then
+        tgtfloc#get_call_target#get_name
+      else "(*" ^ funloc#to_hex_string ^ ")"  in
     LBLOCK [ STR name ; STR "(" ; arg#toPretty ; STR ")" ]
 
   method get_commands (floc:floc_int) =
@@ -260,10 +260,10 @@ object (self)
     let fapi =  default_function_api faddr#to_hex_string [ ] in
     let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 5 } in        
     let tgtfloc = get_floc tgtloc in
-    let wtgt = tgtfloc#get_call_target in
+    let wtgt = tgtfloc#get_call_target#get_target in
     let par1 = mk_stack_parameter 1 in
     let t1 = NumConstant arg#to_numerical in
-    WrappedTarget(a,fapi,wtgt,[ (par1,t1) ])
+    mk_wrapped_target a fapi wtgt [ (par1,t1) ]
 
   method get_description = "wraps a dll call"
 
@@ -327,7 +327,8 @@ object (self)
 
   method get_parametercount = 1 
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "return function pointer based on offset"
 
@@ -395,9 +396,9 @@ let wrapper_patterns = [
     regex_f = fun faddr fnbytes fnhash ->
       let libbase = todw (Str.matched_group 1 fnbytes) in
       let procbase = todw (Str.matched_group 4 fnbytes) in
-      if (isnamed_dll_call faddr 21 "GetModuleHandleA") &&
-	(isnamed_dll_call faddr 37 "LoadLibraryA") &&
-	(isnamed_dll_call faddr 66 "GetProcAddress") then
+      if (is_named_dll_call faddr 21 "GetModuleHandleA") &&
+	(is_named_dll_call faddr 37 "LoadLibraryA") &&
+	(is_named_dll_call faddr 66 "GetProcAddress") then
 	let sem = new wrappedgetprocaddress_semantics_t fnhash libbase procbase 31 in
 	let msg = LBLOCK [ STR " with libbase " ; libbase#toPretty ; 
 			   STR " and procbase " ; procbase#toPretty ] in

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,7 @@ open BCHFloc
 open BCHFunctionApi
 open BCHFunctionData
 open BCHLibTypes
+open BCHMakeCallTargetInfo
 open BCHSystemInfo
 open BCHVariableType
 
@@ -120,25 +121,26 @@ let register_hashed_elf_functions () =
             [ thunk_functions
             ]
     
-let patterns = List.concat [ 
-  alloca_patterns ;
-  delphi_rtl_patterns ;
-  delphi_rtl_class_patterns ;
-  delphi_rtl_sysutils_patterns ;
-  delphi_rtl_types_patterns ;
-  errno_patterns ;
-  fp_patterns ;
-  getter_patterns ;
-  eh3_patterns ;
-  seh4_patterns ;
-  internalcrt_patterns ;
-  libmem_patterns ;
-  libmisc_patterns ;
-  predicate_patterns ;
-  setter_patterns ;
-  updater_patterns ;
-  wrapper_patterns
-                 ]
+let patterns =
+  List.concat [ 
+      alloca_patterns ;
+      delphi_rtl_patterns ;
+      delphi_rtl_class_patterns ;
+      delphi_rtl_sysutils_patterns ;
+      delphi_rtl_types_patterns ;
+      errno_patterns ;
+      fp_patterns ;
+      getter_patterns ;
+      eh3_patterns ;
+      seh4_patterns ;
+      internalcrt_patterns ;
+      libmem_patterns ;
+      libmisc_patterns ;
+      predicate_patterns ;
+      setter_patterns ;
+      updater_patterns ;
+      wrapper_patterns
+    ]
 
 
 let get_templated_function faddr fnbytes fnhash =
@@ -165,7 +167,8 @@ let register_predefined_callsemantics
     else
       ch_error_log#add "inconsistent hash" 
 	(LBLOCK [ faddr#toPretty ; STR " has " ; INT instrs ; STR ", but " ;
-		  STR semantics#get_name ; STR " expects " ; INT semantics#get_instrcount ])
+		  STR semantics#get_name ; STR " expects " ;
+                  INT semantics#get_instrcount ])
   else
     match get_templated_function faddr fnbytes fnhash with
     | Some semantics -> add_semantics semantics
@@ -180,5 +183,5 @@ let get_callsemantics (faddr:doubleword_int):predefined_callsemantics_int =
   | Not_found ->
     raise (BCH_failure (LBLOCK [ STR "No call semantics found for " ; faddr#toPretty ]))
 
-let get_callsemantics_target (faddr:doubleword_int):call_target_t =
+let get_callsemantics_target (faddr:doubleword_int):call_target_info_int =
   (get_callsemantics faddr)#get_call_target faddr

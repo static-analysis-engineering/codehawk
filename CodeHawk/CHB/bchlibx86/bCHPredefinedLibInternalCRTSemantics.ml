@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,7 @@ open BCHFloc
 open BCHFunctionData
 open BCHLibTypes
 open BCHLocation
+open BCHMakeCallTargetInfo
 open BCHSystemInfo
 
 (* bchlibx86 *)
@@ -428,7 +429,8 @@ object (self)
 
   method get_parametercount = 1
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a, self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
 end
 
@@ -449,7 +451,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "Linear Congruence Generator of pseudo random numbers"
 
@@ -512,7 +515,8 @@ object (self)
 
   method get_parametercount = 1
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "initializes a vector with the MD5 initialization constants"
 
@@ -610,7 +614,8 @@ object (self)
 
   method get_parametercount = 1
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a, self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "sets info for setjmp/longjmp"
 
@@ -1017,8 +1022,8 @@ let internalcrt_patterns = [
       let lppname = todw (Str.matched_group 3 fnbytes) in
       match (get_string lpmname, get_string lppname) with
       | (Some "mscoree.dll",Some "CorExitProcess") ->
-	if (isnamed_dll_call faddr 15 "GetModuleHandleExW") &&
-	  (isnamed_dll_call faddr 33 "GetProcAddress") then
+	if (is_named_dll_call faddr 15 "GetModuleHandleExW") &&
+	  (is_named_dll_call faddr 33 "GetProcAddress") then
 	  let sem = new crtcorexitprocess_semantics_t fnhash 19 in
 	  sometemplate sem
 	else
@@ -1049,7 +1054,7 @@ let internalcrt_patterns = [
     regex_f = fun faddr fnbytes fnhash ->
       let fploc = todw (Str.matched_group 1 fnbytes) in
       let sec = todw (Str.matched_group 2 fnbytes) in
-      if isnamed_dll_call faddr 23 "TlsGetValue" then
+      if is_named_dll_call faddr 23 "TlsGetValue" then
 	let _ = system_info#add_esp_adjustment faddr (faddr#add_int 19) 4 in
 	let sem = new crtflsgetvalue_semantics_t fnhash 12 in
 	let msg = LBLOCK [ STR " with fp location " ; fploc#toPretty ;
@@ -1064,8 +1069,8 @@ let internalcrt_patterns = [
       ("558bec6a00ff1570504200ff7508ff156c5042005dc3$") ;
 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_dll_call faddr 5 "SetUnhandledExceptionFilter" &&
-	isnamed_dll_call faddr 14 "UnhandledExceptionFilter" then
+      if is_named_dll_call faddr 5 "SetUnhandledExceptionFilter" &&
+	is_named_dll_call faddr 14 "UnhandledExceptionFilter" then
 	let sem = new crtunhandledexception_semantics_t fnhash 8 in
 	sometemplate sem
       else
@@ -1280,7 +1285,7 @@ let internalcrt_patterns = [
 
     regex_f = fun faddr fnbytes fnhash ->
       let gv = todw (Str.matched_group 2 fnbytes) in
-      if isnamed_dll_call faddr 21 "memset" then
+      if is_named_dll_call faddr 21 "memset" then
 	let sem = new setsbcs_semantics_t fnhash 45 in
 	let msg = LBLOCK [ STR " with base address " ; gv#toPretty ] in
 	sometemplate ~msg sem
@@ -1348,17 +1353,19 @@ let internalcrt_patterns = [
 
     regex_f =
       fun faddr fnbytes fnhash ->
-      let loc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 77 } in
+      let loc =
+        make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 77 } in
       let cfloc = get_floc loc in
-      if cfloc#has_application_target then
-	let appa = cfloc#get_application_target in
-	if functions_data#has_function_name appa &&
-	     (functions_data#get_function appa)#get_function_name = "__fastcopy_I__" then
-	  let sem = new vecmemcpy_semantics_t fnhash 94 in
-	  let msg = STR "" in
-	  sometemplate ~msg sem
-	else None
-      else None
+      if cfloc#has_call_target
+         && cfloc#get_call_target#is_app_call
+         && (let tgtaddr = cfloc#get_call_target#get_app_address in
+             (functions_data#get_function tgtaddr)#get_function_name =
+               "__fastcopy_I__") then
+	let sem = new vecmemcpy_semantics_t fnhash 94 in
+	let msg = STR "" in
+	sometemplate ~msg sem
+      else
+        None
   } ;
 
   (* VEC_memzero *)
@@ -1373,14 +1380,15 @@ let internalcrt_patterns = [
       fun faddr fnbytes fnhash ->
       let loc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 49 } in      
       let cfloc = get_floc loc in
-      if cfloc#has_application_target then
-	let appa = cfloc#get_application_target in
-	if functions_data#has_function_name appa &&
-	  (functions_data#get_function appa)#get_function_name = "__fastzero_I__" then
-	  let sem = new vecmemzero_semantics_t fnhash 60 in
-	  sometemplate sem
-	else None
-      else None
+      if cfloc#has_call_target
+         && cfloc#get_call_target#is_app_call
+         && (let tgtaddr = cfloc#get_call_target#get_app_address in
+             (functions_data#get_function tgtaddr)#get_function_name =
+               "__fastzero_I__") then
+        let sem = new vecmemzero_semantics_t fnhash 60 in
+	sometemplate sem
+      else
+        None
   }
 ]
       

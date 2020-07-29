@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@ open Xprt
 open BCHFloc
 open BCHLibTypes
 open BCHLocation
+open BCHMakeCallTargetInfo
 
 (* bchlibx86 *)
 open BCHLibx86Types
@@ -88,7 +89,8 @@ object (self)
 
   method get_parametercount = 2
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a, self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "RTL system classes function System::Types::Rect"
 
@@ -153,7 +155,8 @@ object (self)
 
   method get_parametercount = 2
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a, self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a  self#get_name
 
   method get_description = "RTL system types function System::Types::Rect"
 
@@ -171,15 +174,16 @@ let delphi_rtl_types_patterns = [
 
     regex_f =
       fun faddr fnbytes fnhash ->
-      let loc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 26 } in
+      let loc =
+        make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 26 } in
       let cfloc = get_floc loc in
-      if cfloc#has_inlined_target then
-	let (_,name) = cfloc#get_inlined_target in
-	if name = "__System::Types::Rect__" then
+      if cfloc#has_call_target
+         && cfloc#get_call_target#is_inlined_call
+         && cfloc#get_call_target#get_name = "__System::Types::Rect__" then
 	  let sem = new rtl_system_classes_rect_semantics_t fnhash 21 in
 	  sometemplate sem
-	else None
       else None
+
   }
 ]
 	

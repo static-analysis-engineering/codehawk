@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,9 @@ open BCHLibTypes
 
 (* xprlib *)
 open Xprt
+
+(* bchlib *)
+open BCHMakeCallTargetInfo
 
 (* bchlibx86 *)
 open BCHLibx86Types
@@ -397,7 +400,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "sets fpu control word to global variable"
 
@@ -511,8 +515,8 @@ let fp_patterns = [
        "0c81eafe0300008b451089105dc3$") ;
 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_app_call faddr 134 "__set_exp__" &&
-	isnamed_app_call faddr 155 "__set_exp__" then
+      if is_named_app_call faddr 134 "__set_exp__" &&
+	is_named_app_call faddr 155 "__set_exp__" then
 	let sem = new decomp_semantics_t fnhash 67 in
 	sometemplate sem
       else

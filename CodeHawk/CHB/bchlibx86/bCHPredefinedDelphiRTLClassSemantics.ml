@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ open Xprt
 
 (* bchlib *)
 open BCHLibTypes
+open BCHMakeCallTargetInfo
 
 (* bchlibx86 *)
 open BCHLibx86Types
@@ -65,6 +66,9 @@ let load_rtl_tobject_functions () =
       "GetInterfaceEntry" ; "InheritsFrom" ; "InitInstance" ; "MethodAddress" ;
       "MethodName" ]
 
+let mk_target ?(pkgs=[ "System" ]) (a:doubleword_int) (name:string) =
+  mk_static_pck_stub_target a "RTL" pkgs name
+
 (* =========================================================== System::TObject::ClassDestroy
    example: V01a:0x40373c
    md5hash: d437f4bf44fa0bb27199419f6c3b6160
@@ -91,7 +95,7 @@ object (self)
   method get_parametercount = 0
 
   method get_call_target (a:doubleword_int) =
-    StaticStubTarget (a,PckFunction ("RTL", [ "System" ; "TObject" ], "ClassDestroy"))
+    mk_target a ~pkgs:[ "System" ; "TObject" ] "ClassDestroy"
 
   method get_description = "Delphi RTL function System::TObject::ClassDestroy"
 
@@ -141,7 +145,8 @@ object (self)
     let cmds = floc#get_assign_commands eaxlhs eaxderef in
     List.concat [ eaxlhscmds ; cmds ]
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_parametercount = 0
 
@@ -204,7 +209,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "Delphi RTL class function System::TObject::ClassParent"
 
@@ -258,7 +264,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "Delphi RTL class function System::TObject::ClassType"
 
@@ -268,7 +275,7 @@ let _ = H.add table "System::TObject::ClassType"
   (new rtl_system_tobject_classtype_semantics_t)
 
 
-(* =========================================================== System::TObject::Free
+(* =================================================== System::TObject::Free ===
    example: V01a:0x4033c8
    md5hash: 4537bb06f56667f04f3d0f8621b29854
 
@@ -283,7 +290,7 @@ let _ = H.add table "System::TObject::ClassType"
 *)
 
 
-(* ===================================================== System::TObject::InheritsFrom
+(* ========================================== System::TObject::InheritsFrom ===
    example: V01a:0x4035f4
    md5hash: d501e41fd3827af8eeee89cb472d780c
 
@@ -306,7 +313,7 @@ let _ = H.add table "System::TObject::ClassType"
 
 
 
-(* =========================================================== System::TObject::InstanceSize
+(* =========================================== System::TObject::InstanceSize ===
    example: V01a:0x403390
    md5hash: 2b2aadb0511a8ec0ec3effa09cb05fef
    
@@ -334,9 +341,11 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
-  method get_description = "Delphi RTL class function System::TObject::InstanceSize"
+  method get_description =
+    "Delphi RTL class function System::TObject::InstanceSize"
 
 end
 
@@ -344,6 +353,7 @@ let _ = H.add table "System::TObject::InstanceSize"
   (new rtl_system_tobject_instancesize_semantics_t)
 
 
-let delphi_rtl_class_functions () = H.fold (fun k v a -> a @ (get_fnhashes k v)) table []
+let delphi_rtl_class_functions () =
+  H.fold (fun k v a -> a @ (get_fnhashes k v)) table []
 
 let delphi_rtl_class_patterns = []

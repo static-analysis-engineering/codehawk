@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -52,6 +52,7 @@ open BCHFunctionSummaryLibrary
 open BCHFloc
 open BCHLibTypes
 open BCHLocation
+open BCHMakeCallTargetInfo
 open BCHMemoryReference
 open BCHSystemInfo
 open BCHVariableType
@@ -78,6 +79,8 @@ let tooff s =
   if offset > 127 then offset - 256 else offset
 
 let toimm2 s =  (string_to_doubleword ("0x" ^ s))#to_int
+
+let mk_loc faddr iaddr = make_location (mk_base_location faddr iaddr)
 
 let is_code_address (n:numerical_t) =
   try
@@ -353,22 +356,18 @@ let get_adjustment_commands (adj:int) (floc:floc_int) =
     []
 
 let get_wrapped_call_commands (hfloc:floc_int) (tgtfloc:floc_int) =
-  let api = if tgtfloc#has_call_target_signature then
-      tgtfloc#get_call_target_signature
-    else
-      (default_summary "default")#get_function_api in
+  let ctinfo = tgtfloc#get_call_target in
   let eax = hfloc#env#mk_cpu_register_variable Eax in
-  let opName = new symbol_t ~atts:["WRAPPEDCALL"] api.fapi_name in
+  let opName = new symbol_t ~atts:["WRAPPEDCALL"] ctinfo#get_name in
   let returnAssign =
     let rvar = hfloc#env#mk_return_value hfloc#cia in
-    let rty = api.fapi_returntype in
-    if tgtfloc#has_call_target_signature then
+    if ctinfo#is_signature_valid then
+      let rty = ctinfo#get_returntype in
       if is_void rty then
 	SKIP
       else
-	let name = api.fapi_name ^ "_rtn_" ^ hfloc#cia in
+	let name = ctinfo#get_name ^ "_rtn_" ^ hfloc#cia in
 	let _ = hfloc#env#set_variable_name rvar name in
-	let rty = api.fapi_returntype in
 	begin
 	  hfloc#f#ftinv#add_function_var_fact rvar rty ;
 	  hfloc#add_var_type_fact eax rty ;
@@ -381,29 +380,33 @@ let get_wrapped_call_commands (hfloc:floc_int) (tgtfloc:floc_int) =
   let bridgevars = hfloc#env#get_bridge_values_at hfloc#cia in
   [ opcmd ; acmd ; returnAssign ; ABSTRACT_VARS bridgevars ]
 
-let isnamed_app_call (faddr:doubleword_int) (offset:int) (fname:string) =
-  let loc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int offset } in
-  let floc = get_floc loc in
-  floc#has_application_target &&
-    (let tgt = floc#get_application_target in
-     ((functions_data#has_function_name tgt) &&
-	 ((functions_data#get_function tgt)#get_function_name = fname)))
+let is_named_app_call (faddr:doubleword_int) (offset:int) (fname:string) =
+  let floc = get_floc (mk_loc faddr (faddr#add_int offset)) in
+  floc#has_call_target
+  && floc#get_call_target#is_app_call
+  && (let tgtaddr = floc#get_call_target#get_app_address in
+      functions_data#has_function_name tgtaddr
+      && (functions_data#get_function tgtaddr)#get_function_name = fname)
 
-let isnamed_dll_call (faddr:doubleword_int) (offset:int) (fname:string) =
-  let loc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int offset } in  
-  let floc = get_floc loc in
-  floc#has_dll_target && (let (_,name) = floc#get_dll_target in name = fname)
+let is_named_dll_call (faddr:doubleword_int) (offset:int) (fname:string) =
+  (* let loc =
+    make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int offset } in *)
+  let floc = get_floc (mk_loc faddr (faddr#add_int offset)) in
+  floc#has_call_target
+  && floc#get_call_target#is_dll_call
+  && floc#get_call_target#get_name = fname
 
-let isnamed_inlined_call (faddr:doubleword_int) (offset:int) (fname:string) =
-  let loc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int offset } in  
-  let floc = get_floc loc in
-  floc#has_inlined_target && (let (_,name) = floc#get_inlined_target in name = fname)
+let is_named_inlined_call (faddr:doubleword_int) (offset:int) (fname:string) =
+  let floc = get_floc (mk_loc faddr (faddr#add_int offset)) in
+  floc#has_call_target
+  && floc#get_call_target#is_inlined_call
+  && floc#get_call_target#get_name = fname
 
-let isnamed_lib_call (faddr:doubleword_int) (offset:int) (fname:string) =
-  let loc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int offset } in  
-  let floc = get_floc loc in
-  floc#has_static_lib_target &&
-    (let (_,_,_,name) = floc#get_static_lib_target in name = fname)
+let is_named_lib_call (faddr:doubleword_int) (offset:int) (fname:string) =
+  let floc = get_floc (mk_loc faddr (faddr#add_int offset)) in
+  floc#has_call_target
+  && floc#get_call_target#is_static_lib_call
+  && floc#get_call_target#get_name = fname
 
   
 let sometemplate ?(msg=STR "") (sem:predefined_callsemantics_int) =
@@ -456,7 +459,7 @@ object (self)
 
   method get_instrcount = instrs
 
-  method get_call_target (a:doubleword_int) = AppTarget a
+  method get_call_target (a:doubleword_int) = mk_app_target a
 
   method get_description = self#get_name
 
@@ -464,8 +467,11 @@ object (self)
 
 end
   
-class dllfun_semantics_t (dll:string) (summary:function_summary_int) (md5hash:string) 
-  (instrs:int):predefined_callsemantics_int =
+class dllfun_semantics_t
+        (dll:string)
+        (summary:function_summary_int)
+        (md5hash:string) 
+        (instrs:int):predefined_callsemantics_int =
 object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
@@ -481,20 +487,22 @@ object (self)
     LBLOCK [ STR self#get_name  ;
 	     pretty_print_list floc#get_call_args
 	       (fun (p,expr) ->
-		 LBLOCK [ STR p.apar_name ; STR ":" ; pr_arg p expr]) "(" "," ")" ]
+		 LBLOCK [ STR p.apar_name ; STR ":" ;
+                          pr_arg p expr]) "(" "," ")" ]
 
   method get_commands (floc:floc_int) =
     let sideeffects = get_side_effects summary floc in
     let returnassign = get_return_assign summary floc in
     let adjassign = get_esp_adjustment_assign summary floc in
-    let abstrassign = [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ] in
+    let abstrassign =
+      [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ] in
     List.concat [ abstrassign ; sideeffects ; returnassign ; adjassign ]
 
   method get_parametercount = get_stack_parameter_count summary#get_function_api
 
   method get_call_target (a:doubleword_int) =
     let name = summary#get_function_api.fapi_name in
-    StaticStubTarget(a, DllFunction (dll, name))
+    mk_static_dll_stub_target a dll name
 
 end
 
@@ -513,8 +521,12 @@ let add_dllfun table (dll:string) (fname:string) =
     chlog#add "statically linked dll function not registered"
       (LBLOCK [ STR dll ; STR ":" ; STR fname ])
 
-class libfun_semantics_t (pkgs:string list) (fname:string) summary (md5hash:string) 
-  (instrs:int):predefined_callsemantics_int =
+class libfun_semantics_t
+        (pkgs:string list)
+        (fname:string)
+        (summary:function_summary_int)
+        (md5hash:string) 
+        (instrs:int):predefined_callsemantics_int =
 object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
@@ -541,7 +553,7 @@ object (self)
   method get_parametercount = get_stack_parameter_count summary#get_function_api
     
   method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a,PckFunction ("RTL",pkgs,fname))
+    mk_static_pck_stub_target a "RTL" pkgs fname
 
   method get_description = "RTL function"
 

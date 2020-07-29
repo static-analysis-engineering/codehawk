@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,7 @@ open XprTypes
 (* bchlib *)
 open BCHFunctionData
 open BCHLibTypes
+open BCHMakeCallTargetInfo
 open BCHSystemInfo
 
 (* bchlibx86 *)
@@ -92,7 +93,10 @@ let table = H.create 11
 
 let load_rtl_functions () =
   List.iter (fun m -> add_libfun table [ "System" ] m)
-    [ "Copy" ; "FillChar" ; "Move" ; "UpCase" ]
+            [ "Copy" ; "FillChar" ; "Move" ; "UpCase" ]
+
+let mk_target ?(pkgs=[ "System" ]) (a:doubleword_int) (name:string) =
+  mk_static_pck_stub_target a "RTL" pkgs name
 
 (* =============================================================== System::AStrCmp
    example: V01a:0x402cd4
@@ -194,8 +198,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a,PckFunction ("RTL",[ "System" ], "AStrCmp"))
+  method get_call_target (a:doubleword_int) = mk_target a "AStrCmp"
 
   method get_description = "Delphi RTL function System::AStrCmp"
 
@@ -255,8 +258,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a, PckFunction ("RTL", [ "System" ], "_CLenToPasStr"))
+  method get_call_target (a:doubleword_int) = mk_target a "_CLenToPasStr"
 
   method get_description = "Delphi RTL function System::_CLenToPasStr"
 
@@ -294,8 +296,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a, PckFunction ("RTL", [ "System" ], "_CToPasStr"))
+  method get_call_target (a:doubleword_int) = mk_target a "_CToPasStr"
 
   method get_description = "Delphi RTL function System::_CToPasStr"
 
@@ -333,8 +334,7 @@ object (self)
 
   method get_parametercount = 0 
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget (a,PckFunction ("RTL", [ "System" ], "EXP"))
+  method get_call_target (a:doubleword_int) = mk_target a "EXP"
 
   method get_description = "Delphi RTL function System::EXP"
 
@@ -371,8 +371,7 @@ object (self)
 
   method get_parametercount = 0 
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a,PckFunction ("RTL",[ "System" ], "Get8087CW"))
+  method get_call_target (a:doubleword_int) = mk_target a "Get8087CW"
 
   method get_description = "Delphi RTL function Get8087CW"
 
@@ -426,8 +425,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a, PckFunction ("RTL" , [ "System" ], "InitImports" ))
+  method get_call_target (a:doubleword_int) = mk_target a "InitImports"
 
   method get_description = "Delphi Rtl function System::InitImports"
 
@@ -464,8 +462,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget (a, PckFunction ("RTL" , [ "System" ], "IntfAddRef" ))
+  method get_call_target (a:doubleword_int) = mk_target a "IntfAddRef"
 
   method get_description = "Delphi RTL system function System::IntfAddRef"
 
@@ -500,8 +497,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a, PckFunction ("RTL" , [ "System" ], "IntfCopy"))
+  method get_call_target (a:doubleword_int) = mk_target a "IntfCopy"
 
   method get_description = "Delphi RTL function System::IntfCopy"
 
@@ -558,8 +554,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a, PckFunction ("RTL", [ "System" ], "IsClass"))
+  method get_call_target (a:doubleword_int) =  mk_target a "IsClass"
 
   method get_description = "Delphi Rtl function System::IsClass"
 
@@ -603,8 +598,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget (a, PckFunction ("RTL", [ "System" ], "LStrAddRef"))
+  method get_call_target (a:doubleword_int) = mk_target a "LStrAddRef"
 
   method get_description = "Delphi Rtl function System::LStrAddRef"
 
@@ -639,8 +633,7 @@ object (self)
 
   method get_parametercount = 0 
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget (a, PckFunction ("RTL", [ "System" ], "LStrCmp"))
+  method get_call_target (a:doubleword_int) = mk_target a "LStrCmp"
 
   method get_description = "Delphi RTL system function System::LStrCmp"
 
@@ -675,8 +668,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget (a, PckFunction ("RTL", [ "System" ], "LStrPos"))
+  method get_call_target (a:doubleword_int) = mk_target a "LStrPos"
 
   method get_description = "Delphi RTL system function System::LStrPos"
 
@@ -794,8 +786,7 @@ object (self)
 
   method get_parametercount = 0 
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a,PckFunction ("RTL",[ "System" ], "PStrCmp"))
+  method get_call_target (a:doubleword_int) = mk_target a "PStrCmp"
 
   method get_description = "Delphi RTL function System::PStrCmp"
 
@@ -856,8 +847,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a, PckFunction ("RTL", [ "System" ], "PStrNCpy"))
+  method get_call_target (a:doubleword_int) = mk_target a "PStrNCpy"
 
   method get_description = "Delphi RTL function System::PStrNCpy"
 
@@ -896,8 +886,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget (a,PckFunction ("RTL",[ "System" ], "ROUND"))
+  method get_call_target (a:doubleword_int) = mk_target a "ROUND"
 
   method get_description = "Delphi RTL function System::ROUND"
 
@@ -935,8 +924,7 @@ object (self)
 
   method get_parametercount = 0 
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a,PckFunction ("RTL",[ "System" ], "Set8087CW"))
+  method get_call_target (a:doubleword_int) = mk_target a "Set8087CW"
 
   method get_description = "Delphi RTL function Set8087CW"
 
@@ -995,8 +983,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget (a, PckFunction ("RTL", [ "System" ], "SetElem"))
+  method get_call_target (a:doubleword_int) = mk_target a "SetElem"
 
   method get_description = "Delphi RTL function System::SetElem"
 
@@ -1039,8 +1026,7 @@ object (self)
    
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a,PckFunction ("RTL", [ "System" ], "SetEq" ))
+  method get_call_target (a:doubleword_int) = mk_target a "SetEq"
 
   method get_description = "Delphi RTL function System::SetEq"
 
@@ -1129,8 +1115,7 @@ object (self)
 
   method get_parametercount = 0 
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a,PckFunction ("RTL",[ "System" ], "SetRange"))
+  method get_call_target (a:doubleword_int) = mk_target a "SetRange"
 
   method get_description = "Delphi RTL function System::SetRange"
 
@@ -1179,8 +1164,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget (a,PckFunction ("RTL", [ "System" ], "SetSub"))
+  method get_call_target (a:doubleword_int) = mk_target a "SetSub"
 
   method get_description = "Delphi RTL function System::SetSub"
 
@@ -1229,8 +1213,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget (a,PckFunction ("RTL", [ "System" ], "SetUnion"))
+  method get_call_target (a:doubleword_int) = mk_target a "SetUnion"
 
   method get_description = "Delphi RTL function System::SetUnion"
 
@@ -1283,7 +1266,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) = mk_inlined_app_target a self#get_name
 
   method get_description = "Delphi RTL function System::LStrLen"
 
@@ -1329,7 +1312,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget (a,self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "Delphi function checks that string argument is not null"
 
@@ -1354,8 +1338,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a, PckFunction ("RTL", [ "System" ], "initExnHandling"))
+  method get_call_target (a:doubleword_int) = mk_target a "initExnHandling"
 
   method get_description = "Delphi RTL function to initialize exception handling"
 
@@ -1397,8 +1380,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a, PckFunction ("RTL", [ "System" ], "initTIBInfo"))
+  method get_call_target (a:doubleword_int) = mk_target a "initTIBInfo"
 
   method get_description = "Delphi RTL function System::initTIBInfo"
 
@@ -1435,8 +1417,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a, PckFunction ("RTL", [ "System" ], "delphi_unknown1"))
+  method get_call_target (a:doubleword_int) = mk_target a "delphi_unknown1"
 
   method get_description = "Delphi RTL function to initialize exception handling?"
 
@@ -1494,8 +1475,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a,PckFunction ("RTL", [ "System" ], "StartExe"))
+  method get_call_target (a:doubleword_int) = mk_target a "StartExe"
 
   method get_description = "Delphi RTL system function System::StartExe"
 
@@ -1545,8 +1525,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a,PckFunction ("RTL",[ "System" ], "TRUNC"))
+  method get_call_target (a:doubleword_int) = mk_target a "TRUNC"
 
   method get_description = "Delphi RTL function System::TRUNC"
 
@@ -1724,8 +1703,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a,PckFunction ("RTL",[ "System" ], "ValLong"))
+  method get_call_target (a:doubleword_int) = mk_target a "ValLong"
 
   method get_description = "Delphi RTL function System::ValLong"
 
@@ -1753,8 +1731,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    StaticStubTarget (a,PckFunction ("RTL", [ "System" ], "WStrCmp" ))
+  method get_call_target (a:doubleword_int) = mk_target a "WStrCmp"
 
   method get_description = "Delphi RTL system function System::WStrCmp"
 
@@ -1794,7 +1771,8 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = InlinedAppTarget(a, self#get_name)
+  method get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
   method get_description = "Delphi RTL system function System::RegisterModule"
 
@@ -1823,7 +1801,7 @@ object (self)
   method get_parametercount = 0
 
   method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a, PckFunction ("RTL" , ["System" ], "RegisterModule_wrapper" ))
+    mk_target a "RegisterModule_wrapper"
 
   method get_description = "RTL system function that wraps RegisterModule"
 
@@ -1865,8 +1843,7 @@ object (self)
 
   method get_parametercount = 0 
 
-  method get_call_target (a:doubleword_int) = 
-    StaticStubTarget (a, PckFunction ("RTL", [ "System" ], "WStrLen"))
+  method get_call_target (a:doubleword_int) = mk_target a "WStrLen"
 
   method get_description = "Delphi RTL system function System::WStrLen"
 
@@ -1917,7 +1894,7 @@ object (self)
   method get_parametercount = 0
 
   method get_call_target (a:doubleword_int) =
-    StaticStubTarget(a, PckFunction ("RTL", [ "System" ; "Sysinit" ], "InitExe" ))
+    mk_target a ~pkgs:[ "System" ; "Sysinit" ] "InitExe"
 
   method get_description = "Delphi RTL function System::Sysinit::InitExe"
 
@@ -1962,7 +1939,7 @@ object (self)
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = AppTarget a
+  method get_call_target (a:doubleword_int) = mk_app_target a
 
   method get_description = "Delphi set exception handler"
 
@@ -2005,7 +1982,7 @@ let delphi_rtl_patterns = [
   { regex_s = Str.regexp "b9ff000000e8\\(........\\)c3$" ;
 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_lib_call faddr 5 "_CLenToPasStr" then
+      if is_named_lib_call faddr 5 "_CLenToPasStr" then
 	let sem = new rtl_system_ctopasstr_semantics_t fnhash 3 in
 	sometemplate sem
       else None
@@ -2016,7 +1993,7 @@ let delphi_rtl_patterns = [
       ("53568bf28bd885db740d8bd68b03e8\\(........\\)84c0750533c05e5bc3b0015e5bc3$") ;
 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_lib_call faddr 14 "InheritsFrom" then
+      if is_named_lib_call faddr 14 "InheritsFrom" then
 	let sem = new rtl_system_isclasssemantics_t fnhash 19 in
 	sometemplate sem
       else None
@@ -2047,7 +2024,7 @@ let delphi_rtl_patterns = [
       ("538a1a3acb76028bcb8808424081e1ff00000092e8\\(........\\)5bc3$") ;
 
     regex_f = fun faddr fnbytes fnhash ->
-      if isnamed_lib_call faddr 20 "Move" then
+      if is_named_lib_call faddr 20 "Move" then
 	let sem = new rtl_system_pstrncpy_semantics_t fnhash 13 in
 	sometemplate sem
       else None
@@ -2071,7 +2048,7 @@ let delphi_rtl_patterns = [
 
     regex_f = fun faddr fnbytes fnhash ->
       let gv = todw (Str.matched_group 1 fnbytes) in
-      if isnamed_inlined_call faddr 5 "__System::RegisterModule__" then
+      if is_named_inlined_call faddr 5 "__System::RegisterModule__" then
 	let sem = new rtl_system_wregistermodule_semantics_t fnhash gv 3 in
 	let msg = LBLOCK [ STR " with pTLibModule " ; gv#toPretty ] in
 	sometemplate ~msg sem
@@ -2096,8 +2073,8 @@ let delphi_rtl_patterns = [
       let src2 = todw (Str.matched_group 4 fnbytes) in
       let _ = functions_data#add_function src1 in
       let _ = functions_data#add_function src2 in
-      if (isnamed_lib_call faddr 46 "initTIBInfo") &&
-	(isnamed_lib_call faddr 58 "initExnHandling") then
+      if (is_named_lib_call faddr 46 "initTIBInfo") &&
+	(is_named_lib_call faddr 58 "initExnHandling") then
 	let sem = new rtl_system_startexe_semantics_t fnhash 12 in
 	let msg = LBLOCK [ 
 	  STR " with global variables set " ; 
@@ -2138,7 +2115,7 @@ let delphi_rtl_patterns = [
       let src2 = todw (Str.matched_group 4 fnbytes) in
       let _ = functions_data#add_function src1 in
       let _ = functions_data#add_function src2 in
-      if (isnamed_lib_call faddr 53 "delphi_unknown1") then
+      if (is_named_lib_call faddr 53 "delphi_unknown1") then
 	let sem = new rtl_system_startexe_semantics_t fnhash 11 in
 	let msg = LBLOCK [ 
 	  STR " with global variables set " ; 
@@ -2209,9 +2186,9 @@ let delphi_rtl_patterns = [
       let gv3 = todw (Str.matched_group 5 fnbytes) in
       let gv4 = todw (Str.matched_group 6 fnbytes) in
       let gv5 = todw (Str.matched_group 8 fnbytes) in
-      if isnamed_dll_call faddr 12 "GetModuleHandleA" &&
-	(isnamed_lib_call faddr 46 "RegisterModule_wrapper") &&
-	(isnamed_lib_call faddr 58 "StartExe") then
+      if is_named_dll_call faddr 12 "GetModuleHandleA" &&
+	(is_named_lib_call faddr 46 "RegisterModule_wrapper") &&
+	(is_named_lib_call faddr 58 "StartExe") then
 	let sem = new rtl_system_sysinit_initexe_semantics_t fnhash 19 in
 	let msg = LBLOCK [ STR " with globals " ; 
 			   pretty_print_list [ gv1 ; gv2 ; gv3 ; gv4 ; gv5 ]
