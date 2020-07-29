@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -395,9 +395,13 @@ let exnpatterns = [
       let jmpaddr = (faddr#add coff)#add_int 10 in
       let loc = make_location { loc_faddr = faddr ; loc_iaddr = jmpaddr } in
       let floc = get_floc loc in
-      floc#has_dll_target &&
+      floc#has_call_target
+        && floc#get_call_target#is_dll_call
+        && floc#get_call_target#get_name = "__CxxFrameHandler"
+        && add_seh_exnhandler imm faddr
+      (*
 	(let (_,name) = floc#get_dll_target in name = "__CxxFrameHandler") &&
-	add_seh_exnhandler imm faddr
+	add_seh_exnhandler imm faddr *)
   } ;
 
   { xregex_s = Str.regexp 
