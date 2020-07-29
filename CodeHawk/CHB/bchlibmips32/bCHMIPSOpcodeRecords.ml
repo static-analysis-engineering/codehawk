@@ -1016,6 +1016,13 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = false ;
       ida_asm    = (fun f -> f#ops "sltu" [ rd ; rs ; rt ])
     }
+  | Syscall code ->
+     let m = "syscall " ^ (string_of_int code) in
+     { mnemonic   = m;
+       operands   = [ ];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops m [ ])
+     }
 
   (* ---------------------------------------------------------------------------
    * Format: TEQ rs, rt

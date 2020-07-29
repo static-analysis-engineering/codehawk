@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -52,6 +52,7 @@ object
 
   method ts (f:mips_instr_format_t) =
     match f with
+    | SyscallType _ -> "sc"
     | RType _ -> "r"
     | R2Type _ -> "r2"
     | IType _ -> "i"

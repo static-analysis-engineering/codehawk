@@ -122,7 +122,8 @@ object (self)
     with
       Invalid_argument _ ->
 	raise (BCH_failure 
-		 (LBLOCK [ STR "Instruction index out of range: " ; INT index ;
+		 (LBLOCK [ STR "set: Instruction index out of range: " ;
+                           INT index ;
 			   STR " (length is " ; INT length ; STR ")"]))
 
   method set_not_code (datablocks:data_block_int list) =
@@ -157,7 +158,8 @@ object (self)
     with
     | Invalid_argument _ ->
        raise (BCH_failure
-		(LBLOCK [ STR "Instruction index out of range: " ; INT index ;
+		(LBLOCK [ STR "at_index: Instruction index out of range: " ;
+                          INT index ;
 			  STR " (length is " ; INT length ; STR ")"]))
 
   (* assume all instructions are aligned on 4-byte boundaries *)
@@ -166,9 +168,9 @@ object (self)
       let index = ((va#subtract codeBase)#to_int / 4) in
       self#at_index index
     with
-    | Invalid_argument s ->
+    | BCH_failure p ->
        raise (BCH_failure (LBLOCK [ STR "Error in assembly-instructions:at-address: " ;
-                                    va#toPretty ]))
+                                    va#toPretty ; STR ": " ; p ]))
 
   method get_code_addresses_rev ?(low=codeBase) ?(high=wordmax) () =
     let low = if low#lt codeBase then codeBase else low in

@@ -159,6 +159,7 @@ let parse_R_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int)
   | 9 -> JumpLinkRegister (r_op rd WR,r_op rs RD)
   | 10 -> MovZ (r_op rd WR, r_op rs RD, r_op rt RD)
   | 11 -> MovN (r_op rd WR, r_op rs RD, r_op rt RD)
+  (* 12: Syscall, handled in MIPSDisassemblyUtils *)
   | 16 -> MoveFromHi (r_op rd WR,mips_hi_op RD)
   | 17 -> MoveToHi (mips_hi_op WR, r_op rs RD)
   | 18 -> MoveFromLo (r_op rd WR,mips_lo_op RD)
@@ -322,6 +323,7 @@ let parse_opcode
        end in
   let opcode =
     match instr with
+    | SyscallType code -> Syscall code
     | IType (opc,rs,rt,imm) -> parse_I_opcode ch base opc rs rt imm
     | JType (opc,tgt) -> parse_J_opcode ch base opc tgt
     | RType (opc,rs,rt,rd,sa,fn) -> parse_R_opcode opc rs rt rd sa fn

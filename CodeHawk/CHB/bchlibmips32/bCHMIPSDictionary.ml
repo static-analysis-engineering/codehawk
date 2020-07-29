@@ -80,6 +80,8 @@ object (self)
   method index_mips_instr_format (f:mips_instr_format_t) =
     let tags = [ mips_instr_format_mcts#ts f ] in
     let key = match f with
+      | SyscallType code ->
+         (tags, [ code ])
       | RType (opc,rs,rt,rd,shamt,funct) ->
          (tags, [ opc; rs; rt; rd; shamt; funct ])
       | R2Type (opc,rs,rt,rd,shamt,funct) ->
@@ -120,6 +122,7 @@ object (self)
     let oi = self#index_mips_operand in
     let tags = [ get_mips_opcode_name opc ] in
     let key = match opc with
+      | Syscall i -> (tags, [ i ])
       (* no operands *)
       | NoOperation
         | Return
