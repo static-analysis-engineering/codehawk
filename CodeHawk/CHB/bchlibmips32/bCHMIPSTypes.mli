@@ -48,6 +48,7 @@ type mips_fp_format_t =
   | FPPair (* 22 *)
 
 type mips_instr_format_t =
+  | SyscallType of int
   | RType of     (* SPECIAL:0 *)
       int (* opcode:6 (0) *)
       * int (* rs:5 *)
@@ -159,6 +160,8 @@ class type mips_operand_int =
 type not_code_t = DataBlock of data_block_int
 
 type mips_opcode_t =
+  (* SyscallType *)
+  | Syscall of int
   (* I-type: branch/function call *)
   | BranchLink of mips_operand_int
   | BranchLEZero of mips_operand_int * mips_operand_int

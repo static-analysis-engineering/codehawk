@@ -117,6 +117,11 @@ let decompose_instr (dw:doubleword_int):mips_instr_format_t =
          let cc = (dwhigh lsr 2) mod 8 in
          let tf = dwhigh mod 2 in
          FPMCType (opcode,rs,cc,tf,rd,funct)
+      | 12 ->
+         let rt = dwhigh mod 32 in
+         let shamt = (dwlow lsr 6) mod 32 in
+         let code = shamt + (32 * (rd + (32 * (rt + (32 * rs ))))) in
+         SyscallType code
       | _ ->
          let rt = dwhigh mod 32 in
          let shamt = (dwlow lsr 6) mod 32 in
@@ -187,6 +192,8 @@ let instr_format_to_string (fmt:mips_instr_format_t) =
     | h::tl -> faux tl (s ^ (stri h) ^ ",")  in
   let f flds = faux flds "(" in
   match fmt with
+  | SyscallType code ->
+     "SC(" ^ (string_of_int code) ^ ")"
   | RType (opcode,rs,rt,rd,shamt,funct) ->
      "R" ^ (f [ opcode ; rs ; rt ; rd ; shamt ; funct ])
   | R2Type (opcode,rs,rt,rd,shamt,funct) ->

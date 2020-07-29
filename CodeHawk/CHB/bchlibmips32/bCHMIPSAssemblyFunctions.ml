@@ -192,7 +192,10 @@ object (self)
 	let finfo = get_function_info faddr in
 	let appCallees = 
 	  List.fold_left (fun acc c -> 
-	    match c with AppTarget a -> a::acc | _ -> acc) [] finfo#get_callees in
+	      if c#is_app_call then
+                (c#get_app_address)::acc
+              else
+                acc) [] finfo#get_callees in
 	calls := (List.map (fun callee -> (faddr, callee)) appCallees) @ !calls) in
       let addresses = List.map (fun f -> f#get_address) self#get_functions in
       let (orderedList,stats,cycle) = create_ordering addresses !calls in

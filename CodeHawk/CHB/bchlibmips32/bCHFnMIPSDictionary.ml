@@ -322,53 +322,65 @@ object (self)
                           xd#index_xpr result ; xd#index_xpr rresult ;
                           xd#index_xpr negresult ])
 
-      | JumpLink _ | BranchLink _ when floc#has_call_target_signature ->
-         let args = List.map snd floc#get_mips_call_arguments in
+      | JumpLink _ | BranchLink _
+           when floc#has_call_target
+                && floc#get_call_target#is_signature_valid ->
+         let args = List.map snd floc#get_call_args in
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
          if (List.length args) > 0 then 
            ([ xtag ], (List.map xd#index_xpr args)
-                      @ [ ixd#index_call_target floc#get_call_target ])
+                      @ [ ixd#index_call_target
+                            floc#get_call_target#get_target ])
          else
-           ([],[ ixd#index_call_target floc#get_call_target ])
+           ([],[ ixd#index_call_target floc#get_call_target#get_target ])
                           
       | JumpLink _ | BranchLink _ when floc#has_call_target ->
-         ([],[ ixd#index_call_target floc#get_call_target ])
+         ([],[ ixd#index_call_target floc#get_call_target#get_target ])
 
       | JumpLink _ | BranchLink _ -> ([],[])
 
-      | JumpLinkRegister _ when floc#has_call_target_signature ->
-         let args = List.map snd floc#get_mips_call_arguments in
+      | JumpLinkRegister _
+           when floc#has_call_target
+                  && floc#get_call_target#is_signature_valid ->
+         let args = List.map snd floc#get_call_args in
          let args = List.map rewrite_expr args in
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
          if (List.length  args) > 0 then
            ([ xtag ], (List.map xd#index_xpr args)
-                      @ [ ixd#index_call_target floc#get_call_target ])
+                      @ [ ixd#index_call_target
+                            floc#get_call_target#get_target ])
          else
-           ([],[ ixd#index_call_target floc#get_call_target ])
+           ([],[ ixd#index_call_target
+                   floc#get_call_target#get_target ])
 
       | JumpLinkRegister (dst,tgt) ->
          let tgt = rewrite_expr (tgt#to_expr floc) in
          ([ "a:x" ],[ xd#index_xpr tgt ])
 
-      | JumpRegister _ when floc#has_call_target_signature ->
-         let args = List.map snd floc#get_mips_call_arguments in
+      | JumpRegister _
+           when floc#has_call_target
+                  && floc#get_call_target#is_signature_valid ->
+         let args = List.map snd floc#get_call_args in
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
          if (List.length  args) > 0 then
            ([ xtag ], (List.map xd#index_xpr args)
-                      @ [ ixd#index_call_target floc#get_call_target ])
+                      @ [ ixd#index_call_target
+                            floc#get_call_target#get_target ])
          else
-           ([],[ ixd#index_call_target floc#get_call_target ])
+           ([],[ ixd#index_call_target floc#get_call_target#get_target ])
 
       | JumpRegister tgt ->
          let rhs = rewrite_expr (tgt#to_expr floc) in
          let iaddr = floc#ia in
          let faddr = floc#fa in
          if  system_info#has_jump_table_target faddr iaddr then
-           let (jt,jta,lb,ub) = system_info#get_jump_table_target faddr iaddr in
+           let (jt,jta,lb,ub) =
+             system_info#get_jump_table_target faddr iaddr in
            let tgts = jt#get_indexed_targets jta lb ub in
            ([ "a:x" ; "table" ],
             (xd#index_xpr rhs) ::
-              (List.concat (List.map (fun (i,dw) -> [ i ; bd#index_address dw  ]) tgts)))
+              (List.concat
+                 (List.map (fun (i,dw) -> [ i ; bd#index_address dw  ]) tgts)))
          else
            ([ "a:x" ],[ xd#index_xpr rhs ])
 
@@ -376,25 +388,29 @@ object (self)
          let addr = rewrite_expr (src#to_address floc) in         
          let rhs = rewrite_expr (src#to_expr floc) in
          let lhs = dst#to_variable floc in
-         ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ; xd#index_xpr addr ])
+         ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
+                        xd#index_xpr addr ])
 
       | LoadByteUnsigned (dst,src) ->
          let addr = rewrite_expr (src#to_address floc) in         
          let rhs = rewrite_expr (src#to_expr floc) in
          let lhs = dst#to_variable floc in
-         ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ; xd#index_xpr addr ])
+         ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
+                        xd#index_xpr addr ])
 
       | LoadDoublewordToFP (dst,src) ->
          let addr = rewrite_expr (src#to_address floc) in         
          let rhs = rewrite_expr (src#to_expr floc) in
          let lhs = dst#to_variable floc in
-         ([ "a:vx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ; xd#index_xpr addr ])
+         ([ "a:vx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
+                       xd#index_xpr addr ])
 
       | LoadHalfWordUnsigned (dst,src) ->
          let addr = rewrite_expr (src#to_address floc) in         
          let rhs = rewrite_expr (src#to_expr floc) in
          let lhs = dst#to_variable floc in
-         ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ; xd#index_xpr addr ])
+         ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
+                        xd#index_xpr addr ])
 
       | LoadImmediate (dst,imm) ->
          let rhs = imm#to_expr floc in
