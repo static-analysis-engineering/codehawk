@@ -15,14 +15,13 @@
      </pt>
      <par name="buffer">storage location for data</par>
      <par name="format">format-control string</par>
-     <par name="arguments">variable number of arguments</par>
      <return>
       <rc cond="success">number of characters written</rc>
       <rc cond="failure">-1</rc>
      </return>
     </apidoc>
    </documentation>
-   <api adj="0" cc="cdecl" name="sprintf">
+   <api adj="0" cc="cdecl" name="sprintf" varargs="yes">
     <returntype>int</returntype>
     <par loc="stack" io="w" name="buffer" nr="1" rep="hex">
       <type><ptr>char</ptr></type>
@@ -31,16 +30,12 @@
 	<role rt="ioc:outputs" rn="formatted data to string"/>
      </roles>
     </par>
-    <par loc="stack" io="r" name="format" nr="2" rep="hex">
+    <par loc="stack" io="r" name="format" fmt="print" nr="2" rep="hex">
       <type><ptr>char</ptr></type>
      <roles>
         <role rt="ioc:outputs" rn="format string"/>
      </roles>
      <pre><deref-read-nt/><format-string/></pre>
-    </par>
-    <par loc="stack" name="args" nr="3">
-     <btype tname="var-arg" ttag="tnamed"/>
-     <roles/>
     </par>
    </api>
    <semantics>
