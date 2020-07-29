@@ -151,55 +151,56 @@ let trace_forward_arg (graph:dot_graph_int) faddress op_n =
         ~label:(make_sig_label faddr op) (make_sig_node faddr op) in
     let _ = H.add table (make_sig_label faddr op) 1 in
     List.iter (fun callee ->
-      if callee#has_call_target_signature then
-	let call_args = callee#get_call_args in
-	List.iter (fun (p,e) ->
-	  match p.apar_location with
-	  | StackParameter par ->
-	     let argIndices = [] in  (* get_xarg_indices finfo e in *)
-	    if List.mem op argIndices then
-	      let label = make_call_label callee callee par in
-	      let callNode = make_call_node faddr callee#l#i par in
-	      let srcSigNode = make_sig_node faddr op in
-	      let tgtSigNode tgt = make_sig_node tgt par in
-	      begin
-		graph#addNode ~label callNode;
-		graph#addEdge srcSigNode callNode ;
-		if callee#has_application_target then
-		  let target = callee#get_application_target in
-		  begin
-		    graph#addEdge callNode (tgtSigNode target) ;
-		    if H.mem table (make_sig_label target par) then () else 
-		      begin
-			H.add table (make_sig_label target par) 1;
-			aux target par
-		      end
-		  end
-		else if callee#has_dll_target then
-		  let (dll,target) = callee#get_dll_target in
-		  let label = make_dll_label dll target par in
-		  let dllNode = make_dll_node target par in
-		  begin
-		    graph#addNode ~label dllNode ;
-		    graph#addEdge callNode dllNode ;
-		    add_dll_node dllNode
-		  end
-		else if callee#has_jni_target then
-		  let jniIndex = callee#get_jni_target in
-		  if function_summary_library#has_jni_function jniIndex then
-		    let api =
-                      (function_summary_library#get_jni_function jniIndex)#get_function_api in
-		    let label = make_jni_label api par in
-		    let jniNode = make_jni_node api par in
-		    begin
-		      graph#addNode ~label jniNode ;
-		      graph#addEdge callNode jniNode ;
-		      add_jni_node jniNode
-		    end
-	      end
-	  | _ -> ()) call_args
-      else
-	()) callees in
+        if callee#has_call_target then
+          let ctinfo = callee#get_call_target in
+	  let call_args = callee#get_call_args in
+	  List.iter (fun (p,e) ->
+	      match p.apar_location with
+	      | StackParameter par ->
+	         let argIndices = [] in  (* get_xarg_indices finfo e in *)
+	         if List.mem op argIndices then
+	           let label = make_call_label callee callee par in
+	           let callNode = make_call_node faddr callee#l#i par in
+	           let srcSigNode = make_sig_node faddr op in
+	           let tgtSigNode tgt = make_sig_node tgt par in
+	           begin
+		     graph#addNode ~label callNode;
+		     graph#addEdge srcSigNode callNode ;
+		     if ctinfo#is_app_call then
+		       let target = ctinfo#get_application_target in
+		       begin
+		         graph#addEdge callNode (tgtSigNode target) ;
+		         if H.mem table (make_sig_label target par) then () else 
+		           begin
+			     H.add table (make_sig_label target par) 1;
+			     aux target par
+		           end
+		       end
+		     else if ctinfo#is_dll_call then
+		       let (dll,target) = ctinfo#get_dll_target in
+		       let label = make_dll_label dll target par in
+		       let dllNode = make_dll_node target par in
+		       begin
+		         graph#addNode ~label dllNode ;
+		         graph#addEdge callNode dllNode ;
+		         add_dll_node dllNode
+		       end
+		     else if ctinfo#is_jni_call then
+		       let jniIndex = ctinfo#get_jni_index in
+		       if function_summary_library#has_jni_function jniIndex then
+		         let api =
+                           (function_summary_library#get_jni_function jniIndex)#get_function_api in
+		         let label = make_jni_label api par in
+		         let jniNode = make_jni_node api par in
+		         begin
+		           graph#addNode ~label jniNode ;
+		           graph#addEdge callNode jniNode ;
+		           add_jni_node jniNode
+		         end
+	           end
+	      | _ -> ()) call_args
+        else
+	  ()) callees in
   begin
     aux faddress op_n ;
     (make_sig_node faddress op_n,!dllNodes,!jniNodes)
@@ -211,25 +212,29 @@ let trace_fwd_returnval (graph:dot_graph_int) faddr v =
   let callees = get_callees faddr in
   let _ = graph#addNode ~label:v#getName#getBaseName "root" in
   List.iter (fun callee ->
-    if callee#has_call_target_signature then
+    if callee#has_call_target then
       let call_args = callee#get_call_args in
       List.iter (fun (p,x) ->
 	if var_is_referenced finfo x v then
 	  match p.apar_location with
 	  | StackParameter i -> 
-	    if callee#has_application_target then
-	      let target = callee#get_application_target in
-	      let (node,_,_) = trace_forward_arg graph target i in
-	      let _ = graph#addEdge "root" node in
-	      ()
-	    else if callee#has_dll_target then
-	      let (_,target) = callee#get_dll_target in
-	      let _ = graph#addNode ~label:(target ^ "(" ^ (string_of_int i) ^ ")")
-		("n_" ^ target ^ (string_of_int i)) in
-	      let _ = graph#addEdge "root" ("n_" ^ target ^ (string_of_int i)) in
-	      ()
-	    else
-	      ()
+	     if callee#has_call_target then
+               let ctinfo = callee#get_call_target in
+               if ctinfo#is_app_call then
+	         let target = ctinfo#get_application_target in
+	         let (node,_,_) = trace_forward_arg graph target i in
+	         let _ = graph#addEdge "root" node in
+	         ()
+	       else if ctinfo#is_dll_call then
+	         let (_,target) = ctinfo#get_dll_target in
+	         let _ = graph#addNode ~label:(target ^ "(" ^ (string_of_int i) ^ ")")
+		                       ("n_" ^ target ^ (string_of_int i)) in
+	         let _ = graph#addEdge "root" ("n_" ^ target ^ (string_of_int i)) in
+	         ()
+               else
+                 ()
+	     else
+	       ()
 	  | _ -> ()) call_args ) callees
 		
   
@@ -239,17 +244,18 @@ let trace_fwd_sideeffect (graph:dot_graph_int) faddr floc v =
   let _ = graph#addNode ~label:v#getName#getBaseName "root" in
   List.iter (fun callee ->
       let call_args = callee#get_call_args in
+      let ctinfo = callee#get_call_target in
       List.iter (fun (p,x) ->
 	if se_address_is_referenced finfo floc x v then
 	  match p.apar_location with
 	  | StackParameter i -> 
-	    if callee#has_application_target then
-	      let target = callee#get_application_target in
+	    if ctinfo#is_app_call then
+	      let target = ctinfo#get_application_target in
 	      let (node,_,_) = trace_forward_arg graph target i in
 	      let _ = graph#addEdge "root" node in
 	      ()
-	    else if callee#has_dll_target then
-	      let (_,target) = callee#get_dll_target in
+	    else if ctinfo#is_dll_call then
+	      let (_,target) = ctinfo#get_dll_target in
 	      let _ = graph#addNode ~label:(target ^ "(" ^ (string_of_int i) ^ ")")
 		("n_" ^ target ^ (string_of_int i)) in
 	      let _ = graph#addEdge "root" ("n_" ^ target ^ (string_of_int i)) in
@@ -384,25 +390,29 @@ object (self)
 	begin
 	  graph#addNode ~label nodename ;
 	  f#iter_calls (fun _ floc ->
-	    if floc#has_dll_target then
-	      let (_,dllfn) = floc#get_dll_target in
-	      begin add_dll_node dllfn ; graph#addEdge nodename dllfn end
-	    else if floc#has_application_target then
-	      graph#addEdge
-                nodename (make_va_node_name floc#get_application_target)
-	    else if floc#has_indirect_target then
-	      let tgts = floc#get_indirect_target in
-	      List.iter (add_tgt_node nodename) tgts
-	    else if floc#has_jni_target then
-	      let jniIndex = floc#get_jni_target in
-	      if function_summary_library#has_jni_function jniIndex then
-		let api = function_summary_library#get_jni_function jniIndex in
-		let api = api#get_function_api in
-		begin 
-		  add_jni_node api.fapi_name  ;
-		  graph#addEdge nodename api.fapi_name
-		end
-	    else ())
+              if floc#has_call_target then
+                let ctinfo = floc#get_call_target in
+	        if ctinfo#is_dll_call then
+	          let (_,dllfn) = ctinfo#get_dll_target in
+	          begin add_dll_node dllfn ; graph#addEdge nodename dllfn end
+	        else if ctinfo#is_app_call then
+	          graph#addEdge
+                    nodename (make_va_node_name ctinfo#get_application_target)
+	        else if ctinfo#is_indirect_call then
+	          let tgts = [] (* floc#get_indirect_target *) in
+	          List.iter (add_tgt_node nodename) tgts
+	        else if ctinfo#is_jni_call then
+	          let jniIndex = ctinfo#get_jni_index in
+	          if function_summary_library#has_jni_function jniIndex then
+		    let api = function_summary_library#get_jni_function jniIndex in
+		    let api = api#get_function_api in
+		    begin 
+		      add_jni_node api.fapi_name  ;
+		      graph#addEdge nodename api.fapi_name
+		    end
+                  else
+                    ()
+	        else ())
 	end) in
     let _ = List.iter (fun dllfn -> graph#addNode ~label:dllfn dllfn) !dllNodes in
     let _ = List.iter (fun jnifn -> graph#addNode ~label:jnifn jnifn) !jniNodes in
