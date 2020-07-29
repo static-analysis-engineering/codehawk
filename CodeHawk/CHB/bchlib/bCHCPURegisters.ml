@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -212,7 +212,7 @@ let register_compare r1 r2 =
         (cpureg_to_string c21, cpureg_to_string c22)
 
 let register_to_string register = match register with
-  | CPURegister r -> "x86(" ^ cpureg_to_string r ^ ")"
+  | CPURegister r -> cpureg_to_string r
   | SegmentRegister r -> segment_to_string r
   | ControlRegister i -> "CR" ^ (string_of_int i)
   | DebugRegister i -> "DR" ^ (string_of_int i)
@@ -220,7 +220,7 @@ let register_to_string register = match register with
   | FloatingPointRegister i -> "st(" ^ (string_of_int i) ^ ")"
   | MmxRegister i -> "mm(" ^ (string_of_int i) ^ ")"
   | XmmRegister i -> "xmm(" ^ (string_of_int i) ^ ")"
-  | MIPSRegister r -> "mips(" ^ mipsreg_to_string r ^ ")"
+  | MIPSRegister r -> mipsreg_to_string r
   | MIPSSpecialRegister r -> mips_special_reg_to_string r
   | MIPSFloatingPointRegister i -> "$f" ^ (string_of_int i)
 
