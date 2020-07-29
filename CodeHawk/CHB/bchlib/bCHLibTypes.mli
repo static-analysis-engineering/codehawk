@@ -975,26 +975,28 @@ end
 
 class type type_invariant_io_int =
 object
-  method add_var_fact     : string -> variable_t -> ?structinfo:string list -> btype_t -> unit
-  method add_const_fact   : string -> numerical_t -> btype_t -> unit
-  method add_xpr_fact     : string -> xpr_t -> btype_t -> unit
-  method add_function_var_fact: variable_t -> ?structinfo:string list -> btype_t -> unit (* location independent *)
+  method add_var_fact:
+           string -> variable_t -> ?structinfo:string list -> btype_t -> unit
+  method add_const_fact: string -> numerical_t -> btype_t -> unit
+  method add_xpr_fact: string -> xpr_t -> btype_t -> unit
+  method add_function_var_fact:
+           variable_t -> ?structinfo:string list -> btype_t -> unit (* location independent *)
 
   (* accessors *)
   method get_location_type_invariant: string -> location_type_invariant_int
-  method get_facts                  : type_invariant_int list (* all facts *)
-  method get_function_facts         : type_invariant_int list (* function-valid facts *)
-  method get_location_facts         : (string * type_invariant_int list) list
-  method get_variable_facts         : string -> variable_t -> type_invariant_int list
-  method get_table_size             : int
-  method get_invariant_count        : int
+  method get_facts: type_invariant_int list (* all facts *)
+  method get_function_facts: type_invariant_int list (* function-valid facts *)
+  method get_location_facts: (string * type_invariant_int list) list
+  method get_variable_facts: string -> variable_t -> type_invariant_int list
+  method get_table_size: int
+  method get_invariant_count: int
 
   (* save and restore *)
-  method write_xml    : xml_element_int -> unit
-  method read_xml     : xml_element_int -> unit
+  method write_xml: xml_element_int -> unit
+  method read_xml: xml_element_int -> unit
 
   (* printing *)
-  method toPretty     : pretty_t
+  method toPretty: pretty_t
 end
 
 (* ===================================================== Location invariants === *)
@@ -1219,14 +1221,20 @@ type parameter_location_t =
 | GlobalParameter of doubleword_int
 | UnknownParameterLocation
 
+type formatstring_type_t =
+  | NoFormat
+  | PrintFormat
+  | ScanFormat
+
 type api_parameter_t = {
-  apar_name : string ;
-  apar_type : btype_t ;
-  apar_desc : string ;
+  apar_name: string ;
+  apar_type: btype_t ;
+  apar_desc: string ;
   apar_roles: (string * string) list ;
-  apar_io   : arg_io_t ;
-  apar_size : int ;
+  apar_io: arg_io_t ;
+  apar_size: int ;
   apar_location: parameter_location_t ;
+  apar_fmt: formatstring_type_t
 }
     
 type arithmetic_op_t =
@@ -1238,6 +1246,8 @@ type relational_op_t =
 type function_api_t = {
   fapi_name : string ;
   fapi_parameters: api_parameter_t list ;
+  fapi_varargs: bool ;
+  fapi_va_list: (api_parameter_t list) option ;
   fapi_returntype: btype_t ;
   fapi_rv_roles  : (string * string) list ;
   fapi_stack_adjustment: int option ;
@@ -1295,8 +1305,11 @@ type call_target_t =
   | StaticStubTarget of doubleword_int * function_stub_t
   | AppTarget of doubleword_int
   | InlinedAppTarget of doubleword_int * string
-  | WrappedTarget of doubleword_int * function_api_t * call_target_t *
-                       (api_parameter_t * bterm_t) list
+  | WrappedTarget of
+      doubleword_int
+      * function_api_t
+      * call_target_t
+      * (api_parameter_t * bterm_t) list
   | VirtualTarget of function_api_t
   | IndirectTarget of bterm_t * call_target_t list
   | UnknownTarget
@@ -1395,8 +1408,8 @@ object ('a)
   method get_sideeffects        : sideeffect_t list
   method get_io_actions         : io_action_t list
 
-  method get_enums_referenced   : string list
-  method get_enum_type          : api_parameter_t -> (btype_t * bool) option  (* name, specified as flags *)
+  method get_enums_referenced: string list
+  method get_enum_type: api_parameter_t -> (btype_t * bool) option  (* name, specified as flags *)
 
   method get_registers_preserved: register_t list   (* deviation from default (Eax,Ecx,Edx) *)
 
@@ -1409,17 +1422,11 @@ object ('a)
   method is_nonreturning        : bool
   method is_jni_function        : bool
   method is_api_inferred        : bool
-  (* method interacts              : bool3 *)
 
-  (* saving
-  method write_xml              : ?altname:string option -> xml_element_int -> unit
-  method write_xml_api          : xml_element_int -> unit
-  method write_xml_semantics    : xml_element_int -> unit
-  method write_xml_documentation: xml_element_int -> unit
-   *)
-  (* printing *)
+  (* i/o *)
   method toPretty               : pretty_t
 end
+
 
 (* ============================================== function summary library == *)
 (* The function summary library holds
@@ -2303,7 +2310,73 @@ class type function_environment_int =
     method variable_name_to_string: variable_t -> string
     method variable_name_to_pretty: variable_t -> pretty_t
          
+  end
+
+(* ======================================================== call-target-info === *)
+
+class type call_target_info_int =
+  object
+
+    (* accessors *)
+    method get_target: call_target_t
+    method get_name: string
+    method get_app_address: doubleword_int
+    method get_application_target: doubleword_int
+    method get_wrapped_app_address: doubleword_int
+    method get_wrapped_app_parameter_mapping: (api_parameter_t * bterm_t) list
+    method get_dll_target: string * string
+    method get_inlined_target: doubleword_int * string
+    method get_static_lib_target: doubleword_int * string * string list * string
+    method get_jni_target_index: int
+    method get_jni_index: int
+
+    method get_semantics: function_semantics_t
+    method get_signature: function_api_t
+    method get_parameters: api_parameter_t list
+    method get_returntype: btype_t
+    method get_target: call_target_t
+    method get_stack_adjustment: int option
+
+    method get_preconditions: precondition_t list
+    method get_postconditions: postcondition_t list
+    method get_errorpostconditions: postcondition_t list
+    method get_sideeffects: sideeffect_t list
+    method get_io_actions: io_action_t list
+
+    method get_enums_referenced : string list
+    method get_enum_type:
+             api_parameter_t -> (btype_t * bool) option  (* name, specified as flags *)
+
+    (* predicates *)
+    method is_nonreturning: bool
+    method has_sideeffects: bool
+
+    method is_signature_valid: bool
+    method is_semantics_valid: bool
+
+    method is_app_call: bool
+    method is_in_application_call: bool   (* target is in application code *)
+    method is_wrapped_app_call: bool
+    method is_dll_call: bool    (* static or dynamic *)
+    method is_static_dll_call: bool
+    method is_wrapped_dll_call: bool
+    method has_dll_target: bool  (* either direct or wrapped *)
+    method is_inlined_call: bool
+    method is_wrapped_call: bool
+    method is_unknown: bool
+    method is_static_lib_call: bool
+    method is_jni_call: bool
+    method is_indirect_call: bool
+    method is_virtual_call: bool
+    method is_call_category: string -> bool
+
+    (* i/o *)
+    method write_xml: xml_element_int -> unit
+    method toPretty: pretty_t
+
 end
+
+(* ============================================================ function-info === *)
 
 (* The function info keeps track of the following information:
    - variables known to the function
@@ -2369,26 +2442,15 @@ object
     ctxt_iaddress_t -> doubleword_int -> jumptable_int -> data_block_int -> unit
   method set_global_jumptarget  : ctxt_iaddress_t -> variable_t -> unit
   method set_argument_jumptarget: ctxt_iaddress_t -> variable_t -> unit
-  method set_dll_jumptarget     : ctxt_iaddress_t -> string -> string -> unit
-  method set_so_jumptarget      : ctxt_iaddress_t -> string -> unit
+  method set_dll_jumptarget:
+           ctxt_iaddress_t -> string -> string -> call_target_info_int -> unit
+  method set_so_jumptarget:
+           ctxt_iaddress_t -> string -> call_target_info_int -> unit
   method set_unknown_jumptarget : ctxt_iaddress_t -> unit
 
-  (* set call targets *)
-  method set_call_target         : ctxt_iaddress_t -> call_target_t -> unit
-  method set_dll_target          : ctxt_iaddress_t -> string -> string -> unit
-  method set_so_target           : ctxt_iaddress_t -> string -> unit
-  method set_static_dll_target   : 
-    ctxt_iaddress_t -> doubleword_int -> string -> string -> unit
-  method set_app_target          : ctxt_iaddress_t -> doubleword_int -> unit
-  method set_inlined_app_target  : ctxt_iaddress_t -> doubleword_int -> string -> unit
-  method set_jni_target          : ctxt_iaddress_t -> int -> unit   (* jni index *)
-  method set_unknown_target      : ctxt_iaddress_t -> unit
+  method set_call_target: ctxt_iaddress_t -> call_target_info_int -> unit
 
-  method set_nonreturning_call   : ctxt_iaddress_t -> unit
-  method set_virtual_call_target : ctxt_iaddress_t -> variable_t -> unit
-  method set_indirect_call_target: ctxt_iaddress_t -> variable_t -> call_target_t list -> unit
-
-  method set_nonreturning        : unit
+  method set_nonreturning: unit
 
   method save_register            : ctxt_iaddress_t -> register_t -> unit
   method restore_register         : ctxt_iaddress_t -> register_t -> unit
@@ -2408,23 +2470,13 @@ object
 
   method get_memory_access_record: memory_accesses_int
   method get_local_stack_accesses: (int * (doubleword_int * memaccess_t) list) list
-  method get_stack_accesses      : (int * (doubleword_int * memaccess_t) list) list
-  method get_global_accesses     : (doubleword_int * (doubleword_int * memaccess_t) list) list
+  method get_stack_accesses: (int * (doubleword_int * memaccess_t) list) list
+  method get_global_accesses: (doubleword_int * (doubleword_int * memaccess_t) list) list
 
-  method get_call_target     : ctxt_iaddress_t -> call_target_t
-  method get_dll_target      : ctxt_iaddress_t -> string * string
-  method get_inlined_target  : ctxt_iaddress_t -> (doubleword_int * string)
-  method get_static_lib_target: ctxt_iaddress_t -> 
-    (doubleword_int * string * string list * string)
-  method get_wrapped_target  : ctxt_iaddress_t -> 
-    (doubleword_int * function_api_t * call_target_t * (api_parameter_t * bterm_t) list)
-  method get_application_target: ctxt_iaddress_t -> doubleword_int
-  method get_jni_target      : ctxt_iaddress_t -> int       (* jni index *)
-  method get_virtual_target  : ctxt_iaddress_t -> function_api_t
-  method get_indirect_target : ctxt_iaddress_t -> call_target_t list
+  method get_call_target: ctxt_iaddress_t -> call_target_info_int
 
-  method get_callees         : call_target_t list
-  method get_callees_located : (ctxt_iaddress_t * call_target_t) list
+  method get_callees         : call_target_info_int list
+  method get_callees_located : (ctxt_iaddress_t * call_target_info_int) list
 
   method get_address         : doubleword_int             (* address of this function *)
   method get_name            : string
@@ -2452,22 +2504,7 @@ object
   method get_return_values   : xpr_t list
 
   method get_call_count : int
-  method get_dll_call_count: int 
-  method get_staticdll_call_count : int
-  method get_staticlib_call_count : int
-  method get_dll_no_sum_call_count: int
-  method get_app_call_count: int
-  method get_inlined_call_count: int
-  method get_appwrapped_call_count: int
-  method get_dllwrapped_call_count: int
-  method get_jni_call_count: int
-  method get_arg_call_count: int
-  method get_arg_call_no_targets_count: int
-  method get_global_call_count: int
-  method get_global_call_no_targets_count: int 
-  method get_indirect_call_count: int
-  method get_indirect_call_no_targets_count:int
-  method get_unr_call_count: int
+  method get_call_category_count: string -> int
 
   (* predicates *)
   method is_complete : bool
@@ -2478,24 +2515,9 @@ object
 
   method has_associated_cc_user  : ctxt_iaddress_t -> bool
   method has_associated_cc_setter: ctxt_iaddress_t -> bool
-    
-  method has_call_target         : ctxt_iaddress_t -> bool
-  method has_dll_target          : ctxt_iaddress_t -> bool
-  method has_static_dll_target   : ctxt_iaddress_t -> bool
-  method has_static_lib_target   : ctxt_iaddress_t -> bool
-  method has_indirect_target     : ctxt_iaddress_t -> bool
-  method has_application_target  : ctxt_iaddress_t -> bool
-  method has_inlined_target      : ctxt_iaddress_t -> bool
-  method has_wrapped_target      : ctxt_iaddress_t -> bool
-  method has_virtual_target      : ctxt_iaddress_t -> bool
-  method has_jni_target          : ctxt_iaddress_t -> bool
-  method has_unknown_target      : ctxt_iaddress_t -> bool
-  method has_no_call_target      : ctxt_iaddress_t -> bool
-
+  method has_call_target: ctxt_iaddress_t -> bool
   method is_dll_jumptarget       : ctxt_iaddress_t -> bool
   method has_jump_target         : ctxt_iaddress_t -> bool
-  method is_nonreturning_call    : ctxt_iaddress_t -> bool
-
   method has_unknown_jump_target : bool
   method has_constant   : variable_t -> bool
   method has_test_expr  : ctxt_iaddress_t -> bool
@@ -2516,6 +2538,7 @@ object
 
 end
 
+
 (* ==================================================================== Floc === *)
 
 class type floc_int =
@@ -2527,17 +2550,8 @@ object
   (* sets the targets for an indirect jump at this instruction *)
   method set_jumptable_target: doubleword_int -> jumptable_int -> register_t -> unit
 
-  (* set call targets  *)
-  method set_application_target: doubleword_int -> unit
-  method set_dll_target        : string -> string -> unit
-  method set_so_target         : string -> unit
-  method set_jni_target        : int -> unit (* jni index *)
-  method set_unknown_target    : unit
-  method set_virtual_target    : variable_t -> unit   (* call via vtable pointer *)
-  method set_indirect_call_target: variable_t -> call_target_t list -> unit
-
-  (* declares the call at this instruction to be nonreturning *)
-  method set_nonreturning_call: unit
+  method set_call_target: call_target_info_int -> unit
+  method update_call_target: unit
 
   (* sets the test expression for this instruction *)
   method set_test_expr: xpr_t -> unit
@@ -2619,24 +2633,11 @@ object
   method get_jump_target         : jump_target_t
   method get_jump_successors     : doubleword_int list
 
-(*  method get_jumptable_indexed_targets: (int * doubleword_int) list *)
-
-  (* returns the type of call that is made at this instruction *)
-  method get_call_target_signature: function_api_t
-  method get_call_target_semantics: function_semantics_t
-  method get_call_target_summary  : function_summary_int
-  method get_call_target          : call_target_t
-  method get_dll_target           : string * string
-  method get_wrapped_target       :
-    (doubleword_int * function_api_t * call_target_t * (api_parameter_t * bterm_t) list)
-  method get_application_target   : doubleword_int
-  method get_inlined_target       : doubleword_int * string
-  method get_static_lib_target    : doubleword_int * string * string list * string
-  method get_jni_target           : int (* jni index *)
-  method get_virtual_target       : function_api_t
-  method get_indirect_target      : call_target_t list
-  method get_call_args            : (api_parameter_t * xpr_t) list
+  method get_call_target: call_target_info_int
+  method get_call_args: (api_parameter_t * xpr_t) list
   method get_mips_call_arguments  : (api_parameter_t * xpr_t) list
+
+(*  method get_jumptable_indexed_targets: (int * doubleword_int) list *)
 
   (* returns the test expression for a conditional jump in this instruction *)
   method get_test_expr: xpr_t
@@ -2650,19 +2651,27 @@ object
   method get_mips_call_commands: cmd_t list
 
   (* returns the CHIF code associated with an assignment instruction *)
-  method get_assign_commands: variable_t -> ?size:xpr_t -> ?vtype:btype_t -> xpr_t -> cmd_t list
+  method get_assign_commands:
+           variable_t -> ?size:xpr_t -> ?vtype:btype_t -> xpr_t -> cmd_t list
 
   method get_sideeffect_assigns: function_semantics_t -> cmd_t list
 
   (* returns the CHIF code associated with an abstraction of variables *)
-  method get_abstract_commands: variable_t -> ?size:xpr_t -> ?vtype:btype_t -> unit -> cmd_t list
+  method get_abstract_commands:
+           variable_t -> ?size:xpr_t -> ?vtype:btype_t -> unit -> cmd_t list
 
   method get_abstract_cpu_registers_command: cpureg_t list -> cmd_t
 
   method get_abstract_registers_command: register_t list -> cmd_t
 
   (* returns the CHIF code associated with an unmodeled operation *)
-  method get_operation_commands: variable_t -> ?size:xpr_t -> ?vtype:btype_t-> symbol_t -> op_arg_t list -> cmd_t list
+  method get_operation_commands:
+           variable_t
+           -> ?size:xpr_t
+           -> ?vtype:btype_t
+           -> symbol_t
+           -> op_arg_t list
+           -> cmd_t list
 
   (* predicates *)
 
@@ -2683,26 +2692,7 @@ object
   (* returns true if this instruction has a test expression for a conditional jump *)
   method has_test_expr: bool
 
-  (* information on call targets *)
-  method has_call_target       : bool
-  method has_dll_target        : bool
-  method has_inlined_target    : bool
-  method has_static_lib_target : bool
-  method has_application_target: bool
-  method has_wrapped_target    : bool
-  method has_jni_target        : bool
-  method has_indirect_target   : bool
-  method has_virtual_target    : bool
-  method has_unknown_target    : bool
-  method has_no_call_target    : bool
-
-  method has_call_target_signature: bool
-  method has_call_target_semantics: bool
-  method has_call_target_summary  : bool
-  method has_call_sideeffects     : bool
-
-  (* returns true if this instruction does not return *)
-  method is_nonreturning_call: bool
+  method has_call_target: bool
 
   (* returns true if this instruction has jump table targets *)
   method has_jump_target: bool
