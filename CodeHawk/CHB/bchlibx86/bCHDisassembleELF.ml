@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2020 Kestrel Technology LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,7 @@ open BCHFunctionInfo
 open BCHJumpTable
 open BCHLibTypes
 open BCHLocation
+open BCHMakeCallTargetInfo
 open BCHStreamWrapper
 open BCHSystemInfo
 open BCHUtilities
@@ -139,10 +140,11 @@ let get_indirect_jump_targets (op:operand_int) =
            | Some s ->
               begin
                 chlog#add "jumpbase section" (s#toPretty) ;
-                match create_jumptable ~base:jumpbase
-                                       ~section_base:s#get_vaddr
-                                       ~is_code_address:system_info#is_code_address
-                                       ~section_string:s#get_xstring  with
+                match create_jumptable
+                        ~base:jumpbase
+                        ~section_base:s#get_vaddr
+                        ~is_code_address:system_info#is_code_address
+                        ~section_string:s#get_xstring  with
                 | Some jt ->
                   begin
                     chlog#add "add jumptable"
@@ -172,15 +174,6 @@ let get_indirect_jump_targets (op:operand_int) =
       end
   else
     None
-
-let check_non_returning (floc:floc_int) =
-  if floc#has_call_target_summary then
-    if floc#get_call_target_summary#is_nonreturning then
-      floc#set_nonreturning_call
-    else
-      ()
-  else
-    ()  
 
 let get_so_target (instr:assembly_instruction_int) =
   (*
@@ -262,8 +255,8 @@ let resolve_pic_target floc instr =
       | Some tgt ->
          begin
            chlog#add "pic target" (LBLOCK [ STR floc#cia ; STR ": " ; STR tgt ]) ;
-           floc#f#set_so_target floc#cia tgt ;
-           check_non_returning floc
+           floc#set_call_target (mk_so_target tgt) ;
+           (*  check_non_returning floc *)
          end
       | _ -> ()
     else
@@ -417,7 +410,8 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
   if system_info#is_nonreturning_call faddr iaddr then
     []
   else
-    let loc = make_location { loc_faddr = faddr ; loc_iaddr = iaddr }  in
+    let loc = make_location { loc_faddr = faddr ; loc_iaddr = iaddr } in
+    let floc = get_floc loc in
     let ctxtiaddr = loc#ci in
     let instr = !assembly_instructions#at_address iaddr in
     let finfo = get_function_info faddr in
@@ -442,7 +436,10 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
           raise (BCH_failure (STR "Unexpected operand in get_so_jump_target_op")) in
       match elf_header#get_relocation dw  with
       | Some fname -> fname
-      | _ -> raise (BCH_failure (LBLOCK [ STR "Unable to find relocation object for " ; dw#toPretty ])) in
+      | _ -> raise
+               (BCH_failure
+                  (LBLOCK [ STR "Unable to find relocation object for " ;
+                            dw#toPretty ])) in
     let successors = match opcode with
       | RepzRet | Ret None | BndRet None -> get_return_successors (get_floc loc)
       | Ret _ | BndRet _ | Halt -> []
@@ -461,11 +458,13 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
       | IndirectJmp op when finfo#is_dll_jumptarget ctxtiaddr -> []
       | IndirectJmp op when is_so_jump_target_op op ->
          let fname = get_so_jump_target_op op in
+         let ctinfo = mk_so_target fname in
          begin
-           finfo#set_so_jumptarget ctxtiaddr fname ;
-           chlog#add "so library call:get_successors:get_indirect_jump_target"
-                     (LBLOCK [ faddr#toPretty ; STR "," ; iaddr#toPretty ; STR ": " ;
-                               STR fname ]) ;
+           finfo#set_so_jumptarget ctxtiaddr fname ctinfo;
+           chlog#add
+             "so library call:get_successors:get_indirect_jump_target"
+             (LBLOCK [ faddr#toPretty ; STR "," ; iaddr#toPretty ; STR ": " ;
+                       STR fname ]) ;
            []
          end
       | IndirectJmp op when op#is_jump_table_target ->
@@ -491,7 +490,9 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
                      (LBLOCK [ floc#l#toPretty ; STR ": " ; op#toPretty ]) ;
            []
          end
-      | IndirectCall _ | DirectCall _ when finfo#is_nonreturning_call ctxtiaddr ->
+      | IndirectCall _ | DirectCall _
+           when floc#has_call_target && floc#get_call_target#is_nonreturning ->
+         (* when finfo#is_nonreturning_call ctxtiaddr -> *)
          []
       | DirectCall op when
              op#is_absolute_address
@@ -533,9 +534,6 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
 	       false
              end) successors)
 
-let is_nr_call (floc:floc_int) (instr:assembly_instruction_int) =
-  let _ = check_non_returning floc in
-  floc#is_nonreturning_call
 
 let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
   let set_block_entry a = (!assembly_instructions#at_address a)#set_block_entry in    
@@ -550,7 +548,7 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       (Some [],prev,[])
     else if instr#is_block_entry then 
       (None,prev,[])
-    else if is_nr_call floc instr then
+    else if floc#has_call_target && floc#get_call_target#is_nonreturning then
       let _ = chlog#add "non-returning" floc#l#toPretty in
       (Some [],va,[])
     else if instr#is_inlined_call then
@@ -662,33 +660,37 @@ let record_call_targets () =
         begin
           f#iteri
             (fun _  ctxtiaddr instr ->
+              let loc = ctxt_string_to_location faddr ctxtiaddr in
+              let floc = get_floc loc in
               match instr#get_opcode with
               | DirectCall op when
                      op#is_absolute_address
                      && (get_function_info op#get_absolute_address)#is_dynlib_stub -> ()
               | DirectCall op | IndirectCall op ->
-                 if finfo#has_call_target ctxtiaddr then
-                   match finfo#get_call_target ctxtiaddr with
-                   | AppTarget a when has_callsemantics a ->
-                      (match  get_callsemantics_target a with
-                       | InlinedAppTarget _ ->
-                          begin
-                            finfo#set_call_target ctxtiaddr (get_callsemantics_target a) ;
-                            finfo#schedule_invariant_reset ;
-                            chlog#add "reset invariants" (LBLOCK [ finfo#a#toPretty ;
-                                                                   STR  ":" ; STR ctxtiaddr ])
+                 if floc#has_call_target
+                    && floc#get_call_target#is_app_call then
+                   let appaddr = floc#get_call_target#get_app_address in
+                   let ctinfo = get_callsemantics_target appaddr in
+                   if ctinfo#is_inlined_call then
+                     begin
+                       floc#set_call_target ctinfo ;
+                       finfo#schedule_invariant_reset ;
+                       chlog#add
+                         "reset invariants"
+                              (LBLOCK [ finfo#a#toPretty ;
+                                        STR  ":" ; STR ctxtiaddr ])
                           end
-                       | _ -> ())
-                   | _ -> ()
+                   else ()
                  else
                    begin
                      match get_so_target instr with
-                     | Some tgt -> finfo#set_so_target ctxtiaddr tgt
+                     | Some tgt -> floc#set_call_target (mk_so_target tgt)
                      | _ ->
                         if is_pic_so_target instr then
                           ()
                         else if op#is_absolute_address then
-                          finfo#set_app_target ctxtiaddr op#get_absolute_address
+                          floc#set_call_target
+                            (mk_app_target op#get_absolute_address)
                         else
                           ()
                    end
@@ -769,9 +771,9 @@ let associate_function_arguments_push () =
                end
             | DirectCall _ | IndirectCall _ ->
                let floc = get_floc loc in
-               if floc#has_call_target_signature then
-                 let api = floc#get_call_target_signature in
-                 match api.fapi_stack_adjustment with
+               if floc#has_call_target
+                  && floc#get_call_target#is_signature_valid then
+                 match floc#get_call_target#get_stack_adjustment with
                  | Some adj -> compensateForPop := !compensateForPop + (adj / 4)
                  | _ -> valid := false
                else ()
@@ -840,9 +842,9 @@ let associate_function_arguments_push () =
                    let numParams = semantics#get_parametercount in
                    identify_known_arguments ~callAddress:ctxtiaddr ~numParams ~block faddr
                 | DirectCall _ | IndirectCall _ ->
-                   if floc#has_call_target_signature
-                      && (not floc#get_call_target_signature.fapi_inferred) then
-                     let api = floc#get_call_target_signature in
+                   if floc#has_call_target
+                      && floc#get_call_target#is_signature_valid then
+                     let api = floc#get_call_target#get_signature in
                      let numParams = List.length (get_stack_parameter_names api) in
                      identify_known_arguments ~callAddress:ctxtiaddr ~numParams ~block faddr
                    else
@@ -964,9 +966,9 @@ let associate_function_arguments_mov () =
 		  let numParams = semantics#get_parametercount in
 		  identify_known_arguments ~callAddress:ctxtiaddr ~numParams ~block
 		| DirectCall _	| IndirectCall _ ->  
-		    if floc#has_call_target_signature && 
-		      (not floc#get_call_target_signature.fapi_inferred) then
-		      let api = floc#get_call_target_signature in
+		   if floc#has_call_target
+                      && floc#get_call_target#is_signature_valid then
+		      let api = floc#get_call_target#get_signature in
 		      let numParams = 
 			List.length (get_stack_parameter_names api) in
 		      identify_known_arguments ~callAddress:ctxtiaddr ~numParams ~block
@@ -977,8 +979,10 @@ let associate_function_arguments_mov () =
 	  )
       with
       | BCH_failure p ->
-	ch_error_log#add "associate function arguments (gcc)"
-	  (LBLOCK [ STR "Function " ; assemblyFunction#get_address#toPretty ; STR ": " ; p ])
+	 ch_error_log#add
+           "associate function arguments (gcc)"
+	   (LBLOCK [ STR "Function " ; assemblyFunction#get_address#toPretty ;
+                     STR ": " ; p ])
     )
 
 let associate_function_arguments () =
