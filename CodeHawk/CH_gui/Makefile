@@ -57,7 +57,7 @@ GUIMODULES := \
 
 all: canvaslib.cmxa 
 
-canvaslib.cmxa: $(GUILIBMODULES:%=%.cmx)
+canvaslib.cmxa: $(GUILIBMLIS:%=%.cmi) $(GUILIBMODULES:%=%.cmx)
 	$(CAMLLINKG) -a -o canvaslib.cmxa $(GUILIBMODULES:%=%.cmx) 
 
 jch_gui.cmxa: $(GUIMLIS:%=%.cmi) $(GUIMODULES:%=%.cmx)

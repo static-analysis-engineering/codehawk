@@ -66,10 +66,10 @@ make_dirs:
 
 defs: make_dirs libsum appsum constsum classsum structdef
 
-xanalyzer:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(X86LIB)/bchlibx86.cmxa $(ANALYZ)/bchanalyze.cmxa cmx/bCHVersion.cmx cmx/bCHXBinaryAnalyzer.cmx
+xanalyzer:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(X86LIB)/bchlibx86.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bCHVersion.cmi cmx/bCHVersion.cmx cmi/bCHXBinaryAnalyzer.cmi cmx/bCHXBinaryAnalyzer.cmx
 	$(CAMLLINK) -o chx86_analyze cmx/bCHVersion.cmx cmx/bCHXBinaryAnalyzer.cmx
 
-inspect: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa cmx/bCHXInspectSummaries.cmx
+inspect: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa cmi/bCHXInspectSummaries.cmi cmx/bCHXInspectSummaries.cmx
 	$(CAMLLINK) -o chx86_inspect_summaries $(OBJECTS) cmx/bCHXInspectSummaries.cmx
 
 export:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa cmx/bCHXSaveExports.cmx

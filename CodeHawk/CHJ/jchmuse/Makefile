@@ -81,16 +81,16 @@ make_dirs:
 
 
 # program to generate key-value pairs (MUSE)
-features: cmx/jCHXExtractFeatures.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHFEA)/jchfeatures.cmxa
+features: cmi/jCHXExtractFeatures.cmi cmx/jCHXExtractFeatures.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHFEA)/jchfeatures.cmxa
 	$(CAMLBUILD) -o chj_features cmx/jCHXExtractFeatures.cmx
 
-exprfeatures: cmx/jCHXExtractExprFeatures.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHFEA)/jchfeatures.cmxa
+exprfeatures: cmi/jCHXExtractExprFeatures.cmi cmx/jCHXExtractExprFeatures.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHFEA)/jchfeatures.cmxa
 	$(CAMLBUILD) -o chj_efeatures cmx/jCHXExtractExprFeatures.cmx
 
-poly: cmx/jCHXClassPoly.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+poly: cmi/jCHXClassPoly.cmi cmx/jCHXClassPoly.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLBUILDPOLY) -o chj_invariants cmx/jCHXClassPoly.cmx
 
-pattern: cmx/jCHXCollectPatterns.cmx  $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+pattern: cmi/jCHXCollectPatterns.cmi cmx/jCHXCollectPatterns.cmx  $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLBUILD) -o chj_patterns cmx/jCHXCollectPatterns.cmx
 
 cmi/%.cmi: %.mli

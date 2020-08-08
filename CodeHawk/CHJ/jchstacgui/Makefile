@@ -90,7 +90,7 @@ make_dirs:
 	@mkdir -p cmi
 
 
-jch_gui: $(CMIS) $(OBJECTS) cmx/jCHXStacGui.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHCOST)/jchcost.cmxa
+jch_gui: $(CMIS) $(OBJECTS) cmi/jCHXStacGui.cmi cmx/jCHXStacGui.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHCOST)/jchcost.cmxa
 	$(CAMLBUILD) -o chj_gui $(OBJECTS) cmx/jCHXStacGui.cmx
 
 cmi/%.cmi: %.mli

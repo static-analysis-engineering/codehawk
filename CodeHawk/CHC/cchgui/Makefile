@@ -80,7 +80,7 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-chc_gui: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(CCHPRE)/cchpre.cmxa cmx/chc_maingui.cmx
+chc_gui: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(CCHPRE)/cchpre.cmxa cmi/chc_maingui.cmi cmx/chc_maingui.cmx
 	$(CAMLLINK) -o chc_gui $(OBJECTS) cmx/chc_maingui.cmx
 
 cmi/%.cmi: %.mli
