@@ -99,7 +99,7 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-gui: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPS32LIB)/bchlibmips32.cmxa $(ANALYZ)/bchanalyze.cmxa cmx/bch_maingui.cmx
+gui: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPS32LIB)/bchlibmips32.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bch_maingui.cmi cmx/bch_maingui.cmx
 	$(CAMLBUILD) -o chx86_gui $(OBJECTS) cmx/bch_maingui.cmx
 
 cmi/%.cmi: %.mli

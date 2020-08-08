@@ -39,23 +39,23 @@ make_dirs:
 	@mkdir -p cmi
 
 # program to experiment with applying certain functionality to a single class
-experiment: cmx/jCHXClassExperiment.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+experiment: cmi/jCHXClassExperiment.cmi cmx/jCHXClassExperiment.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLBUILD) -o chj_experiment cmx/jCHXClassExperiment.cmx
 
 # program to generate xml starting point for library method summaries
-template: cmx/jCHXTemplate.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+template: cmi/jCHXTemplate.cmi cmx/jCHXTemplate.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLBUILD) -o chj_template cmx/jCHXTemplate.cmx
 
 # program to integrate platform-independent and platform dependent library summaries
-integrate: cmx/jCHXIntegrateSummaries.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+integrate: cmi/jCHXIntegrateSummaries.cmi cmx/jCHXIntegrateSummaries.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLBUILD) -o chj_integrate cmx/jCHXIntegrateSummaries.cmx
 
 # program to inspect library method summaries for syntactic correctness and semantic consistency
-inspect: cmx/jCHXInspectSummaries.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+inspect: cmi/jCHXInspectSummaries.cmi cmx/jCHXInspectSummaries.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLBUILD) -o chj_inspect cmx/jCHXInspectSummaries.cmx
 
 # program to generate class xml files with the signatures of native methods (NM)
-native: cmx/jCHXNativeMethodSignatures.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+native: cmi/jCHXNativeMethodSignatures.cmi cmx/jCHXNativeMethodSignatures.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLBUILD) -o chj_native cmx/jCHXNativeMethodSignatures.cmx
 
 
