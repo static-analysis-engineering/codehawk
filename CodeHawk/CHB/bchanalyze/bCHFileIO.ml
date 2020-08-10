@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -65,6 +66,7 @@ open BCHLibx86Types
 open BCHX86Dictionary
 
 (* bchlibmips32 *)
+open BCHMIPSAssemblyInstructions
 open BCHMIPSDictionary
 
 
@@ -211,6 +213,18 @@ let save_mips_dictionary () =
     mips_dictionary#write_xml fnode ;
     doc#setNode root ;
     root#appendChildren [ fnode ] ;
+    file_output#saveFile filename doc#toPretty
+  end
+
+let save_mips_assembly_instructions () =
+  let filename = get_mips_assembly_instructions_filename () in
+  let doc = xmlDocument () in
+  let root = get_bch_root "mips-assembly-instructions" in
+  let fnode = xmlElement "mips-assembly-instructions" in
+  begin
+    (!mips_assembly_instructions)#write_xml fnode;
+    doc#setNode root;
+    root#appendChildren [ fnode ];
     file_output#saveFile filename doc#toPretty
   end
 
