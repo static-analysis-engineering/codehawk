@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -90,9 +91,7 @@ object (self)
       id#write_xml_instr node instr floc restriction;
       id#write_xml_sp_offset node espoffset ;
       mips_dictionary#write_xml_mips_bytestring
-        node (byte_string_to_printed_string instr#get_instruction_bytes) ;
-      mips_dictionary#write_xml_mips_opcode_text
-        node (mips_opcode_to_string instr#get_opcode)
+        node (byte_string_to_printed_string instr#get_instruction_bytes)
     end
 
   method private write_xml_instructions (node:xml_element_int) =

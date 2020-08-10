@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -311,12 +312,10 @@ class type mips_dictionary_int =
     method index_mips_operand: mips_operand_int -> int
     method index_mips_opcode: mips_opcode_t -> int
     method index_mips_bytestring: string -> int
-    method index_mips_opcode_text: string -> int
     method index_mips_instr_format: mips_instr_format_t -> int
 
     method write_xml_mips_bytestring: ?tag:string -> xml_element_int -> string -> unit
     method write_xml_mips_opcode: ?tag:string -> xml_element_int -> mips_opcode_t -> unit
-    method write_xml_mips_opcode_text: ?tag:string -> xml_element_int -> string -> unit
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
@@ -343,12 +342,10 @@ object
   method is_delay_slot  : bool
   method is_inlined_call: bool
 
-  (* printing *)
+  (* i/o *)
+  method write_xml: xml_element_int -> unit
   method toString: string
   method toPretty: pretty_t
-
-  (* xml *)
-  method write_xml  : xml_element_int -> unit
 
 end
 
@@ -374,7 +371,8 @@ object
   method iteri: (int -> mips_assembly_instruction_int -> unit) -> unit
   method itera: (doubleword_int -> mips_assembly_instruction_int -> unit) -> unit (* provide virtual address *)
 
-  (* printing *)
+  (* i/o *)
+  method write_xml: xml_element_int -> unit
   method toString: ?filter:(mips_assembly_instruction_int -> bool) -> unit -> string
   method toPretty: pretty_t
 

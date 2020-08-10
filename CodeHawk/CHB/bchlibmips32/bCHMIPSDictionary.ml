@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -64,7 +65,6 @@ object (self)
   val mips_operand_table = mk_index_table "mips-operand-table"
   val mips_opcode_table = mk_index_table "mips-opcode-table"
   val mips_bytestring_table = mk_string_index_table "mips-bytestring-table"
-  val mips_opcode_text_table = mk_string_index_table "mips-opcode-text-table"
   val mips_instr_format_table = mk_index_table "mips-instr-format-table"
 
   val mutable tables = []
@@ -264,24 +264,17 @@ object (self)
 
   method index_mips_bytestring (s:string):int = mips_bytestring_table#add s
 
-  method index_mips_opcode_text  (s:string):int = mips_opcode_text_table#add s
-
   method write_xml_mips_bytestring ?(tag="ibt") (node:xml_element_int) (s:string) =
     node#setIntAttribute tag (self#index_mips_bytestring s)
 
   method write_xml_mips_opcode ?(tag="iopc") (node:xml_element_int) (opc:mips_opcode_t) =
     node#setIntAttribute tag (self#index_mips_opcode opc)
       
-  method write_xml_mips_opcode_text ?(tag="itxt") (node:xml_element_int) (s:string) =
-    node#setIntAttribute tag (self#index_mips_opcode_text s)
-
   method write_xml (node:xml_element_int) =
     let bnode = xmlElement mips_bytestring_table#get_name in
-    let snode = xmlElement mips_opcode_text_table#get_name in
     begin
       mips_bytestring_table#write_xml bnode ;
-      mips_opcode_text_table#write_xml snode ;
-      node#appendChildren [ bnode ; snode ] ;
+      node#appendChildren [ bnode ] ;
       node#appendChildren
         (List.map
            (fun t ->
@@ -293,7 +286,6 @@ object (self)
     let getc = node#getTaggedChild in
     begin
       mips_bytestring_table#read_xml (getc mips_bytestring_table#get_name) ;
-      mips_opcode_text_table#read_xml (getc mips_opcode_text_table#get_name) ;
       List.iter (fun t -> t#read_xml (getc t#get_name)) tables
     end
 
