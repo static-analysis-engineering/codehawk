@@ -44,6 +44,7 @@ jar -cf bchsummaries.jar \
   shell32_dll \
   shlwapi_dll \
   so_functions \
+  syscalls \
   spoolss_dll \
   user32_dll \
   version_dll \
