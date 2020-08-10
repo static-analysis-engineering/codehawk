@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -681,6 +682,14 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
   | _ ->
      ()
 
+let set_syscall_target (floc:floc_int) (op:mips_operand_int) =
+  let opval = op#to_expr floc in
+  let tgtindex = floc#inv#rewrite_expr opval floc#env#get_variable_comparator in
+  match tgtindex with
+  | XConst (IntConst n) ->
+     floc#set_call_target (mk_syscall_target n#toInt)
+  | _ -> ()
+
 let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
   let _ =
     f#iteri
@@ -709,6 +718,14 @@ let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
              | _ ->
                 pr_debug [ floc#l#toPretty ; STR ": ra = " ; x2p ra ; NL ]
            end
+        | Syscall _ ->
+           let floc = get_floc loc in
+           if (floc#has_call_target && floc#get_call_target#is_unknown)
+              || not floc#has_call_target then
+             let v0_op = mips_register_op MRv0 RD in
+             set_syscall_target floc v0_op
+           else
+             ()
         | _ ->
            ()) in
   ()

@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -130,9 +131,13 @@ object (self)
     let rewrite_expr x:xpr_t =
       let rec expand x =
         match x with
-        | XVar v when floc#env#is_global_variable v
-                      && elf_header#is_program_address (floc#env#get_global_variable_address v) ->
-           num_constant_expr (elf_header#get_program_value (floc#env#get_global_variable_address v))#to_numerical 
+        | XVar v
+             when floc#env#is_global_variable v
+                  && elf_header#is_program_address
+                       (floc#env#get_global_variable_address v) ->
+           num_constant_expr
+             (elf_header#get_program_value
+                (floc#env#get_global_variable_address v))#to_numerical
         | XVar v when floc#env#is_symbolic_value v ->
            expand (floc#env#get_symbolic_value_expr v)
         | XOp (op,l) -> XOp (op, List.map expand l)
@@ -325,7 +330,7 @@ object (self)
       | JumpLink _ | BranchLink _
            when floc#has_call_target
                 && floc#get_call_target#is_signature_valid ->
-         let args = List.map snd floc#get_call_args in
+         let args = List.map snd floc#get_mips_call_arguments in
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
          if (List.length args) > 0 then 
            ([ xtag ], (List.map xd#index_xpr args)
@@ -342,7 +347,7 @@ object (self)
       | JumpLinkRegister _
            when floc#has_call_target
                   && floc#get_call_target#is_signature_valid ->
-         let args = List.map snd floc#get_call_args in
+         let args = List.map snd floc#get_mips_call_arguments in
          let args = List.map rewrite_expr args in
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
          if (List.length  args) > 0 then
@@ -360,7 +365,7 @@ object (self)
       | JumpRegister _
            when floc#has_call_target
                   && floc#get_call_target#is_signature_valid ->
-         let args = List.map snd floc#get_call_args in
+         let args = List.map snd floc#get_mips_call_arguments in
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
          if (List.length  args) > 0 then
            ([ xtag ], (List.map xd#index_xpr args)
@@ -685,6 +690,21 @@ object (self)
          let rresult = rewrite_expr result in
          ([ "a:vxxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
                           xd#index_xpr result ; xd#index_xpr rresult ])
+
+      | Syscall _ when floc#has_call_target ->
+         let args = List.map snd floc#get_mips_call_arguments in
+         let args = List.map rewrite_expr args in
+         let xargs = List.map xd#index_xpr args in
+         let xargs = xargs @ [ ixd#index_call_target floc#get_call_target#get_target ] in
+         let xtag = "a:" ^ (string_repeat "x" ((List.length args) + 1)) in
+         let syscallindex = floc#env#mk_mips_register_variable MRv0 in
+         let syscallindex = rewrite_expr (XVar syscallindex) in
+         ([ xtag ],[ xd#index_xpr syscallindex ] @ xargs)
+
+      | Syscall _ ->
+         let arg = floc#env#mk_mips_register_variable MRv0 in
+         let argval = rewrite_expr (XVar arg) in
+         ([ "a:x" ],[ xd#index_xpr argval ])
 
       | Xor (dst,src1,src2) ->
          let lhs = dst#to_variable floc in

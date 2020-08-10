@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +32,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
@@ -202,7 +204,24 @@ object (self)
       (fun i instr -> if i < len / 4 then f i instr else ())
 
   method itera (f:doubleword_int -> mips_assembly_instruction_int -> unit) =
-    self#iteri (fun i instr -> f (codeBase#add_int (i*4)) instr) 
+    self#iteri (fun i instr -> f (codeBase#add_int (i*4)) instr)
+
+  method write_xml (node:xml_element_int) =
+    let bnode = ref (xmlElement "b") in
+    self#itera
+      (fun va instr ->
+        let _ =
+          if instr#is_block_entry then
+            begin
+              bnode := xmlElement "b" ;
+              (!bnode)#setAttribute "ba" va#to_hex_string ;
+              node#appendChildren [ !bnode ]
+            end in
+        let inode = xmlElement "i" in
+        begin
+          instr#write_xml inode;
+          (!bnode)#appendChildren [ inode ]
+        end)
 
   method toString ?(filter = fun _ -> true) () =
     let stringList = ref [] in
