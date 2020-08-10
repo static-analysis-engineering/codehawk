@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -170,6 +171,7 @@ object (self)
       | FrozenTestValue (v,a1,a2) ->
          (tags @ [ a1 ; a2 ],[ xd#index_variable v ])
       | FunctionReturnValue a -> (tags @ [ a ],[])
+      | SyscallErrorReturnValue a -> (tags @ [ a ],[])
       | FunctionPointer (s1,s2,a) ->
          (tags @ [ a ],[ bd#index_string s1 ; bd#index_string s2 ])
       | CallTargetValue t -> (tags, [ id#index_call_target t ])
@@ -195,6 +197,7 @@ object (self)
     | "iv" -> InitialMemoryValue (xd#get_variable (a 0))
     | "ft" -> FrozenTestValue (xd#get_variable (a 0), t 1, t 2)
     | "fr" -> FunctionReturnValue (t 1)
+    | "ev" -> SyscallErrorReturnValue (t 1)
     | "fp" -> FunctionPointer (bd#get_string (a 0), bd#get_string (a 1), t 1)
     | "ct" -> CallTargetValue (id#get_call_target (a 0))
     | "se" -> SideEffectValue (t 1, bd#get_string (a 0), (a 1) = 1)

@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -267,9 +268,10 @@ object
     | SOFunction _ -> "so"
     | DllFunction _ -> "dll"
     | JniFunction _ -> "jni"
+    | LinuxSyscallFunction _ -> "sc"
     | PckFunction _ -> "pck"
 
-  method tags = [ "dll"; "jni"; "pck"; "so" ]
+  method tags = [ "dll"; "jni"; "pck"; "so"; "sc" ]
 
 end
 
@@ -383,6 +385,7 @@ object
     | InitialMemoryValue _ -> "iv"
     | FrozenTestValue _ -> "ft"
     | FunctionReturnValue _ -> "fr"
+    | SyscallErrorReturnValue _ -> "ev"
     | FunctionPointer _ -> "fp"
     | CallTargetValue _ -> "ct"
     | SideEffectValue _ -> "se"

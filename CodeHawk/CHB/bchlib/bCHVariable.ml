@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -104,7 +105,8 @@ and aux_var_to_pretty (v:constant_value_variable_t) =
   | FrozenTestValue (fv,taddr,jaddr) -> 
     LBLOCK [ STR "Frozen(" ; fv#toPretty ; STR " )@ " ; STR taddr ;
 	     STR " for " ; STR jaddr ]
-  | FunctionReturnValue addr -> LBLOCK [ STR "Return(" ; STR addr ]
+  | FunctionReturnValue addr -> LBLOCK [ STR "Return(" ; STR addr ; STR ")"]
+  | SyscallErrorReturnValue addr -> LBLOCK [ STR "ErrorValue(" ; STR addr ; STR ")" ]
   | FunctionPointer (f,c,addr) -> 
     LBLOCK [ STR "FunctionP(" ; STR f ; STR "," ; STR c ; STR "," ; STR addr ; STR ")" ]
   | CallTargetValue tgt -> 
@@ -155,6 +157,7 @@ object (self:'a)
 	| FunctionPointer (fname,cname,address) -> 
 	  "fp_" ^ fname ^ "_" ^ cname ^ "_" ^ address
 	| FunctionReturnValue address -> "rtn_" ^ address
+        | SyscallErrorReturnValue address -> "errval_" ^ address
 	| CallTargetValue tgt -> 
 	  (match tgt with
 	  | StubTarget fs -> "stub:" ^ (function_stub_to_string fs)
