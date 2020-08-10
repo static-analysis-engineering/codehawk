@@ -39,6 +39,8 @@ val mk_dll_target: string -> string -> call_target_info_int
 
 val mk_so_target: string -> call_target_info_int
 
+val mk_syscall_target: int -> call_target_info_int
+
 val mk_jni_target: int -> call_target_info_int
 
 val mk_virtual_target: function_api_t -> call_target_info_int

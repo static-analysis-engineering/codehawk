@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1252,6 +1253,7 @@ type function_api_t = {
   fapi_rv_roles  : (string * string) list ;
   fapi_stack_adjustment: int option ;
   fapi_jni_index: int option ;
+  fapi_syscall_index: int option ;
   fapi_calling_convention: string ;
   fapi_registers_preserved: register_t list ; 
   (* default PE: all are preserved except Eax, Ecx, Edx *)
@@ -1282,6 +1284,7 @@ type function_stub_t =
   | DllFunction of string * string (* PE *)
   | JniFunction of int  (* Java Native Methods, call on ( *env) where env is the
         first argument on the calling function, with the jni identification number *)
+  | LinuxSyscallFunction of int (* numbers ranging from 4000 to 4999 *)
   | PckFunction of string * string list * string   (* PE, with package names *)
                  
 (* Call target types:
@@ -1392,21 +1395,22 @@ type function_documentation_t = {
 class type function_summary_int =
 object ('a)
   (* accessors *)
-  method get_function_api          : function_api_t 
-  method get_function_semantics    : function_semantics_t
+  method get_function_api: function_api_t 
+  method get_function_semantics: function_semantics_t
   method get_function_documentation: function_documentation_t
 
-  method get_name               : string
-  method get_parameters         : api_parameter_t list
-  method get_returntype         : btype_t
-  method get_stack_adjustment   : int option
-  method get_jni_index          : int
+  method get_name: string
+  method get_parameters: api_parameter_t list
+  method get_returntype: btype_t
+  method get_stack_adjustment: int option
+  method get_jni_index: int
+  method get_syscall_index: int
 
-  method get_preconditions      : precondition_t list
-  method get_postconditions     : postcondition_t list
+  method get_preconditions: precondition_t list
+  method get_postconditions: postcondition_t list
   method get_errorpostconditions: postcondition_t list
-  method get_sideeffects        : sideeffect_t list
-  method get_io_actions         : io_action_t list
+  method get_sideeffects: sideeffect_t list
+  method get_io_actions: io_action_t list
 
   method get_enums_referenced: string list
   method get_enum_type: api_parameter_t -> (btype_t * bool) option  (* name, specified as flags *)
@@ -1414,17 +1418,17 @@ object ('a)
   method get_registers_preserved: register_t list   (* deviation from default (Eax,Ecx,Edx) *)
 
   (* modifiers *)
-  method modify_types           : string -> type_transformer_t -> 'a
+  method modify_types: string -> type_transformer_t -> 'a
 
   (* predicates *)
-  method sets_errno             : bool
+  method sets_errno: bool
   method has_unknown_sideeffects: bool
-  method is_nonreturning        : bool
-  method is_jni_function        : bool
-  method is_api_inferred        : bool
+  method is_nonreturning: bool
+  method is_jni_function: bool
+  method is_api_inferred: bool
 
   (* i/o *)
-  method toPretty               : pretty_t
+  method toPretty: pretty_t
 end
 
 
@@ -1494,27 +1498,29 @@ object
   method read_summary_files: unit
     
   (* accessors *)
-  method get_function_dll   : string -> string   (* dll from which function was loaded *)
-  method get_dll_function   : string -> string -> function_summary_int
-  method get_so_function    : string -> function_summary_int
-  method get_lib_function   : string list -> string -> function_summary_int
+  method get_function_dll: string -> string   (* dll from which function was loaded *)
+  method get_dll_function: string -> string -> function_summary_int
+  method get_so_function: string -> function_summary_int
+  method get_lib_function: string list -> string -> function_summary_int
   method search_for_library_function: string -> string option (* returns dll for function name *)
-  method get_jni_function       : int -> function_summary_int
-  method get_library_functions  : function_summary_int list
+  method get_syscall_function: int -> function_summary_int
+  method get_jni_function: int -> function_summary_int
+  method get_library_functions: function_summary_int list
 
   (* predicates *)
-  method has_function_dll : string -> bool (* true if fname came from a dll *)
-  method has_dllname      : string -> bool (* true if a function was loaded from this dll *)
-  method has_dll_function : string -> string -> bool (* tries to locate the summary, true if
+  method has_function_dll: string -> bool (* true if fname came from a dll *)
+  method has_dllname: string -> bool (* true if a function was loaded from this dll *)
+  method has_dll_function: string -> string -> bool (* tries to locate the summary, true if
                                                     successful *)
-  method has_so_function  : string -> bool
-  method has_lib_function : string list -> string -> bool
-  method has_jni_function : int -> bool (* tries to locate the summary, true if
+  method has_so_function: string -> bool
+  method has_lib_function: string list -> string -> bool
+  method has_syscall_function: int -> bool
+  method has_jni_function: int -> bool (* tries to locate the summary, true if
                                                     successful *)
 
   (* xml *)
   method write_xml_requested_summaries: xml_element_int -> unit
-  method write_xml_missing_summaries  : xml_element_int -> unit
+  method write_xml_missing_summaries: xml_element_int -> unit
 end
 
 (* =============================================================== Cpp class === *)
@@ -1668,6 +1674,7 @@ and constant_value_variable_t =
       * ctxt_iaddress_t     (* address of test instruction *)
       * ctxt_iaddress_t     (* address of jump instruction *)
   | FunctionReturnValue  of ctxt_iaddress_t              (* call site *)
+  | SyscallErrorReturnValue of ctxt_iaddress_t           (* call site *)
   | FunctionPointer of
       string                (* name of function *)
       * string              (* name of creator *)

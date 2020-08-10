@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +40,7 @@ let function_stub_to_string (s:function_stub_t) =
   | SOFunction name -> name
   | DllFunction (dll,name) -> "(" ^ dll ^ ":" ^ name ^ ")"
   | JniFunction i -> "jni(" ^ (string_of_int i) ^ ")"
+  | LinuxSyscallFunction i -> "linux_syscall(" ^ (string_of_int i) ^ ")"
   | PckFunction (lib,pckgs,name) ->
      "(" ^ lib ^ ":" ^  (String.concat "::" pckgs)  ^ ":" ^ name
 
@@ -48,6 +50,8 @@ let function_stub_to_pretty (s:function_stub_t) =
   | DllFunction (dll,name) ->
      LBLOCK [ STR "(" ; STR  dll ; STR ":" ;  STR name ; STR ")" ]
   | JniFunction i -> LBLOCK [ STR "jni(" ; INT i ; STR ")" ]
+  | LinuxSyscallFunction i ->
+     LBLOCK [ STR "linux_syscall(" ; INT i ; STR ")" ]
   | PckFunction (lib,pckgs,name) ->
     LBLOCK [ STR "lib:" ; STR lib ; STR ":" ;
 	     pretty_print_list pckgs (fun s -> STR s) "" "::" "" ; STR name ;
@@ -65,6 +69,9 @@ let function_stub_compare (s1:function_stub_t)  (s2:function_stub_t) =
   | (JniFunction i1, JniFunction i2) -> P.compare i1 i2
   | (JniFunction _, _) -> -1
   | (_, JniFunction _) -> 1
+  | (LinuxSyscallFunction i1, LinuxSyscallFunction i2) -> P.compare i1 i2
+  | (LinuxSyscallFunction _, _) -> -1
+  | (_, LinuxSyscallFunction _) -> 1
   | (PckFunction (lib1,p1,n1),PckFunction (lib2,p2,n2)) ->
      let l0 = P.compare lib1 lib2 in
      if l0 = 0 then
