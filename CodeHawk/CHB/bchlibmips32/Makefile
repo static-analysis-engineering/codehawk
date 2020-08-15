@@ -14,7 +14,6 @@ ELFLIB = $(CHB)/bchlibelf
 CAMLDOC := ocamldoc
 
 CAMLC := ocamlopt  -I str -I cmi -I cmx \
-	-I $(CAML)/lib/ocaml \
 	-I $(EXTLIB) \
 	-I $(ZIPLIB) \
 	-I $(ZARITHLIB) \
