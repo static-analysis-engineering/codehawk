@@ -219,13 +219,27 @@ let disassemble_mips_sections () =
            jr     $t9
            addiu  $t8, $t7, xxx    (not included in the check)
 
+     b   : lw     $t9,...
+           move   $t7,ra
+           jalr   $ra,$t9
+           li     $t8,xxx
+
      None otherwise
+
+strings: 
+     1080998f 2578e003 09f82003 0b001824
+     1080998f 2578e003 09f82003 0c001824
    *)
+
+  let is_library_stub instrs =
+    let regex = Str.regexp "1080998f2578e00309f82003\\(..\\)001824" in
+    Str.string_match regex instrs 0
+  
 let extract_so_symbol (opcodes:mips_opcode_t list) =
   match opcodes with
   | [ LoadUpperImmediate (tmp,imm16) ;
       LoadWord (dst,src) ;
-      JumpRegister tgt ] ->
+      JumpRegister tgt ; _ ] ->
      (match (tmp#get_kind, src#get_kind) with
       | (MIPSReg r1, MIPSIndReg (r2,offset)) when r1 = r2 ->
          (match dst#get_kind with
@@ -233,6 +247,28 @@ let extract_so_symbol (opcodes:mips_opcode_t list) =
              let addr = (imm16#to_numerical#toInt lsl 16) + offset#toInt in
              Some (int_to_doubleword addr)
           | _ -> None)
+      | _ -> None)
+  | [ LoadWord (dst1,src1);
+      Or (dst2,src21,src22);
+      JumpLinkRegister (ra3,tgt3);
+      LoadImmediate (dst4,imm4) ] ->
+     (match (dst1#get_kind,
+             dst2#get_kind,
+             src21#get_kind,
+             src22#get_kind,
+             ra3#get_kind,
+             tgt3#get_kind,
+             dst4#get_kind,
+             imm4#get_kind) with
+      | (MIPSReg MRt9,      (* dst1 *)
+         MIPSReg MRt7,      (* dst2 *)
+         MIPSReg MRra,      (* src21 *)
+         MIPSReg MRzero,    (* src22 *)
+         MIPSReg MRra,      (* ra3 *)
+         MIPSReg MRt9,      (* tgt3 *)
+         MIPSReg MRt9,      (* dst4 *)
+         MIPSImmediate imm) ->  (* imm4 *)
+         Some (int_to_doubleword imm#to_numerical#toInt)
       | _ -> None)
   | _ -> None
 
@@ -243,7 +279,8 @@ let get_so_target (instr:mips_assembly_instruction_int) =
       let tgtopc1 = get_tgtopc tgtaddr in
       let tgtopc2 = get_tgtopc (tgtaddr#add_int 4) in
       let tgtopc3 = get_tgtopc (tgtaddr#add_int 8) in
-      extract_so_symbol [ tgtopc1; tgtopc2; tgtopc3 ]
+      let tgtopc4 = get_tgtopc (tgtaddr#add_int 12) in
+      extract_so_symbol [ tgtopc1; tgtopc2; tgtopc3; tgtopc4 ]
     with
     | BCH_failure p ->
        raise (BCH_failure
@@ -543,10 +580,7 @@ let construct_functions f =
   let functionentrypoints = functions_data#get_function_entry_points in
   let count = ref 0 in
   List.iter (fun faddr ->
-      let fndata = functions_data#get_function faddr in
-      if fndata#is_library_stub then
-        ()
-      else
+      let default () =
         try
           begin
             count := !count + 1;
@@ -557,7 +591,28 @@ let construct_functions f =
         | BCH_failure p ->
            ch_error_log#add
              "construct functions"
-             (LBLOCK [ STR "function " ; faddr#toPretty ; STR ": " ; p ])
+             (LBLOCK [ STR "function " ; faddr#toPretty ; STR ": " ; p ]) in
+      let fndata = functions_data#get_function faddr in
+      if fndata#is_library_stub then
+        ()
+      else if fndata#has_name then
+        let instrs =
+          List.map !mips_assembly_instructions#at_address
+            [ faddr; faddr#add_int 4 ; faddr#add_int 8; faddr#add_int 12 ] in
+        let instrstr =
+          String.concat ""
+            (List.map (fun i -> i#get_bytes_ashexstring) instrs) in
+        if is_library_stub instrstr then
+          begin
+            fndata#set_library_stub;
+            chlog#add
+              "ELF library stub"
+              (LBLOCK [ faddr#toPretty ; STR ": " ; STR fndata#get_function_name ])
+          end
+        else
+          default ()
+      else
+        default ()
     ) functionentrypoints
 
 
@@ -572,7 +627,8 @@ let record_call_targets () =
               match instr#get_opcode with
               | BranchLink op
               | JumpLink op ->
-                 if finfo#has_call_target ctxtiaddr then
+                 if finfo#has_call_target ctxtiaddr
+                    && not (finfo#get_call_target ctxtiaddr)#is_unknown then
                    ()
                  else
                    begin
@@ -620,6 +676,17 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
      let dw = numerical_to_doubleword c in
      if mips_assembly_functions#has_function_by_address dw then
        floc#set_call_target (mk_app_target dw)
+     else if functions_data#is_function_entry_point dw then
+       let fndata = functions_data#get_function dw in
+       if fndata#has_name then
+         let name = List.hd fndata#get_names in
+         let _ = chlog#add "look for library function" (STR name) in
+         if function_summary_library#has_so_function name then
+           floc#set_call_target (mk_so_target name)
+         else
+           ()
+       else
+         ()
      else
        ()
   | XVar v when env#is_global_variable v ->
