@@ -116,6 +116,7 @@ let rec sim_expr (m:bool) (e:xpr_t):(bool * xpr_t) =
        | XGe -> reduce_ge m s1 s2
        | XEq -> reduce_eq m s1 s2
        | XNe -> reduce_ne m s1 s2
+       | XBOr -> reduce_bor m s1 s2
        | XLOr -> reduce_or m s1 s2
        | XShiftlt -> reduce_shiftleft m s1 s2
        | XShiftrt -> reduce_shiftright m s1 s2
@@ -820,6 +821,12 @@ and reduce_logical_not m e =
   | XOp (XEq, [ e1 ; e2 ]) -> (true, XOp (XNe, [ e1 ; e2 ]))
   | XOp (XNe, [ e1 ; e2 ]) -> (true, XOp (XEq, [ e1 ; e2 ]))
   | _ -> default
+
+and reduce_bor m e1 e2 =
+  let default = (m, XOp (XBOr, [e1 ; e2])) in
+  if is_zero e1 then (true, e2)
+  else if is_zero e2 then (true, e1)
+  else default
 
 and reduce_or m e1 e2 =
   let default = (m, XOp (XLOr, [e1 ; e2])) in
