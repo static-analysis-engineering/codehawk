@@ -120,7 +120,7 @@ let stack_offset_to_name offset =
   | ConstantOffset (n,NoOffset) when n#lt numerical_zero ->
      "var." ^ (constant_offset_to_neg_suffix_string n)
   | ConstantOffset (n,NoOffset) when n#equal numerical_zero ->
-     "return-address"
+     "var.0000"
   | _ -> "var.[" ^ (memory_offset_to_string offset) ^ "]"
 
 let global_offset_to_name offset =

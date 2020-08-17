@@ -93,10 +93,17 @@ object (self)
   method get_function_name =
     if self#has_name then
       let make_name name = demangle name in
-      match names with
-      | [ name ] -> make_name name
-      | name :: tl -> (make_name name) ^ " (+" ^ (string_of_int (List.length tl)) ^ ")"
-      | _ -> raise (BCH_failure (STR "Internal error in get_function_name"))
+      let rec aux thisnames =
+        match thisnames with
+        | [ name ] -> make_name name
+        | name :: tl ->
+           let name = make_name name in
+           if String.contains name '@' then
+             aux tl
+           else
+             name
+        | _ -> raise (BCH_failure (STR "Internal error in get_function_name")) in
+      aux names
     else
       raise (BCH_failure (LBLOCK [ STR "Function at address: " ; fa#toPretty ;
                                    STR " does not have a name" ]))
