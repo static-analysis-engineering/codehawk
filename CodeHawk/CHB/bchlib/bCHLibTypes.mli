@@ -2095,12 +2095,14 @@ class type interface_dictionary_int =
     method write_xml_bterm: ?tag:string -> xml_element_int -> bterm_t -> unit
     method write_xml_function_stub: ?tag:string -> xml_element_int -> function_stub_t -> unit
     method write_xml_call_target: ?tag:string -> xml_element_int -> call_target_t -> unit
+    method write_xml_function_api: ?tag:string -> xml_element_int -> function_api_t -> unit
         
     method read_xml_parameter_location: ?tag:string -> xml_element_int -> parameter_location_t
     method read_xml_api_parameter: ?tag:string -> xml_element_int -> api_parameter_t
     method read_xml_bterm: ?tag:string -> xml_element_int -> bterm_t
     method read_xml_function_stub: ?tag:string -> xml_element_int -> function_stub_t
     method read_xml_call_target: ?tag:string -> xml_element_int -> call_target_t
+    method read_xml_function_api: ?tag:string -> xml_element_int -> function_api_t
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit

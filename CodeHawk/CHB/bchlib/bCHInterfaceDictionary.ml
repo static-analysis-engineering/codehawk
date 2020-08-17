@@ -255,7 +255,7 @@ object (self)
       fapi_syscall_index = if (a 8) = (-1) then None else Some (a 8);
       fapi_calling_convention = t 0;
       fapi_registers_preserved =
-        (List.map bd#get_register  (get_list_suffix args 9));
+        (List.map bd#get_register  (get_list_suffix args 10));
       fapi_inferred = (a 9) = 1 }
                  
 
@@ -380,6 +380,14 @@ object (self)
   method read_xml_api_parameter
            ?(tag="iapi") (node:xml_element_int):api_parameter_t =
     self#get_api_parameter (node#getIntAttribute tag)
+
+  method write_xml_function_api
+           ?(tag="ifapi") (node:xml_element_int) (fapi:function_api_t) =
+    node#setIntAttribute tag (self#index_function_api fapi)
+
+  method read_xml_function_api
+           ?(tag="ifapi") (node:xml_element_int):function_api_t =
+    self#get_function_api (node#getIntAttribute tag)
 
   method write_xml_bterm ?(tag="ibt") (node:xml_element_int) (t:bterm_t) =
     node#setIntAttribute tag (self#index_bterm t)
