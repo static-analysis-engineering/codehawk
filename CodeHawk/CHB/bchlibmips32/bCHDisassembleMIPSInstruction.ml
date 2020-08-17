@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -204,6 +205,19 @@ let parse_R2_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int
        OpInvalid
      end
 
+let parse_R3_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int) =
+  let rd = select_mips_reg rrd in
+  let rt = select_mips_reg rrt in
+  let r_op = mips_register_op in
+  match samt with
+  | 16 -> SignExtendByte (r_op rd WR, r_op rt RD)
+  | 24 -> SignExtendHalfword (r_op rd WR, r_op rt RD)
+  | _ ->
+     begin
+       pverbose [ STR "    R3-opcode: " ; INT samt ; NL ] ;
+       OpInvalid
+     end
+
 let parse_FPCM_opcode (opc:int) (rrs:int) (cc:int) (tf:int) (rrd:int) (funct:int) =
   let rs = select_mips_reg rrs in
   let rd = select_mips_reg rrd in
@@ -328,6 +342,7 @@ let parse_opcode
     | JType (opc,tgt) -> parse_J_opcode ch base opc tgt
     | RType (opc,rs,rt,rd,sa,fn) -> parse_R_opcode opc rs rt rd sa fn
     | R2Type (opc,rs,rt,rd,sa,fn) -> parse_R2_opcode opc rs rt rd sa fn
+    | R3Type (opc,rs,rt,rd,sa,fn) -> parse_R3_opcode opc rs rt rd sa fn
     | FPMCType (opc,rs,cc,tf,rd,funct) -> parse_FPCM_opcode opc rs cc tf rd funct
     | FPRIType (opc,sub,rt,fs) -> parse_FPRI_opcode opc sub rt fs
     | FPRType (opc,fmt,ft,fs,fd,funct) -> parse_FPR_opcode opc fmt ft fs fd funct

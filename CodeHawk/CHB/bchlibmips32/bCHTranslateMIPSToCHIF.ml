@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -768,6 +769,20 @@ let translate_mips_instruction
      let rhs2 = rs#to_expr floc in
      let result = XOp (XShiftrt, [ rhs1 ; rhs2 ]) in
      let cmds = floc#get_assign_commands lhs result in
+     default (lhscmds @ cmds)
+
+  | SignExtendByte (rd,rt) ->        (* TODO: constrain rhs to byte *)
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = rd#to_lhs floc in
+     let rhs = rt#to_expr floc in
+     let cmds = floc#get_assign_commands lhs rhs in
+     default (lhscmds @ cmds)
+
+  | SignExtendHalfword (rd,rt) ->    (* TODO: constrain rhs to half word *)
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = rd#to_lhs floc in
+     let rhs = rt#to_expr floc in
+     let cmds = floc#get_assign_commands lhs rhs in
      default (lhscmds @ cmds)
 
   | StoreByte (dst,src) ->

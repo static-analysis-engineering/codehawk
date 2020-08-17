@@ -147,6 +147,14 @@ let decompose_instr (dw:doubleword_int):mips_instr_format_t =
      let shamt = (dwlow lsr 6) mod 32 in
      let funct = dwlow mod 64 in
      R2Type (opcode,rs,rt,rd,shamt,funct)
+  (* SPECIAL3:31, rs:5, rt:5, rd:5, shamt:5, bshfl:6 *)
+  | 31 ->
+     let rs = (dwhigh lsr 5) mod 32 in
+     let rt = dwhigh mod 32 in
+     let rd = dwlow lsr 11 in
+     let shamt = (dwlow lsr 6) mod 32 in
+     let funct = dwlow mod 64 in
+     R3Type (opcode,rs,rt,rd,shamt,funct)
   (* COP1:6, fmt:5, ft:5, fs:5, cc:3, 0:2, function:6 *)
   | 17 ->
      let fmt = (dwhigh lsr 5) mod 32 in
@@ -197,7 +205,9 @@ let instr_format_to_string (fmt:mips_instr_format_t) =
   | RType (opcode,rs,rt,rd,shamt,funct) ->
      "R" ^ (f [ opcode ; rs ; rt ; rd ; shamt ; funct ])
   | R2Type (opcode,rs,rt,rd,shamt,funct) ->
-     "R2" ^  (f [ opcode ; rs ; rt ; rd ; shamt ; funct ])
+     "R2" ^ (f [ opcode ; rs ; rt ; rd ; shamt ; funct ])
+  | R3Type (opcode,rs,rt,rd,shamt,funct) ->
+     "R3" ^ (f [ opcode ; rs ; rt ; rd ; shamt ; funct ])
   | JType (opcode,addr) ->
      "J" ^ (f [ opcode ; addr ])
   | IType (opcode,rs,rt,imm) ->

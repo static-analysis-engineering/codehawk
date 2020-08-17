@@ -632,7 +632,21 @@ object (self)
          let result = XOp (XShiftrt, [ rhs1 ; rhs2 ]) in
          let rresult = rewrite_expr result in
          ([ "a:vxxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
-                          xd#index_xpr result ; xd#index_xpr rresult ])         
+                          xd#index_xpr result ; xd#index_xpr rresult ])
+
+      | SignExtendByte (dst,src) ->
+         let rhs = src#to_expr floc in
+         let lhs = dst#to_variable floc in
+         let rrhs = rewrite_expr rhs in
+         ([ "a:vxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
+                        xd#index_xpr rrhs ])
+
+      | SignExtendHalfword (dst,src) ->
+         let rhs = src#to_expr floc in
+         let lhs = dst#to_variable floc in
+         let rrhs = rewrite_expr rhs in
+         ([ "a:vxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
+                        xd#index_xpr rrhs ])
 
       | StoreByte (dst,src) ->
          let addr = rewrite_expr (dst#to_address floc) in

@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -55,6 +56,7 @@ object
     | SyscallType _ -> "sc"
     | RType _ -> "r"
     | R2Type _ -> "r2"
+    | R3Type _ -> "r3"
     | IType _ -> "i"
     | JType _ -> "j"
     | FPMCType _ -> "fpmc"
@@ -65,7 +67,8 @@ object
     | FPICCType _ -> "fpicc"
 
   method tags =
-    [ "r" ; "i" ; "j" ; "fpmc" ; "fprmc" ; "fpr" ; "fpri" ;  "fpc" ; "fpicc" ]
+    [ "r" ; "i" ; "j" ; "fpmc" ; "fprmc" ; "fpr" ; "fpri" ;  "fpc" ; "fpicc" ;
+      "r2" ; "r3" ]
 
 end
 
