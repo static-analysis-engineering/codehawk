@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1069,6 +1070,41 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = false ;
       ida_asm    = (fun f -> f#ops "mul" [ rd ; rs ; rt ])
     }
+
+  (* ------------------------------------------------------------ R3Type  --- *)
+
+  (* ------------------------------------------------------------------------
+   * Format: SEB rd, rt
+   * Description: GPR[rd] <- SignExtend(GPR[rt](7..0))
+   * -----------------------------------------------------------------------
+   * The least significant byte from rt is sign-extended and store in rd
+   * -----------------------------------------------------------------------
+   * Operation
+   *  GPR[rd] <- sign_extend(GPR[rt](7..0))
+   * ----------------------------------------------------------------------- *)
+  | SignExtendByte (rd,rt) -> {
+      mnemonic   = "seb";
+      operands   = [ rd; rt ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "seb" [ rd; rt ])
+    }
+
+  (* ------------------------------------------------------------------------
+   * Format: SEH rd, rt
+   * Description: GPR[rd] <- SignExtend(GPR[rt](15..0))
+   * -----------------------------------------------------------------------
+   * The least significant halfword from rt is sign-extended and store in rd
+   * -----------------------------------------------------------------------
+   * Operation
+   *  GPR[rd] <- sign_extend(GPR[rt](15..0))
+   * ----------------------------------------------------------------------- *)
+  | SignExtendHalfword (rd,rt) -> {
+      mnemonic   = "seh";
+      operands   = [ rd; rt ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "seh" [ rd; rt ])
+    }
+
   (* ----------------------------------------------------------- FPRType  --- *)
 
   (* ---------------------------------------------------------------------------
@@ -1095,6 +1131,7 @@ let get_record (opc:mips_opcode_t) =
        delay_slot = false ;
        ida_asm   = (fun f -> f#ops mnemonic  [ fd ; fs ; ft ])
      }
+
   | FPSubfmt (fmt,fd,fs,ft) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "sub." ^ fmtstr in

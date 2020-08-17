@@ -85,7 +85,9 @@ object (self)
       | RType (opc,rs,rt,rd,shamt,funct) ->
          (tags, [ opc; rs; rt; rd; shamt; funct ])
       | R2Type (opc,rs,rt,rd,shamt,funct) ->
-         (tags, [ opc; rs; rt; rd; shamt; funct ])        
+         (tags, [ opc; rs; rt; rd; shamt; funct ])
+      | R3Type (opc,rs,rt,rd,shamt,funct) ->
+         (tags, [ opc; rs; rt; rd; shamt; funct ])
       | IType (opc,rs,rt,imm) -> (tags, [ opc; rs; rt; imm ])
       | JType (opc,addr) -> (tags, [ opc; addr ])
       | FPMCType (opc,rs,cc,tf,rd,funct) ->
@@ -158,6 +160,8 @@ object (self)
         | LoadWord (op1,op2)
         | LoadLinkedWord (op1,op2)
         | LoadWordRight (op1,op2)
+        | SignExtendByte (op1,op2)
+        | SignExtendHalfword (op1,op2)
         | StoreByte (op1,op2)
         | StoreHalfWord (op1,op2)
         | StoreWordLeft (op1,op2)

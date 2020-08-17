@@ -64,6 +64,13 @@ type mips_instr_format_t =
       * int (* rd:5 *)
       * int (* shamt:5 *)
       * int (* funct:6 *) 
+  | R3Type of    (*  SPECIAL2:31 *)
+      int (* opcode:6 (31) *)
+      * int (* rs:5 *)
+      * int (* rt:5 *)
+      * int (* rd:5 *)
+      * int (* shamt:5 *)
+      * int (* funct:6 *) 
   | IType of
       int (* opcode:6 *)
       * int (* rs:5 *)
@@ -246,6 +253,9 @@ type mips_opcode_t =
   | CountLeadingZeros of mips_operand_int * mips_operand_int
   | MultiplyWordToGPR of mips_operand_int * mips_operand_int * mips_operand_int
   | MultiplyAddWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
+  (* R3-type *)
+  | SignExtendByte of mips_operand_int * mips_operand_int
+  | SignExtendHalfword of mips_operand_int * mips_operand_int
   (* FPCM-type *)
   | MovF of int * mips_operand_int * mips_operand_int   (* cc, dst, src *)
   | MovT of int * mips_operand_int * mips_operand_int   (* cc, dst, src *)
@@ -476,6 +486,13 @@ class type mips_assembly_functions_int =
     method dark_matter_to_string: string
 
   end
+
+(* ====================================================== Disassembly pattern === *)
+
+type disassembly_pattern_t = {
+    regex_ds: Str.regexp;
+    regex_df: doubleword_int -> string -> string -> doubleword_int
+  }
 
 (* ================================================================== Code pc === *)
 
