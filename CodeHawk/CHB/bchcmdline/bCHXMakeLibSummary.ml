@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +39,9 @@ open BCHPreFileIO
 open BCHSystemInfo
 
 let name = ref ""
+let reftoname = ref None
 let libname = ref ""
+let syscall = ref None
 let iox_cat = ref ""
 let ansi_unicode = ref false
 let num_parameters = ref 0
@@ -58,22 +61,28 @@ let msnNode = refNode "http://msdn.microsoft.com/"
 let togNode = refNode "http://pubs.opengroup.org/onlinepubs/000095399/"
 
 let speclist = [
-  ("-parameters", Arg.Rest add_parameter, "parameter names in order") ;
-  ("-stdcall", Arg.Unit (fun _ -> stdcall := true), "stdcall calling convention") ;
-  ("-cdecl", Arg.Unit (fun _ -> cdecl := true), "cdecl calling convention") ; 
-  ("-name", Arg.String (fun s -> name := s), "name of the function") ;
-  ("-lib", Arg.String (fun s -> libname := s), "name of the library") ;
-  ("-errno", Arg.Unit (fun _ -> sets_errno := true), "sets errno") ;
-  ("-post", Arg.String (fun s -> post := s :: !post), "adds a shortcut postcondition") ;
-  ("-enumpost", Arg.String (fun s -> enumpost := s :: !enumpost), "adds an enum postcondition") ;
-  ("-msn", Arg.Set msn, "documentation obtained from MSDN website") ;
-  ("-tog", Arg.Set tog, "documentation obtained from The Open Group website") ;
-  ("-aw" , Arg.Set ansi_unicode, "create ansi and unicode versions as well") ;
-  ("-io" , Arg.String (fun s -> iox_cat := s), "initializes an io action with category s") ]
+    ("-parameters", Arg.Rest add_parameter, "parameter names in order");
+    ("-syscall", Arg.Int (fun i -> syscall := Some i), "syscall index number");
+    ("-stdcall", Arg.Unit (fun _ -> stdcall := true), "stdcall calling convention");
+    ("-cdecl", Arg.Unit (fun _ -> cdecl := true), "cdecl calling convention");
+    ("-name", Arg.String (fun s -> name := s), "name of the function");
+    ("-reftoname", Arg.String (fun s -> reftoname := Some s),
+     "name of corresponding library function if not the same as syscall name");
+    ("-lib", Arg.String (fun s -> libname := s), "name of the library");
+    ("-errno", Arg.Unit (fun _ -> sets_errno := true), "sets errno");
+    ("-post", Arg.String (fun s -> post := s :: !post),
+     "adds a shortcut postcondition");
+    ("-enumpost", Arg.String (fun s -> enumpost := s :: !enumpost),
+     "adds an enum postcondition");
+    ("-msn", Arg.Set msn, "documentation obtained from MSDN website");
+    ("-tog", Arg.Set tog, "documentation obtained from The Open Group website");
+    ("-aw" , Arg.Set ansi_unicode, "create ansi and unicode versions as well");
+    ("-io" , Arg.String (fun s -> iox_cat := s),
+     "initializes an io action with category s") ]
   
 let ccNode =
   xml_string
-    "copyright-notice" "Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304" 
+    "copyright-notice" "Copyright 2012-2020, Henny Sipma, Palo Alto, CA 94304" 
   
 let usage_msg = "mktemplate name"
 let read_args () = Arg.parse speclist (fun s -> name := s) usage_msg
@@ -248,22 +257,40 @@ let main () =
     let doc = xmlDocument () in
     let root = xmlElement "codehawk-binary-analyzer" in
     let header = xmlElement "header" in
-    let node = xmlElement "libfun" in 
-    let parameters = List.rev !parameter_names in
-    begin
-      doc#setNode root ;
-      write_xml_summary node parameters ;
-      (if !msn then root#appendChildren [ msnNode ]) ;
-      (if !tog then root#appendChildren [ togNode ]) ;
-      root#appendChildren [ header ; node ; ccNode ] ;
-      header#setAttribute "date" (time_to_string (Unix.gettimeofday ())) ;
-      node#setAttribute "name" !name ;
-      (if !libname = "" then () else node#setAttribute "lib" !libname) ;
-      file_output#saveFile (!name ^ ".xml") doc#toPretty ;
-      if !ansi_unicode then save_ansi_unicode_versions ()
-    end
-  with
-    CHFailure p -> pr_debug [ STR "Error in template: " ; p ; NL ]
+    match !syscall with
+    | Some index ->
+       let node = xmlElement "syscallfun" in
+       let refnode = xmlElement "refer-to" in
+       let filename = "syscalls/syscall_" ^ (string_of_int index) ^ ".xml" in
+       begin
+         doc#setNode root;
+         root#appendChildren [ header; node ];
+         header#setAttribute "date" (time_to_string (Unix.gettimeofday ()));
+         node#setAttribute "name" !name;
+         node#setIntAttribute "index" index;
+         (match !reftoname with
+          | Some reftoname -> refnode#setAttribute "name" reftoname
+          | _ -> refnode#setAttribute "name" !name);
+         node#appendChildren [ refnode ];
+         file_output#saveFile filename doc#toPretty
+       end
+  | _ ->
+     let node = xmlElement "libfun" in
+     let parameters = List.rev !parameter_names in
+     begin
+       doc#setNode root ;
+       write_xml_summary node parameters ;
+       (if !msn then root#appendChildren [ msnNode ]) ;
+       (if !tog then root#appendChildren [ togNode ]) ;
+       root#appendChildren [ header ; node ; ccNode ] ;
+       header#setAttribute "date" (time_to_string (Unix.gettimeofday ())) ;
+       node#setAttribute "name" !name ;
+       (if !libname = "" then () else node#setAttribute "lib" !libname) ;
+       file_output#saveFile (!name ^ ".xml") doc#toPretty ;
+       if !ansi_unicode then save_ansi_unicode_versions ()
+     end
+    with
+      CHFailure p -> pr_debug [ STR "Error in template: " ; p ; NL ]
 
 let _ = Printexc.print main ()
   
