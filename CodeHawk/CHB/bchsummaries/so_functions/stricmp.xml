@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="08/05/2013 10:39:54"/>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <libfun lib="so_functions" name="stricmp">
+   <documentation>
+    <desc>compares two strings</desc>
+    <apidoc>
+     <pt>int stricmp (const char *string1, const char *string2)</pt>
+     <par name="string1">pointer to first string</par>
+     <par name="string2">pointer to second string</par>
+     <return>indicates the lexicographic relation of string1 to string2</return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="stricmp">
+     <returntype>int</returntype>
+    <par loc="stack" io="r" name="string1" nr="1" rep="hex">
+      <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:inputs" rn="string comparison"/>
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="r" name="string2" nr="2" rep="hex">
+      <type><ptr>char</ptr></type>
+     <roles>
+        <role rt="ioc:inputs" rn="string comparison"/>
+     </roles>
+     <pre><deref-read-nt/></pre>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="inputs"  desc="compares two strings"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+ </codehawk-binary-analyzer>
