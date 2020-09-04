@@ -390,7 +390,9 @@ let main () =
           (get_orphan_code_listing_filename ())
 	  (STR ((BCHMIPSAssemblyFunctions.mips_assembly_functions#dark_matter_to_string)));
         save_mips_assembly_instructions ();
+	save_system_info ();
         save_mips_dictionary ();
+        save_interface_dictionary ();
         save_bdictionary ();
         save_log_files "disassemble";
       end
