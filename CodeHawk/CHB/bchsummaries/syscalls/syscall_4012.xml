@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-08-31 15:59:18"/>
+  <syscallfun index="4012" name="chdir">
+    <refer-to name="chdir"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

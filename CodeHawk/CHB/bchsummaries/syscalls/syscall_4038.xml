@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-08-31 16:02:55"/>
+  <syscallfun index="4038" name="rename">
+    <refer-to name="rename"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

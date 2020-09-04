@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-08-31 15:56:42"/>
+  <syscallfun index="4002" name="fork">
+    <refer-to name="fork"/>
+  </syscallfun>
+</codehawk-binary-analyzer>
