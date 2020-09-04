@@ -72,6 +72,8 @@ class type ['a]  opcode_formatter_int =
 object
   method ops: string -> mips_operand_int list -> 'a
   method cc_ops: string -> int -> mips_operand_int list -> 'a
+  method int_ops: string -> mips_operand_int list -> int list -> 'a
+  method pre_int_ops: string -> int list -> mips_operand_int list -> 'a
   method no_ops: string -> 'a
 end 
 
@@ -639,6 +641,84 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = false ;
       ida_asm    = (fun f -> f#ops "sdc1" [ src ; dest ])
     }
+
+  (* ------------------------------------------------------------------------
+   * Format: MFC2 rt, Impl, sel
+   * Description: GPR[rt] <- CP2CPR[Impl]
+   * ------------------------------------------------------------------------
+   * The contents of the coprocessor 2 register denoted by the Impl field
+   * are placed into general register rt. The interpretation of Impl is not
+   * specified by the architecture
+   * ------------------------------------------------------------------------
+   * Operation
+   *   data <- CP2CPR[Impl]
+   *   GPR[rt] <- data
+   * ------------------------------------------------------------------------ *)
+  | MoveWordFromCoprocessor2 (rt,impl,sel) -> {
+      mnemonic   = "mfc2";
+      operands   = [ rt ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#int_ops "mfc2" [ rt ] [ impl; sel ])
+    }
+
+  (* ------------------------------------------------------------------------
+   * Format: MTC2 rt, Impl, sel
+   * Description: CP2CPR[Impl] <- GPR[rt]
+   * ------------------------------------------------------------------------
+   * The low word in GPR rt is placed into the low word of a Coprocessor 2
+   * general register denoted by the Impl field. The interpretation of the
+   * Impl field is not specified by the architecture
+   * ------------------------------------------------------------------------
+   * Operation
+   *   data <- GPR[rt]
+   *   CP2CPR[Impl] <- data
+   * ------------------------------------------------------------------------ *)
+  | MoveWordToCoprocessor2 (rt,impl,sel) -> {
+      mnemonic   = "mtc2";
+      operands   = [ rt ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#int_ops "mtc2" [ rt ] [ impl; sel ])
+    }
+
+  (* ------------------------------------------------------------------------
+   * Format: MFHC2 rt, Impl, sel
+   * Description: GPR[rt] <- CP2CPR[Impl](63..32)
+   * ------------------------------------------------------------------------
+   * The contents of high word of the coprocessor 2 register denoted by the
+   * Impl field are placed into general register rt. The interpretation of
+   * Impl is not specified by the architecture
+   * ------------------------------------------------------------------------
+   * Operation
+   *   data <- CP2CPR[Impl](63..32)
+   *   GPR[rt] <- data
+   * ------------------------------------------------------------------------ *)
+  | MoveWordFromHighHalfCoprocessor2 (rt,impl,sel) -> {
+      mnemonic   = "mfhc2";
+      operands   = [ rt ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#int_ops "mfhc2" [ rt ] [ impl; sel ])
+    }
+
+  (* ------------------------------------------------------------------------
+   * Format: PREF hint,offset(base)
+   * Description: prefetch_memory(GPR[base] + offset)
+   * ------------------------------------------------------------------------
+   * PREF adds the 16-bit offset to the contents of GPR base to form an
+   * effective byte address. The hint field supplies information about the
+   * way that the data is expected to be used
+   * ------------------------------------------------------------------------
+   * Operation
+   *   vAddr <- GPR[base] + sign_extend(offset)
+   *   (pAddr, CCA) <- AddressTranslation(vAddr, DATA, LOAD)
+   *   Prefetch(CCA, pAddr, vAddr, DATA, hint)
+   * ------------------------------------------------------------------------ *)
+  | Prefetch (op,hint) -> {
+      mnemonic   = "pref";
+      operands   = [ op ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#pre_int_ops "pref" [ hint ] [op])
+    }
+
   (* ----------------------------------------------------------------- J-type *)
 
   (* ------------------------------------------------------------------------
@@ -670,7 +750,7 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = true ;
       ida_asm    = (fun f -> f#ops "jal" [ target ])
     }
-  (* --------------------------------------------------------- R-type: binary *)                          
+  (* --------------------------------------------------------- R-type: binary *)
   | ShiftLeftLogical (dest,src,samt) -> {
       mnemonic   = "sll" ;
       operands   = [ dest ; src ; samt ] ;
@@ -789,7 +869,7 @@ let get_record (opc:mips_opcode_t) =
    * If the value in GPR rt is not equal to zero, then the contents of GPR rs 
    * are placed into GPR rd.
    * --------------------------------------------------------------------------- *)
-  | MovN (rd,rs,rt) -> {
+  | MoveConditionalNotZero (rd,rs,rt) -> {
       mnemonic = "movn" ;
       operands = [ rd ; rs ; rt ] ;
       delay_slot = false ;
@@ -803,7 +883,7 @@ let get_record (opc:mips_opcode_t) =
    * If the value in GPR rt is equal to zero, then the contents of GPR rs 
    * are placed into GPR rd.
    * --------------------------------------------------------------------------- *)
-  | MovZ (rd,rs,rt) -> {
+  | MoveConditionalZero (rd,rs,rt) -> {
       mnemonic = "movz" ;
       operands = [ rd ; rs ; rt ] ;
       delay_slot = false ;
@@ -866,6 +946,29 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = false ;
       ida_asm    = (fun f -> f#ops "madd" [ rs ; rt ])
     }
+
+  (* ---------------------------------------------------------------------------
+   * Format: MADDU rs, rt
+   * Description: (HI, LO) <- (HI, LO) + GPR[rs] x GPR[rt]
+   * ---------------------------------------------------------------------------
+   * The 32-bit word value in GPR rs is multiplied by the 32-bit word value in
+   * GPR rt, treating both operands as unsigned values, to produce a 64-bit result.
+   * The product is added to the 64-bit concatenated values of HI and LO. The
+   * most sig- nificant 32 bits of the result are written into HI and the least
+   * significant 32 bits are written into LO. No arithmetic exception occurs
+   * under any circumstances.
+   * ---------------------------------------------------------------------------
+   * Operation
+   *   temp <- (HI || LO) + (GPR[rs] x GPR[rt])
+   * HI <- temp[63..32]
+   * LO <- temp[31..0]
+   * --------------------------------------------------------------------------- *)
+  | MultiplyAddUnsignedWord (hi,lo,rs,rt) -> {
+      mnemonic   = "maddu";
+      operands   = [ hi; lo; rs; rt ];
+      delay_slot = false;
+      ida_asm   = (fun f -> f#ops "maddu" [ rs; rt ])
+    } 
 
   (* ---------------------------------------------------------------------------
    * Format: MULTU rs, rt
@@ -1017,6 +1120,33 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = false ;
       ida_asm    = (fun f -> f#ops "sltu" [ rd ; rs ; rt ])
     }
+
+  | Break code ->
+     { mnemonic   = "break";
+       operands   = [ ];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops "break" [ ])
+     }
+
+  | Sync stype ->
+     let m = "sync" ^ (if stype = 0 then "" else " " ^ (string_of_int stype)) in
+     { mnemonic   = m;
+       operands   = [];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops m [])
+     }
+
+  (* ---------------------------------------------------------------------------
+   * Format: SYSCALL
+   * ---------------------------------------------------------------------------
+   * A system call exception occurs, immediately and unconditionally transferring
+   * control to the exception handler. The code field is available for use as
+   * software parameters, but is retrieved by the exception handler only by
+   * loading the contents of the memory word containing the instructions.
+   * ---------------------------------------------------------------------------
+   * Operation
+   *    SignalException(SystemCall)
+   * --------------------------------------------------------------------------- *)
   | Syscall code ->
      let m = "syscall " ^ (string_of_int code) in
      { mnemonic   = m;
@@ -1046,6 +1176,25 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = false  ;
       ida_asm    = (fun f -> f#ops "teq" [ rs ; rt ])
     }
+
+  (* ---------------------------------------------------------------------------
+   * Format: TEQI rs, immediate
+   * Description: if GPR[rs] = immediate then Trap
+   * ---------------------------------------------------------------------------
+   * Compare the contents of GPR rs and the 16-bit signed immediate as signed
+   * integers; if GPR rs is equal to immediate then take a Trap exception.
+   * ---------------------------------------------------------------------------
+   * Operation
+   *   if GPR[rs] = sign_extend(immediate) then
+   *      SignalException(Trap)
+   * --------------------------------------------------------------------------- *)
+  | TrapIfEqualImmediate (rs,imm) -> {
+      mnemonic   = "teqi";
+      operands   = [ rs; imm ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "teqi" [ rs; imm ])
+    }
+
   (* ------------------------------------------------------------ R2Type  --- *)
 
   (* ---------------------------------------------------------------------------
@@ -1072,6 +1221,100 @@ let get_record (opc:mips_opcode_t) =
     }
 
   (* ------------------------------------------------------------ R3Type  --- *)
+
+  (* ------------------------------------------------------------------------
+   * Format: EXT rt, rs, pos, size
+   * Description: GPR[rt] <- ExtractField(GPR[rs], msbd, lsb)
+   * Purpose: To extract a bit field from rs and store it right-justified
+   *  into rt
+   * ------------------------------------------------------------------------
+   * The bit field starting at bit pos and extending for size bits is
+   * extracted from rs and stored zero-extended and right-justified in rt.
+   * The assembly language arguments pos and size are converted by the
+   * assembler to the instruction fields msbd (the most significant bit
+   * of the destination field in rt), in instruction bits 15..11, and
+   * lsb (least significant bit of the source field in rs), in instruction
+   * bits 10..6 as follows:
+   *    msbd <- size-1
+   *   lsb <- pos
+   * The values of pos and size must satisfy all of the following relations:
+   *   0 <= pos < 32
+   *   0 < size <= 32
+   *   0 < pos+size <= 32
+   * ------------------------------------------------------------------------
+   * Operation
+   *   if (lsb + msbd) > 31 then
+   *     unpredictable
+   *   endif
+   *   temp <- 0[32-(msbd+1)] || GPR[rs][msbd+lsb..lsb]
+   *   GPR[rt] <- temp
+   * ------------------------------------------------------------------------ *)
+  | ExtractBitField (dst,src,pos,size) -> {
+      mnemonic   = "ext";
+      operands   = [ dst; src ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "ext" [dst; src])
+    }
+
+  (* ------------------------------------------------------------------------
+   * Format: INS rt, rs, pos, size
+   * Description: GPR[rt] <- InsertField(GPR[rs], msb, lsb)
+   * Purpose: To merge a right-justified bit field from GPR rs into a
+   *   specified field in GPR rt
+   * ------------------------------------------------------------------------
+   * The right-most size bits from GPR rs are merged into the value from
+   * GPR rt starting a bit position pos. The result is placed back in GPR rt.
+   * The assembly language arguments pos and size are converted by the
+   * assembler to the instruction fields msb (the most significant bit of the
+   * field), in instruction bits 15..11, and lsb (least significant bit of
+   * the field), in instruction bits 10..6 as follows:
+   *   msb <- pos+size-1
+   *   lsb <- pos
+   * The values of pos and size must satisfy all of the following relations:
+   *   0 <= pos < 32
+   *   0 < size <= 32
+   *   0 < pos+size <= 32
+   * ------------------------------------------------------------------------
+   * Operation
+   *   if (lsb > msb) then
+   *     unpredictable
+   *   endif
+   *   GPR[rt] <- 0[31-(msb+1)] || GPR[rs][msb-lsb..0] || GPR[rt][lsb-1..0]
+   * ------------------------------------------------------------------------ *)
+  | InsertBitField (dst,src,pos,size) -> {
+      mnemonic   = "ins";
+      operands   = [ dst; src ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "ins" [dst; src])
+    }
+
+  (* ------------------------------------------------------------------------
+   * Format: RDHWR rt,rd
+   * Description: GPR[rt] <- HWR[rd]
+   * -----------------------------------------------------------------------
+   * Read Hardware Register: to move the contents of a hardware register
+   * to a general-purpose register if that operation is enabled by privileged
+   * software
+   * -----------------------------------------------------------------------
+   * Operation
+   *  case rd
+   *   0: temp <- EBase_CPUNum
+   *   1: temp <- SYNCI_StepSize()
+   *   2: temp <- Count
+   *   3: temp <- CountResolution
+   *  29: temp <- UserLocal
+   *  30: temp <- Implementation-Dependent-Value
+   *  31: temp <- Implementation-Dependent-Value
+   *  otherwise: SignalException(ReservedInstruction)
+   *  endcase
+   *  GPR[rt] <- temp
+   * ----------------------------------------------------------------------- *)
+  | ReadHardwareRegister (rt,rd) -> {
+      mnemonic    = "rdhwr";
+      operands    = [ rt ];
+      delay_slot  = false;
+      ida_asm     = (fun f -> f#ops ("rdhwr-" ^ (string_of_int rd)) [ rt ])
+    }
 
   (* ------------------------------------------------------------------------
    * Format: SEB rd, rt
@@ -1103,6 +1346,22 @@ let get_record (opc:mips_opcode_t) =
       operands   = [ rd; rt ];
       delay_slot = false;
       ida_asm    = (fun f -> f#ops "seh" [ rd; rt ])
+    }
+
+  (* ------------------------------------------------------------------------
+   * Format: WSBH rd, rt
+   * Description: GPR[rd] <- SwapBytesWithinHalfwords(GPR[rt])
+   * -----------------------------------------------------------------------
+   * Within each halfword of GPR rt the bytes are swapped and stored in GPR rd
+   * -----------------------------------------------------------------------
+   * Operation
+   *  GPR[rd] <- GPR[r](23..16) || GPR[r](31..24) || GPR[r](7..0) || GPR[r](15..8)
+   * ----------------------------------------------------------------------- *)
+  | WordSwapBytesHalfwords (rd,rt) -> {
+      mnemonic   = "wsbh";
+      operands   = [ rd; rt ];
+      delay_slot = false;
+      ida_asm   = (fun f -> f#ops "wsbh" [ rd; rt ])
     }
 
   (* ----------------------------------------------------------- FPRType  --- *)
@@ -1354,6 +1613,82 @@ let get_record (opc:mips_opcode_t) =
   (* ---------------------------------------------------------- FPRIType  --- *)
 
   (* ---------------------------------------------------------------------------
+   * Format: MFC0 rt, rd, sel
+   * Description: GPR[rt] <- CPR[0,rd,sel]
+   * ---------------------------------------------------------------------------
+   * The contents of the coprocessor 0 register specified by the combination of
+   * rd and sel are loaded into general register rt.
+   * ---------------------------------------------------------------------------
+   * Operation
+   *   reg <- rd
+   *   data <- CPR[0,reg,sel]
+   *   GPR[rt] <- data
+   * --------------------------------------------------------------------------- *)
+  | MoveFromCoprocessor0 (rt,rd,sel) -> {
+      mnemonic   = "mfc0";
+      operands   = [ rt; rd ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#int_ops "mfc0" [ rt; rd ] [sel])
+    }
+
+  (* ---------------------------------------------------------------------------
+   * Format: MTC0 rt, rd, sel
+   * Description: CPR[0,rd,sel] <- GPR[rt]
+   * ---------------------------------------------------------------------------
+   * The contents of general register rt are loaded into the coprocessor 0
+   * register specified by the combination of the rd and sel.
+   * ---------------------------------------------------------------------------
+   * Operation
+   *   data <- GPR[rt]
+   *   reg <- rd
+   *   ??
+   * --------------------------------------------------------------------------- *)
+  | MoveToCoprocessor0 (rt,rd,sel) -> {
+      mnemonic   = "mtc0";
+      operands   = [ rt; rd ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#int_ops "mtc0" [ rt; rd ] [sel])
+    }
+
+  (* ---------------------------------------------------------------------------
+   * Format: MFHC0 rt, rd, sel
+   * Description: GPR[rt] <- CPR[0,rd,sel][63:32]
+   * ---------------------------------------------------------------------------
+   * The contents of the coprocessor 0 register specified by the combination of
+   * rd and sel are loaded into general register rt.
+   * ---------------------------------------------------------------------------
+   * Operation
+   *   reg <- rd
+   *   data <- CPR[0,reg,sel]
+   *   GPR[rt] <- data(63..32)
+   * --------------------------------------------------------------------------- *)
+  | MoveFromHighCoprocessor0 (rt,rd,sel) -> {
+      mnemonic   = "mfhc0";
+      operands   = [ rt; rd ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#int_ops "mfhc0" [ rt; rd ] [sel])
+    }
+
+  (* ---------------------------------------------------------------------------
+   * Format: MTHC0 rt, rd, sel
+   * Description: CPR[0,rd,sel][63:32] <- GPR[rt]
+   * ---------------------------------------------------------------------------
+   * The contents of general register rt are loaded into the Coprocessor 0
+   * register specified by the combination of rd and sel.
+   * ---------------------------------------------------------------------------
+   * Operation
+   *   data <- GPR[rt]
+   *   reg <- rd
+   *   CPR[0,reg,sel](63..32) <- data
+   * --------------------------------------------------------------------------- *)
+  | MoveToHighCoprocessor0 (rt,rd,sel) -> {
+      mnemonic   = "mthc0";
+      operands   = [ rt; rd ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#int_ops "mthc0" [ rt; rd ] [ sel ])
+    }
+
+  (* ---------------------------------------------------------------------------
    * Format: MFC1 rt, fs
    * Description: GPR[rt] <- FPR[fs]
    * ---------------------------------------------------------------------------
@@ -1368,6 +1703,41 @@ let get_record (opc:mips_opcode_t) =
       operands   = [ rt ; fs ] ;
       delay_slot = false ;
       ida_asm    = (fun f -> f#ops "mfc1" [ rt ; fs ])
+    }
+
+  (* ---------------------------------------------------------------------------
+   * Format: MFHC1 rt, fs
+   * Description: GPR[rt] <- FPR[fs](63..32)
+   * ---------------------------------------------------------------------------
+   * The contents of the high word of FPR fs are loaded into general register rt.
+   * ---------------------------------------------------------------------------
+   * Operation
+   *   data <- ValueFPR(fs, UNINTERPRETED_WORD)(63..32)
+   *   GPR[rt] <- data
+   * --------------------------------------------------------------------------- *)
+  | MoveWordFromHighHalfFP (rt,fs) -> {
+      mnemonic   = "mfhc1";
+      operands   = [ rt; fs ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "mfhc1" [ rt; fs])
+    }
+
+  (* ---------------------------------------------------------------------------
+   * Format: MTHC1 rt, fs
+   * Description: FPR[fs](63..32) <- GPR[rt]
+   * ---------------------------------------------------------------------------
+   * The word in GPR rt is placed into the high word of FPR fs.
+   * ---------------------------------------------------------------------------
+   * Operation
+   *   newdata <- GPR[rt]
+   *   olddata <- ValueFPR(fs, UNINTERPRETED_DOUBLEWORD)(31..0)
+   *   StoreFPR(fs, UNINTERPRETED_DOUBLEWORD, newdata || olddata)
+   * --------------------------------------------------------------------------- *)
+  | MoveWordToHighHalfFP (rt,fs) -> {
+      mnemonic   = "mthc1";
+      operands   = [ rt; fs ];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "mthc1" [ rt; fs ])
     }
 
   (* ---------------------------------------------------------------------------
@@ -1514,6 +1884,30 @@ object (self)
       let s = (fixed_length_string s (width+1)) ^ (string_of_int cc) in
       let ops = String.concat "" (List.map (fun op -> ", " ^ op#toString) operands) in
       s ^ ops
+
+  method int_ops s operands intoperands =
+    let s = fixed_length_string s width in
+    let (_,result) =
+      List.fold_left
+        (fun (isfirst,a) op ->
+          if isfirst then
+            (false,s ^ " " ^ op#toString)
+          else
+            (false,a ^ ", " ^ op#toString)) (true,s) operands in
+    List.fold_left
+      (fun a op -> a ^ ", " ^ (string_of_int op)) result intoperands
+
+  method pre_int_ops s intoperands operands =
+    let s = fixed_length_string s width in
+    let (_,result) =
+      List.fold_left
+        (fun (isfirst,a) i ->
+          if isfirst then
+            (false,s ^ " " ^ (string_of_int i))
+          else
+            (false,a ^ ", " ^ (string_of_int i))) (true,s) intoperands in
+    List.fold_left
+      (fun a op -> a ^ ", " ^ op#toString) result operands
 
   method no_ops s = s
 end

@@ -377,6 +377,18 @@ let translate_mips_instruction
      let cmds2 = floc#get_assign_commands lhs2 result in
      default (lhs1cmds @ lhs2cmds @ cmds1 @ cmds2)
 
+  | ExtractBitField (dst,src,pos,size) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | InsertBitField (dst,src,pos,size) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
   | FPAbsfmt (fmt,fd,fs) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = fd#to_lhs floc in
@@ -511,16 +523,22 @@ let translate_mips_instruction
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | MovN (dst,src,cond) ->
+  | MoveConditionalNotZero (dst,src,cond) ->
      let floc = get_floc loc in
+     let rhs = src#to_expr floc in
      let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
+     let testxpr = cond#to_expr floc in
+     let testxpr = XOp (XNe, [ testxpr; zero_constant_expr ]) in
+     let cmds = floc#get_conditional_assign_commands testxpr lhs rhs in
      default (lhscmds @ cmds)
 
-  | MovZ (dst,src,cond) ->
+  | MoveConditionalZero (dst,src,cond) ->
      let floc = get_floc loc in
+     let rhs = src#to_expr floc in
      let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
+     let testxpr = cond#to_expr floc in
+     let testxpr = XOp (XEq, [ testxpr; zero_constant_expr ]) in
+     let cmds = floc#get_conditional_assign_commands testxpr lhs rhs in
      default (lhscmds @ cmds)
 
   | MovF (cc,dst,src) ->
@@ -576,9 +594,51 @@ let translate_mips_instruction
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
+  | MoveWordFromHighHalfFP (rt,fs) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = rt#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | MoveWordToHighHalfFP (rt,fs) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = fs#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
   | MoveWordToFP (rt,fs) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = fs#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | MoveFromCoprocessor0 (dst,_,_) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | MoveToCoprocessor0 _ -> default []
+
+  | MoveFromHighCoprocessor0 (dst,_,_) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | MoveToHighCoprocessor0 _ -> default []
+
+  | MoveWordFromCoprocessor2 (dst,_,_) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | MoveWordToCoprocessor2 _ -> default []
+
+  | MoveWordFromHighHalfCoprocessor2 (dst,_,_) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
@@ -603,6 +663,18 @@ let translate_mips_instruction
      let cmd1 = floc#get_assign_commands lhs2 xpr in
      let cmd2 = floc#get_abstract_commands lhs1 () in
      default (lhs1cmds @ lhs2cmds @ cmd1 @ cmd2 )
+
+  | MultiplyAddUnsignedWord (hi,lo,rs,rt) ->
+     let floc = get_floc loc in
+     let (lhs1,lhs1cmds) = hi#to_lhs floc in
+     let (lhs2,lhs2cmds) = lo#to_lhs floc in
+     let rhs1 = rs#to_expr floc in
+     let rhs2 = rt#to_expr floc in
+     let rhslo = lo#to_expr floc in
+     let xpr = XOp (XPlus, [ rhslo; XOp (XMult, [ rhs1; rhs2 ]) ]) in
+     let cmd1 = floc#get_assign_commands lhs2 xpr in
+     let cmd2 = floc#get_abstract_commands lhs1 () in
+     default (lhs1cmds @ lhs2cmds @ cmd1 @ cmd2)
 
   | MultiplyWordToGPR (rd,rs,rt) ->
      let floc = get_floc loc in
@@ -649,6 +721,14 @@ let translate_mips_instruction
      let rhs2 = imm#to_expr floc in
      let result = XOp (XBOr, [ rhs1 ; rhs2 ]) in
      let cmds = floc#get_assign_commands lhs result in
+     default (lhscmds @ cmds)
+
+  | Prefetch _ -> default []
+
+  | ReadHardwareRegister (dst,index) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
   | SetLT (dst,src1,src2) ->
@@ -886,12 +966,24 @@ let translate_mips_instruction
        | _ -> floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
+  | WordSwapBytesHalfwords (dst,src) ->
+     let floc = get_floc loc in
+     let (lhs,lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
   | JumpLinkRegister _ ->
      default (get_floc loc)#get_mips_call_commands
 
   | JumpLink _ |  BranchLink _ ->
+     default (get_floc loc)#get_mips_call_commands
+
+  | Syscall _ ->
      let floc = get_floc loc in
-     default floc#get_mips_call_commands
+     if floc#has_call_target then
+       default (get_floc loc)#get_mips_syscall_commands
+     else
+       default []
 
   | Return
     | Branch _
@@ -911,14 +1003,21 @@ let translate_mips_instruction
     | BranchNotEqualLikely _
     | Jump _
     | JumpRegister _
+    | TrapIfEqualImmediate _
     | TrapIfEqual _ -> default []
 
   | NoOperation -> default []
 
   | Halt -> default []
+
+  | Sync _ -> default []
      
   | opc ->
-     let _ = chlog#add faddr#to_hex_string (STR (mips_opcode_to_string opc)) in
+     let _ =
+       chlog#add
+         "opcode not translated"
+         (LBLOCK [ faddr#toPretty ; STR ": " ;
+                   STR (mips_opcode_to_string opc)]) in
      default []
 
 
