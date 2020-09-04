@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1055,6 +1056,23 @@ object (self)
 	 | _ -> t_unknown
        end
      | _ -> t_unknown
+
+   method get_conditional_assign_commands
+            (test_expr:xpr_t)
+            (lhs:variable_t)
+            (rhs_expr:xpr_t) =
+     let reqN () = self#env#mk_num_temp in
+     let reqC = self#env#request_num_constant in
+     let testxpr = self#inv#rewrite_expr test_expr self#env#get_variable_comparator in
+     let ftestxpr = simplify_xpr (XOp (XLNot, [ testxpr ])) in
+     let assigncmds = self#get_assign_commands lhs rhs_expr in
+     let (tcmds,txpr) = xpr_to_boolexpr reqN reqC testxpr in
+     let (fcmds,fxpr) = xpr_to_boolexpr reqN reqC ftestxpr in
+     let asserttcmd = ASSERT txpr in
+     let assertfcmd = ASSERT fxpr in
+     let truecmds = tcmds @ [ asserttcmd ] @ assigncmds in
+     let falsecmds = fcmds @ [ assertfcmd ] in
+     [ BRANCH [ LF.mkCode truecmds; LF.mkCode falsecmds ]]
        
 
    method get_assign_commands 
@@ -1596,6 +1614,23 @@ object (self)
        (* postAsserts @ *)
        [ returnAssign ] @ sideEffectAssigns @ espAdjustment @
          [ ABSTRACT_VARS bridgeVars ]
+
+   method get_mips_syscall_commands =
+     let ctinfo = self#get_call_target in
+     let v0 = self#env#mk_mips_register_variable MRv0 in
+     let v1 = self#env#mk_mips_register_variable MRv1 in
+     let opname = new symbol_t ~atts:["CALL"] ctinfo#get_name in
+     let returnassign =
+       let rvar = self#env#mk_return_value self#cia in
+       let _ =
+         if ctinfo#is_signature_valid then
+           let name = ctinfo#get_name ^ "_rtn_" ^ self#cia in
+           self#env#set_variable_name rvar name in
+       ASSIGN_NUM (v0, NUM_VAR rvar) in
+     let defClobbered = List.map (fun r -> (MIPSRegister r)) mips_temporaries in
+     let abstrRegs = List.map self#env#mk_register_variable defClobbered in
+     [ OPERATION { op_name = opname ; op_args = [] } ;
+       ABSTRACT_VARS (v1::abstrRegs) ; returnassign ]
 
    method get_mips_call_commands =
      let ctinfo = self#get_call_target in
