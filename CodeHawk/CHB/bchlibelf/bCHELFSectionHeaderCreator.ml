@@ -809,6 +809,7 @@ object (self)
       let offset = self#get_offset_2 vaddr in
       let size = (ph#get_vaddr#add ph#get_file_size)#subtract vaddr in
       let addralign = s2d "0x4" in
+      let size = align_doubleword size addralign#to_int in
     begin
       sh#set_fields
         ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
