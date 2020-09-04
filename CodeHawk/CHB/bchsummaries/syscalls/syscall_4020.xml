@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-08-31 16:00:38"/>
+  <syscallfun index="4020" name="getpid">
+    <refer-to name="getpid"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

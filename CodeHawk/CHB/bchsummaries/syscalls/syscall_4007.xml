@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-08-31 15:58:23"/>
+  <syscallfun index="4007" name="waitpid">
+    <refer-to name="waitpid"/>
+  </syscallfun>
+</codehawk-binary-analyzer>
