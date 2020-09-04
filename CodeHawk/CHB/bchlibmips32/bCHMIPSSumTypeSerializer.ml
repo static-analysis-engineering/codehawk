@@ -54,21 +54,23 @@ object
   method ts (f:mips_instr_format_t) =
     match f with
     | SyscallType _ -> "sc"
+    | RSyncType _ -> "rs"
+    | RBreakType _ -> "rb"
     | RType _ -> "r"
     | R2Type _ -> "r2"
     | R3Type _ -> "r3"
     | IType _ -> "i"
     | JType _ -> "j"
     | FPMCType _ -> "fpmc"
-    | FPRMCType _ -> "fprmc"
     | FPRType _ -> "fpr"
     | FPRIType _ -> "fpri"
     | FPCompareType _ -> "fpc"
     | FPICCType _ -> "fpicc"
+    | FormatUnknown _ -> "unknown"
 
   method tags =
-    [ "r" ; "i" ; "j" ; "fpmc" ; "fprmc" ; "fpr" ; "fpri" ;  "fpc" ; "fpicc" ;
-      "r2" ; "r3" ]
+    [ "r" ; "i" ; "j" ; "fpmc" ; "fpmc" ; "fpr" ; "fpri" ;  "fpc" ; "fpicc" ;
+      "r2" ; "r3"; "rb"; "rs"; "unknown" ]
 
 end
 

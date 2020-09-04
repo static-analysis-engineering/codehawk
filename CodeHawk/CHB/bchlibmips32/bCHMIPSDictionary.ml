@@ -82,6 +82,10 @@ object (self)
     let key = match f with
       | SyscallType code ->
          (tags, [ code ])
+      | RBreakType (opc,code,fnct) ->
+         (tags, [ opc; code; fnct ])
+      | RSyncType (opc,code,stype,fnct) ->
+         (tags, [ opc; code; stype; fnct ])
       | RType (opc,rs,rt,rd,shamt,funct) ->
          (tags, [ opc; rs; rt; rd; shamt; funct ])
       | R2Type (opc,rs,rt,rd,shamt,funct) ->
@@ -90,18 +94,18 @@ object (self)
          (tags, [ opc; rs; rt; rd; shamt; funct ])
       | IType (opc,rs,rt,imm) -> (tags, [ opc; rs; rt; imm ])
       | JType (opc,addr) -> (tags, [ opc; addr ])
-      | FPMCType (opc,rs,cc,tf,rd,funct) ->
+      | FPMCType (opc,rs,cc,nd,tf,rd,fd,funct) ->
          (tags, [ opc; rs; cc; tf; rd; funct ])
-      | FPRMCType (opc,fmt,cc,tf,fs,fd,funct) ->
-         (tags, [ opc; fmt; cc; tf; fs; fd; funct ])
       | FPRType (opc,fmt,ft,fs,fd,funct) ->
          (tags, [ opc; fmt; ft; fs; fd; funct ])
-      | FPRIType (opc,sub,rt,fs) ->
-         (tags, [ opc; sub; rt; fs ])
+      | FPRIType (opc,sub,rt,fs,imm) ->
+         (tags, [ opc; sub; rt; fs; imm ])
       | FPCompareType (opc, fmt, ft, fs, cc, funct) ->
          (tags, [ opc; fmt; ft; fs; cc ; funct ])
       | FPICCType (opc,sub,cc,nd,tf,offset) ->
-         (tags, [ opc; sub; cc; nd; tf; offset ])   in
+         (tags, [ opc; sub; cc; nd; tf; offset ])
+      | FormatUnknown (opc,otherbits) ->
+         (tags, [ opc; otherbits ]) in
     mips_instr_format_table#add key
 
   method index_mips_opkind (k:mips_operand_kind_t) =
@@ -124,7 +128,9 @@ object (self)
     let oi = self#index_mips_operand in
     let tags = [ get_mips_opcode_name opc ] in
     let key = match opc with
+      | Break i -> (tags, [ i ])
       | Syscall i -> (tags, [ i ])
+      | Sync i -> (tags, [ i ])
       (* no operands *)
       | NoOperation
         | Return
@@ -138,7 +144,12 @@ object (self)
         | JumpRegister op
         | Branch op
         -> (tags,[ oi op ])
+      | ReadHardwareRegister (op,index)
+        -> (tags, [oi op; index])
       (* 2 operands *)
+      | ExtractBitField (op1,op2,pos,size)
+        | InsertBitField (op1,op2,pos,size) ->
+         (tags, [ oi op1; oi op2; pos; size])
       | BranchLTZero (op1,op2)
         | BranchLTZeroLikely (op1,op2)
         | BranchLEZero (op1,op2)
@@ -162,6 +173,7 @@ object (self)
         | LoadWordRight (op1,op2)
         | SignExtendByte (op1,op2)
         | SignExtendHalfword (op1,op2)
+        | WordSwapBytesHalfwords (op1,op2)
         | StoreByte (op1,op2)
         | StoreHalfWord (op1,op2)
         | StoreWordLeft (op1,op2)
@@ -179,9 +191,12 @@ object (self)
         | MoveFromLo (op1,op2)
         | MoveToLo (op1,op2)
         | MoveWordFromFP (op1,op2)
+        | MoveWordFromHighHalfFP (op1,op2)
+        | MoveWordToHighHalfFP (op1,op2)
         | MoveWordToFP (op1,op2)
         | ControlWordFromFP (op1,op2)
         | ControlWordToFP (op1,op2)
+        | TrapIfEqualImmediate (op1,op2)
       -> (tags,[ oi op1 ; oi op2 ])
       (* 3 operands *)
       | BranchEqual (op1,op2,op3)
@@ -212,14 +227,15 @@ object (self)
         | Nor (op1,op2,op3)
         | SetLT (op1,op2,op3)
         | SetLTUnsigned (op1,op2,op3)
-        | MovN (op1,op2,op3)
-        | MovZ (op1,op2,op3)
+        | MoveConditionalNotZero (op1,op2,op3)
+        | MoveConditionalZero (op1,op2,op3)
         | MultiplyWordToGPR (op1,op2,op3)
         -> (tags,[ oi op1 ; oi op2 ; oi op3 ])
       (* 4 operands *)
       | MultiplyWord (op1,op2,op3,op4)
         | MultiplyAddWord (op1,op2,op3,op4)
         | MultiplyUnsignedWord  (op1,op2,op3,op4)
+        | MultiplyAddUnsignedWord (op1,op2,op3,op4)
         | DivideWord (op1,op2,op3,op4)
         | DivideUnsignedWord (op1,op2,op3,op4)
         -> (tags,[ oi op1 ; oi op2 ; oi op3 ; oi op4 ])
@@ -263,6 +279,15 @@ object (self)
       (* fmt, cc,cond,exc, 2 operands *)
       | FPCompare (fmt,cc,cond,exc,op1,op2)
         -> (tags @ [ mips_fp_format_mfts#ts fmt ], [ cc; cond; exc; oi op1 ; oi op2 ])
+      (* misc, others *)
+      | MoveFromCoprocessor0 (op1,op2,i) -> (tags, [ oi op1; oi op2; i ])
+      | MoveToCoprocessor0 (op1,op2,i) -> (tags, [ oi op1; oi op2; i ])
+      | MoveFromHighCoprocessor0 (op1,op2,i) -> (tags, [ oi op1; oi op2; i ])
+      | MoveToHighCoprocessor0 (op1,op2,i) -> (tags, [ oi op1; oi op2; i ])
+      | MoveWordFromCoprocessor2 (op, i1, i2) -> (tags, [ oi op; i1; i2 ])
+      | MoveWordToCoprocessor2 (op, i1, i2) -> (tags, [ oi op; i1; i2 ])
+      | MoveWordFromHighHalfCoprocessor2 (op, i1, i2) -> (tags, [ oi op; i1; i2 ])
+      | Prefetch (op,hint) -> (tags, [ hint; oi op ])
     in
     mips_opcode_table#add key
 

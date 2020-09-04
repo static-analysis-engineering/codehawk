@@ -223,7 +223,7 @@ object (self)
     List.iter (fun assemblyFunction -> 
         f assemblyFunction#get_address assemblyFunction) self#get_functions
 
-  method  get_function_coverage =
+  method get_function_coverage =
     let table = H.create 37 in
     let add faddr ctxta =
       let a = (ctxt_string_to_location faddr ctxta)#i in

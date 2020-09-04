@@ -129,21 +129,28 @@ object (self)
            (floc:floc_int)
            (restriction:block_restriction_t option) =
     let rewrite_expr x:xpr_t =
-      let rec expand x =
-        match x with
-        | XVar v
-             when floc#env#is_global_variable v
-                  && elf_header#is_program_address
-                       (floc#env#get_global_variable_address v) ->
-           num_constant_expr
-             (elf_header#get_program_value
-                (floc#env#get_global_variable_address v))#to_numerical
-        | XVar v when floc#env#is_symbolic_value v ->
-           expand (floc#env#get_symbolic_value_expr v)
-        | XOp (op,l) -> XOp (op, List.map expand l)
-        | _ -> x in
-      let xpr = floc#inv#rewrite_expr (expand x) floc#env#get_variable_comparator in      
-      simplify_xpr (expand xpr) in
+      try
+        let rec expand x =
+          match x with
+          | XVar v
+               when floc#env#is_global_variable v
+                    && elf_header#is_program_address
+                         (floc#env#get_global_variable_address v) ->
+             num_constant_expr
+               (elf_header#get_program_value
+                  (floc#env#get_global_variable_address v))#to_numerical
+          | XVar v when floc#env#is_symbolic_value v ->
+             expand (floc#env#get_symbolic_value_expr v)
+          | XOp (op,l) -> XOp (op, List.map expand l)
+          | _ -> x in
+        let xpr = floc#inv#rewrite_expr (expand x) floc#env#get_variable_comparator in
+        simplify_xpr (expand xpr)
+      with IO.No_more_input ->
+        begin
+          pr_debug [ STR "Error in rewriting expression: " ; x2p x ;
+                     STR ": No more input"; NL ];
+          raise IO.No_more_input
+        end in
     let get_condition_exprs thenxpr elsexpr =
       match restriction with
       | Some (BranchAssert false) -> (false_constant_expr,elsexpr)
@@ -159,6 +166,25 @@ object (self)
          let rresult = rewrite_expr result in
          ([ "a:vxxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
                           xd#index_xpr result ; xd#index_xpr rresult ])
+
+      | AddImmediate (dst,src,imm) ->
+         let rhs1 = src#to_expr floc in
+         let rhs2 = imm#to_expr floc in
+         let lhs = dst#to_variable floc in
+         let result = XOp (XPlus, [ rhs1 ; rhs2 ]) in
+         let rresult = rewrite_expr result in
+         let _ = ignore (get_string_reference floc rresult) in
+         ([ "a:vxxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
+                          xd#index_xpr result ; xd#index_xpr rresult ])
+
+      | AddUpperImmediate (dst,src,imm) ->
+         let rhs1 = src#to_expr floc in
+         let rhs2 = num_constant_expr (imm#to_numerical#mult (mkNumerical (256 * 256))) in
+         let lhs = dst#to_variable floc in
+         let result = XOp (XPlus, [ rhs2; rhs2 ]) in
+         let rresult = rewrite_expr result in
+         ([ "a:vxxxx" ],[ xd#index_variable lhs; xd#index_xpr rhs1; xd#index_xpr rhs2;
+                          xd#index_xpr result; xd#index_xpr rresult ])
 
       | AddImmediateUnsigned (dst,src,imm) ->
          let rhs1 = src#to_expr floc in
@@ -305,6 +331,13 @@ object (self)
          ([ "a:xxxx" ], [ xd#index_xpr rhs ; xd#index_xpr result ;
                           xd#index_xpr rresult ; xd#index_xpr negresult ])
 
+      | BranchLTZeroLink (src,tgt) ->
+         let rhs = src#to_expr floc in
+         let result = XOp (XLt, [ rhs ; zero_constant_expr ]) in
+         let rresult = rewrite_expr result in
+         ([ "a:xxx" ],[ xd#index_xpr rhs ; xd#index_xpr result ;
+                        xd#index_xpr rresult ])
+
       | BranchNotEqual (src1,src2,tgt) ->
          let rhs1 = src1#to_expr floc in
          let rhs2 = src2#to_expr floc in
@@ -326,6 +359,34 @@ object (self)
          ([ "a:xxxxx" ],[ xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
                           xd#index_xpr result ; xd#index_xpr rresult ;
                           xd#index_xpr negresult ])
+
+      | DivideWord (hi,lo,rs,rt) ->
+         let lhshi = hi#to_variable floc in
+         let lhslo = lo#to_variable floc in
+         let rhs1 = rs#to_expr floc in
+         let rhs2 = rt#to_expr floc in
+         let resultlo = XOp (XDiv, [ rhs1; rhs2 ]) in
+         let resulthi = XOp (XMod, [ rhs1; rhs2 ]) in
+         let rresultlo = rewrite_expr resultlo in
+         let rresulthi = rewrite_expr resulthi in
+         ([ "a:vvxxxxxx" ],[ xd#index_variable lhslo; xd#index_variable lhshi;
+                             xd#index_xpr rhs1; xd#index_xpr rhs2;
+                             xd#index_xpr resultlo; xd#index_xpr resulthi;
+                             xd#index_xpr rresultlo; xd#index_xpr rresulthi ])
+
+      | ExtractBitField (dst,src,pos,size) ->
+         let lhs = dst#to_variable floc in
+         let rhs = src#to_expr floc in
+         let rrhs = rewrite_expr rhs in
+         ([ "a:vxx" ],[ xd#index_variable lhs; xd#index_xpr rhs;
+                        xd#index_xpr rrhs ])
+
+      | InsertBitField (dst,src,pos,size) ->
+         let lhs = dst#to_variable floc in
+         let rhs = src#to_expr floc in
+         let rrhs = rewrite_expr rhs in
+         ([ "a:vxx" ],[ xd#index_variable lhs; xd#index_xpr rhs;
+                        xd#index_xpr rrhs ])
 
       | JumpLink _ | BranchLink _
            when floc#has_call_target
@@ -407,7 +468,14 @@ object (self)
          let addr = rewrite_expr (src#to_address floc) in         
          let rhs = rewrite_expr (src#to_expr floc) in
          let lhs = dst#to_variable floc in
-         ([ "a:vx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
+         ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
+                        xd#index_xpr addr ])
+
+      | LoadHalfWord (dst,src) ->
+         let addr = rewrite_expr (src#to_address floc) in
+         let rhs = rewrite_expr (src#to_expr floc) in
+         let lhs = dst#to_variable floc in
+         ([ "a:vx" ],[ xd#index_variable lhs; xd#index_xpr rhs;
                        xd#index_xpr addr ])
 
       | LoadHalfWordUnsigned (dst,src) ->
@@ -439,6 +507,13 @@ object (self)
          let lhs = dst#to_variable floc in
          ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ; xd#index_xpr addr ])
 
+      | LoadWordFP (dst,src) ->
+         let addr = rewrite_expr (src#to_address floc) in
+         let rhs = rewrite_expr (src#to_expr floc) in
+         let lhs = dst#to_variable floc in
+         ([ "a:vxa" ],[ xd#index_variable lhs; xd#index_xpr rhs;
+                        xd#index_xpr addr ])
+
       | LoadWordLeft (dst,src) ->
          let addr = rewrite_expr (src#to_address floc) in         
          let rhs = rewrite_expr (src#to_expr floc) in
@@ -451,17 +526,106 @@ object (self)
          let lhs = dst#to_variable floc in
          ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ; xd#index_xpr addr ])
 
+      | MoveConditionalNotZero (dst,src,testxpr) ->
+         let lhs = dst#to_variable floc in
+         let rhs = rewrite_expr (src#to_expr floc) in
+         let testxpr = rewrite_expr (testxpr#to_expr floc) in
+         let cond = XOp (XNe, [ testxpr; zero_constant_expr ]) in
+         let ccond = rewrite_expr cond in
+         ([ "a:vxxx" ],[ xd#index_variable lhs; xd#index_xpr rhs;
+                         xd#index_xpr cond; xd#index_xpr ccond ])
+
+      | MoveConditionalZero (dst,src,testxpr) ->
+         let lhs = dst#to_variable floc in
+         let rhs = rewrite_expr (src#to_expr floc) in
+         let testxpr = rewrite_expr (testxpr#to_expr floc) in
+         let cond = XOp (XEq, [ testxpr; zero_constant_expr ]) in
+         let ccond = rewrite_expr cond in
+         ([ "a:vxxx" ],[ xd#index_variable lhs; xd#index_xpr rhs;
+                         xd#index_xpr cond; xd#index_xpr ccond ])
+
       | MoveFromLo (rd,lo) ->
          let lhs = rd#to_variable floc in
          let rhs = rewrite_expr (lo#to_expr floc) in
          ([ "a:vx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ])
+
+      | MoveFromHi (rd,hi) ->
+         let lhs = rd#to_variable floc in
+         let rhs = rewrite_expr (hi#to_expr floc) in
+         ([ "a:vx" ],[ xd#index_variable lhs; xd#index_xpr rhs ])
+
+      | MoveToLo (lo,rs) ->
+         let lhs = lo#to_variable floc in
+         let rhs = rewrite_expr (rs#to_expr floc) in
+         ([ "a:vx" ],[ xd#index_variable lhs; xd#index_xpr rhs ])
+
+      | MoveToHi (hi,rs) ->
+         let lhs = hi#to_variable floc in
+         let rhs = rewrite_expr (rs#to_expr floc) in
+         ([ "a:vx" ],[ xd#index_variable lhs; xd#index_xpr rhs ])
 
       | Move (dst,src) ->
          let rhs = rewrite_expr (src#to_expr floc) in
          let lhs = dst#to_variable floc in
          ([ "a:vx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ])
 
+      | MoveWordFromFP (dst,src) ->
+         let rhs = rewrite_expr (src#to_expr floc) in
+         let lhs = dst#to_variable floc in
+         ([ "a:vx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ])
+
+      | MoveWordFromHighHalfFP (dst,src) ->
+         let rhs = rewrite_expr (src#to_expr floc) in
+         let lhs = dst#to_variable floc in
+         ([ "a:vx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ])
+
+      | MoveWordToHighHalfFP (src,dst) ->
+         let rhs = rewrite_expr (src#to_expr floc) in
+         let lhs = dst#to_variable floc in
+         ([ "a:vx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ])
+
+      | MoveFromCoprocessor0 (dst,src,sel) ->
+         let rhs = rewrite_expr (src#to_expr floc) in
+         let lhs = dst#to_variable floc in
+         ([ "a:vx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ])
+
+      | MoveToCoprocessor0 (src,dst,sel) ->
+         let rhs = rewrite_expr (src#to_expr floc) in
+         ([ "a:x" ],[ xd#index_xpr rhs ])
+
+      | MoveFromHighCoprocessor0 (dst,src,sel) ->
+         let rhs = rewrite_expr (src#to_expr floc) in
+         let lhs = dst#to_variable floc in
+         ([ "a:vx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ])
+
+      | MoveToHighCoprocessor0 (src,dst,_) ->
+         let rhs = rewrite_expr (src#to_expr floc) in
+         ([ "a:x" ],[ xd#index_xpr rhs ])
+
+      | MoveWordFromCoprocessor2 (dst,_,_) ->
+         let lhs = dst#to_variable floc in
+         ([ "a:v" ],[ xd#index_variable lhs ])
+
+      | MoveWordToCoprocessor2 (src,_,_) ->
+         let rhs = rewrite_expr (src#to_expr floc) in
+         ( [ "a:x" ],[ xd#index_xpr rhs ])
+
+      | MoveWordFromHighHalfCoprocessor2 (dst,_,_) ->
+         let lhs = dst#to_variable floc in
+         ([ "a:v" ],[ xd#index_variable lhs ])
+
       | MultiplyWord (hi,lo,rs,rt) ->
+         let lhshi = hi#to_variable floc in
+         let lhslo = lo#to_variable floc in
+         let rhs1 = rs#to_expr floc in
+         let rhs2 = rt#to_expr floc in
+         let result = XOp (XMult, [ rhs1 ; rhs2 ]) in
+         let rresult = rewrite_expr result in
+         ([ "a:vvxxxx" ],[ xd#index_variable lhshi ; xd#index_variable lhslo ;
+                           xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
+                           xd#index_xpr result ; xd#index_xpr rresult ])
+
+      | MultiplyUnsignedWord (hi,lo,rs,rt) ->
          let lhshi = hi#to_variable floc in
          let lhslo = lo#to_variable floc in
          let rhs1 = rs#to_expr floc in
@@ -482,9 +646,23 @@ object (self)
          let result = XOp (XMult, [ rhs1 ; rhs2 ]) in
          let rresult = rewrite_expr result in
          ([ "a:vvxxxxxx" ],[ xd#index_variable lhshi ; xd#index_variable lhslo ;
-                           xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
-                           xd#index_xpr rhslo ; xd#index_xpr rhshi  ;
-                           xd#index_xpr result ; xd#index_xpr rresult ])
+                             xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
+                             xd#index_xpr rhslo ; xd#index_xpr rhshi  ;
+                             xd#index_xpr result ; xd#index_xpr rresult ])
+
+      | MultiplyAddUnsignedWord (hi,lo,rs,rt) ->
+         let lhshi = hi#to_variable floc in
+         let lhslo = lo#to_variable floc in
+         let rhshi = hi#to_expr floc in
+         let rhslo = lo#to_expr floc in
+         let rhs1 = rs#to_expr floc in
+         let rhs2 = rt#to_expr floc in
+         let result = XOp (XMult, [ rhs1; rhs2 ]) in
+         let rresult = rewrite_expr result in
+         ([ "a:vvxxxxxx" ],[ xd#index_variable lhshi; xd#index_variable lhslo;
+                             xd#index_xpr rhs1; xd#index_xpr rhs2;
+                             xd#index_xpr rhslo; xd#index_xpr rhshi;
+                             xd#index_xpr result; xd#index_xpr rresult ])
 
       | Nor (dst,src1,src2) ->
          let lhs = dst#to_variable floc in
@@ -515,6 +693,14 @@ object (self)
          ([ "a:vxxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs1 ;
                           xd#index_xpr rhs2 ; xd#index_xpr result ;
                           xd#index_xpr rresult ])
+
+      | Prefetch (addr,hint) ->
+         let rhs = addr#to_expr floc in
+         ([ "a:a" ],[ xd#index_xpr rhs ])
+
+      | ReadHardwareRegister (dst,index) ->
+         let lhs = dst#to_variable floc in
+         ([ "a:v" ],[ xd#index_variable lhs ])
 
       | Return ->
          let rvar = floc#f#env#mk_mips_register_variable MRv0 in
@@ -672,6 +858,20 @@ object (self)
          ([ "a:vxxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ; xd#index_xpr rrhs ;
                          xd#index_xpr addr ])
 
+      | StoreWordFromFP (dst,src) ->
+         let addr = rewrite_expr (dst#to_address floc) in
+         let lhs = dst#to_variable floc in
+         let rhs = src#to_expr floc in
+         ([ "a:vxa" ],[ xd#index_variable lhs; xd#index_xpr rhs;
+                        xd#index_xpr addr ])
+
+      | StoreDoublewordFromFP (dst,src) ->
+         let addr = rewrite_expr (dst#to_address floc) in
+         let lhs = dst#to_variable floc in
+         let rhs = src#to_expr floc in
+         ([ "a:vxa" ],[ xd#index_variable lhs; xd#index_xpr rhs;
+                        xd#index_xpr addr ])
+
       | StoreConditionalWord (dst,src) ->
          let addr = rewrite_expr (dst#to_address floc) in         
          let lhs = dst#to_variable floc in
@@ -719,6 +919,19 @@ object (self)
          let arg = floc#env#mk_mips_register_variable MRv0 in
          let argval = rewrite_expr (XVar arg) in
          ([ "a:x" ],[ xd#index_xpr argval ])
+
+      | TrapIfEqualImmediate (src,imm) ->
+         let rhs1 = src#to_expr floc in
+         let rhs2 = imm#to_expr floc in
+         let rrhs1 = rewrite_expr rhs1 in
+         ([ "a:xxx" ],[ xd#index_xpr rhs1; xd#index_xpr rhs2; xd#index_xpr rrhs1 ])
+
+      | WordSwapBytesHalfwords (dst,src) ->
+         let lhs = dst#to_variable floc in
+         let rhs = src#to_expr floc in
+         let rrhs = rewrite_expr rhs in
+         ([ "a:vxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
+                        xd#index_xpr rrhs ])
 
       | Xor (dst,src1,src2) ->
          let lhs = dst#to_variable floc in
