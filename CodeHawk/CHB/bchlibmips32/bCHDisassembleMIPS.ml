@@ -41,6 +41,7 @@ open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHByteUtilities
 open BCHDataBlock
 open BCHDoubleword
 open BCHFloc
@@ -175,6 +176,11 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
        pr_debug [ STR "Error in disassembly: " ; p ] ;
        raise (BCH_failure p)
      end
+  | IO.No_more_input ->
+     begin
+       pr_debug [ STR "Error in disassembly: No more input" ; NL ];
+       raise IO.No_more_input
+     end
   
 
 let disassemble_mips_sections () =
@@ -212,90 +218,45 @@ let disassemble_mips_sections () =
         disassemble h#get_addr displacement x) xSections in
   sizeOfCode
 
-  (* returns the address of the location holding the relocation symbol
-     if the instructions exhibit the following pattern:
-     a   : lui    $t7,...
-           lw     $t9,xxx($t7)
-           jr     $t9
-           addiu  $t8, $t7, xxx    (not included in the check)
-
-     b   : lw     $t9,...
-           move   $t7,ra
-           jalr   $ra,$t9
-           li     $t8,xxx
-
-     None otherwise
-
-strings: 
+(* recognizes patterns of library function calls
+   strings:
      1080998f 2578e003 09f82003 0b001824
      1080998f 2578e003 09f82003 0c001824
+
+     F B 0x46df90  10 80 99 8f       lw       $t9, -0x7ff0($gp)
+         0x46df94  21 78 e0 03       move     $t7, $ra
+         0x46df98  09 f8 20 03       jalr     $ra, $t9
+         0x46df9c  b9 01 18 24       li       $t8, 441
+
+     1080998 f2178e003 09f82003 b9011824
+
+     F B 0x403810  8f 99 80 10       lw       $t9, -0x7ff0($gp)
+         0x403814  03 e0 78 21       move     $t7, $ra
+         0x403818  03 20 f8 09       jalr     $ra, $t9
+         0x40381c  24 18 00 49       li       $t8, 73
+
+     8f998010 03e07821 0320f809 241800xx
    *)
 
-  let is_library_stub instrs =
-    let regex = Str.regexp "1080998f2578e00309f82003\\(..\\)001824" in
-    Str.string_match regex instrs 0
-  
-let extract_so_symbol (opcodes:mips_opcode_t list) =
-  match opcodes with
-  | [ LoadUpperImmediate (tmp,imm16) ;
-      LoadWord (dst,src) ;
-      JumpRegister tgt ; _ ] ->
-     (match (tmp#get_kind, src#get_kind) with
-      | (MIPSReg r1, MIPSIndReg (r2,offset)) when r1 = r2 ->
-         (match dst#get_kind with
-          | MIPSReg MRt9 ->            (* specified in the ABI *)
-             let addr = (imm16#to_numerical#toInt lsl 16) + offset#toInt in
-             Some (int_to_doubleword addr)
-          | _ -> None)
-      | _ -> None)
-  | [ LoadWord (dst1,src1);
-      Or (dst2,src21,src22);
-      JumpLinkRegister (ra3,tgt3);
-      LoadImmediate (dst4,imm4) ] ->
-     (match (dst1#get_kind,
-             dst2#get_kind,
-             src21#get_kind,
-             src22#get_kind,
-             ra3#get_kind,
-             tgt3#get_kind,
-             dst4#get_kind,
-             imm4#get_kind) with
-      | (MIPSReg MRt9,      (* dst1 *)
-         MIPSReg MRt7,      (* dst2 *)
-         MIPSReg MRra,      (* src21 *)
-         MIPSReg MRzero,    (* src22 *)
-         MIPSReg MRra,      (* ra3 *)
-         MIPSReg MRt9,      (* tgt3 *)
-         MIPSReg MRt9,      (* dst4 *)
-         MIPSImmediate imm) ->  (* imm4 *)
-         Some (int_to_doubleword imm#to_numerical#toInt)
-      | _ -> None)
-  | _ -> None
+let is_library_stub faddr =
+  if elf_header#is_program_address faddr then
+    let bytestring = byte_string_to_printed_string (elf_header#get_xsubstring faddr 16) in
+    let instrseqs = [
+        "1080998f2578e00309f82003\\(..\\)001824";
+        "1080998f2178e00309f82003\\(..\\)001824";
+        "1080998f2178e00309f82003\\(....\\)1824";
+        "8f99801003e078210320f8092418\\(....\\)"
+      ] in
+    List.exists (fun s ->
+        let regex = Str.regexp s in
+        Str.string_match regex bytestring 0) instrseqs
+  else
+    false
 
-let get_so_target (instr:mips_assembly_instruction_int) =
-  let check_so_target tgtaddr =
-    try
-      let get_tgtopc a = (!mips_assembly_instructions#at_address a)#get_opcode in
-      let tgtopc1 = get_tgtopc tgtaddr in
-      let tgtopc2 = get_tgtopc (tgtaddr#add_int 4) in
-      let tgtopc3 = get_tgtopc (tgtaddr#add_int 8) in
-      let tgtopc4 = get_tgtopc (tgtaddr#add_int 12) in
-      extract_so_symbol [ tgtopc1; tgtopc2; tgtopc3; tgtopc4 ]
-    with
-    | BCH_failure p ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Error in get_so_target on instr: " ;
-                          instr#get_address#toPretty ;  STR ": " ;
-                          instr#toPretty ; STR ": " ;  p ])) in
-  match instr#get_opcode with
-  | JumpLink op
-  | BranchLink op when op#is_absolute_address ->
-     let opaddr = op#get_absolute_address in
-     (match check_so_target opaddr with
-      | Some addr -> elf_header#get_relocation addr
-      | _ -> None)
-  | _ -> None
+let extract_so_symbol (opcodes:mips_opcode_t list) = None    (* TBD *)
+let get_so_target (instr:mips_assembly_instruction_int) =  None   (* TBD *)
 
+(* can be used before functions have been constructed *)
 let is_nr_call_instruction (instr:mips_assembly_instruction_int) =
   match get_so_target instr with
   | Some sym ->
@@ -463,7 +424,10 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       (Some (mk_ci_succ [ nextblock ; tgtblock ]),va#add_int 4,[])
     else if is_direct_jump_instruction instr#get_opcode then
       let tgtblock = get_direct_jump_target_address instr#get_opcode in
-      (Some (mk_ci_succ [ tgtblock ]),va#add_int 4,[])
+      if functions_data#is_function_entry_point tgtblock then
+        (Some [],va#add_int 4,[])                (* function chaining *)
+      else
+        (Some (mk_ci_succ [ tgtblock ]),va#add_int 4,[])
     else if is_indirect_jump_instruction instr#get_opcode then
       if system_info#has_jump_table_target faddr va then
         let loc = make_location { loc_faddr = faddr ; loc_iaddr = va } in
@@ -584,7 +548,6 @@ let construct_functions f =
         try
           begin
             count := !count + 1;
-            pverbose [ STR "Construct function " ; faddr#toPretty ; NL ] ;
             construct_mips_assembly_function !count faddr
           end
         with
@@ -596,13 +559,7 @@ let construct_functions f =
       if fndata#is_library_stub then
         ()
       else if fndata#has_name then
-        let instrs =
-          List.map !mips_assembly_instructions#at_address
-            [ faddr; faddr#add_int 4 ; faddr#add_int 8; faddr#add_int 12 ] in
-        let instrstr =
-          String.concat ""
-            (List.map (fun i -> i#get_bytes_ashexstring) instrs) in
-        if is_library_stub instrstr then
+        if is_library_stub faddr then
           begin
             fndata#set_library_stub;
             chlog#add
