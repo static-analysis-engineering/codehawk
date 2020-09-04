@@ -2655,13 +2655,17 @@ object
   method get_test_variables: (variable_t * variable_t) list
 
   (* returns the CHIF code associated with the call instruction *)
-  method get_call_commands: (doubleword_int ->string option) -> cmd_t list
+  method get_call_commands: (doubleword_int -> string option) -> cmd_t list
 
   method get_mips_call_commands: cmd_t list
+  method get_mips_syscall_commands: cmd_t list
 
   (* returns the CHIF code associated with an assignment instruction *)
   method get_assign_commands:
            variable_t -> ?size:xpr_t -> ?vtype:btype_t -> xpr_t -> cmd_t list
+
+  method get_conditional_assign_commands:
+           xpr_t -> variable_t -> xpr_t -> cmd_t list
 
   method get_sideeffect_assigns: function_semantics_t -> cmd_t list
 
