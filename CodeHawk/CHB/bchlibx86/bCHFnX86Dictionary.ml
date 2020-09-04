@@ -58,7 +58,6 @@ open BCHAssemblyInstructions
 open BCHDisassemblyUtils
 open BCHConditionalJumpExpr
 open BCHLibx86Types
-open BCHLoopStructure
 open BCHOperand
 open BCHX86Dictionary
 open BCHX86OpcodeRecords
