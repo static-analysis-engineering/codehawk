@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +34,7 @@ open CHUtil
 open CHXmlDocument
 
 (* bchlib *)
+open BCHBasicTypes
 open BCHByteUtilities   
 open BCHDoubleword
 open BCHLibTypes
@@ -49,6 +51,26 @@ class elf_raw_section_t (s:string) (vaddr:doubleword_int):elf_raw_section_int =
 object (self)
 
   method get_xstring = s
+
+  method get_xsubstring (va:doubleword_int) (size:int) =
+    if self#includes_VA va then
+      try
+        let start = (va#subtract vaddr)#to_int in
+        String.sub s start size
+      with Invalid_argument s ->
+        raise
+          (BCH_failure
+             (LBLOCK [ STR "Invalid section substring request: ";
+                       STR "vaddr: "; vaddr#toPretty;
+                       STR "; start: "; va#toPretty;
+                       STR "; length: "; INT size ;
+                       STR ": "; STR s ]))
+    else
+      raise
+        (BCH_failure
+           (LBLOCK [ STR "Invalid section substring request: ";
+                     STR "start address: "; va#toPretty;
+                     STR " not included in section: "; vaddr#toPretty ]))
 
   method get_vaddr = vaddr
 
