@@ -72,16 +72,16 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-initialize: cmx/jCHVersion.cmx cmx/jCHXInitializeAnalysis.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+initialize: cmi/jCHVersion.cmi cmx/jCHVersion.cmx cmi/jCHXInitializeAnalysis.cmi cmx/jCHXInitializeAnalysis.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLBUILD) -o chj_initialize cmx/jCHVersion.cmx cmx/jCHXInitializeAnalysis.cmx
 
-classinvariants: cmx/jCHXClassInvariants.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+classinvariants: cmi/jCHXClassInvariants.cmi cmx/jCHXClassInvariants.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLBUILD) -o chj_class_invariants cmx/jCHXClassInvariants.cmx
 
-translateclass: cmx/jCHXTranslateClass.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+translateclass: cmi/jCHXTranslateClass.cmi cmx/jCHXTranslateClass.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLPREBUILD) -o chj_translate_class cmx/jCHXTranslateClass.cmx
 
-usertemplate: cmx/jCHXTemplate.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+usertemplate: cmi/jCHXTemplate.cmi cmx/jCHXTemplate.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLBUILD) -o chj_template cmx/jCHXTemplate.cmx
 
 

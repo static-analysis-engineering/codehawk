@@ -65,9 +65,6 @@ open BCHLibx86Types
 (* bchanalyze *)
 open BCHFileIO
 
-(* bchgui *)
-open BCHCanvasUtil
-
 let get_function_name (address:doubleword_int) =
   if functions_data#has_function_name address then
     (functions_data#get_function address)#get_function_name

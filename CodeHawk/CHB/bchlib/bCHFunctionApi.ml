@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -120,17 +121,18 @@ let read_xml_function_api (node:xml_element_int):function_api_t =
   let find l default = 
     List.fold_left (fun acc s -> 
       if hasc s then read_xml_returntype (getc s) else acc) default l in
-  { fapi_name = get "name" ;
-    fapi_parameters = parameters ;
-    fapi_varargs = varargs ;
-    fapi_va_list = None ;
-    fapi_returntype = find [ "returntype" ; "returnbtype" ] t_void ;
+  { fapi_name = get "name";
+    fapi_parameters = parameters;
+    fapi_varargs = varargs;
+    fapi_va_list = None;
+    fapi_returntype = find [ "returntype" ; "returnbtype" ] t_void;
     fapi_rv_roles =
-      (if hasc "rv-roles" then read_xml_roles (getc "rv-roles") else []) ;
+      (if hasc "rv-roles" then read_xml_roles (getc "rv-roles") else []);
     fapi_calling_convention = cc ;
-    fapi_inferred = (has "inferred" && (get "inferred") = "yes") ;
-    fapi_jni_index = if has "jni" then Some (geti "jni") else None ;
-    fapi_stack_adjustment = if has "adj" then Some (geti "adj") else stackadj ;
+    fapi_inferred = (has "inferred" && (get "inferred") = "yes");
+    fapi_jni_index = if has "jni" then Some (geti "jni") else None;
+    fapi_syscall_index = if has "syscall" then Some (geti "syscall") else None;
+    fapi_stack_adjustment = if has "adj" then Some (geti "adj") else stackadj;
     fapi_registers_preserved = if hasc "registers-preserved" then
 	read_xml_registers_preserved (getc "registers-preserved") else []
 }
@@ -210,16 +212,17 @@ let demangled_name_to_function_api (dm:demangled_name_t) =
     apar_size = (match (get_size_of_btype ty) with Some s -> s | _ -> 4) ;
     apar_fmt = NoFormat
   } in
-  { fapi_name = tname_to_string dm.dm_name ;
-    fapi_parameters = List.mapi make_parameter dm.dm_parameter_types ;
-    fapi_varargs = false ;   (* TBD: to be investigated *)
-    fapi_va_list = None ;
-    fapi_returntype = returntype ;
-    fapi_rv_roles = [] ;
-    fapi_stack_adjustment = stack_adjustment ;
-    fapi_jni_index = None ;
-    fapi_calling_convention = dm.dm_calling_convention ;
-    fapi_inferred = false ;
+  { fapi_name = tname_to_string dm.dm_name;
+    fapi_parameters = List.mapi make_parameter dm.dm_parameter_types;
+    fapi_varargs = false;   (* TBD: to be investigated *)
+    fapi_va_list = None;
+    fapi_returntype = returntype;
+    fapi_rv_roles = [];
+    fapi_stack_adjustment = stack_adjustment;
+    fapi_jni_index = None;
+    fapi_syscall_index = None;
+    fapi_calling_convention = dm.dm_calling_convention;
+    fapi_inferred = false;
     fapi_registers_preserved = []
   }
 
@@ -230,15 +233,16 @@ let default_function_api
       (name:string)
       (pars:api_parameter_t list) =
   {
-    fapi_name = name ;
-    fapi_parameters = pars ;
-    fapi_varargs = false ;
-    fapi_va_list = None ;
-    fapi_returntype = t_unknown ;
-    fapi_rv_roles = [] ;
-    fapi_stack_adjustment = Some adj ;
-    fapi_jni_index = None ;
-    fapi_calling_convention = cc ;
-    fapi_registers_preserved = [] ;
+    fapi_name = name;
+    fapi_parameters = pars;
+    fapi_varargs = false;
+    fapi_va_list = None;
+    fapi_returntype = t_unknown;
+    fapi_rv_roles = [];
+    fapi_stack_adjustment = Some adj;
+    fapi_jni_index = None;
+    fapi_syscall_index = None;
+    fapi_calling_convention = cc;
+    fapi_registers_preserved = [];
     fapi_inferred = false
   }

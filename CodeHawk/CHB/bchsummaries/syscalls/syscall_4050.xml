@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-08-31 16:05:22"/>
+  <syscallfun index="4050" name="getegid">
+    <refer-to name="getegid"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

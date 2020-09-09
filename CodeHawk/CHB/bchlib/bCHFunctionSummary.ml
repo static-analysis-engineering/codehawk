@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -190,12 +191,27 @@ object (self:'a)
   method get_registers_preserved = api.fapi_registers_preserved
 
   method get_jni_index = 
-    match api.fapi_jni_index with Some i -> i | _ ->
+    match api.fapi_jni_index with
+    | Some i -> i
+    | _ ->
       begin
-	ch_error_log#add "invocation error" 
-	  (LBLOCK [ STR "function_summary#get_jni_index" ]) ;
-	raise (Invocation_error "function_summary#get_jni_index")
+	ch_error_log#add
+          "invocation error" 
+	  (LBLOCK [ STR "function_summary#get_jni_index" ]);
+	raise (BCH_failure (LBLOCK [ STR "function_summary#get_jni_index"]))
       end
+
+  method get_syscall_index =
+    match api.fapi_syscall_index with
+    | Some i -> i
+    | _ ->
+       begin
+         ch_error_log#add
+           "invocation error"
+           (LBLOCK [ STR "function_summary#get_syscall_index" ]);
+         raise
+           (BCH_failure (LBLOCK [ STR "function_summary#get_syscall_index" ]))
+       end
 
   method get_preconditions = sem.fsem_pre
   method get_postconditions = sem.fsem_post
@@ -277,16 +293,17 @@ let default_function_documentation = {
 
 let default_summary name =
   let api = {
-    fapi_name = name ;
-    fapi_parameters = [] ;
-    fapi_varargs = false ;
-    fapi_va_list = None ;
-    fapi_returntype = t_unknown ;
-    fapi_rv_roles = [] ;
-    fapi_stack_adjustment = None ;
-    fapi_jni_index = None ;
-    fapi_calling_convention = "cdecl"  ;
-    fapi_inferred = true ;
+    fapi_name = name;
+    fapi_parameters = [];
+    fapi_varargs = false;
+    fapi_va_list = None;
+    fapi_returntype = t_unknown;
+    fapi_rv_roles = [];
+    fapi_stack_adjustment = None;
+    fapi_jni_index = None;
+    fapi_syscall_index = None;
+    fapi_calling_convention = "cdecl";
+    fapi_inferred = true;
     fapi_registers_preserved = []
   } in
   let sem = default_function_semantics in

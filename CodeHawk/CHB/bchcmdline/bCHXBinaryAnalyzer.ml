@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -384,11 +385,16 @@ let main () =
       begin
         file_output#saveFile
           (get_asm_listing_filename ())
-          (STR ((!BCHMIPSAssemblyInstructions.mips_assembly_instructions)#toString ())) ;
+          (STR ((!BCHMIPSAssemblyInstructions.mips_assembly_instructions)#toString ()));
 	file_output#saveFile
           (get_orphan_code_listing_filename ())
-	  (STR ((BCHMIPSAssemblyFunctions.mips_assembly_functions#dark_matter_to_string))) ;
-        save_log_files "disassemble" ;
+	  (STR ((BCHMIPSAssemblyFunctions.mips_assembly_functions#dark_matter_to_string)));
+        save_mips_assembly_instructions ();
+	save_system_info ();
+        save_mips_dictionary ();
+        save_interface_dictionary ();
+        save_bdictionary ();
+        save_log_files "disassemble";
       end
                 
 
@@ -415,28 +421,28 @@ let main () =
 	  let _ = analyze starttime in
           let _ = file_metrics#set_disassembly_results (get_disassembly_metrics ()) in
 	  begin
-	    save_functions_list () ;
-	    save_file_results () ;
-	    save_global_state () ;
-            x86_analysis_results#save ;            
-            save_x86dictionary () ;
-	    save_system_info () ;            
-            save_interface_dictionary () ;            
-            save_bdictionary () ;            
-	    save_log_files logcmd ;
+	    save_functions_list ();
+	    save_file_results ();
+	    save_global_state ();
+            x86_analysis_results#save;
+            save_x86dictionary ();
+	    save_system_info ();
+            save_interface_dictionary ();
+            save_bdictionary ();
+	    save_log_files logcmd;
 	    (if !save_asm then
               begin
 	        file_output#saveFile
                   (get_asm_listing_filename ())
-	          (STR ((!BCHAssemblyInstructions.assembly_instructions)#toString ())) ;
+	          (STR ((!BCHAssemblyInstructions.assembly_instructions)#toString ()));
 	        file_output#saveFile
                   (get_orphan_code_listing_filename ())
-	          (STR ((BCHAssemblyFunctions.assembly_functions#dark_matter_to_string))) ;
+	          (STR ((BCHAssemblyFunctions.assembly_functions#dark_matter_to_string)));
                 file_output#saveFile
                   (get_duplicate_coverage_filename ())
-                  (STR (BCHAssemblyFunctions.assembly_functions#duplicates_to_string)) ;
-                save_log_files !cmd ;
-	      end) ;
+                  (STR (BCHAssemblyFunctions.assembly_functions#duplicates_to_string));
+                save_log_files !cmd;
+	      end);
             exit 0
 	  end
 	else
@@ -462,15 +468,15 @@ let main () =
       let _ = analyze starttime in
       let _ = file_metrics#set_disassembly_results (get_disassembly_metrics ()) in      
       begin
-	save_functions_list () ;
-	save_system_info () ;
-	save_file_results () ;
-	save_global_state () ;
-        x86_analysis_results#save ;
-        save_x86dictionary () ;
-        save_interface_dictionary () ;        
-        save_bdictionary () ;
-	save_log_files logcmd ;
+	save_functions_list ();
+	save_system_info ();
+	save_file_results ();
+	save_global_state ();
+        x86_analysis_results#save;
+        save_x86dictionary ();
+        save_interface_dictionary ();
+        save_bdictionary ();
+	save_log_files logcmd;
 	exit 0
       end
 
@@ -493,21 +499,22 @@ let main () =
       let _ = analyze_mips starttime in
       let _ = file_metrics#set_disassembly_results (get_mips_disassembly_metrics ()) in      
       begin
-	save_functions_list () ;
-	save_system_info () ;
-	save_file_results () ;
-	save_global_state () ;
-        mips_analysis_results#save ;
-        save_mips_dictionary () ;
-        save_interface_dictionary () ;        
-        save_bdictionary () ;
+	save_functions_list ();
+	save_system_info ();
+	save_file_results ();
+	save_global_state ();
+        mips_analysis_results#save;
+        save_mips_assembly_instructions ();
+        save_mips_dictionary ();
+        save_interface_dictionary ();
+        save_bdictionary ();
         (file_output#saveFile
            (get_asm_listing_filename ())
-           (STR ((!BCHMIPSAssemblyInstructions.mips_assembly_instructions)#toString ()))) ;
+           (STR ((!BCHMIPSAssemblyInstructions.mips_assembly_instructions)#toString ())));
 	file_output#saveFile
           (get_orphan_code_listing_filename ())
-	  (STR ((BCHMIPSAssemblyFunctions.mips_assembly_functions#dark_matter_to_string))) ;
-	save_log_files logcmd ;
+	  (STR ((BCHMIPSAssemblyFunctions.mips_assembly_functions#dark_matter_to_string)));
+	save_log_files logcmd;
 	exit 0
       end
       

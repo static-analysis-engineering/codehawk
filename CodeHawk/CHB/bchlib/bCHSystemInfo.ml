@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1344,18 +1345,34 @@ object (self)
       else
 	if offset + size > len then
 	  let sizeAvailable = len - offset in
-	  begin
-	    ch_error_log#add "continue operation with error"
-	      (LBLOCK [ STR "Unable to return the requested size " ; 
-			STR " (" ; INT size ; STR " ); " ;
-			STR "only returning " ; INT sizeAvailable ; STR ")" ; NL ] ) ;
-            if len > offset then
-	      string_suffix !file_as_string offset
-            else
-              raise (BCH_failure
-                       (LBLOCK [ STR "get-file-string (error case): String.suffix: Length: " ;
-                                 INT len ; STR "; offset: " ; INT offset ])) 
-	  end
+          if size - sizeAvailable < 10 then
+	    begin
+	      ch_error_log#add "continue operation with error"
+	        (LBLOCK [ STR "Unable to return the requested size " ;
+			  STR " (" ; INT size ; STR " ); " ;
+			  STR "only returning " ; INT sizeAvailable ;
+                          STR " and filling up the rest with zeroes" ] ) ;
+              if len > offset then
+                let missing = Bytes.make (size - sizeAvailable) (Char.chr 0) in
+	        String.concat "" [ string_suffix !file_as_string offset; Bytes.to_string missing ]
+              else
+                raise (BCH_failure
+                         (LBLOCK [ STR "get-file-string (error case): String.suffix: Length: " ;
+                                   INT len ; STR "; offset: " ; INT offset ]))
+	    end
+          else
+            begin
+              ch_error_log#add "continue operation with error"
+                (LBLOCK [ STR "Unable to return the requested size ";
+                          STR " (" ; INT size ; STR " ); ";
+                          STR "only returning " ; INT sizeAvailable ]);
+              if len > offset then
+                string_suffix !file_as_string offset
+              else
+                raise (BCH_failure
+                         (LBLOCK [ STR "get-file-string (error case): String.suffix: Length: ";
+                                   INT len ; STR "; offset: " ; INT offset ]))
+            end
 	else
 	    String.sub !file_as_string offset size
     else

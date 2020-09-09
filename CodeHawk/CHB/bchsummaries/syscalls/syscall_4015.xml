@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-08-31 15:59:52"/>
+  <syscallfun index="4015" name="chmod">
+    <refer-to name="chmod"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

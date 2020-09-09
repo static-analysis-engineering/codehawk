@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -56,6 +57,7 @@ open BCHDisassembleMIPS
 open BCHMIPSAnalysisResults
 open BCHMIPSCHIFSystem
 open BCHMIPSAssemblyFunctions
+open BCHMIPSLoopStructure
 open BCHMIPSMetrics
 open BCHTranslateMIPSToCHIF
 
@@ -188,39 +190,71 @@ let analyze starttime =
     end
   end
 
-let analyze_mips_function faddr f =
+let analyze_mips_function faddr f count =
   let fstarttime = Unix.gettimeofday () in
   let finfo = load_function_info faddr in
   let _ = pverbose [ STR "Analyze " ; faddr#toPretty ; STR " (started: " ;
                      STR (time_to_string fstarttime) ; STR ")" ; NL ] in
   let _ = translate_mips_assembly_function f in
   if mips_chif_system#has_mips_procedure faddr then
+    let _ = record_loop_levels faddr in
+    let loopcount = get_loop_count_from_table f in
+    let loopdepth = get_loop_depth_from_table f in
+    let fintervaltime = ref 0.0 in
+    let dointervals = ref (loopdepth < 11) in
+    let dorelational = ref true in
+    let dovaluesets = ref true in
     let proc = mips_chif_system#get_mips_procedure faddr in
     begin
       bb_invariants#reset  ;
-      analyze_procedure_with_intervals proc mips_chif_system#get_mips_system ;
-      (if faddr#to_hex_string = "0x40c2f0" then
-         pr_debug [ STR "skip LR analysis for 0x40c2f0" ; NL ]
+      (if !dointervals then
+         analyze_procedure_with_intervals proc mips_chif_system#get_mips_system
        else
-         analyze_procedure_with_linear_equalities proc mips_chif_system#get_mips_system) ;
-      analyze_procedure_with_valuesets proc mips_chif_system#get_mips_system ;
-      extract_ranges finfo bb_invariants#get_invariants ;
-      extract_linear_equalities finfo bb_invariants#get_invariants ;
-      extract_valuesets finfo bb_invariants#get_invariants ;
-      resolve_indirect_mips_calls f ;
+         pr_debug [ STR "skip all analyses for " ; faddr#toPretty ;
+                    STR ". loopcount: " ; INT loopcount ;
+                    STR "; loopdepth: " ; INT loopdepth ;
+                    STR "; instrs: " ; INT f#get_instruction_count ; NL ]);
+      fintervaltime := (Unix.gettimeofday ()) -. fstarttime;
+      dorelational := !dointervals && (!fintervaltime < 5.0);
+      dovaluesets := !dointervals && (!fintervaltime < 60.0);
+      (if !dorelational then
+         analyze_procedure_with_linear_equalities proc mips_chif_system#get_mips_system
+       else
+         pr_debug [ STR "skip LR analysis for " ; faddr#toPretty ;
+                    STR " (size: " ; INT f#get_instruction_count ; STR " instrs)" ;
+                    STR " (intervaltime: " ;
+                    STR (Printf.sprintf "%.4f" !fintervaltime) ; STR " secs)" ]) ;
+      (if !dovaluesets then
+         analyze_procedure_with_valuesets proc mips_chif_system#get_mips_system
+       else
+         pr_debug [ STR " ... and valuesets" ]);
+      (if !dointervals then extract_ranges finfo bb_invariants#get_invariants) ;
+      (if !dorelational then extract_linear_equalities finfo bb_invariants#get_invariants) ;
+      (if !dovaluesets then extract_valuesets finfo bb_invariants#get_invariants) ;
+      (try
+         resolve_indirect_mips_calls f
+       with IO.No_more_input ->
+         begin
+           pr_debug [ STR "Error in resolve indirect calls: No more input" ; NL ];
+           raise IO.No_more_input
+         end);
       finfo#reset_invariants ;
       save_function_info finfo ;
       save_function_invariants finfo ;
       save_function_type_invariants finfo ;
-      mips_analysis_results#record_results f ;             
+      mips_analysis_results#record_results f ;
       save_function_variables finfo ;
       file_metrics#record_results
-	~nonrel:false
+	~nonrel:(not !dorelational)
 	~reset:finfo#were_invariants_reset
  	faddr
 	((Unix.gettimeofday ()) -. fstarttime)
         (get_mips_memory_access_metrics f finfo)
         (get_mips_cfg_metrics f finfo#env) ;
+      (if (not !dorelational) || (not !dovaluesets) then
+         pr_debug [ STR " - done: " ;
+                    STR (Printf.sprintf "%.4f" ((Unix.gettimeofday ()) -. fstarttime)) ;
+                    STR " secs" ; STR " (" ; INT count ; STR ")" ; NL ])
     end
   else
     pr_debug [ STR "Translation failed" ; NL ]
@@ -243,9 +277,15 @@ let analyze_mips starttime =
         else
         let _ = count := !count + 1 in
         try
-          analyze_mips_function faddr f
+          analyze_mips_function faddr f !count
         with
         | Failure s -> functionfailure "Failure" faddr (STR s)
+        | IO.No_more_input ->
+           begin
+             pr_debug [ STR "Function failure for " ; faddr#toPretty ;
+                        STR ": No more input" ; NL ];
+             raise IO.No_more_input
+           end
         | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
         | Internal_error s -> functionfailure "Internal error" faddr (STR s)
         | Invocation_error s -> functionfailure "Invocation error" faddr (STR s)

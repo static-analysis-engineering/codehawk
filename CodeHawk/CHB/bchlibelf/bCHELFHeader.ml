@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -493,12 +494,25 @@ object(self)
               s#get_string_reference a
            | _ -> None) section_header_table None
 
+  (* return a substring of the section starting at virtual address a
+     of size bytes *)
+  method get_xsubstring (a:doubleword_int) (size:int) =
+    match self#get_containing_section a with
+    | Some s -> s#get_xsubstring a size
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [ STR "Error in xsubstring request. ";
+                      STR "No section found that includes virtual address ";
+                      a#toPretty ]))
+
   method get_containing_section (a:doubleword_int) =
     H.fold (fun k v result ->
         match result with
         | Some _ -> result
         | _ ->
            match self#get_section k with
+           | ElfProgramSection t when t#includes_VA a -> Some ( t :> elf_raw_section_t )
            | ElfOtherSection t when t#includes_VA a -> Some t
            | _ -> None) section_header_table None
 

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-08-31 15:55:07"/>
+  <syscallfun index="4183" name="socket">
+    <refer-to name="socket"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

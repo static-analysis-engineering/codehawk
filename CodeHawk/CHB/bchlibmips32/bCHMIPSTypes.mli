@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +50,15 @@ type mips_fp_format_t =
 
 type mips_instr_format_t =
   | SyscallType of int
+  | RSyncType of   (* SPECIAL:0 *)
+      int (* opcode:6 (0) *)
+      * int (* 0:15 bits *)
+      * int (* stype:5 *)
+      * int (* funct:6 *)
+  | RBreakType of  (* SPECIAL:0 *)
+      int (* opcode:6 (0) *)
+      * int (* code:20 *)
+      * int (* funct:6 *)
   | RType of     (* SPECIAL:0 *)
       int (* opcode:6 (0) *)
       * int (* rs:5 *)
@@ -63,6 +73,13 @@ type mips_instr_format_t =
       * int (* rd:5 *)
       * int (* shamt:5 *)
       * int (* funct:6 *) 
+  | R3Type of    (*  SPECIAL3:31 *)
+      int (* opcode:6 (31) *)
+      * int (* rs:5 *)
+      * int (* rt:5 *)
+      * int (* rd:5 *)
+      * int (* shamt:5 *)
+      * int (* funct:6 *) 
   | IType of
       int (* opcode:6 *)
       * int (* rs:5 *)
@@ -71,22 +88,13 @@ type mips_instr_format_t =
   | JType of
       int (* opcode:6 (2,3) *)
       * int (* address:26 *)
-  | FPMCType of (* Floating Point Move Conditional *)
+  | FPMCType of (* Floating Point (Register) Move Conditional *)
       int (* opcode:6 (SPECIAL:0) *)
       * int (* rs:5 *)
       * int (* cc:3 *)
-      (* 1 bit: 0 *)
+      * int (* nd:1 *)
       * int (* tf:1 *)
       * int (* rd:5 *)
-      (*  5 bits: 0 *)
-      * int (* funct:6 *)
-  | FPRMCType of (* Floating Point RegisterMove Conditional *)
-      int (* opcode:6 (COP1:17) *)
-      * int (* fmt:5 *)
-      * int (* cc:3 *)
-      (* 1 bit: 0 *)
-      * int (* tf:1 *)
-      * int (* fs:5 *)
       * int (* fd:5 *)
       * int (* funct:6 *)
   | FPRType of
@@ -100,7 +108,8 @@ type mips_instr_format_t =
       int (* opcode:6 (COP1:17) *)
       * int (* sub:5 *)
       * int (* rt:5 *)
-      * int (* fs:5 *)  (* with 11 bits 0 *)
+      * int (* fs:5 *)
+      * int (* imm:11 *)
   | FPCompareType of
       int (* opcode:6 (COP1:17) *)
       * int (* fmt:5 *)
@@ -116,6 +125,9 @@ type mips_instr_format_t =
       * int (* nd:1 *)
       * int (* tf:1 *)
       * int (* offset:16 *)
+ | FormatUnknown of
+     int (* opcode:6 *)
+     * int (* rest:26 *)
 
 (* ================================================================= Operand === *)
 
@@ -162,6 +174,10 @@ type not_code_t = DataBlock of data_block_int
 type mips_opcode_t =
   (* SyscallType *)
   | Syscall of int
+  (* RSyncType *)
+  | Sync of int
+  (* RBreakType  *)
+  | Break of int
   (* I-type: branch/function call *)
   | BranchLink of mips_operand_int
   | BranchLEZero of mips_operand_int * mips_operand_int
@@ -208,6 +224,12 @@ type mips_opcode_t =
   | LoadDoublewordToFP of mips_operand_int * mips_operand_int
   | StoreWordFromFP of mips_operand_int * mips_operand_int
   | StoreDoublewordFromFP of mips_operand_int * mips_operand_int
+  | Prefetch of mips_operand_int * int
+  | TrapIfEqualImmediate of mips_operand_int * mips_operand_int
+  (* I-type: floating point *)
+  | MoveWordFromCoprocessor2 of mips_operand_int * int * int
+  | MoveWordToCoprocessor2 of mips_operand_int * int * int
+  | MoveWordFromHighHalfCoprocessor2 of mips_operand_int * int * int
   (* J-type *)
   | Jump of mips_operand_int
   | JumpLink of mips_operand_int
@@ -224,10 +246,11 @@ type mips_opcode_t =
   | MoveToHi of mips_operand_int * mips_operand_int (* src, HI *)
   | MoveFromLo of mips_operand_int * mips_operand_int (* dest, LO *)
   | MoveToLo of mips_operand_int * mips_operand_int (* src, LO *)
-  | MovN of mips_operand_int * mips_operand_int * mips_operand_int (* dst, src, test *)
-  | MovZ of mips_operand_int * mips_operand_int * mips_operand_int (* dst, src, test *)
+  | MoveConditionalNotZero of mips_operand_int * mips_operand_int * mips_operand_int (* dst, src, test *)
+  | MoveConditionalZero of mips_operand_int * mips_operand_int * mips_operand_int (* dst, src, test *)
   | MultiplyWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
   | MultiplyUnsignedWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
+  | MultiplyAddUnsignedWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
   | DivideWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
   | DivideUnsignedWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
   | Add of mips_operand_int * mips_operand_int * mips_operand_int (* dest,src1,src2 *)
@@ -245,6 +268,13 @@ type mips_opcode_t =
   | CountLeadingZeros of mips_operand_int * mips_operand_int
   | MultiplyWordToGPR of mips_operand_int * mips_operand_int * mips_operand_int
   | MultiplyAddWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
+  (* R3-type *)
+  | ExtractBitField of mips_operand_int * mips_operand_int * int * int
+  | InsertBitField of mips_operand_int * mips_operand_int * int * int
+  | ReadHardwareRegister of mips_operand_int * int
+  | SignExtendByte of mips_operand_int * mips_operand_int
+  | SignExtendHalfword of mips_operand_int * mips_operand_int
+  | WordSwapBytesHalfwords of mips_operand_int * mips_operand_int
   (* FPCM-type *)
   | MovF of int * mips_operand_int * mips_operand_int   (* cc, dst, src *)
   | MovT of int * mips_operand_int * mips_operand_int   (* cc, dst, src *)
@@ -274,8 +304,14 @@ type mips_opcode_t =
   (* FPRIType *)
   | MoveWordFromFP of mips_operand_int * mips_operand_int (* dst, src *)
   | MoveWordToFP of mips_operand_int * mips_operand_int (* src, dst *)
+  | MoveWordFromHighHalfFP of mips_operand_int * mips_operand_int (* dst, src *)
+  | MoveWordToHighHalfFP of mips_operand_int * mips_operand_int (* src, dst *)
   | ControlWordFromFP of mips_operand_int * mips_operand_int (* dst, src *)
   | ControlWordToFP of mips_operand_int * mips_operand_int (* src, dst *)
+  | MoveFromCoprocessor0 of mips_operand_int * mips_operand_int * int (* dst, src, sel *)
+  | MoveToCoprocessor0 of mips_operand_int * mips_operand_int * int (* src, dst, sel *)
+  | MoveFromHighCoprocessor0 of mips_operand_int * mips_operand_int * int (* dst, src, sel *)
+  | MoveToHighCoprocessor0 of mips_operand_int * mips_operand_int * int (* src, dst, sel *)
   (* FPICCType  *)
   | BranchFPFalse of int * mips_operand_int
   | BranchFPTrue of int * mips_operand_int
@@ -311,12 +347,10 @@ class type mips_dictionary_int =
     method index_mips_operand: mips_operand_int -> int
     method index_mips_opcode: mips_opcode_t -> int
     method index_mips_bytestring: string -> int
-    method index_mips_opcode_text: string -> int
     method index_mips_instr_format: mips_instr_format_t -> int
 
     method write_xml_mips_bytestring: ?tag:string -> xml_element_int -> string -> unit
     method write_xml_mips_opcode: ?tag:string -> xml_element_int -> mips_opcode_t -> unit
-    method write_xml_mips_opcode_text: ?tag:string -> xml_element_int -> string -> unit
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
@@ -343,12 +377,10 @@ object
   method is_delay_slot  : bool
   method is_inlined_call: bool
 
-  (* printing *)
+  (* i/o *)
+  method write_xml: xml_element_int -> unit
   method toString: string
   method toPretty: pretty_t
-
-  (* xml *)
-  method write_xml  : xml_element_int -> unit
 
 end
 
@@ -374,7 +406,8 @@ object
   method iteri: (int -> mips_assembly_instruction_int -> unit) -> unit
   method itera: (doubleword_int -> mips_assembly_instruction_int -> unit) -> unit (* provide virtual address *)
 
-  (* printing *)
+  (* i/o *)
+  method write_xml: xml_element_int -> unit
   method toString: ?filter:(mips_assembly_instruction_int -> bool) -> unit -> string
   method toPretty: pretty_t
 
@@ -478,6 +511,13 @@ class type mips_assembly_functions_int =
     method dark_matter_to_string: string
 
   end
+
+(* ====================================================== Disassembly pattern === *)
+
+type disassembly_pattern_t = {
+    regex_ds: Str.regexp;
+    regex_df: doubleword_int -> string -> string -> doubleword_int
+  }
 
 (* ================================================================== Code pc === *)
 

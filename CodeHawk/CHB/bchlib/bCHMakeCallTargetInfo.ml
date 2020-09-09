@@ -71,6 +71,15 @@ let mk_so_target (name:string) =
   else
     mk_default_target name tgt
 
+let mk_syscall_target (index:int) =
+  let tgt = StubTarget (LinuxSyscallFunction index) in
+  if function_summary_library#has_syscall_function index then
+    let fs = function_summary_library#get_syscall_function index in
+    mk_function_summary_target fs tgt
+  else
+    let name = "linux-syscall-" ^ (string_of_int index) in
+    mk_default_target name tgt
+
 let mk_jni_target (index:int) =
   let tgt = StubTarget (JniFunction index) in
   if function_summary_library#has_jni_function index then

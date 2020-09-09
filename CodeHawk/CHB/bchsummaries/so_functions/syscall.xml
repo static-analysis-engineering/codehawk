@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-08-16 22:46:32"/>
+  <libfun lib="so_functions" name="syscall">
+    <documentation>
+      <desc>invoke a system call by index</desc>
+      <apidoc>
+        <pt>int syscall (index)</pt>
+        <par name="index">index of system call</par>
+        <return>
+          <rc cond="success">non-negative</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="syscall">
+      <par loc="stack" name="index" nr="1">
+        <type>UINT</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

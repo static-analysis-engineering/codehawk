@@ -70,12 +70,12 @@ object (self)
         (* 4, 4, Info -----------------------------------------------------------
            This member gives both the symbol table index with respect to which the 
            relocation must be made, and the type of relocation to apply. For example, 
-           a call instruction’s relocation entry would hold the symbol table index 
+           a call instruction's relocation entry would hold the symbol table index 
            of the function being called. If the index is STN_UNDEF, the undefined 
-           symbol index, the relocation uses 0 as the ‘‘symbol value.’’ Relocation
-           types are processor-specific. When the text refers to a relocation entry’s 
+           symbol index, the relocation uses 0 as the "symbol value." Relocation
+           types are processor-specific. When the text refers to a relocation entry's 
            relocation type or symbol table index, it means the result of applying 
-           ELF32_R_TYPE or ELF32_R_SYM, respectively, to the entry’s r_info member.
+           ELF32_R_TYPE or ELF32_R_SYM, respectively, to the entry's r_info member.
            #define ELF32_R_SYM(i) ((i)>>8)
            #define ELF32_R_TYPE(i) ((unsigned char)(i))
            #define ELF32_R_INFO(s,t) (((s)<<8)+(unsigned char)(t))

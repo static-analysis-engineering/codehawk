@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -219,17 +220,18 @@ object (self)
   method index_function_api (a:function_api_t) =
     let tags = [ a.fapi_calling_convention ] in
     let args = [
-        bd#index_string a.fapi_name ;                         (* 0 *)
-        self#index_api_parameter_list a.fapi_parameters;      (* 1 *)
-        if a.fapi_varargs  then 1 else 0 ;                    (* 2 *)
+        bd#index_string a.fapi_name;                                  (* 0 *)
+        self#index_api_parameter_list a.fapi_parameters;              (* 1 *)
+        if a.fapi_varargs  then 1 else 0;                             (* 2 *)
         (match a.fapi_va_list with
          | Some l -> self#index_api_parameter_list l
-         | _ -> (-1));                                        (* 3 *)
-        bd#index_btype a.fapi_returntype ;                    (* 4 *)
-        self#index_roles a.fapi_rv_roles ;                    (* 5 *)
-        (match a.fapi_stack_adjustment with Some n -> n | _ -> (-1)) ;  (* 6 *)
-        (match a.fapi_jni_index with Some n -> n | _ -> (-1)) ;  (* 7 *)
-        (if a.fapi_inferred then 1 else 0)                       (* 8 *)
+         | _ -> (-1));                                                (* 3 *)
+        bd#index_btype a.fapi_returntype;                             (* 4 *)
+        self#index_roles a.fapi_rv_roles;                             (* 5 *)
+        (match a.fapi_stack_adjustment with Some n -> n | _ -> (-1)); (* 6 *)
+        (match a.fapi_jni_index with Some n -> n | _ -> (-1));        (* 7 *)
+        (match a.fapi_syscall_index with Some n -> n | _ -> (-1));    (* 8 *)
+        (if a.fapi_inferred then 1 else 0)                            (* 9 *)
       ] @ (List.map bd#index_register a.fapi_registers_preserved) in
     function_api_table#add (tags,args)
 
@@ -245,21 +247,23 @@ object (self)
         if (a 3) = (-1) then
           None
         else
-          Some (self#get_api_parameter_list (a 3)) ;
-      fapi_returntype = bd#get_btype (a 4) ;
-      fapi_rv_roles = self#get_roles (a 5) ;
-      fapi_stack_adjustment = if (a 6) = (-1) then None else Some (a 6) ;
-      fapi_jni_index = if (a 7) = (-1) then None else Some (a 7) ;
-      fapi_calling_convention = t 0 ;
+          Some (self#get_api_parameter_list (a 3));
+      fapi_returntype = bd#get_btype (a 4);
+      fapi_rv_roles = self#get_roles (a 5);
+      fapi_stack_adjustment = if (a 6) = (-1) then None else Some (a 6);
+      fapi_jni_index = if (a 7) = (-1) then None else Some (a 7);
+      fapi_syscall_index = if (a 8) = (-1) then None else Some (a 8);
+      fapi_calling_convention = t 0;
       fapi_registers_preserved =
-        (List.map bd#get_register  (get_list_suffix args 9)) ;
-      fapi_inferred = (a 8) = 1 }
+        (List.map bd#get_register  (get_list_suffix args 10));
+      fapi_inferred = (a 9) = 1 }
                  
 
   method index_function_stub (fstub:function_stub_t) =
     let tags = [ function_stub_mcts#ts fstub ] in
     let key = match fstub with
       | SOFunction name -> (tags, [ bd#index_string name ])
+      | LinuxSyscallFunction index -> (tags, [ index ])
       | DllFunction (lib,name) ->
          (tags, [ bd#index_string lib ; bd#index_string name ])
       | JniFunction index -> (tags, [ index ])
@@ -276,6 +280,7 @@ object (self)
     let a = a name args in
     match (t 0) with
     | "so" -> SOFunction (bd#get_string (a 0))
+    | "sc" -> LinuxSyscallFunction (a 0)
     | "dll" -> DllFunction (bd#get_string (a 0), bd#get_string (a 1))
     | "jni" -> JniFunction (a 0)
     | "pck" ->
@@ -375,6 +380,14 @@ object (self)
   method read_xml_api_parameter
            ?(tag="iapi") (node:xml_element_int):api_parameter_t =
     self#get_api_parameter (node#getIntAttribute tag)
+
+  method write_xml_function_api
+           ?(tag="ifapi") (node:xml_element_int) (fapi:function_api_t) =
+    node#setIntAttribute tag (self#index_function_api fapi)
+
+  method read_xml_function_api
+           ?(tag="ifapi") (node:xml_element_int):function_api_t =
+    self#get_function_api (node#getIntAttribute tag)
 
   method write_xml_bterm ?(tag="ibt") (node:xml_element_int) (t:bterm_t) =
     node#setIntAttribute tag (self#index_bterm t)

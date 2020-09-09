@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,12 +41,14 @@ open XprTypes
 (* bchlib *)
 open BCHBasicTypes
 open BCHByteUtilities
+open BCHFunctionData
 open BCHLibTypes
 open BCHSystemInfo
 
 (* bchlibmips32 *)
-open BCHMIPSTypes
+open BCHMIPSDictionary
 open BCHMIPSOpcodeRecords
+open BCHMIPSTypes
 
 class mips_assembly_instruction_t (virtual_address:doubleword_int) (opcode:mips_opcode_t) 
   (instruction_bytes:string):mips_assembly_instruction_int =
@@ -76,6 +79,9 @@ object (self)
   method private is_locked = system_info#is_locked_instruction virtual_address
 
   method is_inlined_call = inlined_call
+
+  method private is_function_entry_point =
+    functions_data#is_function_entry_point self#get_address
     
   method toString =
     (if self#is_locked then "lock " else "") ^ (mips_opcode_to_string opcode)
@@ -85,10 +91,16 @@ object (self)
   method write_xml (node:xml_element_int) =
     let opc = self#get_opcode in
     let set = node#setAttribute in
+    let stat = ref "" in
     begin
+      (if self#is_function_entry_point then stat := !stat ^ "F");
+      (if self#is_block_entry then stat := !stat ^ "B");
+      (if self#is_delay_slot then stat := !stat ^ "D");
+      (if !stat = "" then () else set "stat" !stat);
       set "ia" self#get_address#to_hex_string ;
-      set "opc" (mips_opcode_to_string opc) ;
-      set "bytes" (byte_string_to_spaced_string self#get_instruction_bytes)
+      mips_dictionary#write_xml_mips_opcode node opc;
+      mips_dictionary#write_xml_mips_bytestring
+        node ((byte_string_to_printed_string self#get_instruction_bytes))
     end
    
 end

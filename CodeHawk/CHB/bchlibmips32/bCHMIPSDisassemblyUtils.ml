@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -115,13 +116,23 @@ let decompose_instr (dw:doubleword_int):mips_instr_format_t =
      (match funct with
       | 1 ->
          let cc = (dwhigh lsr 2) mod 8 in
+         let nd = (dwhigh lsr 1) mod 2 in
          let tf = dwhigh mod 2 in
-         FPMCType (opcode,rs,cc,tf,rd,funct)
+         let fd = (dwlow lsr 6) mod 32 in
+         FPMCType (opcode,rs,cc,nd,tf,rd,fd,funct)
       | 12 ->
          let rt = dwhigh mod 32 in
          let shamt = (dwlow lsr 6) mod 32 in
          let code = shamt + (32 * (rd + (32 * (rt + (32 * rs ))))) in
          SyscallType code
+      | 13 ->
+         let rt = dwhigh mod 32 in
+         let shamt = (dwlow lsr 6) mod 32 in
+         let code = shamt + (32 * (rd + (32 * (rt + (32 * rs ))))) in
+         RBreakType (0,code,13)
+      | 15 ->
+         let stype = (dwlow lsr 6) mod 32 in
+         RSyncType (0,0,stype,15)
       | _ ->
          let rt = dwhigh mod 32 in
          let shamt = (dwlow lsr 6) mod 32 in
@@ -132,29 +143,38 @@ let decompose_instr (dw:doubleword_int):mips_instr_format_t =
      let addr = dwlow + (upper lsl 16) in
      JType (opcode,addr)
   (* opcode:6, rs:5, rt:5, immediate:16 *)
-  | 1 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 20 | 21 | 22 | 23
+  | 1 | 4 | 5 | 6 | 7 | 8 | 9
+    | 10 | 11 | 12 | 13 | 14 | 15
+    | 20 | 21 | 22 | 23
     | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42
-    | 43 | 44 | 45 | 46 | 48 | 49 | 53 | 56 | 57 | 61 ->
+    | 43 | 44 | 45 | 46 | 48 | 49
+    | 51 | 53 | 56 | 57 | 61 ->
      let rs = (dwhigh lsr 5) mod 32 in
      let rt = dwhigh mod 32 in
      let offset = if dwlow < e15 then dwlow else dwlow - e16 in  (* signed *)
      IType (opcode,rs,rt,offset)
-  (* SPECIAL2:28, rs:5, rt:5, rd:5, shamt:5, funct:6 *)
-  | 28 ->
-     let rs = (dwhigh lsr 5) mod 32 in
-     let rt = dwhigh mod 32 in
-     let rd = dwlow lsr 11 in
-     let shamt = (dwlow lsr 6) mod 32 in
-     let funct = dwlow mod 64 in
-     R2Type (opcode,rs,rt,rd,shamt,funct)
+  (* COP0:6, sub:5, rt:5, rd:5, imm:11 *)
+  | 16 ->
+     let sub = (dwhigh lsr 5) mod 32 in
+     (match sub with
+      | 0 | 4 | 6 ->
+         let rt = dwhigh mod 32 in
+         let rd = dwlow lsr 11 in
+         let imm = dwlow mod 2048 in
+         FPRIType (opcode,sub,rt,rd,imm)
+      | _ ->
+         let upper = dwhigh mod 1024 in
+         let otherbits = dwlow + (upper lsl 16) in
+         FormatUnknown (opcode,otherbits))
   (* COP1:6, fmt:5, ft:5, fs:5, cc:3, 0:2, function:6 *)
   | 17 ->
      let fmt = (dwhigh lsr 5) mod 32 in
      (match fmt with
-      | 0 | 2 | 4 | 6 ->
+      | 0 | 2 | 3 | 4 | 6 | 7 ->
          let rt = dwhigh mod 32 in
          let fs = dwlow lsr 11 in
-         FPRIType (opcode,fmt,rt,fs)
+         let imm = dwlow mod 2048 in
+         FPRIType (opcode,fmt,rt,fs,imm)
       | 16 | 17 | 20 | 21 | 22 ->
          let fnct = dwlow mod 64 in
          let ft = dwhigh mod 32 in
@@ -179,10 +199,31 @@ let decompose_instr (dw:doubleword_int):mips_instr_format_t =
          let cc = (dwlow lsr 8) mod 32 in
          let fnct = dwlow mod 64 in
          FPCompareType (opcode,fmt,ft,fs,cc,fnct))
+  | 18 ->
+     let sub = (dwhigh lsr 5) mod 32 in
+     let rt = dwhigh mod 32 in
+     let impl = dwlow in
+     IType (opcode,sub,rt,impl)
+  (* SPECIAL2:28, rs:5, rt:5, rd:5, shamt:5, funct:6 *)
+  | 28 ->
+     let rs = (dwhigh lsr 5) mod 32 in
+     let rt = dwhigh mod 32 in
+     let rd = dwlow lsr 11 in
+     let shamt = (dwlow lsr 6) mod 32 in
+     let funct = dwlow mod 64 in
+     R2Type (opcode,rs,rt,rd,shamt,funct)
+  (* SPECIAL3:31, rs:5, rt:5, rd:5, shamt:5, bshfl:6 *)
+  | 31 ->
+     let rs = (dwhigh lsr 5) mod 32 in
+     let rt = dwhigh mod 32 in
+     let rd = dwlow lsr 11 in
+     let shamt = (dwlow lsr 6) mod 32 in
+     let funct = dwlow mod 64 in
+     R3Type (opcode,rs,rt,rd,shamt,funct)
   | _ ->
-     raise (BCH_failure (LBLOCK [  STR "Opcode: " ; INT opcode ;
-                                   STR " encountered in decompose_instr" ]))
-
+     let upper = dwhigh mod 1024 in
+     let otherbits = dwlow + (upper lsl 16) in
+     FormatUnknown (opcode,otherbits)
      
 let instr_format_to_string (fmt:mips_instr_format_t) =
   let rec faux flds s =
@@ -194,26 +235,32 @@ let instr_format_to_string (fmt:mips_instr_format_t) =
   match fmt with
   | SyscallType code ->
      "SC(" ^ (string_of_int code) ^ ")"
+  | RBreakType (opcode,code,fnct) ->
+     "RBreakType" ^ (f [ opcode; code; fnct ])
+  | RSyncType (opcode,code,stype,fnct) ->
+     "RSyncType" ^ (f [ opcode; code; stype; fnct ])
   | RType (opcode,rs,rt,rd,shamt,funct) ->
      "R" ^ (f [ opcode ; rs ; rt ; rd ; shamt ; funct ])
   | R2Type (opcode,rs,rt,rd,shamt,funct) ->
-     "R2" ^  (f [ opcode ; rs ; rt ; rd ; shamt ; funct ])
+     "R2" ^ (f [ opcode ; rs ; rt ; rd ; shamt ; funct ])
+  | R3Type (opcode,rs,rt,rd,shamt,funct) ->
+     "R3" ^ (f [ opcode ; rs ; rt ; rd ; shamt ; funct ])
   | JType (opcode,addr) ->
      "J" ^ (f [ opcode ; addr ])
   | IType (opcode,rs,rt,imm) ->
      "I" ^ (f [ opcode ; rs ; rt ; imm ])
-  | FPMCType (opcode,rs,cc,tf,rd,funct) ->
-     "FPMC" ^ (f [ opcode ; rs ; cc ; tf ; rd ; funct ])
-  | FPRMCType (opcode,fmt,cc,tf,fs,fd,funct) ->
-     "FPRMC" ^ (f [ opcode ; fmt ; cc ; tf ; fs ; fd ; funct ])
+  | FPMCType (opcode,rs,cc,nd,tf,rd,fd,funct) ->
+     "FPMC" ^ (f [ opcode ; rs ; cc ; nd ; tf ; rd ; fd ; funct ])
   | FPRType (opcode,fmt,ft,fs,fd,funct) ->
      "FPR" ^ (f [ opcode ; fmt ; ft ; fs ; fd ; funct ])
-  | FPRIType (opcode,sub,rt,fs) ->
-     "FPRI" ^ (f [ opcode ; sub ; rt ; fs ])
+  | FPRIType (opcode,sub,rt,fs,imm) ->
+     "FPRI" ^ (f [ opcode; sub; rt; fs; imm ])
   | FPCompareType (opcode,fmt,ft,fs,cc,fnct) ->
      "FPCompare" ^ (f [ opcode ; fmt ; ft ; fs ; cc ; fnct ])
   | FPICCType (opcode,sub,cc,nd,tf,offset) ->
      "FPICC" ^ (f [ opcode ; sub ; cc ; nd ; tf ; offset ])
+  | FormatUnknown (opcode,otherbits) ->
+     "FormatUnknown" ^ (f [opcode; otherbits ])
        
 let is_conditional_jump_instruction opcode =
   match opcode with

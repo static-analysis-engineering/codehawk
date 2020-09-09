@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -108,6 +109,7 @@ object (self)
   val dllsummaries = H.create 3   (* indexed by (dllname,fname) *)
   val sosummaries = H.create 3    (* ELF shared-object summaries, indexed by fname *)
   val jnisummaries = H.create 3   (* indexed by jni index *)
+  val syscallsummaries = H.create 3 (* indexed by syscall index *)
   val jnitemplates = H.create 3   (* indexed by templated name *)
   val nosummaries = H.create 3
   val missing_summaries = new StringCollections.table_t     (* indexed by dll *)
@@ -115,7 +117,9 @@ object (self)
   val requested_so_summaries = new StringCollections.set_t
   val missing_so_summaries = new StringCollections.set_t
   val missingjnisummaries = new IntCollections.set_t
+  val missingsyscallsummaries = new IntCollections.set_t
   val requestedjnisummaries = new IntCollections.set_t
+  val requestedsyscallsummaries = new IntCollections.set_t
   val dllnames = Hashtbl.create 3  (* records where summaries were taken from *)
   val dlls = new StringCollections.set_t                   (* dlls being used *)
 
@@ -134,7 +138,17 @@ object (self)
     if H.mem jnisummaries index then
       H.find jnisummaries index
     else
-      raise (BCH_failure (LBLOCK [ STR "No summary found for jni index " ; INT index ]))
+      raise
+        (BCH_failure
+           (LBLOCK [ STR "No summary found for jni index " ; INT index ]))
+
+  method get_syscall_function (index:int) =
+    if H.mem syscallsummaries index then
+      H.find syscallsummaries index
+    else
+      raise
+        (BCH_failure
+           (LBLOCK [ STR "No summary found for syscall index " ; INT index ]))
 
   method get_dll_function (dll:string) (fname:string) =
     let dll = self#get_internal_dll_name dll in
@@ -235,7 +249,9 @@ object (self)
 	raise (BCH_failure (LBLOCK [ STR "No jni template found for " ; STR templatename ]))
 
   method private load_jni_function (index:int) =
-    if H.mem jnisummaries index || missingjnisummaries#has index then () else
+    if H.mem jnisummaries index || missingjnisummaries#has index then
+      ()
+    else
       let path = system_settings#get_summary_paths in
       let filename = "jni/jni_" ^ (string_of_int index) in
       if has_summary_file path filename then
@@ -243,9 +259,26 @@ object (self)
 	self#read_jni_function_summary_string index xstring
       else
 	begin
-	  chlog#add "no jni summary" (LBLOCK [ STR "Jni index: " ; INT index ]) ;
+	  chlog#add "no jni summary" (LBLOCK [ STR "Jni index: " ; INT index ]);
 	  missingjnisummaries#add index 
 	end
+
+  method private load_syscall_function (index:int) =
+    if H.mem syscallsummaries index || missingsyscallsummaries#has index then
+      ()
+    else
+      let path = system_settings#get_summary_paths in
+      let filename = "syscalls/syscall_" ^ (string_of_int index) in
+      if has_summary_file path filename then
+        let xstring = get_summary_file path filename in
+        self#read_syscall_function_summary_string index xstring
+      else
+        begin
+          chlog#add
+            "no syscall summary"
+            (LBLOCK [ STR "Syscall index: " ; INT index ]);
+          missingsyscallsummaries#add index
+        end
 	  
 
   method private load_summary_dependencies (summary:function_summary_int) =
@@ -296,15 +329,49 @@ object (self)
       if node#hasNamedAttribute "name" then
 	let summary = read_xml_function_summary node in
 	begin
-	  H.add jnisummaries summary#get_jni_index summary ;
-	  chlog#add "jni summary" 
-	    (LBLOCK [ STR "Jni index " ; INT index ; STR ": " ; STR summary#get_name ])
+	  H.add jnisummaries summary#get_jni_index summary;
+	  chlog#add
+            "jni summary" 
+	    (LBLOCK [ STR "Jni index " ; INT index ; STR ": " ;
+                      STR summary#get_name ])
 	end
       else if node#hasOneTaggedChild "refer-to" then
 	self#read_template_jni_summary node index
       else
-	raise_xml_error node
+	raise_xml_error
+          node
 	  (LBLOCK [ STR "Invalid jni summary for index " ; INT index ])
+
+  method private read_syscall_function_summary_string
+                   (index:int) (xstring:string) =
+    let doc = readXmlDocumentString xstring in
+    let root = doc#getRoot in
+    if root#hasOneTaggedChild "syscallfun" then
+      let node = root#getTaggedChild "syscallfun" in
+      if node#hasOneTaggedChild "refer-to" then
+        let rnode = node#getTaggedChild "refer-to" in
+        let rname = rnode#getAttribute "name" in
+        if self#has_so_function rname then
+          let summary = self#get_so_function rname in
+          begin
+            chlog#add
+              "syscall summary"
+              (LBLOCK [ INT index ; STR ": " ; STR summary#get_name ]);
+            H.add syscallsummaries index summary
+          end
+      else if node#hasNamedAttribute "name" then
+        let summary = read_xml_function_summary node in
+        begin
+          H.add syscallsummaries summary#get_syscall_index summary;
+          chlog#add
+            "syscall summary"
+            (LBLOCK [ STR "Syscall index " ; INT index ; STR ": "  ;
+                      STR summary#get_name  ])
+        end
+      else
+        raise_xml_error
+          node
+          (LBLOCK [ STR "Invalid syscall summary for index " ; INT index ])
 
   method private read_template_jni_summary (node:xml_element_int) (index:int) =
     let rNode = node#getTaggedChild "refer-to" in
@@ -526,9 +593,21 @@ object (self)
       false
     else
       begin
-	requestedjnisummaries#add index ;
-	self#load_jni_function index ;
+	requestedjnisummaries#add index;
+	self#load_jni_function index;
 	H.mem jnisummaries index
+      end
+
+  method has_syscall_function (index:int) =
+    if H.mem syscallsummaries index then
+      true
+    else if missingsyscallsummaries#has index then
+      false
+    else
+      begin
+        requestedsyscallsummaries#add index;
+        self#load_syscall_function index;
+        H.mem syscallsummaries index
       end
 
   method private read_lib_function_summary_string 

@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -365,6 +366,12 @@ let get_mips_dictionary_filename () =
   let fdir = get_results_dir () in
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_mipsdict.xml")
+
+let get_mips_assembly_instructions_filename () =
+  let exename = get_filename () in
+  let fdir = get_results_dir () in
+  let _ = create_directory fdir in
+  Filename.concat fdir (exename ^ "_mips_asm.xml")
 
 let get_cfgs_filename () =
   let exename = get_filename () in

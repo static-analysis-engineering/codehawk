@@ -346,6 +346,13 @@ let int_to_doubleword i =
               (LBLOCK [ STR "int_to_doubleword: " ; INT i ;
                         STR " (" ; p ; STR ")" ]))
 
+let align_doubleword (dw:doubleword_int) (alignment:int) =
+  let rem = dw#to_int mod alignment in
+  if rem = 0 then
+    dw
+  else
+    int_to_doubleword (((dw#to_int / alignment) + 1) * 4)
+
 let big_int_to_doubleword bi = 
   try
     create_doubleword (B.int_of_big_int bi)

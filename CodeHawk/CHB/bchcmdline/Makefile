@@ -66,28 +66,28 @@ make_dirs:
 
 defs: make_dirs libsum appsum constsum classsum structdef
 
-xanalyzer:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(X86LIB)/bchlibx86.cmxa $(ANALYZ)/bchanalyze.cmxa cmx/bCHVersion.cmx cmx/bCHXBinaryAnalyzer.cmx
+xanalyzer:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(X86LIB)/bchlibx86.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bCHVersion.cmi cmx/bCHVersion.cmx cmi/bCHXBinaryAnalyzer.cmi cmx/bCHXBinaryAnalyzer.cmx
 	$(CAMLLINK) -o chx86_analyze cmx/bCHVersion.cmx cmx/bCHXBinaryAnalyzer.cmx
 
-inspect: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa cmx/bCHXInspectSummaries.cmx
+inspect: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa cmi/bCHXInspectSummaries.cmi cmx/bCHXInspectSummaries.cmx
 	$(CAMLLINK) -o chx86_inspect_summaries $(OBJECTS) cmx/bCHXInspectSummaries.cmx
 
 export:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa cmx/bCHXSaveExports.cmx
 	$(CAMLLINK) -o chx86_save_exports $(OBJECTS) cmx/bCHXSaveExports.cmx
 
-libsum: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmx/bCHXMakeLibSummary.cmx
+libsum: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeLibSummary.cmi cmx/bCHXMakeLibSummary.cmx
 	$(CAMLLINK) -o chx86_make_lib_summary cmx/bCHXMakeLibSummary.cmx
 
-appsum: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmx/bCHXMakeAppSummary.cmx
+appsum: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeAppSummary.cmi cmx/bCHXMakeAppSummary.cmx
 	$(CAMLLINK) -o chx86_make_app_summary cmx/bCHXMakeAppSummary.cmx
 
-constsum: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmx/bCHXMakeConstSummary.cmx
+constsum: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeConstSummary.cmi cmx/bCHXMakeConstSummary.cmx
 	$(CAMLLINK) -o chx86_make_const_summary cmx/bCHXMakeConstSummary.cmx
 
-classsum: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmx/bCHXMakeClassSummary.cmx
+classsum: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeClassSummary.cmi cmx/bCHXMakeClassSummary.cmx
 	$(CAMLLINK) -o chx86_make_class_summary cmx/bCHXMakeClassSummary.cmx
 
-structdef: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmx/bCHXMakeStructDefinition.cmx
+structdef: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeStructDefinition.cmi cmx/bCHXMakeStructDefinition.cmx
 	$(CAMLLINK) -o chx86_make_structdef cmx/bCHXMakeStructDefinition.cmx
 
 cmi/%.cmi: %.mli

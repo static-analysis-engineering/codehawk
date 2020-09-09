@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-08-31 16:03:45"/>
+  <syscallfun index="4042" name="pipe">
+    <refer-to name="pipe"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

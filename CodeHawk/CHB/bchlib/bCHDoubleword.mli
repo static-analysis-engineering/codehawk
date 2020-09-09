@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -64,3 +65,5 @@ val numerical_to_signed_hex_string: numerical_t -> string       (* raises Invali
 
 val symbol_to_doubleword: symbol_t -> doubleword_int
 val doubleword_to_symbol: string -> ?atts:string list -> doubleword_int -> symbol_t
+
+val align_doubleword: doubleword_int -> int -> doubleword_int

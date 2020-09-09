@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c)           Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1438,16 +1439,17 @@ object (self)
         | _ -> "unknown" in
       let _ = List.iter (fun par -> 
                   ignore (self#add_api_parameter par)) parameters in  
-      {  fapi_name = self#get_name ;
-         fapi_jni_index = None ;
-         fapi_parameters = self#get_api_parameters ;
-         fapi_varargs = false ;
-         fapi_va_list = None ;
-         fapi_returntype = t_unknown ;
-         fapi_rv_roles = [] ;
-         fapi_calling_convention = cc ;
-         fapi_inferred = true ;
-         fapi_stack_adjustment = adj ;
+      {  fapi_name = self#get_name;
+         fapi_jni_index = None;
+         fapi_syscall_index = None;
+         fapi_parameters = self#get_api_parameters;
+         fapi_varargs = false;
+         fapi_va_list = None;
+         fapi_returntype = t_unknown;
+         fapi_rv_roles = [];
+         fapi_calling_convention = cc;
+         fapi_inferred = true;
+         fapi_stack_adjustment = adj;
          fapi_registers_preserved = []
       }
     with
@@ -1503,19 +1505,20 @@ object (self)
       let par = mk_stack_parameter ~btype ~desc (offset/4) in
       modify_name_par name par in
     let fapi = {
-      fapi_name = api.jnm_signature#name ;
-      fapi_parameters = List.map mkparam stackPars ;
-      fapi_varargs = false ;
-      fapi_va_list = None ;
+      fapi_name = api.jnm_signature#name;
+      fapi_parameters = List.map mkparam stackPars;
+      fapi_varargs = false;
+      fapi_va_list = None;
       fapi_returntype = 
 	(match api.jnm_signature#descriptor#return_value with
 	| Some ty -> get_java_type_btype ty
-	| _ -> t_void) ;
-      fapi_rv_roles = [] ;
-      fapi_stack_adjustment = Some (4 * (List.length stackPars)) ;
-      fapi_jni_index = None ;
-      fapi_calling_convention = "stdcall" ;
-      fapi_registers_preserved = [] ;
+	| _ -> t_void);
+      fapi_rv_roles = [];
+      fapi_stack_adjustment = Some (4 * (List.length stackPars));
+      fapi_jni_index = None;
+      fapi_syscall_index = None;
+      fapi_calling_convention = "stdcall";
+      fapi_registers_preserved = [];
       fapi_inferred = false } in
     let fsem = default_function_semantics in
     let fdoc = default_function_documentation in

@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -275,6 +276,9 @@ object (self)
               | StubTarget (SOFunction name)
                 | StaticStubTarget (_, SOFunction name) ->
                  callgraph#add_so_edge faddr name ctxtiaddr argExprs
+              | StubTarget (LinuxSyscallFunction index)
+                | StaticStubTarget (_, LinuxSyscallFunction index) ->
+                 callgraph#add_so_edge faddr ("syscall-" ^ (string_of_int index)) ctxtiaddr argExprs
 	      | StubTarget (DllFunction (_,name))
 	        | StaticStubTarget (_, DllFunction(_,name)) -> 
 		 callgraph#add_dll_edge faddr name ctxtiaddr argExprs

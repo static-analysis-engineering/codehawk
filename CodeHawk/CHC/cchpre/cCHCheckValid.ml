@@ -1572,10 +1572,10 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
   (* ------------------------------------------- checking for initialization of variables *)
   (* CStandard: 6.7.8/10:  
      If an object that has static storage duration is not initialized explicitly, then:
-     — if it has pointer type, it is initialized to a null pointer;
-     — if it has arithmetic type, it is initialized to (positive or unsigned) zero;
-     — if it is an aggregate, every member is initialized (recursively) according to these rules;
-     — if it is a union, the first named member is initialized (recursively) according to these rules.
+     - if it has pointer type, it is initialized to a null pointer;
+     - if it has arithmetic type, it is initialized to (positive or unsigned) zero;
+     - if it is an aggregate, every member is initialized (recursively) according to these rules;
+     - if it is a union, the first named member is initialized (recursively) according to these rules.
    *)
   | PInitialized (Var (vname,vid),_)
        when vid > 0 && (env#has_varinfo vid) && (get_varinfo vid).vglob ->
