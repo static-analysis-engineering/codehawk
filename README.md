@@ -1,6 +1,6 @@
 # CodeHawk Tool Suite
 
-The CodeHawk Tool Suite, developed by Kestrel Technology, is a sound
+The CodeHawk Tool Suite, originally developed by Kestrel Technology, is a sound
 static analysis platform based on the mathematical theory of
 abstract interpretation developed by Patrick and Radhia Cousot.
 CodeHawk consists of a programming-language independent abstract
@@ -19,9 +19,9 @@ This repository is intended to be for reference only. The actual
 analyzers are provided in separate repositories with an extensive
 Python API to run the analyzer and report results:
 
-- **CodeHawk-Binary**: [Binary Analyzer](https://github.com/kestreltechnology/CodeHawk-Binary)
-- **CodeHawk-C**: C Source Code Analyzer (to be released soon)
-- **CodeHawk-Java**: Java byte code Analyzer (to be released soon)
+- **CodeHawk-Binary**: [Binary Analyzer](https://github.com/static-analysis-engineering/CodeHawk-Binary)
+- **CodeHawk-C**: [C Source Code Analyzer](https://github.com/static-analysis-engineering/CodeHawk-C)
+- **CodeHawk-Java**: [Java byte code Analyzer](https://github.com/static-analysis-engineering/CodeHawk-Java)
 
 
 
