@@ -679,6 +679,7 @@ class type function_data_int =
     method set_virtual: unit
     method set_inlined: unit
     method set_library_stub: unit
+    method set_by_preamble: unit
     method set_class_info: classname:string -> isstatic:bool -> unit
     method add_inlined_block: doubleword_int -> unit
 
