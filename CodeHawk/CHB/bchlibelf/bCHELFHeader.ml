@@ -230,7 +230,7 @@ object
       e_phentsize <- input#read_ui16;
   
       (* 44, 2 --------------------------------------------------------------
-	 Number of entries in the section header table. 
+	 Number of entries in the program header table.
 	 Thus the product of phentsize and phnum gives the table's size 
 	 in bytes. If a file has no program header table, phnum holds the 
 	 value zero. 

@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -394,7 +395,7 @@ object (self)
    * - info: ?
    *)
   method private create_gnu_version_header =
-    let sectionname = ".gnu.version" in    
+    let sectionname = ".gnu.version" in
     if dynamicsegment#has_gnu_symbol_version_table
        && dynamicsegment#has_symtabno then
       let vaddr = dynamicsegment#get_gnu_symbol_version_table in
@@ -424,7 +425,7 @@ object (self)
    * - info: ?
    *)
   method private create_gnu_version_r_header =
-    let sectionname = ".gnu_version_r" in    
+    let sectionname = ".gnu.version_r" in
     if dynamicsegment#has_gnu_symbol_version_reqts
        && dynamicsegment#has_gnu_symbol_version_reqts_no then
       let vaddr = dynamicsegment#get_gnu_symbol_version_reqts in
