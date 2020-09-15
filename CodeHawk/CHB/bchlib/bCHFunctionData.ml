@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,6 +52,7 @@ object (self)
   val mutable incomplete = false
   val mutable ida_provided = false
   val mutable user_provided = false
+  val mutable by_preamble = false
   val mutable virtual_function = false
   val mutable classinfo = None
   val mutable inlined = false
@@ -60,6 +62,8 @@ object (self)
   method set_non_returning = non_returning <- true
 
   method set_inlined = inlined <- true
+
+  method set_by_preamble = by_preamble <- true
 
   method set_incomplete = incomplete <- true
 
@@ -137,6 +141,7 @@ object (self)
     let tags = if virtual_function then "v" :: tags else tags in
     let tags = if self#has_class_info then "c" :: tags else tags in
     let tags = if library_stub then "l" :: tags else tags in
+    let tags = if by_preamble then "pre" :: tags else tags in
     let args =
       match classinfo with
       | Some (cname,isstatic) ->
@@ -224,12 +229,13 @@ object (self)
           let a = a "function-data" args in
           let setnames l = List.iter (fun i -> fe#add_name (bd#get_string i)) l in
           begin
-            (if List.mem "nr" tags then fe#set_non_returning) ;
-            (if List.mem "nc" tags then fe#set_incomplete) ;
-            (if List.mem "ida" tags then fe#set_ida_provided) ;
-            (if List.mem "u" tags then fe#set_user_provided) ;
-            (if List.mem "v" tags then fe#set_virtual) ;
-            (if List.mem "l" tags then fe#set_library_stub) ;
+            (if List.mem "nr" tags then fe#set_non_returning);
+            (if List.mem "nc" tags then fe#set_incomplete);
+            (if List.mem "ida" tags then fe#set_ida_provided);
+            (if List.mem "pre" tags then fe#set_by_preamble);
+            (if List.mem "u" tags then fe#set_user_provided);
+            (if List.mem "v" tags then fe#set_virtual);
+            (if List.mem "l" tags then fe#set_library_stub);
             (if List.mem "c" tags then
                let classname = bd#get_string (a 0) in
                let isstatic = (a 1) = 1 in
