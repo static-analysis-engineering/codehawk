@@ -487,6 +487,7 @@ class type mips_assembly_functions_int =
 
     (* setters *)
     method add_function: mips_assembly_function_int -> unit
+    method add_functions_by_preamble: doubleword_int list
     method inline_blocks: unit
 
     (* accessors *)

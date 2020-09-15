@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +35,7 @@ open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHByteUtilities
 open BCHCallgraph
 open BCHDoubleword
 open BCHFunctionData
@@ -238,6 +240,59 @@ object (self)
       H.iter (fun _ v -> if v = 1 then () else 
 	  begin overlap := !overlap + 1 ; multiple := !multiple + (v-1) end) table in
     (H.length table, !overlap, !multiple)
+
+  method add_functions_by_preamble =
+    let preambles = H.create 3 in
+    let preamble_instrs = H.create 3 in
+    let _ =    (* collect preambles of regular functions *)
+      self#itera (fun faddr f ->
+          let instr = f#get_instruction faddr in
+          let instrs = instr#get_instruction_bytes in
+          let entry =
+            if H.mem preambles instrs then
+              H.find preambles instrs
+            else
+              begin
+                H.add preambles instrs 0;
+                H.add preamble_instrs instrs instr;
+                0
+              end in
+          H.replace preambles instrs (entry + 1)) in
+    let _ =    (* log the results *)
+      H.iter (fun k v ->
+          chlog#add
+            "function preambles"
+            (LBLOCK [ (H.find preamble_instrs k)#toPretty ; STR " (" ;
+                      STR (byte_string_to_printed_string k) ; STR "): ";
+                      INT v ])) preambles in
+    let maxentry = ref 0 in
+    let maxpreamble = ref "" in
+    let _ =    (* find the most common preamble *)
+      H.iter (fun k v ->
+          if v > !maxentry then
+            begin
+              maxentry := v;
+              maxpreamble := k
+            end) preambles in
+    let fnsAdded = ref [] in
+    let _ =     (* check instructions for function entry points *)
+      !mips_assembly_instructions#itera (fun a instr ->
+          if H.mem functions a#index then
+            ()
+          else if instr#get_instruction_bytes = !maxpreamble then
+            let fndata = functions_data#add_function a in
+            begin
+              fnsAdded := a :: !fnsAdded;
+              fndata#set_by_preamble
+            end
+          else
+            ()) in
+    let _ =
+      chlog#add
+        "initialization"
+        (LBLOCK [ STR "Add " ; INT (List.length !fnsAdded) ;
+                  STR " functions by preamble" ]) in
+    !fnsAdded
 
   method dark_matter_to_string =
     let table = H.create 37 in

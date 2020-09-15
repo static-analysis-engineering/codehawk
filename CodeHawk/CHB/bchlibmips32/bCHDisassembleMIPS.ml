@@ -543,34 +543,41 @@ let construct_functions f =
   let _ = set_block_boundaries () in
   let functionentrypoints = functions_data#get_function_entry_points in
   let count = ref 0 in
-  List.iter (fun faddr ->
-      let default () =
-        try
-          begin
-            count := !count + 1;
-            construct_mips_assembly_function !count faddr
-          end
-        with
-        | BCH_failure p ->
-           ch_error_log#add
-             "construct functions"
-             (LBLOCK [ STR "function " ; faddr#toPretty ; STR ": " ; p ]) in
-      let fndata = functions_data#get_function faddr in
-      if fndata#is_library_stub then
-        ()
-      else if fndata#has_name then
-        if is_library_stub faddr then
-          begin
-            fndata#set_library_stub;
-            chlog#add
-              "ELF library stub"
-              (LBLOCK [ faddr#toPretty ; STR ": " ; STR fndata#get_function_name ])
-          end
+  begin
+    List.iter (fun faddr ->
+        let default () =
+          try
+            begin
+              count := !count + 1;
+              construct_mips_assembly_function !count faddr
+            end
+          with
+          | BCH_failure p ->
+             ch_error_log#add
+               "construct functions"
+               (LBLOCK [ STR "function " ; faddr#toPretty ; STR ": " ; p ]) in
+        let fndata = functions_data#get_function faddr in
+        if fndata#is_library_stub then
+          ()
+        else if fndata#has_name then
+          if is_library_stub faddr then
+            begin
+              fndata#set_library_stub;
+              chlog#add
+                "ELF library stub"
+                (LBLOCK [ faddr#toPretty ; STR ": " ; STR fndata#get_function_name ])
+            end
+          else
+            default ()
         else
           default ()
-      else
-        default ()
-    ) functionentrypoints
+      ) functionentrypoints;
+    List.iter (fun faddr ->
+        begin
+          count := !count + 1;
+          construct_mips_assembly_function !count faddr
+        end)  mips_assembly_functions#add_functions_by_preamble
+  end
 
 
 let record_call_targets () =
@@ -658,9 +665,10 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
            if mips_assembly_functions#has_function_by_address dw then
              floc#set_call_target (mk_app_target dw)
            else
-             logerror
-               (LBLOCK [ STR "Function name not associated with address: "  ;
-                         STR name ])
+             begin
+               floc#set_call_target (mk_so_target name);
+               chlog#add "missing library summary" (STR name)
+             end
        else
          if mips_assembly_functions#has_function_by_address dw then
            floc#set_call_target (mk_app_target dw)
