@@ -128,6 +128,13 @@ object (self)
                          STR "base2: " ; base2#toPretty ;
                          STR "; addr: " ; vaddr#toPretty ]))
 
+  method private has_interp_program_header =
+    List.exists
+      (fun (_,ph,_) ->
+        match ph#get_program_header_type with
+        | PT_Interpreter -> true
+        | _ -> false) phdrs
+
   method private get_interp_program_header =
     try
       let (_,ph,_) =
@@ -200,7 +207,7 @@ object (self)
   method create_section_headers =
     begin
       self#create_null_header ;
-      self#create_interp_header ;
+      (if self#has_interp_program_header then self#create_interp_header) ;
       self#create_reginfo_header ;
       self#create_dynamic_header ;
       self#create_hash_header ;
@@ -209,7 +216,7 @@ object (self)
       self#create_gnu_version_header ;
       self#create_gnu_version_r_header ;
       self#create_relocation_header ;
-      self#create_init_header ;
+      (if dynamicsegment#has_init_address then self#create_init_header) ;
       self#create_text_header ;
       self#create_fini_header ;
       self#create_rodata_header ;
@@ -532,18 +539,22 @@ object (self)
     let addr = vaddr in
     let offset = self#get_offset_1 vaddr in
     let size =
-      if dynamicsegment#has_fini_address then
-        let finiaddr = dynamicsegment#get_fini_address in
-        try
-          finiaddr#subtract vaddr
-        with
-        | _ -> assumption_violation (STR "DT_FINI < program entry point")
+      if has_user_data sectionname
+         && (get_user_data sectionname)#has_size then
+        (get_user_data sectionname)#get_size
       else
-        let initaddress = dynamicsegment#get_init_address in
-        try
-          initaddress#subtract vaddr
-        with
-        | _ -> assumption_violation (STR "DT_INIT < program entry point") in            
+        if dynamicsegment#has_fini_address then
+          let finiaddr = dynamicsegment#get_fini_address in
+          try
+            finiaddr#subtract vaddr
+          with
+          | _ -> assumption_violation (STR "DT_FINI < program entry point")
+        else
+          let initaddress = dynamicsegment#get_init_address in
+          try
+            initaddress#subtract vaddr
+          with
+          | _ -> assumption_violation (STR "DT_INIT < program entry point") in            
     let addralign = s2d "0x4" in
     begin
       sh#set_fields
@@ -565,7 +576,7 @@ object (self)
       let flags = s2d "0x6" in
       let addr = vaddr in
       let offset = self#get_offset_1 vaddr in
-      let size = s2d "0x4c" in
+      let size = s2d "0x54" in
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
