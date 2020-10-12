@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-09-15 21:05:09"/>
+  <syscallfun index="4106" name="stat">
+    <refer-to name="stat"/>
+  </syscallfun>
+</codehawk-binary-analyzer>
