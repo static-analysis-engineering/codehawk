@@ -702,11 +702,6 @@ object (self)
          let lhs = dst#to_variable floc in
          ([ "a:v" ],[ xd#index_variable lhs ])
 
-      | Return ->
-         let rvar = floc#f#env#mk_mips_register_variable MRv0 in
-         let result = rewrite_expr (XVar rvar) in
-         ([ "a:x" ],[ xd#index_xpr result ])                  
-
       | SetLT (rd,rs,rt) ->
          let lhs = rd#to_variable floc in
          let rhs1 = rs#to_expr floc in

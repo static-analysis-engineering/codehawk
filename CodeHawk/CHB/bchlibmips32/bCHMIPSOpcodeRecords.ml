@@ -1845,12 +1845,6 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = false ;
       ida_asm    = (fun f -> f#no_ops "<nop>")
     }
-  | Return -> {
-      mnemonic   = "ret" ;
-      operands   = [] ;
-      delay_slot = true ;
-      ida_asm    = (fun f -> f#no_ops "<ret>")
-    }
   | Halt -> {
       mnemonic   = "hlt" ;
       operands   = [] ;

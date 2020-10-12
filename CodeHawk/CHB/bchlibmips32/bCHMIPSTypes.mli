@@ -330,7 +330,6 @@ type mips_opcode_t =
   | Move of mips_operand_int * mips_operand_int (*dst, src *)
   | LoadImmediate of mips_operand_int * mips_operand_int (* dst, imm *)
   | NoOperation
-  | Return
   | Halt
   
   (* Misc *)
