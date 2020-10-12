@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-09-15 21:03:31"/>
+  <syscallfun index="4180" name="sendto">
+    <refer-to name="sendto"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

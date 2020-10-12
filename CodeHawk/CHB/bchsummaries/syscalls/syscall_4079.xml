@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-09-15 21:15:50"/>
+  <syscallfun index="4079" name="settimeofday">
+    <refer-to name="settimeofday"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-09-15 21:08:04"/>
+  <syscallfun index="4172" name="getsockname">
+    <refer-to name="getsockname"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

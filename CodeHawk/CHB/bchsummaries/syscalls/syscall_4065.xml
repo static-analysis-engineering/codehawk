@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-09-15 21:09:10"/>
+  <syscallfun index="4065" name="getpgrp">
+    <refer-to name="getpgrp"/>
+  </syscallfun>
+</codehawk-binary-analyzer>
