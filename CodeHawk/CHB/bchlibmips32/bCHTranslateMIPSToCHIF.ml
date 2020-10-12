@@ -985,8 +985,7 @@ let translate_mips_instruction
      else
        default []
 
-  | Return
-    | Branch _
+  | Branch _
     | BranchLEZero _
     | BranchLEZeroLikely _
     | BranchLTZero _

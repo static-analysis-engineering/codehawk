@@ -331,7 +331,10 @@ let is_halt_instruction opcode =
   match opcode with Halt -> true | _ -> false
 
 let is_return_instruction opcode =
-  match opcode with Return -> true |  _ -> false
+  match opcode with
+  | JumpRegister op ->
+     (match op#get_register with MRra -> true |  _ -> false)
+  | _ -> false
 
 let get_direct_jump_target_address opcode =
   match opcode with

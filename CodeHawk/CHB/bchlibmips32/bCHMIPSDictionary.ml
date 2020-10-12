@@ -133,7 +133,6 @@ object (self)
       | Sync i -> (tags, [ i ])
       (* no operands *)
       | NoOperation
-        | Return
         | Halt
         | NotCode _
         | OpInvalid -> (tags,[])
