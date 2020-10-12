@@ -274,12 +274,17 @@ object (self)
               maxentry := v;
               maxpreamble := k
             end) preambles in
+    let commonpreambles =
+      H.fold (fun k v a -> if v >= 8 then k :: a else a) preambles [] in
+    let is_common_preamble bytes =
+      List.fold_left (fun a p -> a || p = bytes) false commonpreambles in
     let fnsAdded = ref [] in
     let _ =     (* check instructions for function entry points *)
       !mips_assembly_instructions#itera (fun a instr ->
           if H.mem functions a#index then
             ()
-          else if instr#get_instruction_bytes = !maxpreamble then
+                                         (* else if instr#get_instruction_bytes = !maxpreamble then *)
+          else if is_common_preamble instr#get_instruction_bytes then
             let fndata = functions_data#add_function a in
             begin
               fnsAdded := a :: !fnsAdded;
