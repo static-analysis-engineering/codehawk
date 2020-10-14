@@ -275,7 +275,9 @@ object (self)
               maxpreamble := k
             end) preambles in
     let commonpreambles =
-      H.fold (fun k v a -> if v >= 8 then k :: a else a) preambles [] in
+      let preamble_cutoff = system_info#get_preamble_cutoff in
+      H.fold (fun k v a ->
+          if v >= preamble_cutoff then k :: a else a) preambles [] in
     let is_common_preamble bytes =
       List.fold_left (fun a p -> a || p = bytes) false commonpreambles in
     let fnsAdded = ref [] in
@@ -283,7 +285,6 @@ object (self)
       !mips_assembly_instructions#itera (fun a instr ->
           if H.mem functions a#index then
             ()
-                                         (* else if instr#get_instruction_bytes = !maxpreamble then *)
           else if is_common_preamble instr#get_instruction_bytes then
             let fndata = functions_data#add_function a in
             begin
@@ -296,7 +297,9 @@ object (self)
       chlog#add
         "initialization"
         (LBLOCK [ STR "Add " ; INT (List.length !fnsAdded) ;
-                  STR " functions by preamble" ]) in
+                  STR " functions by preamble (from " ;
+                  INT (List.length commonpreambles) ;
+                  STR " common preambles)" ]) in
     !fnsAdded
 
   method dark_matter_to_string =

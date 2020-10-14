@@ -114,6 +114,9 @@ object (self)
   val mutable filename = ""
   val mutable is_elf = false
   val mutable is_mips = false
+  val mutable preamble_cutoff = 12   (* minimum number of observed preambles, to
+                                        use instruction as reason to add function
+                                        entry point *)
 
   val mutable jumptables = []
   val data_blocks = new DataBlockCollections.set_t
@@ -150,7 +153,11 @@ object (self)
   val mutable encodings = []
   val mutable inlined_functions = []
 
-  val data_export_specs = H.create 3 
+  val data_export_specs = H.create 3
+
+  method set_preamble_cutoff (n:int) = preamble_cutoff <- n
+
+  method get_preamble_cutoff = preamble_cutoff
 
   method is_in_readonly_range (a:doubleword_int) =
     List.fold_left (fun r (s,e) -> r || (s#le a && a#lt e)) false readonly_ranges
