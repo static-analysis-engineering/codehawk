@@ -143,6 +143,8 @@ let speclist =
      "continue analyzing functions that have stabilized") ;
     ("-analyze_elf", Arg.Unit (fun () -> cmd := "analyze_elf"),
      "analyze the executable ELF file (x86 architecture)") ;
+    ("-preamble_cutoff", Arg.Int system_info#set_preamble_cutoff,
+     "minimum number of preamble instructions observed to add as function entry point");
     ("-save_cfgs", Arg.Unit (fun () -> savecfgs := true),
      "save basic blocks and loops (applicable to .exe file)") ;
     ("-summaries", Arg.String system_settings#set_summary_jar,

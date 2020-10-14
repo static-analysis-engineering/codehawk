@@ -2803,6 +2803,7 @@ object
   method set_elf: unit
   method set_mips: unit
   method set_big_endian: unit
+  method set_preamble_cutoff: int -> unit
   method set_image_base: doubleword_int -> unit
   method set_base_of_code_rva: doubleword_int -> unit
   method set_elf_is_code_address: doubleword_int -> doubleword_int -> unit
@@ -2828,47 +2829,48 @@ object
   method decode_string             : string -> doubleword_int -> string
     
   (* accessors *)
-  method get_size       : int
-  method get_code_size             : doubleword_int
-  method get_data_blocks           : data_block_int list
-  method get_jumptables            : jumptable_int list
-  method get_call_target           : doubleword_int -> doubleword_int -> (string * string * string)
-  method get_jump_table_target     :
+  method get_size: int
+  method get_code_size: doubleword_int
+  method get_data_blocks: data_block_int list
+  method get_jumptables: jumptable_int list
+  method get_call_target: doubleword_int -> doubleword_int -> (string * string * string)
+  method get_jump_table_target:
            doubleword_int -> doubleword_int -> (jumptable_int * doubleword_int * int * int)
-  method get_esp_adjustment        : doubleword_int -> doubleword_int -> int
-    
-  method get_filename              : string
-  method get_file_string           : ?hexSize:doubleword_int -> doubleword_int -> string
-  method get_file_input            : ?hexSize:doubleword_int -> doubleword_int -> 
-    stream_wrapper_int
-  method get_string_stream         : string -> pushback_stream_int
-  method get_image_base            : doubleword_int
-  method get_base_of_code_rva      : doubleword_int    (* relative virtual address *)
+  method get_esp_adjustment: doubleword_int -> doubleword_int -> int
+
+  method get_preamble_cutoff: int
+  method get_filename: string
+  method get_file_string: ?hexSize:doubleword_int -> doubleword_int -> string
+  method get_file_input:
+           ?hexSize:doubleword_int -> doubleword_int ->  stream_wrapper_int
+  method get_string_stream: string -> pushback_stream_int
+  method get_image_base: doubleword_int
+  method get_base_of_code_rva: doubleword_int    (* relative virtual address *)
   method get_address_of_entry_point: doubleword_int
   method get_bound_library_function: doubleword_int -> (string * string)
-  method get_exported_item_name    : doubleword_int -> string
-  method get_exported_data_spec    : string -> data_export_spec_t
-  method get_data_block            : doubleword_int -> data_block_int
-  method get_jumptable             : doubleword_int -> jumptable_int
-  method get_class_infos           : doubleword_int -> (string * function_api_t * bool) list
-  method get_jump_target           : 
+  method get_exported_item_name: doubleword_int -> string
+  method get_exported_data_spec: string -> data_export_spec_t
+  method get_data_block: doubleword_int -> data_block_int
+  method get_jumptable: doubleword_int -> jumptable_int
+  method get_class_infos: doubleword_int -> (string * function_api_t * bool) list
+  method get_jump_target: 
     doubleword_int -> (doubleword_int * jumptable_int * data_block_int)
-  method get_lib_functions_loaded  : (string * string list) list
+  method get_lib_functions_loaded : (string * string list) list
   method get_thread_start_arguments: doubleword_int -> bterm_t list list
-  method get_goto_return           : doubleword_int -> doubleword_int
-  method get_cfnop                 : doubleword_int -> int * string
-  method get_cfjmp                 : doubleword_int -> doubleword_int * int * string
+  method get_goto_return: doubleword_int -> doubleword_int
+  method get_cfnop: doubleword_int -> int * string
+  method get_cfjmp: doubleword_int -> doubleword_int * int * string
 
   method get_ida_function_entry_points: doubleword_int list
   method get_userdeclared_codesections: doubleword_int list
 
   method get_initialized_memory_strings: (doubleword_int * string) list
 
-  method get_user_data_block_count    : int
-  method get_user_call_target_count   : int
-  method get_user_struct_count        : int
-  method get_user_nonreturning_count  : int
-  method get_user_class_count         : int
+  method get_user_data_block_count: int
+  method get_user_call_target_count: int
+  method get_user_struct_count: int
+  method get_user_nonreturning_count: int
+  method get_user_class_count: int
 
   (* predicates *)
   method is_elf: bool
