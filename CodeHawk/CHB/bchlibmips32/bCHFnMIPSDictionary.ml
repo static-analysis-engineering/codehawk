@@ -374,6 +374,20 @@ object (self)
                              xd#index_xpr resultlo; xd#index_xpr resulthi;
                              xd#index_xpr rresultlo; xd#index_xpr rresulthi ])
 
+      | DivideUnsignedWord (hi,lo,rs,rt) ->
+         let lhshi = hi#to_variable floc in
+         let lhslo = lo#to_variable floc in
+         let rhs1 = rs#to_expr floc in
+         let rhs2 = rt#to_expr floc in
+         let resultlo = XOp (XDiv, [ rhs1; rhs2 ]) in
+         let resulthi = XOp (XMod, [ rhs1; rhs2 ]) in
+         let rresultlo = rewrite_expr resultlo in
+         let rresulthi = rewrite_expr resulthi in
+         ([ "a:vvxxxxxx" ],[ xd#index_variable lhslo; xd#index_variable lhshi;
+                             xd#index_xpr rhs1; xd#index_xpr rhs2;
+                             xd#index_xpr resultlo; xd#index_xpr resulthi;
+                             xd#index_xpr rresultlo; xd#index_xpr rresulthi ])
+
       | ExtractBitField (dst,src,pos,size) ->
          let lhs = dst#to_variable floc in
          let rhs = src#to_expr floc in
