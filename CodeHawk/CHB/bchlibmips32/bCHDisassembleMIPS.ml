@@ -236,6 +236,29 @@ let disassemble_mips_sections () =
          0x40381c  24 18 00 49       li       $t8, 73
 
      8f998010 03e07821 0320f809 241800xx
+
+     3c0f00438df9f2d40320000825f8f2d4
+
+    F B 0x402440  3c 0f 00 43       lui      $t7, 67
+        0x402444  8d f9 f2 d4       lw       $t9, -0xd2c($t7)
+        0x402448  03 20 00 08       jr       $t9
+      D 0x40244c  25 f8 f2 d4       addiu    $t8, $t7, -3372
+
+    3c0f0043 8df9f2d8 03200008 25f8f2d8
+
+    F B 0x402450  3c 0f 00 43       lui      $t7, 67
+        0x402454  8d f9 f2 d8       lw       $t9, -0xd28($t7)
+        0x402458  03 20 00 08       jr       $t9
+      D 0x40245c  25 f8 f2 d8       addiu    $t8, $t7, -3368
+
+    3c0f0043 8df95a08 03200008 25f85a08
+
+    F B 0x401ab0  3c 0f 00 43       lui      $t7, 67
+        0x401ab4  8d f9 5a 08       lw       $t9, 0x5a08($t7)
+        0x401ab8  03 20 00 08       jr       $t9
+      D 0x401abc  25 f8 5a 08       addiu    $t8, $t7, 23048
+
+
    *)
 
 let is_library_stub faddr =
@@ -245,7 +268,9 @@ let is_library_stub faddr =
         "1080998f2578e00309f82003\\(..\\)001824";
         "1080998f2178e00309f82003\\(..\\)001824";
         "1080998f2178e00309f82003\\(....\\)1824";
-        "8f99801003e078210320f8092418\\(....\\)"
+        "8f99801003e078210320f8092418\\(....\\)";
+        "3c0f00438df9f\\(...\\)0320000825f8f\\(...\\)";
+        "3c0f00438df95\\(...\\)0320000825f85\\(...\\)"
       ] in
     List.exists (fun s ->
         let regex = Str.regexp s in
@@ -253,8 +278,57 @@ let is_library_stub faddr =
   else
     false
 
+(* used in case of JMPREL relocation *)
+let set_library_stub_name faddr =
+  if elf_header#is_program_address faddr then
+    let bytestring =
+      byte_string_to_printed_string (elf_header#get_xsubstring faddr 16) in
+    let regex =  Str.regexp "3c0f00438df9f\\(...\\)0320000825f8f\\(...\\)" in
+    if Str.string_match regex bytestring 0 then
+      let offset = "0x" ^ Str.matched_group 1 bytestring in
+      let addr = (string_to_doubleword "0x42f000")#add (string_to_doubleword offset) in
+      if functions_data#has_function_name addr then
+        let fndata = functions_data#add_function faddr in
+        begin
+          fndata#add_name (functions_data#get_function addr)#get_function_name;
+          fndata#set_library_stub;
+          chlog#add "ELF library stub"
+            (LBLOCK [ faddr#toPretty ; STR ": " ; STR fndata#get_function_name ])
+        end
+      else
+        chlog#add "no stub name found" addr#toPretty
+    else
+      let regex =  Str.regexp "3c0f00438df9\\(....\\)0320000825f8\\(....\\)" in
+      if Str.string_match regex bytestring 0 then
+        let offset = "0x" ^ Str.matched_group 1 bytestring in
+        let addr = (string_to_doubleword "0x430000")#add (string_to_doubleword offset) in
+        if functions_data#has_function_name addr then
+          let fndata = functions_data#add_function faddr in
+          begin
+            fndata#add_name (functions_data#get_function addr)#get_function_name;
+            fndata#set_library_stub;
+            chlog#add "ELF library stub"
+              (LBLOCK [ faddr#toPretty ; STR ": " ; STR fndata#get_function_name ])
+          end
+        else
+          chlog#add "no stub name found" addr#toPretty
+      else
+        chlog#add "no string match for stub" faddr#toPretty
+  else
+    chlog#add "faddr is not a program address" faddr#toPretty
+
+
 let extract_so_symbol (opcodes:mips_opcode_t list) = None    (* TBD *)
-let get_so_target (instr:mips_assembly_instruction_int) =  None   (* TBD *)
+
+let get_so_target (tgtaddr:doubleword_int) (instr:mips_assembly_instruction_int) =
+  if functions_data#has_function_name tgtaddr then
+    let fndata = functions_data#get_function tgtaddr in
+    if fndata#is_library_stub  then
+      Some fndata#get_function_name
+    else
+      None
+  else
+    None
 
 (* can be used before functions have been constructed *)
 let is_nr_call_instruction (instr:mips_assembly_instruction_int) =
@@ -284,7 +358,7 @@ let collect_function_entry_points () =
          | BranchGEZeroLink (_,tgt)
          | BranchLink tgt
          | JumpLink tgt when tgt#is_absolute_address ->
-          (match get_so_target instr with
+          (match get_so_target tgt#get_absolute_address instr with
            | Some sym ->
               (functions_data#add_function tgt#get_absolute_address)#add_name sym
            | _ ->
@@ -438,6 +512,9 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
         let reg = MIPSRegister (get_indirect_jump_instruction_register instr#get_opcode) in
         let _ = finfo#set_jumptable_target ctxtiaddr jt#get_start_address jt reg in
         (Some (mk_ci_succ targets),va#add_int 4,[])
+      else if system_info#has_indirect_jump_targets faddr va then
+        let targets = system_info#get_indirect_jump_targets faddr va in
+        (Some (mk_ci_succ targets),va#add_int 4,[])
       else
         (Some [],va#add_int  4,[])
     else if instr#is_delay_slot then
@@ -569,6 +646,8 @@ let construct_functions f =
             end
           else
             default ()
+        else if is_library_stub faddr then
+          set_library_stub_name faddr
         else
           default ()
       ) functionentrypoints;
@@ -593,10 +672,12 @@ let record_call_targets () =
               | JumpLink op ->
                  if finfo#has_call_target ctxtiaddr
                     && not (finfo#get_call_target ctxtiaddr)#is_unknown then
-                   ()
+                   let loc = ctxt_string_to_location faddr ctxtiaddr in
+                   let floc = get_floc loc in
+                   floc#update_call_target
                  else
                    begin
-                     match get_so_target instr with
+                     match get_so_target op#get_absolute_address instr with
                      | Some tgt ->
                         finfo#set_call_target ctxtiaddr (mk_so_target tgt)
                      | _ ->
@@ -606,7 +687,9 @@ let record_call_targets () =
                    end
               | JumpLinkRegister (ra,op) ->
                  if finfo#has_call_target ctxtiaddr then
-                   ()
+                   let loc = ctxt_string_to_location faddr ctxtiaddr in
+                   let floc = get_floc loc in
+                   floc#update_call_target
                  else
                    finfo#set_call_target ctxtiaddr (mk_unknown_target ())
               | _ -> ())
@@ -638,21 +721,49 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
   match opExpr with
   | XConst (IntConst c) ->
      let dw = numerical_to_doubleword c in
-     if mips_assembly_functions#has_function_by_address dw then
-       floc#set_call_target (mk_app_target dw)
-     else if functions_data#is_function_entry_point dw then
+     if functions_data#has_function_name dw then
        let fndata = functions_data#get_function dw in
-       if fndata#has_name then
-         let name = List.hd fndata#get_names in
-         let _ = chlog#add "look for library function" (STR name) in
+       let name = fndata#get_function_name in
+       if fndata#is_library_stub then
          if function_summary_library#has_so_function name then
            floc#set_call_target (mk_so_target name)
+         else
+           begin
+             floc#set_call_target (mk_so_target name);
+             chlog#add "missing library summary" (STR name)
+           end
+       else
+         if mips_assembly_functions#has_function_by_address dw then
+           floc#set_call_target (mk_app_target dw)
+         else if functions_data#is_function_entry_point dw then
+           let fndata = functions_data#get_function dw in
+           if fndata#has_name then
+             let name = List.hd fndata#get_names in
+             let _ = chlog#add "look for library function" (STR name) in
+             if function_summary_library#has_so_function name then
+               floc#set_call_target (mk_so_target name)
+             else
+               ()
+           else
+             ()
+         else
+           ()
+     else
+       if mips_assembly_functions#has_function_by_address dw then
+         floc#set_call_target (mk_app_target dw)
+       else if functions_data#is_function_entry_point dw then
+         let fndata = functions_data#get_function dw in
+         if fndata#has_name then
+           let name = List.hd fndata#get_names in
+           let _ = chlog#add "look for library function" (STR name) in
+           if function_summary_library#has_so_function name then
+             floc#set_call_target (mk_so_target name)
+           else
+             ()
          else
            ()
        else
          ()
-     else
-       ()
   | XVar v when env#is_global_variable v ->
      let gaddr = env#get_global_variable_address v in
      if elf_header#is_program_address gaddr then
