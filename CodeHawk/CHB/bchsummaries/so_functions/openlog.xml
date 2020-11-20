@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-11-16 18:32:32"/>
+  <libfun lib="so-functions" name="openlog">
+    <documentation>
+      <desc>open system log</desc>
+      <apidoc>
+        <pt>
+          <ll>void openlog(</ll>
+          <ld>const char *ident</ld>
+          <ld>int logopt</ld>
+          <ld>int facility</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="ident">string prepended to every message</par>
+        <par name="logopt">logging options</par>
+        <par name="facility">
+	  encodes a default facility to be assigned to all messages
+	  that do not have an explicit facility already encoded.
+	</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="openlog">
+      <par loc="stack" name="ident" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="logopt" nr="2">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="facility" nr="3">
+        <type>int</type>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="2020-11-16 19:19:24"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="msvcrt" name="stat64">
+   <documentation>
+    <desc>get status information on a file</desc>
+    <apidoc>
+     <pt>
+      <ll>int _stat64(</ll>
+      <ld>const char *path,</ld>
+      <ld>struct _stat *buffer</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">zero</rc>
+      <rc cond="failure">-1</rc>
+     </return>
+     <par name="path">
+       pointer to a string containing the path of existing file or directory
+    </par>
+     <par name="buffer">pointer to structure that stores results</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="stat64">
+    <returntype>int</returntype>
+    <par loc="stack" io="r" name="path" rep="hex" nr="1">
+     <roles>
+      <role rt="ioc:filesystem" rn="name:file" />
+     </roles>
+     <type><ptr>char</ptr></type>
+     <pre><deref-read-nt/></pre>
+    </par>
+    <par loc="stack" io="w" name="buffer" nr="2">
+     <roles>
+      <role rt="ioc:memops" rn="dst-struct:file status information" />
+      <role rt="ioc:filesystem" rn="infox:file status"/>
+     </roles>
+     <type><ptr>_stat</ptr></type>
+     <pre><deref-write/></pre>
+     <sideeffects><block-write/></sideeffects>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="filesystem" desc="obtains status information on a file"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions>
+      <zero-negone/>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+ </codehawk-binary-analyzer>

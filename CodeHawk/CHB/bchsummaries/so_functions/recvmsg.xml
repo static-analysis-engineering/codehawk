@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-11-16 17:47:38"/>
+  <libfun lib="so-functions" name="recvmsg">
+    <documentation>
+      <desc>receive a message from a socket</desc>
+      <apidoc>
+        <pt>
+          <ll>ssize_t recvmsg(</ll>
+          <ld>int socket</ld>
+          <ld>struct msghdr *message</ld>
+          <ld>int flags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="socket">socket file descriptor</par>
+        <par name="message">
+	  Points to a msghdr structure, containing both the buffer to store the
+	  source address and the buffers for the incoming message. The length
+	  and format of the address depend on the address family of the
+	  socket. The msg_flags member is ignored on input, but may contain
+	  meaningful values on output.
+	</par>
+        <par name="flags">type of message transmission</par>
+        <return>
+          <rc cond="success">length of the message in bytes</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="recvmsg">
+      <par loc="stack" name="socket" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="message" nr="2">
+        <type><ptr>msghdr</ptr></type>
+	<pre><deref-write/></pre>
+      </par>
+      <par loc="stack" name="flags" nr="3">
+        <type>int</type>
+      </par>
+      <returntype>ssize_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

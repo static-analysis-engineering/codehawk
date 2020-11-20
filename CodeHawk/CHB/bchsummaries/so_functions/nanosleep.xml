@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-11-16 18:25:08"/>
+  <libfun lib="so-functions" name="nanosleep">
+    <documentation>
+      <desc>high-resolution sleep</desc>
+      <apidoc>
+        <pt>
+          <ll>int nanosleep(</ll>
+          <ld>const struct timespec *rqtp</ld>
+          <ld>struct timespec *rmtp</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="rqtp">requested time period</par>
+        <par name="rmtp">remaining time period (when interrupted, maybe NULL)</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="nanosleep">
+      <par loc="stack" name="rqtp" nr="1">
+        <type><ptr>timespec</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="rmtp" nr="2">
+        <type><ptr>timespec</ptr></type>
+	<pre><deref-write-null/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

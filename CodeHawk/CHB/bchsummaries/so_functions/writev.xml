@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-11-16 18:02:04"/>
+  <libfun lib="so-functions" name="writev">
+    <documentation>
+      <desc>write a vector</desc>
+      <apidoc>
+        <pt>
+          <ll>ssize_t writev(</ll>
+          <ld>int fildes</ld>
+          <ld>const struct iovec *iov</ld>
+          <ld>int iovcnt</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="fildes">file descriptor</par>
+        <par name="iov">
+	  specifies a base address and length of an area of memory
+	  from which data should be written
+	</par>
+        <par name="iovcnt">number of iovec entries</par>
+        <return>
+          <rc cond="success">number of bytes written</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="writev">
+      <par loc="stack" name="fildes" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="iov" nr="2">
+        <type><ptr>iovec</ptr></type>
+      </par>
+      <par loc="stack" name="iovcnt" nr="3">
+        <type>int</type>
+      </par>
+      <returntype>ssize_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>iovec</type>
+	      <ci>iov</ci>
+	      <apply>
+		<indexsize/>
+		<ci>iovcnt</ci>
+	      </apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

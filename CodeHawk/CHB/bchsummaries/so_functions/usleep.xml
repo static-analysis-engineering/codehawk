@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-11-06 22:38:44"/>
+  <libfun lib="so_functions" name="usleep">
+    <documentation>
+      <desc>suspend execution for an interval of time</desc>
+      <apidoc>
+        <pt>unsigned usleep (unsigned seconds)</pt>
+        <par name="useconds">
+	  time for the thread to be suspended, in micro seconds
+	</par>
+        <return>
+          <rc cond="success">zero</rc>
+          <rc cond="failure">positive</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="usleep">
+      <par loc="stack" name="useconds" nr="1">
+        <type>UINT</type>
+      </par>
+      <returntype>UINT</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>
