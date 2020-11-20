@@ -332,20 +332,15 @@ let get_so_target (tgtaddr:doubleword_int) (instr:mips_assembly_instruction_int)
 
 (* can be used before functions have been constructed *)
 let is_nr_call_instruction (instr:mips_assembly_instruction_int) =
-  match get_so_target instr with
-  | Some sym ->
-     (function_summary_library#has_so_function sym)
-     && (function_summary_library#get_so_function sym)#is_nonreturning
-  | _ ->
-     match instr#get_opcode with
-     | JumpLink tgt
-       | BranchLTZeroLink (_,tgt)
-       | BranchGEZeroLink (_,tgt)
-       | BranchLink tgt when tgt#is_absolute_address ->
-        let tgtaddr = tgt#get_absolute_address in
-        ((functions_data#is_function_entry_point tgtaddr)
-         && (functions_data#get_function tgtaddr)#is_non_returning)
-     | _ -> false
+  match instr#get_opcode with
+  | JumpLink tgt
+    | BranchLTZeroLink (_,tgt)
+    | BranchGEZeroLink (_,tgt)
+    | BranchLink tgt when tgt#is_absolute_address ->
+     let tgtaddr = tgt#get_absolute_address in
+     ((functions_data#is_function_entry_point tgtaddr)
+      && (functions_data#get_function tgtaddr)#is_non_returning)
+  | _ -> false
 
 let collect_function_entry_points () =
   let addresses = new DoublewordCollections.set_t in
