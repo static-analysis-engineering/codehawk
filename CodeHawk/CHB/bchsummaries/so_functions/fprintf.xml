@@ -38,9 +38,6 @@
         <role rt="ioc:outputs" rn="format string"/>
      </roles>
     </par>
-    <par loc="stack" name="args" io="r" roles="none" nr="3">
-      <type>var-arg</type>
-    </par>
    </api>
    <semantics>
     <io-actions>

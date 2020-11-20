@@ -34,11 +34,11 @@
         <return/>
       </apidoc>
     </documentation>
-    <api adj="0" cc="cdecl" name="syslog">
+    <api adj="0" cc="cdecl" name="syslog" varargs="yes">
       <par loc="stack" name="priority" nr="1">
         <type>int</type>
       </par>
-      <par loc="stack" name="message" nr="2">
+      <par loc="stack" name="message" fmt="print" nr="2">
         <type><ptr>char</ptr></type>
 	<pre><deref-read-nt/><format-string/></pre>
       </par>

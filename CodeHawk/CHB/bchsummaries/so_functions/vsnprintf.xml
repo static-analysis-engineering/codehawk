@@ -43,7 +43,7 @@
     <par loc="stack" desc="count" io="r" name="count" roles="none" nr="2">
       <type>size_t</type>
     </par>
-    <par loc="stack" desc="format" io="r" fmt="print" name="format" nr="3" rep="hex">
+    <par loc="stack" desc="format" io="r" name="format" nr="3" rep="hex">
       <type><ptr>char</ptr></type>
       <roles>
         <role rt="ioc:outputs" rn="format string"/>
