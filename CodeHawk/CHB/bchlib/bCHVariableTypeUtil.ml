@@ -85,37 +85,46 @@ let get_fmt_spec_type (spec:argspec_int):btype_t =
   let conversion = spec#get_conversion in
   match conversion with
   | IntConverter | DecimalConverter ->
-     let ikind = match spec#get_lengthmodifier with
-       | NoModifier -> IInt
-       | CharModifier -> IChar
-       | ShortModifier -> IShort
-       | LongModifier -> ILong
-       | LongLongModifier -> ILongLong
-       | IntMaxModifier -> ILong
-       | SizeModifier -> IULong
-       | PtrDiffModifier -> IULong
-       | LongDoubleModifier -> ILong in
-     TInt (ikind,[])
+     if spec#has_lengthmodifier then
+       let ikind = match spec#get_lengthmodifier with
+         | NoModifier -> IInt
+         | CharModifier -> IChar
+         | ShortModifier -> IShort
+         | LongModifier -> ILong
+         | LongLongModifier -> ILongLong
+         | IntMaxModifier -> ILong
+         | SizeModifier -> IULong
+         | PtrDiffModifier -> IULong
+         | LongDoubleModifier -> ILong in
+       TInt (ikind,[])
+     else
+       TInt (IInt,[])
   | UnsignedOctalConverter | UnsignedDecimalConverter | UnsignedHexConverter _ ->
-     let ikind = match spec#get_lengthmodifier with
-       | NoModifier -> IUInt
-       | CharModifier -> IUChar
-       | ShortModifier -> IUShort
-       | LongModifier -> IULong
-       | LongLongModifier -> IULongLong
-       | IntMaxModifier -> IULong
-       | SizeModifier -> IULong
-       | PtrDiffModifier -> IULong
-       | LongDoubleModifier -> IULong in
-     TInt (ikind,[])
+     if spec#has_lengthmodifier then
+       let ikind = match spec#get_lengthmodifier with
+         | NoModifier -> IUInt
+         | CharModifier -> IUChar
+         | ShortModifier -> IUShort
+         | LongModifier -> IULong
+         | LongLongModifier -> IULongLong
+         | IntMaxModifier -> IULong
+         | SizeModifier -> IULong
+         | PtrDiffModifier -> IULong
+         | LongDoubleModifier -> IULong in
+       TInt (ikind,[])
+     else
+       TInt (IUInt,[])
   | FixedDoubleConverter _
     | ExpDoubleConverter _
     | FlexDoubleConverter _
     | HexDoubleConverter _ ->
-     let fkind = match spec#get_lengthmodifier with
-       | LongDoubleModifier -> FLongDouble
-       | _ -> FDouble in
-     TFloat (fkind,FScalar,[])
+     if spec#has_lengthmodifier then
+       let fkind = match spec#get_lengthmodifier with
+         | LongDoubleModifier -> FLongDouble
+         | _ -> FDouble in
+       TFloat (fkind,FScalar,[])
+     else
+       TFloat (FDouble,FScalar,[])
   | UnsignedCharConverter -> TInt (IUChar,[])
   | StringConverter -> TPtr (TInt (IChar, []),[])
   | PointerConverter -> TPtr (TVoid [],[])
