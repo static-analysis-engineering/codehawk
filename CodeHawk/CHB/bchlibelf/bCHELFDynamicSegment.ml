@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -125,6 +126,36 @@ object (self)
          (BCH_failure
             (LBLOCK [ STR "Value of " ; STR self#get_tag_name ;
                       STR " cannot be interpreted as value" ]))
+
+  method is_plt_relocation_table =
+    match self#get_tag with DT_JmpRel -> true | _ -> false
+
+  method get_plt_relocation_table =
+    if self#is_plt_relocation_table then
+      self#get_d_ptr
+    else
+      raise_dynamic_entry_error
+        self#get_tag_name d_un (STR "get_plt_relocation_table")
+
+  method is_plt_relocation_table_size =
+    match self#get_tag with DT_PltRelSz -> true | _ -> false
+
+  method get_plt_relocation_table_size =
+    if self#is_plt_relocation_table_size then
+      self#get_d_val
+    else
+      raise_dynamic_entry_error
+        self#get_tag_name d_un (STR "get_plt_relocation_table_size")
+
+  method is_plt_relocation_table_type =
+    match self#get_tag with DT_PltRel -> true | _ -> false
+
+  method get_plt_relocation_table_type =
+    if self#is_plt_relocation_table_type then
+      self#get_d_val
+    else
+      raise_dynamic_entry_error
+        self#get_tag_name d_un (STR "get_plt_relocation_table_type")
 
   method is_relocation_table =
     match self#get_tag with DT_Rel -> true | _ -> false
@@ -324,7 +355,31 @@ object (self)
     with
     | IO.No_more_input ->
        ch_error_log#add "no more input"
-                        (LBLOCK [ STR "Unable to read the dynamic segment" ])
+         (LBLOCK [ STR "Unable to read the dynamic segment" ])
+
+  method has_jmprel_address =
+    List.exists (fun e -> e#is_plt_relocation_table) entries
+
+  method get_jmprel_address =
+    try
+      let e = List.find (fun e -> e#is_plt_relocation_table) entries in
+      e#get_plt_relocation_table
+    with
+    | Not_found ->
+       raise
+         (BCH_failure (LBLOCK [ STR "DT_JMPREL not found in Dynamic Segment" ]))
+
+  method has_jmprel_size =
+    List.exists (fun e -> e#is_plt_relocation_table_size) entries
+
+  method get_jmprel_size =
+    try
+      let e = List.find (fun e -> e#is_plt_relocation_table_size) entries in
+      e#get_plt_relocation_table_size
+    with
+    | Not_found ->
+       raise
+         (BCH_failure (LBLOCK [ STR "DT_PLTRELSZ not found in Dynamic Segment" ]))
 
   method has_reltab_address =
     List.exists (fun e -> e#is_relocation_table) entries

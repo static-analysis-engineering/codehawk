@@ -37,6 +37,7 @@ open CHXmlDocument
 open BCHBasicTypes
 open BCHByteUtilities
 open BCHDoubleword
+open BCHFunctionData
 open BCHLibTypes
 open BCHStreamWrapper
 open BCHSystemInfo
@@ -95,6 +96,8 @@ object (self)
 
   method set_symbol (s:elf_symbol_table_entry_int) = symbol <- Some s
 
+  method get_address = r_offset
+
   method has_offset (dw:doubleword_int) = dw#equal r_offset
 
   method get_symbol_string =
@@ -110,6 +113,11 @@ object (self)
     | _ ->
        raise (BCH_failure (LBLOCK [ STR "Relocation entry " ; INT index ;
                                     STR " does not have a symbol" ]))
+
+  method is_function =
+    self#has_symbol && self#get_symbol#is_function
+
+  method has_address = not (r_offset#equal wordzero)
 
   method to_rep_record =
     let tags = [ r_offset#to_hex_string ; r_info#to_hex_string ] in
@@ -172,6 +180,19 @@ object (self)
        raise
          (BCH_failure
             (LBLOCK [ STR "Error in get_offset_symbol: " ; dw#toPretty ]))
+
+  method set_function_entry_points =
+    List.iter (fun e ->
+        if e#is_function && e#has_address then
+          let fndata = functions_data#add_function e#get_address in
+          begin
+            fndata#set_library_stub;
+            if e#has_symbol then
+              let _ = chlog#add "set elf stub name"
+                        (LBLOCK [ e#get_address#toPretty ; STR ": " ; STR e#get_symbol_string]) in
+              fndata#add_name e#get_symbol_string
+          end
+      ) entries
 
   method write_xml_entries (node:xml_element_int) =
     let table = mk_num_record_table "relocation-table" in

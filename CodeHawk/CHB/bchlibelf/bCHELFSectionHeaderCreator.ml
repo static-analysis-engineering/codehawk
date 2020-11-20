@@ -199,6 +199,7 @@ object (self)
           | ".hash" -> h#set_link  !dynsym_index
           | ".dynsym" -> h#set_link !dynstr_index
           | ".reldata" -> h#set_link !dynsym_index
+          | ".rela.plt" -> h#set_link !dynsym_index
           | ".gnu.version"  -> h#set_link !dynsym_index
           | ".gnu.version_r" -> h#set_link !dynstr_index
           | _ -> ()) headers
@@ -216,6 +217,7 @@ object (self)
       self#create_gnu_version_header ;
       self#create_gnu_version_r_header ;
       self#create_relocation_header ;
+      self#create_plt_relocation_header ;
       (if dynamicsegment#has_init_address then self#create_init_header) ;
       self#create_text_header ;
       self#create_fini_header ;
@@ -475,6 +477,31 @@ object (self)
       end
     else
       pr_debug [ STR "No relocation table found" ; NL ]
+
+  (* inputs: from dynamic table, type PT_Load (1)
+   * - addr: DT_JMPREL
+   * - offset: DT_JMPREL - ph#get_vaddr
+   * - size: DT_PLTRELSZ
+   *)
+  method private create_plt_relocation_header =
+    let sectionname = ".rela.plt" in
+    if dynamicsegment#has_jmprel_address then
+      let vaddr = dynamicsegment#get_jmprel_address in
+      let sh = mk_elf_section_header () in
+      let stype = s2d "0x9" in
+      let flags = s2d "0x0" in (* TBD *)
+      let addr = vaddr in
+      let offset = self#get_offset_1 vaddr in
+      let size = numerical_to_doubleword (dynamicsegment#get_jmprel_size) in
+      let entsize = s2d "0x8" in
+      let addralign = s2d "0x4" in
+      begin
+        sh#set_fields
+          ~stype ~flags ~addr ~offset ~size ~addralign ~entsize ~sectionname ();
+        section_headers <- sh :: section_headers
+      end
+    else
+      pr_debug [ STR "No plt relocation table found" ; NL ]
       
   (* inputs: from dynamic table, program header, type PT_Load (1)
    * - addr: DT_INIT
