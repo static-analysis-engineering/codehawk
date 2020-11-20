@@ -294,18 +294,19 @@ object (self)
     if self#has_call_target then
       let ctinfo = self#get_call_target in
       if ctinfo#is_signature_valid then
-        match self#update_varargs ctinfo#get_signature with
-        | Some fapi ->
-           let _ =
-             chlog#add
-               "update call target api"
-               (LBLOCK [ self#l#toPretty ; STR ": " ;
-                         STR fapi.fapi_name ; STR ": " ;
-                         INT (List.length fapi.fapi_parameters) ]) in
-           self#set_call_target (update_target_api ctinfo fapi)
-        | _ -> ()
-      else
-        ()
+        try
+          match self#update_varargs ctinfo#get_signature with
+          | Some fapi ->
+             let _ =
+               chlog#add
+                 "update call target api"
+                 (LBLOCK [ self#l#toPretty ; STR ": " ;
+                           STR fapi.fapi_name ; STR ": " ;
+                           INT (List.length fapi.fapi_parameters) ]) in
+             self#set_call_target (update_target_api ctinfo fapi)
+          | _ -> ()
+        with _ ->
+          ()
     else
       ()
 
@@ -314,37 +315,44 @@ object (self)
   method private update_mips_varargs (s:function_api_t) =
     let args = self#get_mips_call_arguments in
     let argcount = List.length args in
+    if argcount = 0 then
+      None
+    else
+      let (lastpar,lastx) = List.nth args (argcount - 1) in
+      (*
     let arg =
       List.fold_left
         (fun acc (p,x) ->
-          match acc with
-          | Some _  -> acc
+          match acc with   
+          | Some _ -> acc 
           | _ -> if is_formatstring_parameter p then Some x else None) None args in
-    match arg with
-    | Some (XConst (IntConst n)) ->
-       let addr = numerical_to_doubleword n in
-       if string_table#has_string addr then
-         let fmtstring = string_table#get_string addr in
-         let _ = pverbose [ STR "Parse formatstring: " ; STR fmtstring ; NL ] in
-         let fmtspec = parse_formatstring fmtstring false in
-         if fmtspec#has_arguments then
-           let args = fmtspec#get_arguments in
-           let pars =
-             List.mapi
-               (fun i arg -> convert_fmt_spec_arg (argcount + i) arg) args in
-           let newpars = s.fapi_parameters @ pars in
-           begin
-             chlog#add
-               "format args"
-               (LBLOCK [ self#l#toPretty ; STR ": " ;
-                         STR s.fapi_name ; STR ": " ; INT (List.length args) ]) ;
-             Some { s with fapi_parameters = newpars }
-           end
+       *)
+      let arg = if is_formatstring_parameter lastpar then Some lastx else None in
+      match arg with
+      | Some (XConst (IntConst n)) ->
+         let addr = numerical_to_doubleword n in
+         if string_table#has_string addr then
+           let fmtstring = string_table#get_string addr in
+           let _ = pverbose [ STR "Parse formatstring: " ; STR fmtstring ; NL ] in
+           let fmtspec = parse_formatstring fmtstring false in
+           if fmtspec#has_arguments then
+             let args = fmtspec#get_arguments in
+             let pars =
+               List.mapi
+                 (fun i arg -> convert_fmt_spec_arg (argcount + i) arg) args in
+             let newpars = s.fapi_parameters @ pars in
+             begin
+               chlog#add
+                 "format args"
+                 (LBLOCK [ self#l#toPretty ; STR ": " ;
+                           STR s.fapi_name ; STR ": " ; INT (List.length args) ]) ;
+               Some { s with fapi_parameters = newpars }
+             end
+           else
+             None
          else
            None
-       else
-         None
-    | _ -> None
+      | _ -> None
 
   method private update_varargs (s:function_api_t) =
     match s.fapi_va_list with
