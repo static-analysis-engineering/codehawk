@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-11-16 18:46:05"/>
+  <libfun lib="so-functions" name="opendir">
+    <documentation>
+      <desc>open directory associated with file descriptor</desc>
+      <apidoc>
+        <pt>DIR *opendir (const char *dirname)</pt>
+        <par name="dirname">name of directory</par>
+        <return>
+          <rc cond="success">pointer to DIR object</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="opendir">
+      <par loc="stack" name="dirname" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype><ptr>DIR</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

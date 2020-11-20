@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-11-16 18:49:32"/>
+  <libfun lib="so-functions" name="readdir">
+    <documentation>
+      <desc>read a directory</desc>
+      <apidoc>
+        <pt>struct dirent *readdir (DIR *dirp)</pt>
+        <par name="dirp">directory stream</par>
+        <return>
+          <rc cond="success">pointer to dirent struct</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="readdir">
+      <par loc="stack" name="dirp" nr="1">
+        <type><ptr>DIR</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <returntype><ptr>dirent</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

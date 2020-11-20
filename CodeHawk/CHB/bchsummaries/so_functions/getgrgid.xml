@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-11-16 18:38:14"/>
+  <libfun lib="so-functions" name="getgrgid">
+    <documentation>
+      <desc>get group database entry for a group ID</desc>
+      <apidoc>
+        <pt>struct group *getgrgid (gid_t gid)</pt>
+        <par name="gid">group id </par>
+        <return>
+          <rc cond="success">pointer to a struct group</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getgrgid">
+      <par loc="stack" name="gid" nr="1">
+        <type>gid_t</type>
+      </par>
+      <returntype><ptr>group</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

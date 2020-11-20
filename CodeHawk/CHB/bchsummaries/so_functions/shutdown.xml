@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-11-16 17:52:18"/>
+  <libfun lib="so-functions" name="shutdown">
+    <documentation>
+      <desc>shut down socket send and receive operations</desc>
+      <apidoc>
+        <pt>
+          <ll>int shutdown(</ll>
+          <ld>int socket</ld>
+          <ld>int how</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="socket">file descriptor of a socket</par>
+        <par name="how">type of shutdown</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="shutdown">
+      <par loc="stack" name="socket" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="how" nr="2">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

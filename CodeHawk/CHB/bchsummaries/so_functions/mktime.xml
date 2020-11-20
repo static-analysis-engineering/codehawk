@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="2020-11-06 23:39:37"/>
+  <libfun lib="so-functions" name="mktime">
+   <documentation>
+    <desc>Convert the local time to a calendar value.</desc>
+    <apidoc>
+     <pt>time_t mktime (struct tm *timeptr)</pt>
+     <par name="timeptr">Pointer to time structure</par>
+     <return/>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="mktime">
+    <par loc="stack" io="r" name="timeptr" nr="1">
+     <type><ptr>tm</ptr></type>
+     <roles>
+      <role rt="ioc:memops" rn="src-struct:tm" />
+     </roles>
+     <pre><deref-read/></pre>
+    </par>
+    <returntype>time_t</returntype>
+   </api>
+   <semantics>
+    <io-actions>
+      <io-action cat="memops" desc="converts local time to calendar time"/>
+    </io-actions>
+    <preconditions/>
+    <postconditions/>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+ </codehawk-binary-analyzer>

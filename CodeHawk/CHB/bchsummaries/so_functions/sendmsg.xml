@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-11-16 17:41:37"/>
+  <libfun lib="so-functions" name="sendmsg">
+    <documentation>
+      <desc>send a message on a socket using a message structure</desc>
+      <apidoc>
+        <pt>
+          <ll>ssize_tsendmsg(</ll>
+          <ld>int socket</ld>
+          <ld>const struct msghdr *message</ld>
+          <ld>int flags</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="socket">socket file descriptor</par>
+        <par name="msghdr">
+	  Points to a msghdr structure, containing both the
+	  destination address and the buffers for the outgoing
+	  message. The length and format of the address depend on the
+	  address family of the socket. The msg_flags member is
+	  ignored.
+	</par>
+        <par name="flags">type of message transmission</par>
+        <return>
+          <rc cond="success">number of bytes sent</rc>
+          <rc cond="failure">=1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="sendmsg">
+      <par loc="stack" name="socket" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="msghdr" nr="2">
+        <type><ptr>msghdr</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="flags" nr="3">
+        <type>int</type>
+      </par>
+      <returntype>ssize_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-11-16 18:54:33"/>
+  <libfun lib="so-functions" name="if_indextoname">
+    <documentation>
+      <desc>map a network interface index to its corresponding name</desc>
+      <apidoc>
+        <pt>
+          <ll>char *if_indextoname(</ll>
+          <ld>unsigned int ifindex</ld>
+          <ld>char *ifname</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="ifindex">interface index</par>
+        <par name="ifname">corresponding name</par>
+        <return>
+          <rc cond="success">pointer to name</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="if_indextoname">
+      <par loc="stack" name="ifindex" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="ifname" nr="2">
+        <type><ptr>char</ptr></type>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>ifname</ci>
+	      <runtime-value/>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

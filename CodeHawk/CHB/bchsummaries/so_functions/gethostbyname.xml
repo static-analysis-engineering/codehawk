@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-11-06 23:45:32"/>
+  <libfun lib="so-functions" name="gethostbyname">
+    <documentation>
+      <desc>returns a structure of type hostent for the given hostname (obsolete)</desc>
+      <apidoc>
+        <pt>struct hostent *gethostbyname (name)</pt>
+        <par name="name">host name</par>
+        <return>
+          <rc cond="success">hostent structure</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="gethostbyname">
+      <par loc="stack" name="name" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype><ptr>hostent</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="2020-11-06 22:32:22"/>
+  <libfun lib="msvcrt" name="vsprintf">
+   <documentation>
+    <desc>write formatted output using a pointer to a list of arguments</desc>
+    <apidoc>
+     <pt>
+      <ll>int _vsprintf(</ll>
+      <ld>char *buffer,</ld>
+      <ld>const char *format,</ld>
+      <ld>va_list argptr</ld>
+      <ll>)</ll>
+     </pt>
+     <return>
+      <rc cond="success">
+        number of characters written
+      </rc>
+      <rc cond="failure">-1</rc>
+     </return>
+     <par name="buffer">storage location for output</par>
+     <par name="format">format specification</par>
+     <par name="argptr">pointer to list of arguments</par>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="vsprintf">
+     <returntype>int</returntype>
+     <par loc="stack" desc="dest buffer" io="w" name="buffer" nr="1" rep="hex">
+       <type><ptr>char</ptr></type>
+       <roles>
+	 <role rt="ioc:memops" rn="dst-string:formatted data"/>
+	 <role rt="ioc:outputs" rn="formatted data to string"/>
+       </roles>
+    </par>
+    <par loc="stack" desc="format" io="r" name="format" nr="2" rep="hex">
+      <type><ptr>char</ptr></type>
+      <roles>
+        <role rt="ioc:outputs" rn="format string"/>
+      </roles>
+     <pre><deref-read-nt/><format-string/></pre>
+    </par>
+    <par loc="stack" desc="args" name="argptr" io="r" roles="none" nr="3">
+     <btype tname="va_list" ttag="tnamed"/>
+    </par>
+   </api>
+   <semantics>
+    <io-actions>
+       <io-action cat="format" desc="writes formatted data to string"/>
+    </io-actions>
+    <preconditions>
+      <pre>
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <type>char</type>
+	    <ci>buffer</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply><geq/><return/><cn>0</cn></apply>
+	</math>
+      </post>
+      <error-post>
+	<math>
+	  <apply><eq/><return/><cn>-1</cn></apply>
+	</math>
+      </error-post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <type>char</type>
+	    <ci>buffer</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+   </semantics>
+  </libfun>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-11-06 21:43:07"/>
+  <libfun lib="so-functions" name="__assert">
+    <documentation>
+      <desc>insert program diagnostics</desc>
+      <apidoc>
+        <pt>
+          <ll>__assert(</ll>
+          <ld>const char *expr</ld>
+          <ld>const char *file</ld>
+          <ld>int line</ld>
+          <ld>const char *fun</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="expr">assertion expression</par>
+        <par name="file">filename</par>
+        <par name="line">line number</par>
+        <par name="fun">function name</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="__assert">
+      <par loc="stack" name="expr" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="file" nr="2">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>	
+      </par>
+      <par loc="stack" name="line" nr="3">
+        <type><ptr>char</ptr></type>
+      </par>
+      <par loc="stack" name="fun" nr="4">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>	
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>
