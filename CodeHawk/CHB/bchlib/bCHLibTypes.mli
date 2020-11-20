@@ -2826,16 +2826,21 @@ object
 
   method import_ida_function_entry_points: unit
 
-  method decode_string             : string -> doubleword_int -> string
+  method decode_string: string -> doubleword_int -> string
     
   (* accessors *)
   method get_size: int
   method get_code_size: doubleword_int
   method get_data_blocks: data_block_int list
   method get_jumptables: jumptable_int list
-  method get_call_target: doubleword_int -> doubleword_int -> (string * string * string)
+  method get_call_target:
+           doubleword_int -> doubleword_int -> (string * string * string)
   method get_jump_table_target:
-           doubleword_int -> doubleword_int -> (jumptable_int * doubleword_int * int * int)
+           doubleword_int
+           -> doubleword_int
+           -> (jumptable_int * doubleword_int * int * int)
+  method get_indirect_jump_targets:
+           doubleword_int -> doubleword_int -> doubleword_int list
   method get_esp_adjustment: doubleword_int -> doubleword_int -> int
 
   method get_preamble_cutoff: int
@@ -2883,21 +2888,22 @@ object
   method has_call_target: doubleword_int -> doubleword_int -> bool
   method has_jump_table_target: doubleword_int -> doubleword_int -> bool
   method has_esp_adjustment: doubleword_int -> doubleword_int -> bool
-  method has_exported_item_name    : doubleword_int -> bool
-  method has_exported_data_spec    : string -> bool
-  method has_data_block            : doubleword_int -> bool
-  method has_jumptable             : doubleword_int -> bool
+  method has_exported_item_name: doubleword_int -> bool
+  method has_exported_data_spec: string -> bool
+  method has_data_block: doubleword_int -> bool
+  method has_jumptable: doubleword_int -> bool
   method has_bound_library_function: doubleword_int -> bool
-  method is_locked_instruction     : doubleword_int -> bool
-  method has_jump_target           : doubleword_int -> bool
-  method is_code_address           : doubleword_int -> bool
-  method is_in_data_block          : doubleword_int -> data_block_int option
-  method is_in_jumptable           : doubleword_int -> jumptable_int option
-  method is_in_readonly_range      : doubleword_int -> bool
-  method is_goto_return            : doubleword_int -> bool
-  method is_cfnop                  : doubleword_int -> bool
-  method is_cfjmp                  : doubleword_int -> bool
-  method is_inlined_function       : doubleword_int -> bool
+  method is_locked_instruction: doubleword_int -> bool
+  method has_jump_target: doubleword_int -> bool
+  method has_indirect_jump_targets: doubleword_int -> doubleword_int -> bool
+  method is_code_address: doubleword_int -> bool
+  method is_in_data_block: doubleword_int -> data_block_int option
+  method is_in_jumptable: doubleword_int -> jumptable_int option
+  method is_in_readonly_range: doubleword_int -> bool
+  method is_goto_return: doubleword_int -> bool
+  method is_cfnop: doubleword_int -> bool
+  method is_cfjmp: doubleword_int -> bool
+  method is_inlined_function: doubleword_int -> bool
 
 
   (* xml *)

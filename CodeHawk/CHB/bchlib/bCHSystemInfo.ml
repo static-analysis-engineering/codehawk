@@ -122,6 +122,7 @@ object (self)
   val data_blocks = new DataBlockCollections.set_t
   val jumptargets = H.create 13
   val jumptabletargets = H.create 13   (* fa,ia of jmp* instr -> (base address,lb option, ub option) *)
+  val indirect_jump_targets = H.create 13  (* fa,ia -> target list *)
     
   val nonreturning_calls = new DoublewordCollections.table_t
   val fixedtrueconditionals = new DoublewordCollections.set_t
@@ -288,6 +289,16 @@ object (self)
     else
       raise (BCH_failure (LBLOCK [ STR "No user call target found for " ;
 				   faddr#toPretty ; STR "@" ; iaddr#toPretty ]))
+
+  method has_indirect_jump_targets (faddr:doubleword_int) (iaddr:doubleword_int) =
+    H.mem indirect_jump_targets (faddr#index,iaddr#index)
+
+  method get_indirect_jump_targets (faddr:doubleword_int) (iaddr:doubleword_int) =
+    if self#has_indirect_jump_targets faddr iaddr then
+      H.find indirect_jump_targets (faddr#index,iaddr#index)
+    else
+      raise (BCH_failure (LBLOCK [ STR "No indirect jump targets found for " ;
+                                   faddr#toPretty ; STR "@" ; iaddr#toPretty ]))
 
   method has_jump_table_target (faddr:doubleword_int) (iaddr:doubleword_int) =
     if H.mem jumptabletargets (faddr#index,iaddr#index) then
@@ -578,10 +589,12 @@ object (self)
          begin
            self#read_xml_jump_table_targets jnode
          end) ;
-      (if hasc "encodings" then self#read_xml_encodings (getc "encodings")) ;
-      (if hasc "cfnops" then self#read_xml_cfnops (getc "cfnops")) ;
+      (if hasc "indirect-jumps" then
+         self#read_xml_indirect_jumps (getc "indirect-jumps"));
+      (if hasc "encodings" then self#read_xml_encodings (getc "encodings"));
+      (if hasc "cfnops" then self#read_xml_cfnops (getc "cfnops"));
       (if hasc "fixed-conditionals" then 
-	  self#read_xml_fixed_true_conditionals (getc "fixed-conditionals")) ;
+	  self#read_xml_fixed_true_conditionals (getc "fixed-conditionals"));
       (if hasc "excluded-jumptables" then 
 	  self#read_xml_excluded_jumptables (getc "excluded-jumptables"));
       (if hasc "invalidated-jumptable-startaddresses" then
@@ -658,6 +671,20 @@ object (self)
                               STR name ])))
 	(getc "enable")
     end
+
+  method private read_xml_indirect_jumps (node:xml_element_int) =
+    let getc = node#getTaggedChildren in
+    List.iter (fun n ->
+        let get = n#getAttribute in
+        let geta tag = string_to_doubleword (get tag) in
+        let getc = n#getTaggedChildren in
+        let fa = geta "fa" in
+        let ia = geta "ia" in
+        let tgts =
+          List.map (fun nn ->
+              string_to_doubleword (nn#getAttribute "a"))
+            (getc "tgt") in
+        H.add indirect_jump_targets (fa#index,ia#index) tgts) (getc "jumpinstr")
 
   method private read_xml_cfnops (node:xml_element_int) =
     List.iter (fun n ->
