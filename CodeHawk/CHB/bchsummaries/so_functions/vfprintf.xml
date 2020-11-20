@@ -22,7 +22,7 @@
      </return>
     </apidoc>
    </documentation>
-   <api adj="0" cc="cdecl" name="vfprintf" varargs="yes">
+   <api adj="0" cc="cdecl" name="vfprintf">
      <returntype>int</returntype>
      <par loc="stack" desc="output stream" io="r" name="stream" nr="1">
        <type><ptr>FILE</ptr></type>
@@ -31,7 +31,7 @@
        </roles>
        <pre><deref-read/></pre>
     </par>
-    <par loc="stack" io="r" name="format" fmt="print" nr="2" rep="hex">
+    <par loc="stack" io="r" name="format" nr="2" rep="hex">
       <type><ptr>char</ptr></type>
       <roles>
         <role rt="ioc:outputs" rn="format string"/>
