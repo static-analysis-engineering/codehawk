@@ -221,9 +221,12 @@ class type elf_relocation_table_entry_int =
     method get_symbol: elf_symbol_table_entry_int
     method get_symbol_string: string
     method get_symbol_index: int
+    method get_address: doubleword_int
     method get_type: int
     method has_offset: doubleword_int -> bool
+    method has_address: bool
     method has_symbol: bool
+    method is_function: bool
     method to_rep_record: string list * int list
   end
 
@@ -231,6 +234,7 @@ class type elf_relocation_table_int =
   object
     method read: unit
     method set_symbols: elf_symbol_table_int -> unit
+    method set_function_entry_points: unit
     method get_xstring: string
     method get_xsubstring: doubleword_int -> int -> string
     method get_vaddr: doubleword_int
@@ -285,6 +289,9 @@ class type elf_dynamic_segment_entry_int =
     method get_relocation_table: doubleword_int
     method get_relocation_table_size: numerical_t
     method get_relocation_table_entry: numerical_t
+    method get_plt_relocation_table: doubleword_int
+    method get_plt_relocation_table_size: numerical_t
+    method get_plt_relocation_table_type: numerical_t
     method get_string_table: doubleword_int
     method get_string_table_size: numerical_t
     method get_symbol_table: doubleword_int
@@ -303,6 +310,9 @@ class type elf_dynamic_segment_entry_int =
     method is_relocation_table: bool
     method is_relocation_table_size: bool
     method is_relocation_table_entry: bool
+    method is_plt_relocation_table: bool
+    method is_plt_relocation_table_size: bool
+    method is_plt_relocation_table_type: bool
     method is_string_table: bool
     method is_string_table_size: bool
     method is_symbol_table: bool
@@ -334,6 +344,8 @@ class type elf_dynamic_segment_int =
     method get_reltab_address: doubleword_int
     method get_reltab_size: numerical_t
     method get_reltab_ent: numerical_t
+    method get_jmprel_address: doubleword_int
+    method get_jmprel_size: numerical_t
     method get_symtab_address: doubleword_int
     method get_strtab_address: doubleword_int
     method get_init_address: doubleword_int
@@ -353,6 +365,8 @@ class type elf_dynamic_segment_int =
     method has_reltab_address: bool
     method has_reltab_size: bool
     method has_reltab_ent: bool
+    method has_jmprel_address: bool
+    method has_jmprel_size: bool
     method has_symtab_address: bool
     method has_strtab_address: bool
     method has_init_address: bool

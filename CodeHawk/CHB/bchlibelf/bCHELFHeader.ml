@@ -652,7 +652,10 @@ object(self)
                  raise (BCH_failure (LBLOCK [ STR "Section with index: " ; INT index ;
                                               STR " is not a relocation table" ])) in
            let symboltable = self#get_associated_symbol_table h in
-           reltable#set_symbols symboltable
+           begin
+             reltable#set_symbols symboltable;
+             reltable#set_function_entry_points
+           end
         | _ -> ()) section_header_table
       
 
