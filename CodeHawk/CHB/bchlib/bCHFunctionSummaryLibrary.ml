@@ -347,31 +347,40 @@ object (self)
     let doc = readXmlDocumentString xstring in
     let root = doc#getRoot in
     if root#hasOneTaggedChild "syscallfun" then
-      let node = root#getTaggedChild "syscallfun" in
-      if node#hasOneTaggedChild "refer-to" then
-        let rnode = node#getTaggedChild "refer-to" in
-        let rname = rnode#getAttribute "name" in
-        if self#has_so_function rname then
-          let summary = self#get_so_function rname in
-          begin
-            chlog#add
-              "syscall summary"
-              (LBLOCK [ INT index ; STR ": " ; STR summary#get_name ]);
-            H.add syscallsummaries index summary
-          end
-      else if node#hasNamedAttribute "name" then
-        let summary = read_xml_function_summary node in
-        begin
-          H.add syscallsummaries summary#get_syscall_index summary;
-          chlog#add
-            "syscall summary"
-            (LBLOCK [ STR "Syscall index " ; INT index ; STR ": "  ;
-                      STR summary#get_name  ])
-        end
-      else
-        raise_xml_error
-          node
-          (LBLOCK [ STR "Invalid syscall summary for index " ; INT index ])
+      try
+        let node = root#getTaggedChild "syscallfun" in
+        if node#hasOneTaggedChild "refer-to" then
+          let rnode = node#getTaggedChild "refer-to" in
+          let rname = rnode#getAttribute "name" in
+          if self#has_so_function rname then
+            let summary = self#get_so_function rname in
+            begin
+              chlog#add
+                "syscall summary"
+                (LBLOCK [ INT index ; STR ": " ; STR summary#get_name ]);
+              H.add syscallsummaries index summary
+            end
+          else if node#hasNamedAttribute "name" then
+            let summary = read_xml_function_summary node in
+            begin
+              H.add syscallsummaries summary#get_syscall_index summary;
+              chlog#add
+                "syscall summary"
+                (LBLOCK [ STR "Syscall index " ; INT index ; STR ": "  ;
+                          STR summary#get_name  ])
+            end
+          else
+            raise_xml_error
+              node
+              (LBLOCK [ STR "Invalid syscall summary for index " ; INT index ])
+      with
+      | CHXmlReader.XmlParseError(line,col,p)
+        | XmlReaderError (line,col,p)
+        | XmlDocumentError (line,col,p) ->
+         raise (BCH_failure (LBLOCK [ STR "Xml problem in reading syscall " ;
+                                      INT index ; STR ": (" ; INT line ;
+                                      STR "," ; INT col ; STR "): " ; p ]))
+
 
   method private read_template_jni_summary (node:xml_element_int) (index:int) =
     let rNode = node#getTaggedChild "refer-to" in

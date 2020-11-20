@@ -292,7 +292,7 @@ let mk_register_parameter
 let convert_fmt_spec_arg
       (index:int)         (* index of argument, zero-based *)
       (spec:argspec_int):api_parameter_t =
-  { apar_name = "vararg_" ^ (string_of_int) index;
+  { apar_name = "vararg_" ^ (string_of_int index);
     apar_type = get_fmt_spec_type spec;
     apar_desc = "vararg";
     apar_roles = [];
@@ -302,5 +302,5 @@ let convert_fmt_spec_arg
       | _ -> ArgRead);
     apar_fmt = NoFormat;
     apar_size = 4;
-    apar_location = StackParameter (index)
+    apar_location = StackParameter index
   }
