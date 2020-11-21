@@ -19,7 +19,7 @@ jobs:
       run: |
         rm CodeHawk-C/chc/bin/linux/canalyzer
         rm CodeHawk-C/chc/bin/linux/parseFile
-    - uses: avsm/setup-ocaml@v1.0
+    - uses: avsm/setup-ocaml@v1
       with:
         ocaml-version: 4.07.1
     - name: Install dependencies
