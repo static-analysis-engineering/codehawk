@@ -18,6 +18,11 @@ _build/
 # MacOSX
 .DS_Store
 
+# Emacs backup files
+*.xml~
+*.ml~
+*.mli~
+
 # binary analyzer executables
 CodeHawk/CHB/bchcmdline/chx86_analyze
 CodeHawk/CHB/bchcmdline/chx86_inspect_summaries
