@@ -242,6 +242,7 @@ object (self)
     (H.length table, !overlap, !multiple)
 
   method add_functions_by_preamble =
+    let instrtable = self#get_live_instructions in
     let preambles = H.create 3 in
     let preamble_instrs = H.create 3 in
     let _ =    (* collect preambles of regular functions *)
@@ -285,6 +286,8 @@ object (self)
       !mips_assembly_instructions#itera (fun a instr ->
           if H.mem functions a#index then
             ()
+          else if H.mem instrtable instr#get_address#index then
+            ()
           else if is_common_preamble instr#get_instruction_bytes then
             let fndata = functions_data#add_function a in
             begin
@@ -302,15 +305,30 @@ object (self)
                   STR " common preambles)" ]) in
     !fnsAdded
 
-  method dark_matter_to_string =
+  method private get_live_instructions =
     let table = H.create 37 in
+    let add faddr ctxta =
+      let a = (ctxt_string_to_location faddr ctxta)#i in
+      if H.mem table a#index then
+        H.replace table a#index ((H.find table a#index) + 1)
+      else
+        H.add table a#index 1 in
+    let _ = List.iter (fun f ->
+                f#iteri
+                  (fun faddr a _ -> add faddr a))
+              self#get_functions in
+    table
+
+  method dark_matter_to_string =
+    (* let table = H.create 37 in
     let add faddr ctxta  =
       let a = (ctxt_string_to_location faddr ctxta)#i in
       if H.mem  table a#index then
         H.replace table a#index ((H.find table a#index) + 1)
       else
         H.add table a#index 1 in
-    let _ = List.iter (fun f-> f#iteri (fun faddr a _ -> add faddr a)) self#get_functions in
+    let _ = List.iter (fun f-> f#iteri (fun faddr a _ -> add faddr a)) self#get_functions in *)
+    let table = self#get_live_instructions in
     let filter = (fun i -> not (H.mem table i#get_address#index)) in
     !mips_assembly_instructions#toString ~filter ()
     
