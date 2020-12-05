@@ -215,7 +215,7 @@ let analyze_mips_function faddr f count =
                     STR "; loopdepth: " ; INT loopdepth ;
                     STR "; instrs: " ; INT f#get_instruction_count ; NL ]);
       fintervaltime := (Unix.gettimeofday ()) -. fstarttime;
-      dorelational := !dointervals && (!fintervaltime < 5.0);
+      dorelational := !dointervals && (!fintervaltime < 50.0);
       dovaluesets := !dointervals && (!fintervaltime < 60.0);
       (if !dorelational then
          analyze_procedure_with_linear_equalities proc mips_chif_system#get_mips_system
