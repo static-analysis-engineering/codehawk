@@ -62,7 +62,10 @@ let get_user_data (sectionname:string):section_header_info_int =
 
 let assumption_violation (p:pretty_t) =
   let msg = LBLOCK [ STR "Section header creation assumption violation: " ; p ] in
-  raise (BCH_failure msg)
+  begin
+    ch_error_log#add "section header creation" msg;
+    raise (BCH_failure msg)
+  end
 
 let warning (p:pretty_t) = chlog#add "section header creation" p
 
@@ -229,6 +232,7 @@ object (self)
       self#create_data_rel_ro_header ;
       self#create_data_header ;
       self#create_rld_map_header ;
+      self#create_fdata_header ;
       self#create_got_header ;
       self#set_links ;
     end
@@ -295,7 +299,7 @@ object (self)
     let sectionname = ".dynamic" in    
     let ph = self#get_dynamic_program_header in
     let sh = mk_elf_section_header () in
-    let stype = s2d "0x1" in
+    let stype = s2d "0x6" in
     let flags = s2d "0x2" in
     let addr = ph#get_vaddr in
     let offset = ph#get_offset in
@@ -576,12 +580,15 @@ object (self)
             finiaddr#subtract vaddr
           with
           | _ -> assumption_violation (STR "DT_FINI < program entry point")
-        else
+        else if dynamicsegment#has_init_address then
           let initaddress = dynamicsegment#get_init_address in
           try
             initaddress#subtract vaddr
           with
-          | _ -> assumption_violation (STR "DT_INIT < program entry point") in            
+          | _ -> assumption_violation (STR "DT_INIT < program entry point")
+        else
+          assumption_violation
+            (STR "DT_INIT and DT_FINI not present; please provide size of .text section in fixup data") in
     let addralign = s2d "0x4" in
     begin
       sh#set_fields
@@ -642,11 +649,8 @@ object (self)
           (vaddr,size)
         else
           begin
-            pr_debug [ STR "Assumption violation: No addr/size information for .rodata" ;
-                       NL ; NL ];
-            (wordmax,wordzero)
+            assumption_violation (STR "No addr/size information for .rodata; please supply in fixup data")
           end in
-            (*assumption_violation  (STR "No addr/size information for .rodata")  in *)
     let sh = mk_elf_section_header () in
     let stype = s2d "0x1" in
     let flags = s2d "0x2" in
@@ -829,6 +833,30 @@ object (self)
           ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
         section_headers <- sh :: section_headers
       end
+
+  (* inputs: based on availability of userdata only *)
+  method private create_fdata_header =
+    let sectionname = ".fdata" in
+    if has_user_data sectionname
+       && (List.length loadsegments) > 1
+       && (let userdata = get_user_data sectionname in
+           userdata#has_addr && userdata#has_size) then
+      let (vaddr,size) =
+        let userdata = get_user_data sectionname in
+        (userdata#get_addr,userdata#get_size) in
+      let sh = mk_elf_section_header () in
+      let stype = s2d "0x1" in
+      let flags = s2d "0x2" in
+      let addr = vaddr in
+      let offset = self#get_offset_2 vaddr in
+      let addralign = s2d "0x10" in
+      begin
+        sh#set_fields
+          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
+        section_headers <- sh :: section_headers
+      end
+    else
+      ()
 
   (* inputs: dynamic table, program header, PT_Load (2)
    * - addr: DT_PLTGOT
