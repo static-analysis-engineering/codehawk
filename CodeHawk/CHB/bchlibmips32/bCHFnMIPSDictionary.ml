@@ -639,6 +639,16 @@ object (self)
                            xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
                            xd#index_xpr result ; xd#index_xpr rresult ])
 
+      | MultiplyWordToGPR (rd,rs,rt) ->
+         let lhs = rd#to_variable floc in
+         let rhs1 = rs#to_expr floc in
+         let rhs2 = rt#to_expr floc in
+         let result = XOp (XMult, [ rhs1 ; rhs2 ]) in
+         let rresult = rewrite_exp result in
+         ([ "a:vxxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs1 ;
+                          xd#index_xpr rhs2 ; xd#index_xpr result ;
+                          xd#index_xpr rresult ])
+
       | MultiplyUnsignedWord (hi,lo,rs,rt) ->
          let lhshi = hi#to_variable floc in
          let lhslo = lo#to_variable floc in
