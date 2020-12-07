@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-12-05 12:58:35"/>
+  <libfun lib="so_functions" name="sigprocmask">
+    <documentation>
+      <desc>examine and change blocked signals</desc>
+      <apidoc>
+        <pt>
+          <ll>int sigprocmask(</ll>
+          <ld>int how</ld>
+          <ld>const sigset_t *restrict set</ld>
+          <ld>sigset_t *restrict oset</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="how">indicates the way in which the set is changed</par>
+        <par name="set">
+	  points to a set of signals to be used to change the currently blocked set.
+	  May be NULL.
+	</par>
+        <par name="oset">
+	  the previous mask is saved in the location pointed to by oset.
+	  If NULL, the thread's signal mask is unchanged.
+	</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">error code</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="sigprocmask">
+      <par loc="stack" name="how" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="set" nr="2">
+        <type><ptr>sigset_t</ptr></type>
+	<pre><deref-read-null/></pre>
+      </par>
+      <par loc="stack" name="oset" nr="3">
+        <type><ptr>sigset_t</ptr></type>
+	<pre><deref-write-null/></pre>
+	<sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

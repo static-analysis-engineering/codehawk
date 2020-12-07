@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-12-04 22:19:22"/>
+  <syscallfun index="4063" name="dup2">
+    <refer-to name="dup2"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

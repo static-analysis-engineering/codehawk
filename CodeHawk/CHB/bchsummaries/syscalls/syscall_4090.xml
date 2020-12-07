@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-12-04 22:22:53"/>
+  <syscallfun index="4090" name="mmap">
+    <refer-to name="mmap"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

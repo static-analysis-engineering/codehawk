@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-12-04 22:12:58"/>
+  <syscallfun index="4054" name="ioctl">
+    <refer-to name="ioctl"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

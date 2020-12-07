@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-12-04 22:15:52"/>
+  <syscallfun index="4166" name="nanosleep">
+    <refer-to name="nanosleep"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

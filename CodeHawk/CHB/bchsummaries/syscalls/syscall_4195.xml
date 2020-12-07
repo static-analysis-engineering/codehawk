@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-12-05 13:06:54"/>
+  <syscallfun index="4195" name="rt_sigprocmask">
+    <refer-to name="sigprocmask"/>
+  </syscallfun>
+</codehawk-binary-analyzer>
