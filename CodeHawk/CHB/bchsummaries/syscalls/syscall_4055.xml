@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-12-04 22:17:02"/>
+  <syscallfun index="4055" name="fcntl">
+    <refer-to name="fcntl"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-12-04 22:26:22"/>
+  <syscallfun index="4176" name="recvfrom">
+    <refer-to name="recvfrom"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

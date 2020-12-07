@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-12-04 22:25:06"/>
+  <syscallfun index="4171" name="getpeername">
+    <refer-to name="getpeername"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

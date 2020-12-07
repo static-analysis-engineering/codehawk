@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-12-04 22:22:24"/>
+  <syscallfun index="4076" name="getrlimit">
+    <refer-to name="getrlimit"/>
+  </syscallfun>
+</codehawk-binary-analyzer>

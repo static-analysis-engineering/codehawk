@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2020-12-04 22:25:43"/>
+  <syscallfun index="4118" name="fsync">
+    <refer-to name="fsync"/>
+  </syscallfun>
+</codehawk-binary-analyzer>
