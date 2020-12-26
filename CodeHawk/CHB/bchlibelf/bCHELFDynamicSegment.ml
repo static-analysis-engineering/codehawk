@@ -127,6 +127,9 @@ object (self)
             (LBLOCK [ STR "Value of " ; STR self#get_tag_name ;
                       STR " cannot be interpreted as value" ]))
 
+  method is_null =
+    match self#get_tag with DT_Null -> true | _ -> false
+
   method is_plt_relocation_table =
     match self#get_tag with DT_JmpRel -> true | _ -> false
 
@@ -336,19 +339,22 @@ object (self)
   inherit elf_raw_segment_t s vaddr as super
 
   method read =
+    (* Dynamic table is terminated by a DT_NULL entry *)
     try
       let entrysize = 8 in
       let ch =
         make_pushback_stream ~little_endian:system_info#is_little_endian s in
       let n = (String.length s) / entrysize in
       let c = ref 0 in
+      let lastentry = ref false in
       begin
-        while !c < n do
+        while !c < n && (not !lastentry) do
           let entry = new elf_dynamic_segment_entry_t !c in
           begin
             entry#read ch ;
             c :=  !c + 1 ;
-            entries <- entry :: entries
+            entries <- entry :: entries;
+            lastentry := entry#is_null
           end
         done;
       end
