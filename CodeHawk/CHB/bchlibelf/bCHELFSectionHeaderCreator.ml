@@ -103,6 +103,8 @@ object (self)
     | [] -> raise (BCH_failure (LBLOCK [ STR "No Load Segments found" ]))
     | (_,h,_)::_ -> h#get_vaddr
 
+  method get_dynamic_segment = dynamicsegment
+
   method private get_offset_1 (vaddr:doubleword_int) =
     try
       vaddr#subtract base1
@@ -214,7 +216,9 @@ object (self)
       (if self#has_interp_program_header then self#create_interp_header) ;
       self#create_reginfo_header ;
       self#create_dynamic_header ;
-      self#create_hash_header ;
+      (if dynamicsegment#has_hash_address
+          && not (dynamicsegment#get_hash_address#to_hex_string = "0x0") then
+         self#create_hash_header) ;
       self#create_dynsym_header ;
       self#create_dynstr_header ;
       self#create_gnu_version_header ;
@@ -321,6 +325,7 @@ object (self)
   method private create_hash_header =
     let sectionname = ".hash" in    
     if dynamicsegment#has_hash_address
+       && not (dynamicsegment#get_hash_address#to_hex_string = "0x0")
        && dynamicsegment#has_symtab_address then
       let symtabaddr = dynamicsegment#get_symtab_address in
       let vaddr = dynamicsegment#get_hash_address in
@@ -341,7 +346,7 @@ object (self)
         section_headers <- sh :: section_headers
       end
     else
-      assumption_violation (STR "DT_HASH or DT_SYMTAB not present")
+      assumption_violation (STR "DT_HASH or DT_SYMTAB not present, or DT_HASH is zero")
       
   (* inputs: from dynamic table, program header, type PT_Load (1)
    * - addr: DT_SYMTAB
@@ -410,6 +415,7 @@ object (self)
   method private create_gnu_version_header =
     let sectionname = ".gnu.version" in
     if dynamicsegment#has_gnu_symbol_version_table
+       && not (dynamicsegment#get_gnu_symbol_version_table#to_hex_string = "0x0")
        && dynamicsegment#has_symtabno then
       let vaddr = dynamicsegment#get_gnu_symbol_version_table in
       let symtabno = dynamicsegment#get_symtabno in
@@ -440,6 +446,7 @@ object (self)
   method private create_gnu_version_r_header =
     let sectionname = ".gnu.version_r" in
     if dynamicsegment#has_gnu_symbol_version_reqts
+       && not (dynamicsegment#get_gnu_symbol_version_reqts#to_hex_string = "0x0")
        && dynamicsegment#has_gnu_symbol_version_reqts_no then
       let vaddr = dynamicsegment#get_gnu_symbol_version_reqts in
       let neednum = dynamicsegment#get_gnu_symbol_version_reqts_no in
@@ -464,7 +471,8 @@ object (self)
    *)
   method private create_relocation_header =
     let sectionname = ".reldata" in
-    if dynamicsegment#has_reltab_address then
+    if dynamicsegment#has_reltab_address
+      && not (dynamicsegment#get_reltab_address#to_hex_string = "0x0") then
       let vaddr = dynamicsegment#get_reltab_address in
       let sh = mk_elf_section_header () in
       let stype = s2d "0x9" in
@@ -532,7 +540,13 @@ object (self)
           else
             let (_,ph,_) = List.hd loadsegments in
             let phend = ph#get_vaddr#add ph#get_file_size in
-            phend#subtract vaddr in
+            try
+              phend#subtract vaddr
+            with _ ->
+              raise (BCH_failure
+                       (LBLOCK [ STR "Create_init_header: subtracting vaddr: " ;
+                                 vaddr#toPretty ; STR " from " ;
+                                 STR "address + file size: " ; phend#toPretty ])) in
       (*  assumption_violation
              (L BLOCK [ STR "program entry point < DT_INIT. " ;
              STR "program entry point: " ;
@@ -574,7 +588,8 @@ object (self)
          && (get_user_data sectionname)#has_size then
         (get_user_data sectionname)#get_size
       else
-        if dynamicsegment#has_fini_address then
+        if dynamicsegment#has_fini_address
+           && not (dynamicsegment#get_fini_address#to_hex_string = "0x0") then
           let finiaddr = dynamicsegment#get_fini_address in
           try
             finiaddr#subtract vaddr
@@ -874,7 +889,11 @@ object (self)
       let flags = s2d "0x2" in
       let addr = vaddr in
       let offset = self#get_offset_2 vaddr in
-      let size = (ph#get_vaddr#add ph#get_file_size)#subtract vaddr in
+      let size =
+        try
+          (ph#get_vaddr#add ph#get_file_size)#subtract vaddr
+        with _ ->
+          assumption_violation (STR "filesize < vaddr" ) in
       let addralign = s2d "0x4" in
       let size = align_doubleword size addralign#to_int in
     begin
@@ -926,9 +945,14 @@ let create_section_headers
       (phdrs:(int * elf_program_header_int * elf_segment_t) list)
       (fileheader:elf_file_header_int):(int * elf_section_header_int) list =
   let creator = new section_header_creator_t phdrs fileheader in
-  let _ = creator#create_section_headers in
-  let headers = creator#get_section_headers in
-  begin
-    pr_debug [ STR "section headers" ; NL ; creator#toPretty ; NL ] ;
-    headers
-  end
+  try
+    let _ = creator#create_section_headers in
+    let headers = creator#get_section_headers in
+    begin
+      pr_debug [ STR "section headers" ; NL ; creator#toPretty ; NL ] ;
+      headers
+    end
+  with BCH_failure p ->
+    raise (BCH_failure
+             (LBLOCK [ STR "Error in creating section headers: " ; p ;
+                       NL ; creator#get_dynamic_segment#toPretty ]))

@@ -307,6 +307,7 @@ class type elf_dynamic_segment_entry_int =
     method get_gnu_symbol_version_reqts_no: numerical_t
 
     (* predicates *)
+    method is_null: bool
     method is_relocation_table: bool
     method is_relocation_table_size: bool
     method is_relocation_table_entry: bool
