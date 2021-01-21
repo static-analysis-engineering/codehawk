@@ -106,7 +106,8 @@ brew install opam
 brew install cabal-install
 brew install lablgtk
 cabal update
-cabal install shake
+cabal install --lib shake
+cabal install --lib unordered-containers
 git clone https://github.com/kestreltechnology/codehawk.git
 cd codehawk/CodeHawk
 ~/.cabal/bin/shake --opam
@@ -119,7 +120,8 @@ sudo port install opam
 sudo port install hs-cabal-install
 sudo port install lablgtk2
 cabal update
-cabal install shake
+cabal install --lib shake
+cabal install --lib unordered-containers
 git clone https://github.com/kestreltechnology/codehawk.git
 cd codehawk/CodeHawk
 ~/.cabal/bin/shake --opam
