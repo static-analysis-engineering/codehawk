@@ -5,7 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -938,6 +938,14 @@ object (self)
          let arg = floc#env#mk_mips_register_variable MRv0 in
          let argval = rewrite_expr (XVar arg) in
          ([ "a:x" ],[ xd#index_xpr argval ])
+
+      | TrapIfEqual(cc,src1,src2) ->
+         let rhs1 = src1#to_expr floc in
+         let rhs2 = src2#to_expr floc in
+         let result = XOp (XEqual, [ rhs1 ; rhs2 ]) in
+         let rresult = rewrite_expr result in
+         ([ "a:xxxx" ],[ xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
+                         xd#index_xpr result ; xd#index_xpr rresult ])
 
       | TrapIfEqualImmediate (src,imm) ->
          let rhs1 = src#to_expr floc in
