@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-12-31 23:21:07"/>
+  <libfun lib="so_functions" name="getspnam">
+    <documentation>
+      <desc>
+	The getspnam() function returns a pointer to a structure
+	containing the broken-out fields of the record in the shadow
+	password database that matches the username name.
+      </desc>
+      <apidoc>
+        <pt>struct spwd getspnam (const char *name)</pt>
+        <par name="name">username</par>
+        <return>
+          <rc cond="success">shadow password structure</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="getspnam">
+      <par loc="stack" name="name" nr="1">
+	<pre><deref-read/></pre>
+        <type><ptr>char</ptr></type>
+      </par>
+      <returntype><ptr>spwd</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

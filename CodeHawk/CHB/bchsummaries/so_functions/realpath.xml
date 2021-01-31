@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-12-31 23:26:25"/>
+  <libfun lib="so_functions" name="realpath">
+    <documentation>
+      <desc>
+	The realpath() function shall derive, from the pathname
+	pointed to by file_name, an absolute pathname that resolves to
+	the same directory entry, whose resolution does not involve
+	'.', '..', or symbolic links. If resolved_name is a null
+	pointer, the generated pathname shall be stored as a
+	null-terminated string in a buffer allocated as if by a call
+	to malloc(). Otherwise, if {PATH_MAX} is defined as a constant,
+	then the generated pathname shall be
+	stored as a null-terminated string, up to a maximum of
+	{PATH_MAX} bytes, in the buffer pointed to by resolved_name.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>char *realpath(</ll>
+          <ld>const char *restrict file_name</ld>
+          <ld>char *resolved_name</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="file_name">pathname to be resolved</par>
+        <par name="resolved_name">buffer to receive the resolved name</par>
+        <return>
+          <rc cond="success">pointer to resolved_name</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="realpath">
+      <par loc="stack" name="file_name" nr="1">
+	<pre><deref-read-nt/></pre>
+        <type><ptr>char></ptr></type>
+      </par>
+      <par loc="stack" name="resolved_name" nr="2">
+        <type><ptr>char</ptr></type>
+      </par>
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>resolved_name</ci>
+	      <cn>110</cn>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>char</type>
+	      <ci>resolved_name</ci>
+	      <cn>110</cn>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
