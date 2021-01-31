@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-12-31 23:05:07"/>
+  <libfun lib="so_functions" name="dlopen">
+    <documentation>
+      <desc>
+	The dlopen() function shall make the symbols (function
+	identifiers and data object identifiers) in the executable
+	object file specified by file available to the calling
+	program.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>void *dlopen(</ll>
+          <ld>const char *file</ld>
+          <ld>intmode</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="file">
+	  used to construct a pathname to the executable object file.
+	  If file is a null pointer, dlopen() shall return a global
+	  symbol table handle for the currently running process image.
+	</par>
+        <par name="mode">
+	  describes how dlopen() shall operate upon file with respect
+	  to the processing of relocations and the scope of visibility
+	  of the symbols provided within file.
+	</par>
+        <return>
+          <rc cond="success">
+	    A successful dlopen() shall return a symbol table handle
+	    which the caller may use on subsequent calls to dlsym()
+	    and dlclose().
+	  </rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="dlopen">
+      <par loc="stack" name="file" nr="1">
+	<pre><deref-read-null/></pre>
+        <type><ptr>char</ptr></type>
+      </par>
+      <par loc="stack" name="mode" nr="2">
+        <type>int</type>
+      </par>
+      <returntype><ptr>void</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

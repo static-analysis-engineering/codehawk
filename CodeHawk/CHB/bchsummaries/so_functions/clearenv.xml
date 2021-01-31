@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-12-31 23:16:35"/>
+  <libfun lib="so_functions" name="clearenv">
+    <documentation>
+      <desc>
+	The clearenv() function clears the environment of all
+	name-value pairs and sets the value of the external variable
+	environ to NULL.
+      </desc>
+      <apidoc>
+        <pt>int clearenv (void)</pt>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">nonzero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="clearenv">
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

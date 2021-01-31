@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2020-12-31 23:12:33"/>
+  <libfun lib="so_functions" name="dlerror">
+    <documentation>
+      <desc>get diagnostic information</desc>
+      <apidoc>
+        <pt>char *dlerror (void)</pt>
+        <return>
+	  The dlerror() function shall return a null-terminated
+	  character string that describes the last error that occurred
+	  during dynamic linking processing. If no dynamic linking
+	  errors have occurred since the last invocation of dlerror(),
+	  dlerror() shall return NULL. Thus, invoking dlerror() a
+	  second time, immediately following a prior invocation, shall
+	  result in NULL being returned.
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="dlerror">
+      <returntype><ptr>char</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2020, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

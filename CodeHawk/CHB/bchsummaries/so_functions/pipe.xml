@@ -26,7 +26,7 @@
 	<pre>
 	  <math>
 	    <apply>
-	      <deref-read/>
+	      <deref-write/>
 	      <type>int</type>
 	      <ci>fildes</ci>
 	      <apply>
@@ -40,7 +40,18 @@
       <postconditions>
 	<zero-negone/>
       </postconditions>
-      <sideeffects/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>int</type>
+	      <ci>fildes</ci>
+	      <cn>8</cn>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>
