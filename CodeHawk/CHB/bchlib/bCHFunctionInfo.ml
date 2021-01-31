@@ -804,6 +804,9 @@ object (self)
   method get_parent_stack_variables = 
     List.filter varmgr#is_stack_parameter_variable self#get_variables
 
+  method get_mips_argument_values =
+    List.filter varmgr#is_initial_mips_argument_value self#get_variables
+
   method get_realigned_stack_variables = 
     List.filter varmgr#is_realigned_stack_variable self#get_variables
 
@@ -1056,7 +1059,9 @@ object (self)
 
   method is_register_variable = varmgr#is_register_variable
 
-  method is_initial_register_value = varmgr#is_initial_register_value                             
+  method is_initial_register_value = varmgr#is_initial_register_value
+
+  method is_initial_mips_argument_value = varmgr#is_initial_mips_argument_value
 
   method is_function_initial_value = varmgr#is_function_initial_value
 
@@ -1406,7 +1411,11 @@ object (self)
 	  if List.exists (fun p -> (api_parameter_compare p par) = 0) acc then 
 	  acc else par::acc) sapi.fapi_parameters self#get_api_parameters in
 	{ sapi with fapi_parameters = parameters }
-      | _ -> self#get_local_function_api in
+      | _ ->
+         if system_info#is_mips then
+           self#get_mips_local_function_api
+         else
+           self#get_local_function_api in
     let sem = self#get_function_semantics in
     let doc = match user_summary with
       | Some summary -> summary#get_function_documentation
@@ -1420,6 +1429,19 @@ object (self)
     let fsem = if self#is_complete then Some self#get_local_function_semantics else None in
     List.fold_left join_semantics (default_summary self#get_name)#get_function_semantics
       [ usem ; fsem ]
+
+  method private get_mips_local_function_api =
+    try
+      let parameters = env#get_mips_argument_values in
+      let paramregs =
+        List.map self#env#get_initial_register_value_register parameters in
+      let apiparams = List.map mk_register_parameter paramregs in
+      let _ =
+        List.iter (fun p ->  ignore (self#add_api_parameter p)) apiparams in
+      default_function_api self#get_name self#get_api_parameters
+    with
+    | BCH_failure p ->
+       raise (BCH_failure (LBLOCK [ STR "Finfo:get-mips-local-function-api: " ; p ]))
 
   method private get_local_function_api =
     try
@@ -1454,7 +1476,7 @@ object (self)
       }
     with
     | BCH_failure p ->
-       raise (BCH_failure  (LBLOCK [ STR "Finfo:get-local-function-api: " ; p ]))
+       raise (BCH_failure (LBLOCK [ STR "Finfo:get-local-function-api: " ; p ]))
 
   method private get_local_function_semantics:function_semantics_t =
     let post = if nonreturning then [ PostFalse ] else [] in

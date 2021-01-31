@@ -300,6 +300,17 @@ object (self:'a)
     match denotation with 
     | AuxiliaryVariable (InitialRegisterValue (_,0)) -> true | _ -> false
 
+  method is_initial_mips_argument_value =
+    match denotation with
+    | AuxiliaryVariable (InitialRegisterValue (reg,0)) ->
+       (match reg with
+        | MIPSRegister mipsreg ->
+           (match mipsreg with
+            | MRa0 | MRa1 | MRa2 | MRa3 -> true
+            | _ -> false)
+        | _ -> false)
+    | _ -> false
+
   method is_initial_stackpointer_value =
     self#is_initial_register_value || self#is_initial_register_value 
 	      
@@ -331,6 +342,17 @@ object (self:'a)
 
   method is_register_variable = 
     match denotation with RegisterVariable _ -> true | _ -> false
+
+  method is_mips_argument_variable =
+    match denotation with
+    | RegisterVariable reg ->
+       (match reg with
+        | MIPSRegister mipsreg ->
+           (match mipsreg with
+            | MRa0 | MRa1 | MRa2 | MRa3 -> true
+            | _ -> false)
+        | _ -> false)
+    | _ -> false
 
   method is_special_variable = 
     match denotation with AuxiliaryVariable (Special _) -> true | _ -> false
@@ -695,6 +717,9 @@ object (self)
   method is_register_variable (v:variable_t) =
     (self#has_var v) && (self#get_variable v)#is_register_variable
 
+  method is_mips_argument_variable (v:variable_t) =
+    (self#has_var v) && (self#get_variable v)#is_mips_argument_variable
+
   method is_stack_variable (v:variable_t) =
     (self#has_var v) && (self#has_memvar v) &&
       (self#get_memvar_reference v)#is_stack_reference
@@ -748,6 +773,9 @@ object (self)
       
   method is_initial_register_value (v:variable_t) = 
     (self#has_var v) && (self#get_variable v)#is_initial_register_value
+
+  method is_initial_mips_argument_value (v:variable_t) =
+    (self#has_var v) && (self#get_variable v)#is_initial_mips_argument_value
 
   method is_initial_memory_value (v:variable_t) =
     (self#has_var v) && (self#get_variable v)#is_initial_memory_value

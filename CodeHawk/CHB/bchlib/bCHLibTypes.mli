@@ -1735,41 +1735,43 @@ object ('a)
   method compare: 'a -> int
 
   (* accessors *)
-  method get_name                     : string
-  method get_denotation               : assembly_variable_denotation_t
-  method get_register                 : register_t
-  method get_pointed_to_function_name : string
-  method get_call_site                : ctxt_iaddress_t
-  method get_se_argument_descriptor   : string
-  method get_frozen_variable          : (variable_t * ctxt_iaddress_t * ctxt_iaddress_t)
+  method get_name: string
+  method get_denotation: assembly_variable_denotation_t
+  method get_register: register_t
+  method get_pointed_to_function_name: string
+  method get_call_site: ctxt_iaddress_t
+  method get_se_argument_descriptor: string
+  method get_frozen_variable: (variable_t * ctxt_iaddress_t * ctxt_iaddress_t)
   method get_initial_memory_value_variable: variable_t
   method get_initial_register_value_register: register_t
   method get_global_sideeffect_target_address: doubleword_int
-  method get_calltarget_value         : call_target_t
-  method get_symbolic_value_expr      : xpr_t
+  method get_calltarget_value: call_target_t
+  method get_symbolic_value_expr: xpr_t
 
   (* predicates *)
   method is_auxiliary_variable: bool
-  method is_register_variable : bool
-  method is_memory_variable   : bool
+  method is_register_variable: bool
+  method is_mips_argument_variable: bool
+  method is_memory_variable: bool
 
-  method is_function_initial_value  : bool    (* value from function environment *)
+  method is_function_initial_value: bool    (* value from function environment *)
        
-  method is_initial_register_value  : bool
-  method is_initial_stackpointer_value     : bool
+  method is_initial_register_value: bool
+  method is_initial_mips_argument_value: bool
+  method is_initial_stackpointer_value: bool
        
-  method is_initial_memory_value  : bool
-  method is_frozen_test_value     : bool
-  method is_bridge_value          : bool
-  method is_bridge_value_at       : ctxt_iaddress_t -> bool
-  method is_return_value          : bool
-  method is_sideeffect_value      : bool
-  method is_special_variable      : bool
-  method is_runtime_constant      : bool
-  method is_function_pointer      : bool
-  method is_calltarget_value      : bool
-  method is_global_sideeffect     : bool
-  method is_symbolic_value        : bool
+  method is_initial_memory_value: bool
+  method is_frozen_test_value: bool
+  method is_bridge_value: bool
+  method is_bridge_value_at: ctxt_iaddress_t -> bool
+  method is_return_value: bool
+  method is_sideeffect_value: bool
+  method is_special_variable: bool
+  method is_runtime_constant: bool
+  method is_function_pointer: bool
+  method is_calltarget_value: bool
+  method is_global_sideeffect: bool
+  method is_symbolic_value: bool
 
   method is_in_test_jump_range    : ctxt_iaddress_t -> bool
 
@@ -1786,18 +1788,18 @@ object
   method memrefmgr: memory_reference_manager_int
 
   (* constructors *)
-  method make_memory_variable  : memory_reference_int -> memory_offset_t -> assembly_variable_int
+  method make_memory_variable: memory_reference_int -> memory_offset_t -> assembly_variable_int
   method make_register_variable: register_t -> assembly_variable_int
-  method make_flag_variable    : eflag_t -> assembly_variable_int
-  method make_global_variable  : numerical_t -> assembly_variable_int
+  method make_flag_variable: eflag_t -> assembly_variable_int
+  method make_global_variable: numerical_t -> assembly_variable_int
   method make_frozen_test_value: 
     variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t-> assembly_variable_int
-  method make_bridge_value  : ctxt_iaddress_t -> int -> assembly_variable_int
+  method make_bridge_value: ctxt_iaddress_t -> int -> assembly_variable_int
   method make_initial_register_value: register_t -> int -> assembly_variable_int
   method make_initial_memory_value  : variable_t -> assembly_variable_int
-  method make_special_variable : string -> assembly_variable_int
-  method make_runtime_constant : string -> assembly_variable_int
-  method make_return_value  : ctxt_iaddress_t -> assembly_variable_int
+  method make_special_variable: string -> assembly_variable_int
+  method make_runtime_constant: string -> assembly_variable_int
+  method make_return_value: ctxt_iaddress_t -> assembly_variable_int
   method make_calltarget_value: call_target_t -> assembly_variable_int
   method make_function_pointer_value: string -> string -> ctxt_iaddress_t -> assembly_variable_int
   method make_side_effect_value: ctxt_iaddress_t -> ?global:bool -> string -> assembly_variable_int
@@ -1807,64 +1809,66 @@ object
   method make_memref_from_basevar: variable_t -> memory_reference_int
 
   (* accessors *)
-  method get_variable                     : variable_t -> assembly_variable_int
-  method get_variable_by_index            : int -> assembly_variable_int
-  method get_memvar_reference             : variable_t -> memory_reference_int
-  method get_memvar_offset                : variable_t -> memory_offset_t
+  method get_variable: variable_t -> assembly_variable_int
+  method get_variable_by_index: int -> assembly_variable_int
+  method get_memvar_reference: variable_t -> memory_reference_int
+  method get_memvar_offset: variable_t -> memory_offset_t
   method get_initial_memory_value_variable: variable_t -> variable_t
-  method get_memvar_basevar               : variable_t -> variable_t
-  method get_memval_basevar               : variable_t -> variable_t
-  method get_memvar_offset                : variable_t -> memory_offset_t
-  method get_memval_offset                : variable_t -> memory_offset_t
-  method get_global_variable_address      : variable_t -> doubleword_int
-  method get_stack_parameter_index        : variable_t -> int option (* assuming 4-byte parameters *)
-  method get_register                     : variable_t -> register_t
+  method get_memvar_basevar: variable_t -> variable_t
+  method get_memval_basevar: variable_t -> variable_t
+  method get_memvar_offset: variable_t -> memory_offset_t
+  method get_memval_offset: variable_t -> memory_offset_t
+  method get_global_variable_address: variable_t -> doubleword_int
+  method get_stack_parameter_index: variable_t -> int option (* assuming 4-byte parameters *)
+  method get_register: variable_t -> register_t
   method get_initial_register_value_register: variable_t -> register_t
-  method get_pointed_to_function_name     : variable_t -> string
-  method get_calltarget_value             : variable_t -> call_target_t
-  method get_call_site                    : variable_t -> ctxt_iaddress_t
-  method get_se_argument_descriptor       : variable_t -> string
-  method get_frozen_variable   : 
+  method get_pointed_to_function_name: variable_t -> string
+  method get_calltarget_value: variable_t -> call_target_t
+  method get_call_site: variable_t -> ctxt_iaddress_t
+  method get_se_argument_descriptor: variable_t -> string
+  method get_frozen_variable:
     variable_t -> (variable_t * ctxt_iaddress_t * ctxt_iaddress_t)
   method get_global_sideeffect_target_address: variable_t -> doubleword_int
-  method get_symbolic_value_expr          : variable_t -> xpr_t
+  method get_symbolic_value_expr: variable_t -> xpr_t
 
   method get_assembly_variables: assembly_variable_int list
   method get_external_variable_comparator: variable_comparator_t
 
   (* predicates *)
-  method is_stack_parameter_variable      : variable_t -> bool  (* memory variable on the stack above the RA *)
-  method is_realigned_stack_variable      : variable_t -> bool
-  method is_function_initial_value        : variable_t -> bool
-  method is_local_variable                : variable_t -> bool  (* stack or register variable *)
-  method is_global_variable               : variable_t -> bool
-  method is_register_variable             : variable_t -> bool
-  method is_stack_variable                : variable_t -> bool  (* memory variable anywhere on the stack  *)
-  method is_initial_register_value        : variable_t -> bool
-  method is_initial_stackpointer_value    : variable_t -> bool       
-  method is_initial_memory_value          : variable_t -> bool
-  method is_frozen_test_value             : variable_t -> bool
-  method is_bridge_value                  : variable_t -> bool
-  method is_bridge_value_at               : ctxt_iaddress_t -> variable_t -> bool
-  method is_in_test_jump_range            : ctxt_iaddress_t -> variable_t -> bool
-  method is_return_value                  : variable_t -> bool
-  method is_sideeffect_value              : variable_t -> bool
-  method is_special_variable              : variable_t -> bool
-  method is_runtime_constant              : variable_t -> bool
-  method is_function_pointer              : variable_t -> bool
-  method is_calltarget_value              : variable_t -> bool
-  method is_symbolic_value                : variable_t -> bool
+  method is_stack_parameter_variable: variable_t -> bool  (* memory variable on the stack above the RA *)
+  method is_realigned_stack_variable: variable_t -> bool
+  method is_function_initial_value: variable_t -> bool
+  method is_local_variable: variable_t -> bool  (* stack or register variable *)
+  method is_global_variable: variable_t -> bool
+  method is_register_variable: variable_t -> bool
+  method is_mips_argument_variable: variable_t -> bool
+  method is_stack_variable: variable_t -> bool  (* memory variable anywhere on the stack  *)
+  method is_initial_register_value: variable_t -> bool
+  method is_initial_mips_argument_value: variable_t -> bool
+  method is_initial_stackpointer_value: variable_t -> bool
+  method is_initial_memory_value: variable_t -> bool
+  method is_frozen_test_value: variable_t -> bool
+  method is_bridge_value: variable_t -> bool
+  method is_bridge_value_at: ctxt_iaddress_t -> variable_t -> bool
+  method is_in_test_jump_range: ctxt_iaddress_t -> variable_t -> bool
+  method is_return_value: variable_t -> bool
+  method is_sideeffect_value: variable_t -> bool
+  method is_special_variable: variable_t -> bool
+  method is_runtime_constant: variable_t -> bool
+  method is_function_pointer: variable_t -> bool
+  method is_calltarget_value: variable_t -> bool
+  method is_symbolic_value: variable_t -> bool
        
-  method is_memory_variable               : variable_t -> bool
-  method is_basevar_memory_variable       : variable_t -> bool
-  method is_basevar_memory_value          : variable_t -> bool
-  method is_unknown_base_memory_variable  : variable_t -> bool
+  method is_memory_variable: variable_t -> bool
+  method is_basevar_memory_variable: variable_t -> bool
+  method is_basevar_memory_value: variable_t -> bool
+  method is_unknown_base_memory_variable: variable_t -> bool
   method is_unknown_offset_memory_variable: variable_t -> bool
-  method is_unknown_memory_variable       : variable_t -> bool
-  method has_constant_offset              : variable_t -> bool
-  method is_global_sideeffect             : variable_t -> bool
+  method is_unknown_memory_variable: variable_t -> bool
+  method has_constant_offset: variable_t -> bool
+  method is_global_sideeffect: variable_t -> bool
     
-  method has_global_address               : variable_t -> bool
+  method has_global_address: variable_t -> bool
     
   (* save and restore *)
   method write_xml  : xml_element_int -> unit
@@ -2202,55 +2206,56 @@ class type function_environment_int =
     method mk_symbolic_value        : xpr_t -> variable_t
 
     (* accessors *)
-    method get_variable_comparator : variable_t -> variable_t -> int
+    method get_variable_comparator: variable_t -> variable_t -> int
  
-    method get_frozen_variable           : 
+    method get_frozen_variable:
              variable_t -> (variable_t * ctxt_iaddress_t * ctxt_iaddress_t)
 
-    method get_local_stack_variables    : variable_t list 
+    method get_local_stack_variables: variable_t list
     method get_realigned_stack_variables: variable_t list
-    method get_parent_stack_variables   : variable_t list
-    method get_bridge_values_at         : ctxt_iaddress_t -> variable_t list
+    method get_parent_stack_variables: variable_t list
+    method get_mips_argument_values: variable_t list
+    method get_bridge_values_at: ctxt_iaddress_t -> variable_t list
 
-    method get_variable       : int -> variable_t
-    method get_variables      : variable_t list
+    method get_variable: int -> variable_t
+    method get_variables: variable_t list
     method get_local_variables: variable_t list
     method get_external_memory_variables: variable_t list
     method get_virtual_target : variable_t -> function_api_t
     method get_global_sideeffect_target_address: variable_t -> doubleword_int
 
-    method get_memory_reference           : variable_t -> memory_reference_int
-    method get_memvar_basevar             : variable_t -> variable_t
-    method get_memval_basevar             : variable_t -> variable_t
-    method get_memvar_offset              : variable_t -> memory_offset_t
-    method get_memval_offset              : variable_t -> memory_offset_t
-    method get_register                   : variable_t -> register_t
-    method get_constant_offsets           : variable_t -> numerical_t list option
-    method get_total_constant_offset      : variable_t -> numerical_t option
+    method get_memory_reference: variable_t -> memory_reference_int
+    method get_memvar_basevar: variable_t -> variable_t
+    method get_memval_basevar: variable_t -> variable_t
+    method get_memvar_offset: variable_t -> memory_offset_t
+    method get_memval_offset: variable_t -> memory_offset_t
+    method get_register: variable_t -> register_t
+    method get_constant_offsets: variable_t -> numerical_t list option
+    method get_total_constant_offset: variable_t -> numerical_t option
          
-    method get_stack_parameter_index      : variable_t -> int option
+    method get_stack_parameter_index: variable_t -> int option
     method get_init_value_variable: variable_t -> variable_t (* memory or register *)
     method get_initial_register_value_register: variable_t -> register_t         
-    method get_pointed_to_function_name   : variable_t -> string
-    method get_call_site                  : variable_t -> ctxt_iaddress_t
-    method get_se_argument_descriptor     : variable_t -> string
-    method get_global_variable_address    : variable_t -> doubleword_int
-    method get_calltarget_value           : variable_t -> call_target_t
-    method get_symbolic_value_expr        : variable_t -> xpr_t
+    method get_pointed_to_function_name: variable_t -> string
+    method get_call_site: variable_t -> ctxt_iaddress_t
+    method get_se_argument_descriptor: variable_t -> string
+    method get_global_variable_address: variable_t -> doubleword_int
+    method get_calltarget_value: variable_t -> call_target_t
+    method get_symbolic_value_expr: variable_t -> xpr_t
          
-    method get_argbasevar_with_offsets    : variable_t -> (variable_t * numerical_t list) option
-    method get_globalbasevar_with_offsets : variable_t -> (variable_t * numerical_t list) option
+    method get_argbasevar_with_offsets: variable_t -> (variable_t * numerical_t list) option
+    method get_globalbasevar_with_offsets: variable_t -> (variable_t * numerical_t list) option
          
-    method get_initialized_call_target_value : variable_t -> call_target_t
-    method get_initialized_string_value      : variable_t -> int -> string
+    method get_initialized_call_target_value: variable_t -> call_target_t
+    method get_initialized_string_value: variable_t -> int -> string
 
     method get_regarg_deref_val_register: variable_t -> register_t
     method get_regarg_deref_var_register: variable_t -> register_t
          
-    method get_var_count       : int
-    method get_globalvar_count : int
-    method get_argvar_count    : int
-    method get_returnvar_count : int
+    method get_var_count: int
+    method get_globalvar_count: int
+    method get_argvar_count: int
+    method get_returnvar_count: int
     method get_sideeffvar_count: int
          
     (* scope and transactions *)
@@ -2265,35 +2270,36 @@ class type function_environment_int =
     method is_unknown_base_memory_variable: variable_t -> bool
     method is_unknown_offset_memory_variable: variable_t -> bool
     method is_unknown_memory_variable: variable_t -> bool
-    method is_global_variable : variable_t -> bool
-    method is_stack_variable  : variable_t -> bool       
-    method is_local_variable  : variable_t -> bool
-    method is_memory_variable : variable_t -> bool
+    method is_global_variable: variable_t -> bool
+    method is_stack_variable: variable_t -> bool
+    method is_local_variable: variable_t -> bool
+    method is_memory_variable: variable_t -> bool
     method is_basevar_memory_variable: variable_t -> bool
-    method is_basevar_memory_value   : variable_t -> bool
+    method is_basevar_memory_value: variable_t -> bool
     method has_constant_offset: variable_t -> bool
     method is_function_initial_value: variable_t -> bool
-    method is_bridge_value     : variable_t -> bool
-    method is_bridge_value_at  : ctxt_iaddress_t -> variable_t -> bool
-    method is_function_pointer : variable_t -> bool
+    method is_bridge_value: variable_t -> bool
+    method is_bridge_value_at: ctxt_iaddress_t -> variable_t -> bool
+    method is_function_pointer: variable_t -> bool
     method is_global_sideeffect: variable_t -> bool
-    method is_return_value     : variable_t -> bool
-    method is_sideeffect_value : variable_t -> bool       
+    method is_return_value: variable_t -> bool
+    method is_sideeffect_value: variable_t -> bool
     method is_frozen_test_value: variable_t -> bool
-    method is_calltarget_value : variable_t -> bool
-    method is_symbolic_value   : variable_t -> bool
+    method is_calltarget_value: variable_t -> bool
+    method is_symbolic_value: variable_t -> bool
          
     method is_stack_variable: variable_t -> bool  (* memory variable on the stack *)
     method is_stack_parameter_variable: variable_t -> bool (* stack-variable with positive offset *)
          
     method is_register_variable: variable_t -> bool
     method is_initial_register_value: variable_t -> bool
+    method is_initial_mips_argument_value: variable_t -> bool
     method is_initial_stackpointer_value : variable_t -> bool
          
     method is_initial_memory_value: variable_t -> bool
-    method is_in_test_jump_range : variable_t -> ctxt_iaddress_t -> bool       
+    method is_in_test_jump_range: variable_t -> ctxt_iaddress_t -> bool
          
-    method is_unknown_reference   : int -> bool       
+    method is_unknown_reference: int -> bool
          
     (* derived variable manager predicates *)
     method is_stack_parameter_value: variable_t -> bool  (* initial value of stack-parameter *)
