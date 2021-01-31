@@ -538,6 +538,13 @@ object (self)
           if vaddr#lt entrypoint then
             fileheader#get_program_entry_point#subtract vaddr
           else
+            if has_user_data ".rodata"
+               && (let userdata = get_user_data ".rodata" in
+                   userdata#has_addr) then
+              let userdata = get_user_data ".rodata" in
+              let rodata_addr = userdata#get_addr in
+              rodata_addr#subtract vaddr
+          else
             let (_,ph,_) = List.hd loadsegments in
             let phend = ph#get_vaddr#add ph#get_file_size in
             try
