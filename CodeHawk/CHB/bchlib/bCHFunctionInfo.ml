@@ -1436,6 +1436,13 @@ object (self)
       let paramregs =
         List.map self#env#get_initial_register_value_register parameters in
       let apiparams = List.map mk_register_parameter paramregs in
+      let apiparams =
+        match apiparams with
+        | [] ->
+           let argregs = [ MIPSRegister MRa0; MIPSRegister MRa1;
+                           MIPSRegister MRa2; MIPSRegister MRa3 ] in
+           List.map mk_register_parameter argregs
+        | _ -> apiparams in
       let _ =
         List.iter (fun p ->  ignore (self#add_api_parameter p)) apiparams in
       default_function_api self#get_name self#get_api_parameters
