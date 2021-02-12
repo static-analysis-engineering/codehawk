@@ -18,7 +18,7 @@ separately (and that requires additional dependencies to be installed).
 
 ```
 sudo apt update -y
-sudo apt install software-properties-common pkg-config m4 zlib1g-dev -y
+sudo apt install software-properties-common pkg-config m4 zlib1g-dev libgmp-dev -y
 sudo add-apt-repository ppa:avsm/ppa -y
 sudo apt update -y
 sudo apt install opam
@@ -46,7 +46,7 @@ Depending on which analyzer you want to build:
 
 ```
 sudo apt update -y
-sudo apt install software-properties-common pkg-config m4 zlib1g-dev liblablgtk2-ocaml-dev liblablgtksourceview2-ocaml-dev -y
+sudo apt install software-properties-common pkg-config m4 zlib1g-dev libgmp-dev liblablgtk2-ocaml-dev liblablgtksourceview2-ocaml-dev -y
 sudo add-apt-repository ppa:avsm/ppa -y
 sudo apt update -y
 sudo apt install opam

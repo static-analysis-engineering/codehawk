@@ -68,15 +68,15 @@ object (self)
 				  STR " bytes" ; NL ]
 	     | _ -> STR "") ;
 	     STR (string_repeat "-" 80) ; NL ; 
-	     STR "* Changes since version 0.1:" ; NL ;
-	     STR "* - introduction of statically linked library functions" ; NL ;
+	     STR "* Changes since version 0.2.0:" ; NL ;
+	     STR "* - enhanced MIPS functionality" ; NL ;
 	     STR (string_repeat "=" 80) ; NL ]
 
 end
 
 
 let version = new version_info_t 
-  ~version:"0.2"
-  ~date:"Dec 10, 2019"  
+  ~version:"0.3.0"
+  ~date:"Feb 12, 2021"
   ~licensee: None
   ~maxfilesize: None
