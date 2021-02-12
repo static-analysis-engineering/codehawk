@@ -9,49 +9,55 @@ Building codehawk requires the following applications and libraries:
 - The Zlib C library, version 1.1.3 or up
 - The Zarith library
 
-### Build instructions
+The CodeHawk Tool Suite contains three analyzers that can all be built
+individually. All three analyzers have an optional gui that can be built
+separately (and that requires additional dependencies to be installed).
 
-The CodeHawk Tool Suite consists of subsystems that can be built
-individually, with the following dependencies:
 
-#### External libraries
+### Install dependencies: Ubuntu 16.04 or later (without gui)
 
-CodeHawk depends on two external libraries that have been included here
-for convenience. 
+```
+sudo apt update -y
+sudo apt install software-properties-common pkg-config m4 zlib1g-dev -y
+sudo add-apt-repository ppa:avsm/ppa -y
+sudo apt update -y
+sudo apt install opam
+git clone https://github.com/static-analysis-engineering/codehawk.git
+opam init --bare --no-setup --disable-sandboxing
+opam switch create codehawk-4.07.1 4.07.1 --no-switch
+eval $(opam env --switch=codehawk-4.07.1 --set-switch)
+opam install ocamlfind zarith camlzip extlib
+cd codehawk/CodeHawk
+```
 
-- CH_extern: external libraries extlib and camlzip with no dependencies
+Depending on which analyzer you want to build:
+- **Binary:** `./make_binary_analyzer.sh`
+  - analyzer binary: CHB/bchcmdline/chx86_analyze
+- **C:** `./make_c_analyzer.sh`
+  - parser binary: CHC/cchcil/parseFile
+  - analyzer binary: CHC/cchcmdline/canalyzer
+- **Java:** `./make_java_analyzer.sh`
+  - analyzer binary: CHJ/jchstac/chj_initialize
+- **all:** `./full_make_no_gui.sh`
+  - analyzer/parser binaries: all of the above
 
-#### Language-independent Abstract Interpretation Engnine
 
-- CH/chlib: the core abstract interpretation engine, with no dependencies
-- CH/chutil: general utilities, dependent on extlib and camlzip
-- CH/xprlib: expression utilities, dependent on extlib
+### Install dependencies and build: Ubuntu 16.04 or later (including gui)
 
-#### CodeHawk C Analyzer
-
-- CHC/cil-1.7.3-develop: CIL parser, developed by George Necula at Berkeley,
-   modified for use in the CodeHawk C Analyzer.
-- CHC/cchcil: CodeHawk C source code parser, dependent on cil-1.7.3-develop
-- CHC/cchlib: dependent on CH_extern, CH
-- CHC/cchpre: dependent on CH_extern, CH, CHC/cchlib
-- CHC/cchanalyze: dependent on CH_extern, CH, CHC/cchlib,cchpre
-- CHC/cchcmdline: dependent on CH_extern, CH, CHC/cchlib,cchpre,cchanalyze
-
-Building the analyzer can be accomplished by invoking **make** in all of these
-directories in the given sequence.
-
-#### CodeHawk Binary Analyzer
-
-- CHB/bchlib: dependent on CH_extern, CH
-- CHB/bchlibpe: dependent on CH_extern, CH, CHB/bchlib
-- CHB/bchlibelf: dependent on CH_extern, CH, CHB/bchlib
-- CHB/bchlibx86: dependent on CH_extern, CH, CHB/bchlib,bchlibpe,bchlibelf
-- CHB/bchlibmips32: dependent on CH_extern, CH, CHB/bchlib,bchlibelf
-- CHB/bchanalyze: dependent on CH_extern, CH, CHB/bchlib,bchlibpe,bchlibelf,bchlibx86,bchlibmips32
-- CHB/bchcmdline: dependent on CH_extern, CH, CHB/bchlib,bchlibpe,bchlibelf,bchlibx86,bchlibmips32,bchanalyze
-
-Building the analyzer can be accomplished by invoking **make** in all
-of these directories in the given sequence.
+```
+sudo apt update -y
+sudo apt install software-properties-common pkg-config m4 zlib1g-dev liblablgtk2-ocaml-dev liblablgtksourceview2-ocaml-dev -y
+sudo add-apt-repository ppa:avsm/ppa -y
+sudo apt update -y
+sudo apt install opam
+git clone https://github.com/static-analysis-engineering/codehawk.git
+opam init --bare --no-setup --disable-sandboxing
+opam switch create codehawk-4.07.1 4.07.1 --no-switch
+eval $(opam env --switch=codehawk-4.07.1 --set-switch)
+opam install ocamlfind zarith camlzip extlib lablgtk lablgtk-extras
+cd codehawk/CodeHawk
+./full_make.sh
+```
 
 # Building with shake
 
@@ -76,7 +82,7 @@ sudo apt install curl -y
 curl -sSL https://get.haskellstack.org/ | sh
 sh <(curl -sL https://raw.githubusercontent.com/ocaml/opam/master/shell/install.sh)
 stack install shake
-git clone https://github.com/kestreltechnology/codehawk.git
+git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
 stack runghc Shakefile.hs -- --opam
 ```
@@ -85,7 +91,7 @@ stack runghc Shakefile.hs -- --opam
 
 ```
 sudo pacman -Syu opam haskell-shake lablgtk2
-git clone https://github.com/kestreltechnology/codehawk.git
+git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
 shake --opam
 ```
@@ -94,7 +100,7 @@ shake --opam
 
 ```
 sudo yum install opam shake ghc-compiler ghc-shake-devel diffutils zlib-devel ocaml-lablgtk-devel -y
-git clone https://github.com/kestreltechnology/codehawk.git
+git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
 shake --opam
 ```
@@ -108,7 +114,7 @@ brew install lablgtk
 cabal update
 cabal install --lib shake
 cabal install --lib unordered-containers
-git clone https://github.com/kestreltechnology/codehawk.git
+git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
 ~/.cabal/bin/shake --opam
 ```
@@ -122,7 +128,7 @@ sudo port install lablgtk2
 cabal update
 cabal install --lib shake
 cabal install --lib unordered-containers
-git clone https://github.com/kestreltechnology/codehawk.git
+git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
 ~/.cabal/bin/shake --opam
 ```
@@ -134,7 +140,7 @@ sudo apt update -y
 sudo apt install cabal-install pkg-config m4 zlib1g-dev opam liblablgtk2-ocaml-dev liblablgtksourceview2-ocaml-dev -y
 cabal update
 cabal install shake
-git clone https://github.com/kestreltechnology/codehawk.git
+git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
 ~/.cabal/bin/shake --opam
 ```
@@ -149,7 +155,7 @@ sudo apt update -y
 sudo apt install opam
 cabal update
 cabal install shake
-git clone https://github.com/kestreltechnology/codehawk.git
+git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
 ~/.cabal/bin/shake --opam
 ```
@@ -159,8 +165,8 @@ cd codehawk/CodeHawk
 Before the final "shake" command in one of the above instructions:
 
 ```
-opam init --bare --no-setup --disable-sandboxing --bare
-opam switch codehawk-4.07.1 4.07.1 --no-switch
+opam init --bare --no-setup --disable-sandboxing
+opam switch create codehawk-4.07.1 4.07.1 --no-switch
 eval $(opam env --switch=codehawk-4.07.1 --set-switch)
 opam install ocamlfind zarith camlzip extlib lablgtk lablgtk-extras
 /path/to/shake
