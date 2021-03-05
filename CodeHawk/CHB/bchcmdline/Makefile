@@ -16,6 +16,7 @@ PELIB  = $(CHB)/bchlibpe
 ELFLIB = $(CHB)/bchlibelf
 X86LIB = $(CHB)/bchlibx86
 MIPSLIB = $(CHB)/bchlibmips32
+ARMLIB = $(CHB)/bchlibarm32
 ANALYZ = $(CHB)/bchanalyze
 
 CAMLDOC := ocamldoc
@@ -32,6 +33,7 @@ CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(ELFLIB)/cmi \
 	-I $(X86LIB)/cmi \
 	-I $(MIPSLIB)/cmi \
+	-I $(ARMLIB)/cmi \
 	-I $(ANALYZ)/cmi \
 
 CAMLLINK := ocamlopt str.cmxa unix.cmxa \
@@ -48,6 +50,7 @@ CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	$(ELFLIB)/bchlibelf.cmxa \
 	$(X86LIB)/bchlibx86.cmxa \
 	$(MIPSLIB)/bchlibmips32.cmxa \
+	$(ARMLIB)/bchlibarm32.cmxa \
 	$(ANALYZ)/bchanalyze.cmxa \
 
 MLIS := \
@@ -66,7 +69,7 @@ make_dirs:
 
 defs: make_dirs libsum appsum constsum classsum structdef
 
-xanalyzer:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(X86LIB)/bchlibx86.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bCHVersion.cmi cmx/bCHVersion.cmx cmi/bCHXBinaryAnalyzer.cmi cmx/bCHXBinaryAnalyzer.cmx
+xanalyzer:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPSLIB)/bchlibmips32.cmxa $(ARMLIB)/bchlibarm32.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bCHVersion.cmi cmx/bCHVersion.cmx cmi/bCHXBinaryAnalyzer.cmi cmx/bCHXBinaryAnalyzer.cmx
 	$(CAMLLINK) -o chx86_analyze cmx/bCHVersion.cmx cmx/bCHXBinaryAnalyzer.cmx
 
 inspect: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa cmi/bCHXInspectSummaries.cmi cmx/bCHXInspectSummaries.cmx
