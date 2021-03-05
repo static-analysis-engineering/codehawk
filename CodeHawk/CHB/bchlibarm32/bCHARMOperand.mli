@@ -61,6 +61,12 @@ val mk_arm_shifted_register_op:
   -> arm_operand_mode_t
   -> arm_operand_int
 
+val mk_arm_rotated_register_op:
+  arm_reg_t
+  -> int (* rotation *)
+  -> arm_operand_mode_t
+  -> arm_operand_int
+
 val mk_arm_immediate_op:
   bool (* signed *)
   -> int (* size in bytes *)

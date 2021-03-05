@@ -96,11 +96,12 @@ object
     | ARMReg _ -> "r"
     | ARMRegList _ -> "l"
     | ARMShiftedReg _ -> "s"
+    | ARMRotatedReg _ -> "rr"
     | ARMImmediate _ -> "i"
     | ARMAbsolute _ -> "a"
     | ARMOffsetAddress _ -> "o"
 
-  method tags = [ "a"; "i"; "l"; "o"; "r"; "s" ]
+  method tags = [ "a"; "i"; "l"; "o"; "r"; "rr"; "s" ]
 
 end
 

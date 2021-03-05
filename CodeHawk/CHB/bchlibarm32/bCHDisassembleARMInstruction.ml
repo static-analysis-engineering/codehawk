@@ -72,6 +72,13 @@ let parse_data_proc_reg_type
       (reg:int)
       (rm:int) =
   match op with
+  | 0 when (rd = 0) && (opy = 1) && (shifttype = 0) && (reg = 1) -> 
+     let cond = get_opcode_cc cond in
+     let setflags = (opx = 1) in
+     let rdop = arm_register_op (get_arm_reg rn) RD in
+     let rmop = arm_register_op (get_arm_reg rs) WR in
+     let rnop = arm_register_op (get_arm_reg rm) RD in
+     Multiply( setflags, cond, rdop, rnop, rmop)
   | 3 ->
      let cond = get_opcode_cc cond in
      let setflags = (opx = 1) in
@@ -91,6 +98,17 @@ let parse_data_proc_reg_type
        Add (setflags,cond,rdop,rnop,rmop)
      else
        OpInvalid
+  | 5 ->
+     let cond = get_opcode_cc cond in
+     let setflags = (opx = 1) in
+     if (not (rd = 15)) && (reg=0) then
+       let rnop = arm_register_op (get_arm_reg rn) RD in
+       let rdop = arm_register_op (get_arm_reg rd) WR in
+       let shiftamount = (rs lsl 1) + opy in
+       let rmop = mk_arm_shifted_register_op (get_arm_reg rm) shifttype shiftamount RD in
+       AddCarry (setflags,cond,rdop,rnop,rmop)
+     else
+       OpInvalid       
   | 9 when (rn = 15) && (rd = 15) && (rs = 15) && (opy = 0) && (reg = 1) ->
      let cond = get_opcode_cc cond in
      let rmop = arm_register_op (get_arm_reg rm) RD in
@@ -106,12 +124,33 @@ let parse_data_proc_reg_type
      let shiftamount = (rs lsl 1) + opy in
      let rmop = mk_arm_shifted_register_op (get_arm_reg rm) shifttype shiftamount RD in
      Compare (cond,rnop,rmop)
+  | 11 when opx = 0 && rn = 15 && rs = 15 && opy = 0 && shifttype = 0 && reg = 1 ->
+     let cond = get_opcode_cc cond in
+     let rdop = arm_register_op (get_arm_reg rd) WR in
+     let rmop = arm_register_op (get_arm_reg rm) RD in
+     CountLeadingZeros (cond,rdop,rmop)     
+  | 12 ->
+     let cond = get_opcode_cc cond in
+     let setflags = (opx = 1) in
+     let rnop = arm_register_op (get_arm_reg rn) RD in
+     let rdop = arm_register_op (get_arm_reg rd) WR in
+     let shiftamount = (rs lsl 1) + opy in
+     let rmop = mk_arm_shifted_register_op (get_arm_reg rm) shifttype shiftamount RD in
+     BitwiseOr (setflags,cond,rdop,rnop,rmop)
   | 13 ->
      let cond = get_opcode_cc cond in
      let setflags = (opx = 1) in
      let rd = arm_register_op (get_arm_reg rd) WR in
      let rm = arm_register_op (get_arm_reg rm) RD in
      Mov (setflags, cond, rd, rm)
+  | 14 when reg = 0 ->
+     let cond = get_opcode_cc cond in
+     let setflags = (opx = 1) in
+     let rnop = arm_register_op (get_arm_reg rn) RD in
+     let rdop = arm_register_op (get_arm_reg rd) WR in
+     let shiftamount = (rs lsl 1) + opy in
+     let rmop = mk_arm_shifted_register_op (get_arm_reg rm) shifttype shiftamount RD in
+     BitwiseBitClear (setflags,cond,rdop,rnop,rmop)
   | _ -> OpInvalid
 
 let parse_data_proc_imm_type
@@ -125,6 +164,18 @@ let parse_data_proc_imm_type
       (rotate:int)
       (imm:int) =
   match op with
+  | 0 ->
+     let cond = get_opcode_cc cond in
+     let setflags = (opx = 1) in
+     let rdop = arm_register_op (get_arm_reg rd) WR in
+     (match rn with
+      | 15 ->
+         OpInvalid
+      | _ ->
+         let rnop = arm_register_op (get_arm_reg rn) RD in
+         let imm32 = make_immediate false 4 (B.big_int_of_int (arm_expand_imm rotate imm)) in
+         let immop = arm_immediate_op imm32 in
+         BitwiseAnd (setflags, cond, rdop, rnop, immop))
   | 2 ->
      let cond = get_opcode_cc cond in
      let setflags = (opx = 1) in
@@ -232,9 +283,16 @@ let parse_load_store_imm_type
        if p = 0 && u = 1 && opx = 0 && w = 0 && imm = 4 then
          let rl = arm_register_list_op [ (get_arm_reg rd) ] WR in
          Pop (cond, rl)
+       else if opx = 0 then
+         let isindex = (p = 1) in
+         let isadd = (u = 1) in
+         let iswback = (w = 1 || p = 0) in
+         let rtop = arm_register_op (get_arm_reg rd) WR in
+         let srcop = mk_arm_offset_address_op (get_arm_reg rn) imm isadd iswback isindex RD in
+         LoadRegister (cond,rtop,srcop)
        else
          OpInvalid
-     else
+     else  (* isload = 0 *)
        if p = 1 && u = 0 && opx = 0 && w = 1 && imm = 4 then
          let rl = arm_register_list_op [ (get_arm_reg rd) ] RD in
          Push (cond, rl)
@@ -286,6 +344,24 @@ let parse_load_store_reg_type
       (shift:int)
       (opz:int)
       (rm:int) = OpInvalid
+
+let parse_media_type
+      (cond:int)
+      (op1:int)
+      (data1:int)
+      (rd:int)
+      (data2:int)
+      (op2:int)
+      (rn:int) =
+  match op1 with
+  | 15 when data1 = 15 && op2 = 3 ->
+     let cond = get_opcode_cc cond in
+     let rdop = arm_register_op (get_arm_reg rd) WR in
+     let rotation = ((data2 lsr 2) lsl 3) in
+     let rmop = mk_arm_rotated_register_op (get_arm_reg rn) rotation RD in
+     UnsignedExtendHalfword (cond,rdop,rmop)
+  | _ ->
+     OpInvalid
 
 let parse_block_data_type
       (cond:int)
@@ -352,6 +428,8 @@ let parse_opcode
        parse_load_store_imm_type cond p u opx w opy rn rd imm
     | LoadStoreRegType (cond,p,u,opx,w,opy,rn,rd,shiftimm,shift,opz,rm) ->
        parse_load_store_reg_type cond p u opx w opy rn rd shiftimm shift opz rm
+    | MediaType (cond,op1,data1,rd,data2,op2,rn) ->
+       parse_media_type cond op1 data1 rd data2 op2 rn
     | BlockDataType (cond,p,u,opx,w,opy,rn,opz,reglist) ->
        parse_block_data_type cond p u opx w opy rn opz reglist
     | BranchLinkType (cond,opx,offset) ->

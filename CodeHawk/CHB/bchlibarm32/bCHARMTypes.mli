@@ -168,6 +168,7 @@ type arm_operand_kind_t =
   | ARMReg of arm_reg_t
   | ARMRegList of arm_reg_t list
   | ARMShiftedReg of arm_reg_t * register_shift_t option
+  | ARMRotatedReg of arm_reg_t * int
   | ARMImmediate of immediate_int
   | ARMAbsolute of doubleword_int
   | ARMOffsetAddress of
@@ -232,10 +233,28 @@ type arm_opcode_t =
       * arm_operand_int  (* rd *)
       * arm_operand_int  (* rn *)
       * arm_operand_int (* imm *)
+  | AddCarry of
+      bool (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd *)
+      * arm_operand_int  (* rn *)
+      * arm_operand_int (* imm *)      
   | Adr of
       arm_opcode_cc_t (* condition *)
       * arm_operand_int  (* destination register *)
       * arm_operand_int  (* targetaddress *)
+  | BitwiseAnd of
+      bool (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* destination *)
+      * arm_operand_int  (* source1 *)
+      * arm_operand_int  (* source2 *)
+  | BitwiseBitClear of
+      bool   (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* destination *)
+      * arm_operand_int  (* source1 *)
+      * arm_operand_int  (* source2 *)
   | BitwiseNot of
       bool (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -257,6 +276,10 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* register *)
       * arm_operand_int  (* immediate *)
+  | CountLeadingZeros of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* destination *)
+      * arm_operand_int  (* source *)
   | Mov of
       bool (* flags are set *)
       * arm_opcode_cc_t (* condition *)
@@ -272,6 +295,12 @@ type arm_opcode_t =
       * arm_opcode_cc_t (* condition *)
       * arm_operand_int (* destination (reg) *)
       * arm_operand_int (* source *)
+  | Multiply of
+      bool  (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* destination *)
+      * arm_operand_int  (* source1 *)
+      * arm_operand_int  (* source2 *)
   | Subtract of
       bool   (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -309,6 +338,10 @@ type arm_opcode_t =
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* register list *)
   (* MediaType *)
+  | UnsignedExtendHalfword of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
   (* BlockDataType *)
   (* BranchLinkType *)
   | Branch of
