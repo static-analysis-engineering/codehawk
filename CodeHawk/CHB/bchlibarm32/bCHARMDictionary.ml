@@ -120,6 +120,7 @@ object (self)
            | Some (SRType_ROR,n) -> [ 3; n ]
            | Some (SRType_RRX,n) -> [ 4; n ] in
          (tags @ [ arm_reg_mfts#ts r ], alist)
+      | ARMRotatedReg (r,rot) -> (tags @ [ arm_reg_mfts#ts r ],[rot])
       | ARMAbsolute addr -> (tags, [ bd#index_address addr ])
       | ARMOffsetAddress (r,offset,isadd,iswback,isindex) ->
          (tags,[ offset; setb isadd; setb iswback; setb isindex ])
@@ -137,20 +138,24 @@ object (self)
     let ci = arm_opcode_cc_mfts#ts in
     let tags = [ get_arm_opcode_name opc ] in
     let key = match opc with
-      | Add (setflags,cond,rd,rn,imm) ->
+      | Add (setflags,cond,rd,rn,imm)
+        | AddCarry (setflags,cond,rd,rn,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm ])
       | Adr (cond,rd,addr) ->
          (tags @ [ ci cond ], [ oi rd ; oi addr ])
       | BitwiseNot (setflags,cond,rd,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm ])
-      | BitwiseOr (setflags,cond,rd,rn,imm) ->
+      | BitwiseAnd (setflags,cond,rd,rn,imm)
+        | BitwiseBitClear (setflags,cond,rd,rn,imm)
+        | BitwiseOr (setflags,cond,rd,rn,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm])
       | Branch (cond,addr)
         | BranchExchange (cond,addr)
         | BranchLink (cond,addr)
         | BranchLinkExchange (cond,addr) ->
          (tags @ [ ci cond ], [ oi addr ])
-      | Compare (cond,op1,op2) ->
+      | Compare (cond,op1,op2)
+        | CountLeadingZeros (cond,op1,op2) ->
          (tags @ [ ci cond ], [ oi op1; oi op2 ])
       | LoadRegister (cond,dst,src)
         | LoadRegisterByte (cond,dst,src) ->
@@ -159,6 +164,8 @@ object (self)
         | MoveTop (setflags,cond,rd,imm)
         | MoveWide (setflags,cond,rd,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm ])
+      | Multiply (setflags,cond,rd,rn,rm) ->
+         (tags @ [ ci cond ], [ setb setflags; oi rd; oi rn; oi rm])
       | Pop (cond,rl)
         | Push (cond,rl) ->
          (tags @ [ ci cond ], [ oi rl ])
@@ -169,6 +176,8 @@ object (self)
       | Subtract (setflags,cond,dst,src,imm)
         | ReverseSubtract (setflags,cond,dst,src,imm) ->
          (tags @ [ ci cond ], [ setb setflags; oi dst; oi src; oi imm ])
+      | UnsignedExtendHalfword (cond,dst,src) ->
+         (tags @ [ ci cond ], [ oi dst; oi src ])
       | OpInvalid -> (tags,[])
       | SupervisorCall (cond,op) -> (tags @ [ ci cond ], [ oi  op ]) in
     arm_opcode_table#add key

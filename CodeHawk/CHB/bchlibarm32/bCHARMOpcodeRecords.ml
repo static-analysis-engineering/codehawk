@@ -88,11 +88,29 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "ADD" cc [ rd; rn; imm ])
     }
+  | AddCarry (setflags, cc, rd, rn, imm) -> {
+      mnemonic = "ADC";
+      operands = [ rd; rn; imm ];
+      ccode = Some cc;
+      ida_asm = (fun f -> f#opscc "ADC" cc [ rd; rn; imm ])
+    }
   | Adr (cc, rd, addr) -> {
       mnemonic = "ADR";
       operands = [ rd; addr ];
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "ADR" cc [ rd; addr ])
+    }
+  | BitwiseAnd (setflags, cc, rd,rn, imm) -> {
+      mnemonic = "AND";
+      operands = [ rd; rn; imm ];
+      ccode = Some cc;
+      ida_asm = (fun f -> f#opscc "AND" cc [ rd; rn; imm ])
+    }
+  | BitwiseBitClear (setflags, cc, rd, rn, imm) -> {
+      mnemonic = "BIC";
+      operands = [ rd; rn; imm ];
+      ccode = Some cc;
+      ida_asm = (fun f -> f#opscc "BIC" cc [ rd; rn; imm ])
     }
   | BitwiseNot (setflags, cc, rd, imm) -> {
       mnemonic = "MVN";
@@ -136,6 +154,12 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "CMP" cc [ op1; op2 ])
     }
+  | CountLeadingZeros (cc,dst,src) -> {
+      mnemonic = "CLZ";
+      operands = [ dst; src ];
+      ccode = Some cc;
+      ida_asm = (fun f -> f#opscc "CLZ" cc [ dst; src ])
+    }
   | LoadRegister (cc, dst, src) -> {
       mnemonic = "LDR";
       operands = [ dst; src ];
@@ -165,6 +189,12 @@ let get_record (opc:arm_opcode_t) =
       operands = [ rd; imm ];
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "MOVW" cc [ rd; imm ])
+    }
+  | Multiply (setflags, cc, rd, rn, rm) -> {
+      mnemonic = "MUL";
+      operands = [ rd; rn; rm ];
+      ccode = Some cc;
+      ida_asm = (fun f -> f#opscc "MUL" cc [ rd; rn; rm ])
     }
   | Pop (cc, rl) -> {
       mnemonic = "POP";
@@ -207,6 +237,12 @@ let get_record (opc:arm_opcode_t) =
       operands = [ imm ];
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "SVC" cc [ imm ])
+    }
+  | UnsignedExtendHalfword (cc,dst,src) -> {
+      mnemonic = "UXTH";
+      operands = [ dst; src ];
+      ccode = Some cc;
+      ida_asm = (fun f -> f#opscc "UXTH" cc [ dst; src ])
     }
   | OpInvalid -> {
       mnemonic = "invalid";

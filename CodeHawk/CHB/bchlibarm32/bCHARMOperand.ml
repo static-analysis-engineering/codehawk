@@ -184,6 +184,11 @@ object (self:'a)
          | Some (srt,imm) ->
             ", " ^ (shift_rotate_type_to_string srt) ^ "#" ^ (string_of_int imm) in
        (armreg_to_string r) ^ pshift
+    | ARMRotatedReg (r,rotation) ->
+       let protation = match rotation with
+         | 0 -> ""
+         | _ -> ", #" ^ (string_of_int rotation) in
+       (armreg_to_string r) ^ protation
     | ARMImmediate imm -> imm#to_string
     | ARMAbsolute addr -> addr#to_hex_string
     | ARMOffsetAddress (reg,offset,isadd,iswback,isindex) ->
@@ -212,6 +217,12 @@ let mk_arm_shifted_register_op
       (mode:arm_operand_mode_t) =
   let shift = get_register_shift shifttype shiftamount in
   new arm_operand_t (ARMShiftedReg (r,shift)) mode
+
+let mk_arm_rotated_register_op
+      (r:arm_reg_t)
+      (rotation:int)
+      (mode:arm_operand_mode_t) =
+  new arm_operand_t (ARMRotatedReg (r,rotation)) mode
 
 let mk_arm_immediate_op (signed:bool) (size:int) (imm:numerical_t) =
     let immval =
