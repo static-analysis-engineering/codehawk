@@ -74,6 +74,9 @@ open BCHMIPSAnalysisResults
 open BCHMIPSAssemblyFunctions   
 open BCHMIPSAssemblyInstructions
 
+(* bchlibarm32 *)
+open BCHDisassembleARM
+
 (* bchanalyze *)
 open BCHAnalysisTypes
 open BCHAnalyzeApp
@@ -121,8 +124,9 @@ let speclist =
      "stream disassemble a hex-encoded stream of bytes") ;
     ("-startaddress",  Arg.String set_stream_start_address,
      "start address of the code stream") ;
-    ("-mips", Arg.Unit (fun () -> architecture := "mips"), "mips executable") ;
-    ("-elf", Arg.Unit (fun () -> fileformat := "elf"), "ELF executable") ;
+    ("-arm", Arg.Unit (fun () -> architecture := "arm"), "arm executable");
+    ("-mips", Arg.Unit (fun () -> architecture := "mips"), "mips executable");
+    ("-elf", Arg.Unit (fun () -> fileformat := "elf"), "ELF executable");
     ("-extract", Arg.Unit (fun () -> cmd := "extract"),
      "extract executable content from executable and save in xml format") ;
     ("-dump", Arg.Unit (fun () -> cmd := "dump"),
@@ -278,6 +282,7 @@ let main () =
 
     else if !cmd = "extract" && !fileformat = "elf" then
       let _ = if !architecture = "mips" then system_info#set_mips in
+      let _ = if !architecture = "arm" then system_info#set_arm in
       let _ = system_info#initialize in
       let (success,msg) = read_elf_file system_info#get_filename in
       if success then
@@ -398,6 +403,17 @@ let main () =
         save_bdictionary ();
         save_log_files "disassemble";
       end
+
+    else if !cmd = "disassemble" && !architecture = "arm" && !fileformat = "elf" then
+      let _ = system_info#set_elf in
+      let _ = system_info#set_arm in
+      let _ = system_info#initialize in
+      (* let t = ref (Unix.gettimeofday ()) in *)
+      let _ = pr_debug [ STR "Load ARM file ..." ; NL ] in
+      let _ = load_elf_files () in
+      let _ = pr_debug [ STR "disassemble sections ..." ; NL ] in
+      let _ = disassemble_arm_sections () in
+      save_log_files "disassemble"
                 
 
     else if !cmd = "analyze" && !architecture = "x86" && !fileformat = "pe" then
