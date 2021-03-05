@@ -16,6 +16,7 @@ make -C CHB/bchlibpe
 make -C CHB/bchlibelf
 make -C CHB/bchlibx86
 make -C CHB/bchlibmips32
+make -C CHB/bchlibarm32
 make -C CHB/bchanalyze
 make -C CHB/bchcmdline
 make -C CHJ/jchlib
