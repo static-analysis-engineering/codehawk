@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -114,6 +115,7 @@ object (self)
   val mutable filename = ""
   val mutable is_elf = false
   val mutable is_mips = false
+  val mutable is_arm = false
   val mutable preamble_cutoff = 12   (* minimum number of observed preambles, to
                                         use instruction as reason to add function
                                         entry point *)
@@ -448,6 +450,9 @@ object (self)
 
   method set_mips = is_mips <- true
   method is_mips = is_mips
+
+  method set_arm = is_arm <- true
+  method is_arm = is_arm
 
   (* system initialization :
      - load system_file (application specific, created by previous round)

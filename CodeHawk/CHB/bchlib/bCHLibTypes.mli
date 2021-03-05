@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -368,9 +369,11 @@ object ('a)
   method xor              : 'a -> 'a          (* exclusive or *)
 
   (* accessors *)
-  method get_low           : int              (* integer value of low-order 16 bits *)
-  method get_high          : int              (* integer value of high-order 16 bits *)
-  method get_bits_set      : int list
+  method get_low: int                         (* integer value of low-order 16 bits *)
+  method get_high: int                       (* integer value of high-order 16 bits *)
+  method get_bits_set: int list
+  method get_bitval: int -> int            (* value of bit at position (zero-based) *)
+  method get_segval: int -> int -> int      (* value of subrange of bits, high, low *)
 
   (* predicates *)
   method is_highest_bit_set: bool
@@ -2808,6 +2811,7 @@ object
   method set_file_string: string -> unit
   method set_elf: unit
   method set_mips: unit
+  method set_arm: unit
   method set_big_endian: unit
   method set_preamble_cutoff: int -> unit
   method set_image_base: doubleword_int -> unit
@@ -2886,6 +2890,7 @@ object
   (* predicates *)
   method is_elf: bool
   method is_mips: bool
+  method is_arm: bool
   method is_little_endian: bool
   method is_nonreturning_call: doubleword_int -> doubleword_int -> bool
   method is_fixed_true_branch: doubleword_int -> bool

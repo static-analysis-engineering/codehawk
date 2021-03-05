@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,6 +52,14 @@ let ffff = e16 - 1
 let ffff_ffff = e32 - 1
 
 let nume32 = mkNumerical e32
+
+let rec pow2 n =
+  match n with
+  | 0 -> 1
+  | 1 -> 2
+  | n ->
+    let b = pow2 (n / 2) in
+    b * b * (if n mod 2 = 0 then 1 else 2)
 
 (* utility functions *)
 let get_nibbles v n =
@@ -277,6 +286,27 @@ object (self:'a)
       else if v mod 2 = 1 then aux (pos+1) (v lsr 1) (pos::bits)
       else aux (pos+1) (v lsr 1) bits in
     aux 0 unsigned_value []
+
+  (* return the value of the given bit (zero-based) *)
+  method get_bitval (pos:int) =
+    if pos < 0 || pos > 31 then
+      raise (BCH_failure
+               (LBLOCK [ STR "Error in get_bitval at " ; INT pos ]))
+    else
+      if self#is_nth_bit_set pos then 1 else 0
+
+  (* return the value of bits highpos through lowpos (inclusive, zero-based) *)
+  method get_segval (highpos:int) (lowpos:int) =
+    if highpos > 31 || lowpos < 0 || highpos < lowpos then
+      raise (BCH_failure
+               (LBLOCK [ STR "Error in get_segval: " ;
+                         STR "highpos: " ; INT highpos ;
+                         STR "; lowpos: " ; INT lowpos ]))
+    else if highpos = lowpos then
+      if self#is_nth_bit_set highpos then 1 else 0
+    else
+      let r = unsigned_value lsr lowpos in
+      r mod (pow2 ((highpos-lowpos) + 1))
 
   (* --------------------------------------------------------~---- predicates -- *)
 
