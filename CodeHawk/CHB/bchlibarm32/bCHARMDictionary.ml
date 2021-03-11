@@ -61,6 +61,8 @@ let raise_tag_error (name:string) (tag:string) (accepted:string list) =
 class arm_dictionary_t:arm_dictionary_int =
 object (self)
 
+  val register_shift_rotate_table = mk_index_table "register-shift-table"
+  val arm_memory_offset_table = mk_index_table "arm-memory-offset-table"
   val arm_opkind_table = mk_index_table "arm-opkind-table"
   val arm_operand_table = mk_index_table "arm-operand-table"
   val arm_opcode_table = mk_index_table "arm-opcode-table"
@@ -71,6 +73,8 @@ object (self)
 
   initializer
     tables <- [
+      register_shift_rotate_table;
+      arm_memory_offset_table;
       arm_opkind_table;
       arm_operand_table;
       arm_opcode_table;
@@ -104,26 +108,39 @@ object (self)
          (tags, [ op1; rn; data; op; datax ]) in
     arm_instr_class_table#add key
 
+  method index_register_shift_rotate (rs:register_shift_rotate_t) =
+    let tags = [ register_shift_rotate_mcts#ts rs ] in
+    let key = match rs with
+      | ARMImmSRT (srt,imm) ->
+         (tags @ [ shift_rotate_type_mfts#ts srt ],[ imm ])
+      | ARMRegSRT (srt,reg) ->
+         (tags @ [ shift_rotate_type_mfts#ts srt ; arm_reg_mfts#ts reg ],[]) in
+    register_shift_rotate_table#add key
+
+  method index_arm_memory_offset (f:arm_memory_offset_t) =
+    let tags = [ arm_memory_offset_mcts#ts f ] in
+    let key = match f with
+      | ARMImmOffset imm -> (tags,[ imm ])
+      | ARMIndexOffset r -> (tags @ [ arm_reg_mfts#ts r ],[])
+      | ARMShiftedIndexOffset (r,rs) ->
+         (tags @ [ arm_reg_mfts#ts r ],[ self#index_register_shift_rotate rs ]) in
+    arm_memory_offset_table#add key
+
   method index_arm_opkind (k:arm_operand_kind_t) =
     let setb x = if x then 1 else 0 in
     let tags = [ arm_opkind_mcts#ts k ] in
     let key = match k with
       | ARMReg r -> (tags @ [ arm_reg_mfts#ts r ],[])
       | ARMRegList rl -> (tags @ (List.map arm_reg_mfts#ts rl),[])
-      | ARMShiftedReg (r,shift) ->
-         let alist =
-           match shift with
-           | None -> [ -1 ]
-           | Some (SRType_LSL,n) -> [ 0; n ]
-           | Some (SRType_LSR,n) -> [ 1; n ]
-           | Some (SRType_ASR,n) -> [ 2; n ]
-           | Some (SRType_ROR,n) -> [ 3; n ]
-           | Some (SRType_RRX,n) -> [ 4; n ] in
-         (tags @ [ arm_reg_mfts#ts r ], alist)
-      | ARMRotatedReg (r,rot) -> (tags @ [ arm_reg_mfts#ts r ],[rot])
+      | ARMShiftedReg (r,rs) ->
+         (tags, [ self#index_register_shift_rotate rs ])
+      | ARMRegBitSequence (r,lsb,widthm1) ->
+         (tags @ [ arm_reg_mfts#ts r ],[ lsb; widthm1 ])
       | ARMAbsolute addr -> (tags, [ bd#index_address addr ])
+      | ARMMemMultiple (r,n) -> (tags @ [ arm_reg_mfts#ts r ],[n])
       | ARMOffsetAddress (r,offset,isadd,iswback,isindex) ->
-         (tags,[ offset; setb isadd; setb iswback; setb isindex ])
+         let ioffset = self#index_arm_memory_offset offset in
+         (tags,[ ioffset; setb isadd; setb iswback; setb isindex ])
       | ARMImmediate imm -> (tags @ [ imm#to_numerical#toString ],[]) in
     arm_opkind_table#add key
 
@@ -137,15 +154,19 @@ object (self)
     let oi = self#index_arm_operand in
     let ci = arm_opcode_cc_mfts#ts in
     let tags = [ get_arm_opcode_name opc ] in
+    let ctags c = tags @ [ ci c ] in
     let key = match opc with
       | Add (setflags,cond,rd,rn,imm)
         | AddCarry (setflags,cond,rd,rn,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm ])
       | Adr (cond,rd,addr) ->
          (tags @ [ ci cond ], [ oi rd ; oi addr ])
+      | ArithmeticShiftRight (s,c,rd,rn,rm) ->
+         (ctags c,[ setb s; oi rd; oi rn; oi rm ])
       | BitwiseNot (setflags,cond,rd,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm ])
       | BitwiseAnd (setflags,cond,rd,rn,imm)
+        | BitwiseExclusiveOr (setflags,cond,rd,rn,imm)
         | BitwiseBitClear (setflags,cond,rd,rn,imm)
         | BitwiseOr (setflags,cond,rd,rn,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm])
@@ -154,31 +175,62 @@ object (self)
         | BranchLink (cond,addr)
         | BranchLinkExchange (cond,addr) ->
          (tags @ [ ci cond ], [ oi addr ])
+      | ByteReverseWord (c,rd,rm) -> (ctags c,[ oi rd; oi rm ])
       | Compare (cond,op1,op2)
+        | CompareNegative (cond,op1,op2)
         | CountLeadingZeros (cond,op1,op2) ->
          (tags @ [ ci cond ], [ oi op1; oi op2 ])
-      | LoadRegister (cond,dst,src)
-        | LoadRegisterByte (cond,dst,src) ->
-         (tags @ [ ci cond ], [ oi dst; oi src ])
-      | Mov (setflags,cond,rd,imm)
-        | MoveTop (setflags,cond,rd,imm)
-        | MoveWide (setflags,cond,rd,imm) ->
+      | LoadMultipleDecrementBefore (wb,c,rn,rl,mem)
+        | LoadMultipleIncrementAfter (wb,c,rn,rl,mem) ->
+         (ctags c, [ setb wb; oi rn; oi rl; oi mem ])
+      | LoadRegister (c,rt,rn,mem)
+        | LoadRegisterByte (c,rt,rn,mem) ->
+         (ctags c, [ oi rt; oi rn; oi mem ])
+      | LoadRegisterDual (c,rt,rt2,rn,rm,mem) ->
+         (ctags c,[ oi rt; oi rt2; oi rn; oi rm; oi mem])
+      | LoadRegisterHalfword (c,rt,rn,rm,mem) ->
+         (ctags c,[ oi rt; oi rn; oi rm; oi mem])
+      | LogicalShiftLeft (s,c,rd,rn,rm)
+        | LogicalShiftRight (s,c,rd,rn,rm) ->
+         (ctags c, [ setb s; oi rd; oi rn; oi rm])
+      | Move (setflags,cond,rd,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm ])
+      | MoveTop (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
+      | MoveWide (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
       | Multiply (setflags,cond,rd,rn,rm) ->
          (tags @ [ ci cond ], [ setb setflags; oi rd; oi rn; oi rm])
-      | Pop (cond,rl)
-        | Push (cond,rl) ->
-         (tags @ [ ci cond ], [ oi rl ])
-      | StoreRegister (cond,src,dst) ->
-         (tags @ [ ci cond ], [ oi src; oi dst ])
-      | StoreRegisterByte (cond,src,dst) ->
-         (tags @ [ ci cond ], [ oi src; oi dst ])
+      | MultiplyAccumulate (setflags,cond,rd,rn,rm,ra) ->
+         (tags @ [ ci cond ], [ setb setflags; oi rd; oi rn; oi rm; oi ra ])
+      | Pop (c,sp,rl)
+        | Push (c,sp,rl) ->  (ctags c, [ oi sp; oi rl ])
+      | SignedExtendHalfword (c,rd,rm) -> (ctags c, [ oi rd; oi rm ])
+      | SingleBitFieldExtract (c,rd,rn) -> (ctags c, [ oi rd; oi rn ])
+      | StoreMultipleIncrementAfter (wb,c,rn,rl,mem)
+        | StoreMultipleIncrementBefore (wb,c,rn,rl,mem) ->
+         (ctags c, [ setb wb; oi rn; oi rl; oi mem ])
+      | StoreRegister (c,rt,rn,mem)
+        | StoreRegisterByte (c,rt,rn,mem) ->
+         (ctags c,[ oi rt; oi rn; oi mem])
+      | StoreRegisterHalfword (c,rt,rn,rm,mem) ->
+         (tags @ [ ci c ], [ oi rt; oi rn; oi rm; oi mem ])
+      | StoreRegisterDual (c,rt,rt2,rn,rm,mem) ->
+         (ctags c, [ oi rt; oi rt2; oi rn; oi rm; oi mem])
       | Subtract (setflags,cond,dst,src,imm)
-        | ReverseSubtract (setflags,cond,dst,src,imm) ->
+        | SubtractCarry (setflags,cond,dst,src,imm)
+        | ReverseSubtract (setflags,cond,dst,src,imm)
+        | ReverseSubtractCarry (setflags,cond,dst,src,imm) ->
          (tags @ [ ci cond ], [ setb setflags; oi dst; oi src; oi imm ])
-      | UnsignedExtendHalfword (cond,dst,src) ->
-         (tags @ [ ci cond ], [ oi dst; oi src ])
-      | OpInvalid -> (tags,[])
+      | Test (cond,src1,src2)
+        | TestEquivalence (cond,src1,src2) ->
+         (tags @ [ ci cond ], [oi src1; oi src2 ])
+      | UnsignedBitFieldExtract (c,rd,rn) -> (ctags c, [ oi rd; oi rn ])
+      | UnsignedExtendAddHalfword (c,rd,rn,rm) ->
+         (ctags c,[ oi rd; oi rn; oi rm])
+      | UnsignedExtendByte (c,rd,rm)
+        | UnsignedExtendHalfword (c,rd,rm) -> (ctags c,[ oi rd; oi rm])
+      | UnsignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) ->
+         (ctags c,[setb s; oi rdlo; oi rdhi; oi rn; oi rm])
+      | OpInvalid | NotCode _ -> (tags,[])
       | SupervisorCall (cond,op) -> (tags @ [ ci cond ], [ oi  op ]) in
     arm_opcode_table#add key
 

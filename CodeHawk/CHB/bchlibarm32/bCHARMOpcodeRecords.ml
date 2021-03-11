@@ -82,17 +82,17 @@ type 'a opcode_record_t = {
 
 let get_record (opc:arm_opcode_t) =
   match opc with
-  | Add (setflags, cc, rd, rn, imm) -> {
+  | Add (s,c,rd,rn,rm) -> {
       mnemonic = "ADD";
-      operands = [ rd; rn; imm ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "ADD" cc [ rd; rn; imm ])
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "ADD" c [rd;rn;rm])
     }
-  | AddCarry (setflags, cc, rd, rn, imm) -> {
+  | AddCarry (s,c,rd,rn,rm) -> {
       mnemonic = "ADC";
-      operands = [ rd; rn; imm ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "ADC" cc [ rd; rn; imm ])
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "ADC" c [rd;rn;rm])
     }
   | Adr (cc, rd, addr) -> {
       mnemonic = "ADR";
@@ -100,29 +100,41 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "ADR" cc [ rd; addr ])
     }
+  | ArithmeticShiftRight (s,c,rd,rn,rm) -> {
+      mnemonic = "ASR";
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "ASR" c [rd;rn;rm])
+    }
   | BitwiseAnd (setflags, cc, rd,rn, imm) -> {
       mnemonic = "AND";
       operands = [ rd; rn; imm ];
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "AND" cc [ rd; rn; imm ])
     }
-  | BitwiseBitClear (setflags, cc, rd, rn, imm) -> {
+  | BitwiseBitClear (s,c,rd,rn,rm) -> {
       mnemonic = "BIC";
-      operands = [ rd; rn; imm ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "BIC" cc [ rd; rn; imm ])
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "BIC" c [rd;rn;rm])
     }
-  | BitwiseNot (setflags, cc, rd, imm) -> {
+  | BitwiseExclusiveOr (s,c,rd,rn,rm) -> {
+      mnemonic = "EOR";
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "EOR" c [rd;rn;rm])
+    }
+  | BitwiseNot (s,c,rd,rm) -> {
       mnemonic = "MVN";
-      operands = [ rd; imm ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "MVN" cc [ rd; imm ])
+      operands = [rd;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "MVN" c [rd;rm])
     }
-  | BitwiseOr (setflags, cc, rd, rn, imm) -> {
+  | BitwiseOr (s,c,rd,rn,rm) -> {
       mnemonic = "ORR";
-      operands = [ rd; rn; imm ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "ORR" cc [ rd; rn; imm ])
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "ORR" c [rd;rn;rm])
     }
   | Branch (cc, addr) -> {
       mnemonic = "B";
@@ -130,11 +142,11 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "B" cc [ addr ])
     }
-  | BranchExchange (cc, addr) -> {
+  | BranchExchange (c,addr) -> {
       mnemonic = "BX";
       operands = [ addr ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "BX" cc [ addr ])
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "BX" c [ addr ])
     }
   | BranchLink (cc, addr) -> {
       mnemonic = "BL";
@@ -142,95 +154,197 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "BL" cc [ addr ])
     }
-  | BranchLinkExchange (cc, addr) -> {
+  | BranchLinkExchange (c,addr) -> {
       mnemonic = "BLX";
       operands = [ addr ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "BLX" cc [ addr ])
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "BLX" c [ addr ])
     }
-  | Compare (cc,op1,op2) -> {
+  | ByteReverseWord (c,rd,rm) -> {
+      mnemonic = "REV";
+      operands = [rd;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "REV" c [rd;rm])
+    }
+  | Compare (c,rn,rm) -> {
       mnemonic = "CMP";
+      operands = [rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "CMP" c [rn;rm])
+    }
+  | CompareNegative (cc,op1,op2) -> {
+      mnemonic = "CMN";
       operands = [ op1; op2];
       ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "CMP" cc [ op1; op2 ])
+      ida_asm = (fun f -> f#opscc "CMN" cc [ op1; op2 ])
     }
-  | CountLeadingZeros (cc,dst,src) -> {
+  | CountLeadingZeros (c,rd,rm) -> {
       mnemonic = "CLZ";
-      operands = [ dst; src ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "CLZ" cc [ dst; src ])
+      operands = [rd;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "CLZ" c [rd;rm])
     }
-  | LoadRegister (cc, dst, src) -> {
+  | LoadMultipleDecrementBefore (wb,c,rn,rl,mem) -> { 
+      mnemonic = "LDMDB";
+      operands = [ rn; rl; mem ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LDMDB" c [ rn; rl ])
+    }
+  | LoadMultipleIncrementAfter (wb,c,rn,rl,mem) -> { 
+      mnemonic = "LDM";
+      operands = [ rn; rl; mem ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LDM" c [ rn; rl ])
+    }
+  | LoadRegister (c,rt,rn,mem) -> {
       mnemonic = "LDR";
-      operands = [ dst; src ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "LDR" cc [ dst; src ])
+      operands = [ rt; rn; mem ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LDR" c [ rt; mem ])
     }
-  | LoadRegisterByte (cc, dst, src) -> {
+  | LoadRegisterByte (c,rt,rn,mem) -> {
       mnemonic = "LDRB";
-      operands = [ dst; src ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "LDRB" cc [ dst; src ])
+      operands = [ rt; rn; mem ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LDRB" c [ rn; mem ])
     }
-  | Mov (setflags, cc, rd, imm) -> {
+  | LoadRegisterDual (c,rt,rt2,rn,rm,mem) -> {
+      mnemonic = "LDRD";
+      operands = [rt;rt2;rn;rm;mem];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LDRD" c [rt;rt2;mem])
+    }
+  | LoadRegisterHalfword (c,rt,rn,rm,mem) -> {
+      mnemonic = "LDRH";
+      operands = [rt;rn;rm;mem];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LDRH" c [rt;mem])
+    }
+  | LogicalShiftLeft (s,c,rd,rn,rm) -> {
+      mnemonic = "LSL";
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LSL" c [rd;rn;rm])
+    }
+  | LogicalShiftRight (s,c,rd,rn,rm) -> {
+      mnemonic = "LSR";
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LSR" c [rd;rn;rm])
+    }
+  | Move (s,c,rd,rm) -> {
       mnemonic = "MOV";
-      operands = [ rd; imm ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "MOV" cc [ rd; imm ])
+      operands = [rd;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "MOV" c [rd;rm])
     }
-  | MoveTop (setflags, cc, rd, imm) -> {
+  | MoveTop (c,rd,imm) -> {
       mnemonic = "MOVT";
       operands = [ rd; imm ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "MOVT" cc [ rd; imm ])
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "MOVT" c [ rd; imm ])
     }
-  | MoveWide (setflags, cc, rd, imm) -> {
+  | MoveWide (c,rd,imm) -> {
       mnemonic = "MOVW";
       operands = [ rd; imm ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "MOVW" cc [ rd; imm ])
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "MOVW" c [ rd; imm ])
     }
-  | Multiply (setflags, cc, rd, rn, rm) -> {
+  | Multiply (s,c,rd,rn,rm) -> {
       mnemonic = "MUL";
-      operands = [ rd; rn; rm ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "MUL" cc [ rd; rn; rm ])
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "MUL" c [rd;rn;rm])
     }
-  | Pop (cc, rl) -> {
+  | MultiplyAccumulate (s,c,rd,rn,rm,ra) -> {
+      mnemonic = "MLA";
+      operands = [rd;rn;rm;ra];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "MLA" c [rd;rn;rm;ra])
+    }
+  | Pop (c,sp,rl) -> {
       mnemonic = "POP";
-      operands = [ rl ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "POP" cc [ rl ])
+      operands = [ sp; rl ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "POP" c [ rl ])
     }
-  | Push (cc, rl) -> {
+  | Push (c,sp,rl) -> {
       mnemonic = "PUSH";
-      operands = [ rl ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "PUSH" cc [ rl ])
+      operands = [ sp; rl ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "PUSH" c [ rl ])
     }
-  | ReverseSubtract (setflags, cc, rd, rn, rm) -> {
+  | ReverseSubtract (s,c,rd,rn,rm) -> {
       mnemonic = "RSB";
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "RSB" c [rd;rn;rm])
+    }
+  | ReverseSubtractCarry (setflags, cc, rd, rn, rm) -> {
+      mnemonic = "RSC";
       operands = [ rd; rn; rm ];
       ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "RSB" cc [ rd; rn; rm ])
+      ida_asm = (fun f -> f#opscc "RSC" cc [ rd; rn; rm ])
     }
-  | StoreRegister (cc, src, dst) -> {
+  | SignedExtendHalfword (c,rd,rm) -> {
+      mnemonic = "SXTH";
+      operands = [rd;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SXTH" c [rd;rm])
+    }
+  | SingleBitFieldExtract (c,rd,rn) -> {
+      mnemonic = "SBFX";
+      operands = [rd;rn];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SBFX" c [rd;rn])
+    }
+  | StoreMultipleIncrementAfter (wb,c,rn,rl,mem) -> { 
+      mnemonic = "STM";
+      operands = [ rn; rl ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "STM" c [ rn; rl ])
+    }
+  | StoreMultipleIncrementBefore (wb,c,rn,rl,mem) -> { 
+      mnemonic = "STMIB";
+      operands = [ rn; rl ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "STMIB" c [ rn; rl ])
+    }
+  | StoreRegister (c,rt,rn,mem) -> {
       mnemonic = "STR";
-      operands = [ src; dst ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "STR" cc [ src; dst ])
+      operands = [ rt; rn; mem ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "STR" c [ rt; mem ])
     }
-  | StoreRegisterByte (cc, src, dst) -> {
+  | StoreRegisterByte (c,rt,rn,mem) -> {
       mnemonic = "STRB";
-      operands = [ src; dst ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "STRB" cc [ src; dst ])
-    }                                  
-  | Subtract (setflags, cc, rd, rn, imm) -> {
+      operands = [ rt; rn; mem ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "STRB" c [ rt; mem ])
+    }
+  | StoreRegisterDual (c,rt,rt2,rn,rm,mem) -> {
+      mnemonic = "STRD";
+      operands = [rt;rt2;rn;rm;mem];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "STRD" c [rt;rt2;mem])
+    }
+  | StoreRegisterHalfword (c,rt,rn,rm,mem) -> {
+      mnemonic = "STRH";
+      operands = [rt;rn;rm;mem];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "STRH" c [rt;mem])
+    }
+  | Subtract (s,c,rd,rn,rm) -> {
       mnemonic = "SUB";
-      operands = [ rd; rn; imm ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "SUB" cc [ rd; rn; imm ])
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SUB" c [rd;rn;rm])
+    }
+  | SubtractCarry (s,c,rd,rn,rm) -> {
+      mnemonic = "SBC";
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SBC" c [rd;rn;rm])
     }
   | SupervisorCall (cc,imm) -> {
       mnemonic = "SVC";
@@ -238,13 +352,49 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "SVC" cc [ imm ])
     }
-  | UnsignedExtendHalfword (cc,dst,src) -> {
-      mnemonic = "UXTH";
-      operands = [ dst; src ];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "UXTH" cc [ dst; src ])
+  | Test (c,rn,rm) -> {
+      mnemonic = "TST";
+      operands = [rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "TST" c [rn;rm])
     }
-  | OpInvalid -> {
+  | TestEquivalence (c,rn,rm) -> {
+      mnemonic = "TEQ";
+      operands = [rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "TEQ" c [rn;rm])
+    }
+  | UnsignedBitFieldExtract (c,rd,rn) -> {
+      mnemonic = "UBFX";
+      operands = [rd;rn];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "UBFX" c [rd;rn])
+    }
+  | UnsignedExtendAddHalfword (c,rd,rn,rm) -> {
+      mnemonic = "UXTAH";
+      operands = [rd;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "UXTAH" c [rd;rn;rm])
+    }
+  | UnsignedExtendByte (c,rd,rm) -> {
+      mnemonic = "UXTB";
+      operands = [rd;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "UXTB" c [rd;rm])
+    }
+  | UnsignedExtendHalfword (c,rd,rm) -> {
+      mnemonic = "UXTH";
+      operands = [rd;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "UXTH" c [rd;rm])
+    }
+  | UnsignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) -> {
+      mnemonic = "UMULL";
+      operands = [rdlo;rdhi;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "UMULL" c [rdlo;rdhi;rn;rm])
+    }
+  | OpInvalid | NotCode _ -> {
       mnemonic = "invalid";
       operands = [];
       ccode = None;
