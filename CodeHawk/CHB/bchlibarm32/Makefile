@@ -27,6 +27,7 @@ CAMLLINK := ocamlopt \
 
 MLIS := \
 	bCHARMTypes \
+	bCHARMPseudocode \
 	bCHARMSumTypeSerializer \
 	bCHARMOperand \
 	bCHARMOpcodeRecords \
@@ -40,6 +41,7 @@ MLIS := \
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
 SOURCES := \
+	bCHARMPseudocode \
 	bCHARMSumTypeSerializer \
 	bCHARMOperand \
 	bCHARMOpcodeRecords \
