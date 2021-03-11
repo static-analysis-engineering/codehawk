@@ -65,7 +65,14 @@ type shift_rotate_type_t =
   | SRType_ROR
   | SRType_RRX
 
-type register_shift_t = shift_rotate_type_t * int
+type register_shift_rotate_t =
+  | ARMImmSRT of shift_rotate_type_t * int    (* immediate shift amount *)
+  | ARMRegSRT of shift_rotate_type_t * arm_reg_t (* shift amount in reg *)
+
+type arm_memory_offset_t =
+  | ARMImmOffset of int
+  | ARMIndexOffset of arm_reg_t
+  | ARMShiftedIndexOffset of arm_reg_t * register_shift_rotate_t
 
 type arm_instr_class_t =
   | DataProcRegType of    (* 27:25 000 *)
@@ -167,16 +174,17 @@ type arm_instr_class_t =
 type arm_operand_kind_t =
   | ARMReg of arm_reg_t
   | ARMRegList of arm_reg_t list
-  | ARMShiftedReg of arm_reg_t * register_shift_t option
-  | ARMRotatedReg of arm_reg_t * int
+  | ARMShiftedReg of arm_reg_t * register_shift_rotate_t
+  | ARMRegBitSequence of arm_reg_t * int * int (* lsb, widthm1 *)
   | ARMImmediate of immediate_int
   | ARMAbsolute of doubleword_int
+  | ARMMemMultiple of arm_reg_t * int  (* number of locations *)
   | ARMOffsetAddress of
-      arm_reg_t   (* base register *)
-      * int       (* offset (nonnegative) *)
-      * bool      (* isadd *)
-      * bool      (* iswback *)
-      * bool      (* isindex *)
+      arm_reg_t                  (* base register *)
+      * arm_memory_offset_t      (* offset *)
+      * bool                     (* isadd *)
+      * bool                     (* iswback *)
+      * bool                     (* isindex *)
 
 type arm_operand_mode_t = RD | WR | RW
 
@@ -206,6 +214,8 @@ class type arm_operand_int =
     method toPretty: pretty_t
   end
 
+type not_code_t = JumpTable of jumptable_int | DataBlock of data_block_int  
+
 type arm_opcode_cc_t =
   | ACCEqual
   | ACCNotEqual
@@ -225,142 +235,277 @@ type arm_opcode_cc_t =
   | ACCUnconditional
   
 type arm_opcode_t =
-  (* DataProcRegType *)
-  (* DataProcImmType *)
   | Add of
       bool (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
-      * arm_operand_int  (* rd *)
-      * arm_operand_int  (* rn *)
-      * arm_operand_int (* imm *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
   | AddCarry of
       bool (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
-      * arm_operand_int  (* rd *)
-      * arm_operand_int  (* rn *)
-      * arm_operand_int (* imm *)      
+      * arm_operand_int  (* rd: destionation *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
   | Adr of
       arm_opcode_cc_t (* condition *)
-      * arm_operand_int  (* destination register *)
-      * arm_operand_int  (* targetaddress *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* imm: pc-relative address *)
+  | ArithmeticShiftRight of
+      bool  (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm/imm: shift<0:7> *)
   | BitwiseAnd of
       bool (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
-      * arm_operand_int  (* destination *)
-      * arm_operand_int  (* source1 *)
-      * arm_operand_int  (* source2 *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm/imm: source 2 *)
   | BitwiseBitClear of
       bool   (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
-      * arm_operand_int  (* destination *)
-      * arm_operand_int  (* source1 *)
-      * arm_operand_int  (* source2 *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+  | BitwiseExclusiveOr of
+      bool   (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
   | BitwiseNot of
       bool (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
-      * arm_operand_int  (* destination *)
-      * arm_operand_int  (* source *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm/imm: source *)
   | BitwiseOr of
       bool (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
-      * arm_operand_int  (* destination *)
-      * arm_operand_int  (* source1 *)
-      * arm_operand_int  (* source2 *)
-  | BranchExchange of
-      arm_opcode_cc_t    (* condition *)
-      * arm_operand_int  (* target address *)
-  | BranchLinkExchange of
-      arm_opcode_cc_t    (* condition *)
-      * arm_operand_int  (* target address *)
-  | Compare of
-      arm_opcode_cc_t    (* condition *)
-      * arm_operand_int  (* register *)
-      * arm_operand_int  (* immediate *)
-  | CountLeadingZeros of
-      arm_opcode_cc_t    (* condition *)
-      * arm_operand_int  (* destination *)
-      * arm_operand_int  (* source *)
-  | Mov of
-      bool (* flags are set *)
-      * arm_opcode_cc_t (* condition *)
-      * arm_operand_int (* Rd *)
-      * arm_operand_int (* imm/reg *)
-  | MoveTop of
-      bool (* flags are set *)
-      * arm_opcode_cc_t (* condition *)
-      * arm_operand_int (* Rd *)
-      * arm_operand_int (* imm/reg *)
-  | MoveWide of
-      bool (* flags are set *)
-      * arm_opcode_cc_t (* condition *)
-      * arm_operand_int (* destination (reg) *)
-      * arm_operand_int (* source *)
-  | Multiply of
-      bool  (* flags are set *)
-      * arm_opcode_cc_t  (* condition *)
-      * arm_operand_int  (* destination *)
-      * arm_operand_int  (* source1 *)
-      * arm_operand_int  (* source2 *)
-  | Subtract of
-      bool   (* flags are set *)
-      * arm_opcode_cc_t  (* condition *)
-      * arm_operand_int  (* rd *)
-      * arm_operand_int  (* rn *)
-      * arm_operand_int  (* imm *)
-  (* LoadStoreRegType *)
-  | LoadRegister of
-      arm_opcode_cc_t    (* condition *)
-      * arm_operand_int  (* destination (reg) *)
-      * arm_operand_int  (* source (mem) *)
-  | LoadRegisterByte of
-      arm_opcode_cc_t    (* condition *)
-      * arm_operand_int  (* destination (reg) *)
-      * arm_operand_int  (* source (mem) *)
-  | ReverseSubtract of
-      bool   (* flags are set *)
-      * arm_opcode_cc_t  (* condition *)
-      * arm_operand_int  (* destination *)
-      * arm_operand_int  (* src1 *)
-      * arm_operand_int  (* src2 *)
-  | StoreRegister of
-      arm_opcode_cc_t    (* condition *)
-      * arm_operand_int  (* source (reg) *)
-      * arm_operand_int  (* destination (mem) *)
-  | StoreRegisterByte of
-      arm_opcode_cc_t    (* condition *)
-      * arm_operand_int  (* source (reg) *)
-      * arm_operand_int  (* destination (mem) *)
-  (* LoadStoreImmType *)
-  | Pop of
-      arm_opcode_cc_t   (* condition *)
-      * arm_operand_int  (* register list *)
-  | Push of
-      arm_opcode_cc_t   (* condition *)
-      * arm_operand_int (* register list *)
-  (* MediaType *)
-  | UnsignedExtendHalfword of
-      arm_opcode_cc_t   (* condition *)
-      * arm_operand_int (* destination *)
-      * arm_operand_int (* source *)
-  (* BlockDataType *)
-  (* BranchLinkType *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm/imm: source 2 *)
   | Branch of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* target address *)
+  | BranchExchange of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* target address *)
   | BranchLink of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* target address *)
+  | BranchLinkExchange of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* target address *)
+  | ByteReverseWord of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm: source *)
+  | Compare of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+  | CompareNegative of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* imm: source 2 *)
+  | CountLeadingZeros of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm: source *)
+  | LoadMultipleDecrementBefore of
+      bool    (* writeback *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rn: base *)
+      * arm_operand_int (* rl: register list *)
+      * arm_operand_int (* mem: multiple memory locations *)
+  | LoadMultipleIncrementAfter of
+      bool    (* writeback *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rn: base *)
+      * arm_operand_int (* rl: register list *)
+      * arm_operand_int (* mem: multiple memory locations *)
+  | LoadRegister of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt: destination *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* mem: memory location*)
+  | LoadRegisterByte of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt: destination *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* mem: memory location*)
+  | LoadRegisterDual of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt: destination 1 *)
+      * arm_operand_int  (* rt2: destination 2 *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rm/imm: index/immediate *)
+      * arm_operand_int  (* mem: memory location *)
+  | LoadRegisterHalfword of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt: destination *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rm/imm: index/immediate *)
+      * arm_operand_int  (* mem: memory location *)
+  | LogicalShiftLeft of
+      bool  (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm/imm: shift<0:7> *)
+  | LogicalShiftRight of
+      bool  (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm/imm: shift<0:7> *)
+  | Move of
+      bool (* flags are set *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rd: destination *)
+      * arm_operand_int (* rm/imm: source *)
+  | MoveTop of
+      arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rd: destination *)
+      * arm_operand_int (* imm: source *)
+  | MoveWide of
+      arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rd: destination *)
+      * arm_operand_int (* imm: source *)
+  | Multiply of
+      bool  (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+  | MultiplyAccumulate of
+      bool   (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+      * arm_operand_int  (* ra: accumulat *)
+  | Pop of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* stack pointer *)
+      * arm_operand_int  (* register list *)
+  | Push of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* stack pointer *)
+      * arm_operand_int  (* register list *)
+  | ReverseSubtract of
+      bool   (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+  | ReverseSubtractCarry of
+      bool  (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm/imm: source 2 *)
+  | SignedExtendHalfword of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm: source *)
+  | SingleBitFieldExtract of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source *)
+  | StoreMultipleIncrementAfter of
+      bool    (* writeback *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rn: base *)
+      * arm_operand_int (* rl: register list *)
+      * arm_operand_int (* mem: multiple memory locations *)
+  | StoreMultipleIncrementBefore of
+      bool    (* writeback *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rn: base *)
+      * arm_operand_int (* rl: register list *)
+      * arm_operand_int (* mem: multiple memory locations *)
+  | StoreRegister of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt: source *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* mem: memory location *)
+  | StoreRegisterByte of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt: source *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* mem: memory location *)
+  | StoreRegisterDual of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt: source 1 *)
+      * arm_operand_int  (* rt2: source 2 *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rm/imm: index/immdiate *)
+      * arm_operand_int  (* mem: memory location *)
+  | StoreRegisterHalfword of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt: source *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rm/imm: index/immediate *)
+      * arm_operand_int  (* mem: memory loction *)
+  | Subtract of
+      bool   (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm/imm: source 2 *)
+  | SubtractCarry of
+      bool   (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+  | Test of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm/imm: source 2 *)
+  | TestEquivalence of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+  | UnsignedBitFieldExtract of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source *)
+  | UnsignedExtendAddHalfword of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* rd: destination *)
+      * arm_operand_int (* rn: source 1 *)
+      * arm_operand_int (* rm: source 2 *)
+  | UnsignedExtendByte of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
+  | UnsignedExtendHalfword of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
+  | UnsignedMultiplyLong of
+      bool   (* flags are set *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rdlo: destination 1 *)
+      * arm_operand_int (* rdhi: destination 2 *)
+      * arm_operand_int (* rn: source 1 *)
+      * arm_operand_int (* rm: source 2 *)
+
   (* SupervisorType *)
   | SupervisorCall of arm_opcode_cc_t * arm_operand_int
-(* LoadStoreCoprocType *)
-(* CoprocessorType *)
-(* UnconditionalType *)
-(* Misc *)
+  (* Misc *)
   | OpInvalid
+  | NotCode of not_code_t option
 
 class type arm_dictionary_int =
   object
 
+    method index_register_shift_rotate: register_shift_rotate_t -> int
+    method index_arm_memory_offset: arm_memory_offset_t -> int
     method index_arm_opkind: arm_operand_kind_t -> int
     method index_arm_operand: arm_operand_int -> int
     method index_arm_opcode: arm_opcode_t -> int
@@ -386,11 +531,14 @@ class type arm_assembly_instruction_int =
     method get_opcode: arm_opcode_t
     method get_instruction_bytes: string
     method get_bytes_ashexstring: string
+    method get_non_code_block: not_code_t
 
     (* predicates *)
     method is_block_entry: bool
     method is_inlined_call: bool
     method is_valid_instruction: bool
+    method is_non_code_block: bool
+    method is_not_code: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit
@@ -404,6 +552,7 @@ class type arm_assembly_instructions_int =
 
     (* setters *)
     method set: int -> arm_assembly_instruction_int -> unit
+    method set_not_code: data_block_int list -> unit
 
     (* accessors *)
     method length: int
