@@ -41,4 +41,5 @@ val initialize_arm_instructions: int -> unit
 val initialize_arm_assembly_instructions:
   int  (* length in bytes of the combined executable sections *)
   -> doubleword_int   (* address of code base *)
+  -> data_block_int list 
   -> unit
