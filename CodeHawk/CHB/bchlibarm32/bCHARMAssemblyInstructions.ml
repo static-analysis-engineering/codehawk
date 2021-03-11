@@ -122,6 +122,41 @@ object (self)
                           INT index ;
                           STR " (length is " ; INT length ; STR ")" ]))
 
+  method set_not_code (data_blocks:data_block_int list) =
+    List.iter self#set_not_code_block data_blocks
+
+  method private set_not_code_block (db:data_block_int) =
+    let startaddr = db#get_start_address in
+    let endaddr = db#get_end_address in
+    if startaddr#lt codeBase then
+      chlog#add
+        "not code"
+        (LBLOCK [ STR "Ignoring data block "; STR db#toString;
+                  STR "; start address is less than start of code" ])
+    else if codeEnd#lt endaddr then
+      chlog#add
+        "not code"
+        (LBLOCK [ STR "Ignoring data block "; STR db#toString;
+                  STR "; end address is beyond end of code section" ])
+    else
+      let _ =
+        chlog#add
+          "not code"
+          (LBLOCK [ STR "start: " ; startaddr#toPretty; STR "; end: " ;
+                    endaddr#toPretty ]) in
+      let startindex = (startaddr#subtract codeBase)#to_int in
+      let startinstr =
+        make_arm_assembly_instruction
+          startaddr (NotCode (Some (DataBlock db))) "" in
+      let endindex = (endaddr#subtract codeBase)#to_int in
+      begin
+        set_instruction startindex startinstr;
+        for i = startindex + 1 to endindex - 1 do
+          set_instruction
+            i (make_arm_assembly_instruction (codeBase#add_int i) (NotCode None) "")
+        done
+      end
+
   method length = length
 
   method at_index (index:int) =
@@ -205,6 +240,10 @@ object (self)
   method toString ?(filter = fun _ -> true) () =
     let lines = ref [] in
     let firstNew = ref true in
+    let not_code_to_string nc =
+      match nc with
+      | JumpTable jt -> "jumptable"
+      | DataBlock db -> db#toString in
     let add_function_names va =
       if functions_data#is_function_entry_point va
          && functions_data#has_function_name va then
@@ -235,6 +274,7 @@ object (self)
                 Bytes.set statusString 2 'B' in
             let instrbytes = instr#get_instruction_bytes in
             let spacedstring = byte_string_to_spaced_string instrbytes in
+            let len = String.length spacedstring in
             let bytestring =
               if len <= 16 then
                 let s = Bytes.make 16 ' ' in
@@ -245,10 +285,12 @@ object (self)
               else
                 spacedstring ^ "\n" ^ (String.make 24 ' ') in
             match instr#get_opcode with
-            | OpInvalid ->
-               let line = (Bytes.to_string statusString) ^ va#to_hex_string
+            | OpInvalid  -> ()
+               (* let line = (Bytes.to_string statusString) ^ va#to_hex_string
                           ^ "  " ^ bytestring ^ "  **invalid**" in
-               lines := line :: !lines
+               lines := line :: !lines *)
+            | NotCode None -> ()
+            | NotCode (Some b) -> lines := (not_code_to_string b) :: !lines
             | _ ->
                let _ = 
                  if !firstNew then
@@ -269,7 +311,8 @@ let arm_assembly_instructions = ref (new arm_assembly_instructions_t 1 wordzero)
 
 let initialize_arm_assembly_instructions
       (length:int)  (* in bytes *)
-      (codebase:doubleword_int) =
+      (codebase:doubleword_int)
+      (data_blocks: data_block_int list) =
   begin
     chlog#add
       "disassembly"
@@ -277,5 +320,6 @@ let initialize_arm_assembly_instructions
                 codebase#toPretty ; STR " - " ;
                 (codebase#add_int length)#toPretty ]);
     initialize_instruction_segment length;
-    arm_assembly_instructions := new arm_assembly_instructions_t length codebase
+    arm_assembly_instructions := new arm_assembly_instructions_t length codebase;
+    !arm_assembly_instructions#set_not_code data_blocks
   end

@@ -69,6 +69,13 @@ object (self)
     | OpInvalid -> false
     | _ -> true
 
+  method is_non_code_block =
+    match opcode with
+    | NotCode (Some _) -> true
+    | _ -> false
+
+  method is_not_code = match opcode with NotCode _ -> true | _ -> false
+
   method get_address = vaddr
 
   method get_opcode = opcode
@@ -77,6 +84,16 @@ object (self)
 
   method get_bytes_ashexstring =
     byte_string_to_printed_string instruction_bytes
+
+  method get_non_code_block =
+    match opcode with
+    | NotCode (Some b) -> b
+    | _ ->
+       let msg = (LBLOCK [ STR "No data block found at " ; vaddr#toPretty ]) in
+       begin
+         ch_error_log#add "assembly instructions" msg;
+         raise (BCH_failure msg)
+       end
 
   method private is_function_entry_point =
     functions_data#is_function_entry_point self#get_address

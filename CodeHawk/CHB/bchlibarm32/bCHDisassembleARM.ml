@@ -80,7 +80,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   let size = String.length x in  
   (* let opcode_monitor = new opcode_monitor_t base size in *)
   let add_instruction position opcode bytes =
-    let index = (position + displacement) / 4 in  (* assume 4-byte aligned *)
+    let index = position + displacement in 
     let addr = base#add_int position in
     let instr = make_arm_assembly_instruction addr opcode bytes in
     begin
@@ -88,6 +88,32 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
       (* opcode_monitor#check_instruction instr *)
     end in
   let ch = system_info#get_string_stream x in
+  let not_code_length nc =
+    match nc with
+    | JumpTable jt -> jt#get_length
+    | DataBlock db -> db#get_length in
+  let not_code_set_string nc s =
+    match nc with
+    | DataBlock db -> db#set_data_string s
+    | _ -> () in
+  let is_data_block (pos:int) =
+    (!arm_assembly_instructions#at_index (displacement+pos))#is_non_code_block in
+  (* let is_not_code (pos:int) =
+    let instr = !arm_assembly_instructions#at_index pos in
+    match instr#get_opcode with | NotCode None -> true | _ -> false in *)
+  let skip_data_block (pos:int) ch =
+    let nonCodeBlock =
+      (!arm_assembly_instructions#at_index (displacement+pos))#get_non_code_block in
+    let len = not_code_length nonCodeBlock in
+    let sdata = Bytes.make len ' ' in
+    let _ = Bytes.blit (Bytes.of_string x) pos sdata 0 len in
+    begin
+      chlog#add
+        "skip data block"
+        (LBLOCK [ STR "pos: " ; INT pos; STR "; length: " ; INT len ]);
+      ch#skip_bytes len;
+      not_code_set_string nonCodeBlock (Bytes.to_string sdata)
+    end in
   let _ =
     chlog#add
       "disassembly"
@@ -98,18 +124,21 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
     begin
       while ch#pos < size do
         let prevPos = ch#pos in
-        let instrbytes = ch#read_doubleword in
-        let opcode =
-          try
-            disassemble_arm_instruction ch base instrbytes
-          with
-          | _ -> OpInvalid in
-        let currentPos = ch#pos in
-        let instrLen = currentPos - prevPos in
-        let instrBytes = Bytes.make instrLen ' ' in
-        let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0  instrLen in
-        let _ = add_instruction prevPos opcode (Bytes.to_string  instrBytes) in
-      ()
+        if is_data_block prevPos then
+          skip_data_block prevPos ch
+        else
+          let instrbytes = ch#read_doubleword in
+          let opcode =
+            try
+              disassemble_arm_instruction ch base instrbytes
+            with
+            | _ -> OpInvalid in
+          let currentPos = ch#pos in
+          let instrLen = currentPos - prevPos in
+          let instrBytes = Bytes.make instrLen ' ' in
+          let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0  instrLen in
+          let _ = add_instruction prevPos opcode (Bytes.to_string  instrBytes) in
+          ()
       done ;
       (* !arm_assembly_instructions#set_not_code opcode_monitor#get_data_blocks *)
     end
@@ -149,14 +178,19 @@ let disassemble_arm_sections () =
       let endOfCode = highest#get_addr#add highest#get_size in
       (startOfCode,endOfCode) in
   let sizeOfCode = endOfCode#subtract startOfCode in
+  let datablocks = system_info#get_data_blocks in
   let _ = initialize_arm_instructions sizeOfCode#to_int in 
   let _ = pverbose 
             [ STR "Create space for " ; sizeOfCode#toPretty ; STR " (" ;
 	      INT sizeOfCode#to_int ; STR ") instructions" ; NL ; NL ] in
-  let _ = initialize_arm_assembly_instructions sizeOfCode#to_int startOfCode in
+  let _ =
+    initialize_arm_assembly_instructions
+      sizeOfCode#to_int startOfCode datablocks in
   let _ =
     List.iter
       (fun (h,x) ->
         let displacement = (h#get_addr#subtract startOfCode)#to_int in
         disassemble h#get_addr displacement x) xSections in
+  let _ =
+    pr_debug [ STR ((!BCHARMAssemblyInstructions.arm_assembly_instructions)#toString ()) ] in
   sizeOfCode
