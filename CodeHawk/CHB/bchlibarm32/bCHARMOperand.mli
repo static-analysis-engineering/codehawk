@@ -54,16 +54,30 @@ val arm_immediate_op: immediate_int -> arm_operand_int
 
 val arm_absolute_op: doubleword_int -> arm_operand_mode_t -> arm_operand_int
 
-val mk_arm_shifted_register_op:
+val mk_arm_imm_shifted_register_op:
   arm_reg_t
   -> int (* shifttype *)
   -> int (* shiftamount *)
   -> arm_operand_mode_t
   -> arm_operand_int
 
+val mk_arm_reg_shifted_register_op:
+  arm_reg_t
+  -> int   (* shifttype *)
+  -> arm_reg_t  (* lowest byte is shift amount *)
+  -> arm_operand_mode_t
+  -> arm_operand_int
+
 val mk_arm_rotated_register_op:
   arm_reg_t
   -> int (* rotation *)
+  -> arm_operand_mode_t
+  -> arm_operand_int
+
+val mk_arm_reg_bit_sequence_op:
+  arm_reg_t
+  -> int  (* <lsb> bit number of least significant bit in the range 0-31 *)
+  -> int  (* <widthm1> width-1 of the field, in the range 0 to 31-<lsb> *)
   -> arm_operand_mode_t
   -> arm_operand_int
 
@@ -82,9 +96,15 @@ val mk_arm_absolute_target_op:
 
 val mk_arm_offset_address_op:
   arm_reg_t
-  -> int     (* nonnegative offset *)
-  -> bool    (* isadd *)
-  -> bool    (* iswback *)
-  -> bool    (* isindex *)
+  -> arm_memory_offset_t   (* nonnegative offset *)
+  -> isadd:bool
+  -> iswback:bool
+  -> isindex:bool
+  -> arm_operand_mode_t
+  -> arm_operand_int
+
+val mk_arm_mem_multiple_op:
+  arm_reg_t
+  -> int
   -> arm_operand_mode_t
   -> arm_operand_int

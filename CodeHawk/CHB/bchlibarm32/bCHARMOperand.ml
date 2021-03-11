@@ -58,6 +58,7 @@ open BCHXmlUtil
 open BCHELFHeader
 
 (* bchlibarm32 *)
+open BCHARMPseudocode
 open BCHARMTypes
 
    (* commonly used constant values *)
@@ -97,6 +98,25 @@ let shift_rotate_type_to_string (srt:shift_rotate_type_t) =
   | SRType_ROR -> "ROR"
   | SRType_RRX -> "RRX"
 
+let register_shift_to_string (rs:register_shift_rotate_t) =
+  match rs with
+  | ARMImmSRT (SRType_ROR,0) -> ""
+  | ARMImmSRT (srt,imm) ->
+     (shift_rotate_type_to_string srt) ^ " #" ^ (string_of_int imm)
+  | ARMRegSRT (srt,reg) ->
+     (shift_rotate_type_to_string srt) ^ " " ^ (armreg_to_string reg)
+
+let arm_memory_offset_to_string (offset:arm_memory_offset_t) =
+  match offset with
+  | ARMImmOffset off -> "#" ^ (string_of_int off)
+  | ARMIndexOffset r -> armreg_to_string r
+  | ARMShiftedIndexOffset (r,rs) ->
+     match rs with
+     | ARMImmSRT (SRType_LSL,0) -> armreg_to_string r
+     | _ ->
+        (armreg_to_string r) ^ "," ^ (register_shift_to_string rs)
+
+    (*
 let get_register_shift (shifttype:int) (imm:int):register_shift_t option =
   match (shifttype,imm) with
   | (0,0) -> None
@@ -111,7 +131,7 @@ let get_register_shift (shifttype:int) (imm:int):register_shift_t option =
           (LBLOCK [ STR "Unexpected arguments for get_register_shift: ";
                     STR "shifttype: " ; INT shifttype;
                     STR "imm: " ; INT imm ]))
-
+     *)
 class arm_operand_t
         (kind:arm_operand_kind_t) (mode:arm_operand_mode_t):arm_operand_int =
 object (self:'a)
@@ -178,27 +198,25 @@ object (self:'a)
     | ARMReg r -> armreg_to_string r
     | ARMRegList l ->
        "{" ^ String.concat "," (List.map armreg_to_string l) ^ "}"
-    | ARMShiftedReg (r,shift) ->
-       let pshift = match shift with
-         | None -> ""
-         | Some (srt,imm) ->
-            ", " ^ (shift_rotate_type_to_string srt) ^ "#" ^ (string_of_int imm) in
+    | ARMShiftedReg (r,rs) ->
+       let pshift = register_shift_to_string rs in
+       let pshift = if pshift = "" then "" else "," ^ pshift in
        (armreg_to_string r) ^ pshift
-    | ARMRotatedReg (r,rotation) ->
-       let protation = match rotation with
-         | 0 -> ""
-         | _ -> ", #" ^ (string_of_int rotation) in
-       (armreg_to_string r) ^ protation
-    | ARMImmediate imm -> imm#to_string
+    | ARMRegBitSequence (r,lsb,widthm1) ->
+       (armreg_to_string r) ^ ", #" ^ (string_of_int lsb)
+       ^ ", #" ^ (string_of_int (widthm1+1))
+    | ARMImmediate imm -> "#" ^ imm#to_string
     | ARMAbsolute addr -> addr#to_hex_string
+    | ARMMemMultiple (r,n) ->
+       (armreg_to_string r) ^ "<" ^ (string_of_int n) ^ ">"
     | ARMOffsetAddress (reg,offset,isadd,iswback,isindex) ->
-       let offset =
-         if isadd then string_of_int offset else "-" ^ (string_of_int offset) in
+       let poffset = arm_memory_offset_to_string offset in
+       let poffset = if isadd then poffset else "-" ^ poffset in
        (match (iswback,isindex) with
-        | (false,false) -> "??[" ^ (armreg_to_string reg) ^ ", " ^ offset ^ "]"
-        | (false,true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ offset ^ "]"
-        | (true,false) -> "[" ^ (armreg_to_string reg) ^ ", " ^ offset ^ "]!"
-        | (true,true) -> "[" ^ (armreg_to_string reg) ^ "], " ^ offset)
+        | (false,false) -> "??[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
+        | (false,true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
+        | (true,false) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]!"
+        | (true,true) -> "[" ^ (armreg_to_string reg) ^ "], " ^ poffset)
 
   method toPretty = STR self#toString
 
@@ -210,19 +228,37 @@ let arm_register_op (r:arm_reg_t) (mode:arm_operand_mode_t) =
 let arm_register_list_op (l:arm_reg_t list) (mode:arm_operand_mode_t) =
   new arm_operand_t (ARMRegList l) mode
 
-let mk_arm_shifted_register_op
+let mk_arm_imm_shifted_register_op
       (r:arm_reg_t)
-      (shifttype:int)
-      (shiftamount:int)
+      (ty:int)    (* 0 - 3 *)
+      (imm:int)
       (mode:arm_operand_mode_t) =
-  let shift = get_register_shift shifttype shiftamount in
-  new arm_operand_t (ARMShiftedReg (r,shift)) mode
+  let (shifttype,shiftamount) = decode_imm_shift ty imm in
+  let regshift = ARMImmSRT (shifttype,shiftamount) in
+  new arm_operand_t (ARMShiftedReg (r,regshift)) mode
+
+let mk_arm_reg_shifted_register_op
+      (r:arm_reg_t)         (* register to be shifted *)
+      (ty:int)              (* 0 - 3 *)
+      (rs:arm_reg_t)        (* register whose lowest byte controls the shift *)
+      (mode:arm_operand_mode_t) =
+  let shift = decode_reg_shift ty in
+  let regshift = ARMRegSRT (shift,rs) in
+  new arm_operand_t (ARMShiftedReg (r,regshift)) mode
 
 let mk_arm_rotated_register_op
       (r:arm_reg_t)
       (rotation:int)
       (mode:arm_operand_mode_t) =
-  new arm_operand_t (ARMRotatedReg (r,rotation)) mode
+  let regshift = ARMImmSRT (SRType_ROR,rotation) in
+  new arm_operand_t (ARMShiftedReg (r,regshift)) mode
+
+let mk_arm_reg_bit_sequence_op
+      (r:arm_reg_t)
+      (lsb:int)
+      (widthm1:int)
+      (mode:arm_operand_mode_t) =
+  new arm_operand_t (ARMRegBitSequence (r,lsb,widthm1)) mode
 
 let mk_arm_immediate_op (signed:bool) (size:int) (imm:numerical_t) =
     let immval =
@@ -257,8 +293,11 @@ let mk_arm_absolute_target_op
 
 let mk_arm_offset_address_op
       (reg:arm_reg_t)
-      (offset:int)
-      (isadd:bool)
-      (iswback:bool)
-      (isindex:bool) =
+      (offset:arm_memory_offset_t)
+      ~(isadd:bool)
+      ~(iswback:bool)
+      ~(isindex:bool) =
   new arm_operand_t (ARMOffsetAddress (reg,offset,isadd,iswback,isindex))
+
+let mk_arm_mem_multiple_op (reg:arm_reg_t) (n:int) =
+  new arm_operand_t (ARMMemMultiple (reg,n))

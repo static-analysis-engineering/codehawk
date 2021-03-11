@@ -86,6 +86,50 @@ let arm_reg_mfts: arm_reg_t mfts_int =
       (ARLR, "LR");
       (ARPC, "PC") ]
 
+let shift_rotate_type_mfts: shift_rotate_type_t mfts_int =
+  mk_mfts
+    "shift_rotate_type_t"
+    [ (SRType_LSL, "LSL");
+      (SRType_LSR, "LSR");
+      (SRType_ASR, "ASR");
+      (SRType_ROR, "ROR");
+      (SRType_RRX, "RRX") ]
+
+class register_shift_rotate_mcts_t: [ register_shift_rotate_t ] mfts_int =
+object
+
+  inherit [ register_shift_rotate_t ] mcts_t "register_shift_rotate_t"
+
+  method ts (r:register_shift_rotate_t) =
+    match r with
+    | ARMImmSRT _ -> "i"
+    | ARMRegSRT _ -> "r"
+
+  method tags = [ "i"; "r" ]
+
+end
+
+let register_shift_rotate_mcts:register_shift_rotate_t mfts_int =
+  new register_shift_rotate_mcts_t
+
+class arm_memory_offset_mcts_t: [ arm_memory_offset_t ] mfts_int =
+object
+
+  inherit [ arm_memory_offset_t ] mcts_t "arm_memory_offset_t"
+
+  method ts (f:arm_memory_offset_t) =
+    match f with
+    | ARMImmOffset _ -> "i"
+    | ARMIndexOffset _ -> "x"
+    | ARMShiftedIndexOffset _ -> "s"
+
+  method tags = [ "i"; "s"; "x" ]
+
+end
+
+let arm_memory_offset_mcts:arm_memory_offset_t mfts_int =
+  new arm_memory_offset_mcts_t
+
 class arm_opkind_mcts_t: [ arm_operand_kind_t ] mfts_int =
 object
 
@@ -95,13 +139,14 @@ object
     match k with
     | ARMReg _ -> "r"
     | ARMRegList _ -> "l"
+    | ARMRegBitSequence _ -> "b"
     | ARMShiftedReg _ -> "s"
-    | ARMRotatedReg _ -> "rr"
     | ARMImmediate _ -> "i"
     | ARMAbsolute _ -> "a"
+    | ARMMemMultiple _ -> "m"
     | ARMOffsetAddress _ -> "o"
 
-  method tags = [ "a"; "i"; "l"; "o"; "r"; "rr"; "s" ]
+  method tags = [ "a"; "b"; "i"; "l"; "m"; "o"; "r"; "rr"; "si"; "sr" ]
 
 end
 
