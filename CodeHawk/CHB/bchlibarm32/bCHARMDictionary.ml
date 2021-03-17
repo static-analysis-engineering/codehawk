@@ -188,7 +188,9 @@ object (self)
          (ctags c, [ oi rt; oi rn; oi mem ])
       | LoadRegisterDual (c,rt,rt2,rn,rm,mem) ->
          (ctags c,[ oi rt; oi rt2; oi rn; oi rm; oi mem])
-      | LoadRegisterHalfword (c,rt,rn,rm,mem) ->
+      | LoadRegisterHalfword (c,rt,rn,rm,mem)
+        | LoadRegisterSignedByte (c,rt,rn,rm,mem)
+        | LoadRegisterSignedHalfword (c,rt,rn,rm,mem) ->
          (ctags c,[ oi rt; oi rn; oi rm; oi mem])
       | LogicalShiftLeft (s,c,rd,rn,rm)
         | LogicalShiftRight (s,c,rd,rn,rm) ->
@@ -203,9 +205,14 @@ object (self)
          (tags @ [ ci cond ], [ setb setflags; oi rd; oi rn; oi rm; oi ra ])
       | Pop (c,sp,rl)
         | Push (c,sp,rl) ->  (ctags c, [ oi sp; oi rl ])
+      | RotateRightExtend (s,c,rd,rm) ->
+         (ctags c,[setb s; oi rd; oi rm])
       | SignedExtendHalfword (c,rd,rm) -> (ctags c, [ oi rd; oi rm ])
+      | SignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) ->
+         (ctags c,[setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | SingleBitFieldExtract (c,rd,rn) -> (ctags c, [ oi rd; oi rn ])
-      | StoreMultipleIncrementAfter (wb,c,rn,rl,mem)
+      | StoreMultipleDecrementBefore (wb,c,rn,rl,mem)
+        | StoreMultipleIncrementAfter (wb,c,rn,rl,mem)
         | StoreMultipleIncrementBefore (wb,c,rn,rl,mem) ->
          (ctags c, [ setb wb; oi rn; oi rl; oi mem ])
       | StoreRegister (c,rt,rn,mem)

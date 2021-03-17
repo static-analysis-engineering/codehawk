@@ -349,6 +349,18 @@ type arm_opcode_t =
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* rm/imm: index/immediate *)
       * arm_operand_int  (* mem: memory location *)
+  | LoadRegisterSignedByte of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt: destination *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rm/imm: index/immediate *)
+      * arm_operand_int  (* mem: memory location *)
+  | LoadRegisterSignedHalfword of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt: destination *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rm/imm: index/immediate *)
+      * arm_operand_int  (* mem: memory location *)
   | LogicalShiftLeft of
       bool  (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -407,14 +419,32 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: source 2 *)
+  | RotateRightExtend of
+      bool   (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm: source *)
   | SignedExtendHalfword of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
+  | SignedMultiplyLong of
+      bool   (* flags are set *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rdlo: destination 1 *)
+      * arm_operand_int (* rdhi: destination 2 *)
+      * arm_operand_int (* rn: source 1 *)
+      * arm_operand_int (* rm: source 2 *)
   | SingleBitFieldExtract of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source *)
+  | StoreMultipleDecrementBefore of
+      bool    (* writeback *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rn: base *)
+      * arm_operand_int (* rl: register list *)
+      * arm_operand_int (* mem: multiple memory locations *)
   | StoreMultipleIncrementAfter of
       bool    (* writeback *)
       * arm_opcode_cc_t (* condition *)
@@ -461,7 +491,7 @@ type arm_opcode_t =
       * arm_opcode_cc_t  (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
-      * arm_operand_int  (* rm: source 2 *)
+      * arm_operand_int  (* rm/imm: source 2 *)
   | Test of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn: source 1 *)
@@ -469,7 +499,7 @@ type arm_opcode_t =
   | TestEquivalence of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn: source 1 *)
-      * arm_operand_int  (* rm: source 2 *)
+      * arm_operand_int  (* rm/imm: source 2 *)
   | UnsignedBitFieldExtract of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)

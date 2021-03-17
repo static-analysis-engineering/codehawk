@@ -134,6 +134,19 @@ let parse_data_proc_reg_load_stores
       * LDRH<c> <Rt>, [<Rn>], +/-<Rm>                Post-x: (index,wback) = (F,T)  *)
      LoadRegisterHalfword (c,rt,rn,rm,mem)
 
+  (* <cc><0>pu0w1<rn><rt>< 0>1101<rm> *)   (* LDRSB *)
+  | (0,1,2) when bit11_8 = 0 ->
+     let rt = arm_register_op (get_arm_reg bit15_12) WR in
+     let rnreg = get_arm_reg bit19_16 in
+     let rmreg = get_arm_reg bit3_0 in
+     let rn = arm_register_op rnreg (if iswback then RW else RD) in
+     let rm = arm_register_op rmreg RD in
+     let offset = ARMIndexOffset rmreg in
+     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
+     (* LDRSB<c> <Rt>, [<Rn>,+/-<Rm>]{!}
+      * LDRSB<c> <Rt>, [<Rn>],+/-<Rm> *)
+     LoadRegisterSignedByte (c,rt,rn,rm,mem)
+
   (* <cc><0>pu1w0<rn><rt><iH>1011<iL> *)   (* STRH-imm *)
   | (1,0,1) ->
      let rt = arm_register_op (get_arm_reg bit15_12) RD in
@@ -193,6 +206,34 @@ let parse_data_proc_reg_load_stores
       * LDRH<c> <Rt>, [<Rn>, #+/-<imm>]!             Pre-x : (index,wback) = (T,T)
       * LDRH<c> <Rt>, [<Rn>], #+/-<imm>              Post-x: (index,wback) = (F,T) *)
      LoadRegisterHalfword (c,rt,rn,imm,mem)
+
+  (* <cc><0>pu1w1<rn><rt><iH>1101<iL> *)   (* LDRSB-imm *)
+  | (1,1,2) ->
+     let rt = arm_register_op (get_arm_reg bit15_12) WR in
+     let rnreg = get_arm_reg bit19_16 in
+     let rn = arm_register_op rnreg (if iswback then RW else RD) in
+     let imm32 = get_imm32 bit11_8 bit3_0 in
+     let imm = arm_immediate_op (immediate_from_int imm32) in
+     let offset = ARMImmOffset imm32 in
+     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
+     (* LDRSB<c> <Rt>, [<Rn>{, #+/-<imm8>}]
+      * LDRSB<c> <Rt>, [<Rn>], #+/-<imm8>
+      * LDRSB<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
+     LoadRegisterSignedByte (c,rt,rn,imm,mem)
+
+  (* <cc><0>pu1w1<rn><rt><iH>1111<iL> *)   (* LDRSH-imm *)
+  | (1,1,3) ->
+     let rt = arm_register_op (get_arm_reg bit15_12) WR in
+     let rnreg = get_arm_reg bit19_16 in
+     let rn = arm_register_op rnreg (if iswback then RW else RD) in
+     let imm32 = get_imm32 bit11_8 bit3_0 in
+     let imm = arm_immediate_op (immediate_from_int imm32) in
+     let offset = ARMImmOffset imm32 in
+     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
+     (* LDRSH<c> <Rt>, [<Rn>{, #+/-<imm8>}]
+      * LDRSH<c> <Rt>, [<Rn>], #+/-<imm8>
+      * LDRSH<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
+     LoadRegisterSignedHalfword (c,rt,rn,imm,mem)
 
   | _ -> OpInvalid
 
@@ -313,6 +354,15 @@ let parse_data_proc_reg_type
      (* ADC{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
      AddCarry (s,c,rd,rn,rm)
 
+  (* <cc><0>< 5>s<rn><rd><rs>0ty1<rm> *)   (* ADC-reg-shifted *)
+  | 5 when (bit4 = 1) ->
+     let s = (bit20 = 1) in
+     let rd = arm_register_op (get_arm_reg bit15_12) WR in
+     let rn = arm_register_op (get_arm_reg bit19_16) RD in
+     let rm = mk_reg_shift_reg bit3_0 bit6_5 bit11_8 RD in
+     (* ADC{S}<c> <Rd>, <Rn>, <Rm>, <type> <Rs> *)
+     AddCarry (s,c,rd,rn,rm)
+
   (* <cc><0>< 6>s<rn><rd><imm>ty0<rm> *)   (* SBC-reg *)
   | 6 when (bit4 = 0) ->
      let s = (bit20 = 1) in
@@ -322,6 +372,16 @@ let parse_data_proc_reg_type
      let rm = mk_imm_shift_reg bit3_0 bit6_5 imm5 RD in
      (* SBC{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
      SubtractCarry (s,c,rd,rn,rm)
+
+  (* <cc><0>< 6>s<hi><lo><rm>1001<rn> *)   (* SMULL *)
+  | 6 when (bit4 = 1) ->
+     let s = (bit20 = 1) in
+     let rdhi = arm_register_op (get_arm_reg bit19_16) WR in
+     let rdlo = arm_register_op (get_arm_reg bit15_12) WR in
+     let rm = arm_register_op (get_arm_reg bit11_8) RD in
+     let rn = arm_register_op (get_arm_reg bit3_0) RD in
+     (* SMULL{S} <RdLo>, <RdHi>, <Rn>, <Rm> *)
+     SignedMultiplyLong (s,c,rdlo,rdhi,rn,rm)
 
   (* <cc><0>< 8>1<rn>0000<imm>ty0<rm> *)   (* TST-reg *)
   | 8 when (bit20 = 1) && (bit4 = 0) ->
@@ -485,6 +545,18 @@ let parse_data_proc_reg_type
      (* ASR{S}<c> <Rd>, <Rn>, <Rm> *)
      ArithmeticShiftRight (s,c,rd,rn,rm)
 
+  (* <cc><0><13>s< 0><rd>< 0>0110<rm> *)   (* RRX *)
+  | 13 when (bit19_16 = 0)
+            && (bit11_8 = 0)
+            && (bit7 = 0)
+            && (bit6_5 = 3)
+            && (bit4 = 0) ->
+     let s = (bit20 = 1) in
+     let rd = arm_register_op (get_arm_reg bit15_12) WR in
+     let rm = arm_register_op (get_arm_reg bit3_0) RD in
+     (* RRX{S}<c> <Rd>, <Rm> *)
+     RotateRightExtend (s,c,rd,rm)
+
   (* <cc><0><14>s<rn><rd><imm>ty0<rm> *)   (* BIC-reg *)
   | 14 when (bit4 = 0) ->
      let s = (bit20 = 1) in
@@ -496,7 +568,7 @@ let parse_data_proc_reg_type
      BitwiseBitClear (s,c,rd,rn,rm)
 
   (* <cc><0><14>s<rn><rd><rs>0ty1<rm> *)   (* BIC-reg-shifted *)
-  | 14 when (bit4 = 1) ->
+  | 14 when (bit4 = 1) && (bit7 = 0) ->
      let s = (bit20 = 1) in
      let rd = arm_register_op (get_arm_reg bit15_12) WR in
      let rn = arm_register_op (get_arm_reg bit19_16) RD in
@@ -606,6 +678,15 @@ let parse_data_proc_imm_type
      (* ADC{S}<c> <Rd>, <Rn>, #<const> *)
      AddCarry (s,c,rd,rn,imm)
 
+  (* <cc><1>< 6>s<rn><rd><--imm12---> *)   (* SBC-imm *)
+  | 6 ->
+     let s = (bit20 = 1) in
+     let rd = arm_register_op (get_arm_reg bit15_12) WR in
+     let rn = arm_register_op (get_arm_reg bit19_16) RD in
+     let imm = mk_imm bit11_8 bit7_0 in
+     (* SBC{S}<c> <Rd>, <Rn>, #<const> *)
+     SubtractCarry (s,c,rd,rn,imm)
+
   (* <cc><1>< 7>s<rn><rd><--imm12---> *)   (* RSC-imm *)
   | 7 ->
      let s = (bit20 = 1) in
@@ -630,6 +711,13 @@ let parse_data_proc_imm_type
      let imm = mk_imm bit11_8 bit7_0 in
      (* TST<c> <Rn>, #<const> *)
      Test (c,rn,imm)
+
+  (* <cc><1>< 9>1<rn>< 0><--imm12---> *)   (* TEQ-imm *)
+  | 9 when (bit20 = 1) && (bit15_12 = 0) ->
+     let rn = arm_register_op (get_arm_reg bit19_16) RD in
+     let imm = mk_imm bit11_8 bit7_0 in
+     (* TEQ<c> <Rn>, #<const> *)
+     TestEquivalence (c,rn,imm)
 
   (* <cc><1><10>0<i4><rd><--imm12---> *)   (* MOVT    *)
   | 10 when (bit20 = 0) ->
@@ -1022,6 +1110,13 @@ let parse_load_store_multiple
      let rlop = arm_register_list_op rl WR in
      let mmem = mk_arm_mem_multiple_op rnreg (List.length rl) RD in
      LoadMultipleIncrementAfter (iswback,c,rn,rlop,mmem)
+
+  (* <cc><4>100w0<rn><register-list-> *)   (* STMDB (STMFD) *)
+  | (1,0,0) ->
+     let rlop = arm_register_list_op rl RD in
+     let mmem = mk_arm_mem_multiple_op rnreg (List.length rl) WR in
+     (* STMDB<c> <Rn>{!}, <registers> *)
+     StoreMultipleDecrementBefore (iswback,c,rn,rlop,mmem)
 
   (* <cc><4>100w1<rn><register-list-> *)   (* LDMDB (LDMEA) *)
   | (1,0,1) ->

@@ -220,6 +220,18 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDRH" c [rt;mem])
     }
+  | LoadRegisterSignedByte (c,rt,rn,rm,mem) -> {
+      mnemonic = "LDRSB";
+      operands = [ rt; rn; mem ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LDRSB" c [ rn; mem ])
+    }
+  | LoadRegisterSignedHalfword (c,rt,rn,rm,mem) -> {
+      mnemonic = "LDRSH";
+      operands = [ rt; rn; mem ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LDRSH" c [ rn; mem ])
+    }
   | LogicalShiftLeft (s,c,rd,rn,rm) -> {
       mnemonic = "LSL";
       operands = [rd;rn;rm];
@@ -286,17 +298,35 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "RSC" cc [ rd; rn; rm ])
     }
+  | RotateRightExtend (s,c,rd,rm) -> {
+      mnemonic = "RRX";
+      operands = [rd;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "RRX" c [rd;rm])
+    }
   | SignedExtendHalfword (c,rd,rm) -> {
       mnemonic = "SXTH";
       operands = [rd;rm];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SXTH" c [rd;rm])
     }
+  | SignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) -> {
+      mnemonic = "SMULL";
+      operands = [rdlo;rdhi;rn;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMULL" c [rdlo;rdhi;rn;rm])
+    }
   | SingleBitFieldExtract (c,rd,rn) -> {
       mnemonic = "SBFX";
       operands = [rd;rn];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SBFX" c [rd;rn])
+    }
+  | StoreMultipleDecrementBefore (wb,c,rn,rl,mem) -> {
+      mnemonic = "STMDB";
+      operands = [ rn; rl ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "STMDB" c [ rn; rl ])
     }
   | StoreMultipleIncrementAfter (wb,c,rn,rl,mem) -> { 
       mnemonic = "STM";
