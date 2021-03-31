@@ -191,10 +191,12 @@ type arm_operand_mode_t = RD | WR | RW
 class type arm_operand_int =
   object ('a)
 
-           (* accessors *)
+    (* accessors *)
     method get_kind: arm_operand_kind_t
     method get_mode: arm_operand_mode_t
     method get_register: arm_reg_t
+    method get_absolute_address: doubleword_int
+    method get_pc_relative_address: doubleword_int -> doubleword_int
 
     (* converters *)
     method to_numerical: numerical_t
@@ -207,7 +209,11 @@ class type arm_operand_int =
     method is_read: bool
     method is_write: bool
     method is_register: bool
+    method is_register_list: bool
     method is_absolute_address: bool
+    method is_pc_relative_address: bool
+
+    method includes_pc: bool
 
     (* i/o *)
     method toString: string
@@ -590,12 +596,17 @@ class type arm_assembly_instructions_int =
     method at_address: doubleword_int -> arm_assembly_instruction_int
     method get_code_addresses_rev:
              ?low:doubleword_int -> ?high:doubleword_int -> unit -> doubleword_int list
+    method get_next_valid_instruction_address: doubleword_int -> doubleword_int
     method get_num_instructions: int
     method get_num_unknown_instructions: int
 
     (* iterators *)
     method iteri: (int -> arm_assembly_instruction_int -> unit) -> unit
     method itera: (doubleword_int ->arm_assembly_instruction_int -> unit) -> unit
+
+    (* predicates *)
+    method is_code_address: doubleword_int -> bool
+    method has_next_valid_instruction: doubleword_int -> bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit
@@ -613,6 +624,7 @@ class type arm_assembly_block_int =
     method get_context: context_t list
     method get_context_string: ctxt_iaddress_t
     method get_last_address: doubleword_int
+    method get_instructions_rev: arm_assembly_instruction_int list
     method get_instructions: arm_assembly_instruction_int list
     method get_successors: ctxt_iaddress_t list
     method get_instruction: doubleword_int -> arm_assembly_instruction_int
@@ -652,7 +664,7 @@ class type arm_assembly_function_int =
 
     (* iterators *)
     method iter: (arm_assembly_block_int -> unit) -> unit
-    method itera: (ctxt_iaddress_t -> arm_assembly_instruction_int -> unit) -> unit
+    method itera: (ctxt_iaddress_t -> arm_assembly_block_int -> unit) -> unit
     method iteri:
              (doubleword_int -> ctxt_iaddress_t -> arm_assembly_instruction_int -> unit)
              -> unit
@@ -674,8 +686,6 @@ class type arm_assembly_functions_int =
 
     (* setters *)
     method add_function: arm_assembly_function_int -> unit
-    method add_functions_by_preamble: doubleword_int list
-    method inline_blocks: unit
 
     (* accessors *)
     method get_callgraph: callgraph_int
@@ -686,7 +696,7 @@ class type arm_assembly_functions_int =
     method get_num_functions: int
 
     (* iterators *)
-    method iter: (arm_assembly_functions_int -> unit) -> unit
+    method iter: (arm_assembly_function_int -> unit) -> unit
     method itera: (doubleword_int -> arm_assembly_function_int -> unit) -> unit
     method bottom_up_itera:
              (doubleword_int -> arm_assembly_function_int -> unit) -> unit

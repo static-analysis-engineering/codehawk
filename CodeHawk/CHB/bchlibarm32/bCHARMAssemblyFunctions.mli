@@ -25,24 +25,12 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
 (* bchlib *)
 open BCHLibTypes
 
 (* bchlibarm32 *)
 open BCHARMTypes
 
-(* val extract_so_symbol: arm_opcode_t list -> doubleword_int option *)
+val arm_assembly_functions: arm_assembly_functions_int
 
-val disassemble: doubleword_int -> int -> string -> unit
-val disassemble_arm_sections: unit -> doubleword_int
-
-val construct_functions_arm: unit -> unit
-(*
-val construct_functions: (unit -> doubleword_int list) -> unit
-
-
-val resolve_indirect_arm_calls: arm_assembly_function_int -> unit
- *)
+val get_arm_disassembly_metrics: unit -> disassembly_metrics_t

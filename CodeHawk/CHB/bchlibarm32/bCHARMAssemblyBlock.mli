@@ -28,21 +28,25 @@
 (* chlib *)
 open CHPretty
 
+(* chutil *)
+open CHXmlDocument
+
 (* bchlib *)
 open BCHLibTypes
 
 (* bchlibarm32 *)
 open BCHARMTypes
 
-(* val extract_so_symbol: arm_opcode_t list -> doubleword_int option *)
+val make_arm_assembly_block:
+  ?ctxt:context_t list    (* inline context, other function first *)
+  -> doubleword_int       (* function address *)
+  -> doubleword_int       (* first address of the basic block *)
+  -> doubleword_int       (* last address of the basic block *)
+  -> ctxt_iaddress_t list (* addresses of successor blocks *)
+  -> arm_assembly_block_int
 
-val disassemble: doubleword_int -> int -> string -> unit
-val disassemble_arm_sections: unit -> doubleword_int
-
-val construct_functions_arm: unit -> unit
-(*
-val construct_functions: (unit -> doubleword_int list) -> unit
-
-
-val resolve_indirect_arm_calls: arm_assembly_function_int -> unit
- *)
+val make_ctxt_arm_assembly_block:
+  context_t               (* new context to be prepended *)
+  -> arm_assembly_block_int
+  -> ctxt_iaddress_t list (* new successor blocks *)
+  -> arm_assembly_block_int

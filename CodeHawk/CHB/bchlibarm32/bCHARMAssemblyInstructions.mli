@@ -43,3 +43,6 @@ val initialize_arm_assembly_instructions:
   -> doubleword_int   (* address of code base *)
   -> data_block_int list 
   -> unit
+
+(* Replaces instructions with data blocks *)
+val set_data_references: doubleword_int list -> unit

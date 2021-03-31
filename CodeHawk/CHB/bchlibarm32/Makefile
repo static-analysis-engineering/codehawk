@@ -35,6 +35,9 @@ MLIS := \
 	bCHARMDisassemblyUtils \
 	bCHARMAssemblyInstruction \
 	bCHARMAssemblyInstructions \
+	bCHARMAssemblyBlock \
+	bCHARMAssemblyFunction \
+	bCHARMAssemblyFunctions \
 	bCHDisassembleARMInstruction \
 	bCHDisassembleARM \
 
@@ -49,6 +52,9 @@ SOURCES := \
 	bCHARMDisassemblyUtils \
 	bCHARMAssemblyInstruction \
 	bCHARMAssemblyInstructions \
+	bCHARMAssemblyBlock \
+	bCHARMAssemblyFunction \
+	bCHARMAssemblyFunctions \
 	bCHDisassembleARMInstruction \
 	bCHDisassembleARM \
 

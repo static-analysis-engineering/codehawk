@@ -147,6 +147,28 @@ object (self:'a)
          (BCH_failure
             (LBLOCK [ STR "Operand is not a register: " ; self#toPretty ]))
 
+  method get_absolute_address =
+    match kind with
+    | ARMAbsolute dw -> dw
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [ STR "Operand is not an absolute address: " ;
+                      self#toPretty ]))
+
+  method get_pc_relative_address (va: doubleword_int) =
+    match kind with
+    | ARMOffsetAddress (ARPC, ARMImmOffset off,isadd, _, _) ->
+       if isadd then
+         va#add_int (8 + off)
+       else
+         va#add_int (8 - off)
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [ STR "Operand is no a pc-relative address: ";
+                      self#toPretty ]))
+
   method to_numerical =
     match kind with
     | ARMImmediate imm -> imm#to_numerical
@@ -187,11 +209,24 @@ object (self:'a)
 
   method is_register = match kind with ARMReg _ -> true | _ -> false
 
+  method is_register_list = match kind with ARMRegList _ -> true | _ -> false
+
   method is_read = match mode with RW | RD -> true | _ -> false
 
   method is_write = match mode with RW | WR -> true | _ -> false
 
-  method is_absolute_address = false
+  method is_absolute_address =
+    match kind with ARMAbsolute _ -> true | _ -> false
+
+  method is_pc_relative_address =
+    match kind with
+    | ARMOffsetAddress (ARPC, ARMImmOffset _, _, _, _) -> true
+    | _ -> false
+
+  method includes_pc =
+    match kind with
+    | ARMRegList rl -> List.mem ARPC rl
+    | _ -> false
 
   method toString =
     match kind with

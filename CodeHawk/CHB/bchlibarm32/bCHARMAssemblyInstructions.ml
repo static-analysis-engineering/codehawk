@@ -36,14 +36,20 @@ open CHXmlDocument
 (* bchlib *)
 open BCHBasicTypes
 open BCHByteUtilities
+open BCHDataBlock
 open BCHDoubleword
 open BCHFunctionApi
 open BCHFunctionData
 open BCHFunctionSummary
 open BCHLibTypes
+open BCHStreamWrapper
+open BCHStrings
 open BCHSystemInfo
 
-       (* bchlibarm32 *)
+(* bchlibelf *)
+open BCHELFHeader
+
+(* bchlibarm32 *)
 open BCHARMAssemblyInstruction
 open BCHARMTypes
 open BCHARMOpcodeRecords
@@ -184,6 +190,34 @@ object (self)
                 (LBLOCK [ STR "Error in assembly-instructions:at-address: " ;
                           va#toPretty ]))
 
+  method get_next_valid_instruction_address (va:doubleword_int) =
+    let index = (va#subtract codeBase)#to_int in
+    let rec loop i =
+      if i >= len then
+        raise
+          (BCH_failure
+             (LBLOCK [ STR "There is no valid instruction after " ;
+                       va#toPretty ]))
+      else
+        match (self#at_index i)#get_opcode with
+        | OpInvalid -> loop (i+1)
+        | _ -> i in
+    codeBase#add_int (loop (index+1))
+
+  method has_next_valid_instruction (va:doubleword_int) =
+    let index = (va#subtract codeBase)#to_int in
+    let rec loop i =
+      if i >= len || (self#at_index i)#is_not_code then
+        false
+      else
+        match (self#at_index i)#get_opcode with
+        | OpInvalid -> loop (i+1)
+        | _ -> true in
+    loop (index+1)
+
+  method is_code_address (va:doubleword_int) =
+    codeBase#le va && va#lt codeEnd && (self#at_address va)#is_valid_instruction
+
   method get_code_addresses_rev ?(low=codeBase) ?(high=wordmax) () =
     let low = if low#lt codeBase then codeBase else low in
     let high =
@@ -243,24 +277,53 @@ object (self)
     let not_code_to_string nc =
       match nc with
       | JumpTable jt -> "jumptable"
-      | DataBlock db -> db#toString in
+      | DataBlock db ->
+         let s = db#get_data_string in
+         let ch = make_pushback_stream s in
+         let len = String.length s in
+         let addr = ref db#get_start_address in
+         let contents = ref [] in
+         begin
+           for i = 0 to ((len/4) - 1) do
+             begin
+               contents := (!addr, ch#read_doubleword) :: !contents;
+               addr := !addr#add_int 4
+             end
+           done;
+           ("\n" ^ (string_repeat "~" 80) ^ "\nData block (size: "
+            ^ (string_of_int len) ^ " bytes)\n\n"
+            ^ (String.concat
+                 "\n"
+                 (List.map
+                    (fun (a,v) ->
+                      match elf_header#get_string_at_address v with
+                      | Some s ->
+                         "  " ^ a#to_hex_string ^ "  " ^ v#to_hex_string
+                         ^ ": \"" ^ s ^ "\""
+                      | _ ->
+                         "  " ^ a#to_hex_string ^ "  " ^ v#to_hex_string)
+                    (List.rev !contents)))
+            ^ "\n" ^ (string_repeat "=" 80) ^ "\n")
+         end in
     let add_function_names va =
-      if functions_data#is_function_entry_point va
-         && functions_data#has_function_name va then
-        let names = (functions_data#get_function va)#get_names in
-        let fLine = match names with
-          | [] -> ""
-          | [ name ] ->
-             "\nfunction: " ^ name ^ "\n"
-             ^ (functions_data#get_function va)#get_function_name
-          | _ ->
-             "\nfunctions:\n"
-             ^ (String.concat "\n" (List.map (fun n -> "    " ^ n) names))
-             ^ "\n"
-             ^ (functions_data#get_function va)#get_function_name in
-        let line = "\n" ^ (string_repeat "-" 80) ^ fLine ^ "\n"
-                   ^ (string_repeat "-" 80) in
-        lines := line :: !lines in
+      if functions_data#is_function_entry_point va then
+        if functions_data#has_function_name va then
+          let names = (functions_data#get_function va)#get_names in
+          let fLine = match names with
+            | [] -> ""
+            | [ name ] ->
+               "\nfunction: " ^ name ^ "\n"
+               ^ (functions_data#get_function va)#get_function_name
+            | _ ->
+               "\nfunctions:\n"
+               ^ (String.concat "\n" (List.map (fun n -> "    " ^ n) names))
+               ^ "\n"
+               ^ (functions_data#get_function va)#get_function_name in
+          let line = "\n" ^ (string_repeat "-" 80) ^ fLine ^ "\n"
+                     ^ (string_repeat "-" 80) in
+          lines := line :: !lines
+        else
+          lines := "\n" :: !lines in
     begin
       self#itera
         (fun va instr ->
@@ -312,7 +375,7 @@ let arm_assembly_instructions = ref (new arm_assembly_instructions_t 1 wordzero)
 let initialize_arm_assembly_instructions
       (length:int)  (* in bytes *)
       (codebase:doubleword_int)
-      (data_blocks: data_block_int list) =
+      (datablocks: data_block_int list) =
   begin
     chlog#add
       "disassembly"
@@ -321,5 +384,36 @@ let initialize_arm_assembly_instructions
                 (codebase#add_int length)#toPretty ]);
     initialize_instruction_segment length;
     arm_assembly_instructions := new arm_assembly_instructions_t length codebase;
-    !arm_assembly_instructions#set_not_code data_blocks
+    !arm_assembly_instructions#set_not_code datablocks
   end
+
+let set_data_references (lst: doubleword_int list) =
+  let lst = List.sort (fun d1 d2 -> d1#compare d2) lst in
+  let rec get
+            (l: doubleword_int list)
+            (w: doubleword_int list)
+            (blocks: data_block_int list) =
+    match l with
+    | [] -> blocks
+    | hd::tl ->
+       (match w with
+        | [] -> get tl [ hd ] blocks
+        | whd::_ when (whd#add_int 4)#equal hd ->
+           get tl (hd::w) blocks
+        | _ ->
+           let lastaddr = List.hd w in
+           let w = List.rev w in
+           let firstaddr = List.hd w in
+           if (!arm_assembly_instructions#at_address firstaddr)#is_not_code then
+             get tl [ hd ] blocks
+           else
+             let db = make_data_block firstaddr (lastaddr#add_int 4) "" in
+             let sdata =
+               String.concat
+                 ""
+                 (List.map (fun a ->
+                      (!arm_assembly_instructions#at_address a)#get_instruction_bytes) w) in
+             let _ = db#set_data_string sdata in
+             get tl [ hd ] (db::blocks)) in
+  let datablocks = get lst [] [] in
+  !arm_assembly_instructions#set_not_code datablocks
