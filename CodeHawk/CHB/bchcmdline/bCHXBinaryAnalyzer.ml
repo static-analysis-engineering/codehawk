@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -76,6 +77,7 @@ open BCHMIPSAssemblyInstructions
 
 (* bchlibarm32 *)
 open BCHDisassembleARM
+open BCHARMAssemblyFunctions
 
 (* bchanalyze *)
 open BCHAnalysisTypes
@@ -408,12 +410,28 @@ let main () =
       let _ = system_info#set_elf in
       let _ = system_info#set_arm in
       let _ = system_info#initialize in
-      (* let t = ref (Unix.gettimeofday ()) in *)
+      let t = ref (Unix.gettimeofday ()) in
       let _ = pr_debug [ STR "Load ARM file ..." ; NL ] in
       let _ = load_elf_files () in
       let _ = pr_debug [ STR "disassemble sections ..." ; NL ] in
       let _ = disassemble_arm_sections () in
-      save_log_files "disassemble"
+      let _ = disassembly_summary#record_disassembly_time
+                ((Unix.gettimeofday ()) -. !t) in
+      let _ = construct_functions_arm() in
+      let _ = disassembly_summary#record_construct_functions_time
+                ((Unix.gettimeofday ()) -. !t) in
+      let _ = disassembly_summary#set_disassembly_metrics
+                (get_arm_disassembly_metrics ()) in
+      let _ =  pr_debug [ NL; NL; disassembly_summary#toPretty ; NL ] in
+      begin
+       file_output#saveFile
+          (get_asm_listing_filename ())
+          (STR ((!BCHARMAssemblyInstructions.arm_assembly_instructions)#toString ()));
+	file_output#saveFile
+          (get_orphan_code_listing_filename ())
+	  (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)));
+        save_log_files "disassemble"
+      end
                 
 
     else if !cmd = "analyze" && !architecture = "x86" && !fileformat = "pe" then
