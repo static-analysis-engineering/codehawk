@@ -62,10 +62,16 @@ open BCHELFHeader
 open BCHELFTypes
 
 (* bchlibarm32 *)
+open BCHARMAssemblyBlock
+open BCHARMAssemblyFunction
+open BCHARMAssemblyFunctions
 open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
 open BCHARMTypes
 open BCHDisassembleARMInstruction
+
+module H = Hashtbl
+module P = Pervasives
 
 module DoublewordCollections = CHCollections.Make (
   struct
@@ -191,6 +197,329 @@ let disassemble_arm_sections () =
       (fun (h,x) ->
         let displacement = (h#get_addr#subtract startOfCode)#to_int in
         disassemble h#get_addr displacement x) xSections in
-  let _ =
-    pr_debug [ STR ((!BCHARMAssemblyInstructions.arm_assembly_instructions)#toString ()) ] in
   sizeOfCode
+
+(* recognizes patterns of library function calls
+
+     F B 0x99bc  00 c6 8f e2       ADR      R12, 0x99c4
+         0x99c0  3a ca 8c e2       ADD      R12, R12, #237568
+         0x99c4  bc f8 bc e5       LDR      PC, [R12], #2236
+
+ *)
+let is_library_stub faddr =
+  if elf_header#is_program_address faddr then
+    let bytestring = byte_string_to_printed_string (elf_header#get_xsubstring faddr 12) in
+    let instrsegs = [
+        "00c68fe23aca8ce2\\(....\\)bce5"
+      ] in
+    List.exists (fun s ->
+        let regex = Str.regexp s in
+        Str.string_match regex bytestring 0) instrsegs
+  else
+    false
+
+let get_so_target (tgtaddr:doubleword_int) (instr:arm_assembly_instruction_int) =
+  if functions_data#has_function_name tgtaddr then
+    let fndata = functions_data#get_function tgtaddr in
+    if fndata#is_library_stub then
+      Some fndata#get_function_name
+    else
+      None
+  else
+    None
+
+let collect_data_references () =
+  let table = H.create 11 in
+  let add (a:doubleword_int) (instr:arm_assembly_instruction_int) =
+    let hxa = a#to_hex_string in
+    let entry =
+      if H.mem table hxa then
+        H.find table hxa
+      else
+        [] in
+    H.replace table hxa (instr::entry) in
+  begin
+    !arm_assembly_instructions#itera
+      (fun va instr ->
+        match instr#get_opcode with
+        | LoadRegister (_,_,_, mem) when mem#is_pc_relative_address ->
+           let a = mem#get_pc_relative_address va in
+           add a instr
+        | _ -> ());
+    H.fold (fun k v a -> (k,v)::a) table []
+  end
+
+let collect_function_entry_points () =
+  let addresses = new DoublewordCollections.set_t in
+  begin
+    !arm_assembly_instructions#itera
+      (fun va instr ->
+        match instr#get_opcode with
+        | BranchLink (_,op)
+          | BranchLinkExchange (_,op) when op#is_absolute_address ->
+           (match get_so_target op#get_absolute_address instr with
+            | Some sym ->
+               (functions_data#add_function op#get_absolute_address)#add_name sym
+            | _ -> addresses#add op#get_absolute_address)
+        | _ -> ()) ;
+    addresses#toList
+  end
+
+let set_block_boundaries () =
+  let set_block_entry a =
+    (!arm_assembly_instructions#at_address a)#set_block_entry in
+  let feps = functions_data#get_function_entry_points in
+  let datablocks = system_info#get_data_blocks in
+  begin
+    (* -------------------------------- record function entry points -- *)
+    List.iter
+      (fun fe ->
+        try
+          set_block_entry fe
+        with
+        | BCH_failure _ ->
+           chlog#add
+             "disassembly"
+             (LBLOCK [ STR "function entry point incorrect: " ;
+                       fe#toPretty ])) feps ;
+
+    (* -------------------------------- record end of data blocks -- *)
+    List.iter
+      (fun db ->
+        try
+          set_block_entry db#get_end_address
+        with
+        | BCH_failure _ ->
+           chlog#add
+             "disassembly"
+             (LBLOCK [ STR "data block end address incorrect: ";
+                       db#get_end_address#toPretty ])) datablocks;
+
+    (* ------------------- record targets of unconditional jumps -- *)
+    !arm_assembly_instructions#itera
+      (fun _ instr ->
+        try
+          (match instr#get_opcode with
+           | Branch (_,op) | BranchExchange (_,op) ->
+              if op#is_absolute_address then
+                let jmpaddr = op#get_absolute_address in
+                set_block_entry jmpaddr
+              else
+                ()
+           | _ -> ())
+        with
+        | BCH_failure p ->
+           chlog#add
+             "disassembly"
+             (LBLOCK [ STR "assembly instruction creates incorrect block entry: ";
+                       instr#toPretty ; STR ": " ; p ]));
+
+    (* -------------------------- incorporate jump successors -- *)
+    !arm_assembly_instructions#itera
+      (fun va _ ->
+        match system_info#get_successors va with
+        | [] -> ()
+        | l ->
+           begin
+             List.iter set_block_entry l;
+             set_block_entry (va#add_int 4)
+           end);
+
+    (* --------------- add block entries due to previous block-ending -- *)
+    !arm_assembly_instructions#itera
+      (fun va instr ->
+        let opcode = instr#get_opcode in
+        let is_block_ending =
+          match opcode with
+          | Pop (_,_,rl) -> rl#includes_pc
+          | Branch _ | BranchExchange _ -> true
+          | LoadRegister (_,dst,_,_)
+               when dst#is_register && dst#get_register = ARPC -> true
+          | LoadMultipleDecrementBefore (_,_,_,rl,_) when rl#includes_pc -> true
+          | _ -> false in
+        if is_block_ending && !arm_assembly_instructions#has_next_valid_instruction va then
+          set_block_entry
+            (!arm_assembly_instructions#get_next_valid_instruction_address va)
+        else
+          ())
+  end
+
+let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
+  if system_info#is_nonreturning_call faddr iaddr then
+    []
+  else
+    let instr = !arm_assembly_instructions#at_address iaddr in
+    let opcode = instr#get_opcode in
+    let next () =
+      if !arm_assembly_instructions#has_next_valid_instruction iaddr then
+        [ !arm_assembly_instructions#get_next_valid_instruction_address iaddr ]
+      else
+        begin
+          chlog#add
+            "disassembly"
+            (LBLOCK [ STR "Next instruction for " ; iaddr#toPretty ;
+                      STR " "; instr#toPretty ; STR " was not found" ]);
+          []
+        end in
+    let successors =
+      match system_info#get_successors iaddr with
+      | [] ->
+         (match opcode with
+          | Pop (ACCAlways,_,rl) when rl#includes_pc -> []
+          | Branch (ACCAlways,op)
+            | BranchExchange (ACCAlways,op) when op#is_register && op#get_register == ARLR ->
+             []
+          | Branch (ACCAlways,op)
+            | BranchExchange (ACCAlways,op) when op#is_absolute_address ->
+             [ op#get_absolute_address ]
+          | Branch (_,op)
+            | BranchExchange (_,op) when op#is_register && op#get_register == ARLR ->
+             (next ())
+          | Branch (_,op)
+            | BranchExchange (_,op) when op#is_absolute_address ->
+             (next ()) @ [ op#get_absolute_address ]
+          | _ -> (next ()))
+      | l ->
+         let _ = chlog#add
+                   "get-successors"
+                   (LBLOCK [ STR "Get successors for ";
+                             iaddr#toPretty;
+                             STR ": "; INT (List.length l)]) in
+         l in
+    List.map
+      (fun va -> (make_location { loc_faddr = faddr; loc_iaddr = va })#ci)
+      (List.filter
+         (fun va ->
+           if !arm_assembly_instructions#is_code_address va then
+             true
+           else
+             begin
+               chlog#add
+                 "disassembly"
+                 (LBLOCK [ STR "Successor of " ; va#toPretty;
+                           STR " is not a valid code address"]);
+               false
+             end) successors)
+
+let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
+  let get_instr = !arm_assembly_instructions#at_address in
+  let get_next_instr_address =
+    !arm_assembly_instructions#get_next_valid_instruction_address in
+  let rec find_last_instruction (va:doubleword_int) (prev:doubleword_int) =
+    let instr = get_instr va in
+    let floc = get_floc (make_location { loc_faddr = faddr; loc_iaddr = va }) in
+    let _ = floc#set_instruction_bytes instr#get_instruction_bytes in
+    if va#equal wordzero then
+      (Some [],prev,[])
+    else if instr#is_block_entry then
+      (None,prev,[])
+    else if floc#has_call_target && floc#get_call_target#is_nonreturning then
+      let _ = chlog#add "non-returning" floc#l#toPretty in
+      (Some [],va,[])
+    else if !arm_assembly_instructions#has_next_valid_instruction va then
+      find_last_instruction (get_next_instr_address va) va
+    else (None,va,[]) in
+  let (succ,lastaddr,inlinedblocks) =
+    if !arm_assembly_instructions#has_next_valid_instruction baddr then
+      let floc = get_floc (make_location {loc_faddr = faddr; loc_iaddr = baddr }) in
+      let _ = floc#set_instruction_bytes (get_instr baddr)#get_instruction_bytes in
+      find_last_instruction (get_next_instr_address baddr) baddr
+    else (None,baddr,[]) in
+  let successors = match succ with
+    | Some s -> s
+    | _ -> get_successors faddr lastaddr in
+  (inlinedblocks,make_arm_assembly_block faddr baddr lastaddr successors)
+
+let trace_function (faddr:doubleword_int) =
+  let workset = new DoublewordCollections.set_t in
+  let doneset = new DoublewordCollections.set_t in
+  let set_block_entry a =
+    (!arm_assembly_instructions#at_address a)#set_block_entry in
+  let get_iaddr s = (ctxt_string_to_location faddr s)#i in
+  let add_to_workset l =
+    List.iter (fun a -> if doneset#has a then () else workset#add a) l in
+  let blocks = ref [] in
+  let rec add_block (blockentry:doubleword_int) =
+    let (inlinedblocks,block) = trace_block faddr blockentry in
+    let blocksuccessors = block#get_successors in
+    begin
+      set_block_entry blockentry;
+      workset#remove blockentry;
+      doneset#add blockentry;
+      blocks := (block :: inlinedblocks) @ !blocks;
+      add_to_workset (List.map get_iaddr blocksuccessors);
+      match workset#choose with Some a -> add_block a | _ -> ()
+    end in
+  let _ = add_block faddr in
+  let blocklist =
+    List.sort (fun b1 b2 ->
+        P.compare b1#get_context_string b2#get_context_string) !blocks in
+  let successors =
+    List.fold_left
+      (fun acc b ->
+        let src = b#get_context_string in
+        (List.map (fun tgt -> (src,tgt)) b#get_successors) @ acc) [] blocklist in
+  make_arm_assembly_function faddr blocklist successors
+
+let construct_assembly_function (count:int) (faddr:doubleword_int) =
+      try
+        if !arm_assembly_instructions#is_code_address faddr then
+          let fn = trace_function faddr in
+          arm_assembly_functions#add_function fn
+      with
+      | BCH_failure p ->
+         begin
+           ch_error_log#add
+             "construct assembly function"
+             (LBLOCK [ faddr#toPretty ; STR ": " ; p ]);
+           raise
+             (BCH_failure
+                (LBLOCK [ STR "Error in constructing function " ;
+                          faddr#toPretty ; STR ": " ; p ]))
+         end
+
+let set_library_stub_name faddr =
+  pr_debug [ STR "Encountered set library stub name: " ; faddr#toPretty ; NL ]
+
+let construct_functions_arm () =
+  let _ =
+    system_info#initialize_function_entry_points collect_function_entry_points in
+  let dataAddrs = collect_data_references () in
+  let addrs = List.map (fun (a,_) -> string_to_doubleword a) dataAddrs in
+  let _ = set_data_references addrs in
+  let _ = set_block_boundaries () in
+  let fnentrypoints = functions_data#get_function_entry_points in
+  let count = ref 0 in
+  begin
+    List.iter
+      (fun faddr ->
+        let default () =
+          try
+            begin
+              count := !count + 1;
+              construct_assembly_function !count faddr
+            end
+          with
+          | BCH_failure p ->
+             ch_error_log#add
+               "construct functions"
+               (LBLOCK [ STR "Function " ; faddr#toPretty ; STR ": " ; p ]) in
+        let fndata = functions_data#get_function faddr in
+        if fndata#is_library_stub then
+          ()
+        else if fndata#has_name then
+          if is_library_stub faddr then
+            begin
+              fndata#set_library_stub;
+              chlog#add
+                "ELF library stub"
+                (LBLOCK [ faddr#toPretty ; STR ": " ; STR fndata#get_function_name ])
+            end
+          else
+            default ()
+        else if is_library_stub faddr then
+          set_library_stub_name faddr
+        else
+          default ()
+      ) fnentrypoints
+  end
