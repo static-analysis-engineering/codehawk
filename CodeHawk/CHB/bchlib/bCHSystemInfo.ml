@@ -147,6 +147,7 @@ object (self)
   val class_membership = H.create 2
   val mutable constant_files = []
   val lib_functions_loaded = H.create 3 (* functions loaded via LoadLibrary/GetProcAddress *)
+  val successors = H.create 3
 
   val mutable user_data_blocks = 0 
   val mutable user_call_targets = 0
@@ -164,6 +165,18 @@ object (self)
 
   method is_in_readonly_range (a:doubleword_int) =
     List.fold_left (fun r (s,e) -> r || (s#le a && a#lt e)) false readonly_ranges
+
+  method get_successors (a:doubleword_int) =
+    let hxa = a#to_hex_string in
+    if H.mem successors hxa then
+      let _ =
+        chlog#add
+          "provide successors"
+          (LBLOCK [ STR hxa; STR ": ";
+                    INT (List.length (H.find successors hxa))]) in
+      H.find successors hxa
+    else
+      []
 
   method import_ida_function_entry_points =
     match load_ida_dbfe_file () with
@@ -589,6 +602,11 @@ object (self)
 	    self#read_xml_call_targets_i cnode ;
 	    user_call_targets <- user_call_targets + List.length cnode#getChildren
 	  end) ;
+      (if hasc "successors" then
+         let snode = getc "successors" in
+         begin
+           self#read_xml_successors snode
+         end);
       (if hasc "jump-table-targets" then
          let jnode = getc "jump-table-targets" in
          begin
@@ -777,7 +795,25 @@ object (self)
         let lb = geti "lb" in
         let ub = geti "ub" in
         self#add_jump_table_target faddr iaddr jta lb ub)
-    (node#getTaggedChildren "tgt")
+      (node#getTaggedChildren "tgt")
+
+  method private read_xml_successors (node:xml_element_int) =
+    (* Expected format:
+       <successors>
+          <instr ia="0xaaaaa"
+                 ss="0x1a,0x2a....."/>
+       </successors> *)
+    List.iter (fun n ->
+        let get = n#getAttribute in
+        let ia = get "ia" in
+        let ss = get "ss" in
+        let addrs = List.map string_to_doubleword (nsplit ',' ss) in
+        let _ =
+          chlog#add
+            "add successors"
+            (LBLOCK [ STR "Instruction at " ; STR ia ]) in
+        H.add successors ia addrs)
+      (node#getTaggedChildren "instr")
  
   method private read_xml_encodings (node:xml_element_int) =
     List.iter (fun n ->
