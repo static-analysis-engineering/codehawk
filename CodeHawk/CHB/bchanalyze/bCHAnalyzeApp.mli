@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,4 +42,5 @@ val analyze: float -> unit
 val analyze_x86_function: doubleword_int -> assembly_function_int -> unit
 val analyze_mips_function: doubleword_int -> mips_assembly_function_int -> int -> unit
 val analyze_mips: float -> unit
+val analyze_arm: float -> unit
 

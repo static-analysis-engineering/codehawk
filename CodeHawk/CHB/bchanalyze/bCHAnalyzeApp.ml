@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +61,15 @@ open BCHMIPSAssemblyFunctions
 open BCHMIPSLoopStructure
 open BCHMIPSMetrics
 open BCHTranslateMIPSToCHIF
+
+(* bchlibarm32 *)
+open BCHDisassembleARM
+open BCHARMAnalysisResults
+open BCHARMAssemblyFunctions
+open BCHARMCHIFSystem
+open BCHARMLoopStructure
+open BCHARMMetrics
+open BCHTranslateARMToCHIF
 
 (* bchanalyze *)
 open BCHAnalysisTypes
@@ -294,4 +304,51 @@ let analyze_mips starttime =
                          
     file_metrics#record_runtime ((Unix.gettimeofday ()) -. starttime) ;      
   end
+
+let analyze_arm_function faddr f count =
+  let fstarttime = Unix.gettimeofday () in
+  let finfo = load_function_info faddr in
+  let _ = pr_debug [ STR "Analyze "; faddr#toPretty; STR " (started: ";
+                     STR (time_to_string fstarttime); STR ")"; NL ] in
+  let _ = translate_arm_assembly_function f in
+  if arm_chif_system#has_arm_procedure faddr then
+    let _ = record_arm_loop_levels faddr in
+    let proc = arm_chif_system#get_arm_procedure faddr in
+    begin
+      bb_invariants#reset;
+      analyze_procedure_with_intervals proc arm_chif_system#get_arm_system;
+      analyze_procedure_with_linear_equalities proc arm_chif_system#get_arm_system;
+      analyze_procedure_with_valuesets proc arm_chif_system#get_arm_system;
+      extract_ranges finfo bb_invariants#get_invariants;
+      extract_linear_equalities finfo bb_invariants#get_invariants;
+      extract_valuesets finfo bb_invariants#get_invariants;
+      finfo#reset_invariants;
+      save_function_info finfo;
+      save_function_invariants finfo;
+      arm_analysis_results#record_results f;
+      save_function_variables finfo;
+      file_metrics#record_results
+        faddr
+        ((Unix.gettimeofday ()) -. fstarttime)
+        (get_arm_memory_access_metrics f finfo)
+        (get_arm_cfg_metrics f finfo#env)
+    end
+  else
+    pr_debug [STR "Translation failed for "; faddr#toPretty; NL]
            
+let analyze_arm starttime =
+  let count = ref 0 in
+  begin
+    arm_assembly_functions#bottom_up_itera
+      (fun faddr f ->
+        if file_metrics#is_stable faddr#to_hex_string []
+           && (not !analyze_all) then
+          arm_analysis_results#record_results ~save:false f
+        else
+          let _ = count := !count + 1 in
+          try
+            analyze_arm_function faddr f !count
+          with
+          | BCH_failure p ->
+             raise (BCH_failure p))
+  end
