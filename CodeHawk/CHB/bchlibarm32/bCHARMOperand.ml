@@ -71,25 +71,6 @@ let e32 = e16 * e16
 
 let arm_operand_mode_to_string = function RD -> "RD" | WR -> "WR" | RW -> "RW"
 
-let armreg_to_string (r:arm_reg_t) =
-  match r with
-  | AR0 -> "R0"
-  | AR1 -> "R1"
-  | AR2 -> "R2"
-  | AR3 -> "R3"
-  | AR4 -> "R4"
-  | AR5 -> "R5"
-  | AR6 -> "R6"
-  | AR7 -> "R7"
-  | AR8 -> "R8"
-  | AR9 -> "R9"
-  | AR10 -> "R10"
-  | AR11 -> "R11"
-  | AR12 -> "R12"
-  | ARSP -> "SP"
-  | ARLR -> "LR"
-  | ARPC -> "PC"
-
 let shift_rotate_type_to_string (srt:shift_rotate_type_t) =
   match srt with
   | SRType_LSL -> "LSL"
@@ -116,22 +97,6 @@ let arm_memory_offset_to_string (offset:arm_memory_offset_t) =
      | _ ->
         (armreg_to_string r) ^ "," ^ (register_shift_to_string rs)
 
-    (*
-let get_register_shift (shifttype:int) (imm:int):register_shift_t option =
-  match (shifttype,imm) with
-  | (0,0) -> None
-  | (0,n) -> Some (SRType_LSL,n)
-  | (1,n) -> Some (SRType_LSR,n)
-  | (2,n) -> Some (SRType_ASR,n)
-  | (3,0) -> Some (SRType_RRX,0)
-  | (3,n) -> Some (SRType_ROR,n)
-  | _ ->
-     raise
-       (BCH_failure
-          (LBLOCK [ STR "Unexpected arguments for get_register_shift: ";
-                    STR "shifttype: " ; INT shifttype;
-                    STR "imm: " ; INT imm ]))
-     *)
 class arm_operand_t
         (kind:arm_operand_kind_t) (mode:arm_operand_mode_t):arm_operand_int =
 object (self:'a)
@@ -146,6 +111,24 @@ object (self:'a)
        raise
          (BCH_failure
             (LBLOCK [ STR "Operand is not a register: " ; self#toPretty ]))
+
+  method get_register_count =
+    match kind with
+    | ARMRegList rl -> List.length rl
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Operand is not a register list: ";
+                     self#toPretty]))
+
+  method get_register_list =
+    match kind with
+    | ARMRegList rl -> rl
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Operand is not a register list: ";
+                     self#toPretty]))
 
   method get_absolute_address =
     match kind with
@@ -166,7 +149,7 @@ object (self:'a)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Operand is no a pc-relative address: ";
+            (LBLOCK [ STR "Operand is not a pc-relative address: ";
                       self#toPretty ]))
 
   method to_numerical =
@@ -186,26 +169,76 @@ object (self:'a)
             (LBLOCK [ STR "Cannot take address of immediate operand: " ;
                       self#toPretty ]))
 
-  method to_variable (floc:floc_int):variable_t =
+  method to_variable (floc:floc_int): variable_t =
+    let env = floc#f#env in
     match kind with
+    | ARMReg r -> env#mk_arm_register_variable r
+    | ARMOffsetAddress (r,offset,isadd,iswback,isindex) ->
+       let rvar = env#mk_arm_register_variable r in
+       let memoff =
+         match (offset,isadd) with
+         | (ARMImmOffset i,true) -> mkNumerical i
+         | (ARMImmOffset i,false) -> (mkNumerical i)#neg
+         | _ ->
+            raise
+              (BCH_failure
+                 (LBLOCK [STR "to_variable: offset not implemented: ";
+                          self#toPretty])) in
+       floc#get_memory_variable_1 rvar memoff
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Not implemented" ]))
+            (LBLOCK [ STR "Operand:to_variable not yet implemented for: ";
+                      self#toPretty]))
 
-  method to_expr (floc:floc_int):xpr_t =
+  method to_multiple_variable (floc:floc_int): variable_t list =
+    let env = floc#f#env in
     match kind with
+    | ARMRegList rl -> List.map env#mk_arm_register_variable rl
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Not implemented" ]))
+            (LBLOCK [STR "to-multiple-variable not applicable: ";
+                     self#toPretty]))
+
+  method to_expr (floc:floc_int): xpr_t =
+    match kind with
+    | ARMImmediate imm ->
+       big_int_constant_expr imm#to_big_int
+    | ARMReg _ -> XVar (self#to_variable floc)
+    | ARMOffsetAddress _ -> XVar (self#to_variable floc)
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [ STR "Operand:to_expr not yet implemented for: ";
+                      self#toPretty]))
+
+  method to_multiple_expr (floc:floc_int): xpr_t list =
+    let env = floc#f#env in
+    match kind with
+    | ARMRegList rl ->
+       List.map (fun r -> XVar (env#mk_arm_register_variable r)) rl
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "to-multiple-expr not applicable: ";
+                     self#toPretty]))
 
   method to_lhs (floc:floc_int) =
     match kind with
+    | ARMImmediate _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Immediate cannot be a lhs: ";
+                     self#toPretty]))
+    | ARMReg _ -> (self#to_variable floc, [])
+    | ARMOffsetAddress _ -> (self#to_variable floc, [])
     | _ ->
        raise
          (BCH_failure
             (LBLOCK [ STR "Not implemented" ]))
+
+  method is_immediate = match kind with ARMImmediate _ -> true | _ -> false
 
   method is_register = match kind with ARMReg _ -> true | _ -> false
 
@@ -240,7 +273,7 @@ object (self:'a)
     | ARMRegBitSequence (r,lsb,widthm1) ->
        (armreg_to_string r) ^ ", #" ^ (string_of_int lsb)
        ^ ", #" ^ (string_of_int (widthm1+1))
-    | ARMImmediate imm -> "#" ^ imm#to_string
+    | ARMImmediate imm -> "#" ^ imm#to_hex_string
     | ARMAbsolute addr -> addr#to_hex_string
     | ARMMemMultiple (r,n) ->
        (armreg_to_string r) ^ "<" ^ (string_of_int n) ^ ">"
@@ -336,3 +369,15 @@ let mk_arm_offset_address_op
 
 let mk_arm_mem_multiple_op (reg:arm_reg_t) (n:int) =
   new arm_operand_t (ARMMemMultiple (reg,n))
+
+let sp_r mode = arm_register_op ARSP mode
+
+let arm_sp_deref ?(with_offset=0) (mode:arm_operand_mode_t) =
+  if with_offset >= 0 then
+    let offset = ARMImmOffset with_offset in
+    mk_arm_offset_address_op
+      ARSP offset ~isadd:true ~iswback:false ~isindex:false mode
+  else
+    let offset = ARMImmOffset (-with_offset) in
+    mk_arm_offset_address_op
+      ARSP offset ~isadd:false ~iswback:false ~isindex:false mode

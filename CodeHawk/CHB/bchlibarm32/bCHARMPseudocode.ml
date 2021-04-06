@@ -37,6 +37,7 @@ open CHPretty
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHLibTypes
    
 (* bchlibarm32 *)
 open BCHARMTypes

@@ -31,7 +31,7 @@ open CHSumTypeSerializer
 (* bchlibarm32 *)
 open BCHARMTypes
 
-val arm_reg_mfts: arm_reg_t mfts_int
+(* val arm_reg_mfts: arm_reg_t mfts_int *)
 val shift_rotate_type_mfts: shift_rotate_type_t mfts_int
 val register_shift_rotate_mcts: register_shift_rotate_t mfts_int
 

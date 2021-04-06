@@ -38,8 +38,15 @@ MLIS := \
 	bCHARMAssemblyBlock \
 	bCHARMAssemblyFunction \
 	bCHARMAssemblyFunctions \
+	bCHARMCodePC \
+	bCHARMCHIFSystem \
 	bCHDisassembleARMInstruction \
 	bCHDisassembleARM \
+	bCHARMLoopStructure \
+	bCHTranslateARMToCHIF \
+	bCHARMMetrics \
+	bCHFnARMDictionary \
+	bCHARMAnalysisResults \
 
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
@@ -55,8 +62,15 @@ SOURCES := \
 	bCHARMAssemblyBlock \
 	bCHARMAssemblyFunction \
 	bCHARMAssemblyFunctions \
+	bCHARMCodePC \
+	bCHARMCHIFSystem \
 	bCHDisassembleARMInstruction \
 	bCHDisassembleARM \
+	bCHARMLoopStructure \
+	bCHTranslateARMToCHIF \
+	bCHARMMetrics \
+	bCHFnARMDictionary \
+	bCHARMAnalysisResults \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 

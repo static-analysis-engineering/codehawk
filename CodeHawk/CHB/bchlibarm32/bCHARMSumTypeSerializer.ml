@@ -66,6 +66,7 @@ end
 
 let arm_instr_class_mcts:arm_instr_class_t mfts_int = new arm_instr_class_mcts_t
 
+(*
 let arm_reg_mfts: arm_reg_t mfts_int =
   mk_mfts
     "arm_reg_t"
@@ -85,6 +86,7 @@ let arm_reg_mfts: arm_reg_t mfts_int =
       (ARSP, "SP");
       (ARLR, "LR");
       (ARPC, "PC") ]
+ *)
 
 let shift_rotate_type_mfts: shift_rotate_type_t mfts_int =
   mk_mfts
@@ -146,7 +148,7 @@ object
     | ARMMemMultiple _ -> "m"
     | ARMOffsetAddress _ -> "o"
 
-  method tags = [ "a"; "b"; "i"; "l"; "m"; "o"; "r"; "rr"; "si"; "sr" ]
+  method tags = [ "a"; "b"; "i"; "l"; "m"; "o"; "r"; "r"; "s" ]
 
 end
 
