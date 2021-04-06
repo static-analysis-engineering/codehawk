@@ -260,6 +260,9 @@ end
 
 let arm_assembly_functions = new arm_assembly_functions_t
 
+let get_arm_assembly_function (faddr:doubleword_int) =
+  arm_assembly_functions#get_function_by_address faddr
+
 let get_export_metrics () = exports_metrics_handler#init_value
 
 let get_arm_disassembly_metrics () =

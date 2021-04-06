@@ -133,14 +133,15 @@ object (self)
       | ARMReg r -> (tags @ [ arm_reg_mfts#ts r ],[])
       | ARMRegList rl -> (tags @ (List.map arm_reg_mfts#ts rl),[])
       | ARMShiftedReg (r,rs) ->
-         (tags, [ self#index_register_shift_rotate rs ])
+         (tags @ [ arm_reg_mfts#ts r ], [ self#index_register_shift_rotate rs ])
       | ARMRegBitSequence (r,lsb,widthm1) ->
          (tags @ [ arm_reg_mfts#ts r ],[ lsb; widthm1 ])
       | ARMAbsolute addr -> (tags, [ bd#index_address addr ])
       | ARMMemMultiple (r,n) -> (tags @ [ arm_reg_mfts#ts r ],[n])
       | ARMOffsetAddress (r,offset,isadd,iswback,isindex) ->
          let ioffset = self#index_arm_memory_offset offset in
-         (tags,[ ioffset; setb isadd; setb iswback; setb isindex ])
+         (tags @ [ arm_reg_mfts#ts r],
+          [ ioffset; setb isadd; setb iswback; setb isindex ])
       | ARMImmediate imm -> (tags @ [ imm#to_numerical#toString ],[]) in
     arm_opkind_table#add key
 

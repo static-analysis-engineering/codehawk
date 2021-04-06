@@ -32,6 +32,9 @@
  * ARMv7-A and ARMv7-R edition, March 29, 2018
  *)
 
+(* bchlib *)
+open BCHLibTypes
+
 (* bchlibarm32 *)
 open BCHARMTypes
 

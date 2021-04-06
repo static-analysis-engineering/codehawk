@@ -205,12 +205,16 @@ let disassemble_arm_sections () =
          0x99c0  3a ca 8c e2       ADD      R12, R12, #237568
          0x99c4  bc f8 bc e5       LDR      PC, [R12], #2236
 
+     F B 0x89b0  00 c6 8f e2       ADR      R12, 0x89b8
+         0x89b4  0a ca 8c e2       ADD      R12, R12, #40960
+         0x89b8  a4 fb bc e5       LDR      PC, [R12], #2980
+
  *)
 let is_library_stub faddr =
   if elf_header#is_program_address faddr then
     let bytestring = byte_string_to_printed_string (elf_header#get_xsubstring faddr 12) in
     let instrsegs = [
-        "00c68fe23aca8ce2\\(....\\)bce5"
+        "00c68fe2\\(..\\)ca8ce2\\(....\\)bce5"
       ] in
     List.exists (fun s ->
         let regex = Str.regexp s in
@@ -481,6 +485,33 @@ let construct_assembly_function (count:int) (faddr:doubleword_int) =
 let set_library_stub_name faddr =
   pr_debug [ STR "Encountered set library stub name: " ; faddr#toPretty ; NL ]
 
+let record_call_targets_arm () =
+  arm_assembly_functions#itera
+    (fun faddr f ->
+      let finfo = get_function_info faddr in
+      begin
+        f#iteri
+          (fun _ ctxtiaddr instr ->
+            match instr#get_opcode with
+            | BranchLink (_,op) ->
+               if finfo#has_call_target ctxtiaddr
+                  && not (finfo#get_call_target ctxtiaddr)#is_unknown then
+                 let loc = ctxt_string_to_location faddr ctxtiaddr in
+                 let floc = get_floc loc in
+                 floc#update_call_target
+               else
+                 begin
+                   match get_so_target op#get_absolute_address instr with
+                   | Some tgt ->
+                      finfo#set_call_target ctxtiaddr (mk_so_target tgt)
+                   | _ ->
+                      if op#is_absolute_address then
+                        finfo#set_call_target
+                          ctxtiaddr (mk_app_target op#get_absolute_address)
+                 end
+            | _ -> ())
+      end)
+
 let construct_functions_arm () =
   let _ =
     system_info#initialize_function_entry_points collect_function_entry_points in
@@ -521,5 +552,6 @@ let construct_functions_arm () =
           set_library_stub_name faddr
         else
           default ()
-      ) fnentrypoints
+      ) fnentrypoints ;
+    record_call_targets_arm ()
   end

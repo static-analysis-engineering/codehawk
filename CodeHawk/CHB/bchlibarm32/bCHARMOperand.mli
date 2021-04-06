@@ -44,7 +44,7 @@ open BCHARMTypes
 
 val arm_operand_mode_to_string: arm_operand_mode_t -> string
 
-val armreg_to_string: arm_reg_t -> string
+(* val armreg_to_string: arm_reg_t -> string *)
 
 val arm_register_op: arm_reg_t -> arm_operand_mode_t -> arm_operand_int
 
@@ -106,5 +106,12 @@ val mk_arm_offset_address_op:
 val mk_arm_mem_multiple_op:
   arm_reg_t
   -> int
+  -> arm_operand_mode_t
+  -> arm_operand_int
+
+val sp_r: arm_operand_mode_t -> arm_operand_int
+
+val arm_sp_deref:
+  ?with_offset:int
   -> arm_operand_mode_t
   -> arm_operand_int

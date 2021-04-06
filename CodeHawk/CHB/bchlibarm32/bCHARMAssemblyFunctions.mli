@@ -33,4 +33,6 @@ open BCHARMTypes
 
 val arm_assembly_functions: arm_assembly_functions_int
 
+val get_arm_assembly_function: doubleword_int -> arm_assembly_function_int
+
 val get_arm_disassembly_metrics: unit -> disassembly_metrics_t
