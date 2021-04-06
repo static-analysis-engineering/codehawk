@@ -76,8 +76,9 @@ open BCHMIPSAssemblyFunctions
 open BCHMIPSAssemblyInstructions
 
 (* bchlibarm32 *)
-open BCHDisassembleARM
+open BCHARMAnalysisResults
 open BCHARMAssemblyFunctions
+open BCHDisassembleARM
 
 (* bchanalyze *)
 open BCHAnalysisTypes
@@ -101,7 +102,7 @@ module P = Pervasives
 let cmd = ref "version"
 let export_directory = ref ""
 let savecfgs = ref false
-let save_xml = ref false
+let save_xml = ref false  (* save disassembly status in xml *)
 let save_asm = ref false
 
 let architecture = ref "x86"
@@ -135,20 +136,10 @@ let speclist =
      "dump entire executable to xml (max size 1MB)") ;
     ("-disassemble", Arg.Unit (fun () -> cmd := "disassemble"),
      "save an assembly listing of the executable in text format") ;
-    ("-disassemble_x", Arg.Unit (fun () ->
-                           begin cmd := "disassemble" ; save_xml := true end) ,
-     "disassemble and save xml summary") ;
-    ("-disassemble_elf", Arg.Unit (fun () -> cmd := "disassemble_elf"),
-     "save an assembly listing of the executable ELF file in text format") ;
     ("-analyze", Arg.Unit (fun () -> cmd := "analyze"),
      "analyze the executable and save intermediate results in xml format (applicable to xml rep only)") ;
-    ("-analyze_a", Arg.Unit (fun () ->
-                       begin cmd := "analyze" ; save_asm := true end),
-     "analyze the executable and save intermediate results in xml and save the assembly in text form") ;
     ("-ignore_stable", Arg.Unit (fun () -> BCHAnalyzeApp.analyze_all := true),
      "continue analyzing functions that have stabilized") ;
-    ("-analyze_elf", Arg.Unit (fun () -> cmd := "analyze_elf"),
-     "analyze the executable ELF file (x86 architecture)") ;
     ("-preamble_cutoff", Arg.Int system_info#set_preamble_cutoff,
      "minimum number of preamble instructions observed to add as function entry point");
     ("-save_cfgs", Arg.Unit (fun () -> savecfgs := true),
@@ -162,7 +153,11 @@ let speclist =
     ("-verbose", Arg.Unit (fun () -> system_settings#set_verbose),
      "print out analysis intermediate results and progress messages") ;
     ("-show_chif", Arg.String (fun s -> set_chif s),
-     "print out CHIF code") ;
+     "print out CHIF code");
+    ("-save_disassembly_status_in_xml", Arg.Unit (fun () -> save_xml := true),
+     "save disassembly status in xml for bulk evaluation");
+    ("-save_asm", Arg.Unit (fun () -> save_asm := true),
+     "save assembly listing in the analysis directory");
     ("-specialization", Arg.String specializations#activate_specialization,
      "apply named specialization")
   ]
@@ -423,6 +418,7 @@ let main () =
       let _ = disassembly_summary#set_disassembly_metrics
                 (get_arm_disassembly_metrics ()) in
       let _ =  pr_debug [ NL; NL; disassembly_summary#toPretty ; NL ] in
+      let _ = analyze_arm ((Unix.gettimeofday ()) -. !t) in
       begin
        file_output#saveFile
           (get_asm_listing_filename ())
@@ -430,6 +426,11 @@ let main () =
 	file_output#saveFile
           (get_orphan_code_listing_filename ())
 	  (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)));
+        save_arm_assembly_instructions ();
+        save_system_info ();
+        save_arm_dictionary ();
+        save_interface_dictionary ();
+        save_bdictionary ();
         save_log_files "disassemble"
       end
                 
@@ -552,6 +553,43 @@ let main () =
 	  (STR ((BCHMIPSAssemblyFunctions.mips_assembly_functions#dark_matter_to_string)));
 	save_log_files logcmd;
 	exit 0
+      end
+
+    else if !cmd = "analyze" && !architecture = "arm" && !fileformat = "elf" then
+      let starttime = Unix.gettimeofday () in
+      let _ = system_info#set_elf in
+      let _ = system_info#set_arm in
+      let _ = load_bdictionary () in
+      let _ = system_info#initialize in
+      let _ = load_interface_dictionary () in
+      let _ = load_arm_dictionary () in
+      let _ = global_system_state#initialize in
+      let _ = file_metrics#load_xml in
+      let _ = load_elf_files () in
+      let index = file_metrics#get_index in
+      let logcmd = "analyze_" ^ (string_of_int index) in
+      let _ = disassemble_arm_sections () in
+      let _ = construct_functions_arm () in
+      let _ = analyze_arm starttime in
+      let _ = file_metrics#set_disassembly_results (get_arm_disassembly_metrics ()) in
+      begin
+        save_functions_list ();
+        save_system_info ();
+        save_file_results ();
+        save_global_state ();
+        arm_analysis_results#save;
+        save_arm_assembly_instructions ();
+        save_arm_dictionary ();
+        save_interface_dictionary ();
+        save_bdictionary ();
+        (file_output#saveFile
+           (get_asm_listing_filename ())
+           (STR ((!BCHARMAssemblyInstructions.arm_assembly_instructions)#toString ())));
+        file_output#saveFile
+          (get_orphan_code_listing_filename ())
+          (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)));
+        save_log_files logcmd;
+        exit 0
       end
       
 
