@@ -692,7 +692,7 @@ let record_call_targets () =
                           floc#set_call_target
                             (mk_app_target op#get_absolute_address)
                         else
-                          ()
+                          floc#set_call_target (mk_unknown_target ())
                    end
               | _ -> ())
         end
