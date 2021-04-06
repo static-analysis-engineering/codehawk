@@ -1953,7 +1953,15 @@ object (self)
 	      (LBLOCK [ STR s ; STR ": " ; function_location#toPretty ; STR " , " ;
 			blockLabel#toPretty ]) ;
 	    raise (BCH_failure (LBLOCK [ STR s ; STR ": " ; function_location#toPretty ]))
-	  end in
+	  end
+        | BCH_failure p ->
+           begin
+             ch_error_log#add "translate instruction"
+               (LBLOCK [ p ; STR ": " ; function_location#toPretty ; STR " , " ;
+                         blockLabel#toPretty ]) ;
+             raise (BCH_failure (LBLOCK [ STR "Error in translating instruction: " ;
+                                          function_location#toPretty ; STR ": " ; p ]))
+           end in
       match nodes with
 	[] -> 
 	  if codePC#has_more_instructions then 
