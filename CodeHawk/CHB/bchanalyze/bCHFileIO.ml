@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -68,6 +69,10 @@ open BCHX86Dictionary
 (* bchlibmips32 *)
 open BCHMIPSAssemblyInstructions
 open BCHMIPSDictionary
+
+(* bchlibarm32 *)
+open BCHARMAssemblyInstructions
+open BCHARMDictionary
 
 
 let xml_error filename line column p = 
@@ -228,11 +233,42 @@ let save_mips_assembly_instructions () =
     file_output#saveFile filename doc#toPretty
   end
 
+let save_arm_dictionary () =
+  let filename = get_arm_dictionary_filename () in
+  let doc = xmlDocument () in
+  let root = get_bch_root "arm-dictionary" in
+  let fnode = xmlElement "arm-dictionary" in
+  begin
+    arm_dictionary#write_xml fnode;
+    doc#setNode root;
+    root#appendChildren [fnode];
+    file_output#saveFile filename doc#toPretty
+  end
+
+let save_arm_assembly_instructions () =
+  let filename = get_arm_assembly_instructions_filename () in
+  let doc = xmlDocument () in
+  let root = get_bch_root "arm-assembly-instructions" in
+  let fnode = xmlElement "arm-assembly-instructions" in
+  begin
+    (!arm_assembly_instructions)#write_xml fnode;
+    doc#setNode root;
+    root#appendChildren [fnode];
+    file_output#saveFile filename doc#toPretty
+  end
+
 let load_mips_dictionary () =
   let filename = get_mips_dictionary_filename () in
   let optnode = load_xml_file filename  "mips-dictionary" in
   match optnode with
   | Some xnode -> mips_dictionary#read_xml xnode
+  | _ -> ()
+
+let load_arm_dictionary () =
+  let filename = get_arm_dictionary_filename () in
+  let optnode = load_xml_file filename "arm-dictionary" in
+  match optnode with
+  | Some xnode -> arm_dictionary#read_xml xnode
   | _ -> ()
                
 

@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -43,8 +44,13 @@ val save_resultmetrics: xml_element_int -> unit
 val save_disassembly_status: unit -> unit
 val save_function_asm: assembly_function_int -> unit
 val save_x86dictionary: unit -> unit
+
 val save_mips_dictionary: unit -> unit
 val save_mips_assembly_instructions: unit -> unit
+
+val save_arm_dictionary: unit -> unit
+val save_arm_assembly_instructions: unit -> unit
+
 val save_function_info: function_info_int -> unit
 val save_function_variables: function_info_int -> unit
 val save_function_type_invariants: function_info_int -> unit
@@ -55,4 +61,5 @@ val save_results_jni_calls: unit -> unit
 val load_system_info: unit -> xml_element_int option
 val load_x86dictionary: unit -> unit
 val load_mips_dictionary: unit -> unit
+val load_arm_dictionary: unit -> unit
   
