@@ -638,6 +638,7 @@ object (self)
     match arch with
     | "x86" -> self#get_esp_offset
     | "mips" -> self#get_sp_offset
+    | "arm" -> self#get_arm_sp_offset
     | _ ->
        raise (BCH_failure
                 (LBLOCK [ STR "Architecture not recognized: " ; STR arch ]))
@@ -646,6 +647,7 @@ object (self)
     match arch with
     | "x86" -> self#esp_offset_to_string
     | "mips" -> self#sp_offset_to_string
+    | "arm" -> self#arm_sp_offset_to_string
     | _ ->
        raise (BCH_failure
                 (LBLOCK [ STR "Architecture not recognized: " ; STR arch ]))
@@ -681,6 +683,22 @@ object (self)
         (1,sp1Offset)
     else
       (0,sp0Offset)
+
+  method private get_arm_sp_offset =  (* specific to arm *)
+    let inv = self#inv in
+    let spreg = ARMRegister ARSP in
+    let sp = self#env#mk_register_variable spreg in
+    let sp0 = self#env#mk_initial_register_value ~level:0 spreg in
+    let sp0Offset = inv#get_interval_offset sp0 sp in
+    if sp0Offset#isTop then
+      let sp1 = self#env#mk_initial_register_value ~level:1 spreg in
+      let sp1Offset = inv#get_interval_offset sp1 sp in
+      if sp1Offset#isTop then
+        (0, topInterval)
+      else
+        (1, sp1Offset)
+    else
+      (0, sp0Offset)
       
   method private esp_offset_to_string =
     let (level,offset) = self#get_esp_offset in
@@ -711,7 +729,22 @@ object (self)
 	  | (_, NUMBER ub ) -> "-oo ; " ^ ub#toString
 	  | _ -> "?" in
     openB ^ " " ^ offset ^ " " ^ closeB
-     
+
+  method private arm_sp_offset_to_string =
+    let (level,offset) = self#get_arm_sp_offset in
+    let openB = string_repeat "[" (level+1) in
+    let closeB = string_repeat "]" (level+1) in
+    let offset = if offset#isTop then " ? "	else
+	match offset#singleton with
+	  Some num -> num#toString
+	| _ ->
+	  match (offset#getMin#getBound, offset#getMax#getBound) with
+	    (NUMBER lb, NUMBER ub) -> lb#toString  ^ " ; " ^ ub#toString
+	  | (NUMBER lb, _ ) -> lb#toString ^ " ; oo"
+	  | (_, NUMBER ub ) -> "-oo ; " ^ ub#toString
+	  | _ -> "?" in
+    openB ^ " " ^ offset ^ " " ^ closeB
+
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * jump tables                                                                         *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
@@ -1657,6 +1690,19 @@ object (self)
      let abstrRegs = List.map self#env#mk_register_variable defClobbered in
      [ OPERATION { op_name = opname ; op_args = [] } ;
        ABSTRACT_VARS (v1::abstrRegs) ; returnassign ]
+
+   method get_arm_call_commands =
+     let ctinfo = self#get_call_target in
+     let r0 = self#env#mk_arm_register_variable AR0 in
+     let opname = new symbol_t ~atts:["CALL"] ctinfo#get_name in
+     let returnassign =
+       let rvar = self#env#mk_return_value self#cia in
+       let _ =
+         if ctinfo#is_signature_valid then
+           let name = ctinfo#get_name ^ "_rtn_" ^ self#cia in
+           self#env#set_variable_name rvar name in
+       ASSIGN_NUM (r0, NUM_VAR rvar) in
+     [OPERATION {op_name = opname; op_args = []}; returnassign]
 
    method is_constant (var:variable_t) = self#inv#is_constant var
 

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -144,7 +146,8 @@ object (self)
         | XmmRegister i -> (tags,[i])
       | MIPSRegister r ->  (tags @ [ mips_reg_mfts#ts r ],[])
       | MIPSSpecialRegister r -> (tags @ [ mips_special_reg_mfts#ts r ],[])
-      | MIPSFloatingPointRegister i -> (tags,[i]) in
+      | MIPSFloatingPointRegister i -> (tags,[i])
+      | ARMRegister r -> (tags @ [arm_reg_mfts#ts r], []) in
     register_table#add key
 
   method get_register (index:int) =
@@ -164,6 +167,7 @@ object (self)
     | "p" -> MIPSRegister (mips_reg_mfts#fs (t 1))
     | "ps" -> MIPSSpecialRegister (mips_special_reg_mfts#fs (t 1))
     | "pfp" -> MIPSFloatingPointRegister (a 0)
+    | "a" -> ARMRegister (arm_reg_mfts#fs (t 1))
     | s -> raise_tag_error name s register_mcts#tags
 
   method index_attributes (attrs:attributes) =

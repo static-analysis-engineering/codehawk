@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +40,7 @@ val cpureg_mfts: cpureg_t mfts_int
 val segment_mfts: segment_t mfts_int
 val mips_reg_mfts: mips_reg_t mfts_int
 val mips_special_reg_mfts: mips_special_reg_t mfts_int
+val arm_reg_mfts: arm_reg_t mfts_int
 
 val ikind_mfts: ikind mfts_int
 val fkind_mfts: fkind mfts_int
