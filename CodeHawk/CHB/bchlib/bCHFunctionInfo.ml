@@ -5,7 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c)           Henny Sipma
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -665,6 +666,9 @@ object (self)
   method mk_mips_fp_register_variable (index:int) =
     self#mk_register_variable (MIPSFloatingPointRegister index)
 
+  method mk_arm_register_variable (reg:arm_reg_t) =
+    self#mk_register_variable (ARMRegister reg)
+
   method mk_bridge_value (address:ctxt_iaddress_t) (argnr:int) =
     self#mk_variable (varmgr#make_bridge_value address argnr)
       
@@ -1077,6 +1081,7 @@ object (self)
       match self#get_initial_register_value_register v with
       | CPURegister r -> self#mk_cpu_register_variable r
       | MIPSRegister r -> self#mk_mips_register_variable r
+      | ARMRegister r -> self#mk_arm_register_variable r
       | _ ->
          let msg = LBLOCK [ STR "Variable is not a cpu or mips register: " ;
                             v#toPretty ] in

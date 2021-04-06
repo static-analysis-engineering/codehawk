@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyrigth (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -76,6 +77,26 @@ let mips_reg_mfts: mips_reg_t mfts_int =
       (MRs4,"s4"); (MRs5,"s5"); (MRs6,"s6"); (MRs7,"s7"); (MRt8,"t8");
       (MRt9,"t9"); (MRk0,"k0"); (MRk1,"k1"); (MRgp,"gp"); (MRsp,"sp");
       (MRfp,"fp"); (MRra,"ra") ]
+
+let arm_reg_mfts: arm_reg_t mfts_int =
+  mk_mfts
+    "arm_reg_t"
+    [ (AR0, "R0");
+      (AR1, "R1");
+      (AR2, "R2");
+      (AR3, "R3");
+      (AR4, "R4");
+      (AR5, "R5");
+      (AR6, "R6");
+      (AR7, "R7");
+      (AR8, "R8");
+      (AR9, "R9");
+      (AR10, "R10");
+      (AR11, "R11");
+      (AR12, "R12");
+      (ARSP, "SP");
+      (ARLR, "LR");
+      (ARPC, "PC") ]
                                                               
 let mips_special_reg_mfts: mips_special_reg_t mfts_int =
   mk_mfts "mips_special_reg_t" [ (MMHi,"hi") ;  (MMLo,"lo") ]
@@ -140,8 +161,9 @@ object
     | MIPSRegister _ -> "p"
     | MIPSSpecialRegister _ -> "ps"
     | MIPSFloatingPointRegister _ -> "pfp"
+    | ARMRegister _ -> "a"
 
-  method tags = [ "c"; "ctr"; "d"; "dbg"; "f"; "m"; "s"; "x" ; "p" ; "ps" ; "pfp" ]
+  method tags = [ "a"; "c"; "ctr"; "d"; "dbg"; "f"; "m"; "s"; "x" ; "p" ; "ps" ; "pfp" ]
 
 end
 

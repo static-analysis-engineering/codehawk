@@ -318,6 +318,7 @@ object (self:'a)
     match denotation with
     | AuxiliaryVariable (InitialRegisterValue (CPURegister r,0)) -> CPURegister r
     | AuxiliaryVariable (InitialRegisterValue (MIPSRegister r,0)) -> MIPSRegister r
+    | AuxiliaryVariable (InitialRegisterValue (ARMRegister r,0)) -> ARMRegister r
     | _ ->
       begin
 	ch_error_log#add "assembly variable access" 
