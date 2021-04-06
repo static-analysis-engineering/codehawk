@@ -271,7 +271,7 @@ object (self:'a)
       end
 
   method xor (other:'a) =
-    {< unsigned_value = self#to_int lxor other#to_int >}
+    {< unsigned_value = (self#to_int lxor other#to_int) mod e32 >}
 
 
   (* -----------------------------------------------------~---~---- accessors -- *)
