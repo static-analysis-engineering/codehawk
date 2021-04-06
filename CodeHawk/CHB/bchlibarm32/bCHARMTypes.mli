@@ -40,24 +40,6 @@ open XprTypes
 (* bchlib *)
 open BCHLibTypes
 
-type arm_reg_t =
-  | AR0
-  | AR1
-  | AR2
-  | AR3
-  | AR4
-  | AR5
-  | AR6
-  | AR7
-  | AR8
-  | AR9
-  | AR10
-  | AR11
-  | AR12
-  | ARSP
-  | ARLR
-  | ARPC
-
 type shift_rotate_type_t =
   | SRType_LSL
   | SRType_LSR
@@ -195,6 +177,8 @@ class type arm_operand_int =
     method get_kind: arm_operand_kind_t
     method get_mode: arm_operand_mode_t
     method get_register: arm_reg_t
+    method get_register_count: int
+    method get_register_list: arm_reg_t list
     method get_absolute_address: doubleword_int
     method get_pc_relative_address: doubleword_int -> doubleword_int
 
@@ -202,12 +186,15 @@ class type arm_operand_int =
     method to_numerical: numerical_t
     method to_address: floc_int -> xpr_t
     method to_variable: floc_int -> variable_t
+    method to_multiple_variable: floc_int -> variable_t list
     method to_expr: floc_int -> xpr_t
+    method to_multiple_expr: floc_int -> xpr_t list
     method to_lhs: floc_int -> variable_t * cmd_t list
 
     (* predicate *)
     method is_read: bool
     method is_write: bool
+    method is_immediate: bool
     method is_register: bool
     method is_register_list: bool
     method is_absolute_address: bool
@@ -710,4 +697,75 @@ class type arm_assembly_functions_int =
     (* i/o *)
     method dark_matter_to_string: string
 
+  end
+
+class type arm_code_pc_int =
+  object
+
+    (* accessors *)
+    method get_next_instruction: ctxt_iaddress_t * arm_assembly_instruction_int
+    method get_block_successors: ctxt_iaddress_t list
+    method get_block_successor: ctxt_iaddress_t
+    method get_false_branch_successor: ctxt_iaddress_t
+    method get_true_branch_successor: ctxt_iaddress_t
+    method get_conditional_successor_info:
+             (location_int * location_int * ctxt_iaddress_t * ctxt_iaddress_t * xpr_t)
+
+    (* predicates *)
+    method has_more_instructions: bool
+    method has_conditional_successor: bool
+  end
+
+class type arm_chif_system_int =
+  object
+
+    (* reset *)
+    method reset: unit
+
+    (* setters *)
+    method add_arm_procedure: procedure_int -> unit
+
+    (* accessors *)
+    method get_arm_system: system_int
+    method get_arm_procedure_names: symbol_t list
+    method get_arm_procedure: doubleword_int -> procedure_int
+
+    (* predicates *)
+    method has_arm_procedure: doubleword_int -> bool
+  end
+
+class type arm_opcode_dictionary_int =
+  object
+
+    method index_sp_offset: int * interval_t -> int
+    method index_instr:
+             arm_assembly_instruction_int
+             -> floc_int
+             -> int
+
+    method get_sp_offset: int -> (int * interval_t)
+
+    method write_xml_sp_offset:
+             ?tag:string
+             -> xml_element_int
+             -> int * interval_t
+             -> unit
+    method write_xml_instr:
+             ?tag:string
+             -> xml_element_int
+             -> arm_assembly_instruction_int
+             -> floc_int
+             -> unit
+
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
+
+    method toPretty: pretty_t
+  end
+
+class type arm_analysis_results_int =
+  object
+    method record_results: ?save:bool -> arm_assembly_function_int -> unit
+    method write_xml: xml_element_int -> unit
+    method save: unit
   end
