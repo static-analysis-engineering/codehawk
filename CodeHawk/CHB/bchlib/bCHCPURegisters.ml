@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -81,6 +82,9 @@ let mipsregs_from_string_table = H.create 32
 
 let mips_special_regs_to_string_table = H.create 3
 let mips_special_regs_from_string_table = H.create 3
+
+let armregs_to_string_table = H.create 17
+let armregs_from_string_table = H.create 17
 
 let _ = List.iter (fun (r,s) -> 
   add_to_sumtype_tables cpuregs_to_string_table cpuregs_from_string_table r s)
@@ -161,6 +165,34 @@ let mips_special_reg_to_string (r:mips_special_reg_t) =
 let mips_special_reg_from_string (name:string) =
   get_sumtype_from_table
     "mips_special_regs_from_string_table" mips_special_regs_from_string_table name
+
+let _ =
+  List.iter (fun (r,s) ->
+      add_to_sumtype_tables armregs_to_string_table armregs_from_string_table r s)
+    [ (AR0,"R0");
+      (AR1,"R1");
+      (AR2,"R2");
+      (AR3,"R3");
+      (AR4,"R4");
+      (AR5,"R5");
+      (AR6,"R6");
+      (AR7,"R7");
+      (AR8,"R8");
+      (AR9,"R9");
+      (AR10,"R10");
+      (AR11,"R11");
+      (AR12,"R12");
+      (ARSP,"SP");
+      (ARLR,"LR");
+      (ARPC,"PC") ]
+
+let arm_regular_registers = get_sumtype_table_keys armregs_to_string_table
+
+let armreg_to_string (r:arm_reg_t) =
+  get_string_from_table "armregs_to_string_table" armregs_to_string_table r
+
+let armreg_from_string (name:string) =
+  get_sumtype_from_table "armregs_from_string_table" armregs_from_string_table name
   
 let is_register name = is_string_of_sumtype cpuregs_from_string_table name
   
@@ -175,6 +207,10 @@ let register_compare r1 r2 =
      P.compare (cpureg_to_string c1) (cpureg_to_string c2)
   | (CPURegister _, _) -> -1
   | (_, CPURegister _) -> 1
+  | (ARMRegister a1, ARMRegister a2) ->
+     P.compare (armreg_to_string a1) (armreg_to_string a2)
+  | (ARMRegister _, _) -> -1
+  | (_, ARMRegister _) -> 1
   | (MIPSRegister m1, MIPSRegister m2) ->
      P.compare (mipsreg_to_string m1) (mipsreg_to_string m2)
   | (MIPSRegister _, _) -> -1
@@ -223,6 +259,7 @@ let register_to_string register = match register with
   | MIPSRegister r -> mipsreg_to_string r
   | MIPSSpecialRegister r -> mips_special_reg_to_string r
   | MIPSFloatingPointRegister i -> "$f" ^ (string_of_int i)
+  | ARMRegister r -> armreg_to_string r
 
 let extract_cpu_reg s =
   let len = String.length s in

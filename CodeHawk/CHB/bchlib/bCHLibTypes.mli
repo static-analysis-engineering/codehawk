@@ -312,6 +312,27 @@ type mips_special_reg_t =
   | MMHi   (* high multiplication unit register *)
   | MMLo   (* low multiplication unit register *)
 
+(* ======================================================= arm types === *)
+
+type arm_reg_t =
+  | AR0
+  | AR1
+  | AR2
+  | AR3
+  | AR4
+  | AR5
+  | AR6
+  | AR7
+  | AR8
+  | AR9
+  | AR10
+  | AR11
+  | AR12
+  | ARSP
+  | ARLR
+  | ARPC
+
+
 type register_t = 
 | SegmentRegister of segment_t
 | CPURegister of cpureg_t
@@ -324,6 +345,7 @@ type register_t =
 | MIPSRegister of mips_reg_t
 | MIPSSpecialRegister of mips_special_reg_t
 | MIPSFloatingPointRegister of int
+| ARMRegister of arm_reg_t
 
 
 (* =============================================================== Doubleword === *)
@@ -2174,18 +2196,19 @@ class type function_environment_int =
     method mk_base_variable_reference  : variable_t -> memory_reference_int
     method mk_base_sym_reference       : symbol_t -> memory_reference_int
 
-    method mk_register_variable        : register_t -> variable_t
-    method mk_cpu_register_variable    : cpureg_t -> variable_t
-    method mk_fpu_register_variable    : int -> variable_t
-    method mk_mmx_register_variable    : int -> variable_t
-    method mk_xmm_register_variable    : int -> variable_t
+    method mk_register_variable: register_t -> variable_t
+    method mk_cpu_register_variable: cpureg_t -> variable_t
+    method mk_fpu_register_variable: int -> variable_t
+    method mk_mmx_register_variable: int -> variable_t
+    method mk_xmm_register_variable: int -> variable_t
     method mk_control_register_variable: int -> variable_t
-    method mk_debug_register_variable  : int -> variable_t
-    method mk_double_register_variable : cpureg_t -> cpureg_t -> variable_t
-    method mk_mips_register_variable   : mips_reg_t -> variable_t
+    method mk_debug_register_variable: int -> variable_t
+    method mk_double_register_variable: cpureg_t -> cpureg_t -> variable_t
+    method mk_mips_register_variable: mips_reg_t -> variable_t
     method mk_mips_special_register_variable: mips_special_reg_t -> variable_t
     method mk_mips_fp_register_variable: int -> variable_t
-    method mk_global_variable          : numerical_t -> variable_t
+    method mk_arm_register_variable: arm_reg_t -> variable_t
+    method mk_global_variable: numerical_t -> variable_t
 
     method mk_initial_register_value: ?level:int -> register_t -> variable_t
     method mk_initial_memory_value  : variable_t -> variable_t
@@ -2669,6 +2692,8 @@ object
 
   method get_mips_call_commands: cmd_t list
   method get_mips_syscall_commands: cmd_t list
+
+  method get_arm_call_commands: cmd_t list
 
   (* returns the CHIF code associated with an assignment instruction *)
   method get_assign_commands:

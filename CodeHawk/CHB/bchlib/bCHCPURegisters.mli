@@ -54,6 +54,10 @@ val get_mipsreg_argument: int -> mips_reg_t
 val mips_special_reg_to_string: mips_special_reg_t -> string
 val mips_special_reg_from_string: string -> mips_special_reg_t
 
+val armreg_to_string: arm_reg_t -> string
+val armreg_from_string: string -> arm_reg_t
+val arm_regular_registers: arm_reg_t list
+
 val cpureg_to_asm_string  : cpureg_t -> string
 
 val cpureg_option_to_string: cpureg_t option -> string
