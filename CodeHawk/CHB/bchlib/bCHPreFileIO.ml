@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -52,29 +53,48 @@ open BCHVariable
 (* Filename conventions -------------------------------------------------------
  *
  * Given an executable file with name name.ext (ext may be omitted):
- * - executable content: name.ext.ch/x/name_ext_<sections> (xml files)
- *                                   x/name_ext_pe_header.xml
- * - analysis artifacts: name.ext.ch/analysis/name_ext_functions.xml
- *                                   analysis/name_ext_global_state.xml
- *                                   analysis/name_ext_system_info.xml
- *                                   analysis/name_ext_functions.jar
- *                                   analysis/name_ext_asm.log
- *                                   analysis/name_ext_orphan.log
- *                                   analysis/name_ext_bdict.xml
- *                                   analysis/functions/name_ext_<address>/name_ext_address_finfo.xml
- *                                                                name_ext_address_vars.xml
- *                                                                name_ext_address_invs.xml
- *                                                                name_ext_address_tinvs.xml
- * - results artifacts:  name.ext.ch/results/name_ext_app.xml
- *                                   results/name_ext_results.xml
- *                                   results/functions/name_ext_<address>.xml
- * - exports           : name.ext.ch/exports/functions/name_ext_address>.xml
- * - userdata          : name.ext.chu/name_ext_system_info_u.xml
- *                                classes/name_ext_<classname>_cppclass_u.xml
- *                                functions/name_ext_<address>_u.xml
- *                                structconstants/name_ext_<structname>_structconstant_u.xml
- *                                structs/name_ext_<structname>_struct_u.xml
- * - statusinfo        : name.ext.chs/name_ext_disassembly.xml
+ * - executable content:
+ *       name.ext.ch/x/name_ext_<sections> (xml files)
+ *                   x/name_ext_pe_header.xml
+ *                   x/name_ext_elf_header.xml
+ *                   x/name_ext_elf_dictionary.xml
+ *
+ * - analysis artifacts:
+ *      name.ext.ch/a/name_ext_functions.xml
+ *                  a/name_ext_global_state.xml
+ *                  a/name_ext_system_info.xml
+ *                  a/name_ext_functions.jar
+ *                  a/name_ext_asm.log
+ *                  a/name_ext_orphan.log
+ *                  a/name_ext_bdict.xml
+ *                  a/name_ext_ixdict.xml
+ *                  a/functions/name_ext_<address>/name_ext_address_finfo.xml
+ *                                                 name_ext_address_vars.xml
+ *                                                 name_ext_address_invs.xml
+ *                                                 name_ext_address_tinvs.xml
+ *
+ * - results artifacts:
+ *      name.ext.ch/r/name_ext_data.xml
+ *                  r/name_ext_metrics.xml
+ *                  r/name_ext_x86dict.xml   (x86)
+ *                  r/name_ext_mipsdict.xml  (mips)
+ *                  r/name_ext_mips_asm.xml  (mips)
+ *                  r/name_ext_armdict.xml   (arm)
+ *                  r/name_ext_arm_asm.xml   (arm)
+ *                  r/functions/name_ext_<address>.xml
+ *
+ * - exports:
+ *      name.ext.ch/exports/functions/name_ext_address>.xml  (currently not used)
+ *
+ * - userdata:
+ *      name.ext.ch/u/name_ext_system_u.xml
+ *                    classes/name_ext_<classname>_cppclass_u.xml
+ *                    functions/name_ext_<address>_u.xml
+ *                    structconstants/name_ext_<structname>_structconstant_u.xml
+ *                    structs/name_ext_<structname>_struct_u.xml
+ *
+ * - statusinfo:
+ *      name.ext.ch/s/name_ext_disassembly.xml
  * ----------------------------------------------------------------------------
  *)
 
@@ -84,12 +104,12 @@ let get_filename () =
 
 let get_chdir () = system_data#get_filename ^ ".ch"
                         
-let get_analysis_dir () = Filename.concat (get_chdir ()) "analysis"
-let get_results_dir () = Filename.concat (get_chdir ()) "results"
+let get_analysis_dir () = Filename.concat (get_chdir ()) "a"
+let get_results_dir () = Filename.concat (get_chdir ()) "r"
 let get_executable_dir () = Filename.concat (get_chdir ()) "x"
 let get_export_dir () = Filename.concat (get_chdir ())  "exports"
-let get_userdata_dir () = system_data#get_filename ^ ".chu"
-let get_status_dir () = system_data#get_filename ^ ".chs"
+let get_userdata_dir () = Filename.concat (get_chdir ()) "u"
+let get_status_dir () = Filename.concat (get_chdir ()) "s"
 
 let functions_file_path = ref []
 
@@ -372,6 +392,18 @@ let get_mips_assembly_instructions_filename () =
   let fdir = get_results_dir () in
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_mips_asm.xml")
+
+let get_arm_dictionary_filename () =
+  let exename = get_filename () in
+  let fdir = get_results_dir () in
+  let _ = create_directory fdir in
+  Filename.concat fdir (exename ^ "_armdict.xml")
+
+let get_arm_assembly_instructions_filename () =
+  let exename = get_filename () in
+  let fdir = get_results_dir () in
+  let _ = create_directory fdir in
+  Filename.concat fdir (exename ^ "_arm_asm.xml")
 
 let get_cfgs_filename () =
   let exename = get_filename () in

@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -43,8 +44,12 @@ val get_asm_listing_filename  : unit -> string
 val get_orphan_code_listing_filename: unit -> string
 val get_duplicate_coverage_filename: unit -> string
 val get_x86dictionary_filename: unit -> string
+
 val get_mips_dictionary_filename: unit -> string
 val get_mips_assembly_instructions_filename: unit -> string
+
+val get_arm_dictionary_filename: unit -> string
+val get_arm_assembly_instructions_filename: unit -> string
 
 val get_functions_filename   : unit -> string
 val get_global_state_filename: unit -> string
