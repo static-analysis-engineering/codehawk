@@ -62,10 +62,10 @@ open BCHELFHeader
 
 (* bchlibmips32 *)
 open BCHMIPSAssemblyInstructions
+open BCHMIPSDictionary   
 open BCHMIPSDisassemblyUtils
 open BCHMIPSLoopStructure
 open BCHMIPSOperand
-open BCHMIPSDictionary
 open BCHMIPSOpcodeRecords
 open BCHMIPSTypes
    

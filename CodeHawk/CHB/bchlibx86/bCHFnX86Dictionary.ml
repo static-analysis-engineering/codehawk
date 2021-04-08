@@ -76,7 +76,7 @@ class x86_opcode_dictionary_t
         (vard:vardictionary_int):x86_opcode_dictionary_int =
 object (self)
 
-  val esp_offset_table = mk_index_table "esp-offset-table"
+  val esp_offset_table = mk_index_table "sp-offset-table"
   val opx_table = mk_index_table "opx-table"
   val instrx_table = mk_index_table "instrx-table"  (* operands for instruction *)
   val xd = vard#xd
@@ -686,7 +686,7 @@ object (self)
     instrx_table#add key
 
   method write_xml_esp_offset
-           ?(tag="iesp") (node:xml_element_int) (o:int * interval_t) =
+           ?(tag="isp") (node:xml_element_int) (o:int * interval_t) =
     node#setIntAttribute tag (self#index_esp_offset o)
 
   method write_xml_instr
