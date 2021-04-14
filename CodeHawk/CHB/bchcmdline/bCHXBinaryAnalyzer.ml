@@ -420,19 +420,21 @@ let main () =
       let _ = disassembly_summary#set_disassembly_metrics
                 (get_arm_disassembly_metrics ()) in
       let _ =  pr_debug [ NL; NL; disassembly_summary#toPretty ; NL ] in
-      let _ = analyze_arm ((Unix.gettimeofday ()) -. !t) in
       begin
-       file_output#saveFile
-          (get_asm_listing_filename ())
-          (STR ((!BCHARMAssemblyInstructions.arm_assembly_instructions)#toString ()));
-	file_output#saveFile
-          (get_orphan_code_listing_filename ())
-	  (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)));
-        save_arm_assembly_instructions ();
-        save_system_info ();
-        save_arm_dictionary ();
-        save_interface_dictionary ();
-        save_bdictionary ();
+        if !save_asm then
+          begin
+            file_output#saveFile
+              (get_asm_listing_filename ())
+              (STR ((!BCHARMAssemblyInstructions.arm_assembly_instructions)#toString ()));
+	    file_output#saveFile
+              (get_orphan_code_listing_filename ())
+	      (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)));
+            save_arm_assembly_instructions ();
+            save_system_info ();
+            save_arm_dictionary ();
+            save_interface_dictionary ();
+            save_bdictionary ()
+          end;
         save_log_files "disassemble"
       end
                 

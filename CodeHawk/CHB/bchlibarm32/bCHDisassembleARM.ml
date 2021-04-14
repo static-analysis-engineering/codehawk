@@ -130,7 +130,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                 STR "; size: " ; INT size  ]) in
   try
     if system_settings#has_thumb then
-      let _ = pr_debug[STR "disassemble thumb instructions"; NL] in
+      let _ = pverbose [STR "disassemble thumb instructions"; NL] in
       begin
         while ch#pos + 2 < size do
           let prevPos = ch#pos in
@@ -149,7 +149,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
               let instrBytes = Bytes.make instrlen ' ' in
               let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrlen in
               let _ = add_instruction prevPos opcode (Bytes.to_string instrBytes) in
-              let _ = pr_debug [(base#add_int prevPos)#toPretty;
+              let _ = pverbose [(base#add_int prevPos)#toPretty;
                                 STR "  ";
                                 STR (arm_opcode_to_string opcode); NL] in
               ()
