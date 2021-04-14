@@ -492,3 +492,59 @@ let arm_expand_imm_c (rotate4:int) (imm8:int) (carry_in:int) =
 let arm_expand_imm (rotate4:int) (imm8:int) =
   let (imm32,_) = arm_expand_imm_c rotate4 imm8 0 in
   imm32
+
+
+    
+
+(* ThumbExpandImm (pg A6-230)
+ * ==========================
+ * bits(32) ThumbExpandImm(bits(12) imm12)
+ * // APSR.C argument to following function call does not affect
+ * // the imm32 result
+ *   (imm32, _) = ThumbExpandImm_C(imm12, APSR.C);
+ *   return imm32;
+ *
+ * (bits(32), bit) ThumbExpandImm_C(bits(12), bit carry_in)
+ *   if imm12<11:10> == '00' then
+ *      case imm12<9:8> of
+ *         when '00'
+ *            imm32 = ZeroExtend(imm12<7:0>, 32)
+ *         when '01'
+ *            if imm12<7:0> == '00000000' then UNPREDICTABLE;
+ *            imm32 = '00000000' : imm12<7:0> : '00000000' : imm12<7:0>;
+ *         when '10'
+ *            if imm12<7:0> == '00000000' then UNPREDICTABLE;
+ *            imm32 = imm12<7:0> : '00000000' : imm12<7:0> : '00000000';
+ *         when '11'
+ *            if imm12<7:0> == '00000000' then UNPREDICTABLE;
+ *            imm32 = imm12<7:0> : imm12<7:0> : imm12<7:0> : imm12<7:0>;
+ *      carry_out = carry_in
+ *   else
+ *      unrotated_value = ZeroExtend('1':imm12<6:0>, 32);
+ *      (imm32, carry_out) = ROR_C(unrotated_value, UInt(imm12<11:7>));
+ *
+ *   return (imm32, carry_out);
+ *)
+  
+let thumb_expand_imm_c (imm12: int) (carry: int): int * int =
+  let c1 = imm12 lsr 10 in
+  let c2 = (imm12 lsr 8) mod 4 in
+  let v = imm12 mod 256 in
+  let (imm32, c) =
+    if c1 = 0 then
+      let imm =
+        match c2 with
+        | 0 -> v
+        | 1 -> (v lsl 16) + v
+        | 2 -> (v lsl 24) + (v lsl 8)
+        | 3 -> (v lsl 24) + (v lsl 16) + (v lsl 8) + v
+        | _ -> raise (BCH_failure (STR "thumb_expand_imm_c")) in
+      (imm, carry)
+    else
+      let unrotval = (1 lsl 7) + (imm12 mod 128) in
+      do_ROR_C 32 unrotval (imm12 lsr 7) in
+  (imm32, c)
+      
+let thumb_expand_imm (imm12: int) (carry: int): int =
+  let (imm32, _) = thumb_expand_imm_c imm12 carry in
+  imm32

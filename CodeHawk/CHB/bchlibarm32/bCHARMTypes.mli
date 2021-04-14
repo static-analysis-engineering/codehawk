@@ -234,12 +234,14 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm: source 2 *)
+      * bool             (* T.W *)
   | AddCarry of
       bool (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
       * arm_operand_int  (* rd: destionation *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm: source 2 *)
+      * bool             (* T.W *)
   | Adr of
       arm_opcode_cc_t (* condition *)
       * arm_operand_int  (* rd: destination *)
@@ -299,6 +301,12 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm: source 2 *)
+  | CompareBranchNonzero of
+      arm_operand_int    (* register *)
+      * arm_operand_int  (* target address *)
+  | CompareBranchZero of
+      arm_operand_int    (* register *)
+      * arm_operand_int  (* target address *)
   | CompareNegative of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn: source 1 *)
@@ -307,6 +315,12 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
+  | LoadMultipleDecrementAfter of
+      bool    (* writeback *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rn: base *)
+      * arm_operand_int (* rl: register list *)
+      * arm_operand_int (* mem: multiple memory locations *)
   | LoadMultipleDecrementBefore of
       bool    (* writeback *)
       * arm_opcode_cc_t (* condition *)
@@ -319,16 +333,24 @@ type arm_opcode_t =
       * arm_operand_int (* rn: base *)
       * arm_operand_int (* rl: register list *)
       * arm_operand_int (* mem: multiple memory locations *)
+  | LoadMultipleIncrementBefore of
+      bool    (* writeback *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rn: base *)
+      * arm_operand_int (* rl: register list *)
+      * arm_operand_int (* mem: multiple memory locations *)    
   | LoadRegister of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: destination *)
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* mem: memory location*)
+      * bool             (* T.W *)
   | LoadRegisterByte of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: destination *)
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* mem: memory location*)
+      * bool             (* T.W *)
   | LoadRegisterDual of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: destination 1 *)
@@ -371,6 +393,7 @@ type arm_opcode_t =
       * arm_opcode_cc_t (* condition *)
       * arm_operand_int (* rd: destination *)
       * arm_operand_int (* rm/imm: source *)
+      * bool            (* T.W *)
   | MoveTop of
       arm_opcode_cc_t (* condition *)
       * arm_operand_int (* rd: destination *)
@@ -412,9 +435,19 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: source 2 *)
+  | RotateRight of
+      bool   (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm/imm: source 2 *)
   | RotateRightExtend of
       bool   (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm: source *)
+  | SignedExtendByte of
+      arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
   | SignedExtendHalfword of
@@ -455,6 +488,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rt: source *)
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* mem: memory location *)
+      * bool             (* T.W *)
   | StoreRegisterByte of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: source *)
@@ -485,6 +519,16 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: source 2 *)
+  | Swap of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt *)
+      * arm_operand_int  (* rt2 *)
+      * arm_operand_int  (* mem *)
+  | SwapByte of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt *)
+      * arm_operand_int  (* rt2 *)
+      * arm_operand_int  (* mem *)
   | Test of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn: source 1 *)
@@ -522,6 +566,9 @@ type arm_opcode_t =
   | SupervisorCall of arm_opcode_cc_t * arm_operand_int
   (* Misc *)
   | OpInvalid
+  | PermanentlyUndefined of arm_opcode_cc_t * arm_operand_int
+  | NoOperation of arm_opcode_cc_t (* condition *)
+  | NotRecognized of string * doubleword_int
   | NotCode of not_code_t option
 
 class type arm_dictionary_int =
@@ -673,6 +720,7 @@ class type arm_assembly_functions_int =
 
     (* setters *)
     method add_function: arm_assembly_function_int -> unit
+    method add_functions_by_preamble: doubleword_int list
 
     (* accessors *)
     method get_callgraph: callgraph_int

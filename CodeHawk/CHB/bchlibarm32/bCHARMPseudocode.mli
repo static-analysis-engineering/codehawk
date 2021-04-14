@@ -48,3 +48,6 @@ val decode_reg_shift: int -> shift_rotate_type_t
 val sign_extend: int -> int -> int -> int
 val arm_expand_imm_c: int -> int -> int -> (int * int)
 val arm_expand_imm: int -> int -> int   (* rotate [ 11:8], imm[7:1] *)
+
+val thumb_expand_imm_c: int -> int -> (int * int)
+val thumb_expand_imm: int -> int -> int

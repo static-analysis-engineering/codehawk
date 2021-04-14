@@ -244,7 +244,7 @@ object (self)
     List.fold_left
       (fun acc a ->
         match (self#at_address a)#get_opcode with
-        | OpInvalid -> acc + 1
+        | NotRecognized _ -> acc + 1
         | _ -> acc) 0 (self#get_code_addresses_rev ())
       
   method iteri (f:int -> arm_assembly_instruction_int -> unit) =

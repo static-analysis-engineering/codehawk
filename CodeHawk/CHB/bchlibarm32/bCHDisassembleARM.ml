@@ -67,8 +67,10 @@ open BCHARMAssemblyFunction
 open BCHARMAssemblyFunctions
 open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
+open BCHARMOpcodeRecords
 open BCHARMTypes
 open BCHDisassembleARMInstruction
+open BCHDisassembleThumbInstruction
 
 module H = Hashtbl
 module P = Pervasives
@@ -127,27 +129,63 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                 STR "; displacement: " ; INT displacement ;
                 STR "; size: " ; INT size  ]) in
   try
-    begin
-      while ch#pos < size do
-        let prevPos = ch#pos in
-        if is_data_block prevPos then
-          skip_data_block prevPos ch
-        else
-          let instrbytes = ch#read_doubleword in
-          let opcode =
-            try
-              disassemble_arm_instruction ch base instrbytes
-            with
-            | _ -> OpInvalid in
-          let currentPos = ch#pos in
-          let instrLen = currentPos - prevPos in
-          let instrBytes = Bytes.make instrLen ' ' in
-          let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0  instrLen in
-          let _ = add_instruction prevPos opcode (Bytes.to_string  instrBytes) in
-          ()
-      done ;
-      (* !arm_assembly_instructions#set_not_code opcode_monitor#get_data_blocks *)
-    end
+    if system_settings#has_thumb then
+      let _ = pr_debug[STR "disassemble thumb instructions"; NL] in
+      begin
+        while ch#pos + 2 < size do
+          let prevPos = ch#pos in
+          try
+            if is_data_block prevPos then
+              skip_data_block prevPos ch
+            else
+              let instrbytes = ch#read_ui16 in
+              let opcode =
+                try
+                  disassemble_thumb_instruction ch base instrbytes
+                with
+                | _ -> OpInvalid in
+              let currentPos = ch#pos in
+              let instrlen = currentPos - prevPos in
+              let instrBytes = Bytes.make instrlen ' ' in
+              let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrlen in
+              let _ = add_instruction prevPos opcode (Bytes.to_string instrBytes) in
+              let _ = pr_debug [(base#add_int prevPos)#toPretty;
+                                STR "  ";
+                                STR (arm_opcode_to_string opcode); NL] in
+              ()
+        with
+          | BCH_failure p ->
+             begin
+               ch_error_log#add
+                 "disassembly - thumb"
+                 (LBLOCK [STR "failure in disassembling instruction at ";
+                          (base#add_int prevPos)#toPretty]);
+               raise (BCH_failure p)
+             end
+        done
+      end
+    else
+      begin
+        while ch#pos < size do
+          let prevPos = ch#pos in
+          if is_data_block prevPos then
+            skip_data_block prevPos ch
+          else
+            let instrbytes = ch#read_doubleword in
+            let opcode =
+              try
+                disassemble_arm_instruction ch base instrbytes
+              with
+              | _ -> OpInvalid in
+            let currentPos = ch#pos in
+            let instrLen = currentPos - prevPos in
+            let instrBytes = Bytes.make instrLen ' ' in
+            let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrLen in
+            let _ = add_instruction prevPos opcode (Bytes.to_string instrBytes) in
+            ()
+        done ;
+        (* !arm_assembly_instructions#set_not_code opcode_monitor#get_data_blocks *)
+      end
   with
   | BCH_failure p ->
      begin
@@ -159,7 +197,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
        pr_debug [ STR "Error in disassembly: No more input" ; NL ];
        raise IO.No_more_input
      end
-  
+
 
 let disassemble_arm_sections () =
   let xSections = elf_header#get_executable_sections in
@@ -209,9 +247,14 @@ let disassemble_arm_sections () =
          0x89b4  0a ca 8c e2       ADD      R12, R12, #40960
          0x89b8  a4 fb bc e5       LDR      PC, [R12], #2980
 
+     F B 0x2d8a8  00 c6 8f e2       ADR      R12, 0x2d8b0
+         0x2d8ac  e3 ca 8c e2       ADD      R12, R12, #0xe3000
+         0x2d8b0  68 f7 bc e5       LDR      PC, [R12], #1896
+
  *)
 let is_library_stub faddr =
-  if elf_header#is_program_address faddr then
+  if elf_header#is_program_address faddr
+     && elf_header#has_xsubstring faddr 12 then
     let bytestring = byte_string_to_printed_string (elf_header#get_xsubstring faddr 12) in
     let instrsegs = [
         "00c68fe2\\(..\\)ca8ce2\\(....\\)bce5"
@@ -246,7 +289,7 @@ let collect_data_references () =
     !arm_assembly_instructions#itera
       (fun va instr ->
         match instr#get_opcode with
-        | LoadRegister (_,_,_, mem) when mem#is_pc_relative_address ->
+        | LoadRegister (_,_,_, mem, _) when mem#is_pc_relative_address ->
            let a = mem#get_pc_relative_address va in
            add a instr
         | _ -> ());
@@ -337,7 +380,7 @@ let set_block_boundaries () =
           match opcode with
           | Pop (_,_,rl) -> rl#includes_pc
           | Branch _ | BranchExchange _ -> true
-          | LoadRegister (_,dst,_,_)
+          | LoadRegister (_,dst,_,_,_)
                when dst#is_register && dst#get_register = ARPC -> true
           | LoadMultipleDecrementBefore (_,_,_,rl,_) when rl#includes_pc -> true
           | _ -> false in
@@ -483,7 +526,7 @@ let construct_assembly_function (count:int) (faddr:doubleword_int) =
          end
 
 let set_library_stub_name faddr =
-  pr_debug [ STR "Encountered set library stub name: " ; faddr#toPretty ; NL ]
+  pverbose [ STR "Encountered set library stub name: " ; faddr#toPretty ; NL ]
 
 let record_call_targets_arm () =
   arm_assembly_functions#itera
@@ -535,23 +578,33 @@ let construct_functions_arm () =
              ch_error_log#add
                "construct functions"
                (LBLOCK [ STR "Function " ; faddr#toPretty ; STR ": " ; p ]) in
-        let fndata = functions_data#get_function faddr in
-        if fndata#is_library_stub then
-          ()
-        else if fndata#has_name then
-          if is_library_stub faddr then
-            begin
-              fndata#set_library_stub;
-              chlog#add
-                "ELF library stub"
-                (LBLOCK [ faddr#toPretty ; STR ": " ; STR fndata#get_function_name ])
-            end
+        if functions_data#is_function_entry_point faddr then
+          let fndata = functions_data#get_function faddr in
+          if fndata#is_library_stub then
+            ()
+          else if fndata#has_name then
+            if is_library_stub faddr then
+              begin
+                fndata#set_library_stub;
+                chlog#add
+                  "ELF library stub"
+                  (LBLOCK [ faddr#toPretty ; STR ": " ; STR fndata#get_function_name ])
+              end
+            else
+              default ()
+          else if is_library_stub faddr then
+            set_library_stub_name faddr
           else
             default ()
-        else if is_library_stub faddr then
-          set_library_stub_name faddr
         else
-          default ()
+          ch_error_log#add
+            "no function found"
+            (LBLOCK [STR "construct functions: "; faddr#toPretty])
       ) fnentrypoints ;
+    List.iter (fun faddr ->
+        begin
+          count := !count + 1;
+          construct_assembly_function !count faddr
+        end) arm_assembly_functions#add_functions_by_preamble;
     record_call_targets_arm ()
   end

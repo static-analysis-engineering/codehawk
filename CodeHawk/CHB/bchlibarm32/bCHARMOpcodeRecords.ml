@@ -61,15 +61,19 @@ let get_cond_mnemonic_extension (c:arm_opcode_cc_t) =
   | ACCSignedGT -> "GT"
   | ACCSignedLE -> "LE"
   | ACCAlways -> ""
-  | ACCUnconditional ->
-     raise
-       (BCH_failure
-          (LBLOCK [ STR "Unexpected value for mnemonic extension" ]))
+  | ACCUnconditional -> ""
+
 
 class type ['a] opcode_formatter_int =
   object
     method ops: string -> arm_operand_int list -> 'a
-    method opscc: string -> arm_opcode_cc_t -> arm_operand_int list -> 'a
+    method opscc:
+             ?thumbw: bool
+             -> ?writeback: bool
+             -> string
+             -> arm_opcode_cc_t
+             -> arm_operand_int list
+             -> 'a
     method no_ops: string -> 'a
   end
 
@@ -77,22 +81,22 @@ type 'a opcode_record_t = {
     mnemonic: string;
     operands: arm_operand_int list;
     ccode: arm_opcode_cc_t option;
-    ida_asm: 'a
+    ida_asm: 'a opcode_formatter_int -> 'a
   }
 
-let get_record (opc:arm_opcode_t) =
+let get_record (opc:arm_opcode_t): 'a opcode_record_t =
   match opc with
-  | Add (s,c,rd,rn,rm) -> {
+  | Add (s, c, rd, rn, rm, tw) -> {
       mnemonic = "ADD";
       operands = [rd;rn;rm];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "ADD" c [rd;rn;rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "ADD" c [rd;rn;rm])
     }
-  | AddCarry (s,c,rd,rn,rm) -> {
+  | AddCarry (s, c, rd, rn, rm, tw) -> {
       mnemonic = "ADC";
       operands = [rd;rn;rm];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "ADC" c [rd;rn;rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "ADC" c [rd;rn;rm])
     }
   | Adr (cc, rd, addr) -> {
       mnemonic = "ADR";
@@ -172,6 +176,18 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "CMP" c [rn;rm])
     }
+  | CompareBranchNonzero (op1, op2) -> {
+      mnemonic = "CBNZ";
+      operands = [op1; op2];
+      ccode = None;
+      ida_asm = (fun f -> f#ops "CBNZ" [op1; op2])
+    }
+  | CompareBranchZero (op1, op2) -> {
+      mnemonic = "CBZ";
+      operands = [op1; op2];
+      ccode = None;
+      ida_asm = (fun f -> f#ops "CBZ" [op1; op2])
+    }
   | CompareNegative (cc,op1,op2) -> {
       mnemonic = "CMN";
       operands = [ op1; op2];
@@ -183,6 +199,12 @@ let get_record (opc:arm_opcode_t) =
       operands = [rd;rm];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "CLZ" c [rd;rm])
+    }
+  | LoadMultipleDecrementAfter (wb,c,rn,rl,mem) -> { 
+      mnemonic = "LDMDA";
+      operands = [ rn; rl; mem ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LDMDA" c [ rn; rl ])
     }
   | LoadMultipleDecrementBefore (wb,c,rn,rl,mem) -> { 
       mnemonic = "LDMDB";
@@ -196,17 +218,23 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDM" c [ rn; rl ])
     }
-  | LoadRegister (c,rt,rn,mem) -> {
+  | LoadMultipleIncrementBefore (wb,c,rn,rl,mem) -> { 
+      mnemonic = "LDMIB";
+      operands = [ rn; rl; mem ];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LDMIB" c [ rn; rl ])
+    }
+  | LoadRegister (c,rt,rn,mem,tw) -> {
       mnemonic = "LDR";
       operands = [ rt; rn; mem ];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "LDR" c [ rt; mem ])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "LDR" c [ rt; mem ])
     }
-  | LoadRegisterByte (c,rt,rn,mem) -> {
+  | LoadRegisterByte (c,rt,rn,mem,tw) -> {
       mnemonic = "LDRB";
       operands = [ rt; rn; mem ];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "LDRB" c [ rn; mem ])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRB" c [ rn; mem ])
     }
   | LoadRegisterDual (c,rt,rt2,rn,rm,mem) -> {
       mnemonic = "LDRD";
@@ -244,11 +272,11 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LSR" c [rd;rn;rm])
     }
-  | Move (s,c,rd,rm) -> {
+  | Move (s, c, rd, rm, tw) -> {
       mnemonic = "MOV";
       operands = [rd;rm];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "MOV" c [rd;rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "MOV" c [rd;rm])
     }
   | MoveTop (c,rd,imm) -> {
       mnemonic = "MOVT";
@@ -298,11 +326,23 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "RSC" cc [ rd; rn; rm ])
     }
+  | RotateRight (s, c, rd, rn, rm) -> {
+      mnemonic = "ROR";
+      operands = [ rd; rn; rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "ROR" c [rd; rn; rm])
+    }
   | RotateRightExtend (s,c,rd,rm) -> {
       mnemonic = "RRX";
       operands = [rd;rm];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "RRX" c [rd;rm])
+    }
+  | SignedExtendByte (c,rd,rm) -> {
+      mnemonic = "SXTB";
+      operands = [rd;rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SXTB" c [rd;rm])
     }
   | SignedExtendHalfword (c,rd,rm) -> {
       mnemonic = "SXTH";
@@ -340,11 +380,11 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STMIB" c [ rn; rl ])
     }
-  | StoreRegister (c,rt,rn,mem) -> {
+  | StoreRegister (c,rt,rn,mem,tw) -> {
       mnemonic = "STR";
       operands = [ rt; rn; mem ];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "STR" c [ rt; mem ])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "STR" c [ rt; mem ])
     }
   | StoreRegisterByte (c,rt,rn,mem) -> {
       mnemonic = "STRB";
@@ -381,6 +421,18 @@ let get_record (opc:arm_opcode_t) =
       operands = [ imm ];
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "SVC" cc [ imm ])
+    }
+  | Swap (c,rt,rt2,mem) -> {
+      mnemonic = "SWP";
+      operands = [rt; rt2; mem];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SWP" c [rt; rt2; mem])
+    }
+  | SwapByte (c,rt,rt2,mem) -> {
+      mnemonic = "SWPB";
+      operands = [rt; rt2; mem];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SWPB" c [rt; rt2; mem])
     }
   | Test (c,rn,rm) -> {
       mnemonic = "TST";
@@ -424,11 +476,29 @@ let get_record (opc:arm_opcode_t) =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UMULL" c [rdlo;rdhi;rn;rm])
     }
+  | NoOperation c -> {
+      mnemonic = "nop";
+      operands = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "NOP" c [])
+    }
+  | PermanentlyUndefined (c, op) -> {
+      mnemonic = "UDF";
+      operands = [op];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "UDF" c [op])
+    }
   | OpInvalid | NotCode _ -> {
       mnemonic = "invalid";
       operands = [];
       ccode = None;
       ida_asm = (fun f -> f#no_ops "invalid")
+    }
+  | NotRecognized (name, dw) -> {
+      mnemonic = "unknown";
+      operands = [];
+      ccode = None;
+      ida_asm = (fun f -> f#no_ops ("unknown " ^ name ^ ": " ^ dw#to_hex_string))
     }
 
 class string_formatter_t (width:int): [string] opcode_formatter_int =
@@ -445,8 +515,15 @@ object (self)
             (false,a ^ ", " ^ op#toString)) (true,s) operands in
     result
 
-  method opscc (s:string) (cc:arm_opcode_cc_t) (operands:arm_operand_int list) =
-    let mnemonic = s ^ (get_cond_mnemonic_extension cc) in
+  method opscc
+           ?(thumbw: bool=false)
+           ?(writeback: bool=false)
+           (s:string)
+           (cc:arm_opcode_cc_t)
+           (operands:arm_operand_int list) =
+    let wmod = if thumbw then ".W" else "" in
+    let wbmod = if writeback then "S" else "" in
+    let mnemonic = s ^ wbmod ^ (get_cond_mnemonic_extension cc) ^ wmod in
     self#ops mnemonic operands
 
   method no_ops (s:string) = s
