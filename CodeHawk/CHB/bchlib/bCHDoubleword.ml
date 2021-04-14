@@ -239,24 +239,11 @@ object (self:'a)
 
   method add (other:'a) =
     let sum = self#index + other#index in
-    if sum <= ffff_ffff then
-      {< unsigned_value = sum >}
-    else
-      {< unsigned_value = (sum - ffff_ffff) - 1 >}
+    {< unsigned_value = sum mod e32 >}
 
   method add_int (i:int):'a =
     let sum = unsigned_value + i in
-    if sum <= ffff_ffff then
-      {< unsigned_value = sum >}
-    else
-      begin
-	ch_error_log#add
-          "invalid argument" 
-	  (LBLOCK [ STR "Unable to add int -- sum exceeds 32 bits: " ;
-                    INT unsigned_value ; STR " + " ; INT i ]) ;
-	raise (Invalid_argument "doubleword_t#add_int")
-      end
-
+    {< unsigned_value = sum mod e32 >}
 
   method multiply_int (i:int):'a =
     let product = i * unsigned_value in
