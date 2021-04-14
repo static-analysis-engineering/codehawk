@@ -237,7 +237,34 @@ object (self)
                 f#iteri
                   (fun faddr a _ -> add faddr a))
               self#get_functions in
-    table    
+    table
+
+  method add_functions_by_preamble =
+    let instrtable = self#get_live_instructions in
+    let fnsAdded = ref [] in
+    let _ =
+      !arm_assembly_instructions#itera
+        (fun a instr ->
+          if H.mem functions a#index then
+            ()
+          else
+            if H.mem instrtable instr#get_address#index then
+            ()
+            else
+              match instr#get_opcode with
+              | Push (_, _, rlist) when List.mem ARLR rlist#get_register_list ->
+                 let fndata = functions_data#add_function a in
+                 begin
+                   fnsAdded := a :: !fnsAdded;
+                   fndata#set_by_preamble
+                 end
+              | _ -> ()) in
+    let _ =
+      chlog#add
+        "initialization"
+        (LBLOCK [STR "Add "; INT (List.length !fnsAdded);
+                 STR " functions by preamble"]) in
+    !fnsAdded
 
   method dark_matter_to_string =
     let table = self#get_live_instructions in
