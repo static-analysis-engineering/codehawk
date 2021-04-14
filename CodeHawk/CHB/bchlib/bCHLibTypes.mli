@@ -647,27 +647,29 @@ end
 class type system_settings_int =
 object
   (* setters *)
-  method set_summary_jar      : string -> unit
-  method set_jsignature_jar   : string -> unit
-  method set_verbose          : unit
-  method set_vftables         : unit
+  method set_summary_jar: string -> unit
+  method set_jsignature_jar: string -> unit
+  method set_verbose: unit
+  method set_vftables: unit
+  method set_thumb: unit
   method enable_sideeffects_on_globals : string list -> unit
   method disable_sideeffects_on_globals: string list -> unit
-  method set_abstract_stackvars_disabled    : unit
-  method set_apps_dir         : string -> unit
-  method set_app_summary_jars : string -> unit   (* application name *)
-  method set_export_dir       : string -> unit
+  method set_abstract_stackvars_disabled: unit
+  method set_apps_dir: string -> unit
+  method set_app_summary_jars: string -> unit   (* application name *)
+  method set_export_dir: string -> unit
 
   (* accessors *)
-  method get_summary_paths   : (string * Zip.in_file) list
+  method get_summary_paths: (string * Zip.in_file) list
   method get_jsignature_paths: (string * Zip.in_file) list
-  method get_export_dir      : string
+  method get_export_dir: string
 
   (* predicates *)
-  method is_verbose                       : bool
+  method is_verbose: bool
   method is_sideeffects_on_global_enabled: string -> bool
-  method is_abstract_stackvars_disabled   : bool
-  method is_set_vftables_enabled          : bool
+  method is_abstract_stackvars_disabled: bool
+  method is_set_vftables_enabled: bool
+  method has_thumb: bool
 
 end
 

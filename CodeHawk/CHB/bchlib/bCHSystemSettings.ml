@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -71,6 +73,7 @@ object (self)
   val mutable summary_paths = []
   val mutable exportdir = ""
   val mutable verbose = false
+  val mutable thumb = false
   val mutable jni_enabled = false
   val mutable set_vftables_enabled = false
   val mutable record_sideeffects_on_globals = []
@@ -81,6 +84,10 @@ object (self)
   val mutable app_name = None
 
   method set_verbose = verbose <- true
+
+  method set_thumb = thumb <- true
+
+  method has_thumb = thumb
 
   method set_vftables =  set_vftables_enabled <- true
 
