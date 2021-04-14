@@ -203,7 +203,7 @@ let translate_arm_instruction
    * else
    *   R[t] = ROR(data, 8*UInt(address<1:0>));
    * ------------------------------------------------------------------------ *)
-  | LoadRegister (ACCAlways, dst, base, src) ->
+  | LoadRegister (ACCAlways, dst, base, src, _) ->
      let floc = get_floc loc in
      let rhs = src#to_expr floc in
      let (lhs, lhscmds) = dst#to_lhs floc in
@@ -220,7 +220,7 @@ let translate_arm_instruction
    *    APSR.N = result<31>;
    *    APSR.Z = IsZeroBit(result);
    * ------------------------------------------------------------------------ *)
-  | Move (setflags, ACCAlways, dst, src) ->
+  | Move (setflags, ACCAlways, dst, src, _) ->
      let floc = get_floc loc in
      let rhs = src#to_expr floc in
      let (lhs, lhscmds) = dst#to_lhs floc in

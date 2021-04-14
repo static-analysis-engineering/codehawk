@@ -157,9 +157,9 @@ object (self)
     let tags = [ get_arm_opcode_name opc ] in
     let ctags c = tags @ [ ci c ] in
     let key = match opc with
-      | Add (setflags,cond,rd,rn,imm)
-        | AddCarry (setflags,cond,rd,rn,imm) ->
-         (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm ])
+      | Add (setflags,cond, rd, rn, imm, tw)
+        | AddCarry (setflags, cond, rd, rn, imm, tw) ->
+         (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm; setb tw ])
       | Adr (cond,rd,addr) ->
          (tags @ [ ci cond ], [ oi rd ; oi addr ])
       | ArithmeticShiftRight (s,c,rd,rn,rm) ->
@@ -181,12 +181,17 @@ object (self)
         | CompareNegative (cond,op1,op2)
         | CountLeadingZeros (cond,op1,op2) ->
          (tags @ [ ci cond ], [ oi op1; oi op2 ])
+      | CompareBranchNonzero (op1, op2)
+        | CompareBranchZero (op1, op2) -> (tags, [oi op1; oi op2])
       | LoadMultipleDecrementBefore (wb,c,rn,rl,mem)
-        | LoadMultipleIncrementAfter (wb,c,rn,rl,mem) ->
+        | LoadMultipleDecrementAfter (wb,c,rn,rl,mem)
+        | LoadMultipleIncrementAfter (wb,c,rn,rl,mem)
+        | LoadMultipleIncrementBefore (wb,c,rn,rl,mem) ->
          (ctags c, [ setb wb; oi rn; oi rl; oi mem ])
-      | LoadRegister (c,rt,rn,mem)
-        | LoadRegisterByte (c,rt,rn,mem) ->
-         (ctags c, [ oi rt; oi rn; oi mem ])
+      | LoadRegister (c,rt,rn,mem,tw) ->
+         (ctags c, [ oi rt; oi rn; oi mem; setb tw])
+      | LoadRegisterByte (c,rt,rn,mem,tw) ->
+         (ctags c, [ oi rt; oi rn; oi mem; setb tw ])
       | LoadRegisterDual (c,rt,rt2,rn,rm,mem) ->
          (ctags c,[ oi rt; oi rt2; oi rn; oi rm; oi mem])
       | LoadRegisterHalfword (c,rt,rn,rm,mem)
@@ -196,8 +201,8 @@ object (self)
       | LogicalShiftLeft (s,c,rd,rn,rm)
         | LogicalShiftRight (s,c,rd,rn,rm) ->
          (ctags c, [ setb s; oi rd; oi rn; oi rm])
-      | Move (setflags,cond,rd,imm) ->
-         (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm ])
+      | Move (setflags,cond,rd,imm,tw) ->
+         (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm; setb tw ])
       | MoveTop (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
       | MoveWide (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
       | Multiply (setflags,cond,rd,rn,rm) ->
@@ -206,9 +211,12 @@ object (self)
          (tags @ [ ci cond ], [ setb setflags; oi rd; oi rn; oi rm; oi ra ])
       | Pop (c,sp,rl)
         | Push (c,sp,rl) ->  (ctags c, [ oi sp; oi rl ])
+      | RotateRight (s, c, rd, rn, rm) ->
+         (ctags c, [setb s; oi rd; oi rn; oi rm])
       | RotateRightExtend (s,c,rd,rm) ->
          (ctags c,[setb s; oi rd; oi rm])
-      | SignedExtendHalfword (c,rd,rm) -> (ctags c, [ oi rd; oi rm ])
+      | SignedExtendHalfword (c,rd,rm)
+        | SignedExtendByte (c,rd,rm) -> (ctags c, [ oi rd; oi rm ])
       | SignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) ->
          (ctags c,[setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | SingleBitFieldExtract (c,rd,rn) -> (ctags c, [ oi rd; oi rn ])
@@ -216,7 +224,8 @@ object (self)
         | StoreMultipleIncrementAfter (wb,c,rn,rl,mem)
         | StoreMultipleIncrementBefore (wb,c,rn,rl,mem) ->
          (ctags c, [ setb wb; oi rn; oi rl; oi mem ])
-      | StoreRegister (c,rt,rn,mem)
+      | StoreRegister (c,rt,rn,mem,tw) ->
+         (ctags c, [oi rt; oi rn; oi mem; setb tw])
         | StoreRegisterByte (c,rt,rn,mem) ->
          (ctags c,[ oi rt; oi rn; oi mem])
       | StoreRegisterHalfword (c,rt,rn,rm,mem) ->
@@ -228,6 +237,8 @@ object (self)
         | ReverseSubtract (setflags,cond,dst,src,imm)
         | ReverseSubtractCarry (setflags,cond,dst,src,imm) ->
          (tags @ [ ci cond ], [ setb setflags; oi dst; oi src; oi imm ])
+      | Swap (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
+      | SwapByte (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
       | Test (cond,src1,src2)
         | TestEquivalence (cond,src1,src2) ->
          (tags @ [ ci cond ], [oi src1; oi src2 ])
@@ -239,6 +250,9 @@ object (self)
       | UnsignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) ->
          (ctags c,[setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | OpInvalid | NotCode _ -> (tags,[])
+      | NoOperation c -> (ctags c, [])
+      | PermanentlyUndefined (c,op) -> (ctags c, [oi op])
+      | NotRecognized (name, dw) -> (tags @ [name; dw#to_hex_string], [])
       | SupervisorCall (cond,op) -> (tags @ [ ci cond ], [ oi  op ]) in
     arm_opcode_table#add key
 
