@@ -41,6 +41,7 @@ MLIS := \
 	bCHARMCodePC \
 	bCHARMCHIFSystem \
 	bCHDisassembleARMInstruction \
+	bCHDisassembleThumbInstruction \
 	bCHDisassembleARM \
 	bCHARMLoopStructure \
 	bCHTranslateARMToCHIF \
@@ -65,6 +66,7 @@ SOURCES := \
 	bCHARMCodePC \
 	bCHARMCHIFSystem \
 	bCHDisassembleARMInstruction \
+	bCHDisassembleThumbInstruction \
 	bCHDisassembleARM \
 	bCHARMLoopStructure \
 	bCHTranslateARMToCHIF \
