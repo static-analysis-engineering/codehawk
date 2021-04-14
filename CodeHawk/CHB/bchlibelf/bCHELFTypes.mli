@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -144,6 +145,7 @@ class type elf_dictionary_int =
          
 class type elf_raw_section_int =
   object
+    method get_size: int
     method get_xstring: string
     method get_xsubstring: doubleword_int -> int -> string
     method get_vaddr: doubleword_int
@@ -169,6 +171,7 @@ class type elf_string_table_int =
     method get_vaddr: doubleword_int
     method get_string_reference: doubleword_int -> string option
     method includes_VA: doubleword_int -> bool
+    method get_size: int
     method get_xstring: string
     method get_xsubstring: doubleword_int -> int -> string
     method get_string: int -> string
@@ -203,6 +206,7 @@ class type elf_symbol_table_int =
     method set_function_entry_points: unit
     method set_function_names: unit
     method get_xstring: string
+    method get_size: int
     method get_xsubstring: doubleword_int -> int -> string
     method get_vaddr: doubleword_int
     method get_symbol: int -> elf_symbol_table_entry_int
@@ -236,6 +240,7 @@ class type elf_relocation_table_int =
     method set_symbols: elf_symbol_table_int -> unit
     method set_function_entry_points: unit
     method get_xstring: string
+    method get_size: int
     method get_xsubstring: doubleword_int -> int -> string
     method get_vaddr: doubleword_int
     method get_offset_symbol: doubleword_int -> string
@@ -264,6 +269,7 @@ class type elf_dynamic_table_int =
   object
     method read: unit
     method get_xstring: string
+    method get_size: int
     method get_xsubstring: doubleword_int -> int -> string
     method get_vaddr: doubleword_int
     method get_string_reference: doubleword_int -> string option
@@ -389,6 +395,7 @@ class type elf_dynamic_segment_int =
 
 class type elf_program_section_int =
   object
+    method get_size: int
     method get_xstring: string
     method get_xsubstring: doubleword_int -> int -> string
     method get_vaddr: doubleword_int
@@ -549,6 +556,7 @@ object
   (* predicates *)
   method has_sections: bool
   method is_program_address: doubleword_int -> bool
+  method has_xsubstring: doubleword_int -> int -> bool
 
   (* xml *)
   method write_xml: xml_element_int -> unit

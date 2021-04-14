@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -494,11 +495,28 @@ object(self)
               s#get_string_reference a
            | _ -> None) section_header_table None
 
+  method has_xsubstring (a:doubleword_int) (size:int) =
+    match self#get_containing_section a with
+    | Some s -> (a#subtract s#get_vaddr)#to_int + size < s#get_size
+    | _ -> false
+
   (* return a substring of the section starting at virtual address a
      of size bytes *)
   method get_xsubstring (a:doubleword_int) (size:int) =
     match self#get_containing_section a with
-    | Some s -> s#get_xsubstring a size
+    | Some s ->
+       if s#get_size >= size then
+         s#get_xsubstring a size
+       else
+         raise
+           (BCH_failure
+              (LBLOCK [STR "Error in xsubstring request: ";
+                       STR "Size of section ";
+                       s#get_vaddr#toPretty;
+                       STR ": ";
+                       INT s#get_size;
+                       STR " does not cover request of ";
+                       INT size]))
     | _ ->
        raise
          (BCH_failure
