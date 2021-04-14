@@ -128,6 +128,8 @@ let speclist =
     ("-startaddress",  Arg.String set_stream_start_address,
      "start address of the code stream") ;
     ("-arm", Arg.Unit (fun () -> architecture := "arm"), "arm executable");
+    ("-thumb", Arg.Unit (fun () -> system_settings#set_thumb),
+     "arm executable includes thumb instructions");
     ("-mips", Arg.Unit (fun () -> architecture := "mips"), "mips executable");
     ("-elf", Arg.Unit (fun () -> fileformat := "elf"), "ELF executable");
     ("-extract", Arg.Unit (fun () -> cmd := "extract"),
