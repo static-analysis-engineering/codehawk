@@ -174,17 +174,20 @@ object (self:'a)
     match kind with
     | ARMReg r -> env#mk_arm_register_variable r
     | ARMOffsetAddress (r,offset,isadd,iswback,isindex) ->
-       let rvar = env#mk_arm_register_variable r in
-       let memoff =
-         match (offset,isadd) with
-         | (ARMImmOffset i,true) -> mkNumerical i
-         | (ARMImmOffset i,false) -> (mkNumerical i)#neg
-         | _ ->
-            raise
-              (BCH_failure
-                 (LBLOCK [STR "to_variable: offset not implemented: ";
-                          self#toPretty])) in
-       floc#get_memory_variable_1 rvar memoff
+       (match offset with
+        | ARMImmOffset _ ->
+           let rvar = env#mk_arm_register_variable r in
+           let memoff =
+             match (offset,isadd) with
+             | (ARMImmOffset i,true) -> mkNumerical i
+             | (ARMImmOffset i,false) -> (mkNumerical i)#neg
+             | _ ->
+                raise
+                  (BCH_failure
+                     (LBLOCK [STR "to_variable: offset not implemented: ";
+                              self#toPretty])) in
+           floc#get_memory_variable_1 rvar memoff
+        | _ -> env#mk_unknown_memory_variable "operand")
     | _ ->
        raise
          (BCH_failure
@@ -207,6 +210,8 @@ object (self:'a)
        big_int_constant_expr imm#to_big_int
     | ARMReg _ -> XVar (self#to_variable floc)
     | ARMOffsetAddress _ -> XVar (self#to_variable floc)
+    | ARMAbsolute a when elf_header#is_program_address a ->
+       num_constant_expr (elf_header#get_program_value a)#to_numerical
     | _ ->
        raise
          (BCH_failure
