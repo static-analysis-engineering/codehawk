@@ -148,6 +148,7 @@ object (self)
   val mutable constant_files = []
   val lib_functions_loaded = H.create 3 (* functions loaded via LoadLibrary/GetProcAddress *)
   val successors = H.create 3
+  val arm_thumb_switches = H.create 3
 
   val mutable user_data_blocks = 0 
   val mutable user_call_targets = 0
@@ -177,6 +178,12 @@ object (self)
       H.find successors hxa
     else
       []
+
+  method get_arm_thumb_switch (a:string): string option =
+    if H.mem arm_thumb_switches a then
+      Some (H.find arm_thumb_switches a)
+    else
+      None
 
   method import_ida_function_entry_points =
     match load_ida_dbfe_file () with
@@ -614,6 +621,8 @@ object (self)
          end) ;
       (if hasc "indirect-jumps" then
          self#read_xml_indirect_jumps (getc "indirect-jumps"));
+      (if hasc "arm-thumb" then
+         self#read_xml_arm_thumb_switches (getc "arm-thumb"));
       (if hasc "encodings" then self#read_xml_encodings (getc "encodings"));
       (if hasc "cfnops" then self#read_xml_cfnops (getc "cfnops"));
       (if hasc "fixed-conditionals" then 
@@ -828,6 +837,14 @@ object (self)
 	chlog#add "add encoding"  (encoding_to_pretty c) ;
 	encodings <- c :: encodings
       end) (node#getTaggedChildren "encoding")
+
+  method private read_xml_arm_thumb_switches (node: xml_element_int) =
+    List.iter (fun n ->
+        let get = n#getAttribute in
+        let iaddr = get "ia" in
+        let tgtarch = get "tgt" in
+        H.add arm_thumb_switches iaddr tgtarch)
+    (node#getTaggedChildren "switch")
 
   method private read_xml_fixed_true_conditionals (node:xml_element_int) = ()
 
