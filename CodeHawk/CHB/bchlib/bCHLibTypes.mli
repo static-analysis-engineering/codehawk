@@ -2903,6 +2903,7 @@ object
   method get_cfnop: doubleword_int -> int * string
   method get_cfjmp: doubleword_int -> doubleword_int * int * string
   method get_successors: doubleword_int -> doubleword_int list
+  method get_arm_thumb_switch: string -> string option
 
   method get_ida_function_entry_points: doubleword_int list
   method get_userdeclared_codesections: doubleword_int list
