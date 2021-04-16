@@ -34,6 +34,8 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
+val get_cond_mnemonic_extension: arm_opcode_cc_t -> string
+
 val get_arm_opcode_name: arm_opcode_t -> string
 val get_arm_operands: arm_opcode_t -> arm_operand_int list
 

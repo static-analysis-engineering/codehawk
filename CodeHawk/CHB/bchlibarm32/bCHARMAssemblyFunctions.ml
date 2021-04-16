@@ -252,7 +252,7 @@ object (self)
             ()
             else
               match instr#get_opcode with
-              | Push (_, _, rlist) when List.mem ARLR rlist#get_register_list ->
+              | Push (_, _, rlist,_) when List.mem ARLR rlist#get_register_list ->
                  let fndata = functions_data#add_function a in
                  begin
                    fnsAdded := a :: !fnsAdded;

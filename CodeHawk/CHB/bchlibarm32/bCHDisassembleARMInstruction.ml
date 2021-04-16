@@ -352,7 +352,7 @@ let parse_data_proc_reg_type
      let imm5 = mk_imm5 bit11_8 bit7 in
      let rm = mk_imm_shift_reg bit3_0 bit6_5 imm5 RD in
      (* SUB{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
-     Subtract (s,c,rd,rn,rm)
+     Subtract (s,c,rd,rn,rm,false)
 
   (* <cc><0>< 3>s<rn><rd><imm>ty0<rm> *)   (* RSB-reg *)
   | 3 when (bit4 = 0) ->
@@ -471,14 +471,14 @@ let parse_data_proc_reg_type
      let imm5 = mk_imm5 bit11_8 bit7 in
      let rm = mk_imm_shift_reg bit3_0 bit6_5 imm5 RD in
      (* CMP<c> <Rn>, <Rm>{, <shift>} *)
-     Compare (c,rn,rm)
+     Compare (c,rn,rm,false)
 
   (* <cc><0><10>1<rn>< 0><rs>0ty1<rm> *)   (* CMP-reg-shifted *)
   | 10 when (bit20 = 1) && (bit4 = 1) ->
      let rn = arm_register_op (get_arm_reg bit19_16) RD in
      let rm = mk_reg_shift_reg bit3_0 bit6_5 bit11_8 RD in
      (* CMP<c> <Rn>, <Rm>, <type> <Rs> *)
-     Compare (c,rn,rm)
+     Compare (c,rn,rm,false)
 
   (* <cc><0><11>0<15><rd><15>0001<rm> *)   (* CLZ     *)
   | 11 when
@@ -542,7 +542,7 @@ let parse_data_proc_reg_type
      let (_,imm) = decode_imm_shift 0 imm5 in
      let imm = mk_arm_immediate_op false 4 (mkNumerical imm) in
      (* LSL{S}<c> <Rd>, <Rm>, #<imm> *)
-     LogicalShiftLeft (s,c,rd,rm,imm)
+     LogicalShiftLeft (s,c,rd,rm,imm,false)
 
   (* <cc><0><13>s< 0><rd><rm>0001<rn> *)   (* LSL-reg *)
   |13 when (bit19_16 = 0) && (bit7 = 0) && (bit6_5 = 0) && (bit4 = 1) ->
@@ -551,7 +551,7 @@ let parse_data_proc_reg_type
      let rm = arm_register_op (get_arm_reg bit11_8) RD in
      let rn = arm_register_op (get_arm_reg bit3_0) RD in
      (* LSL{S}<c> <Rd>, <Rn>, <Rm> *)
-     LogicalShiftLeft (s,c,rd,rn,rm)
+     LogicalShiftLeft (s,c,rd,rn,rm,false)
 
   (* <cc><0><13>s< 0><rd><imm>010<rm> *)   (* LSR-imm *)
   | 13 when (bit19_16 = 0) && (bit6_5 = 1) && (bit4 = 0) ->
@@ -691,7 +691,7 @@ let parse_data_proc_imm_type
      let rn = arm_register_op (get_arm_reg bit19_16) RD in
      let imm = mk_imm bit11_8 bit7_0 in
      (* SUB{S}<c> <Rd>, <Rn>, #<const> *)
-     Subtract (s,c,rd,rn,imm)
+     Subtract (s,c,rd,rn,imm,false)
 
   (* <cc><1>< 3>s<rn><rd><--imm12---> *)   (* RSC-imm *)
   | 3 ->
@@ -791,7 +791,7 @@ let parse_data_proc_imm_type
      let rn = arm_register_op (get_arm_reg bit19_16) RD in
      let imm = mk_imm bit11_8 bit7_0 in
      (* CMP<c> <Rn>, #<const> *)
-     Compare (c,rn,imm)
+     Compare (c,rn,imm,false)
 
   (* <cc><1><11>1<rn>< 0><--imm12---> *)   (* CMN-imm *)
   | 11 when (bit20 = 1) && (bit15_12 = 0) ->
@@ -852,13 +852,13 @@ let parse_load_store_stack
   | (1,0,1,0) ->
      let rl = arm_register_list_op [ (get_arm_reg bit15_12) ] RD in
      (* PUSH<c> <registers> *)
-     Push (c,sp,rl)
+     Push (c,sp,rl,false)
 
   (* <cc><2>01001<13><rt><-imm12:4--> *)   (* POP *)
   | (0,1,0,1) ->
      let rl = arm_register_list_op [ (get_arm_reg bit15_12) ] WR in
      (* POP<c> <registers> *)
-     Pop (c,sp,rl)
+     Pop (c,sp,rl,false)
 
   (* <cc><2>pu0w0<13><rt><-imm12:4--> *)   (* STR-imm *)
   | (_,_,_,0) ->
@@ -1148,13 +1148,13 @@ let parse_block_data_stack
   | (0,1,1) ->
      let rl = arm_register_list_op rl WR in
      (* POP<c> <registers> *)
-     Pop (c,sp,rl)
+     Pop (c,sp,rl,false)
 
   (* <cc><4>10010<13><register-list-> *)   (* PUSH *)
   | (1,0,0) ->
      let rl = arm_register_list_op rl RD in
      (* PUSH<c> <registers> *)
-     Push (c,sp,rl)
+     Push (c,sp,rl,false)
 
   | (k,l,m) ->
      NotRecognized (
@@ -1274,7 +1274,7 @@ let parse_branch_link_type
   let tgt = (base#add_int (ch#pos + 4))#add_int imm32 in
   let tgtop = arm_absolute_op tgt RD in
   if opx = 0 then
-    Branch (cond,tgtop)
+    Branch (cond, tgtop, false)
   else
     BranchLink (cond,tgtop)
 

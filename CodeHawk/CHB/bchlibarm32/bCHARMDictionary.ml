@@ -130,6 +130,7 @@ object (self)
     let setb x = if x then 1 else 0 in
     let tags = [ arm_opkind_mcts#ts k ] in
     let key = match k with
+      | ARMDMBOption o -> (tags @ [ dmb_option_mfts#ts o], [])
       | ARMReg r -> (tags @ [ arm_reg_mfts#ts r ],[])
       | ARMRegList rl -> (tags @ (List.map arm_reg_mfts#ts rl),[])
       | ARMShiftedReg (r,rs) ->
@@ -171,18 +172,21 @@ object (self)
         | BitwiseBitClear (setflags,cond,rd,rn,imm)
         | BitwiseOr (setflags,cond,rd,rn,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm])
-      | Branch (cond,addr)
-        | BranchExchange (cond,addr)
+      | Branch (c,addr,tw) -> (ctags c, [oi addr; setb tw])
+      | BranchExchange (cond,addr)
         | BranchLink (cond,addr)
         | BranchLinkExchange (cond,addr) ->
          (tags @ [ ci cond ], [ oi addr ])
       | ByteReverseWord (c,rd,rm) -> (ctags c,[ oi rd; oi rm ])
-      | Compare (cond,op1,op2)
-        | CompareNegative (cond,op1,op2)
+      | Compare (c,op1,op2,tw) ->
+         (ctags c, [oi op1; oi op2; setb tw])
+      | CompareNegative (cond,op1,op2)
         | CountLeadingZeros (cond,op1,op2) ->
          (tags @ [ ci cond ], [ oi op1; oi op2 ])
       | CompareBranchNonzero (op1, op2)
         | CompareBranchZero (op1, op2) -> (tags, [oi op1; oi op2])
+      | DataMemoryBarrier (c,op) -> (ctags c,[oi op])
+      | IfThen (c, xyz) -> ((ctags c) @ [xyz], [])
       | LoadMultipleDecrementBefore (wb,c,rn,rl,mem)
         | LoadMultipleDecrementAfter (wb,c,rn,rl,mem)
         | LoadMultipleIncrementAfter (wb,c,rn,rl,mem)
@@ -194,12 +198,15 @@ object (self)
          (ctags c, [ oi rt; oi rn; oi mem; setb tw ])
       | LoadRegisterDual (c,rt,rt2,rn,rm,mem) ->
          (ctags c,[ oi rt; oi rt2; oi rn; oi rm; oi mem])
+      | LoadRegisterExclusive (c, rt, rn, mem) ->
+         (ctags c, [oi rt; oi rn; oi mem])
       | LoadRegisterHalfword (c,rt,rn,rm,mem)
         | LoadRegisterSignedByte (c,rt,rn,rm,mem)
         | LoadRegisterSignedHalfword (c,rt,rn,rm,mem) ->
          (ctags c,[ oi rt; oi rn; oi rm; oi mem])
-      | LogicalShiftLeft (s,c,rd,rn,rm)
-        | LogicalShiftRight (s,c,rd,rn,rm) ->
+      | LogicalShiftLeft (s,c,rd,rn,rm,tw) ->
+         (ctags c, [ setb s; oi rd; oi rn; oi rm; setb tw])
+      | LogicalShiftRight (s,c,rd,rn,rm) ->
          (ctags c, [ setb s; oi rd; oi rn; oi rm])
       | Move (setflags,cond,rd,imm,tw) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm; setb tw ])
@@ -209,8 +216,8 @@ object (self)
          (tags @ [ ci cond ], [ setb setflags; oi rd; oi rn; oi rm])
       | MultiplyAccumulate (setflags,cond,rd,rn,rm,ra) ->
          (tags @ [ ci cond ], [ setb setflags; oi rd; oi rn; oi rm; oi ra ])
-      | Pop (c,sp,rl)
-        | Push (c,sp,rl) ->  (ctags c, [ oi sp; oi rl ])
+      | Pop (c,sp,rl,tw) -> (ctags c, [oi sp; oi rl; setb tw])
+      | Push (c,sp,rl,tw) ->  (ctags c, [ oi sp; oi rl; setb tw ])
       | RotateRight (s, c, rd, rn, rm) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm])
       | RotateRightExtend (s,c,rd,rm) ->
@@ -232,8 +239,11 @@ object (self)
          (tags @ [ ci c ], [ oi rt; oi rn; oi rm; oi mem ])
       | StoreRegisterDual (c,rt,rt2,rn,rm,mem) ->
          (ctags c, [ oi rt; oi rt2; oi rn; oi rm; oi mem])
-      | Subtract (setflags,cond,dst,src,imm)
-        | SubtractCarry (setflags,cond,dst,src,imm)
+      | StoreRegisterExclusive (c, rd, rt, rn, mem) ->
+         (ctags c, [oi rd; oi rt; oi rn; oi mem])
+      | Subtract (s,c,dst,src,imm,tw) ->
+         (ctags c, [setb s; oi dst; oi src; oi imm; setb tw])
+      | SubtractCarry (setflags,cond,dst,src,imm)
         | ReverseSubtract (setflags,cond,dst,src,imm)
         | ReverseSubtractCarry (setflags,cond,dst,src,imm) ->
          (tags @ [ ci cond ], [ setb setflags; oi dst; oi src; oi imm ])

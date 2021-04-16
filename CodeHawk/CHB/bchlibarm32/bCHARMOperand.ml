@@ -59,6 +59,7 @@ open BCHELFHeader
 
 (* bchlibarm32 *)
 open BCHARMPseudocode
+open BCHARMSumTypeSerializer
 open BCHARMTypes
 
    (* commonly used constant values *)
@@ -70,6 +71,8 @@ let e31 = e16 * e15
 let e32 = e16 * e16
 
 let arm_operand_mode_to_string = function RD -> "RD" | WR -> "WR" | RW -> "RW"
+
+let dmb_option_to_string = dmb_option_mfts#ts
 
 let shift_rotate_type_to_string (srt:shift_rotate_type_t) =
   match srt with
@@ -268,6 +271,7 @@ object (self:'a)
 
   method toString =
     match kind with
+    | ARMDMBOption o -> dmb_option_to_string o
     | ARMReg r -> armreg_to_string r
     | ARMRegList l ->
        "{" ^ String.concat "," (List.map armreg_to_string l) ^ "}"
@@ -294,6 +298,12 @@ object (self:'a)
   method toPretty = STR self#toString
 
 end
+
+let arm_dmb_option_op (op: dmb_option_t) =
+  new arm_operand_t (ARMDMBOption op) RD
+
+let arm_dmb_option_from_int_op (option:int) =
+  arm_dmb_option_op (get_dmb_option option)
 
 let arm_register_op (r:arm_reg_t) (mode:arm_operand_mode_t) =
   new arm_operand_t (ARMReg r) mode

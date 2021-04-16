@@ -74,6 +74,21 @@ let get_opcode_cc (c:int) =
        (BCH_failure
           (LBLOCK [ STR "Unexpected value for condition code: "; INT c ]))
 
+let get_dmb_option (option:int) =
+  match option with
+  | 15 -> FullSystemRW
+  | 14 -> FullSystemW
+  | 11 -> InnerShareableRW
+  | 10 -> InnerShareableW
+  | 7 -> NonShareableRW
+  | 6 -> NonShareableW
+  | 3 -> OuterShareableRW
+  | 2 -> OuterShareableW
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK [STR "Unexpected value for dmb option: "; INT option]))
+
 let get_arm_reg (r:int) =
   match r with
   | 0 -> AR0

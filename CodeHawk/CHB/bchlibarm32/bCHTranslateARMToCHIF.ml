@@ -248,7 +248,7 @@ let translate_arm_instruction
    * if registers<13> == '1' then SP = bits(32) UNKNOWN;
    * ------------------------------------------------------------------------ *)
 
-  | Pop (ACCAlways, sp, rl) ->
+  | Pop (ACCAlways, sp, rl, _) ->
      let floc = get_floc loc in
      let regcount = rl#get_register_count in
      let sprhs = sp#to_expr floc in
@@ -285,7 +285,7 @@ let translate_arm_instruction
    *     MemA[address,4] = PCStoreValue();
    * SP = SP - 4*BitCount(registers);
    * ------------------------------------------------------------------------ *)
-  | Push (ACCAlways, sp, rl) ->
+  | Push (ACCAlways, sp, rl, _) ->
      let floc = get_floc loc in
      let regcount = rl#get_register_count in
      let sprhs = sp#to_expr floc in     

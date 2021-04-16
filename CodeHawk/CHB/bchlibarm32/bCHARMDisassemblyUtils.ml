@@ -55,6 +55,7 @@ open BCHELFHeader
 (* bchlibarm32 *)
 open BCHARMOpcodeRecords
 open BCHARMOperand
+open BCHARMPseudocode
 open BCHARMTypes
 
 (* commonly used constant values *)
@@ -74,6 +75,53 @@ let rec pow2 n =
     b * b * (if n mod 2 = 0 then 1 else 2)
         
 let stri = string_of_int
+
+let get_it_condition_list (firstcond:int) (mask:int) =
+  let fc0 = firstcond mod 2 in
+  let elsecond = if fc0 = 1 then firstcond - 1 else firstcond + 1 in
+  let thencc = ("T", get_opcode_cc firstcond) in
+  let elsecc = ("E", get_opcode_cc elsecond) in
+  let xyz =
+    match (mask, fc0) with
+    | (8, _) -> []
+    | (4, 0) -> [thencc]
+    | (4, 1) -> [elsecc]
+    | (12, 0) -> [elsecc]
+    | (12, 1) -> [thencc]
+    | (2, 0) -> [thencc; thencc]
+    | (2, 1) -> [elsecc; elsecc]
+    | (10, 0) -> [elsecc; thencc]
+    | (10, 1) -> [thencc; elsecc]
+    | (6, 0) -> [thencc; elsecc]
+    | (6, 1) -> [elsecc; thencc]
+    | (14, 0) -> [elsecc; elsecc]
+    | (14, 1) -> [thencc; thencc]
+    | (1, 0) -> [thencc; thencc; thencc]
+    | (1, 1) -> [elsecc; elsecc; elsecc]
+    | (9, 0) -> [elsecc; thencc; thencc]
+    | (9, 1) -> [thencc; elsecc; elsecc]
+    | (5, 0) -> [thencc; elsecc; thencc]
+    | (5, 1) -> [elsecc; thencc; elsecc]
+    | (13, 0) -> [elsecc; elsecc; thencc]
+    | (13, 1) -> [thencc; thencc; elsecc]
+    | (3, 0) -> [thencc; thencc; elsecc]
+    | (3, 1) -> [elsecc; elsecc; thencc]
+    | (11, 0) -> [elsecc; thencc; elsecc]
+    | (11, 1) -> [thencc; elsecc; thencc]
+    | (7, 0) -> [thencc; elsecc; elsecc]
+    | (7, 1) -> [elsecc; thencc; thencc]
+    | (15, 0) -> [elsecc; elsecc; elsecc]
+    | (15, 1) -> [thencc; thencc; thencc]
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Unexpected values in get_it_condition_list: ";
+                     STR "mask: ";
+                     INT mask;
+                     STR "; fc0: ";
+                     INT fc0])) in
+  thencc::xyz
+
 
 let decompose_arm_instr (dw:doubleword_int):arm_instr_class_t =
   let dwint = dw#to_int in
