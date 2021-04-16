@@ -221,6 +221,21 @@ object
         LBLOCK [  STR " fns   summ   DLL" ; NL ; dlls  ]
       else
         STR "" in
+    let csv = LBLOCK [
+                  STR "CSV:";
+                  INT d.dm_instrs;
+                  STR ",";
+                  INT d.dm_unknown_instrs;
+                  STR ",";
+                  INT d.dm_functions;
+                  STR ",";
+                  prf d.dm_pcoverage;
+                  STR ",";
+                  INT d.dm_overlap;
+                  STR ",";
+                  INT d.dm_alloverlap;
+                  NL] in
+
     LBLOCK [ 
         STR "Instructions         : " ; INT d.dm_instrs ; NL ;
         STR "Unknown instructions : " ; INT d.dm_unknown_instrs ; NL ;
@@ -231,7 +246,9 @@ object
         STR "Jumptables           : " ; INT d.dm_jumptables ; NL ;
         STR "Data blocks          : " ; INT d.dm_datablocks ; NL ; NL ;
         STR "Imports" ; NL ; imports_to_pretty d.dm_imports ; NL ; 
-        exports_metrics_handler#toPretty d.dm_exports ; NL ]
+        exports_metrics_handler#toPretty d.dm_exports ; NL;
+        csv; NL
+    ]
 
 end
 
