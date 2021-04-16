@@ -38,6 +38,8 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
+val get_dmb_option: int -> dmb_option_t
+
 val get_opcode_cc: int -> arm_opcode_cc_t
 val get_arm_reg: int -> arm_reg_t
 val get_reglist_from_int: int -> int -> arm_reg_t list

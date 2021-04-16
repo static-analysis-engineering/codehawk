@@ -87,6 +87,7 @@ let x2p = xpr_formatter#pr_expr
 let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   let size = String.length x in  
   (* let opcode_monitor = new opcode_monitor_t base size in *)
+  let mode = ref "arm" in
   let add_instruction position opcode bytes =
     let index = position + displacement in 
     let addr = base#add_int position in
@@ -129,15 +130,35 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                 STR "; displacement: " ; INT displacement ;
                 STR "; size: " ; INT size  ]) in
   try
-    if system_settings#has_thumb then
-      let _ = pverbose [STR "disassemble thumb instructions"; NL] in
-      begin
-        while ch#pos + 2 < size do
-          let prevPos = ch#pos in
-          try
-            if is_data_block prevPos then
-              skip_data_block prevPos ch
-            else
+    let _ = pverbose [STR "disassemble thumb instructions"; NL] in
+    begin
+      while ch#pos + 2 < size do
+        let prevPos = ch#pos in
+        let iaddr = base#add_int ch#pos in
+        let _ =
+          let iaddrh = iaddr#to_hex_string in
+          if system_settings#has_thumb then
+            match system_info#get_arm_thumb_switch iaddrh with
+            | Some "A" ->
+               begin
+                 mode := "arm";
+                 chlog#add
+                   "arm-thumb switch"
+                   (LBLOCK [iaddr#toPretty; STR ": arm"])
+               end
+            | Some "T" ->
+               begin
+                 mode := "thumb";
+                 chlog#add
+                   "arm-thumb switch"
+                   (LBLOCK [iaddr#toPretty; STR ": thumb"])
+               end
+            | _ -> () in
+        try
+          if is_data_block prevPos then
+            skip_data_block prevPos ch
+          else
+            if system_settings#has_thumb && !mode = "thumb" then
               let instrbytes = ch#read_ui16 in
               let opcode =
                 try
@@ -153,39 +174,32 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                                 STR "  ";
                                 STR (arm_opcode_to_string opcode); NL] in
               ()
+            else
+              let instrbytes = ch#read_doubleword in
+              let opcode =
+                  try
+                    disassemble_arm_instruction ch base instrbytes
+                  with
+                  | _ -> OpInvalid in
+              let currentPos = ch#pos in
+              let instrLen = currentPos - prevPos in
+              let instrBytes = Bytes.make instrLen ' ' in
+              let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrLen in
+              let _ = add_instruction prevPos opcode (Bytes.to_string instrBytes) in
+              ()
         with
-          | BCH_failure p ->
-             begin
-               ch_error_log#add
-                 "disassembly - thumb"
-                 (LBLOCK [STR "failure in disassembling instruction at ";
-                          (base#add_int prevPos)#toPretty]);
-               raise (BCH_failure p)
-             end
-        done
-      end
-    else
-      begin
-        while ch#pos < size do
-          let prevPos = ch#pos in
-          if is_data_block prevPos then
-            skip_data_block prevPos ch
-          else
-            let instrbytes = ch#read_doubleword in
-            let opcode =
-              try
-                disassemble_arm_instruction ch base instrbytes
-              with
-              | _ -> OpInvalid in
-            let currentPos = ch#pos in
-            let instrLen = currentPos - prevPos in
-            let instrBytes = Bytes.make instrLen ' ' in
-            let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrLen in
-            let _ = add_instruction prevPos opcode (Bytes.to_string instrBytes) in
-            ()
-        done ;
-        (* !arm_assembly_instructions#set_not_code opcode_monitor#get_data_blocks *)
-      end
+        | BCH_failure p ->
+           begin
+             ch_error_log#add
+               "disassembly"
+               (LBLOCK [STR "failure in disassembling instruction at ";
+                        (base#add_int prevPos)#toPretty;
+                        STR " in mode ";
+                        STR !mode]);
+             raise (BCH_failure p)
+           end
+      done
+    end
   with
   | BCH_failure p ->
      begin
@@ -347,7 +361,7 @@ let set_block_boundaries () =
       (fun _ instr ->
         try
           (match instr#get_opcode with
-           | Branch (_,op) | BranchExchange (_,op) ->
+           | Branch (_, op, _) | BranchExchange (_,op) ->
               if op#is_absolute_address then
                 let jmpaddr = op#get_absolute_address in
                 set_block_entry jmpaddr
@@ -378,7 +392,7 @@ let set_block_boundaries () =
         let opcode = instr#get_opcode in
         let is_block_ending =
           match opcode with
-          | Pop (_,_,rl) -> rl#includes_pc
+          | Pop (_,_,rl,_) -> rl#includes_pc
           | Branch _ | BranchExchange _ -> true
           | LoadRegister (_,dst,_,_,_)
                when dst#is_register && dst#get_register = ARPC -> true
@@ -412,17 +426,17 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
       match system_info#get_successors iaddr with
       | [] ->
          (match opcode with
-          | Pop (ACCAlways,_,rl) when rl#includes_pc -> []
-          | Branch (ACCAlways,op)
+          | Pop (ACCAlways,_,rl,tw) when rl#includes_pc -> []
+          | Branch (ACCAlways, op, _)
             | BranchExchange (ACCAlways,op) when op#is_register && op#get_register == ARLR ->
              []
-          | Branch (ACCAlways,op)
+          | Branch (ACCAlways, op, _)
             | BranchExchange (ACCAlways,op) when op#is_absolute_address ->
              [ op#get_absolute_address ]
-          | Branch (_,op)
+          | Branch (_,op, _)
             | BranchExchange (_,op) when op#is_register && op#get_register == ARLR ->
              (next ())
-          | Branch (_,op)
+          | Branch (_,op, _)
             | BranchExchange (_,op) when op#is_absolute_address ->
              (next ()) @ [ op#get_absolute_address ]
           | _ -> (next ()))

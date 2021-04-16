@@ -47,6 +47,16 @@ type shift_rotate_type_t =
   | SRType_ROR
   | SRType_RRX
 
+type dmb_option_t =  (* data memory barrier option *)
+  | FullSystemRW
+  | FullSystemW
+  | InnerShareableRW
+  | InnerShareableW
+  | NonShareableRW
+  | NonShareableW
+  | OuterShareableRW
+  | OuterShareableW
+
 type register_shift_rotate_t =
   | ARMImmSRT of shift_rotate_type_t * int    (* immediate shift amount *)
   | ARMRegSRT of shift_rotate_type_t * arm_reg_t (* shift amount in reg *)
@@ -154,6 +164,7 @@ type arm_instr_class_t =
       * int (* 3:0   - datax *)
 
 type arm_operand_kind_t =
+  | ARMDMBOption of dmb_option_t
   | ARMReg of arm_reg_t
   | ARMRegList of arm_reg_t list
   | ARMShiftedReg of arm_reg_t * register_shift_rotate_t
@@ -284,6 +295,7 @@ type arm_opcode_t =
   | Branch of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* target address *)
+      * bool             (* T.W. *)
   | BranchExchange of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* target address *)
@@ -301,6 +313,7 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm: source 2 *)
+      * bool             (* T.W *)
   | CompareBranchNonzero of
       arm_operand_int    (* register *)
       * arm_operand_int  (* target address *)
@@ -315,6 +328,12 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
+  | DataMemoryBarrier of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* dmb option *)
+  | IfThen of
+      arm_opcode_cc_t    (* firstcond *)
+      * string           (* <x><y><z> *)
   | LoadMultipleDecrementAfter of
       bool    (* writeback *)
       * arm_opcode_cc_t (* condition *)
@@ -358,6 +377,11 @@ type arm_opcode_t =
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* rm/imm: index/immediate *)
       * arm_operand_int  (* mem: memory location *)
+  | LoadRegisterExclusive of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rt: destination *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* mem: memory location *)
   | LoadRegisterHalfword of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: destination *)
@@ -382,6 +406,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: shift<0:7> *)
+      * bool             (* T.W *)
   | LogicalShiftRight of
       bool  (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -419,10 +444,12 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* stack pointer *)
       * arm_operand_int  (* register list *)
+      * bool             (* T.W. *)
   | Push of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* stack pointer *)
       * arm_operand_int  (* register list *)
+      * bool             (* T.W. *)
   | ReverseSubtract of
       bool   (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -501,6 +528,12 @@ type arm_opcode_t =
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* rm/imm: index/immdiate *)
       * arm_operand_int  (* mem: memory location *)
+  | StoreRegisterExclusive of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: status *)
+      * arm_operand_int  (* rt: source *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* mem: memory location *)
   | StoreRegisterHalfword of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: source *)
@@ -513,6 +546,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: source 2 *)
+      * bool             (* T.W. *)
   | SubtractCarry of
       bool   (* flags are set *)
       * arm_opcode_cc_t  (* condition *)

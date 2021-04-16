@@ -140,11 +140,11 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "ORR" c [rd;rn;rm])
     }
-  | Branch (cc, addr) -> {
+  | Branch (cc, addr, tw) -> {
       mnemonic = "B";
       operands = [ addr ];
       ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "B" cc [ addr ])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "B" cc [ addr ])
     }
   | BranchExchange (c,addr) -> {
       mnemonic = "BX";
@@ -170,11 +170,11 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "REV" c [rd;rm])
     }
-  | Compare (c,rn,rm) -> {
+  | Compare (c,rn,rm,tw) -> {
       mnemonic = "CMP";
       operands = [rn;rm];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "CMP" c [rn;rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "CMP" c [rn;rm])
     }
   | CompareBranchNonzero (op1, op2) -> {
       mnemonic = "CBNZ";
@@ -200,6 +200,19 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "CLZ" c [rd;rm])
     }
+  | DataMemoryBarrier (c, option) -> {
+      mnemonic = "DMB";
+      operands = [option];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "DMB" c [option])
+    }
+  | IfThen (c, xyz) ->
+     let mnemonic = "IT" ^ xyz ^ " " ^ (get_cond_mnemonic_extension c) in
+     { mnemonic = mnemonic;
+       operands = [];
+       ccode = None;
+       ida_asm = (fun f -> f#ops mnemonic [])
+     }
   | LoadMultipleDecrementAfter (wb,c,rn,rl,mem) -> { 
       mnemonic = "LDMDA";
       operands = [ rn; rl; mem ];
@@ -234,13 +247,19 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDRB";
       operands = [ rt; rn; mem ];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRB" c [ rn; mem ])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRB" c [ rt; mem ])
     }
   | LoadRegisterDual (c,rt,rt2,rn,rm,mem) -> {
       mnemonic = "LDRD";
       operands = [rt;rt2;rn;rm;mem];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDRD" c [rt;rt2;mem])
+    }
+  | LoadRegisterExclusive (c, rt, rn, mem) -> {
+      mnemonic = "LDREX";
+      operands = [rt; rn; mem];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "LDREX" c [rt;mem])
     }
   | LoadRegisterHalfword (c,rt,rn,rm,mem) -> {
       mnemonic = "LDRH";
@@ -252,19 +271,19 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDRSB";
       operands = [ rt; rn; mem ];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "LDRSB" c [ rn; mem ])
+      ida_asm = (fun f -> f#opscc "LDRSB" c [ rt; mem ])
     }
   | LoadRegisterSignedHalfword (c,rt,rn,rm,mem) -> {
       mnemonic = "LDRSH";
       operands = [ rt; rn; mem ];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "LDRSH" c [ rn; mem ])
+      ida_asm = (fun f -> f#opscc "LDRSH" c [ rt; mem ])
     }
-  | LogicalShiftLeft (s,c,rd,rn,rm) -> {
+  | LogicalShiftLeft (s,c,rd,rn,rm,tw) -> {
       mnemonic = "LSL";
       operands = [rd;rn;rm];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "LSL" c [rd;rn;rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "LSL" c [rd;rn;rm])
     }
   | LogicalShiftRight (s,c,rd,rn,rm) -> {
       mnemonic = "LSR";
@@ -302,17 +321,17 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "MLA" c [rd;rn;rm;ra])
     }
-  | Pop (c,sp,rl) -> {
+  | Pop (c,sp,rl,tw) -> {
       mnemonic = "POP";
       operands = [ sp; rl ];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "POP" c [ rl ])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "POP" c [ rl ])
     }
-  | Push (c,sp,rl) -> {
+  | Push (c,sp,rl,tw) -> {
       mnemonic = "PUSH";
       operands = [ sp; rl ];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "PUSH" c [ rl ])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "PUSH" c [ rl ])
     }
   | ReverseSubtract (s,c,rd,rn,rm) -> {
       mnemonic = "RSB";
@@ -398,17 +417,23 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STRD" c [rt;rt2;mem])
     }
+  | StoreRegisterExclusive (c, rd, rt, rn, mem) -> {
+      mnemonic = "STREX";
+      operands = [rd; rt; rn; mem];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "STREX" c [rd; rt; mem])
+    }
   | StoreRegisterHalfword (c,rt,rn,rm,mem) -> {
       mnemonic = "STRH";
       operands = [rt;rn;rm;mem];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STRH" c [rt;mem])
     }
-  | Subtract (s,c,rd,rn,rm) -> {
+  | Subtract (s,c,rd,rn,rm,tw) -> {
       mnemonic = "SUB";
       operands = [rd;rn;rm];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "SUB" c [rd;rn;rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "SUB" c [rd;rn;rm])
     }
   | SubtractCarry (s,c,rd,rn,rm) -> {
       mnemonic = "SBC";

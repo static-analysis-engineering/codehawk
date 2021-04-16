@@ -66,27 +66,17 @@ end
 
 let arm_instr_class_mcts:arm_instr_class_t mfts_int = new arm_instr_class_mcts_t
 
-(*
-let arm_reg_mfts: arm_reg_t mfts_int =
+let dmb_option_mfts: dmb_option_t mfts_int =
   mk_mfts
-    "arm_reg_t"
-    [ (AR0, "R0");
-      (AR1, "R1");
-      (AR2, "R2");
-      (AR3, "R3");
-      (AR4, "R4");
-      (AR5, "R5");
-      (AR6, "R6");
-      (AR7, "R7");
-      (AR8, "R8");
-      (AR9, "R9");
-      (AR10, "R10");
-      (AR11, "R11");
-      (AR12, "R12");
-      (ARSP, "SP");
-      (ARLR, "LR");
-      (ARPC, "PC") ]
- *)
+    "dmb_option_t"
+    [ (FullSystemRW, "SY");
+      (FullSystemW, "ST");
+      (InnerShareableRW, "ISH");
+      (InnerShareableW, "ISHST");
+      (NonShareableRW, "NSH");
+      (NonShareableW, "NSHST");
+      (OuterShareableRW, "OSH");
+      (OuterShareableW, "OSHST") ]
 
 let shift_rotate_type_mfts: shift_rotate_type_t mfts_int =
   mk_mfts
@@ -139,6 +129,7 @@ object
 
   method ts (k:arm_operand_kind_t) =
     match k with
+    | ARMDMBOption _ -> "d"
     | ARMReg _ -> "r"
     | ARMRegList _ -> "l"
     | ARMRegBitSequence _ -> "b"
@@ -148,7 +139,7 @@ object
     | ARMMemMultiple _ -> "m"
     | ARMOffsetAddress _ -> "o"
 
-  method tags = [ "a"; "b"; "i"; "l"; "m"; "o"; "r"; "r"; "s" ]
+  method tags = [ "a"; "b"; "d"; "i"; "l"; "m"; "o"; "r"; "r"; "s" ]
 
 end
 
@@ -171,4 +162,5 @@ let arm_opcode_cc_mfts: arm_opcode_cc_t mfts_int =
       (ACCSignedLT, "lt");
       (ACCSignedGT, "gt");
       (ACCSignedLE, "le");
-      (ACCAlways, "a") ]
+      (ACCAlways, "a");
+      (ACCUnconditional,"unc")]

@@ -42,10 +42,13 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
+
 val arm_operand_mode_to_string: arm_operand_mode_t -> string
 
-(* val armreg_to_string: arm_reg_t -> string *)
+val arm_dmb_option_op: dmb_option_t -> arm_operand_int
 
+val arm_dmb_option_from_int_op: int -> arm_operand_int
+  
 val arm_register_op: arm_reg_t -> arm_operand_mode_t -> arm_operand_int
 
 val arm_register_list_op: arm_reg_t list -> arm_operand_mode_t -> arm_operand_int
