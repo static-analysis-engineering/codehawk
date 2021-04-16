@@ -839,6 +839,9 @@ object (self)
       end) (node#getTaggedChildren "encoding")
 
   method private read_xml_arm_thumb_switches (node: xml_element_int) =
+    let _ =
+      if List.length (node#getTaggedChildren "switch") > 0 then
+        system_settings#set_thumb in
     List.iter (fun n ->
         let get = n#getAttribute in
         let iaddr = get "ia" in
