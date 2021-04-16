@@ -364,6 +364,15 @@ let parse_data_proc_reg_type
      (* RSB{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
      ReverseSubtract(s,c,rd,rn,rm)
 
+  (* <cc><0>< 3>s<rn><rd><rs>0ty1<rm> *)   (* RSB-reg-shifted *)
+  | 3 when (bit4 = 1) ->
+     let s = (bit20 = 1) in
+     let rd = arm_register_op (get_arm_reg bit15_12) WR in
+     let rn = arm_register_op (get_arm_reg bit19_16) RD in
+     let rm = mk_reg_shift_reg bit3_0 bit6_5 bit11_8 RD in
+     (* RSB{S}<c> <Rd>, <Rn>, <Rm>, <type> <Rs> *)
+     ReverseSubtract(s, c, rd, rn, rm)
+
   (* <cc><0>< 4>s<rn><rd><imm>ty0<rm> *)   (* ADD-reg *)
   | 4 when (bit4 = 0) ->
      let s = (bit20 = 1) in
@@ -604,6 +613,17 @@ let parse_data_proc_reg_type
      let rm = arm_register_op (get_arm_reg bit3_0) RD in
      (* RRX{S}<c> <Rd>, <Rm> *)
      RotateRightExtend (s,c,rd,rm)
+
+  (* <cc><0><13>s< 0><rd><imm>110<rm> *)
+  | 13 when (bit19_16 = 0) && (bit6_5 = 3) && (bit4 = 0) ->
+     let s = (bit20 = 1) in
+     let rd = arm_register_op (get_arm_reg bit15_12) WR in
+     let rm = arm_register_op (get_arm_reg bit3_0) RD in
+     let imm5 = mk_imm5 bit11_8 bit7 in
+     let (_,imm) = decode_imm_shift 2 imm5 in
+     let imm = mk_arm_immediate_op false 4 (mkNumerical imm) in
+     (* ROR{S}<c> <Rd>, <Rm>, #<imm> *)
+     RotateRight (s, c, rd, rm, imm)
 
   (* <cc><0><14>s<rn><rd><imm>ty0<rm> *)   (* BIC-reg *)
   | 14 when (bit4 = 0) ->
