@@ -482,18 +482,27 @@ object(self)
     H.fold (fun _ v r -> r || v#get_section_name = ".dynsym") section_header_table false
 
   method get_string_at_address (a:doubleword_int) =
-    H.fold (fun k v result ->
-        match result with
-        | Some _ -> result
-        | _ ->
-           match self#get_section k with
-           | ElfOtherSection t when not (v#get_addr#equal wordzero) ->
-              t#get_string_reference a
-           | ElfStringTable t when not (v#get_addr#equal wordzero)->
-              t#get_string_reference a
-           | ElfProgramSection s when not (v#get_addr#equal wordzero) ->
-              s#get_string_reference a
-           | _ -> None) section_header_table None
+    try
+      H.fold (fun k v result ->
+          match result with
+          | Some _ -> result
+          | _ ->
+             match self#get_section k with
+             | ElfOtherSection t when not (v#get_addr#equal wordzero) ->
+                t#get_string_reference a
+             | ElfStringTable t when not (v#get_addr#equal wordzero)->
+                t#get_string_reference a
+             | ElfProgramSection s when not (v#get_addr#equal wordzero) ->
+                s#get_string_reference a
+             | _ -> None) section_header_table None
+    with
+    | _ ->
+       begin
+         ch_error_log#add
+           "get_string_at_address"
+           (LBLOCK [a#toPretty]);
+         None
+       end
 
   method has_xsubstring (a:doubleword_int) (size:int) =
     match self#get_containing_section a with
@@ -986,7 +995,17 @@ let save_elf_section (index:int) (header:elf_section_header_int) (s:elf_section_
       sNode#appendChildren [ dNode ]
     end in
   begin
-    rawsection#write_xml sNode ;
+    (let sname = header#get_section_name in
+     if (String.length sname) > 6
+        && (String.sub header#get_section_name 0 6) = ".debug" then
+       let hexdata = xmlElement "hex-data" in
+       begin
+         sNode#appendChildren [ hexdata ];
+         sNode#setAttribute "vaddr" header#get_addr#to_hex_string;
+         sNode#setIntAttribute "size" 0
+       end
+     else
+       rawsection#write_xml sNode) ;
     header#write_xml hNode ;
     sNode#setIntAttribute "index" index ;
     sNode#appendChildren [ hNode ] ;
