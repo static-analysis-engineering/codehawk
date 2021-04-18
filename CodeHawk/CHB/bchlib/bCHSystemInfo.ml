@@ -1075,6 +1075,8 @@ object (self)
     let getcc = node#getTaggedChildren in
     List.iter (fun n ->
         let fd = functions_data#add_function (geta n) in
+        let _ =
+          chlog#add "user-declared non-returning function" (geta n)#toPretty in
         fd#set_non_returning) (getcc "nr")
 
   method private read_xml_nonreturning_calls (node:xml_element_int) =
