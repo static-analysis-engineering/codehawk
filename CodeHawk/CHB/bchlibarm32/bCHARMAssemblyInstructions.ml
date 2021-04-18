@@ -283,28 +283,34 @@ object (self)
          let len = String.length s in
          let addr = ref db#get_start_address in
          let contents = ref [] in
-         begin
-           for i = 0 to ((len/4) - 1) do
-             begin
-               contents := (!addr, ch#read_doubleword) :: !contents;
-               addr := !addr#add_int 4
-             end
-           done;
-           ("\n" ^ (string_repeat "~" 80) ^ "\nData block (size: "
-            ^ (string_of_int len) ^ " bytes)\n\n"
-            ^ (String.concat
-                 "\n"
-                 (List.map
-                    (fun (a,v) ->
-                      match elf_header#get_string_at_address v with
-                      | Some s ->
-                         "  " ^ a#to_hex_string ^ "  " ^ v#to_hex_string
-                         ^ ": \"" ^ s ^ "\""
-                      | _ ->
-                         "  " ^ a#to_hex_string ^ "  " ^ v#to_hex_string)
-                    (List.rev !contents)))
-            ^ "\n" ^ (string_repeat "=" 80) ^ "\n")
-         end in
+         try
+           begin
+             for i = 0 to ((len/4) - 1) do
+               begin
+                 contents := (!addr, ch#read_doubleword) :: !contents;
+                 addr := !addr#add_int 4
+               end
+             done;
+             ("\n" ^ (string_repeat "~" 80) ^ "\nData block (size: "
+              ^ (string_of_int len) ^ " bytes)\n\n"
+              ^ (String.concat
+                   "\n"
+                   (List.map
+                      (fun (a,v) ->
+                        match elf_header#get_string_at_address v with
+                        | Some s ->
+                           "  " ^ a#to_hex_string ^ "  " ^ v#to_hex_string
+                           ^ ": \"" ^ s ^ "\""
+                        | _ ->
+                           "  " ^ a#to_hex_string ^ "  " ^ v#to_hex_string)
+                      (List.rev !contents)))
+              ^ "\n" ^ (string_repeat "=" 80) ^ "\n")
+           end
+         with
+         | _ ->
+            raise
+              (BCH_failure
+                 (LBLOCK [STR "Error in data block of length "; INT len])) in
     let add_function_names va =
       if functions_data#is_function_entry_point va then
         if functions_data#has_function_name va then
@@ -327,44 +333,56 @@ object (self)
     begin
       self#itera
         (fun va instr ->
-          if filter instr then
-            let statusString = Bytes.make 4 ' ' in
-            let _ =
-              if functions_data#is_function_entry_point va then
-                Bytes.set statusString 0 'F' in
-            let  _ =
-              if instr#is_block_entry then
-                Bytes.set statusString 2 'B' in
-            let instrbytes = instr#get_instruction_bytes in
-            let spacedstring = byte_string_to_spaced_string instrbytes in
-            let len = String.length spacedstring in
-            let bytestring =
-              if len <= 16 then
-                let s = Bytes.make 16 ' ' in
-                begin
-                  Bytes.blit (Bytes.of_string spacedstring) 0 s 0 len;
-                  Bytes.to_string s
-                end
-              else
-                spacedstring ^ "\n" ^ (String.make 24 ' ') in
-            match instr#get_opcode with
-            | OpInvalid  -> ()
-               (* let line = (Bytes.to_string statusString) ^ va#to_hex_string
-                          ^ "  " ^ bytestring ^ "  **invalid**" in
-               lines := line :: !lines *)
-            | NotCode None -> ()
-            | NotCode (Some b) -> lines := (not_code_to_string b) :: !lines
-            | _ ->
-               let _ = 
-                 if !firstNew then
-                   begin lines := "\n" :: !lines ; firstNew := false end in
-               let _ = add_function_names va in
-               let line =
-                 (Bytes.to_string statusString) ^ va#to_hex_string ^ "  "
-                 ^ bytestring ^ "  " ^ instr#toString in
-               lines := line :: !lines
-          else
-            firstNew := true);
+          try
+            if filter instr then
+              let statusString = Bytes.make 4 ' ' in
+              let _ =
+                if functions_data#is_function_entry_point va then
+                  Bytes.set statusString 0 'F' in
+              let  _ =
+                if instr#is_block_entry then
+                  Bytes.set statusString 2 'B' in
+              let instrbytes = instr#get_instruction_bytes in
+              let spacedstring = byte_string_to_spaced_string instrbytes in
+              let len = String.length spacedstring in
+              let bytestring =
+                if len <= 16 then
+                  let s = Bytes.make 16 ' ' in
+                  begin
+                    Bytes.blit (Bytes.of_string spacedstring) 0 s 0 len;
+                    Bytes.to_string s
+                  end
+                else
+                  spacedstring ^ "\n" ^ (String.make 24 ' ') in
+              match instr#get_opcode with
+              | OpInvalid  -> ()
+              (* let line = (Bytes.to_string statusString) ^ va#to_hex_string
+                 ^ "  " ^ bytestring ^ "  **invalid**" in
+               li  nes := line :: !lines *)
+              | NotCode None -> ()
+              | NotCode (Some b) -> lines := (not_code_to_string b) :: !lines
+              | _ ->
+                 let _ = 
+                   if !firstNew then
+                     begin lines := "\n" :: !lines ; firstNew := false end in
+                 let _ = add_function_names va in
+                 let line =
+                   (Bytes.to_string statusString) ^ va#to_hex_string ^ "  "
+                   ^ bytestring ^ "  " ^ instr#toString in
+                 lines := line :: !lines
+            else
+              firstNew := true
+          with
+          | BCH_failure p ->
+             raise
+               (BCH_failure
+                  (LBLOCK [STR "Error in instruction: "; va#toPretty;
+                           STR ": "; p]))
+          | _ ->
+             raise
+               (BCH_failure
+                  (LBLOCK [STR "Error in instruction: "; va#toPretty;
+                           STR ": "; STR instr#toString])));
       String.concat "\n" (List.rev !lines)
     end
 
