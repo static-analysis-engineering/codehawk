@@ -224,7 +224,8 @@ object (self)
          (ctags c,[setb s; oi rd; oi rm])
       | SignedExtendHalfword (c,rd,rm)
         | SignedExtendByte (c,rd,rm) -> (ctags c, [ oi rd; oi rm ])
-      | SignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) ->
+      | SignedMultiplyLong (s,c,rdlo,rdhi,rn,rm)
+        | SignedMultiplyAccumulateLong (s,c,rdlo,rdhi,rn,rm) ->
          (ctags c,[setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | SingleBitFieldExtract (c,rd,rn) -> (ctags c, [ oi rd; oi rn ])
       | StoreMultipleDecrementBefore (wb,c,rn,rl,mem)
@@ -233,8 +234,8 @@ object (self)
          (ctags c, [ setb wb; oi rn; oi rl; oi mem ])
       | StoreRegister (c,rt,rn,mem,tw) ->
          (ctags c, [oi rt; oi rn; oi mem; setb tw])
-        | StoreRegisterByte (c,rt,rn,mem) ->
-         (ctags c,[ oi rt; oi rn; oi mem])
+        | StoreRegisterByte (c,rt,rn,mem,tw) ->
+         (ctags c,[ oi rt; oi rn; oi mem; setb tw])
       | StoreRegisterHalfword (c,rt,rn,rm,mem) ->
          (tags @ [ ci c ], [ oi rt; oi rn; oi rm; oi mem ])
       | StoreRegisterDual (c,rt,rt2,rn,rm,mem) ->
