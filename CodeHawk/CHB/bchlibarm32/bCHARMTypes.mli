@@ -481,6 +481,13 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
+  | SignedMultiplyAccumulateLong of
+      bool  (* flags are set *)
+      * arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rdlo *)
+      * arm_operand_int  (* rdhi *)
+      * arm_operand_int  (* rn *)
+      * arm_operand_int  (* rm *)
   | SignedMultiplyLong of
       bool   (* flags are set *)
       * arm_opcode_cc_t (* condition *)
@@ -521,6 +528,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rt: source *)
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* mem: memory location *)
+      * bool             (* T.W. *)
   | StoreRegisterDual of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: source 1 *)

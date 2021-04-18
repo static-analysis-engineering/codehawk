@@ -369,11 +369,17 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SXTH" c [rd;rm])
     }
-  | SignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) -> {
-      mnemonic = "SMULL";
-      operands = [rdlo;rdhi;rn;rm];
+  | SignedMultiplyAccumulateLong (s, c, rdlo, rdhi, rn, rm) -> {
+      mnemonic = "SMLAL";
+      operands = [rdlo; rdhi; rn; rm];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "SMULL" c [rdlo;rdhi;rn;rm])
+      ida_asm = (fun f -> f#opscc "SMLAL" ~writeback:s c [rdlo; rdhi; rn; rm])
+    }
+  | SignedMultiplyLong (s, c, rdlo, rdhi, rn, rm) -> {
+      mnemonic = "SMULL";
+      operands = [rdlo; rdhi; rn; rm];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMULL" c [rdlo; rdhi; rn; rm])
     }
   | SingleBitFieldExtract (c,rd,rn) -> {
       mnemonic = "SBFX";
@@ -405,11 +411,11 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "STR" c [ rt; mem ])
     }
-  | StoreRegisterByte (c,rt,rn,mem) -> {
+  | StoreRegisterByte (c,rt,rn,mem,tw) -> {
       mnemonic = "STRB";
       operands = [ rt; rn; mem ];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "STRB" c [ rt; mem ])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "STRB" c [ rt; mem ])
     }
   | StoreRegisterDual (c,rt,rt2,rn,rm,mem) -> {
       mnemonic = "STRD";

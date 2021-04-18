@@ -552,6 +552,12 @@ let parse_t32_30_0
      (* MOV{S}<c>.W <Rd>, #<const> *)
      Move (setflags, cc, rd WR, const, true)
 
+  (* 11110i00010S<rn>0<i><rd><-imm8->   ORR (immediate) *)
+  | 2 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     (* ORR{S}<c> <Rd>, <Rn>, #<const> *)
+     BitwiseOr (setflags, cc, rd WR, rn RD, const)
+
   (* 11110i00100S<rn>0<i><rd><-imm8->   EOR (immediate) *)
   | 4 ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
@@ -573,6 +579,17 @@ let parse_t32_30_0
      let imm = arm_immediate_op imm in
      (* CMP<c>.W <Rn>, #<const> *)
      Compare (cc, rn RD, imm, true)
+
+  (* 11110i01101S<rn>0<i><rd><-imm8->   SUB (immediate) *)
+  | 13 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let imm = (i lsl 11) + (imm3 lsl 8) + imm8 in
+     let imm = thumb_expand_imm imm 0 in
+     let imm = make_immediate false 4 (B.big_int_of_int imm) in
+     let imm = arm_immediate_op imm in
+     (* SUB{S}<c>.W <Rd>, <Rn>, #<const> *)
+     Subtract (setflags, cc, rd WR, rn RD, imm, false)
 
   (* 11110i100000<rn>0<i><rd><-imm8->   ADD (immediate) *)
   | 16 when not setflags ->
@@ -638,6 +655,22 @@ let parse_t32_branch
          && (b 22 20) = 3 ->
      DataMemoryBarrier (cc, arm_dmb_option_from_int_op (b 3 0))
 
+  (* 11110S<cc><imm6>10J0J<--imm11-->   B *)
+  | (0, 0) ->
+     let s = b 26 26 in
+     let imm6 = b 21 16 in
+     let j1 = b 13 13 in
+     let j2 = b 11 11 in
+     let imm11 = b 10 0 in
+     let imm32 =
+       (s lsl 20) + (j2 lsl 19) + (j1 lsl 18) + (imm6 lsl 12) + (imm11 lsl 1) in
+     let imm32 = sign_extend 32 21 imm32 in
+     let tgt = iaddr#add_int (imm32 + 2) in
+     let tgtop = arm_absolute_op tgt RD in
+     let cond = get_opcode_cc (b 25 22) in
+     (* B<c>.W <label> *)
+     Branch (cond, tgtop, true)
+
   (* 11110S<--imm10->10J1J<--imm11-->   B *)
   | (0,1) ->
      let s = b 26 26 in
@@ -655,6 +688,7 @@ let parse_t32_branch
      let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
      let tgt = iaddr#add_int (imm32 + 2) in
      let tgtop = arm_absolute_op tgt RD in
+     (* B<c>.W <label> *)
      Branch (cc, tgtop, true)
 
   (* 11110S<-imm10H->11J0J<-imm10L->H   BLX (immediate) *)
@@ -735,6 +769,27 @@ let parse_thumb32_31
   let offset = ARMImmOffset (b 11 0) in
   let mem = mk_arm_offset_address_op rnreg offset ~isadd:true ~isindex:true ~iswback:false in
   match (b 26 20) with
+  (* 111110000000<rn><rt>000000i2<rm>   STRB (register) *)
+  | 0 when (b 11 6) = 0 ->
+     let (shift_t, shift_n) = (SRType_LSL, b 5 4) in
+     let reg_srt = ARMImmSRT (shift_t, shift_n) in
+     let offset = ARMShiftedIndexOffset (get_arm_reg (b 3 0), reg_srt) in
+     let mem = mk_arm_offset_address_op rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+     (* STRB<c>.W <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
+     StoreRegisterByte (cc, rt RD, rn RD, mem WR, true)
+
+  (* 111110000000<rn><rt>1puw<-imm8->   STRB (immediate) *)
+  | 0 when (b 11 11) = 1 ->
+     let offset = ARMImmOffset (b 7 0) in
+     let isindex = (b 10 10) = 1 in
+     let isadd = (b 9 9) = 1 in
+     let iswback = (b 8 8) = 1 in
+     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
+     (* STRB<c> <Rt>, [<Rn>, #-<imm8>]
+        STRB<c> <Rt>, [<Rn>], #+/-<imm8>
+        STRB<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
+     StoreRegisterByte (cc, rt RD, rn RD, mem WR, true)
+
   (* 111110000001<rn><rt>000000i2<rm>   LDRB (register) *)
   | 1 when (b 11 6) = 0 ->
      let (shift_t, shift_n) = (SRType_LSL, b 5 4) in
@@ -762,6 +817,27 @@ let parse_thumb32_31
      let rl = arm_register_list_op [ (get_arm_reg (b 15 12)) ] RD in
      Push (cc, sp, rl, true)
 
+  (* 111110000100<rn><rt>000000i2<rm>   STR (register) *)
+  | 4 when (b 11 6) = 0 ->
+     let (shift_t, shift_n) = (SRType_LSL, b 5 4) in
+     let reg_srt = ARMImmSRT (shift_t, shift_n) in
+     let offset = ARMShiftedIndexOffset (get_arm_reg (b 3 0), reg_srt) in
+     let mem = mk_arm_offset_address_op rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+     (* STR<c>.W <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
+     StoreRegister (cc, rt RD, rn RD, mem WR, true)
+
+  (* 111110000100<rn><rt>1puw<-imm8->   STR (immediate) *)
+  | 4 when (b 11 11) = 1 ->
+     let offset = ARMImmOffset (b 7 0) in
+     let isindex = (b 10 10) = 1 in
+     let isadd = (b 9 9) = 1 in
+     let iswback = (b 8 8) = 1 in
+     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
+     (* STR<c> <Rt>, [<Rn>, #-<imm8>] 
+        STR<c> <Rt>, [<Rn>], #+/-<imm8>
+        STR<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
+     StoreRegister (cc, rt RD, rn RD, mem WR, false)
+
   (* 1111100001011101<rt>101100000100   POP *)
   | 5 when (b 19 16) = 13 && (b 11 11) = 1 && (b 10 8) = 3 && (b 7 0) = 4 ->
      let sp = arm_register_op (get_arm_reg 13) RW in
@@ -777,7 +853,12 @@ let parse_thumb32_31
      let memi = mk_arm_offset_address_op rnreg offset ~isadd:true ~isindex:true ~iswback:false in
      (* LDR<c>.W <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
      LoadRegister (cc, rt WR, rn RD, memi RD, true)
-     
+
+  (* 111110001000<rn><rt><--imm12--->   STRB (immediate) *)
+  | 8 ->
+  (* STRB<c>.W <Rt>, [<Rn, #<imm12>] *)
+     StoreRegisterByte (cc, rt RD, rn RD, mem WR, true)
+
   (* 111110001001<rn><rt><--imm12--->   LDRB (immediate) *)
   | 9 ->
      (* LDRB<c>.W <Rt>, [<Rn>, #<imm12>] *)
@@ -1138,7 +1219,7 @@ let parse_t16_load_store_reg
   (* 0101010<r><r><r>  STRB (register) *)
   | 2 ->
      (* STRB<c> <Rt>, [<Rn>, <Rm>] *)
-     StoreRegisterByte (cc, rt RD, rn RD, mem WR)
+     StoreRegisterByte (cc, rt RD, rn RD, mem WR, false)
 
   (* 0101011<r><r><r>  LDRSB (register) *)
   | 3 ->
@@ -1225,7 +1306,7 @@ let parse_t16_load_store_imm
   (* 01110<imm><r><r>  STRB (immediate) *)
   | 2 ->
      (* STRB<c> <Rt>, [<Rn>, #<imm5>] *)
-     StoreRegisterByte (cc, rt RD, rn RD, mem 1 WR)
+     StoreRegisterByte (cc, rt RD, rn RD, mem 1 WR, false)
 
   (* 01111<imm><r><r>  LDRB (immediate) *)
   | 3 ->

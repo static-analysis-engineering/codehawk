@@ -159,6 +159,16 @@ let parse_data_proc_reg_load_stores
       * LDRSB<c> <Rt>, [<Rn>],+/-<Rm> *)
      LoadRegisterSignedByte (c,rt,rn,rm,mem)
 
+  (* <cc><0>0111S<hi><lo><rm>1001<rn> *)   (* SMLAL *)
+  | (1,0,0) when w = 1 && p = 0 && u = 1 ->
+     let rdlo = arm_register_op (get_arm_reg bit15_12) in
+     let rdhi = arm_register_op (get_arm_reg bit19_16) in
+     let rn = arm_register_op (get_arm_reg bit3_0) in
+     let rm = arm_register_op (get_arm_reg bit11_8) in
+     let s = bit20 = 1 in
+     (* SMLAL{S} <RdLo>, <RdHi>, <Rn>, <Rm> *)
+     SignedMultiplyAccumulateLong (s, c, rdlo WR, rdhi WR, rn RD, rm RD)
+
   (* <cc><0>10100<rn><rt>< 0>1001<rt> *)   (* SWPB *)
   | (1,0,0) when w = 0 && bit11_8 = 0 && bit6_5 = 0 ->
      let rnreg = get_arm_reg bit19_16 in
@@ -354,6 +364,15 @@ let parse_data_proc_reg_type
      (* SUB{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
      Subtract (s,c,rd,rn,rm,false)
 
+  (* <cc><0>< 2>s<rn><rd><rs>0ty1<rm> *)   (* SUB-reg-shifted *)
+  | 2 when (bit4 = 1) ->
+     let s = (bit20 = 1) in
+     let rd = arm_register_op (get_arm_reg bit15_12) WR in
+     let rn = arm_register_op (get_arm_reg bit19_16) RD in
+     let rm = mk_reg_shift_reg bit3_0 bit6_5 bit11_8 RD in
+     (* SUB{S}<c> <Rd>, <Rn>, <Rm>, <type> <Rs> *)
+     Subtract(s, c, rd, rn, rm, false)
+
   (* <cc><0>< 3>s<rn><rd><imm>ty0<rm> *)   (* RSB-reg *)
   | 3 when (bit4 = 0) ->
      let s = (bit20 = 1) in
@@ -431,6 +450,25 @@ let parse_data_proc_reg_type
      let rn = arm_register_op (get_arm_reg bit3_0) RD in
      (* SMULL{S} <RdLo>, <RdHi>, <Rn>, <Rm> *)
      SignedMultiplyLong (s,c,rdlo,rdhi,rn,rm)
+
+  (* <cc><0>< 7>s<rn><rd><imm>ty0<rm> *)   (* RSC-reg *)
+  | 7 when (bit4 = 0) ->
+     let s = (bit20 = 1) in
+     let rn = arm_register_op (get_arm_reg bit19_16) RD in
+     let rd = arm_register_op (get_arm_reg bit15_12) WR in
+     let imm5 = mk_imm5 bit11_8 bit7 in
+     let rm = mk_imm_shift_reg bit3_0 bit6_5 imm5 RD in
+     (* RSC{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
+     ReverseSubtractCarry (s,c,rd,rn,rm)
+
+  (* <cc><0>< 7>s<rn><rd><rs>0ty1<rm> *)   (* RSC-reg-shifted *)
+  | 7 when (bit4 = 1) ->
+     let s = (bit20 = 1) in
+     let rd = arm_register_op (get_arm_reg bit15_12) WR in
+     let rn = arm_register_op (get_arm_reg bit19_16) RD in
+     let rm = mk_reg_shift_reg bit3_0 bit6_5 bit11_8 RD in
+     (* ADC{S}<c> <Rd>, <Rn>, <Rm>, <type> <Rs> *)
+     ReverseSubtractCarry (s,c,rd,rn,rm)
 
   (* <cc><0>< 8>1<rn>0000<imm>ty0<rm> *)   (* TST-reg *)
   | 8 when (bit20 = 1) && (bit4 = 0) ->
@@ -614,7 +652,7 @@ let parse_data_proc_reg_type
      (* RRX{S}<c> <Rd>, <Rm> *)
      RotateRightExtend (s,c,rd,rm)
 
-  (* <cc><0><13>s< 0><rd><imm>110<rm> *)
+  (* <cc><0><13>s< 0><rd><imm>110<rm> *)   (* ROR-imm *)
   | 13 when (bit19_16 = 0) && (bit6_5 = 3) && (bit4 = 0) ->
      let s = (bit20 = 1) in
      let rd = arm_register_op (get_arm_reg bit15_12) WR in
@@ -624,6 +662,15 @@ let parse_data_proc_reg_type
      let imm = mk_arm_immediate_op false 4 (mkNumerical imm) in
      (* ROR{S}<c> <Rd>, <Rm>, #<imm> *)
      RotateRight (s, c, rd, rm, imm)
+
+  (* <cc><0><13>s< 0><rd><rm>0111<rn> *)   (* ROR-reg *)
+  | 13 when (bit19_16 = 0) && (bit7 = 0) && (bit6_5 = 3) && (bit4 = 1) ->
+     let s = (bit20 = 1) in
+     let rd = arm_register_op (get_arm_reg bit15_12) WR in
+     let rm = arm_register_op (get_arm_reg bit11_8) RD in
+     let rn = arm_register_op (get_arm_reg bit3_0) RD in
+     (* ROR{S}<c> <Rd>, <Rn>, <Rm> *)
+     RotateRight (s,c,rd,rn,rm)
 
   (* <cc><0><14>s<rn><rd><imm>ty0<rm> *)   (* BIC-reg *)
   | 14 when (bit4 = 0) ->
@@ -977,7 +1024,7 @@ let parse_load_stores
      (* STRB<c> <Rt>, [<Rn>{, #+/-<imm12>}]       Offset: (index,wback) = (T,F)
       * STRB<c> <Rt>, [<Rn>, #+/-<imm12>]!        Pre-x : (index,wback) = (T,T)
       * STRB<c> <Rt>, [<Rn>], #+/-<imm12>         Post-x: (index,wback) = (F,T) *)
-     StoreRegisterByte (c,rt,rn,mem)
+     StoreRegisterByte (c,rt,rn,mem,false)
 
   (* <cc><2>pu1w1<rn><rt><--imm12---> *)   (* LDRB-imm *)
   | (1,1) ->
@@ -1061,7 +1108,7 @@ let parse_load_store_reg_type
      let mem = mk_mem WR in
      (* STRB<c> <Rt>, [<Rn>,+/-<Rm>{, <shift>}]{!} *)
      (* STRB<c> <Rt>, [<Rn>],+/-<Rm>{, <shift>} *)
-     StoreRegisterByte (c,rt,rn,mem)
+     StoreRegisterByte (c,rt,rn,mem,false)
 
   (* <cc><3>pu1w1<rn><rt><imm>ty0<rm> *)   (* LDRB-reg *)
   | (1,1) ->
