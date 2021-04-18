@@ -265,13 +265,18 @@ let disassemble_arm_sections () =
          0x2d8ac  e3 ca 8c e2       ADD      R12, R12, #0xe3000
          0x2d8b0  68 f7 bc e5       LDR      PC, [R12], #1896
 
+     F B 0x1f2ec  05 c6 8f e2       ADR      R12, 0x51f2f4
+         0x1f2f0  42 ca 8c e2       ADD      R12, R12, #0x42000
+         0x1f2f4  18 fd bc e5       LDR      PC, [R12], #3352
+
  *)
 let is_library_stub faddr =
   if elf_header#is_program_address faddr
      && elf_header#has_xsubstring faddr 12 then
     let bytestring = byte_string_to_printed_string (elf_header#get_xsubstring faddr 12) in
     let instrsegs = [
-        "00c68fe2\\(..\\)ca8ce2\\(....\\)bce5"
+        "00c68fe2\\(..\\)ca8ce2\\(....\\)bce5";
+        "05c68fe2\\(..\\)ca8ce2\\(....\\)bce5"
       ] in
     List.exists (fun s ->
         let regex = Str.regexp s in
@@ -309,6 +314,16 @@ let collect_data_references () =
         | _ -> ());
     H.fold (fun k v a -> (k,v)::a) table []
   end
+
+(* can be used before functions have been constructed *)
+let is_nr_call_instruction (instr:arm_assembly_instruction_int) =
+  match instr#get_opcode with
+  | BranchLink (ACCAlways, tgt)
+    | BranchLinkExchange (ACCAlways, tgt) when tgt#is_absolute_address ->
+     let tgtaddr = tgt#get_absolute_address in
+     ((functions_data#is_function_entry_point tgtaddr)
+      && (functions_data#get_function tgtaddr)#is_non_returning)
+  | _ -> false
 
 let collect_function_entry_points () =
   let addresses = new DoublewordCollections.set_t in
@@ -358,7 +373,7 @@ let set_block_boundaries () =
 
     (* ------------------- record targets of unconditional jumps -- *)
     !arm_assembly_instructions#itera
-      (fun _ instr ->
+      (fun va instr ->
         try
           (match instr#get_opcode with
            | Branch (_, op, _) | BranchExchange (_,op) ->
@@ -367,6 +382,11 @@ let set_block_boundaries () =
                 set_block_entry jmpaddr
               else
                 ()
+
+           | BranchLink _ | BranchLinkExchange _
+                when is_nr_call_instruction instr ->
+              set_block_entry (va#add_int 4)
+
            | _ -> ())
         with
         | BCH_failure p ->
@@ -472,6 +492,11 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
     let _ = floc#set_instruction_bytes instr#get_instruction_bytes in
     if va#equal wordzero then
       (Some [],prev,[])
+    else if is_nr_call_instruction instr then
+      let _ =
+        chlog#add
+          "non-returning call" (LBLOCK [faddr#toPretty; STR " "; va#toPretty]) in
+      (Some [],va,[])
     else if instr#is_block_entry then
       (None,prev,[])
     else if floc#has_call_target && floc#get_call_target#is_nonreturning then
@@ -481,7 +506,9 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       find_last_instruction (get_next_instr_address va) va
     else (None,va,[]) in
   let (succ,lastaddr,inlinedblocks) =
-    if !arm_assembly_instructions#has_next_valid_instruction baddr then
+    if is_nr_call_instruction (get_instr baddr) then
+      (Some [],baddr,[])
+    else if !arm_assembly_instructions#has_next_valid_instruction baddr then
       let floc = get_floc (make_location {loc_faddr = faddr; loc_iaddr = baddr }) in
       let _ = floc#set_instruction_bytes (get_instr baddr)#get_instruction_bytes in
       find_last_instruction (get_next_instr_address baddr) baddr
@@ -540,7 +567,11 @@ let construct_assembly_function (count:int) (faddr:doubleword_int) =
          end
 
 let set_library_stub_name faddr =
-  pverbose [ STR "Encountered set library stub name: " ; faddr#toPretty ; NL ]
+  begin
+    chlog#add "set library stub (no name)" (faddr#toPretty);
+    pverbose [ STR "Encountered set library stub name: " ;
+               faddr#toPretty ; NL ]
+  end
 
 let record_call_targets_arm () =
   arm_assembly_functions#itera
@@ -607,7 +638,10 @@ let construct_functions_arm () =
             else
               default ()
           else if is_library_stub faddr then
-            set_library_stub_name faddr
+            begin
+              fndata#set_library_stub;
+              set_library_stub_name faddr
+            end
           else
             default ()
         else
