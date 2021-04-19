@@ -110,11 +110,11 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "ASR" c [rd;rn;rm])
     }
-  | BitwiseAnd (setflags, cc, rd,rn, imm) -> {
+  | BitwiseAnd (setflags, cc, rd,rn, imm, tw) -> {
       mnemonic = "AND";
       operands = [ rd; rn; imm ];
       ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "AND" cc [ rd; rn; imm ])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "AND" cc [ rd; rn; imm ])
     }
   | BitwiseBitClear (s,c,rd,rn,rm,tw) -> {
       mnemonic = "BIC";
@@ -267,17 +267,17 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDREX" c [rt;mem])
     }
-  | LoadRegisterHalfword (c,rt,rn,rm,mem) -> {
+  | LoadRegisterHalfword (c,rt,rn,rm,mem,tw) -> {
       mnemonic = "LDRH";
       operands = [rt;rn;rm;mem];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "LDRH" c [rt;mem])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRH" c [rt;mem])
     }
-  | LoadRegisterSignedByte (c,rt,rn,rm,mem) -> {
+  | LoadRegisterSignedByte (c,rt,rn,rm,mem,tw) -> {
       mnemonic = "LDRSB";
       operands = [ rt; rn; mem ];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "LDRSB" c [ rt; mem ])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRSB" c [ rt; mem ])
     }
   | LoadRegisterSignedHalfword (c,rt,rn,rm,mem,tw) -> {
       mnemonic = "LDRSH";
@@ -476,6 +476,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [rn; rm; mem];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "TBB" c [mem])
+    }
+  | TableBranchHalfword (c, rn, rm, mem) -> {
+      mnemonic = "TBH";
+      operands = [rn; rm; mem];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "TBH" c [mem])
     }
   | Test (c,rn,rm) -> {
       mnemonic = "TST";

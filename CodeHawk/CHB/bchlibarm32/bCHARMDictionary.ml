@@ -167,8 +167,9 @@ object (self)
          (ctags c,[ setb s; oi rd; oi rn; oi rm; setb tw ])
       | BitwiseNot (setflags,cond,rd,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm ])
-      | BitwiseAnd (setflags,cond,rd,rn,imm)
-        | BitwiseOrNot (setflags,cond,rd,rn,imm) ->
+      | BitwiseAnd (s,c,rd,rn,imm,tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
+      | BitwiseOrNot (setflags,cond,rd,rn,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm])
       | BitwiseBitClear (s,c,rd,rn,imm,tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
@@ -204,9 +205,10 @@ object (self)
          (ctags c,[ oi rt; oi rt2; oi rn; oi rm; oi mem])
       | LoadRegisterExclusive (c, rt, rn, mem) ->
          (ctags c, [oi rt; oi rn; oi mem])
-      | LoadRegisterHalfword (c,rt,rn,rm,mem)
-        | LoadRegisterSignedByte (c,rt,rn,rm,mem) ->
-         (ctags c,[ oi rt; oi rn; oi rm; oi mem])
+      | LoadRegisterHalfword (c,rt,rn,rm,mem,tw)->
+         (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw])
+        | LoadRegisterSignedByte (c,rt,rn,rm,mem,tw) ->
+         (ctags c,[ oi rt; oi rn; oi rm; oi mem; setb tw])
       | LoadRegisterSignedHalfword (c,rt,rn,rm,mem,tw) ->
          (ctags c,[ oi rt; oi rn; oi rm; oi mem; setb tw])
       | LogicalShiftLeft (s,c,rd,rn,rm,tw) ->
@@ -257,6 +259,7 @@ object (self)
       | Swap (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
       | SwapByte (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
       | TableBranchByte (c, rn, rm, mem) -> (ctags c, [oi rn; oi rm; oi mem])
+      | TableBranchHalfword (c, rn, rm, mem) -> (ctags c, [oi rn; oi rm; oi mem])
       | Test (cond,src1,src2)
         | TestEquivalence (cond,src1,src2) ->
          (tags @ [ ci cond ], [oi src1; oi src2 ])

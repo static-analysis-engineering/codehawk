@@ -270,6 +270,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: source 2 *)
+      * bool             (* T.W. *)
   | BitwiseBitClear of
       bool   (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -398,12 +399,14 @@ type arm_opcode_t =
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* rm/imm: index/immediate *)
       * arm_operand_int  (* mem: memory location *)
+      * bool             (* T.W. *)
   | LoadRegisterSignedByte of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: destination *)
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* rm/imm: index/immediate *)
       * arm_operand_int  (* mem: memory location *)
+      * bool             (* T.W. *)
   | LoadRegisterSignedHalfword of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: destination *)
@@ -589,6 +592,11 @@ type arm_opcode_t =
       * arm_operand_int  (* rt2 *)
       * arm_operand_int  (* mem *)
   | TableBranchByte of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rn *)
+      * arm_operand_int  (* rm *)
+      * arm_operand_int  (* mem *)
+  | TableBranchHalfword of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn *)
       * arm_operand_int  (* rm *)
