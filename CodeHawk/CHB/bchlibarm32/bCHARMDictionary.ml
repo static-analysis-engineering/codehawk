@@ -163,15 +163,19 @@ object (self)
          (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm; setb tw ])
       | Adr (cond,rd,addr) ->
          (tags @ [ ci cond ], [ oi rd ; oi addr ])
-      | ArithmeticShiftRight (s,c,rd,rn,rm) ->
-         (ctags c,[ setb s; oi rd; oi rn; oi rm ])
+      | ArithmeticShiftRight (s,c,rd,rn,rm,tw) ->
+         (ctags c,[ setb s; oi rd; oi rn; oi rm; setb tw ])
       | BitwiseNot (setflags,cond,rd,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm ])
       | BitwiseAnd (setflags,cond,rd,rn,imm)
-        | BitwiseExclusiveOr (setflags,cond,rd,rn,imm)
-        | BitwiseBitClear (setflags,cond,rd,rn,imm)
-        | BitwiseOr (setflags,cond,rd,rn,imm) ->
+        | BitwiseOrNot (setflags,cond,rd,rn,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm])
+      | BitwiseBitClear (s,c,rd,rn,imm,tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
+      | BitwiseExclusiveOr (s,c,rd,rn,imm,tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
+      | BitwiseOr (s,c,rd,rn,imm,tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
       | Branch (c,addr,tw) -> (ctags c, [oi addr; setb tw])
       | BranchExchange (cond,addr)
         | BranchLink (cond,addr)
@@ -201,13 +205,14 @@ object (self)
       | LoadRegisterExclusive (c, rt, rn, mem) ->
          (ctags c, [oi rt; oi rn; oi mem])
       | LoadRegisterHalfword (c,rt,rn,rm,mem)
-        | LoadRegisterSignedByte (c,rt,rn,rm,mem)
-        | LoadRegisterSignedHalfword (c,rt,rn,rm,mem) ->
+        | LoadRegisterSignedByte (c,rt,rn,rm,mem) ->
          (ctags c,[ oi rt; oi rn; oi rm; oi mem])
+      | LoadRegisterSignedHalfword (c,rt,rn,rm,mem,tw) ->
+         (ctags c,[ oi rt; oi rn; oi rm; oi mem; setb tw])
       | LogicalShiftLeft (s,c,rd,rn,rm,tw) ->
          (ctags c, [ setb s; oi rd; oi rn; oi rm; setb tw])
-      | LogicalShiftRight (s,c,rd,rn,rm) ->
-         (ctags c, [ setb s; oi rd; oi rn; oi rm])
+      | LogicalShiftRight (s,c,rd,rn,rm,tw) ->
+         (ctags c, [ setb s; oi rd; oi rn; oi rm; setb tw])
       | Move (setflags,cond,rd,imm,tw) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm; setb tw ])
       | MoveTop (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
@@ -218,6 +223,8 @@ object (self)
          (tags @ [ ci cond ], [ setb setflags; oi rd; oi rn; oi rm; oi ra ])
       | Pop (c,sp,rl,tw) -> (ctags c, [oi sp; oi rl; setb tw])
       | Push (c,sp,rl,tw) ->  (ctags c, [ oi sp; oi rl; setb tw ])
+      | ReverseSubtract (s,c,dst,src,imm,tw) ->
+         (ctags c, [setb s; oi dst; oi src; oi imm; setb tw])
       | RotateRight (s, c, rd, rn, rm) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm])
       | RotateRightExtend (s,c,rd,rm) ->
@@ -228,16 +235,16 @@ object (self)
         | SignedMultiplyAccumulateLong (s,c,rdlo,rdhi,rn,rm) ->
          (ctags c,[setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | SingleBitFieldExtract (c,rd,rn) -> (ctags c, [ oi rd; oi rn ])
-      | StoreMultipleDecrementBefore (wb,c,rn,rl,mem)
-        | StoreMultipleIncrementAfter (wb,c,rn,rl,mem)
-        | StoreMultipleIncrementBefore (wb,c,rn,rl,mem) ->
-         (ctags c, [ setb wb; oi rn; oi rl; oi mem ])
+      | StoreMultipleDecrementBefore (wb,c,rn,rl,mem,tw)
+        | StoreMultipleIncrementAfter (wb,c,rn,rl,mem,tw)
+        | StoreMultipleIncrementBefore (wb,c,rn,rl,mem,tw) ->
+         (ctags c, [ setb wb; oi rn; oi rl; oi mem; setb tw ])
       | StoreRegister (c,rt,rn,mem,tw) ->
          (ctags c, [oi rt; oi rn; oi mem; setb tw])
         | StoreRegisterByte (c,rt,rn,mem,tw) ->
          (ctags c,[ oi rt; oi rn; oi mem; setb tw])
-      | StoreRegisterHalfword (c,rt,rn,rm,mem) ->
-         (tags @ [ ci c ], [ oi rt; oi rn; oi rm; oi mem ])
+      | StoreRegisterHalfword (c,rt,rn,rm,mem, tw) ->
+         (tags @ [ ci c ], [ oi rt; oi rn; oi rm; oi mem; setb tw ])
       | StoreRegisterDual (c,rt,rt2,rn,rm,mem) ->
          (ctags c, [ oi rt; oi rt2; oi rn; oi rm; oi mem])
       | StoreRegisterExclusive (c, rd, rt, rn, mem) ->
@@ -245,11 +252,11 @@ object (self)
       | Subtract (s,c,dst,src,imm,tw) ->
          (ctags c, [setb s; oi dst; oi src; oi imm; setb tw])
       | SubtractCarry (setflags,cond,dst,src,imm)
-        | ReverseSubtract (setflags,cond,dst,src,imm)
         | ReverseSubtractCarry (setflags,cond,dst,src,imm) ->
          (tags @ [ ci cond ], [ setb setflags; oi dst; oi src; oi imm ])
       | Swap (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
       | SwapByte (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
+      | TableBranchByte (c, rn, rm, mem) -> (ctags c, [oi rn; oi rm; oi mem])
       | Test (cond,src1,src2)
         | TestEquivalence (cond,src1,src2) ->
          (tags @ [ ci cond ], [oi src1; oi src2 ])

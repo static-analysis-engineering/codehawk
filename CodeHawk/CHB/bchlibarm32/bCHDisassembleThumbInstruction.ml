@@ -26,6 +26,7 @@
    ============================================================================= *)
 
 (* chlib *)
+open CHNumerical
 open CHPretty
 
 (* chutil *)
@@ -214,6 +215,7 @@ module B = Big_int_Z
    11101101UD01<rn><vd>1011<-imm8->   VLDR
    11101110000o<vn><rt>1010N0010000   VMOV (register to single-prec register)
    111011101D110100<vd>101sE1M0<vm>   VCMP, VCMPE
+   111011101D11<i4><vd>101s0000<i4>   VMOV (immediate)
    111011101D111<o><vd>101so1M0<vm>   VCVT (floating point to integer)
    1110111011110001<rt>101000010000   VMRS
 
@@ -477,6 +479,19 @@ let parse_thumb32_29
      (* LDREX<c> <Rt>, [<Rn>{, #<imm>}] *)
      LoadRegisterExclusive (cc, rt WR, rn RD, mem RD)
 
+  (* 1110100010W0<rn>0m0<---rlist--->   STM/STMIA/STMEA *)
+  | 4 when (b 15 15) = 0 && (b 13 13) = 0 ->
+     let regs = ((b 14 14) lsl 14) + (b 12 0) in
+     let reglist = get_reglist_from_int 16 regs in
+     let rl = arm_register_list_op reglist in
+     let rnreg = get_arm_reg (b 19 16) in
+     let mem = mk_arm_mem_multiple_op rnreg (List.length reglist) in
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let wback = (b 21 21) = 1 in
+     let rn = if wback then rn RW else rn RD in
+     (* STM<c>.W <Rn>{!}, <registers> *)
+     StoreMultipleIncrementAfter (wback, cc, rn, rl RD , mem WR, true)
+
   (* 1110100010111101pm0<---rlist--->   POP.W *)
   | 5 ->
      let reglist = get_reglist_from_int 16 (b 15 0) in
@@ -484,6 +499,30 @@ let parse_thumb32_29
      let sp = arm_register_op (get_arm_reg 13) in
      (* POP<c>.W <registers> *)
      Pop (cc, sp RW, rl WR, true)
+
+  (* 111010001101<rn>11110000000H<rm>   TBB, TBH *)
+  | 6 when (b 20 20) = 1 && (b 15 12) = 15 && (b 11 5) = 0 && (b 4 4) = 0 ->
+     let rnreg = get_arm_reg (b 19 16) in
+     let rmreg = get_arm_reg (b 3 0) in
+     let rn = arm_register_op rnreg in
+     let rm = arm_register_op rmreg in
+     let offset = ARMIndexOffset rmreg in
+     let mem = mk_arm_offset_address_op rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+     (* TBB<c> [<Rn>, <Rm>] *)
+     TableBranchByte (cc, rn RD, rm RD, mem RD)
+
+  (* 1110100100W0<rn>0m0<---rlist--->   STMDB/STMFD *)
+  | 8 when (b 15 15) = 0 && (b 13 13) = 0 ->
+     let regs = ((b 14 14) lsl 14) + (b 12 0) in
+     let reglist = get_reglist_from_int 16 regs in
+     let rl = arm_register_list_op reglist in
+     let rnreg = get_arm_reg (b 19 16) in
+     let mem = mk_arm_mem_multiple_op rnreg (List.length reglist) in
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let wback = (b 21 21) = 1 in
+     let rn = if wback then rn RW else rn RD in
+     (* STM<c>.W <Rn>{!}, <registers> *)
+     StoreMultipleDecrementBefore (wback, cc, rn, rl RD , mem WR, true)
 
   (* 11101001001011010M0<---rlist--->   PUSH.W *)
   | 9 ->
@@ -493,8 +532,79 @@ let parse_thumb32_29
      (* PUSH<c>.W <registers> *)
      Push (cc, sp RW, rl RD, true)
 
+  (* 11101010001S<rn>0<i><rd>i2ty<rm>   BIC (register) *)
+  | 17 when (b 15 15) = 0 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rmreg = get_arm_reg (b 3 0) in
+     let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
+     let setflags = (b 20 20) = 1 in
+     (* BIC{S}<c>.W <Rd>, <Rn>, <Rm>{, <shifht>} *)
+     BitwiseBitClear (setflags, cc, rd WR, rn RD, rm RD, true)
+
+  (* 11101010010S11110<i><rd>i210<rm>   ASR (immediate) *)
+  | 18 when (b 19 16) = 15 && (b 15 15) = 0 && (b 5 4) = 2 ->
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rm = arm_register_op (get_arm_reg (b 3 0)) in
+     let imm = ((b 14 12) lsl 2) + (b 7 6) in
+     let (_, shift_n) = decode_imm_shift 2 imm in
+     let imm = mk_arm_immediate_op false 4 (mkNumerical shift_n) in
+     let setflags = (b 20 20) = 1 in
+     (* ASR{S}<c>.W <Rd>, <Rm>, #<imm> *)
+     ArithmeticShiftRight (setflags, cc, rd WR, rm RD, imm, true)
+
+  (* 11101010010S11110000<rd>0000<rm>   MOV (register) *)
+  | 18 when (b 19 16) = 15 && (b 15 15) = 0 && (b 7 4) = 0 ->
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rm = arm_register_op (get_arm_reg (b 3 0)) in
+     let setflags = (b 20 20) = 1 in
+     (* MOV{S}<c>.W <Rd>, <Rm> *)
+     Move (setflags, cc, rd WR, rm RD, true)
+
+  (* 11101010010S11110<i><rd>i200<rm>   LSL (immediate) *)
+  | 18 when (b 19 16) = 15 && (b 15 15) = 0 && (b 5 4) = 0 ->
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rm = arm_register_op (get_arm_reg (b 3 0)) in
+     let imm = ((b 14 12) lsl 2) + (b 7 6) in
+     let (_, shift_n) = decode_imm_shift 1 imm in
+     let imm = mk_arm_immediate_op false 4 (mkNumerical shift_n) in
+     let setflags = (b 20 20) = 1 in
+     (* LSL{S}<c>.W <Rd>, <Rm>, #<imm> *)
+     LogicalShiftLeft (setflags, cc, rd WR, rm RD, imm, true)
+
+  (* 11101010010S11110<i><rd>i201<rm>   LSR (immediate) *)
+  | 18 when (b 19 16) = 15 && (b 15 15) = 0 && (b 5 4) = 1 ->
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rm = arm_register_op (get_arm_reg (b 3 0)) in
+     let imm = ((b 14 12) lsl 2) + (b 7 6) in
+     let (_, shift_n) = decode_imm_shift 1 imm in
+     let imm = mk_arm_immediate_op false 4 (mkNumerical shift_n) in
+     let setflags = (b 20 20) = 1 in
+     (* LSR{S}<c>.W <Rd>, <Rm>, #<imm> *)
+     LogicalShiftRight (setflags, cc, rd WR, rm RD, imm, true)
+
+  (* 11101010010S<rn>0<i><rd>i2ty<rm>   ORR (register) *)
+  | 18 when (b 15 15) = 0 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rmreg = get_arm_reg (b 3 0) in
+     let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
+     let setflags = (b 20 20) = 1 in
+     (* ORR{S}<c>.W <Rd>, <Rn>, <Rm>{, <shift>} *)
+     BitwiseOr (setflags, cc, rd WR, rn RD, rm RD, true)
+
+  (* 11101010100S<rn>0<i><rd>i2ty<rm>   EOR (register) *)
+  | 20 when (b 15 15) = 0 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rmreg = get_arm_reg (b 3 0) in
+     let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
+     let setflags = (b 20 20) = 1 in
+     (* EOR{S}<c>.W <Rd>, <Rn>, <Rm>{, <shift>} *)
+     BitwiseExclusiveOr (setflags, cc, rd WR, rn RD, rm RD, true)
+
   (* 11101011000S<rn>0<i><rd>i2ty<rm>   ADD (register) *)
-  | 24 ->
+  | 24 when (b 15 15) = 0 ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
@@ -502,8 +612,18 @@ let parse_thumb32_29
      let setflags = (b 20 20) = 1 in
      Add (setflags, cc, rd WR, rn RD, rm RD, true)
 
+  (* 11101011010S<rn>0<i><rd>i2ty<rm>   ADC (register) *)
+  | 26 when (b 15 15) = 0 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rmreg = get_arm_reg (b 3 0) in
+     let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
+     let setflags = (b 20 20) = 1 in
+     (* ADC{S}<c>.W <Rd>, <Rn>, <Rm>{, <shift>} *)
+     AddCarry (setflags, cc, rd WR, rn RD, rm RD, true)
+
   (* 11101011101S<rn>0<i><rd>i2ty<rm>   SUB (register) *)
-  | 29 ->
+  | 29 when (b 15 15) = 0 ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
@@ -511,6 +631,16 @@ let parse_thumb32_29
      let setflags = (b 20 20) = 1 in
      (* SUB{S}.W <Rd>, <Rn>, <Rm>{, <shift>} *)
      Subtract (setflags, cc, rd WR, rn RD, rm RD, true)
+
+  (* 11101011110S<rn>0<i><rd>i2ty<rm>   RSB (register) *)
+  | 30 when (b 15 15) = 0 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rmreg = get_arm_reg (b 3 0) in
+     let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
+     let setflags = (b 20 20) = 1 in
+     (* RSB{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
+     ReverseSubtract (setflags, cc, rd WR, rn RD, rm RD, false)
 
   | _ ->
      NotRecognized ("parse_thumb32_29:" ^ (string_of_int op), instr)
@@ -545,7 +675,7 @@ let parse_t32_30_0
   | 1 ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      (* BIC{S} <Rd>, <Rn>, #<const> *)
-     BitwiseBitClear (setflags, cc, rd WR, rn RD, const)
+     BitwiseBitClear (setflags, cc, rd WR, rn RD, const, false)
 
   (* 11110i00010S11110<i><rd><-imm8->   MOV.W (immediate) *)
   | 2 when (b 19 16) = 15 ->
@@ -556,19 +686,42 @@ let parse_t32_30_0
   | 2 ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      (* ORR{S}<c> <Rd>, <Rn>, #<const> *)
-     BitwiseOr (setflags, cc, rd WR, rn RD, const)
+     BitwiseOr (setflags, cc, rd WR, rn RD, const, false)
+
+  (* 11110i00011S11110<i><rd><-imm8->   MVN (immediate) *)
+  | 3 when (b 19 16) = 15 ->
+     (* MVN{S}<c> <Rd>, #<const> *)
+     BitwiseNot (setflags, cc, rd WR, const)
+
+  (* 11110i00011S<rn>0<i><rd><-imm8->   ORN (immediate) *)
+  | 3 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     (* ORN{S}<c> <Rd>, <Rn>, #<const> *)
+     BitwiseOrNot (setflags, cc, rd WR, rn RD, const)
 
   (* 11110i00100S<rn>0<i><rd><-imm8->   EOR (immediate) *)
   | 4 ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      (* EOR{S}<c> <Rd>, <Rn>, #<const> *)
-     BitwiseExclusiveOr (setflags, cc, rd WR, rn RD, const)
+     BitwiseExclusiveOr (setflags, cc, rd WR, rn RD, const, false)
 
   (* 11110i01000S<rn>0<i><rd><-imm8->   ADD.W (immediate) *)
   | 8 ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      (* ADD{S}<c>.W <Rd>, <Rn>, #<const> *)
      Add (setflags, cc, rd WR, rn RD, const, true)
+
+  (* 11110i01010S<rn>0<i><rd><-imm8->   ADC (immediate) *)
+  | 10 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     (* ADC{S}<c> <Rd>, <Rn>, #<const> *)
+     AddCarry (setflags, cc, rd WR, rn RD, const, true)
+
+  (* 11110i01011S<rn>0<i><rd><-imm8->   SBC (immediate) *)
+  | 11 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     (* SBC{S}<c> <Rd>, <Rn>, #<const> *)
+     SubtractCarry (setflags, cc, rd WR, rn RD, const)
 
   (* 11110i011011<rn>0<i>1111<-imm8->   CMP (immediate) *)
   | 13 when setflags && (b 11 8) = 15 ->
@@ -590,6 +743,17 @@ let parse_t32_30_0
      let imm = arm_immediate_op imm in
      (* SUB{S}<c>.W <Rd>, <Rn>, #<const> *)
      Subtract (setflags, cc, rd WR, rn RD, imm, false)
+
+  (* 11110i01110S<rn>0<i><rd><-imm8->   RSB (immediate) *)
+  | 14 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let imm = (i lsl 11) + (imm3 lsl 8) + imm8 in
+     let imm = thumb_expand_imm imm 0 in
+     let imm = make_immediate false 4 (B.big_int_of_int imm) in
+     let imm = arm_immediate_op imm in
+     (* RSB{S}<c>.W <Rd>, <Rn>, #<const> *)
+     ReverseSubtract (setflags, cc, rd WR, rn RD, imm, true)
 
   (* 11110i100000<rn>0<i><rd><-imm8->   ADD (immediate) *)
   | 16 when not setflags ->
@@ -863,7 +1027,12 @@ let parse_thumb32_31
   | 9 ->
      (* LDRB<c>.W <Rt>, [<Rn>, #<imm12>] *)
      LoadRegisterByte (cc, rt WR, rn RD, mem RD, true)
-    
+
+  (* 111110001010<rn><rt><--imm12--->   STRH (immediate) *)
+  | 10 ->
+     (* STRH<c>.W <Rt>, [<Rn>, #<imm12>] *)
+     StoreRegisterHalfword (cc, rt RD, rn RD, rm RD, mem WR, true)
+
   (* 111110001100<rn><rt><--imm12--->   STR (immediate) *)
   | 12 ->
      (* STR<c>.W <Rt>, [<Rn>, #<imm12>] *)
@@ -874,6 +1043,30 @@ let parse_thumb32_31
     (* LDR<c>.W <Rt>, [<Rn>{, #<imm12>}] *)
      LoadRegister (cc, rt WR, rn RD, mem RD, true)
 
+  (* 111110010011<rn><rt>000000i2<rm>   LDRSH (register) *)
+  | 19 when (b 11 11) = 0 ->
+     let (shift_t, shift_n) = decode_imm_shift 0 (b 5 4) in
+     let reg_srt = ARMImmSRT (shift_t, shift_n) in
+     let rmreg = get_arm_reg (b 3 0) in
+     let rm = arm_register_op rmreg in
+     let offset = ARMShiftedIndexOffset (rmreg, reg_srt) in
+     let memi = mk_arm_offset_address_op rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+     (* LDRSH<c>.W, <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
+     LoadRegisterSignedHalfword (cc, rt WR, rn RD, rm RD, memi RD, true)
+
+  (* 111110010011<rn><rt>1puw<-imm8->   LDRSH (immediate) *)
+  | 19 when (b 11 11) = 1 ->
+     let offset = ARMImmOffset (b 7 0) in
+     let isindex = (b 10 10) = 1 in
+     let isadd = (b 9 9) = 1 in
+     let iswback = (b 8 8) = 1 in
+     let imm = arm_immediate_op (immediate_from_int (b 7 0)) in
+     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
+     (* LDRSH<c> <Rt>, [<Rn>, #-<imm8>]
+        LDRSH<c> <Rt>, [<Rn>], #+/-<imm8>
+        LDRSH<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
+     LoadRegisterSignedHalfword (cc, rt WR, rn RD, imm, mem RD, false)
+
   (* 111110011011<rn><rt><--imm12--->   LDRSH (immediate) *)
   | 27 ->
      let imm12 = b 11 0 in
@@ -881,13 +1074,19 @@ let parse_thumb32_31
      let offset = ARMImmOffset imm12 in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd:true ~isindex:true ~iswback:false in
   (* LDRSH<c> <Rt>, [<Rn>, #<imm12>] *)
-     LoadRegisterSignedHalfword (cc, rt WR, rn RD, imm, mem RD)
+     LoadRegisterSignedHalfword (cc, rt WR, rn RD, imm, mem RD, false)
 
   (* 11111010000S<rn>1111<rd>0000<rm>   LSL (register) *)
-  | 32 | 33 ->
+  | 32 | 33 when (b 15 12) = 15 && (b 7 4) = 0->
      let setflags = (b 20 20) = 1 in
      (* LSL{S}<c>.W <Rd>, <Rn>, <Rm> *)
      LogicalShiftLeft (setflags, cc, rd WR, rn RD, rm RD, true)
+
+  (* 11111010001S<rn>1111<rd>0000<rm>   LSR (register) *)
+  | 34 | 35 when (b 15 12) = 15 && (b 7 4) = 0 ->
+     let setflags = (b 20 20) = 1 in
+     (* LSR{S}<c>.W <Rd>, <Rn>, <Rm> *)
+     LogicalShiftRight (setflags, cc, rd WR, rn RD, rm RD, true)
 
   (* 111110101011<rm>1111<rd>1000<rm>   CLZ *)
   | 43 when (b 15 12) = 15 && (b 7 4) = 8 ->
@@ -895,6 +1094,32 @@ let parse_thumb32_31
      let rm = arm_register_op (get_arm_reg (b 3 0)) in
      (* CLZ<c> <Rd>, <Rm> *)
      CountLeadingZeros (cc, rd WR, rm RD)
+
+  (* 111110110000<rn>1111<rd>0000<rm>   MUL *)
+  | 48 when (b 15 12) = 15 && (b 7 4) = 0 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rm = arm_register_op (get_arm_reg (b 3 0)) in
+     (* MUL<c> <Rd>, <Rn>, <Rm> *)
+     Multiply (false, cc, rd WR, rn RD, rm RD)
+
+  (* 111110111000<rn><lo><hi>0000<rm>   SMULL *)
+  | 56 when (b 7 4) = 0 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rdlo = arm_register_op (get_arm_reg (b 15 12)) in
+     let rdhi = arm_register_op (get_arm_reg (b 11 8)) in
+     let rm = arm_register_op (get_arm_reg (b 3 0)) in
+     (* SMULL<c> <RdLo>, <RdHi>, <Rn>, <Rm> *)
+     SignedMultiplyLong (false, cc, rdlo WR, rdhi WR, rn RD, rm RD)
+
+  (* 111110111100<rn><rd><rd>0000<rm>   SMLAL *)
+  | 60 when (b 7 4) = 0 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rdlo = arm_register_op (get_arm_reg (b 15 12)) in
+     let rdhi = arm_register_op (get_arm_reg (b 11 8)) in
+     let rm = arm_register_op (get_arm_reg (b 3 0)) in
+     (* SMLAL<c> <RdLo>, <RdHi>, <Rn>, <Rm> *)
+     SignedMultiplyAccumulateLong (false, cc, rdlo WR, rdhi WR, rn RD, rm RD)
 
   | s ->
      NotRecognized ("parse_thumb32_31:" ^ (string_of_int s), instr)
@@ -959,13 +1184,13 @@ let parse_t16_00
   | 1 ->
      (* LSRS <Rd>, <Rm>, #<imm> (outside IT block) *)
      (* LSR<c> <Rd>, <Rm>, #<imm> (inside IT block) *)
-     LogicalShiftRight (not in_it, cc, r 3 WR, r 2 RD, imm5 1)
+     LogicalShiftRight (not in_it, cc, r 3 WR, r 2 RD, imm5 1, false)
     
   (* 00010<im5><r><r>  ASR (immediate) *)
   | 2 ->
      (* ASRS <Rd>, <Rm>, #<imm> (outside IT block) *)
      (* ASR<c> <Rd>, <Rm>, #<imm> (inside IT block) *)
-     ArithmeticShiftRight (not in_it, cc, r 3 WR, r 2 RD, imm5 2)
+     ArithmeticShiftRight (not in_it, cc, r 3 WR, r 2 RD, imm5 2, false)
 
   (* 0001100<r><r><r>  ADD (register) *)
   | 3 when (b 10 9) = 0 ->
@@ -1039,7 +1264,7 @@ let parse_t16_01
   | 1 ->
      (* EORS <Rdn>, <Rm> (outside IT block) *)
      (* EOR<c>, <Rdn>, <Rm> (inside IT block) *)
-     BitwiseExclusiveOr (not in_it, cc, r 1 WR, r 1 RD, r 0 RD)
+     BitwiseExclusiveOr (not in_it, cc, r 1 WR, r 1 RD, r 0 RD, false)
     
   (* 0100000010<r><r>  LSL (register) *)
   | 2 ->
@@ -1051,13 +1276,13 @@ let parse_t16_01
   | 3 ->
      (* LSRS <Rdn>, <Rm> (outside IT block) *)
      (* LSR<c> <Rdn>, <Rm> (inside IT block) *)
-     LogicalShiftRight (not in_it, cc, r 1 WR, r 1 RD, r 0 RD)
+     LogicalShiftRight (not in_it, cc, r 1 WR, r 1 RD, r 0 RD, false)
 
   (* 0100000100<r><r>  ASR (register) *)
   | 4 ->
      (* ASRS <Rdn>, <Rm> (outside IT block) *)
      (* ASR<c> <Rdn>, <Rm> (inside IT block) *)
-     ArithmeticShiftRight (not in_it, cc, r 1 WR, r 1 RD, r 0 RD)
+     ArithmeticShiftRight (not in_it, cc, r 1 WR, r 1 RD, r 0 RD, false)
 
   (* 0100000101<r><r>  ADC (register) *)
   | 5 ->
@@ -1087,7 +1312,7 @@ let parse_t16_01
      (* RSBS <Rd>, <Rn>, #0 (inside IT block *)
      (* RSB<c> <Rd>, <Rn>, #0 (outside IT block *)
      let imm0 = arm_immediate_op imm0 in
-     ReverseSubtract (not in_it, cc, r 1 WR, r 0 RD, imm0)
+     ReverseSubtract (not in_it, cc, r 1 WR, r 0 RD, imm0, false)
 
   (* 0100001010<r><r>  CMP (register) *)
   | 10 ->
@@ -1103,7 +1328,7 @@ let parse_t16_01
   | 12 ->
      (* ORRS <Rdn>, <Rm> (outside IT block) *)
      (* ORR<c> <Rdn>, <Rm> (inside IT block_ *)
-     BitwiseOr (not in_it, cc, r 1 WR, r 1 RD, r 0 RD)
+     BitwiseOr (not in_it, cc, r 1 WR, r 1 RD, r 0 RD, false)
 
   (* 0100001101<r><r>  MUL *)
   | 13 ->
@@ -1115,7 +1340,7 @@ let parse_t16_01
   | 14 ->
      (* BICS <Rdn>, <Rm> (outside IT block) *)
      (* BIC<c> <Rdn>, <Rm> (inside IT block) *)
-     BitwiseBitClear (not in_it, cc, r 1 WR, r 1 RD, r 0 RD)
+     BitwiseBitClear (not in_it, cc, r 1 WR, r 1 RD, r 0 RD, false)
 
   (* 0100001111<r><r>  MVN (register) *)
   | 15 ->
@@ -1214,7 +1439,7 @@ let parse_t16_load_store_reg
   (* 0101001<r><r><r>  STRH (register) *)
   | 1 ->
      (* STRH<c> <Rt>, [<Rn>, <Rm>] *)
-     StoreRegisterHalfword (cc, rt RD, rn RD, rm RD, mem WR)
+     StoreRegisterHalfword (cc, rt RD, rn RD, rm RD, mem WR, false)
 
   (* 0101010<r><r><r>  STRB (register) *)
   | 2 ->
@@ -1244,7 +1469,7 @@ let parse_t16_load_store_reg
   (* 0101111<r><r><r>  LDRSH (register) *)
   | 7 ->
      (* LDRSH<c> <Rt>, [<Rn>, <Rm>] *)
-     LoadRegisterSignedHalfword (cc, rt WR, rn RD, rm RD, mem RD)
+     LoadRegisterSignedHalfword (cc, rt WR, rn RD, rm RD, mem RD, false)
 
   | _ -> NotRecognized ("t16_load_store_reg", instr)
 
@@ -1286,7 +1511,7 @@ let parse_t16_load_store_imm
   (* 10000<imm><r><r>  STRH (immediate) *)
   | 0 when hw ->
      (* STRH<c> <Rt>, [<Rn>, #<imm>] *)
-     StoreRegisterHalfword (cc, rt RD, rn RD, imm, mem 2 WR)
+     StoreRegisterHalfword (cc, rt RD, rn RD, imm, mem 2 WR, false)
     
   (* 01100<imm><r><r>  STR (immediate) *)
   | 0 ->
@@ -1512,7 +1737,7 @@ let parse_t16_store_load_multiple
   (* 11000<r><rlist->  STM/STMIA/STMEA *)
   | 0 ->
      (* STM<c> <Rn>!, <registers> *)
-     StoreMultipleIncrementAfter (true, cc, rn RW, rl RD, mmem WR)
+     StoreMultipleIncrementAfter (true, cc, rn RW, rl RD, mmem WR, false)
 
        (* 11001<r><rlist->  LDM/LDMIA/LDMFD *)
   | 1 ->

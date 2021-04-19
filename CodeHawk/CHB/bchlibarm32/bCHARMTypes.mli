@@ -263,6 +263,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: shift<0:7> *)
+      * bool             (* T.W. *)
   | BitwiseAnd of
       bool (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -275,18 +276,27 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm: source 2 *)
+      * bool             (* T.W. *)
   | BitwiseExclusiveOr of
       bool   (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm: source 2 *)
+      * bool             (* T.W. *)
   | BitwiseNot of
       bool (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm/imm: source *)
   | BitwiseOr of
+      bool (* flags are set *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm/imm: source 2 *)
+      * bool             (* T.W. *)
+  | BitwiseOrNot of
       bool (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
       * arm_operand_int  (* rd: destination *)
@@ -400,6 +410,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* rm/imm: index/immediate *)
       * arm_operand_int  (* mem: memory location *)
+      * bool             (* T.W. *)
   | LogicalShiftLeft of
       bool  (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -413,6 +424,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: shift<0:7> *)
+      * bool             (* T.W. *)
   | Move of
       bool (* flags are set *)
       * arm_opcode_cc_t (* condition *)
@@ -456,6 +468,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm: source 2 *)
+      * bool             (* T.W. *)
   | ReverseSubtractCarry of
       bool  (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -505,18 +518,21 @@ type arm_opcode_t =
       * arm_operand_int (* rn: base *)
       * arm_operand_int (* rl: register list *)
       * arm_operand_int (* mem: multiple memory locations *)
+      * bool            (* T.W. *)
   | StoreMultipleIncrementAfter of
       bool    (* writeback *)
       * arm_opcode_cc_t (* condition *)
       * arm_operand_int (* rn: base *)
       * arm_operand_int (* rl: register list *)
       * arm_operand_int (* mem: multiple memory locations *)
+      * bool            (* T.W. *)
   | StoreMultipleIncrementBefore of
       bool    (* writeback *)
       * arm_opcode_cc_t (* condition *)
       * arm_operand_int (* rn: base *)
       * arm_operand_int (* rl: register list *)
       * arm_operand_int (* mem: multiple memory locations *)
+      * bool            (* T.W. *)
   | StoreRegister of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: source *)
@@ -548,6 +564,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* rm/imm: index/immediate *)
       * arm_operand_int  (* mem: memory loction *)
+      * bool             (* T.W. *)
   | Subtract of
       bool   (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -570,6 +587,11 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt *)
       * arm_operand_int  (* rt2 *)
+      * arm_operand_int  (* mem *)
+  | TableBranchByte of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rn *)
+      * arm_operand_int  (* rm *)
       * arm_operand_int  (* mem *)
   | Test of
       arm_opcode_cc_t    (* condition *)

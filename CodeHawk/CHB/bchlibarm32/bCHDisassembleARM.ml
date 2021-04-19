@@ -269,14 +269,17 @@ let disassemble_arm_sections () =
          0x1f2f0  42 ca 8c e2       ADD      R12, R12, #0x42000
          0x1f2f4  18 fd bc e5       LDR      PC, [R12], #3352
 
+     F B 0x38f1c  02 c6 8f e2       ADR      R12, 0x238f24
+         0x38f20  0b ca 8c e2       ADD      R12, R12, #0xb000
+         0x38f24  e8 f0 bc e5       LDR      PC, [R12], #232
+
  *)
 let is_library_stub faddr =
   if elf_header#is_program_address faddr
      && elf_header#has_xsubstring faddr 12 then
     let bytestring = byte_string_to_printed_string (elf_header#get_xsubstring faddr 12) in
     let instrsegs = [
-        "00c68fe2\\(..\\)ca8ce2\\(....\\)bce5";
-        "05c68fe2\\(..\\)ca8ce2\\(....\\)bce5"
+        "\\(..\\)c68fe2\\(..\\)ca8ce2\\(....\\)bce5"
       ] in
     List.exists (fun s ->
         let regex = Str.regexp s in
