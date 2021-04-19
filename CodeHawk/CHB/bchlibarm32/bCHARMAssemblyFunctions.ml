@@ -217,7 +217,21 @@ object (self)
 	H.replace table a#index ((H.find table a#index) + 1)
       else
 	H.add table a#index 1 in
-    let _ = List.iter (fun f -> f#iteri (fun faddr a _ -> add faddr a)) self#get_functions in
+    let add_library_stub_instr (iaddr:doubleword_int) =
+      if H.mem table iaddr#index then
+        ()
+      else
+        H.add table iaddr#index 1 in
+    let add_library_stub (faddr:doubleword_int) =
+      begin
+        add_library_stub_instr faddr;
+        add_library_stub_instr (faddr#add_int 4);
+        add_library_stub_instr (faddr#add_int 8);
+      end in
+    let _ =
+      List.iter (fun f ->
+          f#iteri (fun faddr a _ -> add faddr a)) self#get_functions in
+    let _ = List.iter add_library_stub functions_data#get_library_stubs in
     let overlap = ref 0 in
     let multiple = ref 0 in
     let _ = 
