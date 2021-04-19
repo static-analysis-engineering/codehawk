@@ -184,6 +184,9 @@ object (self)
     let otherfns = self#retrieve_addresses (fun f -> not f#is_inlined) in
     inlinedfns @ otherfns
 
+  method get_library_stubs =
+    self#retrieve_addresses (fun f -> f#is_library_stub)
+
   method is_function_entry_point (fa:doubleword_int) = H.mem table fa#index
 
   method has_function_name (fa:doubleword_int) =

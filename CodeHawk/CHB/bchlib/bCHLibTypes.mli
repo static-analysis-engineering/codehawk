@@ -742,6 +742,7 @@ class type functions_data_int =
     (* accessors *)
     method get_functions: function_data_int list
     method get_function_entry_points: doubleword_int list
+    method get_library_stubs: doubleword_int list
     method get_function: doubleword_int -> function_data_int
     method get_ida_provided_functions: function_data_int list
     method get_ida_provided_function_entry_points: doubleword_int list
