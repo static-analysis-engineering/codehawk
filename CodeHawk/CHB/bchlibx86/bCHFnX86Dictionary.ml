@@ -485,7 +485,7 @@ object (self)
          ([ "a:vx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ])
          
       (* ------------------------------------------------------------- Shl -- *)
-      | Shl (dst,src) when src#is_immediate_value ->
+      | Shl (dst, src) when src#is_immediate_value ->
          let lhs = dst#to_variable floc in
          let rhsexp = src#to_expr floc in
          let rhsbase = dst#to_expr floc in
@@ -506,6 +506,19 @@ object (self)
              end
           | _ ->
              raise (BCH_failure (LBLOCK [ STR "Internal error in Shl" ])))
+
+      | Shl (dst, src) ->
+         let lhs = dst#to_variable floc in
+         let rhsexp = src#to_expr floc in
+         let rhsbase = dst#to_expr floc in
+         let result = XOp (XShiftlt, [rhsbase; rhsexp]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxxx"], [
+            xd#index_variable lhs;
+            xd#index_xpr rhsbase;
+            xd#index_xpr rhsexp;
+            xd#index_xpr result;
+            xd#index_xpr rresult])
 
       (* ------------------------------------------------------------ Shld -- *)
       | Shld (dst,src,shift) when shift#is_immediate_value ->
@@ -654,7 +667,7 @@ object (self)
          ([ "a:vxxxx" ], [ xd#index_variable lhs ; xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
                            xd#index_xpr result ; xd#index_xpr rresult ])
 
-      | Div (_,quot,rem,dividend,divisor) ->  (* need to distinguis between signed and unsigned *)
+      | Div (_,quot,rem,dividend,divisor) ->  (* need to distinguish between signed and unsigned *)
          let lhs1 = quot#to_variable floc in
          let lhs2 = rem#to_variable floc in
          let rhs1 = dividend#to_expr floc in
@@ -668,7 +681,7 @@ object (self)
                 xd#index_xpr quot ; xd#index_xpr rquot ;
                 xd#index_xpr rem ; xd#index_xpr rrem ])         
 
-      | IDiv (_,quot,rem,dividend,divisor) -> (* need to distinguis between signed and unsigned *)
+      | IDiv (_,quot,rem,dividend,divisor) -> (* need to distinguish between signed and unsigned *)
          let lhs1 = quot#to_variable floc in
          let lhs2 = rem#to_variable floc in
          let rhs1 = dividend#to_expr floc in
