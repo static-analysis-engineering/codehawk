@@ -114,6 +114,8 @@ val mk_arm_mem_multiple_op:
 
 val sp_r: arm_operand_mode_t -> arm_operand_int
 
+val pc_r: arm_operand_mode_t -> arm_operand_int
+
 val arm_sp_deref:
   ?with_offset:int
   -> arm_operand_mode_t

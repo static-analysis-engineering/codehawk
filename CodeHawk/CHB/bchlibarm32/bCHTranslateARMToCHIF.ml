@@ -139,13 +139,72 @@ let translate_arm_instruction
       ~(blocklabel:symbol_t)
       ~(exitlabel:symbol_t)
       ~(cmds:cmd_t list) =
-  let (ctxtiaddr,instr) = codepc#get_next_instruction in
+  let (ctxtiaddr, instr) = codepc#get_next_instruction in
   let faddr = funloc#f in
   let loc = ctxt_string_to_location faddr ctxtiaddr in  (* instr location *)
   let invlabel = get_invariant_label loc in
   let invop = OPERATION { op_name = invlabel ; op_args = [] } in
-  let default newcmds = ([], [], cmds @ (invop :: newcmds)) in
+  let rewrite_expr floc x:xpr_t =
+    let xpr = floc#inv#rewrite_expr x floc#env#get_variable_comparator in
+    let rec expand x =
+      match x with
+      | XVar v when floc#env#is_symbolic_value v ->
+         expand (floc#env#get_symbolic_value_expr v)
+      | XOp (op,l) -> XOp (op, List.map expand l)
+      | _ -> x in
+    simplify_xpr (expand xpr) in
+  let default newcmds =
+    let floc = get_floc loc in
+    let pcv = (pc_r RD)#to_variable floc in
+    let iaddr12 = (loc#i#add_int 12)#to_numerical in
+    let pcassign = floc#get_assign_commands pcv (XConst (IntConst iaddr12)) in
+    ([], [], cmds @ (invop :: (newcmds @ pcassign))) in
   match instr#get_opcode with
+
+  (* -------------------------------------------------------------- Add -- *
+   * if ConditionPassed() then
+   *   shifted = Shift(R[m], shift_t, shift_n, APSR.C)
+   *   (result, carry, overflow) = AddWithCarry(R[n], shifted, '0')
+   *   if d == 15 then
+   *     ALUWritePC(result);
+   *   else
+   *     R[d] = result;
+   *     if setflags then
+   *       APSR.N = result<31>;
+   *       APSR.Z = IsZeroBit(result);
+   *       APSR.C = carry;
+   *       APSR.V = overflow;
+   *------------------------------------------------------------------------- *)
+  | Add (setflags, ACCAlways, rd, rn, rm, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let xrn = rn#to_expr floc in
+     let xrm = rm#to_expr floc in
+     let cmds = floc#get_assign_commands vrd (XOp (XPlus, [xrn; xrm])) in
+     default cmds
+
+  | ArithmeticShiftRight(setflags, ACCAlways, rd, rn, rm, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let xrn = rn#to_expr floc in
+     let xrm = rm#to_expr floc in
+     let asrr =
+       match xrm with
+       | XConst (IntConst n) when n#toInt = 2->
+          XOp (XDiv, [xrn; XConst (IntConst (mkNumerical 4))])
+       | _ -> XOp (XShiftrt, [xrn; xrm]) in
+     let cmds = floc#get_assign_commands vrd asrr in
+     default cmds
+
+  | BitwiseAnd (setflags, ACCAlways, rd, rn, rm, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let xrn = rn#to_expr floc in
+     let xrm = rm#to_expr floc in
+     let result = XOp (XBAnd, [xrn; xrm]) in
+     let cmds = floc#get_assign_commands vrd result in
+     default cmds
+
   (* ---------------------------------------------------------- BitwiseNot -- *
    * if immediate
    *   result = NOT(imm32);
@@ -205,10 +264,42 @@ let translate_arm_instruction
    * ------------------------------------------------------------------------ *)
   | LoadRegister (ACCAlways, dst, base, src, _) ->
      let floc = get_floc loc in
+     let rhs =
+       floc#inv#rewrite_expr (src#to_expr floc)
+         floc#env#get_variable_comparator in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmd = floc#get_assign_commands lhs rhs in
+     default (cmd @ lhscmds)
+
+  | LoadRegisterByte (ACCAlways, dst, base, src, _) ->
+     let floc = get_floc loc in
      let rhs = src#to_expr floc in
      let (lhs, lhscmds) = dst#to_lhs floc in
      let cmd = floc#get_assign_commands lhs rhs in
      default (cmd @ lhscmds)
+
+  | LoadRegisterHalfword (ACCAlways, dst, base, _, src, _) ->
+     let floc = get_floc loc in
+     let rhs = src#to_expr floc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmd = floc#get_assign_commands lhs rhs in
+     default (cmd @ lhscmds)
+
+  | LoadRegisterSignedHalfword (ACCAlways, rt, rn, rm, mem, _) ->
+     let floc = get_floc loc in
+     let rhs = mem#to_expr floc in
+     let (lhs, lhscmds) = rt#to_lhs floc in
+     let cmd = floc#get_assign_commands lhs rhs in
+     default (cmd @ lhscmds)
+
+  | LogicalShiftLeft (setflags, ACCAlways, rd, rn, rm, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let xrn = rn#to_expr floc in
+     let xrm = rm#to_expr floc in
+     let result = XOp (XShiftlt, [xrn; xrm]) in
+     let cmds = floc#get_assign_commands vrd result in
+     default cmds
 
   (* ---------------------------------------------------------------- Move -- *
    * result = R[m];
@@ -290,6 +381,7 @@ let translate_arm_instruction
      let regcount = rl#get_register_count in
      let sprhs = sp#to_expr floc in     
      let rhsexprs = rl#to_multiple_expr floc in
+     let rhsexprs = List.map (rewrite_expr floc) rhsexprs in
      let (stackops,_) =
        List.fold_left
          (fun (acc,off) rhsexpr ->
@@ -302,9 +394,72 @@ let translate_arm_instruction
      let decrem = XConst (IntConst (mkNumerical(4 * regcount))) in
      let cmds = floc#get_assign_commands splhs (XOp (XMinus, [sprhs; decrem])) in
      default (stackops @ cmds)
-       
+
+  | StoreRegister (ACCAlways, rt, rn, mem, _) ->
+     let floc = get_floc loc in
+     let (vmem,memcmds) = mem#to_lhs floc in
+     let xrt = rt#to_expr floc in
+     let cmds = floc#get_assign_commands vmem xrt in
+     default (memcmds @ cmds)
+
+  | StoreRegisterByte (ACCAlways, rt, rn, mem, _) ->
+     let floc = get_floc loc in
+     let (vmem,memcmds) = mem#to_lhs floc in
+     let xrt = rt#to_expr floc in
+     let cmds = floc#get_assign_commands vmem xrt in
+     default (memcmds @ cmds)
+
+  | StoreRegisterHalfword (ACCAlways, rt, rn, _, mem, _) ->
+     let floc = get_floc loc in
+     let (vmem,memcmds) = mem#to_lhs floc in
+     let xrt = rt#to_expr floc in
+     let cmds = floc#get_assign_commands vmem xrt in
+     default (memcmds @ cmds)
+
+  (* ------------------------------------------------------------ Subtract -- *
+   * if ConditionPassed() then
+   *   (result, carry, overflow) = AddWithCarry (R[n], NOT9imm32), '1');
+   *   R[d] = result;
+   *   if setflags then
+   *     APSR.N = result<31>;
+   *     APSR.Z = IsZeroBit(result);
+   *     APSR.C = carry;
+   *     APSR.V = overflow
+   * ------------------------------------------------------------------------- *)
+  | Subtract (_, ACCAlways, dst, src1, src2, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let xsrc1 = src1#to_expr floc in
+     let xsrc2 = src2#to_expr floc in
+     let cmds = floc#get_assign_commands vdst (XOp (XMinus, [xsrc1; xsrc2])) in
+     default cmds
+
+  | UnsignedExtendByte (ACCAlways, rd, rm) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let xrm = rm#to_expr floc in
+     (* let result = XOp (XMod, [xrm; XConst (IntConst (mkNumerical 256))]) in *)
+     let result = xrm in
+     let cmds = floc#get_assign_commands vrd result in
+     default cmds
+
+  | UnsignedExtendHalfword (ACCAlways, rd, rm) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let xrm = rm#to_expr floc in
+     (* let result = XOp (XMod, [xrm; XConst (IntConst (mkNumerical (256 * 256)))]) in *)
+     let result = xrm in
+     let cmds = floc#get_assign_commands vrd result in
+     default cmds
      
-  | _ -> default []
+
+  | instr ->
+     let _ =
+       if faddr#to_hex_string = "0xcc4" then
+         pr_debug [STR "No semantics yet for ";
+                   STR (arm_opcode_to_string instr);
+                   NL] in
+     default []
         
 
 class arm_assembly_function_translator_t (f:arm_assembly_function_int) =

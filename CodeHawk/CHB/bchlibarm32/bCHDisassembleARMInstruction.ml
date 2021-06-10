@@ -103,7 +103,7 @@ let parse_data_proc_reg_load_stores
      let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback WR in
      (* STRH{<c>} <Rt>, [<Rn>, +/-<Rm>]{!}          Pre-x : (index,wback) = (T,T/F)
       * STRH{<c>} <Rt>, [<Rn>], +/-<Rm>             Post-x: (index,wback) = (F,T) *)
-     StoreRegisterHalfword (c,rt,rn,rm,mem,false)
+     StoreRegisterHalfword (c, rt, rn, rm, mem, false)
 
   (* <cc><0>pu0w0<rn><rt>< 0>1101<rm> *)   (* LDRD-reg *)
   | (0,0,2) when bit11_8 = 0 ->
@@ -191,7 +191,7 @@ let parse_data_proc_reg_load_stores
      (* STRH<c> <Rt>, [<Rn>{, #+/-<imm8>}]           Offset: (index,wback) = (T,F)
       * STRH<c> <Rt>, [<Rn>, #+/-<imm>]!             Pre-x : (index,wback) = (T,T)
       * STRH<c> <Rt>, [<Rn>], #+/-<imm>              Post-x: (index,wback) = (F,T) *)
-     StoreRegisterHalfword (c,rt,rn,imm,mem,false)
+     StoreRegisterHalfword (c, rt, rn, imm, mem, false)
 
   (* <cc><0>pu1w0<rn><rt><iH>1101<iL> *)   (* LDRD-imm *)
   (* <cc><0>1u1001111<rt><iH>1101<iL> *)   (* LDRD-lit *)
@@ -1343,7 +1343,7 @@ let parse_branch_link_type
   if opx = 0 then
     Branch (cond, tgtop, false)
   else
-    BranchLink (cond,tgtop)
+    BranchLink (cond, tgtop)
 
 let parse_opcode
       (ch:pushback_stream_int)
@@ -1368,7 +1368,7 @@ let parse_opcode
        parse_block_data_type cond p u opx w opy rn opz reglist
     | BranchLinkType (cond,opx,offset) ->
        parse_branch_link_type ch base cond opx offset
-    | _ -> OpInvalid in
+    | _ -> NotRecognized ("no type", instrbytes) in
   let pinstrclass =
     if system_settings#is_verbose
        && (match opcode with OpInvalid -> true | _ -> false) then
