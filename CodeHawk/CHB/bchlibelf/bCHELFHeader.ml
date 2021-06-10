@@ -334,7 +334,12 @@ object
       e_phnum <- geti "e_phnum" ;
       e_shentsize <- geti "e_shentsize" ;
       e_shnum <- geti "e_shnum" ;
-      e_shstrndx <- geti "e_shstrndx"
+      e_shstrndx <- geti "e_shstrndx";
+
+      if e_entry#equal wordzero then
+        ()
+      else
+        system_info#set_address_of_entry_point e_entry
     end
 
   method toPretty =
@@ -678,11 +683,14 @@ object(self)
              | _ ->
                  raise (BCH_failure (LBLOCK [ STR "Section with index: " ; INT index ;
                                               STR " is not a relocation table" ])) in
-           let symboltable = self#get_associated_symbol_table h in
-           begin
-             reltable#set_symbols symboltable;
-             reltable#set_function_entry_points
-           end
+           if h#get_link#equal wordzero then
+             ()
+           else
+             let symboltable = self#get_associated_symbol_table h in
+             begin
+               reltable#set_symbols symboltable;
+               reltable#set_function_entry_points
+             end
         | _ -> ()) section_header_table
       
 
