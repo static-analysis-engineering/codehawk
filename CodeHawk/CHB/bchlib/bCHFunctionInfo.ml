@@ -811,6 +811,9 @@ object (self)
   method get_mips_argument_values =
     List.filter varmgr#is_initial_mips_argument_value self#get_variables
 
+  method get_arm_argument_values =
+    List.filter varmgr#is_initial_arm_argument_value self#get_variables
+
   method get_realigned_stack_variables = 
     List.filter varmgr#is_realigned_stack_variable self#get_variables
 
@@ -1066,6 +1069,8 @@ object (self)
   method is_initial_register_value = varmgr#is_initial_register_value
 
   method is_initial_mips_argument_value = varmgr#is_initial_mips_argument_value
+
+  method is_initial_arm_argument_value = varmgr#is_initial_arm_argument_value
 
   method is_function_initial_value = varmgr#is_function_initial_value
 
@@ -1419,6 +1424,8 @@ object (self)
       | _ ->
          if system_info#is_mips then
            self#get_mips_local_function_api
+         else if system_info#is_arm then
+           self#get_arm_local_function_api
          else
            self#get_local_function_api in
     let sem = self#get_function_semantics in
@@ -1454,6 +1461,26 @@ object (self)
     with
     | BCH_failure p ->
        raise (BCH_failure (LBLOCK [ STR "Finfo:get-mips-local-function-api: " ; p ]))
+
+  method private get_arm_local_function_api =
+    try
+      let parameters = env#get_arm_argument_values in
+      let paramregs =
+        List.map self#env#get_initial_register_value_register parameters in
+      let apiparams = List.map mk_register_parameter paramregs in
+      let apiparams =
+        match apiparams with
+        | [] ->
+           let argregs = [ ARMRegister AR0; ARMRegister AR1;
+                           ARMRegister AR2; ARMRegister AR3 ] in
+           List.map mk_register_parameter argregs
+        | _ -> apiparams in
+      let _ =
+        List.iter (fun p ->  ignore (self#add_api_parameter p)) apiparams in
+      default_function_api self#get_name self#get_api_parameters
+    with
+    | BCH_failure p ->
+       raise (BCH_failure (LBLOCK [ STR "Finfo:get-arm-local-function-api: " ; p ]))
 
   method private get_local_function_api =
     try

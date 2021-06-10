@@ -1780,12 +1780,14 @@ object ('a)
   method is_auxiliary_variable: bool
   method is_register_variable: bool
   method is_mips_argument_variable: bool
+  method is_arm_argument_variable: bool
   method is_memory_variable: bool
 
   method is_function_initial_value: bool    (* value from function environment *)
        
   method is_initial_register_value: bool
   method is_initial_mips_argument_value: bool
+  method is_initial_arm_argument_value: bool
   method is_initial_stackpointer_value: bool
        
   method is_initial_memory_value: bool
@@ -1870,9 +1872,11 @@ object
   method is_global_variable: variable_t -> bool
   method is_register_variable: variable_t -> bool
   method is_mips_argument_variable: variable_t -> bool
+  method is_arm_argument_variable: variable_t -> bool
   method is_stack_variable: variable_t -> bool  (* memory variable anywhere on the stack  *)
   method is_initial_register_value: variable_t -> bool
   method is_initial_mips_argument_value: variable_t -> bool
+  method is_initial_arm_argument_value: variable_t -> bool
   method is_initial_stackpointer_value: variable_t -> bool
   method is_initial_memory_value: variable_t -> bool
   method is_frozen_test_value: variable_t -> bool
@@ -2244,6 +2248,7 @@ class type function_environment_int =
     method get_realigned_stack_variables: variable_t list
     method get_parent_stack_variables: variable_t list
     method get_mips_argument_values: variable_t list
+    method get_arm_argument_values: variable_t list
     method get_bridge_values_at: ctxt_iaddress_t -> variable_t list
 
     method get_variable: int -> variable_t
@@ -2323,6 +2328,7 @@ class type function_environment_int =
     method is_register_variable: variable_t -> bool
     method is_initial_register_value: variable_t -> bool
     method is_initial_mips_argument_value: variable_t -> bool
+    method is_initial_arm_argument_value: variable_t -> bool
     method is_initial_stackpointer_value : variable_t -> bool
          
     method is_initial_memory_value: variable_t -> bool
