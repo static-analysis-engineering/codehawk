@@ -311,8 +311,19 @@ object (self:'a)
         | _ -> false)
     | _ -> false
 
+  method is_initial_arm_argument_value =
+    match denotation with
+    | AuxiliaryVariable (InitialRegisterValue (reg,0)) ->
+       (match reg with
+        | ARMRegister armreg ->
+           (match armreg with
+            | AR0 | AR1 | AR2 | AR3 -> true
+            | _ -> false)
+        | _ -> false)
+    | _ -> false
+
   method is_initial_stackpointer_value =
-    self#is_initial_register_value || self#is_initial_register_value 
+    self#is_initial_register_value
 	      
   method get_initial_register_value_register =
     match denotation with
@@ -351,6 +362,17 @@ object (self:'a)
         | MIPSRegister mipsreg ->
            (match mipsreg with
             | MRa0 | MRa1 | MRa2 | MRa3 -> true
+            | _ -> false)
+        | _ -> false)
+    | _ -> false
+
+  method is_arm_argument_variable =
+    match denotation with
+    | RegisterVariable reg ->
+       (match reg with
+        | ARMRegister armreg ->
+           (match armreg with
+            | AR0 | AR1 | AR2 | AR3 -> true
             | _ -> false)
         | _ -> false)
     | _ -> false
@@ -497,8 +519,11 @@ object (self)
           | InitialRegisterValue (CPURegister Esp,1) -> memrefmgr#mk_realigned_stack_reference
           | InitialRegisterValue (MIPSRegister MRsp,0) -> memrefmgr#mk_local_stack_reference
           | InitialRegisterValue (MIPSRegister MRsp,1) -> memrefmgr#mk_realigned_stack_reference
+          | InitialRegisterValue (ARMRegister ARSP,0) -> memrefmgr#mk_local_stack_reference
+          | InitialRegisterValue (ARMRegister ARSP,1) -> memrefmgr#mk_realigned_stack_reference
           | InitialRegisterValue (CPURegister _,_)
             | InitialRegisterValue (MIPSRegister _,_)
+            | InitialRegisterValue (ARMRegister _, _)
             | InitialMemoryValue _
             | FunctionReturnValue _ -> memrefmgr#mk_basevar_reference v
           | _ -> memrefmgr#mk_unknown_reference ("base:" ^ v#getName#getBaseName))
@@ -721,6 +746,9 @@ object (self)
   method is_mips_argument_variable (v:variable_t) =
     (self#has_var v) && (self#get_variable v)#is_mips_argument_variable
 
+  method is_arm_argument_variable (v:variable_t) =
+    (self#has_var v) && (self#get_variable v)#is_arm_argument_variable
+
   method is_stack_variable (v:variable_t) =
     (self#has_var v) && (self#has_memvar v) &&
       (self#get_memvar_reference v)#is_stack_reference
@@ -777,6 +805,9 @@ object (self)
 
   method is_initial_mips_argument_value (v:variable_t) =
     (self#has_var v) && (self#get_variable v)#is_initial_mips_argument_value
+
+  method is_initial_arm_argument_value (v:variable_t) =
+    (self#has_var v) && (self#get_variable v)#is_initial_arm_argument_value
 
   method is_initial_memory_value (v:variable_t) =
     (self#has_var v) && (self#get_variable v)#is_initial_memory_value
