@@ -190,6 +190,7 @@ class type arm_operand_int =
     method get_register: arm_reg_t
     method get_register_count: int
     method get_register_list: arm_reg_t list
+    method get_register_op_list: 'a list
     method get_absolute_address: doubleword_int
     method get_pc_relative_address: doubleword_int -> doubleword_int
 

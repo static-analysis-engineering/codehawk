@@ -158,17 +158,17 @@ object (self)
     let tags = [ get_arm_opcode_name opc ] in
     let ctags c = tags @ [ ci c ] in
     let key = match opc with
-      | Add (setflags,cond, rd, rn, imm, tw)
-        | AddCarry (setflags, cond, rd, rn, imm, tw) ->
-         (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm; setb tw ])
+      | Add (s, c, rd, rn, imm, tw)
+        | AddCarry (s, c, rd, rn, imm, tw) ->
+         (ctags c, [setb s ; oi rd; oi rn; oi imm; setb tw])
       | Adr (cond,rd,addr) ->
          (tags @ [ ci cond ], [ oi rd ; oi addr ])
-      | ArithmeticShiftRight (s,c,rd,rn,rm,tw) ->
-         (ctags c,[ setb s; oi rd; oi rn; oi rm; setb tw ])
+      | ArithmeticShiftRight (s, c, rd, rn, rm, tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw ])
+      | BitwiseAnd (s, c, rd, rn, imm, tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
       | BitwiseNot (setflags,cond,rd,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm ])
-      | BitwiseAnd (s,c,rd,rn,imm,tw) ->
-         (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
       | BitwiseOrNot (setflags,cond,rd,rn,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm])
       | BitwiseBitClear (s,c,rd,rn,imm,tw) ->
@@ -177,7 +177,7 @@ object (self)
          (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
       | BitwiseOr (s,c,rd,rn,imm,tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
-      | Branch (c,addr,tw) -> (ctags c, [oi addr; setb tw])
+      | Branch (c, addr, tw) -> (ctags c, [oi addr; setb tw])
       | BranchExchange (cond,addr)
         | BranchLink (cond,addr)
         | BranchLinkExchange (cond,addr) ->
@@ -197,33 +197,33 @@ object (self)
         | LoadMultipleIncrementAfter (wb,c,rn,rl,mem)
         | LoadMultipleIncrementBefore (wb,c,rn,rl,mem) ->
          (ctags c, [ setb wb; oi rn; oi rl; oi mem ])
-      | LoadRegister (c,rt,rn,mem,tw) ->
-         (ctags c, [ oi rt; oi rn; oi mem; setb tw])
-      | LoadRegisterByte (c,rt,rn,mem,tw) ->
-         (ctags c, [ oi rt; oi rn; oi mem; setb tw ])
+      | LoadRegister (c, rt, rn, mem, tw) ->
+         (ctags c, [oi rt; oi rn; oi mem; setb tw])
+      | LoadRegisterByte (c, rt, rn, mem, tw) ->
+         (ctags c, [oi rt; oi rn; oi mem; setb tw ])
       | LoadRegisterDual (c,rt,rt2,rn,rm,mem) ->
          (ctags c,[ oi rt; oi rt2; oi rn; oi rm; oi mem])
       | LoadRegisterExclusive (c, rt, rn, mem) ->
          (ctags c, [oi rt; oi rn; oi mem])
-      | LoadRegisterHalfword (c,rt,rn,rm,mem,tw)->
+      | LoadRegisterHalfword (c, rt, rn, rm, mem, tw)->
          (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw])
-        | LoadRegisterSignedByte (c,rt,rn,rm,mem,tw) ->
+      | LoadRegisterSignedByte (c,rt,rn,rm,mem,tw) ->
          (ctags c,[ oi rt; oi rn; oi rm; oi mem; setb tw])
-      | LoadRegisterSignedHalfword (c,rt,rn,rm,mem,tw) ->
+      | LoadRegisterSignedHalfword (c, rt, rn, rm, mem, tw) ->
          (ctags c,[ oi rt; oi rn; oi rm; oi mem; setb tw])
-      | LogicalShiftLeft (s,c,rd,rn,rm,tw) ->
-         (ctags c, [ setb s; oi rd; oi rn; oi rm; setb tw])
+      | LogicalShiftLeft (s, c, rd, rn, rm, tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
       | LogicalShiftRight (s,c,rd,rn,rm,tw) ->
          (ctags c, [ setb s; oi rd; oi rn; oi rm; setb tw])
-      | Move (setflags,cond,rd,imm,tw) ->
-         (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm; setb tw ])
+      | Move (s, c, rd, rm, tw) ->
+         (ctags c, [setb s; oi rd; oi rm; setb tw])
       | MoveTop (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
       | MoveWide (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
       | Multiply (setflags,cond,rd,rn,rm) ->
          (tags @ [ ci cond ], [ setb setflags; oi rd; oi rn; oi rm])
       | MultiplyAccumulate (setflags,cond,rd,rn,rm,ra) ->
          (tags @ [ ci cond ], [ setb setflags; oi rd; oi rn; oi rm; oi ra ])
-      | Pop (c,sp,rl,tw) -> (ctags c, [oi sp; oi rl; setb tw])
+      | Pop (c, sp, rl, tw) -> (ctags c, [oi sp; oi rl; setb tw])
       | Push (c,sp,rl,tw) ->  (ctags c, [ oi sp; oi rl; setb tw ])
       | ReverseSubtract (s,c,dst,src,imm,tw) ->
          (ctags c, [setb s; oi dst; oi src; oi imm; setb tw])
@@ -241,17 +241,17 @@ object (self)
         | StoreMultipleIncrementAfter (wb,c,rn,rl,mem,tw)
         | StoreMultipleIncrementBefore (wb,c,rn,rl,mem,tw) ->
          (ctags c, [ setb wb; oi rn; oi rl; oi mem; setb tw ])
-      | StoreRegister (c,rt,rn,mem,tw) ->
+      | StoreRegister (c, rt, rn, mem, tw) ->
          (ctags c, [oi rt; oi rn; oi mem; setb tw])
-        | StoreRegisterByte (c,rt,rn,mem,tw) ->
-         (ctags c,[ oi rt; oi rn; oi mem; setb tw])
-      | StoreRegisterHalfword (c,rt,rn,rm,mem, tw) ->
-         (tags @ [ ci c ], [ oi rt; oi rn; oi rm; oi mem; setb tw ])
+      | StoreRegisterByte (c, rt, rn, mem, tw) ->
+         (ctags c, [oi rt; oi rn; oi mem; setb tw])
+      | StoreRegisterHalfword (c, rt, rn, rm, mem, tw) ->
+         (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw ])
       | StoreRegisterDual (c,rt,rt2,rn,rm,mem) ->
          (ctags c, [ oi rt; oi rt2; oi rn; oi rm; oi mem])
       | StoreRegisterExclusive (c, rd, rt, rn, mem) ->
          (ctags c, [oi rd; oi rt; oi rn; oi mem])
-      | Subtract (s,c,dst,src,imm,tw) ->
+      | Subtract (s, c, dst, src, imm, tw) ->
          (ctags c, [setb s; oi dst; oi src; oi imm; setb tw])
       | SubtractCarry (setflags,cond,dst,src,imm)
         | ReverseSubtractCarry (setflags,cond,dst,src,imm) ->
@@ -266,8 +266,8 @@ object (self)
       | UnsignedBitFieldExtract (c,rd,rn) -> (ctags c, [ oi rd; oi rn ])
       | UnsignedExtendAddHalfword (c,rd,rn,rm) ->
          (ctags c,[ oi rd; oi rn; oi rm])
-      | UnsignedExtendByte (c,rd,rm)
-        | UnsignedExtendHalfword (c,rd,rm) -> (ctags c,[ oi rd; oi rm])
+      | UnsignedExtendByte (c, rd, rm)
+        | UnsignedExtendHalfword (c,rd,rm) -> (ctags c, [oi rd; oi rm])
       | UnsignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) ->
          (ctags c,[setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | OpInvalid | NotCode _ -> (tags,[])

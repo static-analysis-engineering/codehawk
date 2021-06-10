@@ -526,7 +526,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ida_asm = (fun f -> f#opscc "UMULL" c [rdlo;rdhi;rn;rm])
     }
   | NoOperation c -> {
-      mnemonic = "nop";
+      mnemonic = "NOP";
       operands = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "NOP" c [])

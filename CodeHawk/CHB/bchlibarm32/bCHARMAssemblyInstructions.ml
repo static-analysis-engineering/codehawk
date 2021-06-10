@@ -297,12 +297,13 @@ object (self)
                    "\n"
                    (List.map
                       (fun (a,v) ->
+                        let addr = a#to_hex_string in
                         match elf_header#get_string_at_address v with
                         | Some s ->
-                           "  " ^ a#to_hex_string ^ "  " ^ v#to_hex_string
+                           "  " ^ addr ^ "  " ^ v#to_hex_string
                            ^ ": \"" ^ s ^ "\""
                         | _ ->
-                           "  " ^ a#to_hex_string ^ "  " ^ v#to_hex_string)
+                           "  " ^ addr ^ "  " ^ v#to_hex_string)
                       (List.rev !contents)))
               ^ "\n" ^ (string_repeat "=" 80) ^ "\n")
            end
@@ -366,8 +367,9 @@ object (self)
                    if !firstNew then
                      begin lines := "\n" :: !lines ; firstNew := false end in
                  let _ = add_function_names va in
+                 let addr = va#to_hex_string in
                  let line =
-                   (Bytes.to_string statusString) ^ va#to_hex_string ^ "  "
+                   (Bytes.to_string statusString) ^ addr ^ "  "
                    ^ bytestring ^ "  " ^ instr#toString in
                  lines := line :: !lines
             else

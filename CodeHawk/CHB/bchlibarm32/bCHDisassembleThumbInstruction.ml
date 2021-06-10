@@ -1013,7 +1013,7 @@ let parse_thumb32_31
      let offset = ARMShiftedIndexOffset (get_arm_reg (b 3 0), reg_srt) in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd:true ~isindex:true ~iswback:false in
      (* STRH<c>.W <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
-     StoreRegisterHalfword (cc, rt RD, rn RD, rm RD, mem WR, true)
+     StoreRegisterHalfword (cc, rt RD, rn RD, rm RD,  mem WR, true)
 
   (* 111110000010<rn><rt>1puw<-imm8->   STRH (immediate) *)
   | 2 when (b 11 11) = 1 ->
@@ -1021,12 +1021,11 @@ let parse_thumb32_31
      let isindex = (b 10 10) = 1 in
      let isadd = (b 9 9) = 1 in
      let iswback = (b 8 8) = 1 in
-     let imm = arm_immediate_op (immediate_from_int (b 7 0)) in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
      (* STRH<c> <Rt>, [<Rn>, #-<imm8>]
         STRH<c> <Rt>, [<Rn>], #+/-<imm8>
         STRH<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
-     StoreRegisterHalfword (cc, rt RD, rn RD, imm, mem WR, true)
+     StoreRegisterHalfword (cc, rt RD, rn RD, rm RD, mem WR, true)
 
   (* 111110000011<rn><rt>000000i2<rm>   LDRH (register) *)
   | 3 when (b 11 6) = 0 ->

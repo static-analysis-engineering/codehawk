@@ -104,6 +104,9 @@ class arm_operand_t
         (kind:arm_operand_kind_t) (mode:arm_operand_mode_t):arm_operand_int =
 object (self:'a)
 
+  val kind = kind
+  val mode = mode
+
   method get_kind = kind
   method get_mode = mode
 
@@ -127,6 +130,16 @@ object (self:'a)
   method get_register_list =
     match kind with
     | ARMRegList rl -> rl
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Operand is not a register list: ";
+                     self#toPretty]))
+
+  method get_register_op_list: 'a list =
+    match kind with
+    | ARMRegList rl ->
+       List.map (fun r -> {< kind = ARMReg r; mode = mode >}) rl
     | _ ->
        raise
          (BCH_failure
@@ -215,6 +228,10 @@ object (self:'a)
     | ARMOffsetAddress _ -> XVar (self#to_variable floc)
     | ARMAbsolute a when elf_header#is_program_address a ->
        num_constant_expr (elf_header#get_program_value a)#to_numerical
+    | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
+       let env = floc#f#env in
+       XVar (env#mk_arm_register_variable r)
+    | ARMShiftedReg _ -> XConst (XRandom)
     | _ ->
        raise
          (BCH_failure
@@ -222,10 +239,10 @@ object (self:'a)
                       self#toPretty]))
 
   method to_multiple_expr (floc:floc_int): xpr_t list =
-    let env = floc#f#env in
     match kind with
     | ARMRegList rl ->
-       List.map (fun r -> XVar (env#mk_arm_register_variable r)) rl
+       let rlops = self#get_register_op_list in
+       List.map (fun op -> op#to_expr floc) rlops
     | _ ->
        raise
          (BCH_failure
@@ -386,6 +403,8 @@ let mk_arm_mem_multiple_op (reg:arm_reg_t) (n:int) =
   new arm_operand_t (ARMMemMultiple (reg,n))
 
 let sp_r mode = arm_register_op ARSP mode
+
+let pc_r mode = arm_register_op ARPC mode
 
 let arm_sp_deref ?(with_offset=0) (mode:arm_operand_mode_t) =
   if with_offset >= 0 then
