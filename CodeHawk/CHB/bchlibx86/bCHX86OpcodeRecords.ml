@@ -1603,8 +1603,8 @@ let get_record (opc:opcode_t) =
     intel_asm    = (fun f -> f#no_ops "hlt") ;
     att_asm      = (fun f -> f#no_ops "hlt") }
 
-  (* IDIV r/m8  --- Unsigned divide:  AL,AH <- AX / r/m8               ---- F6/7
-     IDIV r/m32 --- Unsigned divide (EAX,EDX) <- EDX:EAX / r/m32       ---- F7/7
+  (* IDIV r/m8  --- Signed divide:  AL,AH <- AX / r/m8               ---- F6/7
+     IDIV r/m32 --- Signed divide (EAX,EDX) <- EDX:EAX / r/m32       ---- F7/7
   *)
   | IDiv (width,quot,rem,dividend,divisor) -> 
     { docref       = "2A, 3-511" ;
@@ -1617,7 +1617,7 @@ let get_record (opc:opcode_t) =
       intel_asm    = (fun f -> f#ops "idiv" [ divisor ]) ;
       att_asm      = (fun f -> f#ops "idiv" [ divisor ]) }
 
-  (* IMUL r16,r/m16      --- r16 <- r/m32 * imm16                        ---- 69/r iw
+  (* IMUL r16,r/m16      --- r16 <- r/m16 * imm16                        ---- 69/r iw
      IMUL r32,r/m32      --- r32 <- r/m32 * imm32                        ---- 69/r id
      IMUL r16,r/m16,imm8 --- r16 <- r/m16 * sign-extended imm8           ---- 6B/r ib
      IMUL r32,r/m32,imm8 --- r32 <- r/m32 * sign-extended imm8           ---- 6B/r ib
