@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -153,12 +154,12 @@ object (self)
         end in
     let get_condition_exprs thenxpr elsexpr =
       match restriction with
-      | Some (BranchAssert false) -> (false_constant_expr,elsexpr)
-      | Some (BranchAssert true) -> (thenxpr,false_constant_expr)
-      | _ -> (thenxpr,elsexpr) in
+      | Some (BranchAssert false) -> (false_constant_expr, elsexpr)
+      | Some (BranchAssert true) -> (thenxpr, false_constant_expr)
+      | _ -> (thenxpr, elsexpr) in
     let key =
       match instr#get_opcode with
-      | Add (dst,src,imm) ->
+      | Add (dst, src, imm) ->
          let rhs1 = src#to_expr floc in
          let rhs2 = imm#to_expr floc in
          let lhs = dst#to_variable floc in
@@ -206,7 +207,7 @@ object (self)
                           xd#index_xpr rhs2 ; xd#index_xpr result ;
                           xd#index_xpr rresult ])
 
-      | And (dst,src,imm) ->
+      | And (dst, src, imm) ->
          let rhs1 = src#to_expr floc in
          let rhs2 = imm#to_expr floc in
          let lhs = dst#to_variable floc in
@@ -274,8 +275,13 @@ object (self)
          let rhs = src#to_expr floc in
          let result = XOp (XGe, [ rhs ; zero_constant_expr ]) in
          let rresult = rewrite_expr result in
-         ([ "a:xxx" ],[ xd#index_xpr rhs ; xd#index_xpr result ;
-                        xd#index_xpr rresult ])
+         let negresult = rewrite_expr (XOp (XLNot, [rresult])) in
+         let (rresult, negresult) = get_condition_exprs rresult negresult in
+         ([ "a:xxxx" ],
+          [xd#index_xpr rhs;
+           xd#index_xpr result;
+           xd#index_xpr rresult;
+           xd#index_xpr negresult])
 
       | BranchGTZero (src,tgt) ->
          let rhs = src#to_expr floc in
@@ -335,8 +341,13 @@ object (self)
          let rhs = src#to_expr floc in
          let result = XOp (XLt, [ rhs ; zero_constant_expr ]) in
          let rresult = rewrite_expr result in
-         ([ "a:xxx" ],[ xd#index_xpr rhs ; xd#index_xpr result ;
-                        xd#index_xpr rresult ])
+         let negresult = rewrite_expr (XOp (XLNot, [rresult])) in
+         let (result, negresult) = get_condition_exprs rresult negresult in
+         (["a:xxxx"],
+          [xd#index_xpr rhs;
+           xd#index_xpr result;
+           xd#index_xpr rresult;
+           xd#index_xpr negresult])
 
       | BranchNotEqual (src1,src2,tgt) ->
          let rhs1 = src1#to_expr floc in
@@ -407,47 +418,38 @@ object (self)
                 && floc#get_call_target#is_signature_valid ->
          let args = List.map snd floc#get_mips_call_arguments in
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
-         if (List.length args) > 0 then 
-           ([ xtag ], (List.map xd#index_xpr args)
-                      @ [ ixd#index_call_target
-                            floc#get_call_target#get_target ])
-         else
-           ([],[ ixd#index_call_target floc#get_call_target#get_target ])
+         ([xtag],
+          (List.map xd#index_xpr args)
+          @ [ixd#index_call_target floc#get_call_target#get_target])
                           
       | JumpLink _ | BranchLink _ when floc#has_call_target ->
-         ([],[ ixd#index_call_target floc#get_call_target#get_target ])
+         (["a:"],[ixd#index_call_target floc#get_call_target#get_target])
 
-      | JumpLink _ | BranchLink _ -> ([],[])
+      | JumpLink _ | BranchLink _ -> (["a:"; "u"],[])
 
       | JumpLinkRegister _
            when floc#has_call_target
-                  && floc#get_call_target#is_signature_valid ->
+                && floc#get_call_target#is_signature_valid ->
          let args = List.map snd floc#get_mips_call_arguments in
          let args = List.map rewrite_expr args in
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
-         if (List.length  args) > 0 then
-           ([ xtag ], (List.map xd#index_xpr args)
-                      @ [ ixd#index_call_target
-                            floc#get_call_target#get_target ])
-         else
-           ([],[ ixd#index_call_target
-                   floc#get_call_target#get_target ])
+         ([xtag],
+          (List.map xd#index_xpr args)
+          @ [ixd#index_call_target floc#get_call_target#get_target])
 
-      | JumpLinkRegister (dst,tgt) ->
-         let tgt = rewrite_expr (tgt#to_expr floc) in
-         ([ "a:x" ],[ xd#index_xpr tgt ])
+      | JumpLinkRegister (dst, tgt) ->
+         let op = tgt#to_expr floc in
+         let ropx = rewrite_expr (tgt#to_expr floc) in
+         (["a:x"; "u"],[xd#index_xpr op; xd#index_xpr ropx])
 
       | JumpRegister _
            when floc#has_call_target
-                  && floc#get_call_target#is_signature_valid ->
+                && floc#get_call_target#is_signature_valid ->
          let args = List.map snd floc#get_mips_call_arguments in
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
-         if (List.length  args) > 0 then
-           ([ xtag ], (List.map xd#index_xpr args)
-                      @ [ ixd#index_call_target
-                            floc#get_call_target#get_target ])
-         else
-           ([],[ ixd#index_call_target floc#get_call_target#get_target ])
+         ([xtag; "call"],
+          (List.map xd#index_xpr args)
+          @ [ ixd#index_call_target floc#get_call_target#get_target ])
 
       | JumpRegister tgt ->
          let rhs = rewrite_expr (tgt#to_expr floc) in
@@ -485,12 +487,12 @@ object (self)
          ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
                         xd#index_xpr addr ])
 
-      | LoadHalfWord (dst,src) ->
+      | LoadHalfWord (dst, src) ->
          let addr = rewrite_expr (src#to_address floc) in
          let rhs = rewrite_expr (src#to_expr floc) in
          let lhs = dst#to_variable floc in
-         ([ "a:vx" ],[ xd#index_variable lhs; xd#index_xpr rhs;
-                       xd#index_xpr addr ])
+         (["a:vxa"],
+          [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr addr])
 
       | LoadHalfWordUnsigned (dst,src) ->
          let addr = rewrite_expr (src#to_address floc) in         
@@ -540,14 +542,17 @@ object (self)
          let lhs = dst#to_variable floc in
          ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ; xd#index_xpr addr ])
 
-      | MoveConditionalNotZero (dst,src,testxpr) ->
-         let lhs = dst#to_variable floc in
-         let rhs = rewrite_expr (src#to_expr floc) in
-         let testxpr = rewrite_expr (testxpr#to_expr floc) in
+      | MoveConditionalNotZero (rd, rs, rt) ->
+         let lhs = rd#to_variable floc in
+         let rhs = rewrite_expr (rs#to_expr floc) in
+         let testxpr = rewrite_expr (rt#to_expr floc) in
          let cond = XOp (XNe, [ testxpr; zero_constant_expr ]) in
          let ccond = rewrite_expr cond in
-         ([ "a:vxxx" ],[ xd#index_variable lhs; xd#index_xpr rhs;
-                         xd#index_xpr cond; xd#index_xpr ccond ])
+         (["a:vxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs;
+           xd#index_xpr cond;
+           xd#index_xpr ccond ])
 
       | MoveConditionalZero (dst,src,testxpr) ->
          let lhs = dst#to_variable floc in
@@ -932,7 +937,7 @@ object (self)
          let xtag = "a:" ^ (string_repeat "x" ((List.length args) + 1)) in
          let syscallindex = floc#env#mk_mips_register_variable MRv0 in
          let syscallindex = rewrite_expr (XVar syscallindex) in
-         ([ xtag ],[ xd#index_xpr syscallindex ] @ xargs)
+         ([xtag; "call"], [xd#index_xpr syscallindex] @ xargs)
 
       | Syscall _ ->
          let arg = floc#env#mk_mips_register_variable MRv0 in
@@ -947,7 +952,7 @@ object (self)
          ([ "a:xxxx" ],[ xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
                          xd#index_xpr result ; xd#index_xpr rresult ])
 
-      | TrapIfEqualImmediate (src,imm) ->
+      | TrapIfEqualImmediate (src, imm) ->
          let rhs1 = src#to_expr floc in
          let rhs2 = imm#to_expr floc in
          let rrhs1 = rewrite_expr rhs1 in
@@ -960,7 +965,7 @@ object (self)
          ([ "a:vxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
                         xd#index_xpr rrhs ])
 
-      | Xor (dst,src1,src2) ->
+      | Xor (dst, src1, src2) ->
          let lhs = dst#to_variable floc in
          let rhs1 = src1#to_expr floc in
          let rhs2 = src2#to_expr floc in
