@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -66,7 +68,7 @@ let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
 
-let tracked_locations = [ ]
+let tracked_locations = [ "0xcfe"; "0xd00"; "0xd02"; "0xd04"; "0xd12"; "0xd14"; "0xd16"; "0xd18"; "0xd1c"; "0xd1e" ]
 
 let track_location loc p =
   if List.mem loc tracked_locations then
@@ -208,6 +210,21 @@ let linear_equality_get_unity_vars e =
       v :: acc 
     else acc) [] e.leq_factors
 
+let is_variable_equality (lineq: linear_equality_t) =
+  if lineq.leq_constant#equal numerical_zero then
+    match lineq.leq_factors with
+    | [(c1, v1); (c2, v2)] ->
+       c1#equal numerical_one && c2#equal (mkNumerical (-1))
+    | _ -> false
+  else
+    false
+
+let get_variable_equality_variables (lineq: linear_equality_t) =
+  if is_variable_equality lineq then
+    linear_equality_get_vars lineq
+  else
+    []
+
 let linear_equality_get_expr e v =
   let make_factor c f = if c#equal numerical_one then 
       XVar f 
@@ -308,28 +325,66 @@ class invariant_t
         ~(invd:invdictionary_int)
         ~(index:int)
         ~(fact:invariant_fact_t):invariant_int =
-object (self:'a) 
+object (self:'a)
+
+  val invd = invd
+  val index = index
+  val fact = fact
+
   method index = index
 
-  method compare (other:'a) = P.compare self#index other#index
+  method compare (other:'a) =
+    P.compare self#index other#index
+
+  method transfer (v: variable_t) =
+    match fact with
+    | NonRelationalFact (oldv, nrv) ->
+       let newindex = v#getName#getSeqNumber in
+       let newfact = NonRelationalFact (v, nrv) in
+       {< index = newindex; fact = newfact >}
+    | _ -> {< >}
 
   method get_fact = fact
 
-  method is_constant = match fact with 
-  | NonRelationalFact (_,FIntervalValue (Some lb,Some ub)) -> lb#equal ub
-  | _ -> false
+  method is_constant =
+    match fact with
+    | NonRelationalFact (_,FIntervalValue (Some lb,Some ub)) -> lb#equal ub
+    | _ -> false
 
-  method is_interval = match fact with
-  | NonRelationalFact (_,FIntervalValue _) -> true
-  | _ -> false
+  method is_interval =
+    match fact with
+    | NonRelationalFact (_,FIntervalValue _) -> true
+    | _ -> false
 
-  method is_base_offset_value = match fact with
+  method is_base_offset_value =
+    match fact with
     | NonRelationalFact (_,FBaseOffsetValue _) -> true
     | _ -> false
 
-  method is_symbolic_expr = match fact with
+  method is_symbolic_expr =
+    match fact with
     | NonRelationalFact (_,FSymbolicExpr _) -> true
     | _ -> false
+
+  method is_linear_equality =
+    match fact with
+    | RelationalFact _ -> true
+    | _ -> false
+
+  method is_variable_equality =
+    match fact with
+    | RelationalFact lineq ->
+       is_variable_equality lineq
+    | _ -> false
+
+  method get_variable_equality_variables =
+    match fact with
+    | RelationalFact lineq when is_variable_equality lineq ->
+       get_variable_equality_variables lineq
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Not a variable-equality: "; self#toPretty]))
 
   method is_smaller (other:'a) =
     match (fact, other#get_fact) with
@@ -344,7 +399,8 @@ object (self:'a)
 			   self#toPretty ; STR " and " ; other#toPretty ]))
       end
 
-  method get_variables = match fact with | NonRelationalFact (v,_) -> [v] | _ -> []
+  method get_variables =
+    match fact with | NonRelationalFact (v,_) -> [v] | _ -> []
 
   method write_xml (node:xml_element_int) =
     begin
@@ -378,8 +434,13 @@ object (self)
     if H.mem facts index then ()  else
       let inv = new invariant_t ~invd ~index ~fact  in
       begin
-        H.add facts index inv ;
-        self#integrate_fact inv
+        H.add facts index inv;
+        self#integrate_fact inv;
+        track_location
+          iaddr
+          (LBLOCK [STR iaddr;
+                   STR ": add fact ";
+                   inv#toPretty])
       end
 
   method private integrate_fact  (inv:invariant_int) =
@@ -426,12 +487,46 @@ object (self)
 	else
 	  [ f ] in
       H.replace table index entry in
+    let add_relational_equality f =
+      if f#is_variable_equality then
+        let eqvars = f#get_variable_equality_variables in
+        match eqvars with
+        | [v1; v2] ->
+           let v1index = v1#getName#getSeqNumber in
+           let v2index = v2#getName#getSeqNumber in
+           if H.mem table v2index then
+             let v2facts = H.find table v2index in
+             let v1newfacts =
+               List.fold_left (fun a f ->
+                   match f#get_fact with
+                   | NonRelationalFact (_, nrv) ->
+                      (f#transfer v1) :: a
+                   | _ -> a) [] v2facts in
+             let _ =
+               track_location
+                 iaddr
+                 (LBLOCK [
+                      STR "new v1facts: ";
+                      LBLOCK
+                        (List.map (
+                             fun inv -> LBLOCK [inv#toPretty; STR "; "]) v1newfacts)]) in
+             if H.mem table v1index then
+               let v1facts = H.find table v1index in
+                 H.replace table v1index (v1newfacts @ v1facts)
+             else
+                 H.add table v1index v1newfacts
+           else
+             ()
+        | _ -> ()
+      else
+        () in
     begin
       match inv#get_fact with
       | NonRelationalFact (v,_)
       | InitialVarEquality (v,_)
       | InitialVarDisEquality (v,_)
       | TestVarEquality (v,_,_,_) -> add v inv
+      | RelationalFact lineq -> add_relational_equality inv
       | _ -> ()
     end
 
@@ -498,12 +593,15 @@ object (self)
     let x4 = simplify_xpr (substitute_expr subst4 x3) in
     let result = simplify_xpr (substitute_expr subst3 x4) in
     let _ =
-      track_location iaddr (LBLOCK [ STR "rewrite: " ; x2p x ; STR " --> " ;
-                                     STR "; x1: " ; x2p x1 ;
-                                     STR "; x2: " ; x2p x2 ;
-                                     STR "; x3: " ; x2p x3 ;
-                                     STR "; x4: " ; x2p x4 ;
-                                     STR "; result: " ; x2p result ]) in
+      track_location
+        iaddr
+        (LBLOCK [
+             STR "rewrite: " ; x2p x; STR " --> ";
+             STR "; x1: " ; x2p x1 ;
+             STR "; x2: " ; x2p x2 ;
+             STR "; x3: " ; x2p x3 ;
+             STR "; x4: " ; x2p x4 ;
+             STR "; result: " ; x2p result]) in
     result
 
 
@@ -583,7 +681,7 @@ object (self)
 	| NonRelationalFact (v,FSymbolicExpr _) -> add v
 	| NonRelationalFact (v,FIntervalValue (Some lb,Some ub)) when lb#equal ub -> add v
 	| InitialVarEquality (v,_) -> add v
-	| TestVarEquality (tv,_,_,jaddr) when jaddr = iaddr -> add tv
+	(* | TestVarEquality (tv,_,_,jaddr) when jaddr = iaddr -> add tv *)
 	| _ -> ()) facts) table in
     !nrFacts
 
