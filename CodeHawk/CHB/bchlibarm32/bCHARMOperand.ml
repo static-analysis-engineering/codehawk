@@ -227,11 +227,19 @@ object (self:'a)
     | ARMReg _ -> XVar (self#to_variable floc)
     | ARMOffsetAddress _ -> XVar (self#to_variable floc)
     | ARMAbsolute a when elf_header#is_program_address a ->
-       num_constant_expr (elf_header#get_program_value a)#to_numerical
+       num_constant_expr a#to_numerical
+    | ARMAbsolute a ->
+       begin
+         ch_error_log#add
+           "absolute address"
+           (LBLOCK [STR "Address "; a#toPretty; STR " not found"]);
+         num_constant_expr a#to_numerical
+       end
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
        let env = floc#f#env in
        XVar (env#mk_arm_register_variable r)
     | ARMShiftedReg _ -> XConst (XRandom)
+    | ARMRegBitSequence (r,lsb,widthm1) -> XConst (XRandom)
     | _ ->
        raise
          (BCH_failure

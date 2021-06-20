@@ -32,6 +32,7 @@ MLIS := \
 	bCHARMOperand \
 	bCHARMOpcodeRecords \
 	bCHARMDictionary \
+	bCHARMConditionalJumpExpr \
 	bCHARMDisassemblyUtils \
 	bCHARMAssemblyInstruction \
 	bCHARMAssemblyInstructions \
@@ -57,6 +58,7 @@ SOURCES := \
 	bCHARMOperand \
 	bCHARMOpcodeRecords \
 	bCHARMDictionary \
+	bCHARMConditionalJumpExpr \
 	bCHARMDisassemblyUtils \
 	bCHARMAssemblyInstruction \
 	bCHARMAssemblyInstructions \

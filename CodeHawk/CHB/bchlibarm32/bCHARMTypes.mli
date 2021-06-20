@@ -668,6 +668,8 @@ class type arm_assembly_instruction_int =
     (* setters *)
     method set_block_entry: unit
     method set_inlined_call: unit
+    method set_aggregate: arm_operand_int -> doubleword_int list -> unit
+    method set_subsumed: unit
 
     (* accessors *)
     method get_address: doubleword_int
@@ -675,6 +677,7 @@ class type arm_assembly_instruction_int =
     method get_instruction_bytes: string
     method get_bytes_ashexstring: string
     method get_non_code_block: not_code_t
+    method get_aggregate_dst: arm_operand_int
 
     (* predicates *)
     method is_block_entry: bool
@@ -682,6 +685,8 @@ class type arm_assembly_instruction_int =
     method is_valid_instruction: bool
     method is_non_code_block: bool
     method is_not_code: bool
+    method is_aggregate: bool
+    method is_subsumed: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit
@@ -731,7 +736,10 @@ class type arm_assembly_block_int =
     method get_context: context_t list
     method get_context_string: ctxt_iaddress_t
     method get_last_address: doubleword_int
-    method get_instructions_rev: arm_assembly_instruction_int list
+    method get_instructions_rev:
+             ?high:doubleword_int
+             -> unit
+             -> arm_assembly_instruction_int list
     method get_instructions: arm_assembly_instruction_int list
     method get_successors: ctxt_iaddress_t list
     method get_instruction: doubleword_int -> arm_assembly_instruction_int
