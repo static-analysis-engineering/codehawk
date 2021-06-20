@@ -57,16 +57,46 @@ object (self)
      
   val mutable block_entry = false
   val mutable inlined_call = false
+  val mutable aggregate_dst = None
+  val mutable aggregate = []
+  val mutable subsumed = false
 
   method set_block_entry = block_entry <- true
 
   method set_inlined_call = inlined_call <- true
+
+  (* applies to IfThen instruction:
+     aggregates the dependents into one assignment *)
+  method set_aggregate (dstop: arm_operand_int) (dependents: doubleword_int list) =
+    begin
+      aggregate <- dependents;
+      aggregate_dst <- Some dstop
+    end
+
+  method is_aggregate =
+    match aggregate with
+    | [] -> false
+    | _ -> true
+
+  method get_aggregate_dst =
+    match aggregate_dst with
+    | Some op -> op
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Internal error in get_aggregate_dst"]))
+
+  (* applies to dependents of aggregate instructions *)
+  method set_subsumed = subsumed <- true
+
+  method is_subsumed = subsumed
 
   method is_block_entry = block_entry
 
   method is_valid_instruction =
     match opcode with
     | OpInvalid -> false
+    | NotCode _ -> false
     | _ -> true
 
   method is_non_code_block =
@@ -102,7 +132,7 @@ object (self)
 
   method toString = arm_opcode_to_string opcode
 
-  method toPretty = LBLOCK [ STR self#toString ]
+  method toPretty = LBLOCK [STR self#toString]
 
   method write_xml (node:xml_element_int) =
     let opc = self#get_opcode in
@@ -111,6 +141,8 @@ object (self)
     begin
       (if self#is_function_entry_point then stat := !stat ^ "F");
       (if self#is_block_entry then stat := !stat ^ "B");
+      (if self#is_aggregate then stat := !stat ^ "A");
+      (if self#is_subsumed then stat := !stat ^ "S");
       (if !stat = "" then () else set "stat" !stat);
       set "ia" self#get_address#to_hex_string;
       arm_dictionary#write_xml_arm_opcode node opc;

@@ -258,18 +258,19 @@ object (self)
     let bnode = ref (xmlElement "b") in
     self#itera
       (fun va instr ->
-        let _ =
-          if instr#is_block_entry then
-            begin
-              bnode := xmlElement "b";
-              (!bnode)#setAttribute "ba" va#to_hex_string;
-              node#appendChildren [ !bnode ]
-            end in
-        let inode = xmlElement "i" in
-        begin
-          instr#write_xml inode;
-          (!bnode)#appendChildren [ inode ]
-        end)
+        if instr#is_valid_instruction then
+          let _ =
+            if instr#is_block_entry then
+              begin
+                bnode := xmlElement "b";
+                (!bnode)#setAttribute "ba" va#to_hex_string;
+                node#appendChildren [ !bnode ]
+              end in
+          let inode = xmlElement "i" in
+          begin
+            instr#write_xml inode;
+            (!bnode)#appendChildren [ inode ]
+          end)
 
   method toString ?(filter = fun _ -> true) () =
     let lines = ref [] in
@@ -343,6 +344,12 @@ object (self)
               let  _ =
                 if instr#is_block_entry then
                   Bytes.set statusString 2 'B' in
+              let _ =
+                if instr#is_aggregate then
+                  Bytes.set statusString 2 'A' in
+              let _ =
+                if instr#is_subsumed then
+                  Bytes.set statusString 2 'S' in
               let instrbytes = instr#get_instruction_bytes in
               let spacedstring = byte_string_to_spaced_string instrbytes in
               let len = String.length spacedstring in

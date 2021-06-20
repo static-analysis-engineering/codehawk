@@ -214,7 +214,7 @@ object (self)
       | LogicalShiftLeft (s, c, rd, rn, rm, tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
       | LogicalShiftRight (s,c,rd,rn,rm,tw) ->
-         (ctags c, [ setb s; oi rd; oi rn; oi rm; setb tw])
+         (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
       | Move (s, c, rd, rm, tw) ->
          (ctags c, [setb s; oi rd; oi rm; setb tw])
       | MoveTop (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])

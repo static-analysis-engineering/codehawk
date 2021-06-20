@@ -53,7 +53,6 @@ class arm_assembly_block_t
 object (self)
 
   val loc = make_location ~ctxt { loc_faddr = faddr; loc_iaddr = first_address }
-  val mutable rev_instrs = []
 
   method get_location = loc
 
@@ -67,30 +66,27 @@ object (self)
 
   method get_context_string = loc#ci
 
-  method get_instructions_rev =
-    match rev_instrs with
-    | [] ->
-       let addrsRev =
-         !arm_assembly_instructions#get_code_addresses_rev
-           ~low:first_address ~high:last_address () in
-       let instrsRev = List.map !arm_assembly_instructions#at_address addrsRev in
-       begin rev_instrs <- instrsRev ; instrsRev end
-    | l -> l
+  method get_instructions_rev ?(high=last_address) () =
+    let addrsRev =
+      !arm_assembly_instructions#get_code_addresses_rev
+        ~low:first_address ~high () in
+    List.map !arm_assembly_instructions#at_address addrsRev
 
-  method get_instructions = List.rev self#get_instructions_rev
+  method get_instructions = List.rev (self#get_instructions_rev ())
 
   method get_successors = successors
 
   method get_instruction (va:doubleword_int) =
     try
-      List.find (fun instr -> va#equal instr#get_address) self#get_instructions_rev
+      List.find (fun instr ->
+          va#equal instr#get_address) (self#get_instructions_rev ())
     with
     | Not_found ->
        raise
          (BCH_failure
             (LBLOCK [ STR "No instruction found at address "; va#toPretty ]))
 
-  method get_instruction_count = List.length self#get_instructions_rev
+  method get_instruction_count = List.length (self#get_instructions_rev ())
 
   method get_bytes_as_hexstring =
     let s = ref "" in
@@ -103,7 +99,7 @@ object (self)
            ?(reverse=false)
            (f:ctxt_iaddress_t -> arm_assembly_instruction_int -> unit) =
     let instrs =
-      if reverse then self#get_instructions_rev else self#get_instructions in
+      if reverse then self#get_instructions_rev () else self#get_instructions in
     let instrs =
       if low#equal first_address then
         instrs
@@ -119,7 +115,7 @@ object (self)
 
   method includes_instruction_address (va:doubleword_int) =
     List.exists
-      (fun instr -> va#equal instr#get_address) self#get_instructions_rev
+      (fun instr -> va#equal instr#get_address) (self#get_instructions_rev ())
 
   method is_returning =
     match successors with
