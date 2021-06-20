@@ -78,7 +78,7 @@ open BCHExtractInvariants
 open BCHFileIO
 open BCHTrace
 
-let analyze_all = ref false
+let analyze_all = ref true
 let maxrelationalvarcomplexity = ref 150000.0
 let maxrelationalloopcomplexity = ref 2000
 
