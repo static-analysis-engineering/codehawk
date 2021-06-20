@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +51,7 @@ open BCHSystemInfo
 open BCHLibx86Types
 open BCHOperand
 open BCHX86Opcodes
+
 
 class type ['a]  opcode_formatter_int =
 object
@@ -3745,11 +3747,15 @@ end
 let string_formatter = new string_formatter_t
 
 let get_operands (opc:opcode_t) = (get_record opc).operands
+
 let get_flags_set (opc:opcode_t) = (get_record opc).flags_set
+
 let get_flags_used (opc:opcode_t) = (get_record opc).flags_used
 
 let get_opcode_name  (opc:opcode_t) = (get_record opc).mnemonic
+
 let get_opcode_long_name (opc:opcode_t) = (get_record opc).long_name
+
 let get_opcode_group (opc:opcode_t) = (get_record opc).group_name
 
 let is_conditional_instruction (opc:opcode_t) =  

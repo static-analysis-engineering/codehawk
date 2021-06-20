@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1194,14 +1195,14 @@ let associate_condition_code_users () =
     let revInstrs = block#get_instructions_rev in
     let rec set l =
       match l with
-	[] -> 
+      | [] ->
 	  let loc = ctxt_string_to_location faddr ctxtiaddr in
 	  disassembly_log#add "cc user without setter"
 	    (LBLOCK [ loc#toPretty ; STR ": " ; 
 		      (!assembly_instructions#at_address loc#i)#toPretty ])
       | instr :: tl ->
 	match get_flags_set instr#get_opcode with
-	  [] -> set tl
+	| [] -> set tl
 	| flags_set -> 
 	   if List.for_all (fun fUsed -> List.mem fUsed flags_set) flags_used then
              let iloc = ctxt_string_to_location faddr ctxtiaddr in
@@ -1215,7 +1216,7 @@ let associate_condition_code_users () =
 	  block#itera
 	    (fun ctxtiaddr instr ->
 	      match get_flags_used instr#get_opcode with
-		[] -> ()
+	      | [] -> ()
 	      | flags -> set_condition flags faddr ctxtiaddr block) ) )
     
     

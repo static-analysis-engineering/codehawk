@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,17 +43,23 @@ open BCHLibTypes
 (* bchlibx86 *)
 open BCHLibx86Types
 
+
 val get_float_type: bool -> bool -> btype_t
 
-val get_operands    : opcode_t -> operand_int list
-val get_flags_set   : opcode_t -> eflag_t list
-val get_flags_used  : opcode_t -> eflag_t list
+val get_operands: opcode_t -> operand_int list
+
+val get_flags_set: opcode_t -> eflag_t list
+
+val get_flags_used: opcode_t -> eflag_t list
+
 val opcode_to_string: opcode_t -> string
 
-val get_opcode_name     : opcode_t -> string
+val get_opcode_name: opcode_t -> string
+
 val get_opcode_long_name: opcode_t -> string
-val get_opcode_group    : opcode_t -> string
+
+val get_opcode_group: opcode_t -> string
 
 val is_conditional_instruction: opcode_t -> bool
 
-val write_xml_opcode : xml_element_int -> opcode_t -> floc_int -> unit
+val write_xml_opcode: xml_element_int -> opcode_t -> floc_int -> unit
