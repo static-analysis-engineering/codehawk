@@ -20,7 +20,7 @@
     </apidoc>
    </documentation>
    <api adj="0" cc="cdecl" name="strncasecmp">
-    <returnbtype tname="int" ttag="tnamed"/>
+     <returntype>int</returntype>
     <par loc="stack" io="r" name="string1" nr="1" rep="hex">
       <type><ptr>char</ptr></type>
       <roles>

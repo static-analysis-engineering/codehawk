@@ -15,7 +15,7 @@
     </apidoc>
    </documentation>
    <api adj="0" cc="cdecl" name="fflush">
-    <returnbtype tname="int" ttag="tnamed"/>
+     <returntype>int</returntype>
     <par loc="stack" name="stream" io="r" nr="1">
       <type><ptr>FILE</ptr></type>
      <pre><deref-read/></pre>
