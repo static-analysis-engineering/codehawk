@@ -126,6 +126,7 @@ object (self)
            (floc:floc_int) =
     let rewrite_expr x: xpr_t =
       try
+        (*
         let rec expand x =
           match x with
           | XVar v
@@ -138,7 +139,7 @@ object (self)
           | XVar v when floc#env#is_symbolic_value v ->
              expand (floc#env#get_symbolic_value_expr v)
           | XOp (op, l) -> XOp (op, List.map expand l)
-          | _ -> x in
+          | _ -> x in *)
         let xpr =
           floc#inv#rewrite_expr x floc#env#get_variable_comparator in
         simplify_xpr xpr
