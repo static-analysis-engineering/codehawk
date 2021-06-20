@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,10 +41,13 @@ open XprTypes
 (* bchlib *)
 open BCHLibTypes
 
-val numerical_constraint_to_linear_equality: numerical_constraint_t -> linear_equality_t
+
+val numerical_constraint_to_linear_equality:
+  numerical_constraint_t -> linear_equality_t
 
 val linear_equality_get_vars: linear_equality_t -> variable_t list
   
 val linear_equality_get_expr: linear_equality_t -> variable_t -> xpr_t      
 
-val mk_invariant_io: xml_element_int option -> vardictionary_int ->  string -> invariant_io_int
+val mk_invariant_io:
+  xml_element_int option -> vardictionary_int ->  string -> invariant_io_int
