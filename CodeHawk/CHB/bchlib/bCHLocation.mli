@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -66,8 +68,12 @@ val add_ctxt_to_ctxt_string:
   -> ctxt_iaddress_t
 
 val ctxt_string_to_string: ctxt_iaddress_t -> string
+
 val is_iaddress: ctxt_iaddress_t -> bool
+
 val is_same_iaddress: doubleword_int -> ctxt_iaddress_t -> bool
+
 val symbol_to_ctxt_string: symbol_t -> ctxt_iaddress_t
+
 val ctxt_string_to_symbol: string -> ?atts:string list -> ctxt_iaddress_t -> symbol_t
 

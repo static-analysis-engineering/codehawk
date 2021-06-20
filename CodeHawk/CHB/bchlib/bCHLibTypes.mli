@@ -314,6 +314,8 @@ type mips_special_reg_t =
 
 (* ======================================================= arm types === *)
 
+type arm_cc_flag_t = APSR_Z | APSR_N | APSR_C | APSR_V
+
 type arm_reg_t =
   | AR0
   | AR1
@@ -989,18 +991,18 @@ end
 
 class type location_type_invariant_int =
 object
-  method add_fact      : type_invariant_fact_t -> unit
+  method add_fact: type_invariant_fact_t -> unit
 
   (* accessors *)
   method get_var_facts : variable_t -> type_invariant_int list
-  method get_facts     : type_invariant_int list
-  method get_count     : int
+  method get_facts: type_invariant_int list
+  method get_count: int
 
   (* predicates *)
-  method has_facts     : bool
+  method has_facts: bool
 
   (* printing *)
-  method toPretty    : pretty_t
+  method toPretty: pretty_t
 end
 
 class type type_invariant_io_int =
@@ -1055,17 +1057,21 @@ type invariant_fact_t =
 
 class type invariant_int =
 object ('a)
-  method index        : int
-  method compare      : 'a -> int
-  method get_fact     : invariant_fact_t
+  method index: int
+  method compare: 'a -> int
+  method transfer: variable_t -> 'a
+  method get_fact: invariant_fact_t
   method get_variables: variable_t list
-  method is_constant  : bool
-  method is_interval  : bool
+  method get_variable_equality_variables: variable_t list
+  method is_constant: bool
+  method is_interval: bool
   method is_base_offset_value: bool
   method is_symbolic_expr: bool
-  method is_smaller   : 'a -> bool
-  method write_xml    : xml_element_int -> unit
-  method toPretty     : pretty_t
+  method is_linear_equality: bool
+  method is_variable_equality: bool
+  method is_smaller: 'a -> bool
+  method write_xml: xml_element_int -> unit
+  method toPretty: pretty_t
 end
 
 
@@ -1717,6 +1723,10 @@ and constant_value_variable_t =
   | BridgeVariable of ctxt_iaddress_t * int      (* call site, argument index *)
   | FieldValue of string * int * string     (* struct name, offset, fieldname *)
   | SymbolicValue of xpr_t  (* expression that consists entirely of symbolic constants *)
+  | SignedSymbolicValue of
+      xpr_t    (* sign-extended symbolic value *)
+      * int    (* original size (in bits) *)
+      * int    (* extended size (in bits) *)
   | Special of string
   | RuntimeConstant of string
   | ChifTemp
@@ -1831,10 +1841,14 @@ object
   method make_runtime_constant: string -> assembly_variable_int
   method make_return_value: ctxt_iaddress_t -> assembly_variable_int
   method make_calltarget_value: call_target_t -> assembly_variable_int
-  method make_function_pointer_value: string -> string -> ctxt_iaddress_t -> assembly_variable_int
-  method make_side_effect_value: ctxt_iaddress_t -> ?global:bool -> string -> assembly_variable_int
+  method make_function_pointer_value:
+           string -> string -> ctxt_iaddress_t -> assembly_variable_int
+  method make_side_effect_value:
+           ctxt_iaddress_t -> ?global:bool -> string -> assembly_variable_int
   method make_field_value: string -> int -> string -> assembly_variable_int
   method make_symbolic_value: xpr_t -> assembly_variable_int
+  method make_signed_symbolic_value:
+           xpr_t -> int -> int -> assembly_variable_int
 
   method make_memref_from_basevar: variable_t -> memory_reference_int
 
@@ -2232,11 +2246,14 @@ class type function_environment_int =
     method mk_runtime_constant  : string -> variable_t
     method mk_return_value      : ctxt_iaddress_t -> variable_t
 
-    method mk_calltarget_value      : call_target_t -> variable_t
-    method mk_function_pointer_value: string -> string -> ctxt_iaddress_t -> variable_t
-    method mk_side_effect_value     : ctxt_iaddress_t -> ?global:bool-> string -> variable_t
-    method mk_field_value           : string -> int -> string -> variable_t
-    method mk_symbolic_value        : xpr_t -> variable_t
+    method mk_calltarget_value: call_target_t -> variable_t
+    method mk_function_pointer_value:
+             string -> string -> ctxt_iaddress_t -> variable_t
+    method mk_side_effect_value:
+             ctxt_iaddress_t -> ?global:bool-> string -> variable_t
+    method mk_field_value: string -> int -> string -> variable_t
+    method mk_symbolic_value: xpr_t -> variable_t
+    method mk_signed_symbolic_value: xpr_t -> int -> int -> variable_t
 
     (* accessors *)
     method get_variable_comparator: variable_t -> variable_t -> int
@@ -2706,7 +2723,11 @@ object
 
   (* returns the CHIF code associated with an assignment instruction *)
   method get_assign_commands:
-           variable_t -> ?size:xpr_t -> ?vtype:btype_t -> xpr_t -> cmd_t list
+           variable_t
+           -> ?size:xpr_t
+           -> ?vtype:btype_t
+           -> xpr_t
+           -> cmd_t list
 
   method get_conditional_assign_commands:
            xpr_t -> variable_t -> xpr_t -> cmd_t list
@@ -2911,6 +2932,9 @@ object
   method get_cfjmp: doubleword_int -> doubleword_int * int * string
   method get_successors: doubleword_int -> doubleword_int list
   method get_arm_thumb_switch: string -> string option
+  method get_argument_constraints:
+           (* name, offset, lower bound, upper bound *)
+           string -> (string * int option * int option * int option) list
 
   method get_ida_function_entry_points: doubleword_int list
   method get_userdeclared_codesections: doubleword_int list
@@ -2943,6 +2967,7 @@ object
   method is_locked_instruction: doubleword_int -> bool
   method has_jump_target: doubleword_int -> bool
   method has_indirect_jump_targets: doubleword_int -> doubleword_int -> bool
+  method has_argument_constraints: string -> bool
   method is_code_address: doubleword_int -> bool
   method is_in_data_block: doubleword_int -> data_block_int option
   method is_in_jumptable: doubleword_int -> jumptable_int option
@@ -2951,7 +2976,6 @@ object
   method is_cfnop: doubleword_int -> bool
   method is_cfjmp: doubleword_int -> bool
   method is_inlined_function: doubleword_int -> bool
-
 
   (* xml *)
   method read_xml_constant_file    : string -> unit
