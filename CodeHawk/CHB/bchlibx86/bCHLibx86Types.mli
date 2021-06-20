@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -510,11 +512,14 @@ object
 
   (* accessors *)
   method length: int
-  method at_index  :            int -> assembly_instruction_int
+  method at_index: int -> assembly_instruction_int
   method at_address: doubleword_int -> assembly_instruction_int
   method get_next_valid_instruction_address: doubleword_int -> doubleword_int
   method get_code_addresses_rev:
-           ?low:doubleword_int -> ?high:doubleword_int -> unit -> doubleword_int list
+           ?low:doubleword_int
+           -> ?high:doubleword_int
+           -> unit
+           -> doubleword_int list
   method get_num_instructions: int
   method get_num_unknown_instructions: int
   method get_data_blocks: data_block_int list
@@ -524,11 +529,15 @@ object
 
   (* iterators *)
   method iteri: (int -> assembly_instruction_int -> unit) -> unit
-  method itera: (doubleword_int -> assembly_instruction_int -> unit) -> unit (* provide virtual address *)
+  method itera:
+           (doubleword_int
+            -> assembly_instruction_int
+            -> unit)
+           -> unit (* provide virtual address *)
 
   (* predicates *)
-  method is_in_code_range          : doubleword_int -> bool
-  method is_code_address           : doubleword_int -> bool
+  method is_in_code_range: doubleword_int -> bool
+  method is_code_address: doubleword_int -> bool
   method has_next_valid_instruction: doubleword_int -> bool
 
   (* printing *)
