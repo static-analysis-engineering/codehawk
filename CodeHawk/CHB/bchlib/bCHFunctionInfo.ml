@@ -701,6 +701,9 @@ object (self)
   method mk_symbolic_value (x:xpr_t) =
     self#mk_variable (varmgr#make_symbolic_value x)
 
+  method mk_signed_symbolic_value (x: xpr_t) (s0: int) (sx: int) =
+    self#mk_variable (varmgr#make_signed_symbolic_value x s0 sx)
+
   method private probe_global_var_field_values (v:variable_t) (iv:variable_t) =
     let addr = varmgr#get_global_variable_address v in
     if has_symbolic_address_name addr then

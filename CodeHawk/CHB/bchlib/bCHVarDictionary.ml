@@ -181,9 +181,10 @@ object (self)
       | BridgeVariable (a,i) -> (tags @ [ a ],[ i ])
       | FieldValue (sname,offset,fname) ->
          (tags, [ bd#index_string sname ; offset ; bd#index_string fname ])
-      | SymbolicValue x ->  (tags, [ xd#index_xpr x ])
-      | Special s -> (tags, [ bd#index_string s ])
-      | RuntimeConstant s -> (tags, [ bd#index_string s ])
+      | SymbolicValue x ->  (tags, [xd#index_xpr x])
+      | SignedSymbolicValue (x, s0, sx) -> (tags, [xd#index_xpr x; s0; sx])
+      | Special s -> (tags, [bd#index_string s])
+      | RuntimeConstant s -> (tags, [bd#index_string s])
       | ChifTemp -> (tags,[]) in
     constant_value_variable_table#add key
 
@@ -205,6 +206,7 @@ object (self)
     | "bv" -> BridgeVariable (t 1, a 0)
     | "fv" -> FieldValue (bd#get_string (a 0), a 1, bd#get_string  (a 2))
     | "sv" -> SymbolicValue (xd#get_xpr (a 0))
+    | "ssv" -> SignedSymbolicValue (xd#get_xpr (a 0), a 1, a 2)
     | "sp" -> Special (bd#get_string (a 0))
     | "rt" -> RuntimeConstant (bd#get_string (a 0))
     | "chiftemp" -> ChifTemp
