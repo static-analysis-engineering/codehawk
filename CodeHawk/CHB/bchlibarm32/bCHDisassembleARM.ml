@@ -603,6 +603,111 @@ let record_call_targets_arm () =
             | _ -> ())
       end)
 
+(* ---------------------------------------------------------------------
+   associate conditional jump instructions with the closest instruction
+   (within the same basic block) that sets the flags
+   ---------------------------------------------------------------------- *)
+let associate_condition_code_users () =
+  let set_condition
+        (flags_used: arm_cc_flag_t list)
+        (faddr: doubleword_int)
+        (ctxtiaddr:ctxt_iaddress_t)
+        (block: arm_assembly_block_int) =
+    let finfo = get_function_info faddr in
+    let loc = ctxt_string_to_location faddr ctxtiaddr in
+    let revInstrs: arm_assembly_instruction_int list =
+      block#get_instructions_rev ~high:loc#i () in
+    let rec set l =
+      match l with
+      | [] ->
+	  disassembly_log#add "cc user without setter"
+	    (LBLOCK [ loc#toPretty ; STR ": " ;
+		      (!arm_assembly_instructions#at_address loc#i)#toPretty ])
+      | instr :: tl ->
+	match get_arm_flags_set instr#get_opcode with
+	| [] -> set tl
+	| flags_set ->
+	  if List.for_all (fun fUsed -> List.mem fUsed flags_set) flags_used then
+             let iloc = ctxt_string_to_location faddr ctxtiaddr in
+             let instrctxt = (make_i_location iloc instr#get_address)#ci in
+	    finfo#connect_cc_user ctxtiaddr instrctxt in
+    set revInstrs in
+  arm_assembly_functions#itera
+    (fun faddr f ->
+      f#iter
+	(fun block ->
+	  block#itera
+	    (fun iaddr instr ->
+	      match get_arm_flags_used instr#get_opcode with
+	      | [] -> ()
+	      | flags -> set_condition flags faddr iaddr block) ) )
+
+
+let is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr =
+  let iszero op floc =
+    match op#to_expr floc with
+    | XConst (IntConst n) -> n#equal numerical_zero
+    | _ -> false in
+  let isone op floc =
+    match op#to_expr floc with
+    | XConst (IntConst n) -> n#equal numerical_one
+    | _ -> false in
+  match (theninstr#get_opcode, elseinstr#get_opcode) with
+  | (Move (_, _, tr, thenop, _), Move (_, _, er, elseop, _)) ->
+     if tr#is_register && er#is_register then
+       if tr#get_register = er#get_register then
+         isone thenop thenfloc && iszero elseop elsefloc
+       else
+         false
+     else
+       false
+  | _ -> false
+
+let get_ite_predicate_dstop thenfloc theninstr elsefloc elseinstr =
+  if is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr then
+    match theninstr#get_opcode with
+    | Move(_, _, r, _, _) -> r
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Internal error in get_ite_predicate_dst"]))
+  else
+    raise
+      (BCH_failure
+         (LBLOCK [STR "Internal error in get_ite_predicate_dst"]))
+
+
+let aggregate_ite () =
+  arm_assembly_functions#itera
+    (fun faddr f ->
+      f#iter
+        (fun block ->
+          block#itera
+            (fun ciaddr instr ->
+              let finfo = get_function_info faddr in
+              let loc = ctxt_string_to_location faddr ciaddr in
+              let iaddr = loc#i in
+              let itefloc = get_floc loc in
+              match instr#get_opcode with
+              | IfThen (c, xyz) when xyz = "E" ->
+                 let thenaddr = iaddr#add_int 2 in
+                 let elseaddr = iaddr#add_int 4 in
+                 let theninstr = !arm_assembly_instructions#at_address thenaddr in
+                 let elseinstr = !arm_assembly_instructions#at_address elseaddr in
+                 let thenfloc = get_i_floc itefloc thenaddr in
+                 let elsefloc = get_i_floc itefloc elseaddr in
+                 if is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr then
+                   let dstop = get_ite_predicate_dstop thenfloc theninstr elsefloc elseinstr in
+                   begin
+                     chlog#add
+                       "aggregate ite"
+                       (LBLOCK [STR ciaddr; STR ": "; instr#toPretty]);
+                     instr#set_aggregate dstop [thenaddr; elseaddr];
+                     theninstr#set_subsumed;
+                     elseinstr#set_subsumed
+                   end
+              | _ -> ())))
+
 let construct_functions_arm () =
   let _ =
     system_info#initialize_function_entry_points collect_function_entry_points in
@@ -657,5 +762,7 @@ let construct_functions_arm () =
           count := !count + 1;
           construct_assembly_function !count faddr
         end) arm_assembly_functions#add_functions_by_preamble;
-    record_call_targets_arm ()
+    record_call_targets_arm ();
+    associate_condition_code_users ();
+    aggregate_ite ()
   end
