@@ -415,6 +415,7 @@ object
     | BridgeVariable _ -> "bv"
     | FieldValue _ -> "fv"
     | SymbolicValue _ -> "sv"
+    | SignedSymbolicValue _ -> "ssv"
     | Special _ -> "sp"
     | RuntimeConstant _ -> "rt"
     | ChifTemp -> "chiftemp"

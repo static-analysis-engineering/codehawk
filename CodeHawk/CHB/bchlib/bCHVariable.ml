@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -111,13 +112,27 @@ and aux_var_to_pretty (v:constant_value_variable_t) =
     LBLOCK [ STR "FunctionP(" ; STR f ; STR "," ; STR c ; STR "," ; STR addr ; STR ")" ]
   | CallTargetValue tgt -> 
     LBLOCK [ STR "CallTarget(" ; call_target_to_pretty tgt ; STR ")" ]
-  | SideEffectValue (addr,arg,_) -> 
-    LBLOCK [ STR "SideEffect(" ; STR arg ; STR addr ; STR ")" ]
-  | FieldValue (sname,offset,fname) ->
-    LBLOCK [ STR "FieldValue(" ; STR sname ; STR "," ; INT offset ;
-	     STR "," ; STR fname ]
-  | SymbolicValue x -> LBLOCK [ STR "SymbolicValue(" ; x2p x ; STR ")" ]
-  | BridgeVariable (addr,arg) -> 
+  | SideEffectValue (addr, arg, _) ->
+    LBLOCK [STR "SideEffect("; STR arg; STR addr; STR ")"]
+  | FieldValue (sname, offset, fname) ->
+     LBLOCK [
+         STR "FieldValue(" ;
+         STR sname ;
+         STR "," ;
+         INT offset ;
+	 STR "," ;
+         STR fname]
+  | SymbolicValue x -> LBLOCK [STR "SymbolicValue("; x2p x; STR ")"]
+  | SignedSymbolicValue (x, s0, sx) ->
+     LBLOCK [
+         STR "SignedSymbolicValue(";
+         x2p x;
+         STR ", ";
+         INT s0;
+         STR ">";
+         INT sx;
+         STR ")"]
+  | BridgeVariable (addr,arg) ->
     LBLOCK [ STR "Bridge(" ; STR addr ; STR "," ; INT arg ; STR ")" ]
   | Special s -> LBLOCK [ STR "Special " ; STR s ]
   | RuntimeConstant s -> LBLOCK [ STR "Runtime " ; STR s ]
@@ -168,7 +183,15 @@ object (self:'a)
 	| FieldValue (sname,offset,fname) ->
 	   sname ^ "." ^ fname ^ "@" ^ (string_of_int offset)
         | SymbolicValue x -> "sv__" ^ (x2s x) ^ "__sv"
-	| BridgeVariable (address,n) -> 
+        | SignedSymbolicValue (x, s0, sx) ->
+           "ssv__"
+           ^ (x2s x)
+           ^ "_"
+           ^ (string_of_int s0)
+           ^ "_"
+           ^ (string_of_int sx)
+           ^ "_"
+	| BridgeVariable (address, n) -> 
 	  "arg_" ^ (string_of_int n) ^ "_for_call_at_" ^ address
 	| Special s -> "special_" ^ s
   	| RuntimeConstant s -> "rtc_" ^ s
@@ -280,7 +303,8 @@ object (self:'a)
 	  | CallTargetValue _
 	  | SideEffectValue _
 	  | FieldValue _
-          | SymbolicValue _ -> true
+          | SymbolicValue _
+          | SignedSymbolicValue _ -> true
 	| _ -> false
       end
     | _ -> false
@@ -392,14 +416,21 @@ object (self:'a)
     | _ -> false
 
   method is_symbolic_value =
-    match denotation with AuxiliaryVariable (SymbolicValue _) -> true | _ -> false
+    match denotation with
+    | AuxiliaryVariable (SymbolicValue _)
+      | AuxiliaryVariable (SignedSymbolicValue _) -> true
+    | _ -> false
 
   method get_symbolic_value_expr =
     match denotation with
     | AuxiliaryVariable (SymbolicValue x) -> x
+    | AuxiliaryVariable (SignedSymbolicValue (x, _, _)) -> x
     | _ ->
-       raise (BCH_failure (LBLOCK [ STR "Variable is not a symbolic value: " ;
-                                    self#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Variable is not a symbolic value: " ;
+                 self#toPretty]))
 
   method toPretty = STR self#get_name
 
@@ -574,6 +605,9 @@ object (self)
 
   method make_symbolic_value (x:xpr_t) =
     self#mk_variable (AuxiliaryVariable (SymbolicValue x))
+
+  method make_signed_symbolic_value (x: xpr_t) (s0: int) (sx: int) =
+    self#mk_variable (AuxiliaryVariable (SignedSymbolicValue (x, s0, sx)))
       
   method make_special_variable (name:string) =
     self#mk_variable (AuxiliaryVariable (Special name))
@@ -654,6 +688,10 @@ object (self)
 	    let var1 = self#get_variable v1 in
 	    let var2 = self#get_variable v2 in
 	    match (var1#get_denotation, var2#get_denotation) with
+            | (AuxiliaryVariable (SymbolicValue _), _) -> -1
+            | (_, AuxiliaryVariable (SymbolicValue _)) -> 1
+            | (AuxiliaryVariable (SignedSymbolicValue _), _) -> -1
+            | (_, AuxiliaryVariable (SignedSymbolicValue _)) -> 1
 	    | (AuxiliaryVariable (CallTargetValue _), _) -> -1
 	    | (_, AuxiliaryVariable (CallTargetValue _)) -> 1
 	    | (AuxiliaryVariable (InitialRegisterValue _), _) -> -1
