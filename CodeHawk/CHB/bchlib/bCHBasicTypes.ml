@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +36,8 @@ open CHNumericalConstraints
 open BCHLibTypes
 open BCHUtilities
 
+module H = Hashtbl
+
 let version_date = BCHUtilities.get_date_and_time ()
 let get_version () = version_date
 
@@ -45,28 +49,47 @@ exception Invalid_input of string
 
 exception Request_function_retracing       (* raised when control flow is found to be altered *)
 
-let eflags_to_string_table = Hashtbl.create 6
-let eflags_from_string_table = Hashtbl.create 6
+let eflags_to_string_table = H.create 6
+
+let eflags_from_string_table = H.create 6
+
+let arm_cc_flags_to_string_table = H.create 6
+
+let arm_cc_flags_from_string_table = H.create 6
 
 let _ =
   List.iter (fun (e,s) ->
       add_to_sumtype_tables eflags_to_string_table eflags_from_string_table e s)
-	    [ (OFlag, "OF") ;
-	      (CFlag, "CF") ;
-	      (ZFlag, "ZF") ;
-	      (SFlag, "SF") ;
-	      (PFlag, "PF") ;
-	      (DFlag, "DF") ;
-	      (IFlag, "IF") ]
+    [(OFlag, "OF");
+     (CFlag, "CF");
+     (ZFlag, "ZF");
+     (SFlag, "SF");
+     (PFlag, "PF");
+     (DFlag, "DF");
+     (IFlag, "IF")]
+
+let _ =
+  List.iter (fun (f, s) ->
+      add_to_sumtype_tables
+        arm_cc_flags_to_string_table arm_cc_flags_from_string_table f s)
+    [(APSR_Z, "Z"); (APSR_N, "N"); (APSR_C, "C"); (APSR_V, "V")]
   
-let eflag_to_string (e:eflag_t) = 
+let eflag_to_string (e: eflag_t) =
   get_string_from_table "eflags_to_string_table" eflags_to_string_table e
 
-let eflag_from_string (name:string) =
+let eflag_from_string (name: string) =
   get_sumtype_from_table "eflags_from_string_table" eflags_from_string_table name
 
 let eflag_compare (f1:eflag_t) (f2:eflag_t) = 
   Pervasives.compare (eflag_to_string f1) (eflag_to_string f2)
+
+let arm_cc_flag_to_string (f: arm_cc_flag_t): string =
+  get_string_from_table
+    "arm_cc_flags_to_string_table" arm_cc_flags_to_string_table f
+
+let arm_cc_flag_from_string (name: string): arm_cc_flag_t =
+  get_sumtype_from_table
+    "arm_cc_flags_from_string_table" arm_cc_flags_from_string_table name
 
 type risk_type_t =
   | OutOfBoundsRead
@@ -75,8 +98,8 @@ type risk_type_t =
   | TypeConditionViolation
   | FunctionFailure
   
-let risk_types_to_string_table = Hashtbl.create 5
-let risk_types_from_string_table = Hashtbl.create 5
+let risk_types_to_string_table = H.create 5
+let risk_types_from_string_table = H.create 5
 
 let _ = List.iter (fun (r,s) -> 
   add_to_sumtype_tables risk_types_to_string_table risk_types_from_string_table r s)
@@ -93,11 +116,15 @@ let risk_type_from_string (s:string) =
   get_sumtype_from_table "risk_types_from_string_table" risk_types_from_string_table s
     
 let variable_to_pretty v = STR v#getName#getBaseName
+
 let symbol_to_pretty s   = STR s#getBaseName
+
 let factor_to_pretty f   = variable_to_pretty f#getVariable
   
 let variable_to_string v = v#getName#getBaseName
+
 let symbol_to_string s   = s#getBaseName
+
 let factor_to_string f   = variable_to_string f#getVariable
   
   

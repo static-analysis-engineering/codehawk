@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2020 Henny Sipma
+   Copyright (c) 2021      Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -54,8 +56,14 @@ exception Request_function_retracing       (* raised when control flow is found 
 val get_version: unit -> string
 
 val eflag_to_string  : eflag_t -> string
+
 val eflag_from_string: string -> eflag_t
+
 val eflag_compare  : eflag_t -> eflag_t -> int
+
+val arm_cc_flag_to_string: arm_cc_flag_t -> string
+
+val arm_cc_flag_from_string: string -> arm_cc_flag_t
 
 type risk_type_t =
     OutOfBoundsRead
