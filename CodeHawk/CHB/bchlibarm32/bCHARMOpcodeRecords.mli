@@ -37,9 +37,17 @@ open BCHARMTypes
 val get_cond_mnemonic_extension: arm_opcode_cc_t -> string
 
 val get_arm_opcode_name: arm_opcode_t -> string
+
+val is_cond_conditional: arm_opcode_cc_t -> bool
+
 val get_arm_operands: arm_opcode_t -> arm_operand_int list
+
+val get_arm_flags_set: arm_opcode_t -> arm_cc_flag_t list
+
+val get_arm_flags_used: arm_opcode_t -> arm_cc_flag_t list
 
 val arm_opcode_to_string: ?width:int -> arm_opcode_t -> string
 
 val get_operands_written: arm_opcode_t -> arm_operand_int list
+
 val get_operands_read: arm_opcode_t -> arm_operand_int list
