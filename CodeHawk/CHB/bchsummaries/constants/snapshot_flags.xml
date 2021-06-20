@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <reference href="http://msdn.microsoft.com/"/>
   <header date="09/30/2015 10:06:36"/>
-  <symbolic-flags type="snapshot_flags">
+  <symbolic-constants type="snapshot_flags">
    <values>
     <symf name="TH32CS_INHERIT" value="0x80000000">
      <desc>the snapshot handle is to be inheritable</desc>
@@ -38,6 +38,6 @@
      <desc>Includes all threads in the system in the snapshot</desc>
     </symf>
    </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

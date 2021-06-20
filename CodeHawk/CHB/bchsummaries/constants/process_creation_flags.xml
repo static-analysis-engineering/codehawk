@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <reference href="http://msdn.microsoft.com/"/>
   <header date="08/25/2015 21:32:53"/>
-  <symbolic-flags type="process_creation_flags">
+  <symbolic-constants type="process_creation_flags">
     <values>
    <symf name="CREATE_BREAKAWAY_FROM_JOB" value="0x01000000">
     <desc>
@@ -142,6 +142,6 @@
     </desc>
    </symf>
  </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

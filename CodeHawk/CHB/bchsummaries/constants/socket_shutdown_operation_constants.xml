@@ -4,8 +4,10 @@
     <reference href="http://msdn.microsoft.com/"/>
   </header>
   <symbolic-constants type="socket_shutdown_operation_constants">
-    <symc name="SD_RECEIVE" value="0" desc="Shutdown receive operations"/>
-    <symc name="SD_SEND" value="1" desc="Shutdown send operations."/>
-    <symc name="SD_BOTH" value="2" desc="Shutdown both send and receive operations"/>
+    <values>
+      <symc name="SD_RECEIVE" value="0" desc="Shutdown receive operations"/>
+      <symc name="SD_SEND" value="1" desc="Shutdown send operations."/>
+      <symc name="SD_BOTH" value="2" desc="Shutdown both send and receive operations"/>
+    </values>
   </symbolic-constants>
 </codehawk-binary-analyzer>

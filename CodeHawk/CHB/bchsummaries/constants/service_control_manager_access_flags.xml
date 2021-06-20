@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <reference href="http://msdn.microsoft.com/"/>
   <header date="08/21/2015 20:50:30"/>
-  <symbolic-flags type="service_control_manager_access_flags">
+  <symbolic-constants type="service_control_manager_access_flags">
     <values>
       <symc name="SC_MANAGER_ALL_ACCESS" value="0xf003f">
 	<desc>
@@ -42,6 +42,6 @@
 	</desc>
       </symf>
     </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

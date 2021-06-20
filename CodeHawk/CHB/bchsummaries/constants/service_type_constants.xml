@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <reference href="http://msdn.microsoft.com/"/>
   <header date="03/07/2015 22:19:21"/>
-  <symbolic-flags type="service_type_constants">
+  <symbolic-constants type="service_type_constants">
     <type>service_type_constants</type>
     <values>
       <symf name="SERVICE_KERNEL_DRIVER" value="0x00000001">
@@ -27,6 +27,6 @@
 	<desc>The service can interact with the desktop.</desc>
       </symf>
     </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

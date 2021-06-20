@@ -3,7 +3,7 @@
   <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
     <reference href="http://msdn.microsoft.com/"/>
   </header>
-  <symbolic-flags type="memory_protection_constants">
+  <symbolic-constants type="memory_protection_constants">
     <values>
       <symf name="PAGE_EXECUTE" value="0x10"
 	    desc="enables execute access to the committed region of pages"/>
@@ -22,5 +22,5 @@
       <symf name="PAGE_WRITECOPY" value="0x08"
 	    desc="enables read-only or copy-on-write access to a mapped view of a file mapping object"/>
     </values>
-  </symbolic-flags>
+  </symbolic-constants>
 </codehawk-binary-analyzer>

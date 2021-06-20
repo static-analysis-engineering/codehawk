@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <reference href="http://msdn.microsoft.com/"/>
   <header date="11/05/2015 12:02:57"/>
-  <symbolic-flags type="window_positioning_flags">
+  <symbolic-constants type="window_positioning_flags">
    <values>
     <symf name="SWP_ASYNCWINDOWPOS" value="0x4000">
      <desc>
@@ -78,6 +78,6 @@
      <desc>Displays the window</desc>
     </symf>
    </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

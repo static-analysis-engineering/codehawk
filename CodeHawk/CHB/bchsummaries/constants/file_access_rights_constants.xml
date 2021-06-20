@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <reference href="http://msdn.microsoft.com/"/>
   <header date="08/25/2015 23:07:58"/>
-  <symbolic-flags type="file_access_rights_constants">
+  <symbolic-constants type="file_access_rights_constants">
    <values>
     <symf name="GENERIC_READ" value="0x80000000">
      <desc>Read access</desc>
@@ -17,6 +17,6 @@
      <desc>All possible access rights</desc>
     </symf>
    </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <reference href="http://msdn.microsoft.com/"/>
   <header date="08/25/2015 22:59:07"/>
-  <symbolic-flags type="file_sharing_flags">
+  <symbolic-constants type="file_sharing_flags">
    <values>
     <symf name="FILE_SHARE_DELETE" value="0x00000004">
      <desc>
@@ -33,6 +33,6 @@
      </desc>
     </symf>
    </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

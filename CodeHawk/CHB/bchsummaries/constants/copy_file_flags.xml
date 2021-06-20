@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
  <codehawk-binary-analyzer>
   <header date="03/10/2015 12:38:43"/>
-  <symbolic-flags type="copy_file_flags">
+  <symbolic-constants type="copy_file_flags">
     <type>copy_file_flags</type>
     <values>
       <symf name="COPY_FILE_ALLOW_DECRYPTED_DESTINATION" value="0x00000008">
@@ -38,6 +38,6 @@
 	</desc>
       </symf>
     </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

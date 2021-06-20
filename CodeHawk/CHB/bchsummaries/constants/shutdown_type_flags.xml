@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <reference href="http://msdn.microsoft.com/"/>
   <header date="08/29/2015 10:48:22"/>
-  <symbolic-flags type="shutdown_type_flags">
+  <symbolic-constants type="shutdown_type_flags">
    <values>
     <symc name="EWX_LOGOFF" value="0x0">
      <desc>
@@ -67,6 +67,6 @@
      </desc>
     </symf>
    </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

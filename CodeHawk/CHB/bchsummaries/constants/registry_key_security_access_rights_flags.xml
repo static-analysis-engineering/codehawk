@@ -3,7 +3,7 @@
   <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
     <reference href="http://msdn.microsoft.com/"/>
   </header>
-  <symbolic-flags type="registry_key_security_access_rights_flags">
+  <symbolic-constants type="registry_key_security_access_rights_flags">
     <type>registry_key_security_access_rights_flags</type>
     <values>
       <symf name="KEY_CREATE_LINK" value="0x0020" 
@@ -35,5 +35,5 @@
 	</desc>
       </symf>
     </values>
-  </symbolic-flags>
+  </symbolic-constants>
 </codehawk-binary-analyzer>
