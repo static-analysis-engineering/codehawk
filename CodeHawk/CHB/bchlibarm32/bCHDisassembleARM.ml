@@ -684,7 +684,6 @@ let aggregate_ite () =
         (fun block ->
           block#itera
             (fun ciaddr instr ->
-              let finfo = get_function_info faddr in
               let loc = ctxt_string_to_location faddr ciaddr in
               let iaddr = loc#i in
               let itefloc = get_floc loc in

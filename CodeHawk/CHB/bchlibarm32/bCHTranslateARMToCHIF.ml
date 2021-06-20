@@ -107,11 +107,6 @@ let make_ite_predicate
       ~(test_instr: arm_assembly_instruction_int)
       ~(iteloc: location_int)
       ~(testloc: location_int) =
-  let testfloc = get_floc testloc in
-  let itefloc = get_floc iteloc in
-  let env = testfloc#f#env in
-  let reqN () = env#mk_num_temp in
-  let reqC i = env#request_num_constant i in
   let (frozenvars, optxpr) =
     arm_conditional_jump_expr
       ~jumpopc:ite_instr#get_opcode
@@ -400,7 +395,7 @@ let translate_arm_instruction
 
   | Compare (_, src1, _, _) ->
      let floc = get_floc loc in
-     let rhs =
+     let _ =
        floc#inv#rewrite_expr (src1#to_expr floc)
          floc#env#get_variable_comparator in
      default []
