@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <reference href="http://msdn.microsoft.com/"/>
   <header date="08/25/2015 22:03:46"/>
-  <symbolic-flags type="file_map_flags">
+  <symbolic-constants type="file_map_flags">
     <values>
    <symc name="FILE_MAP_ALL_ACCESS" value="0xf001f">
     <desc>
@@ -52,6 +52,6 @@
      </desc>
    </symf>
     </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <reference href="http://msdn.microsoft.com/"/>
   <header date="03/26/2015 12:31:09"/>
-  <symbolic-flags type="format_message_flags">
+  <symbolic-constants type="format_message_flags">
     <type>format_message_flags</type>
     <values>
       <symf name="FORMAT_MESSAGE_ALLOCATE_BUFFER" value="0x00000100">
@@ -56,6 +56,6 @@
 	</desc>
       </symf>
     </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

@@ -3,7 +3,7 @@
   <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
     <reference href="http://msdn.microsoft.com/"/>
   </header>
-  <symbolic-flags type="heap_allocation_flags">
+  <symbolic-constants type="heap_allocation_flags">
     <type>heap_allocation_flags</type>
     <values>
       <symf name="HEAP_GENERATE_EXCEPTIONS" value="0x00000004">
@@ -22,5 +22,5 @@
 	</desc>
       </symf>
     </values>
-  </symbolic-flags>
+  </symbolic-constants>
 </codehawk-binary-analyzer>

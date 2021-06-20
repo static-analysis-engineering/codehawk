@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <reference href="http://msdn.microsoft.com/"/>
   <header date="04/05/2015 22:26:35"/>
-  <symbolic-flags type="server_type_constants">
+  <symbolic-constants type="server_type_constants">
     <type>server_type_constants</type>
     <values>
    <symf name="SV_TYPE_WORKSTATION" value="0x00000001">
@@ -101,6 +101,6 @@
     <desc>The primary domain</desc>
    </symf>
  </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

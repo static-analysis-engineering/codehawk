@@ -3,7 +3,7 @@
   <header name="hresult" creation-date="2015-02-28" last-revision="2015-03-01">
     <reference href="http://msdn.microsoft.com/"/>
   </header>
-  <symbolic-flags type="memory_allocation_flags">
+  <symbolic-constants type="memory_allocation_flags">
     <type>memory_allocation_flags</type>
     <values>
     <symf name="MEM_COMMIT" value="0x00001000">
@@ -64,5 +64,5 @@
       </desc>
     </symf>
     </values>
-  </symbolic-flags>
+  </symbolic-constants>
 </codehawk-binary-analyzer>

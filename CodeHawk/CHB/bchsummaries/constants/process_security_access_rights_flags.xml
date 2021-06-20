@@ -2,7 +2,7 @@
  <codehawk-binary-analyzer>
   <reference href="http://msdn.microsoft.com/"/>
   <header date="04/06/2015 22:06:38"/>
-  <symbolic-flags type="process_security_access_rights_flags">
+  <symbolic-constants type="process_security_access_rights_flags">
     <type>process_security_access_rights_flags</type>
     <values>
    <symf name="DELETE" value="0x00010000">
@@ -69,6 +69,6 @@
     <desc>Required to write to memory in a process using WriteProcessMemory</desc>
    </symf>
     </values>
-  </symbolic-flags>
+  </symbolic-constants>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

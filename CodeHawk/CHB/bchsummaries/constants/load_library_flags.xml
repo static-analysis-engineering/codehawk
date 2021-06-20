@@ -3,7 +3,7 @@
   <header name="hresult" creation-date="2015-02-07" last-revision="2015-02-07">
     <reference href="http://msdn.microsoft.com/"/>
   </header>
-  <symbolic-flags type="load_library_flags">
+  <symbolic-constants type="load_library_flags">
     <type>load_library_flags</type>
     <values>
     <symf name="DONT_RESOLVE_DLL_REFERENCES" value="0x00000001">
@@ -122,5 +122,5 @@
       </desc>
     </symf>
   </values>
-  </symbolic-flags>
+  </symbolic-constants>
 </codehawk-binary-analyzer>
