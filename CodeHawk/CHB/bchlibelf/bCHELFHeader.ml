@@ -183,7 +183,10 @@ object
 	 EM_M32      1    AT&T WE 32100
 	 EM_SPARC    2    SUN SPARC
 	 EM_386      3    Intel 80386
+         EM_MIPS     8    MIPS
+         EM_ARM     40    ARM
 	 EM_X86_64  62    AMD x86-64
+         EM_AVR     83    AVR
 	 --------------------------------------------------------------------- *)
       e_machine <- input#read_ui16;
   
