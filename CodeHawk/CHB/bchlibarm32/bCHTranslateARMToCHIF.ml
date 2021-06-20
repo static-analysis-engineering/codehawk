@@ -71,11 +71,13 @@ open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
 open BCHARMCHIFSystem
 open BCHARMCodePC
+open BCHARMConditionalJumpExpr
 open BCHARMOpcodeRecords
 open BCHARMOperand
 open BCHARMTypes
 open BCHDisassembleARM
 
+module B = Big_int_Z
 module LF = CHOnlineCodeSet.LanguageFactory
 
 let valueset_domain = "valuesets"
@@ -100,37 +102,138 @@ let package_transaction
   let cnstAssigns = finfo#env#end_transaction in
   TRANSACTION (label, LF.mkCode (cnstAssigns @ cmds), None)
 
+let make_ite_predicate
+      ~(ite_instr: arm_assembly_instruction_int)
+      ~(test_instr: arm_assembly_instruction_int)
+      ~(iteloc: location_int)
+      ~(testloc: location_int) =
+  let testfloc = get_floc testloc in
+  let itefloc = get_floc iteloc in
+  let env = testfloc#f#env in
+  let reqN () = env#mk_num_temp in
+  let reqC i = env#request_num_constant i in
+  let (frozenvars, optxpr) =
+    arm_conditional_jump_expr
+      ~jumpopc:ite_instr#get_opcode
+      ~testopc:test_instr#get_opcode
+      ~jumploc:iteloc
+      ~testloc:testloc in
+  (frozenvars, optxpr)
+
+
 let make_tests
-      ~(testloc:location_int)
-      ~(jumploc:location_int)
-      ~(testexpr:xpr_t) =
-  ([], [], [])
+    ~(jump_instruction:arm_assembly_instruction_int)
+    ~(test_instruction:arm_assembly_instruction_int)
+    ~(jump_location:location_int)
+    ~(test_location:location_int) =
+  let testFloc = get_floc test_location in
+  let jumpFloc = get_floc jump_location in
+  let env = testFloc#f#env in
+  let reqN () = env#mk_num_temp in
+  let reqC i = env#request_num_constant i in
+  let (frozenVars,optBooleanExpr) =
+    arm_conditional_jump_expr ~jumpopc:jump_instruction#get_opcode
+      ~testopc:test_instruction#get_opcode ~jumploc:jump_location ~testloc:test_location in
+  let convert_to_chif expr =
+    let (cmds,bxpr) = xpr_to_boolexpr reqN reqC expr in
+    cmds @ [ ASSERT bxpr ] in
+  let convert_to_assert expr  =
+    let vars = variables_in_expr expr in
+    let varssize = List.length vars in
+    let xprs =
+      if varssize = 1 then
+	let var = List.hd vars in
+	let extExprs = jumpFloc#inv#get_external_exprs var in
+	let extExprs = List.map (fun e -> substitute_expr (fun v -> e) expr) extExprs in
+	expr :: extExprs
+      else if varssize = 2 then
+	let varList = vars in
+	let var1 = List.nth varList 0 in
+	let var2 = List.nth varList 1 in
+	let externalExprs1 = jumpFloc#inv#get_external_exprs var1 in
+	let externalExprs2 = jumpFloc#inv#get_external_exprs var2 in
+	let xprs = List.concat
+	  (List.map
+	     (fun e1 ->
+	       List.map
+		 (fun e2 ->
+		   substitute_expr (fun w -> if w#equal var1 then e1 else e2) expr)
+		 externalExprs2)
+	     externalExprs1) in
+	expr :: xprs
+      else
+	[ expr ] in
+    List.concat (List.map convert_to_chif xprs) in
+  let make_asserts exprs =
+    let _ = env#start_transaction in
+    let commands = List.concat (List.map convert_to_assert exprs) in
+    let const_assigns = env#end_transaction in
+    const_assigns @ commands in
+  let make_branch_assert exprs =
+    let _ = env#start_transaction in
+    let commands = List.map convert_to_assert exprs in
+    let branch = BRANCH (List.map LF.mkCode commands) in
+    let const_assigns = env#end_transaction in
+    const_assigns @ [ branch ] in
+  let make_assert expr =
+    let _ = env#start_transaction in
+    let commands = convert_to_assert expr in
+    let const_assigns = env#end_transaction in
+    const_assigns @ commands in
+  let make_test_code expr =
+    if is_conjunction expr then
+      let conjuncts = get_conjuncts expr in
+      make_asserts conjuncts
+    else if is_disjunction expr then
+      let disjuncts = get_disjuncts expr in
+      make_branch_assert disjuncts
+    else
+      make_assert expr in
+  match optBooleanExpr with
+    Some booleanExpr ->
+      let thenCode = make_test_code booleanExpr in
+      let elseCode = make_test_code (simplify_xpr (XOp (XLNot, [ booleanExpr ]))) in
+      (frozenVars,Some (thenCode, elseCode))
+  | _ -> (frozenVars,None)
+
 
 let make_condition
-      ~(testloc:location_int)
-      ~(jumploc:location_int)
-      ~(theniaddr:ctxt_iaddress_t)
-      ~(elseiaddr:ctxt_iaddress_t)
-      ~(blocklabel:symbol_t)
-      ~(testexpr:xpr_t) =
-  let thensucclabel = make_code_label theniaddr in
-  let elsesucclabel = make_code_label elseiaddr in
-  let (frozenvars, thentest, elsetest) = make_tests ~testloc ~jumploc ~testexpr in
-  let make_node_and_label testcode tgtaddr modifier =
-    let src = jumploc#i in
-    let nextlabel = make_code_label ~src ~modifier tgtaddr in
-    let testcode = testcode @ [ABSTRACT_VARS frozenvars] in
-    let transaction = TRANSACTION (nextlabel, LF.mkCode testcode, None) in
-    (nextlabel, [transaction]) in
-  let (thentestlabel, thennode) =
-    make_node_and_label thentest theniaddr "then" in
-  let (elsetestlabel, elsenode) =
-    make_node_and_label elsetest elseiaddr "else" in
-  let thenedges =
-    [(blocklabel, thentestlabel); (thentestlabel, thensucclabel)] in
-  let elseedges =
-    [(blocklabel, elsetestlabel); (elsetestlabel, elsesucclabel)] in
-  ([(thentestlabel, thennode); (elsetestlabel, elsenode)], thenedges @ elseedges)
+    ~(jump_instruction:arm_assembly_instruction_int)
+    ~(test_instruction:arm_assembly_instruction_int)
+    ~(jump_location:location_int)
+    ~(test_location:location_int)
+    ~(block_label:symbol_t)
+    ~(then_successor_address:ctxt_iaddress_t)
+    ~(else_successor_address:ctxt_iaddress_t) =
+  let thenSuccessorLabel = make_code_label then_successor_address in
+  let elseSuccessorLabel = make_code_label else_successor_address in
+  let (frozenVars,tests) =
+    make_tests ~jump_location ~test_location ~jump_instruction ~test_instruction in
+  match tests with
+    Some (then_test, else_test) ->
+      let make_node_and_label testCode targetAddress modifier =
+	let src = jump_location#i in
+	let nextLabel = make_code_label ~src ~modifier targetAddress in
+	let testCode = testCode @ [ ABSTRACT_VARS frozenVars ] in
+	let transaction = TRANSACTION ( nextLabel, LF.mkCode testCode, None) in
+	(nextLabel, [ transaction ] ) in
+      let (thenTestLabel, thenNode) =
+	make_node_and_label then_test then_successor_address "then" in
+      let (elseTestLabel, elseNode) =
+	make_node_and_label else_test else_successor_address "else" in
+      let thenEdges =
+	[ (block_label, thenTestLabel) ; (thenTestLabel, thenSuccessorLabel) ] in
+      let elseEdges =
+	[ (block_label, elseTestLabel) ; (elseTestLabel, elseSuccessorLabel) ] in
+      ( [ (thenTestLabel, thenNode) ; (elseTestLabel, elseNode) ], thenEdges @ elseEdges )
+  | _ ->
+    let abstractLabel =
+      make_code_label ~modifier:"abstract" test_location#ci in
+    let transaction =
+      TRANSACTION (abstractLabel, LF.mkCode [ ABSTRACT_VARS frozenVars ], None) in
+    let edges = [ (block_label, abstractLabel) ; (abstractLabel, thenSuccessorLabel) ;
+		  (abstractLabel, elseSuccessorLabel) ] in
+    ([ (abstractLabel, [transaction])], edges)
     
 
 let translate_arm_instruction
@@ -141,9 +244,13 @@ let translate_arm_instruction
       ~(cmds:cmd_t list) =
   let (ctxtiaddr, instr) = codepc#get_next_instruction in
   let faddr = funloc#f in
+  let finfo = get_function_info faddr in
   let loc = ctxt_string_to_location faddr ctxtiaddr in  (* instr location *)
   let invlabel = get_invariant_label loc in
   let invop = OPERATION { op_name = invlabel ; op_args = [] } in
+  let frozenAsserts =
+    List.map (fun (v,fv) -> ASSERT (EQ (v,fv)))
+      (finfo#get_test_variables ctxtiaddr) in
   let rewrite_expr floc x:xpr_t =
     let xpr = floc#inv#rewrite_expr x floc#env#get_variable_comparator in
     let rec expand x =
@@ -158,8 +265,44 @@ let translate_arm_instruction
     let pcv = (pc_r RD)#to_variable floc in
     let iaddr12 = (loc#i#add_int 12)#to_numerical in
     let pcassign = floc#get_assign_commands pcv (XConst (IntConst iaddr12)) in
-    ([], [], cmds @ (invop :: (newcmds @ pcassign))) in
+    ([], [], cmds @ frozenAsserts @ (invop :: (newcmds @ pcassign))) in
   match instr#get_opcode with
+
+  | Branch (c, op, _)
+    | BranchExchange (c, op) when is_cond_conditional c && op#is_absolute_address ->
+     if op#is_absolute_address then
+       let thenAddress = (make_i_location loc op#get_absolute_address)#ci in
+       let elseAddress = codepc#get_false_branch_successor in
+       let cmds = cmds @ [ invop ] in
+       let transaction = package_transaction finfo blocklabel cmds in
+       if finfo#has_associated_cc_setter ctxtiaddr then
+	 let testIAddress = finfo#get_associated_cc_setter ctxtiaddr in
+         let testloc = ctxt_string_to_location faddr testIAddress in
+         let testAddress = (ctxt_string_to_location faddr testIAddress)#i in
+	 let (nodes,edges) =
+           make_condition
+	     ~jump_instruction:instr
+	     ~test_instruction:(!arm_assembly_instructions#at_address testAddress)
+	     ~jump_location:loc
+	     ~test_location:testloc
+	     ~block_label:blocklabel
+	     ~then_successor_address:thenAddress
+	     ~else_successor_address:elseAddress in
+	 ((blocklabel, [ transaction ])::nodes, edges, [])
+       else
+	 let thenSuccessorLabel = make_code_label thenAddress in
+	 let elseSuccessorLabel = make_code_label elseAddress in
+	 let nodes = [ (blocklabel, [ transaction ]) ] in
+	 let edges = [ (blocklabel, thenSuccessorLabel) ;
+		       (blocklabel, elseSuccessorLabel) ] in
+	 (nodes, edges, [])
+     else
+       begin
+	 ch_error_log#add "internal error"
+	   (LBLOCK [STR "Unexpected operand in conditional jump: " ; op#toPretty]) ;
+	 raise (BCH_failure (LBLOCK [ STR "translate_instruction:conditional jump"]))
+       end
+
 
   (* -------------------------------------------------------------- Add -- *
    * if ConditionPassed() then
@@ -183,6 +326,12 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands vrd (XOp (XPlus, [xrn; xrm])) in
      default cmds
 
+  | Add (_, _, rd, _, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
   | ArithmeticShiftRight(setflags, ACCAlways, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
@@ -196,6 +345,12 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands vrd asrr in
      default cmds
 
+  | ArithmeticShiftRight (_, _, rd, _, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
   | BitwiseAnd (setflags, ACCAlways, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
@@ -203,6 +358,12 @@ let translate_arm_instruction
      let xrm = rm#to_expr floc in
      let result = XOp (XBAnd, [xrn; xrm]) in
      let cmds = floc#get_assign_commands vrd result in
+     default cmds
+
+  | BitwiseAnd (_, _, rd, _, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
      default cmds
 
   (* ---------------------------------------------------------- BitwiseNot -- *
@@ -230,6 +391,58 @@ let translate_arm_instruction
      let (lhs, lhscmds) = dst#to_lhs floc in
      let cmd = floc#get_assign_commands lhs notrhs in
      default (cmd @ lhscmds)
+
+  | BitwiseNot (_, _, dst, src) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | Compare (_, src1, _, _) ->
+     let floc = get_floc loc in
+     let rhs =
+       floc#inv#rewrite_expr (src1#to_expr floc)
+         floc#env#get_variable_comparator in
+     default []
+
+  | IfThen (c, xyz) when instr#is_aggregate ->
+     let floc = get_floc loc in
+     let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+     let testloc = ctxt_string_to_location faddr testiaddr in
+     let testaddr = testloc#i in
+     let testinstr = !arm_assembly_instructions#at_address testaddr in
+     let dstop = instr#get_aggregate_dst in
+     let (frozenvars, optpredicate) =
+       make_ite_predicate
+         ~ite_instr:instr
+         ~test_instr:testinstr
+         ~iteloc:loc
+         ~testloc:testloc in
+     let cmds =
+       match optpredicate with
+       | Some p ->
+          let (lhs, lhscmds) = dstop#to_lhs floc in
+          let cmds = floc#get_assign_commands lhs p in
+          let _ =
+            chlog#add
+              "assign ite predicate"
+              (LBLOCK [testaddr#toPretty;
+                       STR ": " ;
+                       lhs#toPretty;
+                       STR " := ";
+                       x2p p]) in
+          let _ =
+            chlog#add
+              "ite assign cmds"
+              (LBLOCK (List.map (command_to_pretty 0) cmds)) in
+          lhscmds @ cmds
+       | _ ->
+          let _ =
+            chlog#add
+              "no ite predicate"
+              (LBLOCK [testaddr#toPretty; STR ": " ; testinstr#toPretty]) in
+          [] in
+     default cmds
 
   (* ---------------------------------------------------------- BranchLink -- *
    * if CurrentInstrSet() == InstrSet_ARM then
@@ -271,12 +484,24 @@ let translate_arm_instruction
      let cmd = floc#get_assign_commands lhs rhs in
      default (cmd @ lhscmds)
 
+  | LoadRegister (_, dst, _, _, _) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
   | LoadRegisterByte (ACCAlways, dst, base, src, _) ->
      let floc = get_floc loc in
      let rhs = src#to_expr floc in
      let (lhs, lhscmds) = dst#to_lhs floc in
      let cmd = floc#get_assign_commands lhs rhs in
      default (cmd @ lhscmds)
+
+  | LoadRegisterByte (_, dst, _, _, _) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
 
   | LoadRegisterHalfword (ACCAlways, dst, base, _, src, _) ->
      let floc = get_floc loc in
@@ -285,12 +510,46 @@ let translate_arm_instruction
      let cmd = floc#get_assign_commands lhs rhs in
      default (cmd @ lhscmds)
 
+  | LoadRegisterHalfword (_, dst, _, _, _, _) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
   | LoadRegisterSignedHalfword (ACCAlways, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
      let rhs = mem#to_expr floc in
+     let rhs = floc#inv#rewrite_expr rhs floc#env#get_variable_comparator in
      let (lhs, lhscmds) = rt#to_lhs floc in
-     let cmd = floc#get_assign_commands lhs rhs in
-     default (cmd @ lhscmds)
+     let is_external v = floc#env#is_function_initial_value v in
+     let rec is_symbolic_expr x =
+       match x with
+       | XOp (_, l) -> List.for_all is_symbolic_expr l
+       | XVar v -> is_external v
+       | XConst _ -> true
+       | XAttr _ -> false in
+     if is_symbolic_expr rhs then
+       let rhs = floc#env#mk_signed_symbolic_value rhs 16 32 in
+       let cmds = floc#get_assign_commands lhs (XVar rhs) in
+       default (lhscmds @ cmds)
+     else
+       let cmds = floc#get_abstract_commands lhs () in
+       default (lhscmds @ cmds)
+
+  | LoadRegisterSignedHalfword (_, rt, _, _, _, _) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = rt#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | LogicalShiftLeft (_, ACCAlways, rd, rn, rm, _) when rm#is_immediate ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let xrn = rn#to_expr floc in
+     let p = rm#to_numerical#toInt in
+     let m = mkNumerical_big (B.power_int_positive_int 2 p) in
+     let cmds = floc#get_assign_commands vrd (XOp (XMult, [num_constant_expr m; xrn])) in
+     default cmds
 
   | LogicalShiftLeft (setflags, ACCAlways, rd, rn, rm, _) ->
      let floc = get_floc loc in
@@ -299,6 +558,12 @@ let translate_arm_instruction
      let xrm = rm#to_expr floc in
      let result = XOp (XShiftlt, [xrn; xrm]) in
      let cmds = floc#get_assign_commands vrd result in
+     default cmds
+
+  | LogicalShiftLeft (_, _, rd, _, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
      default cmds
 
   (* ---------------------------------------------------------------- Move -- *
@@ -317,6 +582,19 @@ let translate_arm_instruction
      let (lhs, lhscmds) = dst#to_lhs floc in
      let cmd = floc#get_assign_commands lhs rhs in
      default (cmd @ lhscmds)
+
+  | Move _ when instr#is_subsumed ->
+     let _ =
+       chlog#add
+         "instr subsumed"
+         (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; instr#toPretty]) in
+     default []
+
+  | Move (_, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
 
   (* ----------------------------------------------------------------- Pop -- *
    * address = SP;
@@ -357,6 +635,19 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands splhs (XOp (XPlus, [sprhs; increm])) in
      default (stackops @ cmds)
 
+  | Pop (_, sp, rl, _) ->
+     let floc = get_floc loc in
+     let reglhss = rl#to_multiple_variable floc in
+     let (stackops,_) =
+       List.fold_left
+         (fun (acc,off) reglhs ->
+           let (splhs,splhscmds) = (sp_r RD)#to_lhs floc in
+           let cmds1 = floc#get_abstract_commands reglhs () in
+           (acc @ cmds1 @ splhscmds, off+4)) ([],0) reglhss in
+     let (splhs,splhscmds) = (sp_r WR)#to_lhs floc in
+     let cmds = floc#get_abstract_commands splhs () in
+     default (stackops @ cmds)
+
   (* ---------------------------------------------------------------- Push -- *
    * address = SP - 4*BitCount(registers);
    * for i = 0 to 14
@@ -395,11 +686,34 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands splhs (XOp (XMinus, [sprhs; decrem])) in
      default (stackops @ cmds)
 
+  | Push (_, sp, rl, _) ->
+     let floc = get_floc loc in
+     let regcount = rl#get_register_count in
+     let rhsexprs = rl#to_multiple_expr floc in
+     let rhsexprs = List.map (rewrite_expr floc) rhsexprs in
+     let (stackops,_) =
+       List.fold_left
+         (fun (acc,off) rhsexpr ->
+           let (splhs,splhscmds) = (sp_r RD)#to_lhs floc in
+           let stackop = arm_sp_deref ~with_offset:off WR in
+           let (stacklhs, stacklhscmds) = stackop#to_lhs floc in
+           let cmds1 = floc#get_abstract_commands stacklhs () in
+           (acc @ cmds1 @ stacklhscmds @ splhscmds, off+4)) ([],(-(4*regcount))) rhsexprs in
+     let (splhs,splhscmds) = (sp_r WR)#to_lhs floc in
+     let cmds = floc#get_abstract_commands splhs () in
+     default (stackops @ cmds)
+
   | StoreRegister (ACCAlways, rt, rn, mem, _) ->
      let floc = get_floc loc in
      let (vmem,memcmds) = mem#to_lhs floc in
      let xrt = rt#to_expr floc in
      let cmds = floc#get_assign_commands vmem xrt in
+     default (memcmds @ cmds)
+
+  | StoreRegister (_, _, _, mem, _) ->
+     let floc = get_floc loc in
+     let (vmem, memcmds) = mem#to_lhs floc in
+     let cmds = floc#get_abstract_commands vmem () in
      default (memcmds @ cmds)
 
   | StoreRegisterByte (ACCAlways, rt, rn, mem, _) ->
@@ -409,11 +723,23 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands vmem xrt in
      default (memcmds @ cmds)
 
+  | StoreRegisterByte (_, _, _, mem, _) ->
+     let floc = get_floc loc in
+     let (vmem, memcmds) = mem#to_lhs floc in
+     let cmds = floc#get_abstract_commands vmem () in
+     default (memcmds @ cmds)
+
   | StoreRegisterHalfword (ACCAlways, rt, rn, _, mem, _) ->
      let floc = get_floc loc in
      let (vmem,memcmds) = mem#to_lhs floc in
      let xrt = rt#to_expr floc in
      let cmds = floc#get_assign_commands vmem xrt in
+     default (memcmds @ cmds)
+
+  | StoreRegisterHalfword (_, _, _, _, mem, _) ->
+     let floc = get_floc loc in
+     let (vmem, memcmds) = mem#to_lhs floc in
+     let cmds = floc#get_abstract_commands vmem () in
      default (memcmds @ cmds)
 
   (* ------------------------------------------------------------ Subtract -- *
@@ -434,6 +760,12 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands vdst (XOp (XMinus, [xsrc1; xsrc2])) in
      default cmds
 
+  | Subtract(_, _, dst, _, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     default cmds
+
   | UnsignedExtendByte (ACCAlways, rd, rm) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
@@ -441,6 +773,12 @@ let translate_arm_instruction
      (* let result = XOp (XMod, [xrm; XConst (IntConst (mkNumerical 256))]) in *)
      let result = xrm in
      let cmds = floc#get_assign_commands vrd result in
+     default cmds
+
+  | UnsignedExtendByte (_, rd, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
      default cmds
 
   | UnsignedExtendHalfword (ACCAlways, rd, rm) ->
@@ -451,14 +789,21 @@ let translate_arm_instruction
      let result = xrm in
      let cmds = floc#get_assign_commands vrd result in
      default cmds
-     
+
+  | UnsignedExtendHalfword (_, rd, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
 
   | instr ->
      let _ =
-       if faddr#to_hex_string = "0xcc4" then
-         pr_debug [STR "No semantics yet for ";
-                   STR (arm_opcode_to_string instr);
-                   NL] in
+       chlog#add
+         "no semantics"
+         (LBLOCK [loc#toPretty;
+                  STR ": ";
+                  STR (arm_opcode_to_string instr);
+                  NL]) in
      default []
         
 
@@ -498,6 +843,7 @@ object (self)
       | [] ->
          if codepc#has_more_instructions then
            aux newcmds
+         (*
          else if codepc#has_conditional_successor then
            let (testloc,jumploc,theniaddr,elseiaddr,testexpr) =
              codepc#get_conditional_successor_info in
@@ -505,7 +851,7 @@ object (self)
            let (nodes,edges) =
              make_condition
                ~testloc ~jumploc ~theniaddr ~elseiaddr ~blocklabel ~testexpr in
-           ((blocklabel, [transaction])::nodes, edges)
+           ((blocklabel, [transaction])::nodes, edges) *)
          else
            let transaction = package_transaction finfo blocklabel newcmds in
            let nodes = [(blocklabel, [transaction])] in
@@ -523,7 +869,86 @@ object (self)
       List.iter (fun (src, tgt) -> codegraph#add_edge src tgt) edges
     end
 
-  method private get_entry_cmd =
+  method private create_arg_deref_asserts
+                   (finfo: function_info_int)
+                   (reg: arm_reg_t)
+                   (offset: int)
+                   (optlb: int option)
+                   (optub: int option) =
+    let env = finfo#env in
+    let reqN () = env#mk_num_temp in
+    let reqC = env#request_num_constant in
+    let ri = env#mk_initial_register_value (ARMRegister reg) in
+    let _ = finfo#add_base_pointer ri in
+    let rbase = env#mk_base_variable_reference ri in
+    let memvar = env#mk_memory_variable rbase (mkNumerical offset) in
+    let cmdasserts cxpr =
+      let (cmds, bxpr) = xpr_to_boolexpr reqN reqC cxpr in
+      cmds @ [ASSERT bxpr] in
+    match (optlb, optub) with
+    | (Some lb, Some ub) when lb = ub ->
+       let cxpr = XOp (XEq, [XVar memvar; int_constant_expr lb]) in
+       cmdasserts cxpr
+    | (Some lb, Some ub) ->
+       let c1xpr = XOp (XGe, [XVar memvar; int_constant_expr lb]) in
+       let c2xpr = XOp (XLe, [XVar memvar; int_constant_expr ub]) in
+       (cmdasserts c1xpr) @ (cmdasserts c2xpr)
+    | (Some lb, _) ->
+       let cxpr = XOp (XGe, [XVar memvar; int_constant_expr lb]) in
+       cmdasserts cxpr
+    | (_, Some ub) ->
+       let cxpr = XOp (XLe, [XVar memvar; int_constant_expr ub]) in
+       cmdasserts cxpr
+    | _ -> []
+
+  method private create_arg_scalar_asserts
+                   (finfo: function_info_int)
+                   (reg: arm_reg_t)
+                   (optlb: int option)
+                   (optub: int option) =
+    let env = finfo#env in
+    let reqN () = env#mk_num_temp in
+    let reqC = env#request_num_constant in
+    let regvar = env#mk_arm_register_variable reg in
+    let cmdasserts cxpr =
+      let (cmds, bxpr) = xpr_to_boolexpr reqN reqC cxpr in
+      cmds @ [ASSERT bxpr] in
+    match (optlb, optub) with
+    | (Some lb, Some ub) when lb = ub ->
+       let cxpr = XOp (XEq, [XVar regvar; int_constant_expr lb]) in
+       cmdasserts cxpr
+    | (Some lb, Some ub) ->
+       let c1xpr = XOp (XGe, [XVar regvar; int_constant_expr lb]) in
+       let c2xpr = XOp (XLe, [XVar regvar; int_constant_expr ub]) in
+       (cmdasserts c1xpr) @ (cmdasserts c2xpr)
+    | (Some lb, _) ->
+       let cxpr = XOp (XGe, [XVar regvar; int_constant_expr lb]) in
+       cmdasserts cxpr
+    | (_, Some ub) ->
+       let cxpr = XOp (XLe, [XVar regvar; int_constant_expr ub]) in
+       cmdasserts cxpr
+    | _ -> []
+
+
+  method private create_arg_asserts
+                   (finfo: function_info_int)
+                   (c: (string * int option * int option * int option)) =
+    let (name, optoffset, optlb, optub) = c in
+    let reg = armreg_from_string name in
+    match optoffset with
+    | Some offset -> self#create_arg_deref_asserts finfo reg offset optlb optub
+    | _ -> self#create_arg_scalar_asserts finfo reg optlb optub
+
+  method private create_args_asserts
+                   (finfo: function_info_int)
+                   (argconstraints:
+                      (string * int option * int option * int option) list) =
+    List.concat
+      (List.map (fun c -> self#create_arg_asserts finfo c) argconstraints)
+
+  method private get_entry_cmd
+                   (argconstraints:
+                      (string * int option * int option * int option) list) =
     let env = finfo#env in
     let _ = env#start_transaction in
     let freeze_initial_register_value (reg:arm_reg_t) =
@@ -539,6 +964,10 @@ object (self)
     let mAsserts = List.map freeze_external_memory_values externalMemvars in
     let sp0 = env#mk_initial_register_value (ARMRegister ARSP) in
     let _ = finfo#add_base_pointer sp0 in
+
+    (* ----- test code --- *)
+    let argasserts = self#create_args_asserts finfo argconstraints in
+
     let unknown_scalar = env#mk_special_variable "unknown_scalar" in
     let initializeScalar =
       DOMAIN_OPERATION
@@ -558,7 +987,8 @@ object (self)
       @ rAsserts
       @ mAsserts
       @ [ initializeScalar ]
-      @ initializeBasePointerOperations in
+      @ initializeBasePointerOperations
+      @ argasserts in
     TRANSACTION (new symbol_t "entry", LF.mkCode cmds, None)
 
   method translate =
@@ -568,7 +998,8 @@ object (self)
     let exitLabel = make_code_label ~modifier:"exit" funloc#ci in
     let procname = make_arm_proc_name faddr in
     let _ = f#iter self#translate_block in
-    let entrycmd = self#get_entry_cmd in
+    let argconstraints = system_info#get_argument_constraints faddr#to_hex_string in
+    let entrycmd = self#get_entry_cmd argconstraints in
     let scope = finfo#env#get_scope in
     let _ = codegraph#add_node entryLabel [entrycmd] in
     let _ = codegraph#add_node exitLabel [SKIP] in
