@@ -150,6 +150,24 @@ object (self)
   val successors = H.create 3
   val arm_thumb_switches = H.create 3
 
+  (* constraints on function arguments.
+     format:
+        <arg-constraints>
+          <fn a=hex-address>
+            <c n=arg-name offset=offset lb=lb ub=ub v=v/>
+            ...
+          </fn>
+          <fn>
+          ....
+          </fn>
+        </arg-constraints>
+
+     offset indicates field offset of argument deref
+
+     table: fn -> arg -> (int option, int option, int option)
+   *)
+  val argument_constraints = H.create 3
+
   val mutable user_data_blocks = 0 
   val mutable user_call_targets = 0
   val mutable user_structs = 0 
@@ -659,7 +677,9 @@ object (self)
       (if hasc "symbolic-addresses" then 
 	  read_xml_symbolic_addresses (getc "symbolic-addresses")) ;
       (if hasc "userdeclared-codesections" then
-	  self#read_xml_userdeclared_codesections (getc "userdeclared-codesections"))
+	 self#read_xml_userdeclared_codesections (getc "userdeclared-codesections"));
+      (if hasc "arg-constraints" then
+         self#read_xml_argument_constraints (getc "arg-constraints"))
     end
 
   method private read_xml_initialized_memory (node:xml_element_int) =
@@ -905,7 +925,87 @@ object (self)
 	ch_error_log#add "set virtual function table"
 	  (LBLOCK [ STR "No jump table found at " ; jtaddr#toPretty ]))
       (node#getTaggedChildren "vft")
-	
+
+  method private read_xml_argument_constraints (node: xml_element_int) =
+    (* format: <fn a=hex-addr>
+                 <c n=arg-name offset=offset lb=lb ub=ub v=v>
+     *)
+    List.iter (fun n ->
+        let get = n#getAttribute in
+        let faddr = get "a" in
+        List.iter (fun nc ->
+            let getn = nc#getAttribute in
+            let geti = nc#getIntAttribute in
+            let has = nc#hasNamedAttribute in
+            let name = getn "n" in
+            let lb =
+              if has "lb" then
+                Some (geti "lb")
+              else if has "v" then
+                Some (geti "v")
+              else
+                None in
+            let ub =
+              if has "ub" then
+                Some (geti "ub")
+              else if has "v" then
+                Some (geti "v")
+              else None in
+            let offset =
+              if has "offset" then
+                Some (geti "offset")
+              else
+                None in
+            self#add_argument_constraint faddr name offset lb ub)
+          (n#getTaggedChildren "c"))
+      (node#getTaggedChildren "fn")
+
+  method private add_argument_constraint
+                   (faddr: string)
+                   (name: string)
+                   (offset: int option)
+                   (lb: int option)
+                   (ub: int option) =
+    let entry =
+      if H.mem argument_constraints faddr then
+        H.find argument_constraints faddr
+      else
+        let e = H.create 3 in
+        begin
+          H.add argument_constraints faddr e;
+          e
+        end in
+    if H.mem entry (name, offset) then
+      ()
+    else
+        let popt (tag: string)  (i: int option) =
+          match i with
+          | Some i -> LBLOCK [STR tag; STR ":"; INT i; STR "; "]
+          | _ -> STR "" in
+        begin
+          chlog#add
+            "argument constraint"
+            (LBLOCK [
+                 STR faddr;
+                 STR ". ";
+                 STR name;
+                 STR ": ";
+                 (popt "offset" offset);
+                 (popt "lb" lb);
+                 (popt "ub" ub)]);
+          H.add entry (name, offset) (lb, ub)
+        end
+
+  method has_argument_constraints (faddr: string): bool =
+    H.mem argument_constraints faddr
+
+  method get_argument_constraints
+           (faddr: string): (string * int option * int option * int option) list =
+    if H.mem argument_constraints faddr then
+      let args = H.find argument_constraints faddr in
+      H.fold (fun (k, offset) (lb, ub) a -> (k, offset, lb, ub) :: a) args []
+    else
+      []
 
   method private read_xml_userdeclared_codesections (node:xml_element_int) =
     List.iter (fun n ->
