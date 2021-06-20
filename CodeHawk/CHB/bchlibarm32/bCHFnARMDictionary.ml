@@ -48,6 +48,7 @@ open BCHBasicTypes
 open BCHByteUtilities
 open BCHConstantDefinitions
 open BCHCPURegisters
+open BCHDoubleword
 open BCHFloc   
 open BCHFunctionApi
 open BCHFunctionInfo
@@ -139,8 +140,8 @@ object (self)
           | XOp (op, l) -> XOp (op, List.map expand l)
           | _ -> x in
         let xpr =
-          floc#inv#rewrite_expr (expand x) floc#env#get_variable_comparator in
-        simplify_xpr (expand xpr)
+          floc#inv#rewrite_expr x floc#env#get_variable_comparator in
+        simplify_xpr xpr
       with IO.No_more_input ->
             begin
               pr_debug [STR "Error in rewriting expression: ";
@@ -162,6 +163,11 @@ object (self)
                         xd#index_xpr xrm;
                         xd#index_xpr result;
                         xd#index_xpr rresult])
+
+      | Adr (_, rd, imm) ->
+         let vrd = rd#to_variable floc in
+         let ximm = imm#to_expr floc in
+         (["a:vx"], [xd#index_variable vrd; xd#index_xpr ximm])
 
       | ArithmeticShiftRight (_, _, rd, rn, rm, _) ->
          let vrd = rd#to_variable floc in
@@ -191,6 +197,19 @@ object (self)
                         xd#index_xpr result;
                         xd#index_xpr rresult])
 
+      | BitwiseBitClear (_, _, rd, rn, imm, _) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rd#to_expr floc in
+         let ximm = imm#to_expr floc in
+         let result = XOp (XBAnd, [xrn; XOp (XBNot, [ximm])]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxxx"],
+          [xd#index_variable vrd;
+           xd#index_xpr xrn;
+           xd#index_xpr ximm;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
       | BitwiseOr (_, _, rd, rn, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
@@ -202,6 +221,16 @@ object (self)
                         xd#index_xpr xrm;
                         xd#index_xpr result;
                         xd#index_xpr rresult])
+
+      | Branch (c, tgt, _)
+           when is_cond_conditional c
+                && tgt#is_absolute_address
+                && floc#has_test_expr ->
+         let xtgt = tgt#to_expr floc in
+         let tcond = rewrite_expr floc#get_test_expr in
+         let fcond = rewrite_expr (XOp (XLNot, [tcond])) in
+         (["a:xxx"; "TF"],
+          [xd#index_xpr tcond; xd#index_xpr fcond; xd#index_xpr xtgt])
 
       | Branch (_, tgt, _) ->
          let xtgt = tgt#to_expr floc in
@@ -215,10 +244,30 @@ object (self)
          let xtgt = tgt#to_expr floc in
          (["a:x"], [xd#index_xpr xtgt])
 
+      | BranchLinkExchange (_, tgt) ->
+         let xtgt = tgt#to_expr floc in
+         (["a:x"], [xd#index_xpr xtgt])
+
       | Compare (_, rn, rm, _) ->
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          (["a:xx"], [xd#index_xpr xrn; xd#index_xpr xrm])
+
+      | CompareBranchNonzero (rn, tgt) ->
+         let xrn = rn#to_expr floc in
+         let xtgt = tgt#to_expr floc in
+         (["a:xx"], [xd#index_xpr xrn; xd#index_xpr xtgt])
+
+      | CompareBranchZero (rn, tgt) ->
+         let xrn = rn#to_expr floc in
+         let xtgt = tgt#to_expr floc in
+         (["a:xx"], [xd#index_xpr xrn; xd#index_xpr xtgt])
+
+      | LoadMultipleIncrementAfter (_, _, rn, rl, mem) ->
+         let lhss = rl#to_multiple_variable floc in
+         let xtag =
+           "a:" ^ (string_repeat "v" rl#get_register_count) in
+         ([xtag], List.map xd#index_variable lhss)
 
       | LoadRegister (_, rt, rn, mem, _) ->
          let vrt = rt#to_variable floc in
@@ -256,18 +305,53 @@ object (self)
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
+         let result = XOp (XShiftlt, [xrn; xrm]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxxx"],
+          [xd#index_variable vrd;
+           xd#index_xpr xrn;
+           xd#index_xpr xrm;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
+      | LogicalShiftRight (_, _, rd, rn, rm, _) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
          let result = XOp (XShiftrt, [xrn; xrm]) in
          let rresult = rewrite_expr result in
-         (["a:vxxxx"], [xd#index_variable vrd;
-                        xd#index_xpr xrn;
-                        xd#index_xpr xrm;
-                        xd#index_xpr result;
-                        xd#index_xpr rresult])
+         (["a:vxxxx"],
+          [xd#index_variable vrd;
+           xd#index_xpr xrn;
+           xd#index_xpr xrm;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
 
       | Move(_, _, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
          (["a:vx"], [xd#index_variable vrd; xd#index_xpr xrm])
+
+      | MoveTop (_, rd, imm) ->
+         let vrd = rd#to_variable floc in
+         let ximm = imm#to_expr floc in
+         let xrd = rd#to_expr floc in
+         let ximm16 = XOp (XMult, [ximm; int_constant_expr e16]) in
+         let xrdm16 = XOp (XMod, [xrd; int_constant_expr e16]) in
+         let result = XOp (XPlus, [xrdm16; ximm16]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxxxx"],
+          [xd#index_variable vrd;
+           xd#index_xpr ximm;
+           xd#index_xpr xrd;
+           xd#index_xpr xrdm16;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
+      | MoveWide(_,rd, imm) ->
+         let vrd = rd#to_variable floc in
+         let ximm = imm#to_expr floc in
+         (["a:vx"], [xd#index_variable vrd; xd#index_xpr ximm])
 
       | Pop (_, sp, rl, _) ->
          let lhsvars = List.map (fun op -> op#to_variable floc) rl#get_register_op_list in
@@ -301,6 +385,25 @@ object (self)
            (List.map xd#index_variable lhsvars)
            @ (List.map xd#index_xpr rhsexprs) in
          (tags, args)
+
+      | ReverseSubtract (_, _, dst, src1, src2, _) ->
+         let lhs = dst#to_variable floc in
+         let rhs1 = src1#to_expr floc in
+         let rhs2 = src2#to_expr floc in
+         let result = XOp (XMinus, [rhs2; rhs1]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
+      | StoreMultipleIncrementAfter (_, _, rn, rl, mem, _) ->
+         let rhss = rl#to_multiple_expr floc in
+         let xtag =
+           "a:" ^ (string_repeat "x" rl#get_register_count) in
+         ([xtag], List.map xd#index_xpr rhss)
 
       | StoreRegister (_, rt, rn, mem, _) ->
          let vmem = mem#to_variable floc in
@@ -337,6 +440,13 @@ object (self)
                         xd#index_xpr rhs2;
                         xd#index_xpr result;
                         xd#index_xpr rresult])
+
+      | UnsignedBitFieldExtract (_, rd, rn) ->
+         let lhs = rd#to_variable floc in
+         let rhs = rn#to_expr floc in
+         let rrhs = rewrite_expr rhs in
+         (["a:vxx"],
+          [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr rrhs])
 
       | UnsignedExtendByte (_, rd, rm) ->
          let vrd = rd#to_variable floc in
