@@ -28,7 +28,7 @@
         <type><ptr>FILE</ptr></type>
 	<pre><deref-read/></pre>
       </par>
-      <par loc="stack" name="format"fmt="scan" nr="2">
+      <par loc="stack" name="format" fmt="scan" nr="2">
         <type><ptr>char</ptr></type>
 	<pre><deref-read-nt/><format-string/></pre>
       </par>

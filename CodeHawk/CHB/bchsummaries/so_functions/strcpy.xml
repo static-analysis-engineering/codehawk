@@ -13,9 +13,9 @@
     </apidoc>
    </documentation>
    <api adj="0" cc="cdecl" name="strcpy">
-    <returnbtype ttag="tptr">
-     <typ tname="char" ttag="tnamed"/>
-    </returnbtype>
+     <returntype>
+       <ptr>char</ptr>
+     </returntype>
     <par loc="stack" name="dest" io="w" nr="1" rep="hex">
       <type><ptr>char</ptr></type>
       <roles>

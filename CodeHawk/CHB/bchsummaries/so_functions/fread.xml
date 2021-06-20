@@ -25,7 +25,7 @@
     </apidoc>
    </documentation>
    <api adj="0" cc="cdecl" name="fread">
-    <returnbtype tname="size_t" ttag="tnamed"/>
+     <returntype>size_t</returntype>
     <par loc="stack" desc="file read dest" io="w" name="dest" nr="1" rep="hex">
        <type><ptr>void</ptr></type>
      <roles>

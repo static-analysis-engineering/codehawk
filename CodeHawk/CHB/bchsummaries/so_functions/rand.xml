@@ -11,7 +11,7 @@
     </apidoc>
    </documentation>
    <api adj="0" cc="cdecl" name="rand">
-    <returnbtype tname="int" ttag="tnamed"/>
+     <returntype>int</returntype>
    </api>
    <semantics>
      <io-actions/>

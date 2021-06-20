@@ -27,7 +27,7 @@
       <par loc="stack" name="type" nr="2">
         <type>int</type>
       </par>
-      <returntype><ptr>netent<ptr></returntype>
+      <returntype><ptr>netent</ptr></returntype>
     </api>
     <semantics>
       <io-actions/>
