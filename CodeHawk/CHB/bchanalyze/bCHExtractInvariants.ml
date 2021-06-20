@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -71,7 +73,16 @@ module ConstraintCollections = CHCollections.Make
    end)
 
 let pr_expr = xpr_formatter#pr_expr
+let x2p = pr_expr
 let expr_compare = syntactic_comparison
+
+
+let tracked_locations = ["0xd12"; "0xd14"; "0xd16"]
+
+let track_location loc p =
+  if List.mem loc tracked_locations then
+    chlog#add ("tracked (invariant):" ^ loc) p
+
 
 exception TimeOut of float * int * int
 
@@ -107,17 +118,27 @@ let extract_external_value_equalities
     (flocinv:location_invariant_int) 
     starttime =
   let rec expand_symbolic_values x =
+    let _ =
+      track_location
+        iaddr
+        (LBLOCK [
+             STR "expand-symbolic-value: "; x2p x]) in
     match  x with
     | XVar v when finfo#env#is_symbolic_value v ->
        expand_symbolic_values (finfo#env#get_symbolic_value_expr v)
     | XOp (op,l) -> XOp (op, List.map expand_symbolic_values l)
     | _ -> x in
   let is_external_var = finfo#env#is_function_initial_value in
-  let numConstraints = domain#observer#getNumericalConstraints ~variables:None () in
+  let numConstraints =
+    domain#observer#getNumericalConstraints ~variables:None () in
   let constraintSets = get_constraint_sets numConstraints in
   let constraintVars = new VariableCollections.set_t in
-  let _ = List.iter (fun c ->
-    List.iter (fun f -> constraintVars#add f#getVariable) c#getFactors) numConstraints in
+  let _ =
+    List.iter
+      (fun c ->
+        List.iter
+          (fun f -> constraintVars#add f#getVariable) c#getFactors)
+      numConstraints in
   let vars = constraintVars#toList in
   (* let initialVars = List.filter is_external_var vars in *)
   let localVars = List.filter (fun v -> not (is_external_var v)) vars in
@@ -139,22 +160,28 @@ let extract_external_value_equalities
 
   let make_scalar_exp factors constant =
     match factors with
-    | [ (c,v) ] when c#equal numerical_one && constant#equal numerical_zero -> XVar v
-    | [ (c,v) ] when c#equal numerical_one ->
+    | [(c,v)] when c#equal numerical_one && constant#equal numerical_zero ->
+       XVar v
+    | [(c,v)] when c#equal numerical_one ->
       if constant#gt numerical_zero then 
-	XOp (XPlus, [ XVar v ; num_constant_expr constant ])
+	XOp (XPlus, [XVar v; num_constant_expr constant])
       else
-	XOp (XMinus, [ XVar v ; num_constant_expr constant#neg ])
+	XOp (XMinus, [XVar v; num_constant_expr constant#neg])
     | l ->
       List.fold_left (fun x (c,v) ->
-	let t = if c#abs#equal numerical_one then 
-	    XVar v 
-	  else XOp (XMult, [ num_constant_expr c#abs ; XVar v ]) in
+	  let t =
+            if c#abs#equal numerical_one then
+	      XVar v
+	    else
+              XOp (XMult, [num_constant_expr c#abs; XVar v]) in
 	let op = if c#gt numerical_zero then XPlus else XMinus in
-	XOp (op, [ x ; t ])) (num_constant_expr constant) l in
+	XOp (op, [x ; t])) (num_constant_expr constant) l in
   
-  let get_frozen_exp (k:numerical_constraint_t) invert_factors
-      (factors:numerical_factor_t list) (constant:numerical_t):xpr_t option =
+  let get_frozen_exp
+        (k: numerical_constraint_t)
+        (invert_factors: bool)
+        (factors: numerical_factor_t list)
+        (constant: numerical_t): xpr_t option =
     try
       let factors = if invert_factors then
 	  List.map (fun f -> ((k#getCoefficient f)#neg, f#getVariable)) factors
@@ -166,43 +193,67 @@ let extract_external_value_equalities
     | BCH_failure p ->
       begin
 	ch_error_log#add "get-frozen-exp"
-	  (LBLOCK [ finfo#get_address#toPretty ; STR ": " ; k#toPretty ; STR " - " ; p ]) ;
+	  (LBLOCK [
+               finfo#get_address#toPretty;
+               STR ": ";
+               k#toPretty;
+               STR " - ";
+               p]) ;
 	None
       end in
   
   List.fold_left (fun acc (c:numerical_constraint_t) ->
+      let _ =
+        track_location
+          iaddr
+          (LBLOCK [c#toPretty]) in
     match c#getFactors with
     | [ f ] ->
       let v = f#getVariable in
-      if (c#getCoefficient f)#equal numerical_one ||
-	(c#getCoefficient f)#equal numerical_one#neg then
-	if (c#getCoefficient f)#equal numerical_one then                    (* p = c *)
-	  begin finfo#finv#add_constant_fact iaddr v c#getConstant ; v :: acc end
+      if (c#getCoefficient f)#equal numerical_one
+         || (c#getCoefficient f)#equal numerical_one#neg then
+	if (c#getCoefficient f)#equal numerical_one then
+	  begin
+            finfo#finv#add_constant_fact iaddr v c#getConstant;    (* p = c *)
+            v :: acc
+          end
 	else 
-          begin finfo#finv#add_constant_fact iaddr v c#getConstant#neg ; v :: acc end (* -p = c *)
+          begin
+            finfo#finv#add_constant_fact iaddr v c#getConstant#neg;  (* -p = c *)
+            v :: acc
+          end
       else
 	acc
     | l ->
-      let (pfactors,ffactors) =                             (* p = sum (c_i . f_i) *)
+      let (pfactors,ffactors) =                      (* p = sum (c_i . f_i) *)
 	List.fold_left (fun (pf,ff) f ->
-	  if is_external_var f#getVariable then (pf,f::ff) else (f::pf,ff)) ([],[]) l in
+	    if is_external_var f#getVariable then
+              (pf,f::ff)
+            else
+              (f::pf,ff)) ([],[]) l in
       match (pfactors,ffactors) with
-      | ([],_) -> acc
-      | ( [ pf ],ff::_) when
+      | ([], _) -> acc
+      | ([pf], ff :: _) when
 	  let pc = c#getCoefficient pf in
 	  pc#equal numerical_one || pc#neg#equal numerical_one ->
-	begin
-	  (* invert the factors if the coefficient of the program variable equals
-	     one otherwise invert the constant *)
-	  match get_frozen_exp c ((c#getCoefficient pf)#equal numerical_one)
-	    ffactors c#getConstant with
-	    | Some fexp -> 
-	       let v = pf#getVariable in
-               let fexpx = simplify_xpr (expand_symbolic_values fexp) in
-	      begin finfo#finv#add_symbolic_expr_fact iaddr v fexpx  ; v :: acc end
-	    | _ -> acc
-	end
+	 begin
+	   (* invert the factors if the coefficient of the program variable equals
+	      one otherwise invert the constant *)
+	   match get_frozen_exp
+                   c
+                   ((c#getCoefficient pf)#equal numerical_one)
+	           ffactors c#getConstant with
+	   | Some fexp ->
+	      let v = pf#getVariable in
+              let fexpx = simplify_xpr (expand_symbolic_values fexp) in
+	      begin
+                finfo#finv#add_symbolic_expr_fact iaddr v fexpx ;
+                v :: acc
+              end
+	   | _ -> acc
+	 end
       | _ -> acc) [] newConstraints#toList
+
 
 let extract_relational_facts finfo iaddr domain =
   let constraints = domain#observer#getNumericalConstraints ~variables:None () in
@@ -221,9 +272,10 @@ let extract_testvar_equalities finfo iaddr domain =
       match numConstrs with 
       | [] -> acc 
       | _ -> 
-	begin 
-	  finfo#finv#add_test_value_fact iaddr fvar fval taddr jaddr ; 
-	  fval :: acc 
+	 begin
+           chlog#add "test variables" (STR iaddr);
+	   finfo#finv#add_test_value_fact iaddr fvar fval taddr jaddr ;
+	   fval :: acc
 	end
     else acc) [] fvals
 
@@ -306,9 +358,27 @@ let extract_linear_equalities
 	let domain = inv#getDomain "karr" in
 	let vars = domain#observer#getObservedVariables in
 	let outvars = List.filter (fun v -> v#isTmp || outside_test_jump_range v k) vars in
+        let _ =
+          track_location
+            k
+            (LBLOCK [
+                 STR "lineareq: "; NL;
+                 STR "knownVars: ";
+                 pretty_print_list knownVars (fun v -> v#toPretty) "[" "," "]";
+                 NL;
+                 STR "outvars: ";
+                 pretty_print_list outvars (fun v -> v#toPretty) "[" "," "]"]) in
 	let domain = domain#projectOut outvars in
 	let initVars = extract_initvar_equalities finfo k domain flocinv in
 	let testVals = extract_testvar_equalities finfo k domain in
+        let _ =
+          track_location
+            k
+            (LBLOCK [
+                 STR "testVals: ";
+                 pretty_print_list testVals (fun v -> v#toPretty) "[" "," "]";
+                 NL;
+                 pretty_print_list initVars (fun v -> v#toPretty) "[" "," "]"]) in
 	let domain = domain#projectOut (knownVars @ initVars @ testVals) in
 	let extVars = extract_external_value_equalities finfo k domain flocinv starttime in
 	let domain = domain#projectOut extVars in
