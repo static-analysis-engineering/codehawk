@@ -468,13 +468,18 @@ and reduce_lt m e1 e2 =
   let rs op args = sim_expr true (XOp (op, args)) in
 
   match (e1,e2) with
-    (XVar v, XOp (XPlus, [ XVar w ; XConst (IntConst n) ])) 
+  | (XVar v, XOp (XPlus, [ XVar w ; XConst (IntConst n) ])) 
        when v#equal w && n#gt numerical_zero ->
     be true
 
   | (XVar v, XOp (XPlus, [ XVar w  ; e' ])) 
        when v#equal w ->
      (true, XOp ( XGt, [ e' ; zero_constant_expr ]))
+
+  | (XOp (XMinus, [ XVar v; XConst (IntConst a) ]),       (* (v - a) < (v - b) *)
+     XOp (XMinus, [ XVar w; XConst (IntConst b) ]))       (*  ~> a > b  *)
+       when v#equal w ->
+     be (a#gt b)
 
   | _ ->
      match (get_struct e1, get_struct e2) with
@@ -776,7 +781,15 @@ and reduce_eq m e1 e2 =
      else
        rs XEq [x ; ne (a#div b) ]                    (* b<>0 ~~> x = a/b *)
 
-  | _ -> default
+  (*  (x != y) ==  0)  -> (x == y)  *)
+
+  | _ ->
+     match (e1, get_struct e2) with
+     | (XOp (XNe, [x; y]), SConst b) when zero_num b ->
+        (true, XOp (XEq, [x; y]))
+     | (XOp (XEq, [x; y]), SConst b) when zero_num b ->
+        (true, XOp (XNe, [x; y]))
+     |  _ -> default
 
 and reduce_ne m e1 e2 = 
   let default = (m, XOp (XNe, [e1 ; e2])) in
@@ -795,6 +808,8 @@ and reduce_ne m e1 e2 =
   | _ ->
      match (e1,get_struct e2) with                         
      | (XOp (XLt, _), SConst a)
+       | (XOp (XEq, _), SConst a)
+       | (XOp (XNe, _), SConst a)
        | (XOp (XGt, _), SConst a)
        | (XOp (XLe, _), SConst a)
        | (XOp (XGe, _), SConst a) when zero_num a ->           (* (x1 op x2) <> 0 *)
@@ -855,7 +870,15 @@ and reduce_bitwiseand m e1 e2 =
        if b#is_zero then
          (true, ne numerical_zero)
        else
-         default
+         (match get_struct e1 with
+          | SConst a ->
+             if a#is_zero then
+               (true, ne numerical_zero)
+             else if a#equal b then
+               (true, e1)
+             else
+               default
+          | _ -> default)
     | _ -> default
   with
   | CHFailure p ->
