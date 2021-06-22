@@ -523,13 +523,19 @@ let translate_arm_instruction
        | XVar v -> is_external v
        | XConst _ -> true
        | XAttr _ -> false in
-     if is_symbolic_expr rhs then
-       let rhs = floc#env#mk_signed_symbolic_value rhs 16 32 in
-       let cmds = floc#get_assign_commands lhs (XVar rhs) in
-       default (lhscmds @ cmds)
-     else
-       let cmds = floc#get_abstract_commands lhs () in
-       default (lhscmds @ cmds)
+     (match rhs with
+      | XConst  (IntConst n) when n#toInt > e15 ->
+         let rhs = XOp (XPlus, [rhs; int_constant_expr (e32-e16)]) in
+         let cmds = floc#get_assign_commands lhs rhs in
+         default (lhscmds @ cmds)
+      | _ ->
+         if is_symbolic_expr rhs then
+           let rhs = floc#env#mk_signed_symbolic_value rhs 16 32 in
+           let cmds = floc#get_assign_commands lhs (XVar rhs) in
+           default (lhscmds @ cmds)
+         else
+           let cmds = floc#get_abstract_commands lhs () in
+           default (lhscmds @ cmds))
 
   | LoadRegisterSignedHalfword (_, rt, _, _, _, _) ->
      let floc = get_floc loc in
