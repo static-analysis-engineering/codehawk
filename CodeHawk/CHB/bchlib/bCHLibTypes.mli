@@ -1812,6 +1812,7 @@ object ('a)
   method is_calltarget_value: bool
   method is_global_sideeffect: bool
   method is_symbolic_value: bool
+  method is_signed_symbolic_value: bool
 
   method is_in_test_jump_range    : ctxt_iaddress_t -> bool
 
@@ -1904,6 +1905,7 @@ object
   method is_function_pointer: variable_t -> bool
   method is_calltarget_value: variable_t -> bool
   method is_symbolic_value: variable_t -> bool
+  method is_signed_symbolic_value: variable_t -> bool
        
   method is_memory_variable: variable_t -> bool
   method is_basevar_memory_variable: variable_t -> bool
@@ -2338,6 +2340,7 @@ class type function_environment_int =
     method is_frozen_test_value: variable_t -> bool
     method is_calltarget_value: variable_t -> bool
     method is_symbolic_value: variable_t -> bool
+    method is_signed_symbolic_value: variable_t -> bool
          
     method is_stack_variable: variable_t -> bool  (* memory variable on the stack *)
     method is_stack_parameter_variable: variable_t -> bool (* stack-variable with positive offset *)
