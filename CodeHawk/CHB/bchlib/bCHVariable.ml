@@ -421,6 +421,11 @@ object (self:'a)
       | AuxiliaryVariable (SignedSymbolicValue _) -> true
     | _ -> false
 
+  method is_signed_symbolic_value =
+    match denotation with
+    | AuxiliaryVariable (SignedSymbolicValue _) -> true
+    | _ -> false
+
   method get_symbolic_value_expr =
     match denotation with
     | AuxiliaryVariable (SymbolicValue x) -> x
@@ -862,6 +867,9 @@ object (self)
 
   method is_symbolic_value (v:variable_t) =
     (self#has_var v) && (self#get_variable v)#is_symbolic_value
+
+  method is_signed_symbolic_value (v:variable_t) =
+    (self#has_var v) && (self#get_variable v)#is_signed_symbolic_value
 
   method is_in_test_jump_range (a:ctxt_iaddress_t) (v:variable_t) =
     (self#has_var v) &&  (self#get_variable v)#is_in_test_jump_range a

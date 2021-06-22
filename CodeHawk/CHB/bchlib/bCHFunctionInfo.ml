@@ -1112,6 +1112,8 @@ object (self)
 
   method is_symbolic_value = varmgr#is_symbolic_value
 
+  method is_signed_symbolic_value = varmgr#is_signed_symbolic_value
+
   method get_symbolic_value_expr v =
     if self#is_symbolic_value v then
       varmgr#get_symbolic_value_expr v
