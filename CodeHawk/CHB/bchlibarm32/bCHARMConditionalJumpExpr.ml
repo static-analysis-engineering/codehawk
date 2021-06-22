@@ -117,9 +117,13 @@ let cc_expr v vu testfloc testopc cc =
     | (Compare (ACCAlways, x, y, _), ACCSignedLE) when iszero x && iszero y ->
        true_constant_expr
     | (Compare (ACCAlways, x, y, _), ACCSignedLE) when gezero x && iszero y ->
-       XOp (XGe, [v x;  int_constant_expr e31])
+           XOp (XGe, [v x;  int_constant_expr e31])
     | (Compare (ACCAlways, x, y, _), ACCSignedLE) when iszero y ->
-       XOp (XLOr, [XOp (XEq, [v x; zero_constant_expr]); XOp (XGe, [v x; int_constant_expr e31])])
+       (match v x with
+        | XVar var when testfloc#env#is_signed_symbolic_value var ->
+           XOp (XLOr, [XOp (XEq, [v x; zero_constant_expr]); XOp (XGe, [v x; int_constant_expr e15])])
+        | _ ->
+           XOp (XLOr, [XOp (XEq, [v x; zero_constant_expr]); XOp (XGe, [v x; int_constant_expr e31])]))
     | _ -> begin found := false; random_constant_expr end in
   let expr = simplify_xpr expr in
   if is_random expr then (!found, None) else (true, Some expr)
