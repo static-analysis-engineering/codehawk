@@ -1601,7 +1601,8 @@ object (self)
    * setters and users of condiditon codes; conditional jumps                              
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
     
-  method connect_cc_user (user_addr:ctxt_iaddress_t) (setter_addr:ctxt_iaddress_t) =
+  method connect_cc_user
+           (user_addr:ctxt_iaddress_t) (setter_addr:ctxt_iaddress_t) =
     begin
       H.replace cc_setter_to_user setter_addr user_addr ;
       H.replace cc_user_to_setter user_addr setter_addr
@@ -1615,8 +1616,8 @@ object (self)
       H.find cc_user_to_setter user_address
     else
       raise (BCH_failure
-               (LBLOCK [ STR "function_info#get_associated_condition: " ; 
-			 STR user_address ]))
+               (LBLOCK [STR "function_info#get_associated_condition: ";
+			STR user_address ]))
 	
   method has_associated_cc_user (setter_address:ctxt_iaddress_t) = 
     H.mem cc_setter_to_user setter_address
@@ -1625,9 +1626,10 @@ object (self)
     if H.mem cc_setter_to_user setter_address then
       H.find cc_setter_to_user setter_address
     else
-      raise (BCH_failure
-               (LBLOCK [ STR "function_info#get_associated_jump: " ;
-                         STR setter_address ]))
+      raise
+        (BCH_failure
+           (LBLOCK [STR "function_info#get_associated_jump: ";
+                    STR setter_address ]))
 	
   method set_test_expr (iaddr:ctxt_iaddress_t) (x:xpr_t) = 
     H.replace test_expressions iaddr x

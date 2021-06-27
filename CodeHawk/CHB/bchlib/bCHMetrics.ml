@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -106,7 +108,11 @@ let get_jumps_metrics (finfo:function_info_int) =
     mjumps_dll = finfo#get_dll_jumps_count ;
   }
   
-let get_cc_metrics (finfo:function_info_int) = cc_metrics_handler#init_value
+let get_cc_metrics (finfo:function_info_int) = {
+    mcc_instrs = finfo#get_num_conditions_associated;
+    mcc_assoc = finfo#get_num_conditions_associated;
+    mcc_test = finfo#get_num_test_expressions
+  }
                                              
 let get_invs_metrics (invio:invariant_io_int) = {
     minvs_table = 0 (* invio#get_table_size *) ;
