@@ -71,7 +71,7 @@ open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
 open BCHARMCHIFSystem
 open BCHARMCodePC
-open BCHARMConditionalJumpExpr
+open BCHARMConditionalExpr
 open BCHARMOpcodeRecords
 open BCHARMOperand
 open BCHARMTypes
@@ -83,10 +83,20 @@ module LF = CHOnlineCodeSet.LanguageFactory
 let valueset_domain = "valuesets"
 let x2p = xpr_formatter#pr_expr
 
-let make_code_label ?src ?modifier (address:ctxt_iaddress_t) = 
-  let name = "pc_" ^ address in
+let make_code_label ?src ?modifier (address:ctxt_iaddress_t) =
+  let name =
+    if address = "exit" || address = "?" then
+      "exit"
+    else
+      "pc_" ^ address in
   let atts = match modifier with
-    | Some s -> [s] | _ -> [] in
+    | Some s -> [s]
+    | _ -> [] in
+  let atts =
+    if address = "?" then
+      "unresolved-jump" :: atts
+    else
+      atts in
   let atts = match src with
     | Some s -> s#to_fixed_length_hex_string :: atts | _ -> atts in
   ctxt_string_to_symbol name ~atts address
@@ -102,62 +112,67 @@ let package_transaction
   let cnstAssigns = finfo#env#end_transaction in
   TRANSACTION (label, LF.mkCode (cnstAssigns @ cmds), None)
 
-let make_ite_predicate
-      ~(ite_instr: arm_assembly_instruction_int)
-      ~(test_instr: arm_assembly_instruction_int)
-      ~(iteloc: location_int)
+let make_conditional_predicate
+      ~(condinstr: arm_assembly_instruction_int)
+      ~(testinstr: arm_assembly_instruction_int)
+      ~(condloc: location_int)
       ~(testloc: location_int) =
   let (frozenvars, optxpr) =
-    arm_conditional_jump_expr
-      ~jumpopc:ite_instr#get_opcode
-      ~testopc:test_instr#get_opcode
-      ~jumploc:iteloc
+    arm_conditional_expr
+      ~condopc:condinstr#get_opcode
+      ~testopc:testinstr#get_opcode
+      ~condloc:condloc
       ~testloc:testloc in
   (frozenvars, optxpr)
 
-
+  
 let make_tests
-    ~(jump_instruction:arm_assembly_instruction_int)
-    ~(test_instruction:arm_assembly_instruction_int)
-    ~(jump_location:location_int)
-    ~(test_location:location_int) =
-  let testFloc = get_floc test_location in
-  let jumpFloc = get_floc jump_location in
-  let env = testFloc#f#env in
+    ~(condinstr:arm_assembly_instruction_int)
+    ~(testinstr:arm_assembly_instruction_int)
+    ~(condloc:location_int)
+    ~(testloc:location_int) =
+  let testfloc = get_floc testloc in
+  let condfloc = get_floc condloc in
+  let env = testfloc#f#env in
   let reqN () = env#mk_num_temp in
   let reqC i = env#request_num_constant i in
-  let (frozenVars,optBooleanExpr) =
-    arm_conditional_jump_expr ~jumpopc:jump_instruction#get_opcode
-      ~testopc:test_instruction#get_opcode ~jumploc:jump_location ~testloc:test_location in
+  let (frozenVars, optboolxpr) =
+    arm_conditional_expr
+      ~condopc:condinstr#get_opcode
+      ~testopc:testinstr#get_opcode
+      ~condloc
+      ~testloc in
   let convert_to_chif expr =
     let (cmds,bxpr) = xpr_to_boolexpr reqN reqC expr in
-    cmds @ [ ASSERT bxpr ] in
+    cmds @ [ASSERT bxpr] in
   let convert_to_assert expr  =
     let vars = variables_in_expr expr in
     let varssize = List.length vars in
     let xprs =
       if varssize = 1 then
 	let var = List.hd vars in
-	let extExprs = jumpFloc#inv#get_external_exprs var in
-	let extExprs = List.map (fun e -> substitute_expr (fun v -> e) expr) extExprs in
-	expr :: extExprs
+	let extxprs = condfloc#inv#get_external_exprs var in
+	let extxprs =
+          List.map (fun e -> substitute_expr (fun v -> e) expr) extxprs in
+	expr :: extxprs
       else if varssize = 2 then
-	let varList = vars in
-	let var1 = List.nth varList 0 in
-	let var2 = List.nth varList 1 in
-	let externalExprs1 = jumpFloc#inv#get_external_exprs var1 in
-	let externalExprs2 = jumpFloc#inv#get_external_exprs var2 in
+	let varlist = vars in
+	let var1 = List.nth varlist 0 in
+	let var2 = List.nth varlist 1 in
+	let extxprs1 = condfloc#inv#get_external_exprs var1 in
+	let extxprs2 = condfloc#inv#get_external_exprs var2 in
 	let xprs = List.concat
 	  (List.map
 	     (fun e1 ->
 	       List.map
 		 (fun e2 ->
-		   substitute_expr (fun w -> if w#equal var1 then e1 else e2) expr)
-		 externalExprs2)
-	     externalExprs1) in
+		   substitute_expr
+                     (fun w -> if w#equal var1 then e1 else e2) expr)
+		 extxprs2)
+	     extxprs1) in
 	expr :: xprs
       else
-	[ expr ] in
+	[expr] in
     List.concat (List.map convert_to_chif xprs) in
   let make_asserts exprs =
     let _ = env#start_transaction in
@@ -169,7 +184,7 @@ let make_tests
     let commands = List.map convert_to_assert exprs in
     let branch = BRANCH (List.map LF.mkCode commands) in
     let const_assigns = env#end_transaction in
-    const_assigns @ [ branch ] in
+    const_assigns @ [branch] in
   let make_assert expr =
     let _ = env#start_transaction in
     let commands = convert_to_assert expr in
@@ -184,51 +199,52 @@ let make_tests
       make_branch_assert disjuncts
     else
       make_assert expr in
-  match optBooleanExpr with
-    Some booleanExpr ->
-      let thenCode = make_test_code booleanExpr in
-      let elseCode = make_test_code (simplify_xpr (XOp (XLNot, [ booleanExpr ]))) in
-      (frozenVars,Some (thenCode, elseCode))
-  | _ -> (frozenVars,None)
+  match optboolxpr with
+    Some bxpr ->
+      let thencode = make_test_code bxpr in
+      let elsecode = make_test_code (simplify_xpr (XOp (XLNot, [bxpr]))) in
+      (frozenVars, Some (thencode, elsecode))
+  | _ -> (frozenVars, None)
 
 
 let make_condition
-    ~(jump_instruction:arm_assembly_instruction_int)
-    ~(test_instruction:arm_assembly_instruction_int)
-    ~(jump_location:location_int)
-    ~(test_location:location_int)
-    ~(block_label:symbol_t)
-    ~(then_successor_address:ctxt_iaddress_t)
-    ~(else_successor_address:ctxt_iaddress_t) =
-  let thenSuccessorLabel = make_code_label then_successor_address in
-  let elseSuccessorLabel = make_code_label else_successor_address in
-  let (frozenVars,tests) =
-    make_tests ~jump_location ~test_location ~jump_instruction ~test_instruction in
+    ~(condinstr:arm_assembly_instruction_int)
+    ~(testinstr:arm_assembly_instruction_int)
+    ~(condloc:location_int)
+    ~(testloc:location_int)
+    ~(blocklabel:symbol_t)
+    ~(thenaddr:ctxt_iaddress_t)
+    ~(elseaddr:ctxt_iaddress_t) =
+  let thenlabel = make_code_label thenaddr in
+  let elselabel = make_code_label elseaddr in
+  let (frozenVars, tests) =
+    make_tests ~condloc ~testloc ~condinstr ~testinstr in
   match tests with
-    Some (then_test, else_test) ->
-      let make_node_and_label testCode targetAddress modifier =
-	let src = jump_location#i in
-	let nextLabel = make_code_label ~src ~modifier targetAddress in
-	let testCode = testCode @ [ ABSTRACT_VARS frozenVars ] in
-	let transaction = TRANSACTION ( nextLabel, LF.mkCode testCode, None) in
-	(nextLabel, [ transaction ] ) in
-      let (thenTestLabel, thenNode) =
-	make_node_and_label then_test then_successor_address "then" in
-      let (elseTestLabel, elseNode) =
-	make_node_and_label else_test else_successor_address "else" in
-      let thenEdges =
-	[ (block_label, thenTestLabel) ; (thenTestLabel, thenSuccessorLabel) ] in
-      let elseEdges =
-	[ (block_label, elseTestLabel) ; (elseTestLabel, elseSuccessorLabel) ] in
-      ( [ (thenTestLabel, thenNode) ; (elseTestLabel, elseNode) ], thenEdges @ elseEdges )
+    Some (thentest, elsetest) ->
+      let make_node_and_label testcode tgtaddr modifier =
+	let src = condloc#i in
+	let nextlabel = make_code_label ~src ~modifier tgtaddr in
+	let testcode = testcode @ [ABSTRACT_VARS frozenVars] in
+	let transaction = TRANSACTION (nextlabel, LF.mkCode testcode, None) in
+	(nextlabel, [transaction]) in
+      let (thentestlabel, thennode) =
+	make_node_and_label thentest thenaddr "then" in
+      let (elsetestlabel, elsenode) =
+	make_node_and_label elsetest elseaddr "else" in
+      let thenedges =
+	[(blocklabel, thentestlabel); (thentestlabel, thenlabel)] in
+      let elseedges =
+	[(blocklabel, elsetestlabel); (elsetestlabel, elselabel) ] in
+      ([(thentestlabel, thennode); (elsetestlabel, elsenode)], thenedges @ elseedges)
   | _ ->
-    let abstractLabel =
-      make_code_label ~modifier:"abstract" test_location#ci in
+    let abstractlabel =
+      make_code_label ~modifier:"abstract" testloc#ci in
     let transaction =
-      TRANSACTION (abstractLabel, LF.mkCode [ ABSTRACT_VARS frozenVars ], None) in
-    let edges = [ (block_label, abstractLabel) ; (abstractLabel, thenSuccessorLabel) ;
-		  (abstractLabel, elseSuccessorLabel) ] in
-    ([ (abstractLabel, [transaction])], edges)
+      TRANSACTION (abstractlabel, LF.mkCode [ABSTRACT_VARS frozenVars], None) in
+    let edges = [(blocklabel, abstractlabel);
+                 (abstractlabel, thenlabel);
+		 (abstractlabel, elselabel)] in
+    ([(abstractlabel, [transaction])], edges)
     
 
 let translate_arm_instruction
@@ -261,43 +277,64 @@ let translate_arm_instruction
     let iaddr12 = (loc#i#add_int 12)#to_numerical in
     let pcassign = floc#get_assign_commands pcv (XConst (IntConst iaddr12)) in
     ([], [], cmds @ frozenAsserts @ (invop :: (newcmds @ pcassign))) in
+  let make_conditional_commands (c: arm_opcode_cc_t) (cmds: cmd_t list) =
+    if finfo#has_associated_cc_setter ctxtiaddr then
+      let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+      let testloc = ctxt_string_to_location faddr testiaddr in
+      let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
+      let testinstr = (!arm_assembly_instructions#at_address testaddr) in
+      let (frozenvars, tests) =
+        make_tests ~condloc:loc ~testloc ~condinstr:instr ~testinstr in
+      match tests with
+      | Some (thentest, elsetest) ->
+         default [BRANCH [LF.mkCode (thentest @ cmds); LF.mkCode elsetest]]
+      | _ ->
+         default [BRANCH [LF.mkCode cmds; LF.mkCode [SKIP]]]
+    else
+      default [BRANCH [LF.mkCode cmds; LF.mkCode [SKIP]]] in
+
   match instr#get_opcode with
 
   | Branch (c, op, _)
-    | BranchExchange (c, op) when is_cond_conditional c && op#is_absolute_address ->
-     if op#is_absolute_address then
-       let thenAddress = (make_i_location loc op#get_absolute_address)#ci in
-       let elseAddress = codepc#get_false_branch_successor in
-       let cmds = cmds @ [ invop ] in
-       let transaction = package_transaction finfo blocklabel cmds in
-       if finfo#has_associated_cc_setter ctxtiaddr then
-	 let testIAddress = finfo#get_associated_cc_setter ctxtiaddr in
-         let testloc = ctxt_string_to_location faddr testIAddress in
-         let testAddress = (ctxt_string_to_location faddr testIAddress)#i in
-	 let (nodes,edges) =
-           make_condition
-	     ~jump_instruction:instr
-	     ~test_instruction:(!arm_assembly_instructions#at_address testAddress)
-	     ~jump_location:loc
-	     ~test_location:testloc
-	     ~block_label:blocklabel
-	     ~then_successor_address:thenAddress
-	     ~else_successor_address:elseAddress in
-	 ((blocklabel, [ transaction ])::nodes, edges, [])
+    | BranchExchange (c, op) when is_cond_conditional c ->
+     let thenaddr =
+       if op#is_absolute_address then
+         (make_i_location loc op#get_absolute_address)#ci
+       else if op#is_register && op#get_register = ARLR then
+         "exit"
        else
-	 let thenSuccessorLabel = make_code_label thenAddress in
-	 let elseSuccessorLabel = make_code_label elseAddress in
-	 let nodes = [ (blocklabel, [ transaction ]) ] in
-	 let edges = [ (blocklabel, thenSuccessorLabel) ;
-		       (blocklabel, elseSuccessorLabel) ] in
-	 (nodes, edges, [])
+         "?" in
+     let elseaddr = codepc#get_false_branch_successor in
+     let cmds = cmds @ [invop] in
+     let transaction = package_transaction finfo blocklabel cmds in
+     if finfo#has_associated_cc_setter ctxtiaddr then
+       let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+       let testloc = ctxt_string_to_location faddr testiaddr in
+       let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
+       let (nodes, edges) =
+         make_condition
+           ~condinstr:instr
+           ~testinstr:(!arm_assembly_instructions#at_address testaddr)
+           ~condloc:loc
+           ~testloc
+           ~blocklabel
+           ~thenaddr
+           ~elseaddr in
+       ((blocklabel, [transaction]) :: nodes, edges, [])
      else
-       begin
-	 ch_error_log#add "internal error"
-	   (LBLOCK [STR "Unexpected operand in conditional jump: " ; op#toPretty]) ;
-	 raise (BCH_failure (LBLOCK [ STR "translate_instruction:conditional jump"]))
-       end
+       let thenlabel = make_code_label thenaddr in
+       let elselabel = make_code_label elseaddr in
+       let nodes = [(blocklabel, [transaction])] in
+       let edges = [(blocklabel, thenlabel); (blocklabel, elselabel)] in
+       (nodes, edges, [])
 
+  | Branch (_, op, _)
+    | BranchExchange (ACCAlways, op) when op#is_absolute_address ->
+     default []
+
+  | Branch (_, op, _)
+    | BranchExchange (ACCAlways, op) when op#is_register && op#get_register = ARLR ->
+     default []
 
   (* -------------------------------------------------------------- Add -- *
    * if ConditionPassed() then
@@ -313,19 +350,22 @@ let translate_arm_instruction
    *       APSR.C = carry;
    *       APSR.V = overflow;
    *------------------------------------------------------------------------- *)
-  | Add (setflags, ACCAlways, rd, rn, rm, _) ->
+  | Add (_, c, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
      let cmds = floc#get_assign_commands vrd (XOp (XPlus, [xrn; xrm])) in
-     default cmds
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
-  | Add (_, _, rd, _, _, _) ->
+  | Adr (ACCAlways, dst, src) ->
      let floc = get_floc loc in
-     let vrd = rd#to_variable floc in
-     let cmds = floc#get_abstract_commands vrd () in
-     default cmds
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let rhs = src#to_expr floc in
+     let cmds = floc#get_assign_commands lhs rhs in
+     default (lhscmds @ cmds)
 
   | ArithmeticShiftRight(setflags, ACCAlways, rd, rn, rm, _) ->
      let floc = get_floc loc in
@@ -381,6 +421,8 @@ let translate_arm_instruction
      let rhs = src#to_expr floc in
      let notrhs =
        match rhs with
+       | XConst (IntConst n) when n#equal numerical_zero ->
+          XConst (IntConst numerical_one#neg)
        | XConst (IntConst n) -> XConst (IntConst ((nume32#sub n)#sub numerical_one))
        | _ -> XConst XRandom in
      let (lhs, lhscmds) = dst#to_lhs floc in
@@ -388,6 +430,12 @@ let translate_arm_instruction
      default (cmd @ lhscmds)
 
   | BitwiseNot (_, _, dst, src) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | ByteReverseWord (_, dst, _) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = dst#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
@@ -408,10 +456,10 @@ let translate_arm_instruction
      let testinstr = !arm_assembly_instructions#at_address testaddr in
      let dstop = instr#get_aggregate_dst in
      let (frozenvars, optpredicate) =
-       make_ite_predicate
-         ~ite_instr:instr
-         ~test_instr:testinstr
-         ~iteloc:loc
+       make_conditional_predicate
+         ~condinstr:instr
+         ~testinstr:testinstr
+         ~condloc:loc
          ~testloc:testloc in
      let cmds =
        match optpredicate with
@@ -497,6 +545,14 @@ let translate_arm_instruction
      let (lhs, lhscmds) = dst#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
+
+  | LoadRegisterDual (_, rt, rt2, _, _, _) ->
+     let floc = get_floc loc in
+     let (lhs1, lhscmds1) = rt#to_lhs floc in
+     let (lhs2, lhscmds2) = rt2#to_lhs floc in
+     let cmds1 = floc#get_abstract_commands lhs1 () in
+     let cmds2 = floc#get_abstract_commands lhs2 () in
+     default (lhscmds1 @ lhscmds2 @ cmds1 @ cmds2)
 
   | LoadRegisterHalfword (ACCAlways, dst, base, _, src, _) ->
      let floc = get_floc loc in
@@ -597,6 +653,24 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
+  | MoveTop (ACCAlways, dst, src) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let rhs = dst#to_expr floc in
+     let imm16 = src#to_expr floc in
+     let ximm16 = XOp (XMult, [imm16; int_constant_expr e16]) in
+     let xrdm16 = XOp (XMod, [rhs; int_constant_expr e16]) in
+     let rhsxpr = XOp (XPlus, [xrdm16; ximm16]) in
+     let cmds = floc#get_assign_commands lhs rhsxpr in
+     default (cmds @ lhscmds)
+
+  | MoveWide (ACCAlways, dst, src) ->
+     let floc = get_floc loc in
+     let rhs = src#to_expr floc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_assign_commands lhs rhs in
+     default (cmds @ lhscmds)
+
   (* ----------------------------------------------------------------- Pop -- *
    * address = SP;
    * for i = 0 to 14
@@ -618,7 +692,7 @@ let translate_arm_instruction
    * if registers<13> == '1' then SP = bits(32) UNKNOWN;
    * ------------------------------------------------------------------------ *)
 
-  | Pop (ACCAlways, sp, rl, _) ->
+  | Pop (c, sp, rl, _) ->
      let floc = get_floc loc in
      let regcount = rl#get_register_count in
      let sprhs = sp#to_expr floc in
@@ -634,8 +708,10 @@ let translate_arm_instruction
      let (splhs,splhscmds) = (sp_r WR)#to_lhs floc in
      let increm = XConst (IntConst (mkNumerical (4 * regcount))) in
      let cmds = floc#get_assign_commands splhs (XOp (XPlus, [sprhs; increm])) in
-     default (stackops @ cmds)
-
+     (match c with
+      | ACCAlways -> default (stackops @ cmds)
+      | _ -> make_conditional_commands c (stackops @ cmds))
+(*
   | Pop (_, sp, rl, _) ->
      let floc = get_floc loc in
      let reglhss = rl#to_multiple_variable floc in
@@ -648,7 +724,7 @@ let translate_arm_instruction
      let (splhs,splhscmds) = (sp_r WR)#to_lhs floc in
      let cmds = floc#get_abstract_commands splhs () in
      default (stackops @ cmds)
-
+ *)
   (* ---------------------------------------------------------------- Push -- *
    * address = SP - 4*BitCount(registers);
    * for i = 0 to 14
@@ -703,6 +779,29 @@ let translate_arm_instruction
      let (splhs,splhscmds) = (sp_r WR)#to_lhs floc in
      let cmds = floc#get_abstract_commands splhs () in
      default (stackops @ cmds)
+
+  | SignedDivide (ACCAlways, rd, rn, rm) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = rd#to_lhs floc in
+     let dividend = rn#to_expr floc in
+     let divisor = rm#to_expr floc in
+     let rhs = XOp (XDiv, [dividend; divisor]) in
+     let cmds = floc#get_assign_commands lhs rhs in
+     default (lhscmds @ cmds)
+
+  | SignedMostSignificantWordMultiply (_, dst, _, _, _) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | SignedMostSignificantWordMultiplyAccumulate (_, dst, _, _, acc, _) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let (lhsacc, lhsacccmds) = acc#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     let cmdsacc = floc#get_abstract_commands lhsacc () in
+     default (lhscmds @ cmds @ lhsacccmds @ cmdsacc)
 
   | StoreRegister (ACCAlways, rt, rn, mem, _) ->
      let floc = get_floc loc in
@@ -767,6 +866,12 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vdst () in
      default cmds
 
+  | SubtractCarry(_, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     default cmds
+
   | UnsignedExtendByte (ACCAlways, rd, rm) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
@@ -803,8 +908,7 @@ let translate_arm_instruction
          "no semantics"
          (LBLOCK [loc#toPretty;
                   STR ": ";
-                  STR (arm_opcode_to_string instr);
-                  NL]) in
+                  STR (arm_opcode_to_string instr)]) in
      default []
         
 
