@@ -37,15 +37,9 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
-val arm_conditional_jump_expr: 
-  jumpopc: arm_opcode_t
+val arm_conditional_expr: 
+  condopc: arm_opcode_t
   -> testopc:arm_opcode_t
-  -> jumploc:location_int
+  -> condloc:location_int
   -> testloc:location_int
   -> (variable_t list * xpr_t option)
-
-                                                    (*
-val arm_conditional_set_expr:
-  setopc:opcode_t -> testopc:arm_opcode_t ->
-  setloc:location_int -> testloc:location_int -> xpr_t
-   *)
