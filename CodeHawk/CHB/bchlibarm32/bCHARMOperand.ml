@@ -214,6 +214,15 @@ object (self:'a)
     let env = floc#f#env in
     match kind with
     | ARMRegList rl -> List.map env#mk_arm_register_variable rl
+    | ARMMemMultiple (r, n) ->
+       let rvar = env#mk_arm_register_variable r in
+       let rec loop i l =
+         if i = 0 then
+           l
+         else
+           let offset = mkNumerical (i - 1) in
+           loop (i - 1) ((floc#get_memory_variable_1 rvar offset) :: l) in
+       loop n []
     | _ ->
        raise
          (BCH_failure
@@ -269,7 +278,17 @@ object (self:'a)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Not implemented" ]))
+            (LBLOCK [STR "Not implemented"]))
+
+  method to_multiple_lhs (floc: floc_int) =
+    match kind with
+    | ARMRegList _
+      | ARMMemMultiple _ -> (self#to_multiple_variable floc, [])
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "to_multiple_lhs not available for ";
+                     self#toPretty]))
 
   method is_immediate = match kind with ARMImmediate _ -> true | _ -> false
 

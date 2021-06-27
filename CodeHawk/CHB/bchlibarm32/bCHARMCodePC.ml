@@ -95,7 +95,8 @@ object (self)
 
   method get_false_branch_successor =
     match block#get_successors with
-    | [false_branch;_] -> false_branch
+    | [false_branch]
+    | [false_branch; _] -> false_branch
     | _ ->
        let msg =
          LBLOCK [block#get_first_address#toPretty; NL; block#toPretty; NL;
