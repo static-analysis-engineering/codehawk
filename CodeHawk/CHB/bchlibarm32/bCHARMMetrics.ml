@@ -37,10 +37,56 @@ open BCHARMOpcodeRecords
 open BCHARMTypes
 
 let get_arm_op_metrics (f:arm_assembly_function_int) (finfo:function_info_int) =
+  let faddr = f#get_address in
   let reads = ref 0 in
   let qreads = ref 0 in
   let writes = ref 0 in
   let qwrites = ref 0 in
+  let is_memory_op op =
+    match op#get_kind with
+    | ARMMemMultiple _
+      | ARMOffsetAddress _ -> true
+    | _ -> false in
+  let is_loc_unknown floc (op: arm_operand_int) =
+    match op#get_kind with
+    | ARMMemMultiple _ ->
+       let (vlist, _) = op#to_multiple_lhs floc in
+       (match vlist with
+        | v::_ -> v#isTmp || (finfo#env#is_unknown_memory_variable v)
+        | _ -> true)
+    | ARMOffsetAddress _ ->
+       let (v, _) = op#to_lhs floc in
+       v#isTmp || (finfo#env#is_unknown_memory_variable v)
+    | _ -> false in
+  let add_read floc (op: arm_operand_int) =
+    if is_memory_op op then
+      begin
+        reads := !reads + 1;
+        if is_loc_unknown floc op then qreads := !qreads + 1
+      end in
+  let add_write floc (op: arm_operand_int) =
+    if is_memory_op op then
+      begin
+        writes := !writes + 1;
+        if is_loc_unknown floc op then qwrites := !qwrites + 1
+      end in
+  let _ =
+    f#iteri (fun _ ctxtiaddr instr ->
+        let ops = get_arm_operands instr#get_opcode in
+        match ops with
+        | [] -> ()
+        | _ ->
+           let loc = ctxt_string_to_location faddr ctxtiaddr in
+           let floc = get_floc loc in
+           List.iter (fun (op: arm_operand_int) ->
+               match op#get_mode with
+               | RD -> add_read floc op
+               | WR -> add_write floc op
+               | RW ->
+                  begin
+                    add_read floc op;
+                    add_write floc op
+                  end) ops) in
   (!reads,!qreads,!writes,!qwrites)
 
 let get_arm_stackpointer_metrics (f:arm_assembly_function_int) (finfo:function_info_int) =
