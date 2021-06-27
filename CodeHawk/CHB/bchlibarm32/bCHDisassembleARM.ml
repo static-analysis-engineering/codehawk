@@ -324,7 +324,12 @@ let collect_data_references () =
         match instr#get_opcode with
         | LoadRegister (_,_,_, mem, _) when mem#is_pc_relative_address ->
            let a = mem#get_pc_relative_address va in
-           add a instr
+           if !arm_assembly_instructions#is_code_address a then
+             add a instr
+           else
+             ch_error_log#add
+               "LDR from non-code-address"
+               (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
         | _ -> ());
     H.fold (fun k v a -> (k,v)::a) table []
   end
@@ -357,7 +362,16 @@ let collect_function_entry_points () =
 
 let set_block_boundaries () =
   let set_block_entry a =
-    (!arm_assembly_instructions#at_address a)#set_block_entry in
+    try
+      (!arm_assembly_instructions#at_address a)#set_block_entry
+    with
+    | BCH_failure p ->
+       begin
+         ch_error_log#add "set-block-entry" p;
+         raise
+           (BCH_failure
+              (LBLOCK [STR "Error in set-block-entry: "; p]))
+       end in
   let feps = functions_data#get_function_entry_points in
   let datablocks = system_info#get_data_blocks in
   begin
@@ -446,7 +460,17 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
   if system_info#is_nonreturning_call faddr iaddr then
     []
   else
-    let instr = !arm_assembly_instructions#at_address iaddr in
+    let instr =
+      try
+        !arm_assembly_instructions#at_address iaddr
+      with
+      | BCH_failure p ->
+         begin
+           ch_error_log#add "get-successors" p;
+           raise
+             (BCH_failure
+                (LBLOCK [STR "Error in get-successors: "; p]))
+         end in
     let opcode = instr#get_opcode in
     let next () =
       if !arm_assembly_instructions#has_next_valid_instruction iaddr then
@@ -503,7 +527,17 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
              end) successors)
 
 let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
-  let get_instr = !arm_assembly_instructions#at_address in
+  let get_instr a =
+    try
+      !arm_assembly_instructions#at_address a
+    with
+    | BCH_failure p ->
+       begin
+         ch_error_log#add "trace-block" p;
+         raise
+           (BCH_failure
+              (LBLOCK [STR "Error in trace-block: "; p]))
+       end in
   let get_next_instr_address =
     !arm_assembly_instructions#get_next_valid_instruction_address in
   let rec find_last_instruction (va:doubleword_int) (prev:doubleword_int) =
