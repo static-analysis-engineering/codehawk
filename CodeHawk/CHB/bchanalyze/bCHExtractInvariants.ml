@@ -77,7 +77,8 @@ let x2p = pr_expr
 let expr_compare = syntactic_comparison
 
 
-let tracked_locations = ["0xd12"; "0xd14"; "0xd16"]
+let tracked_locations = []
+
 
 let track_location loc p =
   if List.mem loc tracked_locations then
@@ -273,7 +274,9 @@ let extract_testvar_equalities finfo iaddr domain =
       | [] -> acc 
       | _ -> 
 	 begin
-           chlog#add "test variables" (STR iaddr);
+           chlog#add
+             "test variables"
+             (LBLOCK [STR iaddr; STR ": "; fvar#toPretty; fval#toPretty]);
 	   finfo#finv#add_test_value_fact iaddr fvar fval taddr jaddr ;
 	   fval :: acc
 	end
@@ -378,6 +381,7 @@ let extract_linear_equalities
                  STR "testVals: ";
                  pretty_print_list testVals (fun v -> v#toPretty) "[" "," "]";
                  NL;
+                 STR "initVars: ";
                  pretty_print_list initVars (fun v -> v#toPretty) "[" "," "]"]) in
 	let domain = domain#projectOut (knownVars @ initVars @ testVals) in
 	let extVars = extract_external_value_equalities finfo k domain flocinv starttime in

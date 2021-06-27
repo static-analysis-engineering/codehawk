@@ -78,7 +78,7 @@ open BCHExtractInvariants
 open BCHFileIO
 open BCHTrace
 
-let analyze_all = ref true
+let analyze_all = ref false
 let maxrelationalvarcomplexity = ref 150000.0
 let maxrelationalloopcomplexity = ref 2000
 
@@ -302,7 +302,7 @@ let analyze_mips starttime =
         | CHFailure p -> functionfailure "CHFailure" faddr p
         | BCH_failure p -> functionfailure "BCHFailure" faddr p ) ;
                          
-    file_metrics#record_runtime ((Unix.gettimeofday ()) -. starttime) ;      
+    file_metrics#record_runtime ((Unix.gettimeofday ()) -. starttime);
   end
 
 let analyze_arm_function faddr f count =
@@ -350,5 +350,6 @@ let analyze_arm starttime =
             analyze_arm_function faddr f !count
           with
           | BCH_failure p ->
-             raise (BCH_failure p))
+             raise (BCH_failure p));
+    file_metrics#record_runtime ((Unix.gettimeofday ()) -. starttime);
   end
