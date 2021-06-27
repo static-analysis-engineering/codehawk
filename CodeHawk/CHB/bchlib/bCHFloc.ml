@@ -406,6 +406,54 @@ object (self)
     else
       []
 
+  (* ARM uses R0 through R3 as default argument registers *)
+  method get_arm_call_arguments =
+    let get_regargs pars =
+      List.mapi
+        (fun i p ->
+          let reg = get_armreg_argument i in
+          let avar = self#env#mk_arm_register_variable reg in
+          (p, self#inv#rewrite_expr (XVar avar) self#env#get_variable_comparator))
+        pars in
+    let get_stackargs pars =
+      List.map
+        (fun p ->
+          match p.apar_location with
+          | StackParameter i ->
+             let memref = self#f#env#mk_local_stack_reference in
+             let argvar =
+               match self#get_stackpointer_offset "mips" with
+               | (0,sprange) ->
+                  (match sprange#singleton with
+                   | Some num ->
+                      self#f#env#mk_memory_variable
+                        memref (num#add (mkNumerical 16))
+                   | _ ->
+                      self#f#env#mk_unknown_memory_variable p.apar_name)
+               | _ ->
+                  self#f#env#mk_unknown_memory_variable p.apar_name in
+             (p,
+              self#inv#rewrite_expr
+                (XVar argvar) self#env#get_variable_comparator)
+          | _ ->
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Unexpected parameter type in ";
+                       self#l#toPretty])))
+        pars in
+    let ctinfo = self#get_call_target in
+    if ctinfo#is_signature_valid then
+      let fapi = ctinfo#get_signature in
+      let npars = List.length fapi.fapi_parameters in
+      if npars < 5 then
+        get_regargs fapi.fapi_parameters
+      else
+        let (regpars,stackpars) = split_list 4 fapi.fapi_parameters in
+        List.concat [(get_regargs regpars);  (get_stackargs stackpars)]
+    else
+      []
+
   method set_instruction_bytes (b:string) = self#f#set_instruction_bytes self#cia b
 
   method get_instruction_bytes = self#f#get_instruction_bytes self#cia

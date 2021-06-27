@@ -145,7 +145,9 @@ let get_mipsreg_argument (index:int) =
   | 2 -> MRa2
   | 3 -> MRa3
   | _ ->
-     raise (BCH_failure (LBLOCK [ STR "Argument index out of range: " ; INT index ]))
+     raise
+       (BCH_failure
+          (LBLOCK [STR "Argument index out of range: "; INT index]))
 
 let mips_temporaries = [
     MRa0 ; MRa1 ; MRa2 ; MRa3 ;
@@ -192,7 +194,20 @@ let armreg_to_string (r:arm_reg_t) =
   get_string_from_table "armregs_to_string_table" armregs_to_string_table r
 
 let armreg_from_string (name:string) =
-  get_sumtype_from_table "armregs_from_string_table" armregs_from_string_table name
+  get_sumtype_from_table
+    "armregs_from_string_table" armregs_from_string_table name
+
+let get_armreg_argument (index: int) =
+  match index with
+  | 0 -> AR0
+  | 1 -> AR1
+  | 2 -> AR2
+  | 3 -> AR3
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK [STR "Index out of range for get_armreg_argument: ";
+                   INT index]))
   
 let is_register name = is_string_of_sumtype cpuregs_from_string_table name
   

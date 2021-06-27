@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +45,7 @@ val register_from_string: string -> register_t    (* incomplete *)
 val is_register  : string -> bool
 
 val cpureg_to_string   : cpureg_t -> string
-val cpureg_from_string : string -> cpureg_t                (* raises Invalid_argument *)
+val cpureg_from_string : string -> cpureg_t  (* raises Invalid_argument *)
 
 val mipsreg_to_string : mips_reg_t -> string
 val mipsreg_from_string: string -> mips_reg_t
@@ -57,6 +59,7 @@ val mips_special_reg_from_string: string -> mips_special_reg_t
 val armreg_to_string: arm_reg_t -> string
 val armreg_from_string: string -> arm_reg_t
 val arm_regular_registers: arm_reg_t list
+val get_armreg_argument: int -> arm_reg_t
 
 val cpureg_to_asm_string  : cpureg_t -> string
 

@@ -68,7 +68,7 @@ let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
 
-let tracked_locations = [ "0xcfe"; "0xd00"; "0xd02"; "0xd04"; "0xd12"; "0xd14"; "0xd16"; "0xd18"; "0xd1c"; "0xd1e" ]
+let tracked_locations = []
 
 let track_location loc p =
   if List.mem loc tracked_locations then
@@ -416,7 +416,9 @@ let read_xml_invariant (invd:invdictionary_int) (node:xml_element_int):invariant
   let fact = invd#read_xml_invariant_fact node in
   new invariant_t ~invd ~index ~fact
 
-class location_invariant_t (invd:invdictionary_int) (iaddr:string):location_invariant_int =
+
+class location_invariant_t
+        (invd:invdictionary_int) (iaddr:string):location_invariant_int =
 object (self)
 
   val invd = invd
@@ -459,14 +461,18 @@ object (self)
 	    let pfacts = List.filter (fun p -> p#is_interval) e in
 	    match pfacts with
 	    | [] -> f :: e
-	    | [ p ] when f#is_smaller p ->
+	    | [p] when f#is_smaller p ->
 	      f :: (List.filter (fun p -> not p#is_interval) e)
-	    | [ p ] -> e
+	    | [p] -> e
 	    | _ ->
-               let msg = LBLOCK [ STR "Multiple interval facts: " ; 
-			          pretty_print_list pfacts (fun p -> p#toPretty) "{" "," "}" ] in
+               let msg =
+                 LBLOCK [
+                     STR "Multiple interval facts: ";
+		     pretty_print_list pfacts (fun p -> p#toPretty) "{" "," "}";
+                     STR " at ";
+                     STR iaddr] in
 	      begin
-		ch_error_log#add "interval facts" msg ;
+		ch_error_log#add "interval facts" msg;
 		raise (BCH_failure msg)
 	      end
           else if f#is_base_offset_value then
@@ -512,9 +518,10 @@ object (self)
                              fun inv -> LBLOCK [inv#toPretty; STR "; "]) v1newfacts)]) in
              if H.mem table v1index then
                let v1facts = H.find table v1index in
-                 H.replace table v1index (v1newfacts @ v1facts)
+               List.iter (fun f -> add v1 f) (v1newfacts @ v1facts)
+                         (* H.replace table v1index (v1newfacts @ v1facts) *)
              else
-                 H.add table v1index v1newfacts
+               H.add table v1index v1newfacts
            else
              ()
         | _ -> ()
@@ -708,10 +715,13 @@ object (self)
 	      
   method test_var_is_equal (v:variable_t) (taddr:ctxt_iaddress_t) (jaddr:ctxt_iaddress_t) =
     List.fold_left (fun acc f ->
-      if acc then acc else
-	match f with
-	| TestVarEquality (tv,_,ta,ja) -> ta = taddr && ja = jaddr
-	| _ -> acc) false (self#get_var_facts v)
+        if acc then
+          acc
+        else
+          let _ = track_location jaddr (LBLOCK [STR "testvar: "; invariant_fact_to_pretty f]) in
+	  match f with
+	  | TestVarEquality (tv,_,ta,ja) -> ta = taddr && ja = jaddr
+	  | _ -> acc) false (self#get_var_facts v)
 
   method var_has_initial_value (var:variable_t) =
     List.fold_left (fun acc f ->

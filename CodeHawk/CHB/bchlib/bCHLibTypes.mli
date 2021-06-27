@@ -2706,9 +2706,10 @@ object
 
   method get_call_target: call_target_info_int
   method get_call_args: (api_parameter_t * xpr_t) list
-  method get_mips_call_arguments  : (api_parameter_t * xpr_t) list
+  method get_mips_call_arguments : (api_parameter_t * xpr_t) list
+  method get_arm_call_arguments: (api_parameter_t * xpr_t) list
 
-(*  method get_jumptable_indexed_targets: (int * doubleword_int) list *)
+  (* method get_jumptable_indexed_targets: (int * doubleword_int) list *)
 
   (* returns the test expression for a conditional jump in this instruction *)
   method get_test_expr: xpr_t
