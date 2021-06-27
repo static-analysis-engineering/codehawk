@@ -1207,7 +1207,15 @@ let associate_condition_code_users () =
 	   if List.for_all (fun fUsed -> List.mem fUsed flags_set) flags_used then
              let iloc = ctxt_string_to_location faddr ctxtiaddr in
              let instrctxt = (make_i_location iloc instr#get_address)#ci in
-	     finfo#connect_cc_user ctxtiaddr instrctxt in
+	     finfo#connect_cc_user ctxtiaddr instrctxt
+           else
+             chlog#add
+               "no flag setter"
+               (LBLOCK [faddr#toPretty;
+                        STR ", ";
+                        STR ctxtiaddr;
+                        STR ": ";
+                        instr#toPretty]) in
     set revInstrs in
   assembly_functions#itera
     (fun faddr assemblyFunction ->

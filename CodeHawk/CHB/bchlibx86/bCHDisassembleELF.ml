@@ -719,7 +719,7 @@ let associate_condition_code_users () =
 		      (!assembly_instructions#at_address loc#i)#toPretty ])
       | instr :: tl ->
 	match get_flags_set instr#get_opcode with
-	  [] -> set tl
+	| [] -> set tl
 	| flags_set -> 
 	  if List.for_all (fun fUsed -> List.mem fUsed flags_set) flags_used then
              let iloc = ctxt_string_to_location faddr ctxtiaddr in
