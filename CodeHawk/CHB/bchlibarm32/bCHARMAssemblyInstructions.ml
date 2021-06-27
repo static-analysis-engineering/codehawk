@@ -216,7 +216,9 @@ object (self)
     loop (index+1)
 
   method is_code_address (va:doubleword_int) =
-    codeBase#le va && va#lt codeEnd && (self#at_address va)#is_valid_instruction
+    try
+      codeBase#le va && va#lt codeEnd && (self#at_address va)#is_valid_instruction
+    with _ -> false
 
   method get_code_addresses_rev ?(low=codeBase) ?(high=wordmax) () =
     let low = if low#lt codeBase then codeBase else low in
