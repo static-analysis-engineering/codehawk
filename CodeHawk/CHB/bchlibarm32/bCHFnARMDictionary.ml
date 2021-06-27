@@ -211,6 +211,17 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
+      | BitwiseNot (_, _, rd, rm) ->
+         let vrd = rd#to_variable floc in
+         let xrm = rm#to_expr floc in
+         let result = XOp (XBNot, [xrm]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxx"],
+          [xd#index_variable vrd;
+           xd#index_xpr xrm;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
       | BitwiseOr (_, _, rd, rn, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
@@ -241,6 +252,16 @@ object (self)
          let xtgt = tgt#to_expr floc in
          (["a:x"], [xd#index_xpr xtgt])
 
+      | BranchLink (_, tgt)
+        | BranchLinkExchange (_, tgt)
+           when floc#has_call_target
+                && floc#get_call_target#is_signature_valid ->
+         let args = List.map snd floc#get_arm_call_arguments in
+         let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
+         ([xtag; "call"],
+          (List.map xd#index_xpr args)
+          @ [ixd#index_call_target floc#get_call_target#get_target])
+
       | BranchLink (_, tgt) ->
          let xtgt = tgt#to_expr floc in
          (["a:x"], [xd#index_xpr xtgt])
@@ -248,6 +269,13 @@ object (self)
       | BranchLinkExchange (_, tgt) ->
          let xtgt = tgt#to_expr floc in
          (["a:x"], [xd#index_xpr xtgt])
+
+      | ByteReverseWord(_, rd, rm) ->
+         let vrd = rd#to_variable floc in
+         let xrm = rm#to_expr floc in
+         let xrmm = rewrite_expr xrm in
+         (["a:vxx"],
+          [xd#index_variable vrd; xd#index_xpr xrm; xd#index_xpr xrmm])
 
       | Compare (_, rn, rm, _) ->
          let xrn = rn#to_expr floc in
@@ -285,6 +313,17 @@ object (self)
          (["a:vxx"], [xd#index_variable vrt;
                       xd#index_xpr xmem;
                       xd#index_xpr xrmem])
+
+      | LoadRegisterDual (_, rt, rt2, _, _, mem) ->
+         let vrt = rt#to_variable floc in
+         let vrt2 = rt2#to_variable floc in
+         let xmem = mem#to_expr floc in
+         let xrmem = rewrite_expr xmem in
+         (["a:vvxx"],
+          [xd#index_variable vrt;
+           xd#index_variable vrt2;
+           xd#index_xpr xmem;
+           xd#index_xpr xrmem])
 
       | LoadRegisterHalfword (_, rt, rn, _, mem, _) ->
          let vrt = rt#to_variable floc in
@@ -400,6 +439,51 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
+      | SignedDivide (_, rd, rn, rm) ->
+         let lhs = rd#to_variable floc in
+         let rhs1 = rn#to_expr floc in
+         let rhs2 = rm#to_expr floc in
+         let result = XOp (XDiv, [rhs1; rhs2]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
+      | SignedMostSignificantWordMultiply (_, rd, rn, rm, _) ->
+         let lhs = rd#to_variable floc in
+         let rhs1 = rn#to_expr floc in
+         let rhs2 = rm#to_expr floc in
+         let result = XOp (XMult, [rhs1; rhs2]) in
+         let result = XOp (XDiv, [result; int_constant_expr e32]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
+      | SignedMostSignificantWordMultiplyAccumulate (_, rd, rn, rm, ra, _) ->
+         let lhs = rd#to_variable floc in
+         let lhsra = ra#to_variable floc in
+         let rhsra = ra#to_expr floc in
+         let rhs1 = rn#to_expr floc in
+         let rhs2 = rm#to_expr floc in
+         let result = XOp (XMult, [rhs1; rhs2]) in
+         let result = XOp (XDiv, [result; int_constant_expr e32]) in
+         let rresult = rewrite_expr result in
+         (["a:vvxxxxx"],
+          [xd#index_variable lhs;
+           xd#index_variable lhsra;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr rhsra;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
       | StoreMultipleIncrementAfter (_, _, rn, rl, mem, _) ->
          let rhss = rl#to_multiple_expr floc in
          let xtag =
@@ -436,11 +520,25 @@ object (self)
          let rhs2 = src2#to_expr floc in
          let result = XOp (XMinus, [rhs1; rhs2]) in
          let rresult = rewrite_expr result in
-         (["a:vxxxx"], [xd#index_variable lhs;
-                        xd#index_xpr rhs1;
-                        xd#index_xpr rhs2;
-                        xd#index_xpr result;
-                        xd#index_xpr rresult])
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
+      | SubtractCarry (_, _, rd, rn, rm) ->
+         let lhs = rd#to_variable floc in
+         let rhs1 = rn#to_expr floc in
+         let rhs2 = rm#to_expr floc in
+         let result = XOp (XMinus, [rhs1; rhs2]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
 
       | UnsignedBitFieldExtract (_, rd, rn) ->
          let lhs = rd#to_variable floc in
