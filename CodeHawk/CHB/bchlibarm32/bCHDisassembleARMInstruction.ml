@@ -1129,6 +1129,7 @@ let parse_media_type
       (bit3_0:int) =
   let c = get_opcode_cc cond in
   let bit9_8 = bit11_8 mod 4 in
+  let bit7_6 = bit7_5 lsr 1 in
   let bit11_10 = bit11_8 lsr 2 in
   match bit24_20 with
   (* <cc><3>< 10><15><rd>ro000111<rm> *)   (* SXTB *)
@@ -1168,7 +1169,7 @@ let parse_media_type
      let rotation = bit11_10 lsl 3 in
      let rm = mk_arm_rotated_register_op (get_arm_reg bit3_0) rotation RD in
      (* UXTH<c> <Rd>, <Rm>{, <rotation>} *)
-     UnsignedExtendHalfword (c,rd,rm)
+     UnsignedExtendHalfword (c, rd, rm)
 
   (* <cc><3>< 15><rn><rd>ro000111<rm> *)   (* UXTAH  *)
   | 15 when (bit9_8 = 0) && (bit7_5 = 3) ->
@@ -1178,6 +1179,33 @@ let parse_media_type
      let rm = mk_arm_rotated_register_op (get_arm_reg bit3_0) rotation RD in
      (* UXTAH<c> <Rd>, <Rn>, <Rm>{, <rotation>} *)
      UnsignedExtendAddHalfword (c,rd,rn,rm)
+
+  (* <cc><3>< 17><rd><15><rm><0>1<rn> *)   (* SDIV   *)
+  | 17 when (bit15_12 = 15) && (bit7_5 = 0) ->
+     let rd = arm_register_op (get_arm_reg bit19_16) WR in
+     let rm = arm_register_op (get_arm_reg bit11_8) RD in
+     let rn = arm_register_op (get_arm_reg bit3_0) RD in
+     (* SDIV<c> <Rd>, <Rn>, <Rm> *)
+     SignedDivide (c, rd, rn, rm)
+
+  (* <cc><3>< 21><rd><15><rm>00R1<rn> *)   (* SMMUL  *)
+  | 21 when (bit15_12 = 15) && (bit7_6 = 0) ->
+     let rd = arm_register_op (get_arm_reg bit19_16) WR in
+     let rm = arm_register_op (get_arm_reg bit11_8) RD in
+     let rn = arm_register_op (get_arm_reg bit3_0) RD in
+     let roundf = bit7_5 mod 2 in
+     (* SMMUL{R}<c> <Rd>, <Rn>, <Rm> *)
+     SignedMostSignificantWordMultiply (c, rd, rm, rn, roundf)
+
+  (* <cc><3>< 21><rd><ra><rm>00R1<rn> *)   (* SMMLA  *)
+  | 21 when (bit7_6 = 0) ->
+     let rd = arm_register_op (get_arm_reg bit19_16) WR in
+     let ra = arm_register_op (get_arm_reg bit15_12) WR in
+     let rm = arm_register_op (get_arm_reg bit11_8) RD in
+     let rn = arm_register_op (get_arm_reg bit3_0) RD in
+     let roundf = bit7_5 mod 2 in
+     (* SMMLA{R}<c> <Rd>, <Rn>, <Rm>, <Ra> *)
+     SignedMostSignificantWordMultiplyAccumulate (c, rd, rm, rn, ra, roundf)
 
   (* <cc><3><13><wm1><rd><lsb>101<rn> *)   (* SBFX   *)
   | 26 | 27 when (bit7_5 mod 4) = 2 ->
@@ -1332,18 +1360,22 @@ let parse_block_data_type
 let parse_branch_link_type
       (ch:pushback_stream_int)
       (base:doubleword_int)
-      (cond:int)
+      (condv:int)
       (opx:int)
       (offset:int) =
-  let cond = get_opcode_cc cond in
+  let cond = get_opcode_cc condv in
   let imm32 = sign_extend 32 26 (offset lsl 2) in
   let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
   let tgt = (base#add_int (ch#pos + 4))#add_int imm32 in
   let tgtop = arm_absolute_op tgt RD in
-  if opx = 0 then
-    Branch (cond, tgtop, false)
-  else
-    BranchLink (cond, tgtop)
+  match condv with
+  | 15 ->
+     BranchLinkExchange(ACCAlways, tgtop)
+  | _ ->
+     if opx = 0 then
+       Branch (cond, tgtop, false)
+     else
+       BranchLink (cond, tgtop)
 
 let parse_opcode
       (ch:pushback_stream_int)

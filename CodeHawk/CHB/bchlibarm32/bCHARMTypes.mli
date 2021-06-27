@@ -202,6 +202,7 @@ class type arm_operand_int =
     method to_expr: floc_int -> xpr_t
     method to_multiple_expr: floc_int -> xpr_t list
     method to_lhs: floc_int -> variable_t * cmd_t list
+    method to_multiple_lhs: floc_int -> variable_t list * cmd_t list
 
     (* predicate *)
     method is_read: bool
@@ -490,6 +491,11 @@ type arm_opcode_t =
       * arm_opcode_cc_t  (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
+  | SignedDivide of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm: dividend *)
+      * arm_operand_int  (* rn: divisor *)
   | SignedExtendByte of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
@@ -498,6 +504,19 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
+  | SignedMostSignificantWordMultiply of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: first operand *)
+      * arm_operand_int  (* rm: second operand *)
+      * int              (* 0/1: multiplication is rounded *)
+  | SignedMostSignificantWordMultiplyAccumulate of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: first operand *)
+      * arm_operand_int  (* rm: second operand *)
+      * arm_operand_int  (* ra: accumulation register *)
+      * int              (* 0/1: multiplication is rounded *)
   | SignedMultiplyAccumulateLong of
       bool  (* flags are set *)
       * arm_opcode_cc_t    (* condition *)

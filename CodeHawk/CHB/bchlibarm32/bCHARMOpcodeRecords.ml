@@ -435,20 +435,43 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "RRX" c [rd; rm])
     }
+  | SignedDivide (c, rd, rn, rm) -> {
+      mnemonic = "SDIV";
+      operands = [rd; rn; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SDIV" c [rd; rn; rm])
+    }
   | SignedExtendByte (c, rd, rm) -> {
       mnemonic = "SXTB";
       operands = [rd; rm];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "SXTB" c [rd;rm])
+      ida_asm = (fun f -> f#opscc "SXTB" c [rd; rm])
     }
   | SignedExtendHalfword (c, rd, rm) -> {
       mnemonic = "SXTH";
       operands = [rd; rm];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "SXTH" c [rd;rm])
+      ida_asm = (fun f -> f#opscc "SXTH" c [rd; rm])
     }
+  | SignedMostSignificantWordMultiply (c, rd, rm, rn, rf) ->
+     let mnemonic = "SMMUL" ^ (if rf = 1 then "R" else "") in
+     { mnemonic = mnemonic;
+       operands = [rd; rm; rn];
+       flags_set = [];
+       ccode = Some c;
+       ida_asm = (fun f -> f#opscc mnemonic c [rd; rm; rn])
+     }
+  | SignedMostSignificantWordMultiplyAccumulate (c, rd, rm, rn, ra, rf) ->
+     let mnemonic = "SMMLA" ^ (if rf = 1 then "R" else "") in
+     { mnemonic = mnemonic;
+       operands = [rd; rm; rn; ra];
+       flags_set = [];
+       ccode = Some c;
+       ida_asm = (fun f -> f#opscc mnemonic c [rd; rm; rn; ra])
+     }
   | SignedMultiplyAccumulateLong (s, c, rdlo, rdhi, rn, rm) -> {
       mnemonic = "SMLAL";
       operands = [rdlo; rdhi; rn; rm];
