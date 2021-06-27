@@ -231,11 +231,16 @@ object (self)
          (ctags c, [setb s; oi rd; oi rn; oi rm])
       | RotateRightExtend (s,c,rd,rm) ->
          (ctags c,[setb s; oi rd; oi rm])
+      | SignedDivide (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | SignedExtendHalfword (c,rd,rm)
         | SignedExtendByte (c,rd,rm) -> (ctags c, [ oi rd; oi rm ])
+      | SignedMostSignificantWordMultiply (c, rd, rm, rn, roundf) ->
+         (ctags c, [oi rd; oi rm; oi rn; roundf])
+      | SignedMostSignificantWordMultiplyAccumulate (c, rd, rm, rn, ra, roundf) ->
+         (ctags c, [oi rd; oi rm; oi rn; oi ra; roundf])
       | SignedMultiplyLong (s,c,rdlo,rdhi,rn,rm)
         | SignedMultiplyAccumulateLong (s,c,rdlo,rdhi,rn,rm) ->
-         (ctags c,[setb s; oi rdlo; oi rdhi; oi rn; oi rm])
+         (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | SingleBitFieldExtract (c,rd,rn) -> (ctags c, [ oi rd; oi rn ])
       | StoreMultipleDecrementBefore (wb,c,rn,rl,mem,tw)
         | StoreMultipleIncrementAfter (wb,c,rn,rl,mem,tw)
