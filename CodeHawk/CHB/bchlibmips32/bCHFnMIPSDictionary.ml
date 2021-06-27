@@ -449,7 +449,7 @@ object (self)
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
          ([xtag; "call"],
           (List.map xd#index_xpr args)
-          @ [ ixd#index_call_target floc#get_call_target#get_target ])
+          @ [ixd#index_call_target floc#get_call_target#get_target])
 
       | JumpRegister tgt ->
          let rhs = rewrite_expr (tgt#to_expr floc) in
