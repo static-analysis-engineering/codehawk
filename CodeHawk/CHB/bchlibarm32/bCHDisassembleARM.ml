@@ -115,20 +115,31 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
       (!arm_assembly_instructions#at_index (displacement+pos))#get_non_code_block in
     let len = not_code_length nonCodeBlock in
     let sdata = Bytes.make len ' ' in
-    let _ = Bytes.blit (Bytes.of_string x) pos sdata 0 len in
-    begin
-      chlog#add
-        "skip data block"
-        (LBLOCK [ STR "pos: " ; INT pos; STR "; length: " ; INT len ]);
-      ch#skip_bytes len;
-      not_code_set_string nonCodeBlock (Bytes.to_string sdata)
-    end in
+    if pos + len <= String.length x then
+      let _ = Bytes.blit (Bytes.of_string x) pos sdata 0 len in
+      begin
+        chlog#add
+          "skip data block"
+          (LBLOCK [STR "pos: "; INT pos; STR "; length: "; INT len]);
+        ch#skip_bytes len;
+        not_code_set_string nonCodeBlock (Bytes.to_string sdata)
+      end
+    else
+      ch_error_log#add
+        "data block problem"
+        (LBLOCK [STR "Data block at ";
+                 (base#add_int pos)#toPretty;
+                 STR " extends beyond end of section. Ignore"]) in
   let _ =
     chlog#add
       "disassembly"
-      (LBLOCK [ STR "base: " ; base#toPretty ;
-                STR "; displacement: " ; INT displacement ;
-                STR "; size: " ; INT size  ]) in
+      (LBLOCK [
+           STR "base: ";
+           base#toPretty ;
+           STR "; displacement: ";
+           INT displacement ;
+           STR "; size: " ;
+           INT size]) in
   try
     let _ = pverbose [STR "disassemble thumb instructions"; NL] in
     begin
@@ -379,7 +390,10 @@ let set_block_boundaries () =
       (fun va instr ->
         try
           (match instr#get_opcode with
-           | Branch (_, op, _) | BranchExchange (_,op) ->
+           | Branch (_, op, _)
+             | BranchExchange (_,op)
+             | CompareBranchNonzero (_, op)
+             | CompareBranchZero (_, op) ->
               if op#is_absolute_address then
                 let jmpaddr = op#get_absolute_address in
                 set_block_entry jmpaddr
@@ -436,13 +450,13 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
     let opcode = instr#get_opcode in
     let next () =
       if !arm_assembly_instructions#has_next_valid_instruction iaddr then
-        [ !arm_assembly_instructions#get_next_valid_instruction_address iaddr ]
+        [!arm_assembly_instructions#get_next_valid_instruction_address iaddr]
       else
         begin
           chlog#add
             "disassembly"
-            (LBLOCK [ STR "Next instruction for " ; iaddr#toPretty ;
-                      STR " "; instr#toPretty ; STR " was not found" ]);
+            (LBLOCK [STR "Next instruction for "; iaddr#toPretty ;
+                     STR " "; instr#toPretty; STR " was not found" ]);
           []
         end in
     let successors =
@@ -451,27 +465,30 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
          (match opcode with
           | Pop (ACCAlways,_,rl,tw) when rl#includes_pc -> []
           | Branch (ACCAlways, op, _)
-            | BranchExchange (ACCAlways,op) when op#is_register && op#get_register == ARLR ->
+            | BranchExchange (ACCAlways,op)
+               when op#is_register && op#get_register == ARLR ->
              []
           | Branch (ACCAlways, op, _)
             | BranchExchange (ACCAlways,op) when op#is_absolute_address ->
-             [ op#get_absolute_address ]
+             [op#get_absolute_address]
           | Branch (_,op, _)
-            | BranchExchange (_,op) when op#is_register && op#get_register == ARLR ->
+            | BranchExchange (_, op)
+               when op#is_register && op#get_register == ARLR ->
              (next ())
           | Branch (_,op, _)
-            | BranchExchange (_,op) when op#is_absolute_address ->
-             (next ()) @ [ op#get_absolute_address ]
+            | BranchExchange (_, op) when op#is_absolute_address ->
+             (next ()) @ [op#get_absolute_address]
           | _ -> (next ()))
       | l ->
          let _ = chlog#add
                    "get-successors"
-                   (LBLOCK [ STR "Get successors for ";
-                             iaddr#toPretty;
-                             STR ": "; INT (List.length l)]) in
+                   (LBLOCK [STR "Get successors for ";
+                            iaddr#toPretty;
+                            STR ": ";
+                            INT (List.length l)]) in
          l in
     List.map
-      (fun va -> (make_location { loc_faddr = faddr; loc_iaddr = va })#ci)
+      (fun va -> (make_location {loc_faddr = faddr; loc_iaddr = va})#ci)
       (List.filter
          (fun va ->
            if !arm_assembly_instructions#is_code_address va then
@@ -480,8 +497,8 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
              begin
                chlog#add
                  "disassembly"
-                 (LBLOCK [ STR "Successor of " ; va#toPretty;
-                           STR " is not a valid code address"]);
+                 (LBLOCK [STR "Successor of " ; va#toPretty;
+                          STR " is not a valid code address"]);
                false
              end) successors)
 
@@ -584,22 +601,24 @@ let record_call_targets_arm () =
         f#iteri
           (fun _ ctxtiaddr instr ->
             match instr#get_opcode with
-            | BranchLink (_,op) ->
+            | BranchLink (_, op)
+              | BranchLinkExchange (_, op) ->
                if finfo#has_call_target ctxtiaddr
                   && not (finfo#get_call_target ctxtiaddr)#is_unknown then
                  let loc = ctxt_string_to_location faddr ctxtiaddr in
                  let floc = get_floc loc in
                  floc#update_call_target
-               else
+               else if op#is_absolute_address then
                  begin
                    match get_so_target op#get_absolute_address instr with
                    | Some tgt ->
                       finfo#set_call_target ctxtiaddr (mk_so_target tgt)
                    | _ ->
-                      if op#is_absolute_address then
-                        finfo#set_call_target
-                          ctxtiaddr (mk_app_target op#get_absolute_address)
+                      finfo#set_call_target
+                        ctxtiaddr (mk_app_target op#get_absolute_address)
                  end
+               else
+                 ()
             | _ -> ())
       end)
 
@@ -621,8 +640,8 @@ let associate_condition_code_users () =
       match l with
       | [] ->
 	  disassembly_log#add "cc user without setter"
-	    (LBLOCK [ loc#toPretty ; STR ": " ;
-		      (!arm_assembly_instructions#at_address loc#i)#toPretty ])
+	    (LBLOCK [loc#toPretty ; STR ": " ;
+		     (!arm_assembly_instructions#at_address loc#i)#toPretty ])
       | instr :: tl ->
 	match get_arm_flags_set instr#get_opcode with
 	| [] -> set tl
