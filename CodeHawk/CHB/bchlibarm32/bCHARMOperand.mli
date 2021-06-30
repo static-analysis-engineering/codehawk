@@ -45,6 +45,11 @@ open BCHARMTypes
 
 val arm_operand_mode_to_string: arm_operand_mode_t -> string
 
+val arm_index_offset: ?offset:int -> arm_reg_t -> arm_memory_offset_t
+
+val arm_shifted_index_offset:
+  ?offset:int -> arm_reg_t -> register_shift_rotate_t -> arm_memory_offset_t
+
 val arm_dmb_option_op: dmb_option_t -> arm_operand_int
 
 val arm_dmb_option_from_int_op: int -> arm_operand_int

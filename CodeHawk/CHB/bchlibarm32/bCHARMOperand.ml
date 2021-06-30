@@ -91,14 +91,19 @@ let register_shift_to_string (rs:register_shift_rotate_t) =
      (shift_rotate_type_to_string srt) ^ " " ^ (armreg_to_string reg)
 
 let arm_memory_offset_to_string (offset:arm_memory_offset_t) =
+  let p_off off =
+    if off = 0 then "" else " (+ " ^ (string_of_int off) ^ ")" in
   match offset with
   | ARMImmOffset off -> "#" ^ (string_of_int off)
-  | ARMIndexOffset r -> armreg_to_string r
-  | ARMShiftedIndexOffset (r,rs) ->
+  | ARMIndexOffset (r, off) -> (armreg_to_string r) ^ (p_off off)
+  | ARMShiftedIndexOffset (r, rs, off) ->
      match rs with
-     | ARMImmSRT (SRType_LSL,0) -> armreg_to_string r
+     | ARMImmSRT (SRType_LSL, 0) -> (armreg_to_string r) ^ (p_off off)
      | _ ->
-        (armreg_to_string r) ^ "," ^ (register_shift_to_string rs)
+        (armreg_to_string r)
+        ^ ","
+        ^ (register_shift_to_string rs)
+        ^ (p_off off)
 
 class arm_operand_t
         (kind:arm_operand_kind_t) (mode:arm_operand_mode_t):arm_operand_int =
@@ -195,8 +200,8 @@ object (self:'a)
            let rvar = env#mk_arm_register_variable r in
            let memoff =
              match (offset,isadd) with
-             | (ARMImmOffset i,true) -> mkNumerical i
-             | (ARMImmOffset i,false) -> (mkNumerical i)#neg
+             | (ARMImmOffset i, true) -> mkNumerical i
+             | (ARMImmOffset i, false) -> (mkNumerical i)#neg
              | _ ->
                 raise
                   (BCH_failure
@@ -204,6 +209,8 @@ object (self:'a)
                               self#toPretty])) in
            floc#get_memory_variable_1 rvar memoff
         | _ -> env#mk_unknown_memory_variable "operand")
+    | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
+       env#mk_arm_register_variable r
     | _ ->
        raise
          (BCH_failure
@@ -342,6 +349,13 @@ object (self:'a)
   method toPretty = STR self#toString
 
 end
+
+let arm_index_offset ?(offset=0) (r: arm_reg_t) =
+  ARMIndexOffset (r, offset)
+
+let arm_shifted_index_offset
+      ?(offset=0) (r: arm_reg_t) (sr: register_shift_rotate_t) =
+  ARMShiftedIndexOffset (r, sr, offset)
 
 let arm_dmb_option_op (op: dmb_option_t) =
   new arm_operand_t (ARMDMBOption op) RD

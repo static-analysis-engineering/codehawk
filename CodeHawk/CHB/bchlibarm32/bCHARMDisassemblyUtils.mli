@@ -37,4 +37,7 @@ open BCHARMTypes
 val get_it_condition_list: int -> int -> (string * arm_opcode_cc_t) list
 
 val decompose_arm_instr: doubleword_int -> arm_instr_class_t
+
 val arm_instr_class_to_string: arm_instr_class_t -> string
+
+val get_string_reference: floc_int -> xpr_t -> string option
