@@ -118,12 +118,13 @@ object (self)
     register_shift_rotate_table#add key
 
   method index_arm_memory_offset (f:arm_memory_offset_t) =
-    let tags = [ arm_memory_offset_mcts#ts f ] in
+    let tags = [arm_memory_offset_mcts#ts f] in
     let key = match f with
-      | ARMImmOffset imm -> (tags,[ imm ])
-      | ARMIndexOffset r -> (tags @ [ arm_reg_mfts#ts r ],[])
-      | ARMShiftedIndexOffset (r,rs) ->
-         (tags @ [ arm_reg_mfts#ts r ],[ self#index_register_shift_rotate rs ]) in
+      | ARMImmOffset imm -> (tags, [imm])
+      | ARMIndexOffset (r, off) -> (tags @ [arm_reg_mfts#ts r], [off])
+      | ARMShiftedIndexOffset (r, rs, off) ->
+         (tags @ [arm_reg_mfts#ts r],
+          [self#index_register_shift_rotate rs; off]) in
     arm_memory_offset_table#add key
 
   method index_arm_opkind (k:arm_operand_kind_t) =
@@ -165,6 +166,8 @@ object (self)
          (tags @ [ ci cond ], [ oi rd ; oi addr ])
       | ArithmeticShiftRight (s, c, rd, rn, rm, tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw ])
+      | BitFieldClear (c, rd, lsb, width, msb) ->
+         (ctags c, [oi rd; lsb; width; msb])
       | BitwiseAnd (s, c, rd, rn, imm, tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
       | BitwiseNot (setflags,cond,rd,imm) ->
@@ -201,8 +204,8 @@ object (self)
          (ctags c, [oi rt; oi rn; oi mem; setb tw])
       | LoadRegisterByte (c, rt, rn, mem, tw) ->
          (ctags c, [oi rt; oi rn; oi mem; setb tw ])
-      | LoadRegisterDual (c,rt,rt2,rn,rm,mem) ->
-         (ctags c,[ oi rt; oi rt2; oi rn; oi rm; oi mem])
+      | LoadRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
+         (ctags c, [oi rt; oi rt2; oi rn; oi rm; oi mem; oi mem2])
       | LoadRegisterExclusive (c, rt, rn, mem) ->
          (ctags c, [oi rt; oi rn; oi mem])
       | LoadRegisterHalfword (c, rt, rn, rm, mem, tw)->
@@ -217,12 +220,16 @@ object (self)
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
       | Move (s, c, rd, rm, tw) ->
          (ctags c, [setb s; oi rd; oi rm; setb tw])
+      | MoveRegisterCoprocessor (c, coproc, opc1, rt, crn, crm, opc2) ->
+         (ctags c, [coproc; opc1; oi rt; crn; crm; opc2])
       | MoveTop (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
       | MoveWide (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
       | Multiply (setflags,cond,rd,rn,rm) ->
-         (tags @ [ ci cond ], [ setb setflags; oi rd; oi rn; oi rm])
+         (tags @ [ ci cond ], [setb setflags; oi rd; oi rn; oi rm])
       | MultiplyAccumulate (setflags,cond,rd,rn,rm,ra) ->
-         (tags @ [ ci cond ], [ setb setflags; oi rd; oi rn; oi rm; oi ra ])
+         (tags @ [ ci cond ], [setb setflags; oi rd; oi rn; oi rm; oi ra ])
+      | MultiplySubtract (c, rd, rn, rm, ra) ->
+         (ctags c, [oi rd; oi rn; oi rm; oi ra])
       | Pop (c, sp, rl, tw) -> (ctags c, [oi sp; oi rl; setb tw])
       | Push (c,sp,rl,tw) ->  (ctags c, [ oi sp; oi rl; setb tw ])
       | ReverseSubtract (s,c,dst,src,imm,tw) ->
@@ -252,8 +259,8 @@ object (self)
          (ctags c, [oi rt; oi rn; oi mem; setb tw])
       | StoreRegisterHalfword (c, rt, rn, rm, mem, tw) ->
          (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw ])
-      | StoreRegisterDual (c,rt,rt2,rn,rm,mem) ->
-         (ctags c, [ oi rt; oi rt2; oi rn; oi rm; oi mem])
+      | StoreRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
+         (ctags c, [oi rt; oi rt2; oi rn; oi rm; oi mem; oi mem2])
       | StoreRegisterExclusive (c, rd, rt, rn, mem) ->
          (ctags c, [oi rd; oi rt; oi rn; oi mem])
       | Subtract (s, c, dst, src, imm, tw) ->

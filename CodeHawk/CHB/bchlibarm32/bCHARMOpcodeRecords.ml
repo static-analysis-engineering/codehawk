@@ -91,10 +91,16 @@ let is_cond_conditional (c: arm_opcode_cc_t): bool =
 
 class type ['a] opcode_formatter_int =
   object
-    method ops: string -> arm_operand_int list -> 'a
+    method ops:
+             ?preops: string
+             -> ?postops: string
+             -> string
+             -> arm_operand_int list -> 'a
     method opscc:
              ?thumbw: bool
              -> ?writeback: bool
+             -> ?preops: string
+             -> ?postops: string
              -> string
              -> arm_opcode_cc_t
              -> arm_operand_int list
@@ -117,7 +123,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [rd;rn;rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "ADD" c [rd;rn;rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "ADD" c [rd; rn; rm])
     }
   | AddCarry (s, c, rd, rn, rm, tw) -> {
       mnemonic = "ADC";
@@ -140,12 +146,20 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "ASR" c [rd; rn; rm])
     }
-  | BitwiseAnd (s, cc, rd,rn, imm, tw) -> {
+  | BitFieldClear (c, rd, lsb, width, msb) ->
+     let postops = ", " ^ (string_of_int lsb) ^ ", " ^ (string_of_int width) in
+     { mnemonic = "BFC";
+       operands = [rd];
+       flags_set = [];
+       ccode = Some c;
+       ida_asm = (fun f -> f#opscc ~postops "BFC" c [rd])
+     }
+  | BitwiseAnd (s, c, rd,rn, imm, tw) -> {
       mnemonic = "AND";
       operands = [ rd; rn; imm ];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
-      ccode = Some cc;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "AND" cc [rd; rn; imm ])
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "AND" c [rd; rn; imm])
     }
   | BitwiseBitClear (s, c, rd, rn, rm, tw) -> {
       mnemonic = "BIC";
@@ -240,10 +254,10 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
     }
   | CompareNegative (cc, op1, op2) -> {
       mnemonic = "CMN";
-      operands = [ op1; op2];
+      operands = [op1; op2];
       flags_set = [APSR_N; APSR_Z; APSR_C; APSR_V];
       ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "CMN" cc [ op1; op2 ])
+      ida_asm = (fun f -> f#opscc "CMN" cc [op1; op2])
     }
   | CountLeadingZeros (c, rd, rm) -> {
       mnemonic = "CLZ";
@@ -309,9 +323,9 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRB" c [rt; mem])
     }
-  | LoadRegisterDual (c, rt, rt2, rn, rm, mem) -> {
+  | LoadRegisterDual (c, rt, rt2, rn, rm, mem, mem2) -> {
       mnemonic = "LDRD";
-      operands = [rt; rt2; rn; rm; mem];
+      operands = [rt; rt2; rn; rm; mem; mem2];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDRD" c [rt; rt2; mem])
@@ -365,6 +379,23 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "MOV" c [rd;rm])
     }
+  | MoveRegisterCoprocessor (c, coproc, opc1, rt, crn, crm, opc2) ->
+     let preops =
+       "p" ^ (string_of_int coproc) ^ ", " ^ (string_of_int opc1) ^ ", " in
+     let postops =
+       ", c"
+       ^ (string_of_int crn)
+       ^ ", c"
+       ^ (string_of_int crm)
+       ^ ", "
+       ^ (string_of_int opc2) in
+     {
+      mnemonic = "MRC";
+      operands = [rt];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~preops ~postops "MRC" c [rt]);
+    }
   | MoveTop (c, rd, imm) -> {
       mnemonic = "MOVT";
       operands = [rd; imm];
@@ -391,7 +422,14 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [rd; rn; rm; ra];
       flags_set = if s then [APSR_N; APSR_Z] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "MLA" c [rd;rn;rm;ra])
+      ida_asm = (fun f -> f#opscc "MLA" c [rd; rn; rm; ra])
+    }
+  | MultiplySubtract (c, rd, rn, rm, ra) -> {
+      mnemonic = "MLS";
+      operands = [rd; rn; rm; ra];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "MLS" c [rd; rn; rm; ra])
     }
   | Pop (c, sp, rl, tw) -> {
       mnemonic = "POP";
@@ -528,9 +566,9 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "STRB" c [rt; mem])
     }
-  | StoreRegisterDual (c, rt, rt2, rn, rm, mem) -> {
+  | StoreRegisterDual (c, rt, rt2, rn, rm, mem, mem2) -> {
       mnemonic = "STRD";
-      operands = [rt; rt2; rn; rm; mem];
+      operands = [rt; rt2; rn; rm; mem; mem2];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STRD" c [rt; rt2; mem])
@@ -679,8 +717,11 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
 class string_formatter_t (width:int): [string] opcode_formatter_int =
 object (self)
 
-  method ops (s:string) (operands:arm_operand_int list) =
-    let s = fixed_length_string s width in
+  method ops
+           ?(preops: string="")
+           ?(postops: string="")
+           (s:string) (operands:arm_operand_int list) =
+    let s = (fixed_length_string s width) ^ preops in
     let (_,result) =
       List.fold_left
         (fun (isfirst,a) op ->
@@ -688,18 +729,20 @@ object (self)
             (false,s ^ " " ^ op#toString)
           else
             (false,a ^ ", " ^ op#toString)) (true,s) operands in
-    result
+    result ^ postops
 
   method opscc
            ?(thumbw: bool=false)
            ?(writeback: bool=false)
+           ?(preops: string="")
+           ?(postops: string="")
            (s:string)
            (cc:arm_opcode_cc_t)
            (operands:arm_operand_int list) =
     let wmod = if thumbw then ".W" else "" in
     let wbmod = if writeback then "S" else "" in
     let mnemonic = s ^ wbmod ^ (get_cond_mnemonic_extension cc) ^ wmod in
-    self#ops mnemonic operands
+    self#ops ~preops ~postops mnemonic operands
 
   method no_ops (s:string) = s
 end

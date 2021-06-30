@@ -63,8 +63,8 @@ type register_shift_rotate_t =
 
 type arm_memory_offset_t =
   | ARMImmOffset of int
-  | ARMIndexOffset of arm_reg_t
-  | ARMShiftedIndexOffset of arm_reg_t * register_shift_rotate_t
+  | ARMIndexOffset of arm_reg_t * int  (* additional offset *)
+  | ARMShiftedIndexOffset of arm_reg_t * register_shift_rotate_t * int
 
 type arm_instr_class_t =
   | DataProcRegType of    (* 27:25 000 *)
@@ -266,6 +266,12 @@ type arm_opcode_t =
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: shift<0:7> *)
       * bool             (* T.W. *)
+  | BitFieldClear of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * int              (* lsbit *)
+      * int              (* width *)
+      * int              (* msbit *)
   | BitwiseAnd of
       bool (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -390,6 +396,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* rm/imm: index/immediate *)
       * arm_operand_int  (* mem: memory location *)
+      * arm_operand_int  (* mem2: second memory location *)
   | LoadRegisterExclusive of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: destination *)
@@ -436,6 +443,14 @@ type arm_opcode_t =
       * arm_operand_int (* rd: destination *)
       * arm_operand_int (* rm/imm: source *)
       * bool            (* T.W *)
+  | MoveRegisterCoprocessor of
+      arm_opcode_cc_t   (* condition *)
+      * int             (* coprocessor *)
+      * int             (* opc1 *)
+      * arm_operand_int (* rt: destination register *)
+      * int             (* CRn *)
+      * int             (* CRm *)
+      * int             (* opc2 *)
   | MoveTop of
       arm_opcode_cc_t (* condition *)
       * arm_operand_int (* rd: destination *)
@@ -456,7 +471,13 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm: source 2 *)
-      * arm_operand_int  (* ra: accumulat *)
+      * arm_operand_int  (* ra: accumulate *)
+  | MultiplySubtract of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+      * arm_operand_int  (* ra: accumulate *)
   | Pop of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* stack pointer *)
@@ -575,6 +596,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rn: base *)
       * arm_operand_int  (* rm/imm: index/immdiate *)
       * arm_operand_int  (* mem: memory location *)
+      * arm_operand_int  (* mem2: second memory location *)
   | StoreRegisterExclusive of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: status *)
