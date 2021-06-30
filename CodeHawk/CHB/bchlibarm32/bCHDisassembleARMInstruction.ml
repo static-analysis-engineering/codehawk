@@ -99,7 +99,7 @@ let parse_data_proc_reg_load_stores
      let rmreg = get_arm_reg bit3_0 in
      let rn = arm_register_op rnreg (if iswback then RW else RD) in
      let rm = arm_register_op rmreg RD in
-     let offset = ARMIndexOffset rmreg in
+     let offset = arm_index_offset rmreg in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback WR in
      (* STRH{<c>} <Rt>, [<Rn>, +/-<Rm>]{!}          Pre-x : (index,wback) = (T,T/F)
       * STRH{<c>} <Rt>, [<Rn>], +/-<Rm>             Post-x: (index,wback) = (F,T) *)
@@ -113,11 +113,15 @@ let parse_data_proc_reg_load_stores
      let rmreg = get_arm_reg bit3_0 in
      let rn = arm_register_op rnreg (if iswback then RW else RD) in
      let rm = arm_register_op rmreg RD in
-     let offset = ARMIndexOffset rmreg in
-     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
+     let offset = arm_index_offset rmreg in
+     let offset2 = arm_index_offset ~offset:4 rmreg in
+     let mem =
+       mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
+     let mem2 =
+       mk_arm_offset_address_op rnreg offset2 ~isadd ~isindex ~iswback RD in
      (* LDRD{<c>} <Rt>, <Rt2>, [<Rn>, +/-<Rm>]{!}   Pre-x : (index,wback) = (T,T/F)
       * LDRD{<c>} <Rt>, <Rt2>, [<Rn>], +/-<Rm>      Post-x: (index,wback) = (F,T) *)
-     LoadRegisterDual (c,rt,rt2,rn,rm,mem)
+     LoadRegisterDual (c, rt, rt2, rn, rm, mem, mem2)
 
   (* <cc><0>pu0w0<rn><rt>< 0>1111<rm> *)   (* STRD-reg *)
   | (0,0,3) when bit11_8 = 0 ->
@@ -127,11 +131,15 @@ let parse_data_proc_reg_load_stores
      let rmreg = get_arm_reg bit3_0 in
      let rn = arm_register_op rnreg (if iswback then RW else RD) in
      let rm = arm_register_op rmreg RD in
-     let offset = ARMIndexOffset rmreg in
-     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback WR in
+     let offset = arm_index_offset rmreg in
+     let offset2 = arm_index_offset ~offset:4 rmreg in
+     let mem =
+       mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback WR in
+     let mem2 =
+       mk_arm_offset_address_op rnreg offset2 ~isadd ~isindex ~iswback WR in
      (* STRD<c> <Rt>, <Rt2>, [<Rn>, +/-<Rm>]{!}     Pre-x : (index,wback) = (T,T/F)
       * STRD<c> <Rt>, <Rt2>, [<Rn>], +/-<Rm>        Post-x: (index,wback) = (F,T)  *)
-     StoreRegisterDual (c,rt,rt2,rn,rm,mem)
+     StoreRegisterDual (c, rt, rt2, rn, rm, mem, mem2)
 
   (* <cc><0>pu0w1<rn><rt>< 0>1011<rm> *)   (* LDRH-reg *)
   | (0,1,1) when bit11_8 = 0 ->
@@ -140,7 +148,7 @@ let parse_data_proc_reg_load_stores
      let rmreg = get_arm_reg bit3_0 in
      let rn = arm_register_op rnreg (if iswback then RW else RD) in
      let rm = arm_register_op rmreg RD in
-     let offset = ARMIndexOffset rmreg in
+     let offset = arm_index_offset rmreg in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
      (* LDRH<c> <Rt>, [<Rn>, +/-<Rm>]{!}             Pre-x : (index,wback) = (T,T/F)
       * LDRH<c> <Rt>, [<Rn>], +/-<Rm>                Post-x: (index,wback) = (F,T)  *)
@@ -153,7 +161,7 @@ let parse_data_proc_reg_load_stores
      let rmreg = get_arm_reg bit3_0 in
      let rn = arm_register_op rnreg (if iswback then RW else RD) in
      let rm = arm_register_op rmreg RD in
-     let offset = ARMIndexOffset rmreg in
+     let offset = arm_index_offset rmreg in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
      (* LDRSB<c> <Rt>, [<Rn>,+/-<Rm>]{!}
       * LDRSB<c> <Rt>, [<Rn>],+/-<Rm> *)
@@ -203,11 +211,15 @@ let parse_data_proc_reg_load_stores
      let imm32 = get_imm32 bit11_8 bit3_0 in
      let imm = arm_immediate_op (immediate_from_int imm32) in
      let offset = ARMImmOffset imm32 in
-     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
+     let offset2 = ARMImmOffset (imm32 + 4) in
+     let mem =
+       mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
+     let mem2 =
+       mk_arm_offset_address_op rnreg offset2 ~isadd ~isindex ~iswback RD in
      (* LDRD<c> <Rt>, <Rt2>, [<Rn>{, #+/-<imm>}]     Offset: (index,wback) = (T,F)
       * LDRD<c> <Rt>, <Rt2>, [<Rn>, #+/-<imm>]!      Pre-x : (index,wback) = (T,T)
       * LDRD<c> <Rt>, <Rt2>, [<Rn>], #+/-<imm>       Post-x: (index,wback) = (F,T) *)
-     LoadRegisterDual (c,rt,rt2,rn,imm,mem)
+     LoadRegisterDual (c, rt, rt2, rn, imm, mem, mem2)
 
   (* <cc><0>pu1w0<rn><rt><iH>1111<iL> *)   (* STRD-imm *)
   | (1,0,3) ->
@@ -218,11 +230,15 @@ let parse_data_proc_reg_load_stores
      let imm32 = get_imm32 bit11_8 bit3_0 in
      let imm = arm_immediate_op (immediate_from_int imm32) in
      let offset = ARMImmOffset imm32 in
-     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
+     let offset2 = ARMImmOffset (imm32 + 4) in
+     let mem =
+       mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback WR in
+     let mem2 =
+       mk_arm_offset_address_op rnreg offset2 ~isadd ~isindex ~iswback WR in
      (* STRD<c> <Rt>, <Rt2>, [<Rn>{, #+/-<imm>}]     Offset: (index,wback) = (T,F)
       * STRD<c> <Rt>, <Rt2>, [<Rn>, #+/-<imm>]!      Pre-x : (index,wback) = (T,T)
       * STRD<c> <Rt>, <Rt2>, [<Rn>], #+/-<imm>       Post-x: (index,wback) = (F,T) *)
-     StoreRegisterDual (c,rt,rt2,rn,imm,mem)
+     StoreRegisterDual (c, rt, rt2, rn, imm, mem, mem2)
 
   (* <cc><0>pu1w1<rn><rt><iH>1011<iL> *)   (* LDRH-imm *)
   (* <cc><0>pu1w11111<rt><iH>1011<iL> *)   (* LDRH-lit *)
@@ -1083,7 +1099,7 @@ let parse_load_store_reg_type
   let rn = arm_register_op rnreg (if iswback then RW else RD) in
   let (shift_t,shift_n) = decode_imm_shift bit6_5 bit11_7 in
   let reg_srt = ARMImmSRT (shift_t,shift_n) in
-  let offset = ARMShiftedIndexOffset (get_arm_reg bit3_0,reg_srt) in
+  let offset = arm_shifted_index_offset (get_arm_reg bit3_0) reg_srt in
   let mk_mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
   match (bit22,bit20) with
   (* <cc><3>pu0w0<rn><rt><imm>ty0<rm> *)   (* STR-reg *)
@@ -1131,6 +1147,9 @@ let parse_media_type
   let bit9_8 = bit11_8 mod 4 in
   let bit7_6 = bit7_5 lsr 1 in
   let bit11_10 = bit11_8 lsr 2 in
+  let bit6_5 = bit7_5 mod 4 in
+  let bit20_16 = bit19_16 + (16 * (bit24_20 mod 2)) in
+  let bit11_7 = (bit11_8 lsl 1) + (bit7_5 lsr 2) in
   match bit24_20 with
   (* <cc><3>< 10><15><rd>ro000111<rm> *)   (* SXTB *)
   | 10 when (bit19_16 = 15) && (bit9_8 = 0) && (bit7_5 = 3) ->
@@ -1215,6 +1234,15 @@ let parse_media_type
      let rn = mk_arm_reg_bit_sequence_op (get_arm_reg bit3_0) lsb widthm1 RD in
      (* SBFX<c> <Rd>, <Rn>, #<lsb>, #<width> *)
      SingleBitFieldExtract (c,rd,rn)
+
+  (* <cc><3><14><msb><rd><lsb>0011111 *)   (* BFC    *)
+  | 28 | 29 when (bit6_5 = 0) && (bit3_0 = 15) ->
+     let rd = arm_register_op (get_arm_reg bit15_12) WR in
+     let msb = bit20_16 in
+     let lsb = bit11_7 in
+     let width = (msb - lsb) + 1 in
+     (* BFC<c> <Rd>, #<lsb>, #<width> *)
+     BitFieldClear (c, rd, lsb, width, msb)
 
   (* <cc><3><15><wm1><rd><lsb>101<rn> *)   (* UBFX   *)
   | 30 | 31 when (bit7_5 mod 4) = 2 ->
