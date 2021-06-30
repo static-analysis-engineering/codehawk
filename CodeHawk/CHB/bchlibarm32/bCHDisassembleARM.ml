@@ -445,11 +445,13 @@ let set_block_boundaries () =
           match opcode with
           | Pop (_,_,rl,_) -> rl#includes_pc
           | Branch _ | BranchExchange _ -> true
+          | CompareBranchZero _ | CompareBranchNonzero _ -> true
           | LoadRegister (_,dst,_,_,_)
                when dst#is_register && dst#get_register = ARPC -> true
           | LoadMultipleDecrementBefore (_,_,_,rl,_) when rl#includes_pc -> true
           | _ -> false in
-        if is_block_ending && !arm_assembly_instructions#has_next_valid_instruction va then
+        if is_block_ending
+           && !arm_assembly_instructions#has_next_valid_instruction va then
           set_block_entry
             (!arm_assembly_instructions#get_next_valid_instruction_address va)
         else
@@ -500,7 +502,9 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
                when op#is_register && op#get_register == ARLR ->
              (next ())
           | Branch (_,op, _)
-            | BranchExchange (_, op) when op#is_absolute_address ->
+            | BranchExchange (_, op)
+            | CompareBranchZero (_, op)
+            | CompareBranchNonzero (_, op) when op#is_absolute_address ->
              (next ()) @ [op#get_absolute_address]
           | _ -> (next ()))
       | l ->
