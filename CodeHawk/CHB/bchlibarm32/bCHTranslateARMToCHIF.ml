@@ -206,6 +206,60 @@ let make_tests
       (frozenVars, Some (thencode, elsecode))
   | _ -> (frozenVars, None)
 
+let make_local_tests
+      (condinstr: arm_assembly_instruction_int) (condloc: location_int) =
+  let floc = get_floc condloc in
+  let env = floc#f#env in
+  let reqN () = env#mk_num_temp in
+  let reqC i = env#request_num_constant i in
+  let boolxpr =
+    match condinstr#get_opcode with
+    | CompareBranchZero (op, _) ->
+       let x = op#to_expr floc in
+       XOp (XEq, [x; zero_constant_expr])
+    | CompareBranchNonzero (op, _) ->
+       let x = op#to_expr floc in
+       XOp (XNe, [x; zero_constant_expr])
+    | _ ->
+       raise (BCH_failure
+                (LBLOCK [STR "Unexpected condition: "; condinstr#toPretty])) in
+  let convert_to_chif expr =
+    let (cmds,bxpr) = xpr_to_boolexpr reqN reqC expr in
+    cmds @ [ASSERT bxpr] in
+  let make_assert x =
+    let _ = env#start_transaction in
+    let commands = convert_to_chif x in
+    let const_assigns = env#end_transaction in
+    const_assigns @ commands in
+  let thencode = make_assert boolxpr in
+  let elsecode = make_assert (simplify_xpr (XOp (XLNot, [boolxpr]))) in
+  (thencode, elsecode)
+
+
+let make_local_condition
+      (condinstr: arm_assembly_instruction_int)
+      (condloc: location_int)
+      (blocklabel: symbol_t)
+      (thenaddr: ctxt_iaddress_t)
+      (elseaddr: ctxt_iaddress_t) =
+  let thenlabel = make_code_label thenaddr in
+  let elselabel = make_code_label elseaddr in
+  let (thentest, elsetest) = make_local_tests condinstr condloc in
+  let make_node_and_label testcode tgtaddr modifier =
+    let src = condloc#i in
+    let nextlabel = make_code_label ~src ~modifier tgtaddr in
+    let transaction = TRANSACTION (nextlabel, LF.mkCode testcode, None) in
+    (nextlabel, [transaction]) in
+  let (thentestlabel, thennode) =
+    make_node_and_label thentest thenaddr "then" in
+  let (elsetestlabel, elsenode) =
+    make_node_and_label elsetest elseaddr "else" in
+  let thenedges =
+    [(blocklabel, thentestlabel); (thentestlabel, thenlabel)] in
+  let elseedges =
+    [(blocklabel, elsetestlabel); (elsetestlabel, elselabel) ] in
+  ([(thentestlabel, thennode); (elsetestlabel, elsenode)], thenedges @ elseedges)
+
 
 let make_condition
     ~(condinstr:arm_assembly_instruction_int)
@@ -328,6 +382,16 @@ let translate_arm_instruction
        let edges = [(blocklabel, thenlabel); (blocklabel, elselabel)] in
        (nodes, edges, [])
 
+  | CompareBranchZero (op, tgt)
+    | CompareBranchNonzero (op, tgt) ->
+     let thenaddr = (make_i_location loc tgt#get_absolute_address)#ci in
+     let elseaddr = codepc#get_false_branch_successor in
+     let cmds = cmds @ [invop] in
+     let transaction = package_transaction finfo blocklabel cmds in
+     let (nodes, edges) =
+       make_local_condition instr loc blocklabel thenaddr elseaddr in
+     ((blocklabel, [transaction]) :: nodes, edges, [])
+
   | Branch (_, op, _)
     | BranchExchange (ACCAlways, op) when op#is_absolute_address ->
      default []
@@ -386,6 +450,12 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vrd () in
      default cmds
 
+  | BitFieldClear (_, rd, _, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
   | BitwiseAnd (setflags, ACCAlways, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
@@ -435,6 +505,30 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
+  | BitwiseOr (_, _, rd, _, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
+  (* ---------------------------------------------------------- BranchLink -- *
+   * if CurrentInstrSet() == InstrSet_ARM then
+   *   LR = PC - 4;
+   * else
+   *   LR = PC<31:1> : '1';
+   * if targetInstrSet == InstrSet_ARM then
+   *   targetAddress = Align(PC,4) + imm32;
+   * else
+   *   targetAddress = PC + imm32;
+   * SelectInstrSet(targetInstrSet);
+   * BranchWritePC(targetAddress);
+   * ------------------------------------------------------------------------ *)
+  | BranchLink (ACCAlways, tgt) when tgt#is_absolute_address ->
+     default (get_floc loc)#get_arm_call_commands
+
+  | BranchLinkExchange (ACCAlways, tgt) when tgt#is_absolute_address ->
+     default (get_floc loc)#get_arm_call_commands
+
   | ByteReverseWord (_, dst, _) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = dst#to_lhs floc in
@@ -447,6 +541,15 @@ let translate_arm_instruction
        floc#inv#rewrite_expr (src1#to_expr floc)
          floc#env#get_variable_comparator in
      default []
+
+  | CompareNegative _ ->
+     default []
+
+  | CountLeadingZeros (_, rd, _) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = rd#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
 
   | IfThen (c, xyz) when instr#is_aggregate ->
      let floc = get_floc loc in
@@ -486,21 +589,6 @@ let translate_arm_instruction
               (LBLOCK [testaddr#toPretty; STR ": " ; testinstr#toPretty]) in
           [] in
      default cmds
-
-  (* ---------------------------------------------------------- BranchLink -- *
-   * if CurrentInstrSet() == InstrSet_ARM then
-   *   LR = PC - 4;
-   * else
-   *   LR = PC<31:1> : '1';
-   * if targetInstrSet == InstrSet_ARM then
-   *   targetAddress = Align(PC,4) + imm32;
-   * else
-   *   targetAddress = PC + imm32;
-   * SelectInstrSet(targetInstrSet);
-   * BranchWritePC(targetAddress);
-   * ------------------------------------------------------------------------ *)
-  | BranchLink (ACCAlways, tgt) when tgt#is_absolute_address ->
-     default (get_floc loc)#get_arm_call_commands
      
   (* -------------------------------------------------------- LoadRegister -- *
    * offset = Shift(R[m], shift_t, shift_n, APSR.C);
@@ -546,13 +634,24 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | LoadRegisterDual (_, rt, rt2, _, _, _) ->
+  | LoadRegisterDual (_, rt, rt2, _, _, mem, mem2) ->
      let floc = get_floc loc in
      let (lhs1, lhscmds1) = rt#to_lhs floc in
      let (lhs2, lhscmds2) = rt2#to_lhs floc in
-     let cmds1 = floc#get_abstract_commands lhs1 () in
-     let cmds2 = floc#get_abstract_commands lhs2 () in
+     let rhs1 = mem#to_expr floc in
+     let rhs2 = mem2#to_expr floc in
+     let cmds1 = floc#get_assign_commands lhs1 rhs1 in
+     let cmds2 = floc#get_assign_commands lhs2 rhs2 in
      default (lhscmds1 @ lhscmds2 @ cmds1 @ cmds2)
+
+  | LoadRegisterExclusive (ACCAlways, dst, base, src) ->
+     let floc = get_floc loc in
+     let rhs =
+       floc#inv#rewrite_expr (src#to_expr floc)
+         floc#env#get_variable_comparator in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmd = floc#get_assign_commands lhs rhs in
+     default (cmd @ lhscmds)
 
   | LoadRegisterHalfword (ACCAlways, dst, base, _, src, _) ->
      let floc = get_floc loc in
@@ -608,7 +707,7 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands vrd (XOp (XMult, [num_constant_expr m; xrn])) in
      default cmds
 
-  | LogicalShiftLeft (setflags, ACCAlways, rd, rn, rm, _) ->
+  | LogicalShiftLeft (_, ACCAlways, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrn = rn#to_expr floc in
@@ -618,6 +717,21 @@ let translate_arm_instruction
      default cmds
 
   | LogicalShiftLeft (_, _, rd, _, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
+  | LogicalShiftRight (_, ACCAlways, rd, rn, rm, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let xrn = rn#to_expr floc in
+     let xrm = rm#to_expr floc in
+     let result = XOp (XShiftrt, [xrn; xrm]) in
+     let cmds = floc#get_assign_commands vrd result in
+     default cmds
+
+  | LogicalShiftRight (_, _, rd, _, _, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let cmds = floc#get_abstract_commands vrd () in
@@ -653,6 +767,12 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
+  | MoveRegisterCoprocessor (_, _, _, dst, _, _, _) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
   | MoveTop (ACCAlways, dst, src) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = dst#to_lhs floc in
@@ -664,12 +784,22 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands lhs rhsxpr in
      default (cmds @ lhscmds)
 
-  | MoveWide (ACCAlways, dst, src) ->
+  | MoveWide (c, dst, src) ->
      let floc = get_floc loc in
      let rhs = src#to_expr floc in
      let (lhs, lhscmds) = dst#to_lhs floc in
      let cmds = floc#get_assign_commands lhs rhs in
-     default (cmds @ lhscmds)
+     (match c with
+      | ACCAlways -> default (cmds @ lhscmds)
+      | _ -> make_conditional_commands c (cmds @ lhscmds))
+
+  | MultiplySubtract (_, rd, _, _, ra) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = rd#to_lhs floc in
+     let (lhsa, lhsacmds) = ra#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     let cmdsa = floc#get_abstract_commands lhsa () in
+     default (lhscmds @ lhsacmds @ cmds @ cmdsa)
 
   (* ----------------------------------------------------------------- Pop -- *
    * address = SP;
@@ -711,20 +841,7 @@ let translate_arm_instruction
      (match c with
       | ACCAlways -> default (stackops @ cmds)
       | _ -> make_conditional_commands c (stackops @ cmds))
-(*
-  | Pop (_, sp, rl, _) ->
-     let floc = get_floc loc in
-     let reglhss = rl#to_multiple_variable floc in
-     let (stackops,_) =
-       List.fold_left
-         (fun (acc,off) reglhs ->
-           let (splhs,splhscmds) = (sp_r RD)#to_lhs floc in
-           let cmds1 = floc#get_abstract_commands reglhs () in
-           (acc @ cmds1 @ splhscmds, off+4)) ([],0) reglhss in
-     let (splhs,splhscmds) = (sp_r WR)#to_lhs floc in
-     let cmds = floc#get_abstract_commands splhs () in
-     default (stackops @ cmds)
- *)
+
   (* ---------------------------------------------------------------- Push -- *
    * address = SP - 4*BitCount(registers);
    * for i = 0 to 14
@@ -780,6 +897,18 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands splhs () in
      default (stackops @ cmds)
 
+  | ReverseSubtract(_, _, dst, _, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     default cmds
+
+  | ReverseSubtractCarry(_, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     default cmds
+
   | SignedDivide (ACCAlways, rd, rn, rm) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = rd#to_lhs floc in
@@ -787,6 +916,12 @@ let translate_arm_instruction
      let divisor = rm#to_expr floc in
      let rhs = XOp (XDiv, [dividend; divisor]) in
      let cmds = floc#get_assign_commands lhs rhs in
+     default (lhscmds @ cmds)
+
+  | SignedExtendHalfword (_, rd, _) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = rd#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
   | SignedMostSignificantWordMultiply (_, dst, _, _, _) ->
@@ -802,6 +937,14 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands lhs () in
      let cmdsacc = floc#get_abstract_commands lhsacc () in
      default (lhscmds @ cmds @ lhsacccmds @ cmdsacc)
+
+  | SignedMultiplyLong (_, _, rdlo, rdhi, _, _) ->
+     let floc = get_floc loc in
+     let vlo = rdlo#to_variable floc in
+     let vhi = rdhi#to_variable floc in
+     let cmdslo = floc#get_abstract_commands vlo () in
+     let cmdshi = floc#get_abstract_commands vhi () in
+     default (cmdslo @ cmdshi)
 
   | StoreRegister (ACCAlways, rt, rn, mem, _) ->
      let floc = get_floc loc in
@@ -828,6 +971,41 @@ let translate_arm_instruction
      let (vmem, memcmds) = mem#to_lhs floc in
      let cmds = floc#get_abstract_commands vmem () in
      default (memcmds @ cmds)
+
+  | StoreRegisterDual (ACCAlways, rt, rt2, _, _, mem, mem2) ->
+     let floc = get_floc loc in
+     let (vmem, memcmds) = mem#to_lhs floc in
+     let (vmem2, mem2cmds) = mem2#to_lhs floc in
+     let xrt = rt#to_expr floc in
+     let xrt2 = rt2#to_expr floc in
+     let cmds1 = floc#get_assign_commands vmem xrt in
+     let cmds2 = floc#get_assign_commands vmem2 xrt2 in
+     default (memcmds @ mem2cmds @ cmds1 @ cmds2)
+
+  | StoreRegisterDual (_, _, _, _, _, mem, mem2) ->
+     let floc = get_floc loc in
+     let (vmem, memcmds) = mem#to_lhs floc in
+     let (vmem2, mem2cmds) = mem2#to_lhs floc in
+     let cmds1 = floc#get_abstract_commands vmem () in
+     let cmds2 = floc#get_abstract_commands vmem2 () in
+     default (memcmds @ mem2cmds @ cmds1 @ cmds2)
+
+  | StoreRegisterExclusive (ACCAlways, rd, rt, rn, mem) ->
+     let floc = get_floc loc in
+     let (vmem,memcmds) = mem#to_lhs floc in
+     let (vrd, vrdcmds) = rd#to_lhs floc in
+     let xrt = rt#to_expr floc in
+     let cmds = floc#get_assign_commands vmem xrt in
+     let scmds = floc#get_abstract_commands vrd () in
+     default (memcmds @ vrdcmds @ cmds @ scmds)
+
+  | StoreRegisterExclusive (_, rd, _, _, mem) ->
+     let floc = get_floc loc in
+     let (vmem,memcmds) = mem#to_lhs floc in
+     let (vrd, vrdcmds) = rd#to_lhs floc in
+     let cmds = floc#get_abstract_commands vmem () in
+     let scmds = floc#get_abstract_commands vrd () in
+     default (memcmds @ vrdcmds @ cmds @ scmds)
 
   | StoreRegisterHalfword (ACCAlways, rt, rn, _, mem, _) ->
      let floc = get_floc loc in
@@ -901,6 +1079,14 @@ let translate_arm_instruction
      let vrd = rd#to_variable floc in
      let cmds = floc#get_abstract_commands vrd () in
      default cmds
+
+  | UnsignedMultiplyLong (_, _, rdlo, rdhi, _, _) ->
+     let floc = get_floc loc in
+     let vlo = rdlo#to_variable floc in
+     let vhi = rdhi#to_variable floc in
+     let cmdslo = floc#get_abstract_commands vlo () in
+     let cmdshi = floc#get_abstract_commands vhi () in
+     default (cmdslo @ cmdshi)
 
   | instr ->
      let _ =
