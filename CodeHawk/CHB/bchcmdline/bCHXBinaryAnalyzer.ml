@@ -387,7 +387,7 @@ let main () =
       let _ = disassembly_summary#record_construct_functions_time
                 ((Unix.gettimeofday ()) -. !t) in
       let _ = disassembly_summary#set_disassembly_metrics (get_mips_disassembly_metrics ()) in      
-      let _ =  pr_debug [ disassembly_summary#toPretty ; NL ] in
+      let _ = pr_debug [ disassembly_summary#toPretty ; NL ] in
       begin
         file_output#saveFile
           (get_asm_listing_filename ())
