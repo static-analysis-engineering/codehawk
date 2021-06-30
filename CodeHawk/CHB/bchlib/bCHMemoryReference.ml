@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -172,9 +174,12 @@ object (self:'a)
     match base with
     | BaseVar v -> v
     | _ ->
-       raise (BCH_failure (LBLOCK [ STR "get external base. " ;
-				    STR " base is not an external base: " ; 
-				    self#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "get external base. ";
+		 STR " base is not an external base: ";
+		 self#toPretty]))
 	
   method has_external_base = match base with BaseVar _ -> true | _ -> false
 
@@ -225,6 +230,7 @@ object (self)
   method mk_basevar_reference v = self#mk_reference (BaseVar v)
 
   method mk_unknown_reference s = self#mk_reference (BaseUnknown s)
+
   method get_memory_reference (index:int) =
     if H.mem table index then
       H.find table index
