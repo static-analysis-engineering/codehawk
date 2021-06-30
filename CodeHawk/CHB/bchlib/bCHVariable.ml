@@ -203,12 +203,12 @@ object (self:'a)
       begin
 	chlog#add
           "convert name"
-          LBLOCK [
+          (LBLOCK [
             STR "Convert variable name ";
             STR name;
             STR " to ";
             STR newname;
-            NL];
+            NL]);
 	newname
       end
     else name
