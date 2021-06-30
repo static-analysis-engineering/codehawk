@@ -201,7 +201,14 @@ object (self:'a)
     if has_control_characters name then 
       let newname = "__xx__" ^ (hex_string name) in
       begin
-	pr_debug [ STR "Convert variable name " ; STR name ; STR " to " ; STR newname ; NL ] ;
+	chlog#add
+          "convert name"
+          LBLOCK [
+            STR "Convert variable name ";
+            STR name;
+            STR " to ";
+            STR newname;
+            NL];
 	newname
       end
     else name
