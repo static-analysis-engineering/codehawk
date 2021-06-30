@@ -44,7 +44,7 @@ open BCHStrings
 (* bchlibelf *)
 open BCHELFTypes
 
-let is_printable c = (c >= 32 && c < 127) || c = 10 || c = 9
+let is_printable c = (c >= 32 && c < 127) || c = 10 || c = 9 || c = 13
   
 let is_printable_char c = is_printable (Char.code c)
 
