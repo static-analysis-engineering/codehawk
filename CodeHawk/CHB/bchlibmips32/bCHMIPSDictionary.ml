@@ -102,7 +102,7 @@ object (self)
       | FPRIType (opc,sub,rt,fs,imm) ->
          (tags, [ opc; sub; rt; fs; imm ])
       | FPCompareType (opc, fmt, ft, fs, cc, funct) ->
-         (tags, [ opc; fmt; ft; fs; cc ; funct ])
+         (tags, [opc; fmt; ft; fs; cc; funct])
       | FPICCType (opc,sub,cc,nd,tf,offset) ->
          (tags, [ opc; sub; cc; nd; tf; offset ])
       | FormatUnknown (opc,otherbits) ->
@@ -131,7 +131,7 @@ object (self)
     let key = match opc with
       | Break i -> (tags, [ i ])
       | Syscall i -> (tags, [ i ])
-      | Sync i -> (tags, [ i ])
+      | Sync i -> (tags, [i])
       (* no operands *)
       | NoOperation
         | Halt
@@ -193,11 +193,11 @@ object (self)
         | MoveWordFromFP (op1,op2)
         | MoveWordFromHighHalfFP (op1,op2)
         | MoveWordToHighHalfFP (op1,op2)
-        | MoveWordToFP (op1,op2)
+        | MoveWordToFP (op1, op2)
         | ControlWordFromFP (op1,op2)
         | ControlWordToFP (op1,op2)
         | TrapIfEqualImmediate (op1,op2)
-      -> (tags,[ oi op1 ; oi op2 ])
+      -> (tags, [oi op1; oi op2])
       (* 3 operands *)
       | BranchEqual (op1,op2,op3)
         | BranchEqualLikely (op1,op2,op3)
@@ -277,8 +277,9 @@ object (self)
         | FPDivfmt (fmt,op1,op2,op3)
         -> (tags @ [ mips_fp_format_mfts#ts fmt ],[ oi op1 ; oi op2 ])
       (* fmt, cc,cond,exc, 2 operands *)
-      | FPCompare (fmt,cc,cond,exc,op1,op2)
-        -> (tags @ [ mips_fp_format_mfts#ts fmt ], [ cc; cond; exc; oi op1 ; oi op2 ])
+      | FPCompare (fmt, cc, cond, exc, op1, op2)
+        -> (tags @ [mips_fp_format_mfts#ts fmt],
+            [cc; cond; exc; oi op1; oi op2])
       (* misc, others *)
       | MoveFromCoprocessor0 (op1,op2,i) -> (tags, [ oi op1; oi op2; i ])
       | MoveToCoprocessor0 (op1,op2,i) -> (tags, [ oi op1; oi op2; i ])

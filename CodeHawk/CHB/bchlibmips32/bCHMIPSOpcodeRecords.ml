@@ -1281,11 +1281,11 @@ let get_record (opc:mips_opcode_t) =
    *   endif
    *   GPR[rt] <- 0[31-(msb+1)] || GPR[rs][msb-lsb..0] || GPR[rt][lsb-1..0]
    * ------------------------------------------------------------------------ *)
-  | InsertBitField (dst,src,pos,size) -> {
-      mnemonic   = "ins";
-      operands   = [ dst; src ];
+  | InsertBitField (dst, src, pos, size) -> {
+      mnemonic = "ins";
+      operands = [dst; src];
       delay_slot = false;
-      ida_asm    = (fun f -> f#ops "ins" [dst; src])
+      ida_asm = (fun f -> f#ops "ins" [dst; src])
     }
 
   (* ------------------------------------------------------------------------
@@ -1423,13 +1423,13 @@ let get_record (opc:mips_opcode_t) =
        delay_slot = false ;
        ida_asm    = (fun f -> f#ops mnemonic [ fd ; fs ; ft ])
      }
-  | FPDivfmt (fmt,dst,src1,src2) ->
+  | FPDivfmt (fmt, dst, src1, src2) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "div." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src1 ; src2 ] ;
+     { mnemonic = mnemonic ;
+       operands = [dst; src1; src2] ;
        delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src1 ; src2 ])
+       ida_asm = (fun f -> f#ops mnemonic [dst; src1; src2])
      }
   | FPSqrtfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
@@ -1750,11 +1750,11 @@ let get_record (opc:mips_opcode_t) =
    *   data <- GPR[rt][31..0]
    *   StoreFPR(fs, UNINTERPRETED_WORD, data)
    * --------------------------------------------------------------------------- *)
-  | MoveWordToFP (rt,fs) -> {
-      mnemonic   = "mtc1" ;
-      operands   = [ rt ; fs ] ;
+  | MoveWordToFP (rt, fs) -> {
+      mnemonic = "mtc1" ;
+      operands = [rt ; fs] ;
       delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "mtc1" [ rt ; fs ])
+      ida_asm = (fun f -> f#ops "mtc1" [ rt ; fs ])
     }
 
   (* ---------------------------------------------------------------------------
@@ -1813,14 +1813,14 @@ let get_record (opc:mips_opcode_t) =
     }
 
   (* ------------------------------------------------------ FPCompareType --- *)
-  | FPCompare (fmt,cc,pred,excn,src1,src2) ->
+  | FPCompare (fmt, cc, pred, excn, src1, src2) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let predstr = mips_fp_predicate_to_string pred in
      let mnemonic = "c."  ^ predstr ^ "." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ src1 ; src2 ] ;
+     { mnemonic = mnemonic ;
+       operands = [src1; src2] ;
        delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ src1 ; src2 ])
+       ida_asm = (fun f -> f#ops mnemonic [src1; src2])
      }
       
   (* ---------------------------------------------------- Pseudo instructions *)
