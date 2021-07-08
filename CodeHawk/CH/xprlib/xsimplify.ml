@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -655,18 +657,21 @@ and reduce_gt m e1 e2 =
   | (SConst a, SRScalar (XMinus, x, b)) ->              (* a > x - b *)
      rs XLt [x ; ne (a#add b)]                                 (* ~> x < (a+b) *)
 
+  | (SRScalar (XMinus, x, a), SConst b) ->        (* x - a > b *)
+     rs XGt [x; ne (a#add b)]                     (* ~> x > a + b *)
+
   | (SConst a, SLScalar (XMult, b, x))                  (* a > b * x *)
     | (SConst a, SRScalar (XMult, x, b))                  (* a > x * b *)
        when divides b a ->
-     let op = if neg_num b then XGt else XLt in                (* b < 0 ~> [ > ] *)
-     rs op [x ; ne (a#div b)]                                (* ~> x [<|>] a/b *)
+     let op = if neg_num b then XGt else XLt in   (* b < 0 ~> [ > ] *)
+     rs op [x ; ne (a#div b)]                     (* ~> x [<|>] a/b *)
 
   | (SConst a, SRScalar (XDiv, x, b)) ->                (* a > x / b *)
      if zero_num b                                     (* b=0 ~~> warning *)
      then default
      else
-       let op = if neg_num b then XGt else XLt in              (* b < 0 ~> [ > ] *)
-       rs op [x ; ne (a#mult b)]                             (* ~> x [<|>] a*b *)
+       let op = if neg_num b then XGt else XLt in   (* b < 0 ~> [ > ] *)
+       rs op [x ; ne (a#mult b)]                    (* ~> x [<|>] a*b *)
   | _ -> default
 
 and reduce_ge m e1 e2 = 
