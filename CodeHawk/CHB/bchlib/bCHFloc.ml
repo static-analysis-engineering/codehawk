@@ -597,17 +597,41 @@ object (self)
     let comparator = self#env#get_variable_comparator in
     let indexExpr = 
       if inv#is_constant index then 
-	num_constant_expr (inv#get_constant index) else XVar index in
-    let addr = XOp (XPlus, [ XVar base ; num_constant_expr offset ]) in
+	num_constant_expr (inv#get_constant index)
+      else
+        XVar index in
+    let addr = XOp (XPlus, [XVar base; num_constant_expr offset]) in
     let addr = self#inv#rewrite_expr addr comparator in
-    let addr = XOp (XPlus, [ addr ; 
-			     XOp (XMult, [ int_constant_expr scale ; indexExpr ]) ]) in
+    let addr =
+      XOp (XPlus,
+           [addr; XOp (XMult, [int_constant_expr scale; indexExpr])]) in
     let address = self#inv#rewrite_expr addr comparator in
-    let (memref,memoffset) = self#decompose_address  address in
+    let (memref, memoffset) = self#decompose_address address in
     if is_constant_offset memoffset then
       self#env#mk_memory_variable memref (get_total_constant_offset memoffset)
     else
-      default ()
+      match memoffset with
+      | IndexOffset _ ->
+         self#env#mk_index_offset_memory_variable memref memoffset
+      | _ ->
+         begin
+           chlog#add
+             "scaled register memory variable"
+             (LBLOCK [
+                  STR "base: ";
+                  base#toPretty;
+                  STR "; index: ";
+                  index#toPretty;
+                  STR "; scale: ";
+                  INT scale;
+                  STR "; offset: ";
+                  offset#toPretty;
+                  STR "; address: ";
+                  x2p address;
+                  STR "; memoffset: ";
+                  memory_offset_to_pretty memoffset]);
+           default ()
+         end
      											    
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save ScaledReg (None,indexreg, scale, offset)  (scale <> 1)  (memrefs4)
@@ -986,6 +1010,7 @@ object (self)
           let memref = self#env#mk_base_variable_reference v in
           let offset = match xoffset with
             | XConst (IntConst n) -> ConstantOffset (n, NoOffset)
+            | XOp (XMult, [XConst (IntConst n); XVar v]) -> IndexOffset (v, n#toInt, NoOffset)
             | _ -> UnknownOffset in
           (memref,offset)
        | _ -> default ()

@@ -2239,8 +2239,10 @@ class type function_environment_int =
     method mk_flag_variable  : eflag_t -> variable_t
     method mk_bridge_value   : ctxt_iaddress_t -> int -> variable_t
 
-    method mk_memory_variable   :
+    method mk_memory_variable:
              ?save_name:bool -> memory_reference_int -> numerical_t -> variable_t
+    method mk_index_offset_memory_variable:
+             memory_reference_int -> memory_offset_t -> variable_t
     method mk_unknown_memory_variable: string -> variable_t
     method mk_frozen_test_value :
              variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t -> variable_t
