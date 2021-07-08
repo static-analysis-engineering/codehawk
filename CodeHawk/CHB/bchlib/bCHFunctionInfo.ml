@@ -627,6 +627,14 @@ object (self)
         | _ -> () in
       v
 
+  method mk_index_offset_memory_variable
+           (memref: memory_reference_int) (offset: memory_offset_t) =
+    if memref#is_unknown_reference then
+      self#mk_num_temp
+    else
+      let avar = varmgr#make_memory_variable memref offset in
+      self#mk_variable avar
+
   method mk_global_variable (offset:numerical_t) =
     self#mk_variable (varmgr#make_global_variable offset)
     
