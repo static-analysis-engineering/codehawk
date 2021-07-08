@@ -406,12 +406,12 @@ object (self)
          ([ "a:vxx" ],[ xd#index_variable lhs; xd#index_xpr rhs;
                         xd#index_xpr rrhs ])
 
-      | InsertBitField (dst,src,pos,size) ->
+      | InsertBitField (dst, src, pos, size) ->
          let lhs = dst#to_variable floc in
          let rhs = src#to_expr floc in
          let rrhs = rewrite_expr rhs in
-         ([ "a:vxx" ],[ xd#index_variable lhs; xd#index_xpr rhs;
-                        xd#index_xpr rrhs ])
+         (["a:vxx"],
+          [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr rrhs])
 
       | JumpLink _ | BranchLink _
            when floc#has_call_target
@@ -602,6 +602,11 @@ object (self)
          let rhs = rewrite_expr (src#to_expr floc) in
          let lhs = dst#to_variable floc in
          ([ "a:vx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ])
+
+      | MoveWordToFP (rt, fs) ->
+         let rhs = rewrite_expr (rt#to_expr floc) in
+         let lhs = fs#to_variable floc in
+         (["a:vx"], [xd#index_variable lhs; xd#index_xpr rhs])
 
       | MoveFromCoprocessor0 (dst,src,sel) ->
          let rhs = rewrite_expr (src#to_expr floc) in
