@@ -27,6 +27,7 @@
 
 (* chlib *)
 open CHIntervals
+open CHLanguage
 open CHNumerical
 open CHPretty
 
@@ -84,8 +85,10 @@ let rec pow a = function
     let b = pow a (n / 2) in
     b * b * (if n mod 2 = 0 then 1 else a)
 
+
 let get_multiplier (n:numerical_t) =
   int_constant_expr (pow 2 n#toInt)
+
 
 class arm_opcode_dictionary_t
         (faddr:doubleword_int)
@@ -151,6 +154,33 @@ object (self)
                         NL];
               raise IO.No_more_input
             end in
+    let add_instr_condition
+          (tags: string list)
+          (args: int list)
+          (x: xpr_t): (string list) * (int list) =
+      let _ =
+        if (List.length tags) = 0 then
+          raise (BCH_failure
+                   (LBLOCK [STR "Empty tag list in add_instr_condition"])) in
+      let xtag = (List.hd tags) ^ "x" in
+      let tags = xtag :: ((List.tl tags) @ ["ic"]) in
+      let args = args @ [xd#index_xpr x] in
+      (tags, args) in
+
+    let add_base_update
+          (tags: string list)
+          (args: int list)
+          (v: variable_t)
+          (x: xpr_t): (string list) * (int list) =
+      let _ =
+        if (List.length tags) = 0 then
+          raise (BCH_failure
+                   (LBLOCK [STR "Empty tag list in add_base_update"])) in
+      let xtag = (List.hd tags) ^ "vx" in
+      let tags = xtag :: ((List.tl tags) @ ["bu"]) in
+      let args = args @ [xd#index_variable v; xd#index_xpr x] in
+      (tags, args) in
+
     let key =
       match instr#get_opcode with
       | Add (_, _, rd, rn, rm, _) ->
@@ -314,14 +344,28 @@ object (self)
            "a:" ^ (string_repeat "v" rl#get_register_count) in
          ([xtag], List.map xd#index_variable lhss)
 
-      | LoadRegister (_, rt, rn, mem, _) ->
+      | LoadRegister (c, rt, rn, mem, _) ->
          let vrt = rt#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
-         (["a:vxx"],
-          [xd#index_variable vrt;
-           xd#index_xpr xmem;
-           xd#index_xpr xrmem])
+         let tags = ["a:vxx"] in
+         let args = [
+             xd#index_variable vrt; xd#index_xpr xmem; xd#index_xpr xrmem] in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> (tags, args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition tags args tcond
+           | _ -> (tags @ ["uc"], args) in
+         let (tags, args) =
+           if mem#is_offset_address_writeback then
+             let vrn = rn#to_variable floc in
+             let xaddr = mem#to_updated_offset_address floc in
+             add_base_update tags args vrn xaddr
+           else
+             (tags, args) in
+         (tags, args)
 
       | LoadRegisterByte (_, rt, rn, mem, _) ->
          let vrt = rt#to_variable floc in
@@ -397,10 +441,19 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | Move(_, _, rd, rm, _) ->
+      | Move(_, c, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
-         (["a:vx"], [xd#index_variable vrd; xd#index_xpr xrm])
+         let tags = ["a:vx"] in
+         let args = [xd#index_variable vrd; xd#index_xpr xrm] in
+         (match c with
+          | ACCAlways ->
+             (tags, args)
+          | c when is_cond_conditional c && floc#has_test_expr ->
+             let tcond = rewrite_expr floc#get_test_expr in
+             add_instr_condition tags args tcond
+          | _ ->
+             (["a:vx"; "uc"], [xd#index_variable vrd; xd#index_xpr xrm]))
 
       | MoveRegisterCoprocessor (_, _, _, dst, _, _, _) ->
          let vdst = dst#to_variable floc in
@@ -450,24 +503,30 @@ object (self)
            xd#index_xpr xdiff;
            xd#index_xpr xxdiff])
 
-      | Pop (_, sp, rl, _) ->
+      | Pop (c, sp, rl, _) ->
          let lhsvars = List.map (fun op -> op#to_variable floc) rl#get_register_op_list in
          let rhsexprs =
            List.map (fun offset ->
                arm_sp_deref ~with_offset:offset RD)
              (List.init rl#get_register_count (fun i -> 4 * i)) in
-         let rhsexprs = List.map (fun x -> x#to_expr floc) rhsexprs in
-         let xtag = "a:"
-                    ^ (string_repeat "v" rl#get_register_count)
-                    ^ (string_repeat "x" rl#get_register_count) in
+         let rhsexprs = List.map (fun x -> rewrite_expr (x#to_expr floc)) rhsexprs in
+         let xtag =
+           "a:"
+           ^ (string_repeat "v" rl#get_register_count)
+           ^ (string_repeat "x" rl#get_register_count) in
          let tags = [xtag] in
          let args =
            (List.map xd#index_variable lhsvars)
            @ (List.map xd#index_xpr rhsexprs) in
-         (tags, args)
+         (match c with
+          | ACCAlways -> (tags, args)
+          | c when is_cond_conditional c && floc#has_test_expr ->
+             let tcond = rewrite_expr floc#get_test_expr in
+             add_instr_condition tags args tcond
+          | _ -> (tags @ ["uc"], args))
 
       | Push (_, sp, rl, _) ->
-         let rhsexprs = List.map (fun op -> op#to_expr floc) rl#get_register_op_list in
+         let rhsexprs = List.map (fun op -> rewrite_expr (op#to_expr floc)) rl#get_register_op_list in
          let regcount = List.length rhsexprs in
          let lhsops =
            List.map (fun offset ->
@@ -580,14 +639,19 @@ object (self)
            "a:" ^ (string_repeat "x" rl#get_register_count) in
          ([xtag], List.map xd#index_xpr rhss)
 
-      | StoreRegister (_, rt, rn, mem, _) ->
+      | StoreRegister (c, rt, rn, mem, _) ->
          let vmem = mem#to_variable floc in
          let xrt = rt#to_expr floc in
          let xxrt = rewrite_expr xrt in
-         (["a:vxx"],
-          [xd#index_variable vmem;
-           xd#index_xpr xrt;
-           xd#index_xpr xxrt])
+         let tags = ["a:vxx"] in
+         let args = [
+             xd#index_variable vmem; xd#index_xpr xrt; xd#index_xpr xxrt] in
+         (match c with
+          | ACCAlways -> (tags, args)
+          | c when is_cond_conditional c && floc#has_test_expr ->
+             let tcond = rewrite_expr floc#get_test_expr in
+             add_instr_condition tags args tcond
+          | _ -> (tags @ ["uc"], args))
 
       | StoreRegisterByte (_, rt, rn, mem, _) ->
          let vmem = mem#to_variable floc in

@@ -760,6 +760,8 @@ let get_arm_flags_used (opc: arm_opcode_t): arm_cc_flag_t list =
   | Some c -> get_cond_flags_used c
   | _ -> []
 
+let get_arm_opcode_condition (opc: arm_opcode_t): arm_opcode_cc_t option =
+  (get_record opc).ccode
 
 let arm_opcode_to_string ?(width=8) (opc:arm_opcode_t) =
   let formatter = new string_formatter_t width in

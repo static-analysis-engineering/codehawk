@@ -203,6 +203,7 @@ class type arm_operand_int =
     method to_multiple_expr: floc_int -> xpr_t list
     method to_lhs: floc_int -> variable_t * cmd_t list
     method to_multiple_lhs: floc_int -> variable_t list * cmd_t list
+    method to_updated_offset_address: floc_int -> xpr_t
 
     (* predicate *)
     method is_read: bool
@@ -212,6 +213,7 @@ class type arm_operand_int =
     method is_register_list: bool
     method is_absolute_address: bool
     method is_pc_relative_address: bool
+    method is_offset_address_writeback: bool
 
     method includes_pc: bool
 

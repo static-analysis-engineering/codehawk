@@ -231,13 +231,20 @@ let arm_conditional_expr
   let testfloc = get_floc testloc in
   let condfloc = get_floc condloc in
   let (found, optxpr) =
+    match get_arm_opcode_condition condopc with
+    | Some c when is_cond_conditional c ->
+       cc_expr v vu testfloc testopc c
+    | _ -> (false, None) in
+             (*
     match condopc with
     | Branch (c, _, _)
       | BranchExchange (c, _) when is_cond_conditional c ->
        cc_expr v vu testfloc testopc c
     | IfThen (c, _) when is_cond_conditional c ->
        cc_expr v vu testfloc testopc c
-    | _ -> (false, None) in
+    | Move (_, c, _, _, _) when is_cond_conditional c ->
+       cc_expr v vu testfloc testopc c
+    | _ -> (false, None) in *)
   if found then
     match optxpr with
     | Some expr ->
