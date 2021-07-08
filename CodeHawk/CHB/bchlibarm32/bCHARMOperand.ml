@@ -182,19 +182,53 @@ object (self:'a)
             (LBLOCK [ STR "Operand is not an immediate value: " ;
                       self#toPretty ]))
 
-  method to_address (floc:floc_int):xpr_t =
+  method to_address (floc: floc_int): xpr_t =
     match kind with
+    | ARMOffsetAddress (r, offset, isadd, iswback, isindex) ->
+       let env = floc#f#env in
+       let memoff =
+         if isindex then
+           match (offset, isadd) with
+           | (ARMImmOffset i, true) -> int_constant_expr i
+           | (ARMImmOffset i, false) -> int_constant_expr (-i)
+           | _ -> random_constant_expr
+         else
+           zero_constant_expr in
+       let rvar = env#mk_arm_register_variable r in
+       let addr = XOp (XPlus, [XVar rvar; memoff]) in
+       floc#inv#rewrite_expr addr env#get_variable_comparator
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Cannot take address of immediate operand: " ;
-                      self#toPretty ]))
+            (LBLOCK [
+                 STR "Address of "; self#toPretty; STR " not yet implemented"]))
+
+  method to_updated_offset_address (floc: floc_int): xpr_t =
+    match kind with
+    | ARMOffsetAddress (r, offset, isadd, iswback, isindex) ->
+       let env = floc#f#env in
+       if isindex then
+         self#to_address floc
+       else
+         let memoff =
+           match (offset, isadd) with
+           | (ARMImmOffset i, true) -> int_constant_expr i
+           | (ARMImmOffset i, false) -> int_constant_expr (-i)
+           | _ -> random_constant_expr in
+         let addr = XOp (XPlus, [self#to_address floc; memoff]) in
+         floc#inv#rewrite_expr addr env#get_variable_comparator
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand is not an arm-offset-address: ";
+                 self#toPretty]))
 
   method to_variable (floc:floc_int): variable_t =
     let env = floc#f#env in
     match kind with
     | ARMReg r -> env#mk_arm_register_variable r
-    | ARMOffsetAddress (r,offset,isadd,iswback,isindex) ->
+    | ARMOffsetAddress (r, offset, isadd, iswback, isindex) ->
        (match offset with
         | ARMImmOffset _ ->
            let rvar = env#mk_arm_register_variable r in
@@ -208,6 +242,16 @@ object (self:'a)
                      (LBLOCK [STR "to_variable: offset not implemented: ";
                               self#toPretty])) in
            floc#get_memory_variable_1 rvar memoff
+        | ARMShiftedIndexOffset _ ->
+           let rvar = env#mk_arm_register_variable r in
+           (match (offset, isadd) with
+            | (ARMShiftedIndexOffset (ivar, srt, i), true) ->
+               let scale = match srt with
+                 | ARMImmSRT (SRType_LSL, 2) -> 4
+                 | _ -> 1 in
+               let ivar = env#mk_arm_register_variable ivar in
+               floc#get_memory_variable_3 rvar ivar scale (mkNumerical i)
+            | _ -> env#mk_unknown_memory_variable "operand")
         | _ -> env#mk_unknown_memory_variable "operand")
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
        env#mk_arm_register_variable r
@@ -254,6 +298,12 @@ object (self:'a)
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
        let env = floc#f#env in
        XVar (env#mk_arm_register_variable r)
+    | ARMShiftedReg (r, ARMImmSRT (SRType_LSR, n)) ->
+       let env = floc#f#env in
+       XOp (XShiftrt, [XVar (env#mk_arm_register_variable r); int_constant_expr n])
+    | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, n)) ->
+       let env = floc#f#env in
+       XOp (XShiftlt, [XVar (env#mk_arm_register_variable r); int_constant_expr n])
     | ARMShiftedReg _ -> XConst (XRandom)
     | ARMRegBitSequence (r,lsb,widthm1) -> XConst (XRandom)
     | _ ->
@@ -320,6 +370,11 @@ object (self:'a)
     | ARMRegList rl -> List.mem ARPC rl
     | _ -> false
 
+  method is_offset_address_writeback =
+    match kind with
+    | ARMOffsetAddress (_, _, _, true, _) -> true
+    | _ -> false
+
   method toString =
     match kind with
     | ARMDMBOption o -> dmb_option_to_string o
@@ -343,8 +398,8 @@ object (self:'a)
        (match (iswback,isindex) with
         | (false,false) -> "??[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
         | (false,true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
-        | (true,false) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]!"
-        | (true,true) -> "[" ^ (armreg_to_string reg) ^ "], " ^ poffset)
+        | (true,true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]!"
+        | (true,false) -> "[" ^ (armreg_to_string reg) ^ "], " ^ poffset)
 
   method toPretty = STR self#toString
 
@@ -391,8 +446,11 @@ let mk_arm_rotated_register_op
       (r:arm_reg_t)
       (rotation:int)
       (mode:arm_operand_mode_t) =
-  let regshift = ARMImmSRT (SRType_ROR,rotation) in
-  new arm_operand_t (ARMShiftedReg (r,regshift)) mode
+  if rotation = 0 then
+    arm_register_op r mode
+  else
+    let regshift = ARMImmSRT (SRType_ROR, rotation) in
+    new arm_operand_t (ARMShiftedReg (r,regshift)) mode
 
 let mk_arm_reg_bit_sequence_op
       (r:arm_reg_t)
