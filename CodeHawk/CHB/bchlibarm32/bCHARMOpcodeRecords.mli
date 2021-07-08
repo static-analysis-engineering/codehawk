@@ -40,6 +40,8 @@ val get_arm_opcode_name: arm_opcode_t -> string
 
 val is_cond_conditional: arm_opcode_cc_t -> bool
 
+val get_arm_opcode_condition: arm_opcode_t -> arm_opcode_cc_t option
+
 val get_arm_operands: arm_opcode_t -> arm_operand_int list
 
 val get_arm_flags_set: arm_opcode_t -> arm_cc_flag_t list
