@@ -125,6 +125,77 @@ let make_conditional_predicate
       ~testloc:testloc in
   (frozenvars, optxpr)
 
+
+let make_instr_local_tests
+    ~(condinstr:arm_assembly_instruction_int)
+    ~(testinstr:arm_assembly_instruction_int)
+    ~(condloc:location_int)
+    ~(testloc:location_int) =
+  let testfloc = get_floc testloc in
+  let condfloc = get_floc condloc in
+  let env = testfloc#f#env in
+  let reqN () = env#mk_num_temp in
+  let reqC i = env#request_num_constant i in
+  let (frozenVars, optboolxpr) =
+    arm_conditional_expr
+      ~condopc:condinstr#get_opcode
+      ~testopc:testinstr#get_opcode
+      ~condloc
+      ~testloc in
+  let convert_to_chif expr =
+    let (cmds,bxpr) = xpr_to_boolexpr reqN reqC expr in
+    cmds @ [ASSERT bxpr] in
+  let convert_to_assert expr  =
+    let vars = variables_in_expr expr in
+    let varssize = List.length vars in
+    let xprs =
+      if varssize = 1 then
+	let var = List.hd vars in
+	let extxprs = condfloc#inv#get_external_exprs var in
+	let extxprs =
+          List.map (fun e -> substitute_expr (fun v -> e) expr) extxprs in
+	expr :: extxprs
+      else if varssize = 2 then
+	let varlist = vars in
+	let var1 = List.nth varlist 0 in
+	let var2 = List.nth varlist 1 in
+	let extxprs1 = condfloc#inv#get_external_exprs var1 in
+	let extxprs2 = condfloc#inv#get_external_exprs var2 in
+	let xprs = List.concat
+	  (List.map
+	     (fun e1 ->
+	       List.map
+		 (fun e2 ->
+		   substitute_expr
+                     (fun w -> if w#equal var1 then e1 else e2) expr)
+		 extxprs2)
+	     extxprs1) in
+	expr :: xprs
+      else
+	[expr] in
+    List.concat (List.map convert_to_chif xprs) in
+  let make_asserts exprs =
+    List.concat (List.map convert_to_assert exprs) in
+  let make_branch_assert exprs =
+    let commands = List.map convert_to_assert exprs in
+    [BRANCH (List.map LF.mkCode commands)] in
+  let make_assert expr =
+    convert_to_assert expr in
+  let make_test_code expr =
+    if is_conjunction expr then
+      let conjuncts = get_conjuncts expr in
+      make_asserts conjuncts
+    else if is_disjunction expr then
+      let disjuncts = get_disjuncts expr in
+      make_branch_assert disjuncts
+    else
+      make_assert expr in
+  match optboolxpr with
+    Some bxpr ->
+      let thencode = make_test_code bxpr in
+      let elsecode = make_test_code (simplify_xpr (XOp (XLNot, [bxpr]))) in
+      (frozenVars, Some (thencode, elsecode))
+  | _ -> (frozenVars, None)
   
 let make_tests
     ~(condinstr:arm_assembly_instruction_int)
@@ -338,7 +409,7 @@ let translate_arm_instruction
       let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
       let testinstr = (!arm_assembly_instructions#at_address testaddr) in
       let (frozenvars, tests) =
-        make_tests ~condloc:loc ~testloc ~condinstr:instr ~testinstr in
+        make_instr_local_tests ~condloc:loc ~testloc ~condinstr:instr ~testinstr in
       match tests with
       | Some (thentest, elsetest) ->
          default [BRANCH [LF.mkCode (thentest @ cmds); LF.mkCode elsetest]]
@@ -606,20 +677,24 @@ let translate_arm_instruction
    * else
    *   R[t] = ROR(data, 8*UInt(address<1:0>));
    * ------------------------------------------------------------------------ *)
-  | LoadRegister (ACCAlways, dst, base, src, _) ->
+  | LoadRegister (c, dst, base, src, _) ->
      let floc = get_floc loc in
      let rhs =
        floc#inv#rewrite_expr (src#to_expr floc)
          floc#env#get_variable_comparator in
      let (lhs, lhscmds) = dst#to_lhs floc in
-     let cmd = floc#get_assign_commands lhs rhs in
-     default (cmd @ lhscmds)
-
-  | LoadRegister (_, dst, _, _, _) ->
-     let floc = get_floc loc in
-     let (lhs, lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
+     let updatecmds =
+       if src#is_offset_address_writeback then
+         let addr = src#to_updated_offset_address floc in
+         let (baselhs, baselhscmds) = base#to_lhs floc in
+         let ucmds = floc#get_assign_commands baselhs addr in
+         baselhscmds @ ucmds
+       else
+         [] in
+     let cmds = lhscmds @ (floc#get_assign_commands lhs rhs) @ updatecmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | LoadRegisterByte (ACCAlways, dst, base, src, _) ->
      let floc = get_floc loc in
@@ -747,13 +822,6 @@ let translate_arm_instruction
    *    APSR.N = result<31>;
    *    APSR.Z = IsZeroBit(result);
    * ------------------------------------------------------------------------ *)
-  | Move (setflags, ACCAlways, dst, src, _) ->
-     let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs, lhscmds) = dst#to_lhs floc in
-     let cmd = floc#get_assign_commands lhs rhs in
-     default (cmd @ lhscmds)
-
   | Move _ when instr#is_subsumed ->
      let _ =
        chlog#add
@@ -761,11 +829,14 @@ let translate_arm_instruction
          (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; instr#toPretty]) in
      default []
 
-  | Move (_, _, dst, _, _) ->
+  | Move (setflags, c, dst, src, _) ->
      let floc = get_floc loc in
+     let rhs = src#to_expr floc in
      let (lhs, lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
+     let cmd = floc#get_assign_commands lhs rhs in
+     (match c with
+      | ACCAlways ->  default (cmd @ lhscmds)
+      | _ -> make_conditional_commands c (cmd @ lhscmds))
 
   | MoveRegisterCoprocessor (_, _, _, dst, _, _, _) ->
      let floc = get_floc loc in
@@ -946,31 +1017,23 @@ let translate_arm_instruction
      let cmdshi = floc#get_abstract_commands vhi () in
      default (cmdslo @ cmdshi)
 
-  | StoreRegister (ACCAlways, rt, rn, mem, _) ->
+  | StoreRegister (c, rt, rn, mem, _) ->
+     let floc = get_floc loc in
+     let (vmem, memcmds) = mem#to_lhs floc in
+     let xrt = rt#to_expr floc in
+     let cmds = memcmds @ (floc#get_assign_commands vmem xrt) in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | StoreRegisterByte (c, rt, rn, mem, _) ->
      let floc = get_floc loc in
      let (vmem,memcmds) = mem#to_lhs floc in
      let xrt = rt#to_expr floc in
-     let cmds = floc#get_assign_commands vmem xrt in
-     default (memcmds @ cmds)
-
-  | StoreRegister (_, _, _, mem, _) ->
-     let floc = get_floc loc in
-     let (vmem, memcmds) = mem#to_lhs floc in
-     let cmds = floc#get_abstract_commands vmem () in
-     default (memcmds @ cmds)
-
-  | StoreRegisterByte (ACCAlways, rt, rn, mem, _) ->
-     let floc = get_floc loc in
-     let (vmem,memcmds) = mem#to_lhs floc in
-     let xrt = rt#to_expr floc in
-     let cmds = floc#get_assign_commands vmem xrt in
-     default (memcmds @ cmds)
-
-  | StoreRegisterByte (_, _, _, mem, _) ->
-     let floc = get_floc loc in
-     let (vmem, memcmds) = mem#to_lhs floc in
-     let cmds = floc#get_abstract_commands vmem () in
-     default (memcmds @ cmds)
+     let cmds = memcmds @ (floc#get_assign_commands vmem xrt) in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | StoreRegisterDual (ACCAlways, rt, rt2, _, _, mem, mem2) ->
      let floc = get_floc loc in
