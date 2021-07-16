@@ -1,0 +1,35 @@
+name: CI_b_orchestration
+
+on: [pull_request, push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        path: codehawk
+    - uses: actions/checkout@v2
+      with:
+        repository: static-analysis-engineering/CodeHawk-Binary
+        path: CodeHawk-Binary
+    - name: Delete prebuilt codehawk ocaml binary
+      run: |
+        rm CodeHawk-Binary/chb/bin/binaries/linux/chx86_analyze
+    - uses: avsm/setup-ocaml@v1
+      with:
+        ocaml-version: 4.07.1
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y libgtksourceview2.0-dev libgnomecanvas2-dev
+        opam install zarith ocamlbuild conf-gtksourceview conf-gnomecanvas lablgtk
+    - name: Compile CodeHawk
+      run: eval $(opam env) && cd codehawk/CodeHawk && ./full_make.sh
+    - name: Replace prebuilt codehawk ocaml binary
+      run: |
+        cp codehawk/CodeHawk/CHB/bchcmdline/chx86_analyze CodeHawk-Binary/chb/bin/binaries/linux/chx86_analyze
+    - name: Run binary analyzer test suite
+      run: |
+        PYTHONPATH=$PWD/CodeHawk-Binary CodeHawk-Binary/chb/cmdline/chkx test runall

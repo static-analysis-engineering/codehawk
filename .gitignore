@@ -22,6 +22,8 @@ _build/
 *.xml~
 *.ml~
 *.mli~
+*.sh~
+*.yaml~
 
 # binary analyzer executables
 CodeHawk/CHB/bchcmdline/chx86_analyze
