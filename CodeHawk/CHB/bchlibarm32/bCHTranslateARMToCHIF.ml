@@ -1031,6 +1031,10 @@ let translate_arm_instruction
      let (vmem,memcmds) = mem#to_lhs floc in
      let xrt = rt#to_expr floc in
      let cmds = memcmds @ (floc#get_assign_commands vmem xrt) in
+     let _ =
+       chlog#add
+         "STRB"
+         (LBLOCK [loc#toPretty; STR ": "; vmem#toPretty; STR " to "; x2p xrt]) in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
@@ -1257,29 +1261,29 @@ object (self)
 
   method private create_arg_scalar_asserts
                    (finfo: function_info_int)
-                   (reg: arm_reg_t)
+                   (var: variable_t)
                    (optlb: int option)
                    (optub: int option) =
     let env = finfo#env in
     let reqN () = env#mk_num_temp in
     let reqC = env#request_num_constant in
-    let regvar = env#mk_arm_register_variable reg in
+    (* let regvar = env#mk_arm_register_variable reg in *)
     let cmdasserts cxpr =
       let (cmds, bxpr) = xpr_to_boolexpr reqN reqC cxpr in
       cmds @ [ASSERT bxpr] in
     match (optlb, optub) with
     | (Some lb, Some ub) when lb = ub ->
-       let cxpr = XOp (XEq, [XVar regvar; int_constant_expr lb]) in
+       let cxpr = XOp (XEq, [XVar var; int_constant_expr lb]) in
        cmdasserts cxpr
     | (Some lb, Some ub) ->
-       let c1xpr = XOp (XGe, [XVar regvar; int_constant_expr lb]) in
-       let c2xpr = XOp (XLe, [XVar regvar; int_constant_expr ub]) in
+       let c1xpr = XOp (XGe, [XVar var; int_constant_expr lb]) in
+       let c2xpr = XOp (XLe, [XVar var; int_constant_expr ub]) in
        (cmdasserts c1xpr) @ (cmdasserts c2xpr)
     | (Some lb, _) ->
-       let cxpr = XOp (XGe, [XVar regvar; int_constant_expr lb]) in
+       let cxpr = XOp (XGe, [XVar var; int_constant_expr lb]) in
        cmdasserts cxpr
     | (_, Some ub) ->
-       let cxpr = XOp (XLe, [XVar regvar; int_constant_expr ub]) in
+       let cxpr = XOp (XLe, [XVar var; int_constant_expr ub]) in
        cmdasserts cxpr
     | _ -> []
 
@@ -1288,10 +1292,17 @@ object (self)
                    (finfo: function_info_int)
                    (c: (string * int option * int option * int option)) =
     let (name, optoffset, optlb, optub) = c in
-    let reg = armreg_from_string name in
-    match optoffset with
-    | Some offset -> self#create_arg_deref_asserts finfo reg offset optlb optub
-    | _ -> self#create_arg_scalar_asserts finfo reg optlb optub
+    if (String.length name) > 1 && (String.sub name 0 2) = "0x" then
+      let gv = finfo#env#mk_global_variable (string_to_doubleword name)#to_numerical in
+      (* let gv_in = finfo#env#mk_initial_memory_value gv in *)
+      self#create_arg_scalar_asserts finfo gv optlb optub
+    else
+      let reg = armreg_from_string name in
+      match optoffset with
+      | Some offset -> self#create_arg_deref_asserts finfo reg offset optlb optub
+      | _ ->
+         let regvar = finfo#env#mk_arm_register_variable reg in
+         self#create_arg_scalar_asserts finfo regvar optlb optub
 
   method private create_args_asserts
                    (finfo: function_info_int)
@@ -1315,6 +1326,9 @@ object (self)
     let rAsserts = List.map freeze_initial_register_value arm_regular_registers in
     let externalMemvars = env#get_external_memory_variables in
     let externalMemvars = List.filter env#has_constant_offset externalMemvars in
+    let _ = chlog#add
+              "external memory variables"
+              (LBLOCK [finfo#get_address#toPretty; pretty_print_list externalMemvars (fun v -> v#toPretty) " [" ", " "]"]) in
     let mAsserts = List.map freeze_external_memory_values externalMemvars in
     let sp0 = env#mk_initial_register_value (ARMRegister ARSP) in
     let _ = finfo#add_base_pointer sp0 in
@@ -1338,11 +1352,11 @@ object (self)
     let constantAssigns = env#end_transaction in
     let cmds =
       constantAssigns
+      @ argasserts
       @ rAsserts
       @ mAsserts
       @ [ initializeScalar ]
-      @ initializeBasePointerOperations
-      @ argasserts in
+      @ initializeBasePointerOperations in
     TRANSACTION (new symbol_t "entry", LF.mkCode cmds, None)
 
   method translate =
