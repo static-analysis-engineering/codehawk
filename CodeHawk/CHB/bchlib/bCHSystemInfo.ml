@@ -150,7 +150,7 @@ object (self)
   val successors = H.create 3
   val arm_thumb_switches = H.create 3
 
-  (* constraints on function arguments.
+  (* constraints on function arguments/global variables.
      format:
         <arg-constraints>
           <fn a=hex-address>
@@ -929,6 +929,8 @@ object (self)
   method private read_xml_argument_constraints (node: xml_element_int) =
     (* format: <fn a=hex-addr>
                  <c n=arg-name offset=offset lb=lb ub=ub v=v>
+
+       where arg-name may also be the address of a global variable
      *)
     List.iter (fun n ->
         let get = n#getAttribute in

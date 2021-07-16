@@ -262,7 +262,7 @@ let disassemble_mips_sections () =
    *)
 
 let is_library_stub faddr =
-  if elf_header#is_program_address faddr then
+  if elf_header#is_program_address faddr && elf_header#has_xsubstring faddr 16 then
     let bytestring = byte_string_to_printed_string (elf_header#get_xsubstring faddr 16) in
     let instrseqs = [
         "1080998f2578e00309f82003\\(..\\)001824";
