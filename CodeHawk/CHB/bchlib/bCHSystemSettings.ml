@@ -71,6 +71,7 @@ object (self)
 
   val mutable jsignature_paths = []
   val mutable summary_paths = []
+  val mutable so_libraries = []    (* names of so-libraries *)
   val mutable exportdir = ""
   val mutable verbose = false
   val mutable thumb = false
@@ -144,7 +145,14 @@ object (self)
        end
 
   method set_summary_jar s = 
-    match open_path s with Some p -> summary_paths <- summary_paths @ [ p ] | _ -> ()
+    match open_path s with
+    | Some p -> summary_paths <- summary_paths @ [ p ] | _ -> ()
+
+  method add_so_library l =
+    let _ = chlog#add "so-library" (STR l) in
+    so_libraries <- l :: so_libraries
+
+  method so_libraries = so_libraries
 
   method set_app_summary_jars (appname:string) =
     match apps_dir with
