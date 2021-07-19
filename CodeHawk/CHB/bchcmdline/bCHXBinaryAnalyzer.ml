@@ -147,7 +147,9 @@ let speclist =
     ("-save_cfgs", Arg.Unit (fun () -> savecfgs := true),
      "save basic blocks and loops (applicable to .exe file)") ;
     ("-summaries", Arg.String system_settings#set_summary_jar,
-     "path to the jar that holds the library function summaries") ;
+     "path to the jar that holds the library function summaries");
+    ("-so_library", Arg.String system_settings#add_so_library,
+     "name of a library with shared objects to be searched for summaries");
     ("-appsdir", Arg.String system_settings#set_apps_dir,
      "directory that holds application-dependent summaries") ;
     ("-save_exports", Arg.Unit (fun () -> cmd := "saveexports"),

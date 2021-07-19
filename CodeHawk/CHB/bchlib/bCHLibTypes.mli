@@ -650,6 +650,7 @@ class type system_settings_int =
 object
   (* setters *)
   method set_summary_jar: string -> unit
+  method add_so_library: string -> unit    (* name of so-library *)
   method set_jsignature_jar: string -> unit
   method set_verbose: unit
   method set_vftables: unit
@@ -665,6 +666,7 @@ object
   method get_summary_paths: (string * Zip.in_file) list
   method get_jsignature_paths: (string * Zip.in_file) list
   method get_export_dir: string
+  method so_libraries: string list  (* names of so-libraries *)
 
   (* predicates *)
   method is_verbose: bool

@@ -218,13 +218,22 @@ object (self)
       ()
     else
       let path = system_settings#get_summary_paths in
-      let filename = "so_functions/" ^ fname in
-      if has_summary_file path filename then
-        let xstring = get_summary_file path filename in
-        self#read_so_function_summary_string fname xstring
+      let solibraries = system_settings#so_libraries in
+      let so_paths = solibraries @ ["so_functions"] in
+      let _ = 
+        List.iter (fun p ->
+            let filename = p ^ "/" ^ fname in
+            if H.mem sosummaries fname then
+              ()
+            else
+              if has_summary_file path filename then
+                let xstring = get_summary_file path filename in
+                self#read_so_function_summary_string fname xstring) so_paths in
+      if H.mem sosummaries fname then
+        ()
       else
         begin
-          chlog#add "no so summary" (LBLOCK [ STR fname ]) ;
+          chlog#add "no so summary" (LBLOCK [STR fname]) ;
           missing_so_summaries#add fname
         end
 
