@@ -81,22 +81,40 @@ let initialize_mips_instructions len =
       index := !index + 1 
     done ;
     if !remaining > 0 then
-      raise (BCH_failure (LBLOCK [ STR "Not sufficient array space to store all instruction bytes"]))
+      raise (BCH_failure
+               (LBLOCK [STR "Not sufficient array space to store all instruction bytes"]));
   end
 
 let get_indices (index:int) = (index/arrayLength, index mod arrayLength)
 
 let set_instruction (index:int) (instruction:mips_assembly_instruction_int) =
-  let (i,j) = get_indices index in
-  mips_instructions.(i).(j) <- instruction
+  try
+    let (i,j) = get_indices index in
+    mips_instructions.(i).(j) <- instruction
+  with
+  | Invalid_argument s ->
+     raise (Invalid_argument ("set_instruction: " ^ s))
 
 let initialize_instruction_segment (endindex:int) =
   for index = 0 to (endindex - 1) do
     set_instruction index (make_mips_assembly_instruction wordzero OpInvalid "")
   done
 
-let get_instruction (index:int) =	
-  let (i,j) = get_indices index in mips_instructions.(i).(j)
+let get_instruction (index:int) =
+  let (i,j) = get_indices index in
+  try
+    mips_instructions.(i).(j)
+  with
+  | Invalid_argument s ->
+     raise (
+         Invalid_argument
+           ("get_instruction: "
+            ^ s
+            ^ " ("
+            ^ (string_of_int i)
+            ^ ", "
+            ^ (string_of_int j)
+            ^ ")"))
 
 let fold_instructions (f:'a -> mips_assembly_instruction_int -> 'a) (init:'a) =
   Array.fold_left (fun a arr ->
@@ -117,6 +135,9 @@ object (self)
   val codeBase = code_base
   val codeEnd = code_base#add_int len
   val length = len
+
+  method is_code_address (va: doubleword_int) =
+    codeBase#le va && va#lt codeEnd
 
   method set (index:int) (instruction:mips_assembly_instruction_int) =
     try
@@ -158,11 +179,14 @@ object (self)
       else
 	instr
     with
-    | Invalid_argument _ ->
+    | Invalid_argument s ->
        raise (BCH_failure
-		(LBLOCK [ STR "at_index: Instruction index out of range: " ;
+		(LBLOCK [ STR "at_index: Instruction index out of range: ";
                           INT index ;
-			  STR " (length is " ; INT length ; STR ")"]))
+                          STR ": ";
+                          STR s;
+			  STR " (length is ";
+                          INT length ; STR ")"]))
 
   (* assume all instructions are aligned on 4-byte boundaries *)
   method at_address (va:doubleword_int) =
@@ -171,8 +195,13 @@ object (self)
       self#at_index index
     with
     | BCH_failure p ->
-       raise (BCH_failure (LBLOCK [ STR "Error in assembly-instructions:at-address: " ;
-                                    va#toPretty ; STR ": " ; p ]))
+       raise (BCH_failure
+                (LBLOCK [STR "Error in assembly-instructions:at-address: ";
+                         va#toPretty;
+                         STR " with codeBase: ";
+                         codeBase#toPretty;
+                         STR ": ";
+                         p ]))
 
   method get_code_addresses_rev ?(low=codeBase) ?(high=wordmax) () =
     let low = if low#lt codeBase then codeBase else low in

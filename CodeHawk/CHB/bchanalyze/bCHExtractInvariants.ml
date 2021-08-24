@@ -274,9 +274,6 @@ let extract_testvar_equalities finfo iaddr domain =
       | [] -> acc 
       | _ -> 
 	 begin
-           chlog#add
-             "test variables"
-             (LBLOCK [STR iaddr; STR ": "; fvar#toPretty; fval#toPretty]);
 	   finfo#finv#add_test_value_fact iaddr fvar fval taddr jaddr ;
 	   fval :: acc
 	end

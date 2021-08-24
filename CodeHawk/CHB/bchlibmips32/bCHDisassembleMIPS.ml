@@ -478,7 +478,7 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       (fun va -> (make_location { loc_faddr = faddr ; loc_iaddr = va })#ci) l in
   let rec find_last_instr (va:doubleword_int) (prev:doubleword_int) =
     let instr = get_instr va in
-    if va#equal wordzero then
+    if va#equal wordzero || not (!mips_assembly_instructions#is_code_address va) then
       (Some [],prev,[])
     else if is_return_instruction instr#get_opcode then
       (Some [],va#add_int 4,[])
