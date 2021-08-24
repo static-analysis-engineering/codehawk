@@ -201,12 +201,12 @@ let cc_expr
                     XOp (XLt, [v x; int_constant_expr e31])])
 
     | (Compare (ACCAlways, x, y, _), ACCSignedGE) ->
-       XOp (XLOr, [XOp (XLAnd, [XOp (XGe, [v x; v y]);
-                                XOp (XLt, [v x; int_constant_expr e31]);
-                                XOp (XLt, [v y; int_constant_expr e31])]);
-                   XOp (XLAnd, [XOp (XLt, [v x; v y]);
-                                XOp (XLt, [v x; int_constant_expr e31]);
-                                XOp (XGe, [v y; int_constant_expr e31])])])
+       let ic31 = int_constant_expr e31 in
+       let c1 = XOp (XLAnd, [XOp (XGe, [v x; v y]); XOp (XLt, [v x; ic31])]) in
+       let d1 = XOp (XLAnd, [c1; XOp (XLt, [v y; ic31])]) in
+       let c2 = XOp (XLAnd, [XOp (XLt, [v x; v y]); XOp (XLt, [v x; ic31])]) in
+       let d2 = XOp (XLAnd, [c2; XOp (XGe, [v y; ic31])]) in
+       XOp (XLOr, [d1; d2])
 
     | (Compare (ACCAlways, x, y, _), ACCUnsignedHigher) ->
        XOp (XGt, [v x; v y])

@@ -97,10 +97,11 @@ object (self)
     match block#get_successors with
     | [false_branch]
     | [false_branch; _] -> false_branch
-    | _ ->
+    | bsucc ->
        let msg =
          LBLOCK [block#get_first_address#toPretty; NL; block#toPretty; NL;
-                 INDENT (3, STR "get_false_branch_successor does not have two successors")] in
+                 INDENT (3, LBLOCK [STR "get_false_branch_successor has ";
+                                    INT (List.length bsucc); STR " successors"])] in
        begin
          ch_error_log#add "cfg error" msg;
          raise (BCH_failure msg)

@@ -410,7 +410,7 @@ let set_block_boundaries () =
              | CompareBranchZero (_, op) ->
               if op#is_absolute_address then
                 let jmpaddr = op#get_absolute_address in
-                set_block_entry jmpaddr
+                set_block_entry jmpaddr;
               else
                 ()
 
@@ -515,6 +515,12 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
                             STR ": ";
                             INT (List.length l)]) in
          l in
+    let _ =
+      chlog#add
+        "successors"
+        (LBLOCK [ iaddr#toPretty;
+                  STR ": ";
+                  pretty_print_list successors (fun s -> s#toPretty) " [" "," "]"]) in
     List.map
       (fun va -> (make_location {loc_faddr = faddr; loc_iaddr = va})#ci)
       (List.filter
@@ -550,13 +556,13 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
     let _ = floc#set_instruction_bytes instr#get_instruction_bytes in
     if va#equal wordzero then
       (Some [],prev,[])
+    else if instr#is_block_entry then
+      (None,prev,[])
     else if is_nr_call_instruction instr then
       let _ =
         chlog#add
           "non-returning call" (LBLOCK [faddr#toPretty; STR " "; va#toPretty]) in
       (Some [],va,[])
-    else if instr#is_block_entry then
-      (None,prev,[])
     else if floc#has_call_target && floc#get_call_target#is_nonreturning then
       let _ = chlog#add "non-returning" floc#l#toPretty in
       (Some [],va,[])
@@ -571,6 +577,9 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       let _ = floc#set_instruction_bytes (get_instr baddr)#get_instruction_bytes in
       find_last_instruction (get_next_instr_address baddr) baddr
     else (None,baddr,[]) in
+  let _ = chlog#add
+            "last address"
+            (LBLOCK [baddr#toPretty; STR " -> "; lastaddr#toPretty]) in
   let successors = match succ with
     | Some s -> s
     | _ -> get_successors faddr lastaddr in
