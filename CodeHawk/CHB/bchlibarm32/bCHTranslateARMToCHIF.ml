@@ -624,42 +624,49 @@ let translate_arm_instruction
 
   | IfThen (c, xyz) when instr#is_aggregate ->
      let floc = get_floc loc in
-     let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
-     let testloc = ctxt_string_to_location faddr testiaddr in
-     let testaddr = testloc#i in
-     let testinstr = !arm_assembly_instructions#at_address testaddr in
-     let dstop = instr#get_aggregate_dst in
-     let (frozenvars, optpredicate) =
-       make_conditional_predicate
-         ~condinstr:instr
-         ~testinstr:testinstr
-         ~condloc:loc
-         ~testloc:testloc in
-     let cmds =
-       match optpredicate with
-       | Some p ->
-          let (lhs, lhscmds) = dstop#to_lhs floc in
-          let cmds = floc#get_assign_commands lhs p in
-          let _ =
-            chlog#add
-              "assign ite predicate"
-              (LBLOCK [testaddr#toPretty;
-                       STR ": " ;
-                       lhs#toPretty;
-                       STR " := ";
-                       x2p p]) in
-          let _ =
-            chlog#add
-              "ite assign cmds"
-              (LBLOCK (List.map (command_to_pretty 0) cmds)) in
-          lhscmds @ cmds
+     if finfo#has_associated_cc_setter ctxtiaddr then
+       let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+       let testloc = ctxt_string_to_location faddr testiaddr in
+       let testaddr = testloc#i in
+       let testinstr = !arm_assembly_instructions#at_address testaddr in
+       let dstop = instr#get_aggregate_dst in
+       let (frozenvars, optpredicate) =
+         make_conditional_predicate
+           ~condinstr:instr
+           ~testinstr:testinstr
+           ~condloc:loc
+           ~testloc:testloc in
+       let cmds =
+         match optpredicate with
+         | Some p ->
+            let (lhs, lhscmds) = dstop#to_lhs floc in
+            let cmds = floc#get_assign_commands lhs p in
+            let _ =
+              chlog#add
+                "assign ite predicate"
+                (LBLOCK [testaddr#toPretty;
+                         STR ": " ;
+                         lhs#toPretty;
+                         STR " := ";
+                         x2p p]) in
+            let _ =
+              chlog#add
+                "ite assign cmds"
+                (LBLOCK (List.map (command_to_pretty 0) cmds)) in
+            lhscmds @ cmds
        | _ ->
           let _ =
             chlog#add
               "no ite predicate"
               (LBLOCK [testaddr#toPretty; STR ": " ; testinstr#toPretty]) in
           [] in
-     default cmds
+       default cmds
+     else
+       let _ =
+         chlog#add
+           "aggregate without ite predicate"
+           (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
+       default []
      
   (* -------------------------------------------------------- LoadRegister -- *
    * offset = Shift(R[m], shift_t, shift_n, APSR.C);
