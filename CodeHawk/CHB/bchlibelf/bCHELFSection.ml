@@ -78,7 +78,8 @@ object (self)
   method get_vaddr = vaddr
 
   method includes_VA (va:doubleword_int) =
-    wordzero#lt vaddr && vaddr#le va && va#lt (vaddr#add_int (String.length s))
+    (* assume that at least 4 bytes must be available *)
+    wordzero#lt vaddr && vaddr#le va && va#le (vaddr#add_int ((String.length s) - 4))
 
   method get_string_reference  (va:doubleword_int) =   (* absolute address *)
     if self#includes_VA va then

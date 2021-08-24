@@ -145,9 +145,11 @@ let get_result_metrics
 
 let combine_results index skip nonrel reset time 
     (presults:function_results_t) (r:result_metrics_t) =
-  let stable = (not reset) &&
-    ((presults.fres_results.mres_invs.minvs_count = r.mres_invs.minvs_count) &&
-      (presults.fres_results.mres_vars.mvars_count = r.mres_vars.mvars_count)) in
+  let stable =
+    (not reset)
+    (* && r.mres_calls.mcalls_unr = 0 *)
+    && ((presults.fres_results.mres_invs.minvs_count = r.mres_invs.minvs_count)
+        && (presults.fres_results.mres_vars.mvars_count = r.mres_vars.mvars_count)) in
   let pinstrs = presults.fres_results.mres_cfg.mcfg_instrs in
   let pvars = presults.fres_results.mres_vars.mvars_count in
   let pinvs = presults.fres_results.mres_invs.minvs_count in

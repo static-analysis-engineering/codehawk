@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -69,6 +70,17 @@ object (self)
        let msg =
          LBLOCK [ STR "Error in getting value from program section: " ; p  ] in
        raise (BCH_failure msg)
+    | IO.No_more_input ->
+       let msg =
+         LBLOCK [STR "No more input in getting value from program section: ";
+                 a#toPretty;
+                 STR " (section va: ";
+                 vaddr#toPretty;
+                 STR ", section length: ";
+                 INT (String.length s);
+                 STR ")"] in
+       raise (BCH_failure msg)
+
 end
 
 let mk_elf_program_section

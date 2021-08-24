@@ -951,12 +951,7 @@ object (self)
 
   initializer
     match optnode with
-    | Some node ->
-       begin
-         self#read_xml node;
-         chlog#add "initialize invariants"
-           (LBLOCK [STR fname; STR ": "; INT invariants#size])
-       end
+    | Some node -> self#read_xml node
     | _ -> ()
 
   method reset = 
