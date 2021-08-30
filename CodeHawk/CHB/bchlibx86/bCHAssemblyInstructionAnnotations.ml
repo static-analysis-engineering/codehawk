@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +44,7 @@ open XprToPretty
 open Xsimplify
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHAssemblyInstructions
 open BCHBasicTypes
 open BCHCallTarget
@@ -51,7 +53,7 @@ open BCHCPURegisters
 open BCHDemangler
 open BCHDoubleword
 open BCHFloc
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
@@ -88,10 +90,24 @@ end
 let check_range ?low ?high (msg:pretty_t) value =
   let returnValue = ref value in
   begin
-    (match low with Some low -> if value < low then
-	begin ch_error_log#add "range error" msg ; returnValue := low end else ()  | _ -> ()) ;
-    (match high with Some high -> if value > high then
-	begin ch_error_log#add "range error" msg ; returnValue := high end else () | _ -> ()) ;
+    (match low with
+     | Some low ->
+        if value < low then
+	  begin
+            ch_error_log#add "range error" msg;
+            returnValue := low
+          end
+        else ()
+     | _ -> ());
+    (match high with
+     | Some high ->
+        if value > high then
+	  begin
+            ch_error_log#add "range error" msg;
+            returnValue := high
+          end
+        else ()
+     | _ -> ());
     !returnValue
   end
 
@@ -121,7 +137,7 @@ let create_annotation_aux (floc:floc_int) =
 	| _ ->  xpr_formatter#pr_expr x 
       else
 	xpr_formatter#pr_expr x in
-  let pr_argument_expr ?(typespec=None) (p:api_parameter_t) (xpr:xpr_t) = 
+  let pr_argument_expr ?(typespec=None) (p: fts_parameter_t) (xpr: xpr_t) =
     let is_code_address n = 
       try system_info#is_code_address (numerical_to_doubleword n) with
 	Invalid_argument _ -> false in
@@ -140,14 +156,17 @@ let create_annotation_aux (floc:floc_int) =
 	  let (memref,memoffset) = floc#decompose_address xpr in
 	  if is_constant_offset memoffset then
             let offset = get_total_constant_offset memoffset in
-	    LBLOCK [ STR "&" ; variable_to_pretty (env#mk_memory_variable memref offset) ]
+	    LBLOCK [
+                STR "&";
+                variable_to_pretty (env#mk_memory_variable memref offset)]
 	  else if memref#is_unknown_reference then
 	    pr_expr xpr
 	  else
 	    memref#toPretty
 	  else
 	    pr_expr ~typespec ~partype:p.apar_type xpr in
-  let pr_sum_argument_expr (ct:call_target_info_int) (p:api_parameter_t) (xpr:xpr_t) =
+  let pr_sum_argument_expr
+        (ct: call_target_info_int) (p: fts_parameter_t) (xpr: xpr_t) =
     let typespec = ct#get_enum_type p in
     match get_xpr_symbolic_name ~typespec xpr with
     | Some name -> STR name
@@ -192,12 +211,18 @@ let create_annotation_aux (floc:floc_int) =
     if op#is_absolute_address then
       if floc#has_test_expr then
 	let testExpr = floc#get_test_expr in
-	let pp = LBLOCK [ STR "if " ; xpr_formatter#pr_expr testExpr ; STR " then goto " ; 
-			  STR op#get_absolute_address#to_hex_string ] in
+	let pp =
+          LBLOCK [
+              STR "if ";
+              xpr_formatter#pr_expr testExpr;
+              STR " then goto ";
+	      STR op#get_absolute_address#to_hex_string] in
 	make_annotation (Jump op#get_absolute_address) pp
       else
-	let pp = LBLOCK [ STR "if ? then goto " ; 
-			  STR op#get_absolute_address#to_hex_string ] in
+	let pp =
+          LBLOCK [
+              STR "if ? then goto ";
+	      STR op#get_absolute_address#to_hex_string] in
 	make_annotation (Jump op#get_absolute_address) pp
     else
       no_annotation
@@ -217,16 +242,22 @@ let create_annotation_aux (floc:floc_int) =
     let callSiteFloc = get_floc (ctxt_string_to_location floc#fa callSite) in
     if callSiteFloc#has_call_target
        && callSiteFloc#get_call_target#is_signature_valid then
-      let api = callSiteFloc#get_call_target#get_signature in
-      let functionName = api.fapi_name in
+      let fintf = callSiteFloc#get_call_target#get_function_interface in
+      let functionName = fintf.fintf_name in
       let param = 
 	try
-	  get_stack_parameter api argIndex 
+	  get_stack_parameter fintf argIndex
 	with
 	  BCH_failure p ->
 	    begin
-	      ch_error_log#add "number of arguments" 
-		(LBLOCK [ floc#l#toPretty ; STR ": " ; STR functionName ; STR ": " ; p ]) ;
+	      ch_error_log#add
+                "number of arguments"
+		(LBLOCK [
+                     floc#l#toPretty;
+                     STR ": ";
+                     STR functionName;
+                     STR ": ";
+                     p]) ;
 	      mk_stack_parameter argIndex ;
 	    end in
       let rhs = get_rhs src floc in
@@ -237,8 +268,14 @@ let create_annotation_aux (floc:floc_int) =
 	  | Some name -> STR name 
 	  | _ -> rhs_to_pretty ~partype:param.apar_type rhs in
       make_annotation FunctionArgument 
-	(LBLOCK [ STR "[" ; STR functionName ; STR " : " ; 
-		  STR param.apar_name ; STR " = " ; rhs_pp ; STR " ]" ])
+	(LBLOCK [
+             STR "[";
+             STR functionName;
+             STR " : ";
+	     STR param.apar_name;
+             STR " = ";
+             rhs_pp;
+             STR " ]"])
     else
       no_annotation
 
@@ -252,30 +289,43 @@ let create_annotation_aux (floc:floc_int) =
     let rhs = get_rhs src floc in
     let lhs = get_lhs dst floc in
     let rewritten = rewrite_expr_pretty rhs in
-    let pp = LBLOCK [ lhs_to_pretty dst lhs ; STR " := " ; rhs_to_pretty rhs ; rewritten ] in
+    let pp =
+      LBLOCK [
+          lhs_to_pretty dst lhs; STR " := "; rhs_to_pretty rhs; rewritten] in
     make_annotation Assignment pp
       
   | Movzx (_, dst, src) ->
     let rhs = get_rhs src floc in
     let lhs = get_lhs dst floc in
     let rewritten = rewrite_expr_pretty rhs in
-    let pp = LBLOCK [ lhs_to_pretty dst lhs ; STR " := " ; rhs_to_pretty rhs ; rewritten ] in
+    let pp =
+      LBLOCK [
+          lhs_to_pretty dst lhs; STR " := "; rhs_to_pretty rhs; rewritten] in
     make_annotation Assignment pp
       
   | Movsx (_, dst, src) ->
     let rhs = get_rhs src floc in
     let lhs = get_lhs dst floc in
     let rewritten = rewrite_expr_pretty rhs in
-    let pp = LBLOCK [ lhs_to_pretty dst lhs ; STR " := " ; rhs_to_pretty rhs ; rewritten ] in
+    let pp =
+      LBLOCK [
+          lhs_to_pretty dst lhs; STR " := "; rhs_to_pretty rhs; rewritten] in
     make_annotation Assignment pp
       
   | Movs (width, dst, src,srcptr,dstptr) ->
     let rhs = rewrite_expr (get_rhs src floc) in
     let lhs = get_lhs dst floc in
     let ecx = rewrite_expr (get_rhs (ecx_r RD) floc) in
-    let pp = LBLOCK [ STR "(Esi): " ; rhs_to_pretty rhs ; STR "; (Edi): " ; 
-		      lhs_to_pretty dst lhs ; 
-		      STR "; Ecx: " ; rhs_to_pretty ecx ; STR "; width: " ; INT width ] in
+    let pp =
+      LBLOCK [
+          STR "(Esi): ";
+          rhs_to_pretty rhs;
+          STR "; (Edi): ";
+	  lhs_to_pretty dst lhs;
+	  STR "; Ecx: ";
+          rhs_to_pretty ecx;
+          STR "; width: ";
+          INT width] in
     make_annotation Assignment pp
 
   | FXmmMove (_,scalar,single,dst,src) ->
@@ -284,15 +334,23 @@ let create_annotation_aux (floc:floc_int) =
     let rewritten = rewrite_expr_pretty rhs in
     let sScalar = if scalar then "scalar" else "packed" in
     let sSingle = if single then "single prec" else "double prec" in
-    let pp = LBLOCK [ lhs_to_pretty dst lhs ; STR " := " ; rhs_to_pretty rhs ; rewritten ;
-		      STR " (" ; STR sScalar ; STR ", " ; STR sSingle ; STR ")" ] in
+    let pp =
+      LBLOCK [
+          lhs_to_pretty dst lhs;
+          STR " := ";
+          rhs_to_pretty rhs;
+          rewritten;
+	  STR " (";
+          STR sScalar;
+          STR ", ";
+          STR sSingle;
+          STR ")"] in
     make_annotation Assignment pp
       
   | Stos (width, dst, src, opedi,opdf) ->
-     (* let src = if width =1 then al_r RD else if width = 2 then ax_r RD else eax_r RD in *)
     let rhs = rewrite_expr (get_rhs src floc) in
     let lhs = get_lhs dst floc in
-    let pp = LBLOCK [ lhs_to_pretty dst lhs ; STR " := " ; rhs_to_pretty rhs ] in
+    let pp = LBLOCK [lhs_to_pretty dst lhs; STR " := "; rhs_to_pretty rhs] in
     make_annotation Assignment pp
       
   | RepECmps (width,src1,src2) ->
@@ -705,28 +763,38 @@ let create_annotation_aux (floc:floc_int) =
       
   | DirectCall _ | IndirectCall _
        when floc#has_call_target && floc#get_call_target#is_signature_valid ->
-    let api = floc#get_call_target#get_signature in
-    let fn = api.fapi_name in
+     let fintf = floc#get_call_target#get_function_interface in
+     let fts = fintf.fintf_type_signature in
+    let fn = fintf.fintf_name in
     let pStackAdjustment = 
-      if floc#get_call_target#is_nonreturning then STR " (nonreturning)" 
+      if floc#get_call_target#is_nonreturning then
+        STR " (nonreturning)" 
       else if system_info#has_esp_adjustment floc#fa floc#ia then 
-	LBLOCK [ STR " (adj " ; INT (system_info#get_esp_adjustment floc#fa floc#ia) ; 
-		 STR ")" ]
+	LBLOCK [
+            STR " (adj ";
+            INT (system_info#get_esp_adjustment floc#fa floc#ia); 
+	    STR ")"]
       else
-      match api.fapi_stack_adjustment with
-      | Some adj -> if adj = 0 then STR "" else LBLOCK [ STR " (adj " ; INT adj ; STR ")" ]
+        match fts.fts_stack_adjustment with
+        | Some adj ->
+           if adj = 0 then STR "" else LBLOCK [STR " (adj "; INT adj; STR ")"]
       | _ -> STR " (?adj?)" in
     let pr_arg = if floc#get_call_target#is_semantics_valid then
 	pr_sum_argument_expr floc#get_call_target
       else
 	pr_argument_expr ~typespec:None in
-    let pp = LBLOCK [ STR (demangle fn) ;  
-		      pretty_print_list floc#get_call_args
-			(fun (p,expr) -> 
-			  LBLOCK [ STR p.apar_name ; STR ":" ; 
-				   pr_arg p expr ]) "(" ", " ")" ;
-		      pStackAdjustment ] in
-    let _ = if fn = "strncmp" then
+    let pp =
+      LBLOCK [
+          STR (demangle fn);
+	  pretty_print_list floc#get_call_args
+	    (fun (p,expr) ->
+	      LBLOCK [
+                  STR p.apar_name;
+                  STR ":";
+		  pr_arg p expr]) "(" ", " ")" ;
+	  pStackAdjustment] in
+    let _ =
+      if fn = "strncmp" then
 	let rvar = floc#f#env#mk_return_value floc#cia in
 	floc#f#env#set_variable_name rvar (pretty_to_string pp) in
     make_annotation (LibraryCall fn) pp 
@@ -771,15 +839,16 @@ let create_annotation_aux (floc:floc_int) =
     let (callSite, argIndex) = op#get_function_argument in
     let callSiteFloc = get_floc (ctxt_string_to_location floc#fa callSite) in
     if callSiteFloc#has_call_target && floc#get_call_target#is_signature_valid then
-      let api = callSiteFloc#get_call_target#get_signature in
-	let fName = api.fapi_name in
+      let fintf = callSiteFloc#get_call_target#get_function_interface in
+	let fName = fintf.fintf_name in
 	let param = 
 	  try
-	    get_stack_parameter api argIndex 
+	    get_stack_parameter fintf argIndex
 	  with
 	    BCH_failure p ->
 	      begin
-		ch_error_log#add "number of arguments" 
+		ch_error_log#add
+                  "number of arguments"
 		  (LBLOCK [ STR fName ; STR ": " ; p ]) ;
 		mk_stack_parameter argIndex
 	      end in
@@ -789,8 +858,15 @@ let create_annotation_aux (floc:floc_int) =
 	    match get_xpr_symbolic_name rhs with
 	    | Some name -> STR name 
 	    | _ -> rhs_to_pretty ~partype:param.apar_type rhs in
-	let pp = LBLOCK [ STR "[" ; STR fName ; STR " : " ; 
-			  STR param.apar_name ;  STR " = " ; rhs_pp ; STR " ]" ] in
+	let pp =
+          LBLOCK [
+              STR "[";
+              STR fName;
+              STR " : ";
+	      STR param.apar_name;
+              STR " = ";
+              rhs_pp;
+              STR " ]"] in
 	make_annotation FunctionArgument pp
       else 
 	no_annotation
@@ -804,22 +880,34 @@ let create_annotation_aux (floc:floc_int) =
       let rhs = get_rhs op floc in
       let lhs_op = esp_deref ~with_offset:(-4) WR in
       let lhs = get_lhs lhs_op floc in
-      let pp = LBLOCK [ STR "esp := esp - 4 ; " ; lhs_to_pretty lhs_op lhs ; STR " := " ;
-			rhs_to_pretty rhs ] in
+      let pp =
+        LBLOCK [
+            STR "esp := esp - 4 ; ";
+            lhs_to_pretty lhs_op lhs;
+            STR " := ";
+	    rhs_to_pretty rhs] in
       make_annotation Assignment pp
 	
   | Push (_,op) ->
     let rhs = get_rhs op floc in
     let lhs_op = esp_deref ~with_offset:(-4) WR in
     let lhs = get_lhs lhs_op floc in
-    let pp = LBLOCK [ STR "esp := esp - 4 ; " ; lhs_to_pretty lhs_op lhs ; STR " := " ;
-		      rhs_to_pretty rhs ] in
+    let pp =
+      LBLOCK [
+          STR "esp := esp - 4 ; ";
+          lhs_to_pretty lhs_op lhs;
+          STR " := ";
+	  rhs_to_pretty rhs] in
     make_annotation Assignment pp
       
   | PushFlags ->
     let lhs_op = esp_deref ~with_offset:(-4) WR in
     let lhs = get_lhs lhs_op floc in
-    let pp = LBLOCK [ STR "esp := esp - 4 ; " ; lhs_to_pretty lhs_op lhs ; STR " := cpu-flags" ] in
+    let pp =
+      LBLOCK [
+          STR "esp := esp - 4 ; ";
+          lhs_to_pretty lhs_op lhs;
+          STR " := cpu-flags"] in
     make_annotation Assignment pp
       
   | Pop (_,op) when op#is_register ->
@@ -827,28 +915,44 @@ let create_annotation_aux (floc:floc_int) =
     let rhs = floc#inv#rewrite_expr rhs env#get_variable_comparator in
     let initVal = env#mk_initial_register_value (CPURegister op#get_cpureg) in
     if syntactically_equal rhs (XVar initVal) then
-      let pp = LBLOCK [ STR "restore " ; STR (cpureg_to_string op#get_cpureg) ] in
+      let pp = LBLOCK [STR "restore "; STR (cpureg_to_string op#get_cpureg)] in
       make_annotation Assignment pp
     else
       let lhs = get_lhs op floc in
       let esp = env#mk_cpu_register_variable Esp in
-      let rewritten = rewrite_expr_pretty (XOp (XPlus, [ XVar esp ; int_constant_expr 4 ])) in
-      let pp = LBLOCK [ lhs_to_pretty op lhs ; STR " := " ; rhs_to_pretty rhs ; 
-			STR " ; esp := esp + 4" ; rewritten  ] in
+      let rewritten =
+        rewrite_expr_pretty (XOp (XPlus, [XVar esp; int_constant_expr 4])) in
+      let pp =
+        LBLOCK [
+            lhs_to_pretty op lhs;
+            STR " := ";
+            rhs_to_pretty rhs;
+	    STR " ; esp := esp + 4";
+            rewritten ] in
       make_annotation Assignment pp
 	
   | Pop (_,op) ->
     let rhs = get_rhs (esp_deref RD) floc in
     let lhs = get_lhs op floc in
     let esp = env#mk_cpu_register_variable Esp in
-    let rewritten = rewrite_expr_pretty (XOp (XPlus, [ XVar esp ; int_constant_expr 4 ])) in
-    let pp = LBLOCK [ lhs_to_pretty op lhs ; STR " := " ; rhs_to_pretty rhs ; 
-		      STR " ; esp := esp + 4" ; rewritten ] in
+    let rewritten =
+      rewrite_expr_pretty (XOp (XPlus, [XVar esp; int_constant_expr 4])) in
+    let pp =
+      LBLOCK [
+          lhs_to_pretty op lhs;
+          STR " := ";
+          rhs_to_pretty rhs; 
+	  STR " ; esp := esp + 4";
+          rewritten] in
     make_annotation Assignment pp
       
   | PopFlags ->
     let rhs = get_rhs (esp_deref RD) floc in
-    let pp = LBLOCK [ STR "cpu-flags := " ; rhs_to_pretty rhs ; STR " ; esp := esp + 4" ] in
+    let pp =
+      LBLOCK [
+          STR "cpu-flags := ";
+          rhs_to_pretty rhs;
+          STR " ; esp := esp + 4"] in
     make_annotation Assignment pp
 
   | Setcc (_,op) when floc#f#has_associated_cc_setter floc#cia ->
@@ -922,31 +1026,36 @@ let create_annotation_aux (floc:floc_int) =
   | SysReturn -> make_annotation Return (STR "sysret")
 
   | DirectJmp op when op#is_absolute_address ->
-    let pp = LBLOCK [ STR "goto " ; STR op#get_absolute_address#to_hex_string ] in
+    let pp = LBLOCK [STR "goto "; STR op#get_absolute_address#to_hex_string] in
     make_annotation (Jump op#get_absolute_address) pp
 
   | IndirectJmp op when floc#f#is_dll_jumptarget floc#cia ->
     if floc#has_call_target && floc#get_call_target#is_signature_valid then
-      let api = floc#get_call_target#get_signature in
-      let fn = api.fapi_name in
+      let fintf = floc#get_call_target#get_function_interface in
+      let fts = fintf.fintf_type_signature in
+      let fn = fintf.fintf_name in
       let pStackAdjustment = 
-	match api.fapi_stack_adjustment with
+	match fts.fts_stack_adjustment with
 	| Some adj -> if adj = 0 then 
 	    STR "" 
 	  else 
-	    LBLOCK [ STR " (adjust " ; INT adj ; STR ")" ]
+	    LBLOCK [STR " (adjust "; INT adj ; STR ")"]
 	| _ -> STR " (?adj?)" in
       let pr_arg =
         if floc#has_call_target && floc#get_call_target#is_semantics_valid then
 	  pr_sum_argument_expr floc#get_call_target
 	else
 	  pr_argument_expr ~typespec:None in
-      let pp = LBLOCK [ STR (demangle fn) ;  
-			pretty_print_list floc#get_call_args
-			  (fun (p,expr) -> 
-			    LBLOCK [ STR p.apar_name ; STR ":" ; 
-				     pr_arg p expr ]) "(" ", " ")" ;
-			pStackAdjustment ] in
+      let pp =
+        LBLOCK [
+            STR (demangle fn);
+	    pretty_print_list floc#get_call_args
+	      (fun (p,expr) ->
+		LBLOCK [
+                    STR p.apar_name;
+                    STR ":";
+		    pr_arg p expr ]) "(" ", " ")";
+	    pStackAdjustment ] in
       let _ = if fn = "strncmp" then
 	  let rvar = floc#f#env#mk_return_value floc#cia in
 	  floc#f#env#set_variable_name rvar (pretty_to_string pp) in

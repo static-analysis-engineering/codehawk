@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +51,7 @@ open BCHCPURegisters
 open BCHDataBlock
 open BCHDoubleword
 open BCHFloc
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHFunctionSummary
@@ -264,7 +265,8 @@ let disassemble_string (displacement:int) (vastart:doubleword_int) (codestring:s
 
 let add_class_functions classes isCodeAddress =
   List.iter (fun c ->
-      let _ = c#initialize_function_apis pe_sections#get_virtual_function_address in
+      let _ =
+        c#initialize_function_interfaces pe_sections#get_virtual_function_address in
       let add l isstatic =
         let classname = c#get_name in
         List.iter (fun (fa,functionname)  -> 
@@ -1117,7 +1119,10 @@ let record_call_targets () =
                                  STR predefined_ctinfo#get_name ])
                  else
 		   if system_info#has_call_target faddr iaddr then
-                     (* ----- user-provided target ----- *)
+                     let calltgt = system_info#get_call_target faddr iaddr in
+                     let ctinfo = mk_call_target_info calltgt in
+                     finfo#set_call_target ctxtiaddr ctinfo
+                     (* ----- user-provided target -----
 		     match system_info#get_call_target faddr iaddr with
 		     | ("dll",dllname,dllfn) ->
                         let ctinfo = mk_dll_target dllname dllfn in
@@ -1135,6 +1140,7 @@ let record_call_targets () =
                         finfo#set_call_target ctxtiaddr ctinfo
 		     | _ -> raise (BCH_failure 
 				     (STR "system_info#get_call_target internal error"))
+                      *)
 		   else
 		     begin 
 		       match get_dll_target instr with
@@ -1169,19 +1175,21 @@ let record_call_targets () =
 	      | _ -> ()) ;
 	  if system_settings#is_verbose then
 	    let etime = Unix.gettimeofday () in
-	    pverbose [ prl !count ;
-		       STR "  " ; faddr#toPretty ; STR "  " ; 
-		       prt (etime -. ftime) ; STR "  " ;
-		       prt (etime -. !starttime) ; STR "  " ;
-		       prl f#get_block_count ; STR "  " ;
-		       prl f#get_instruction_count ; STR "  " ;
-		       prl finfo#env#get_var_count ; STR "  " ;
-		       prl finfo#get_call_count ; NL ]
+	    pverbose [
+                prl !count; STR "  ";
+                faddr#toPretty; STR "  ";
+		prt (etime -. ftime); STR "  ";
+		prt (etime -. !starttime); STR "  ";
+		prl f#get_block_count; STR "  ";
+		prl f#get_instruction_count; STR "  ";
+		prl finfo#env#get_var_count; STR "  ";
+		prl finfo#get_call_count; NL]
 	end
       with
       | BCH_failure p ->
-	 ch_error_log#add "record call targets" 
-	                  (LBLOCK [ STR "Function " ; faddr#toPretty ; STR ": " ; p ])
+	 ch_error_log#add
+           "record call targets"
+	   (LBLOCK [STR "Function "; faddr#toPretty; STR ": "; p])
     )
   
   
@@ -1274,13 +1282,15 @@ let associate_function_arguments_push () =
 	      let floc = get_floc loc in
 	      if floc#has_call_target
                    && floc#get_call_target#is_signature_valid then
-		let api = floc#get_call_target#get_signature in
-		match api.fapi_stack_adjustment with
+		let fintf = floc#get_call_target#get_function_interface in
+                let fts = fintf.fintf_type_signature in
+		match fts.fts_stack_adjustment with
 		| Some adj -> compensateForPop := !compensateForPop + (adj / 4)
 		| _ -> valid := false
 	      else ()
 	    | Sub (dst,_) 
-	    | Add (dst,_ ) when dst#is_register && dst#get_cpureg = Esp -> valid := false
+	      | Add (dst,_ ) when dst#is_register && dst#get_cpureg = Esp ->
+               valid := false
 	    | Mov (4,dst,_) when dst#is_memory_access ->
 		(match dst#get_kind with
 		| IndReg (Esp, offset)
@@ -1346,25 +1356,36 @@ let associate_function_arguments_push () =
 		| DirectCall _ | IndirectCall _ ->
 		   if floc#has_call_target
                       && floc#get_call_target#is_signature_valid then
-		      let api = floc#get_call_target#get_signature in
-		      let numParams = List.length (get_stack_parameter_names api) in
-		      identify_known_arguments ~callAddress:ctxtiaddr ~numParams ~block faddr
+		      let fintf = floc#get_call_target#get_function_interface in
+		      let numParams =
+                        List.length (get_stack_parameter_names fintf) in
+		      identify_known_arguments
+                        ~callAddress:ctxtiaddr ~numParams ~block faddr
 		    else if system_info#has_esp_adjustment faddr iaddr then
 		      let numParams = system_info#get_esp_adjustment faddr iaddr in
-		      identify_known_arguments ~callAddress:ctxtiaddr ~numParams ~block faddr
+		      identify_known_arguments
+                        ~callAddress:ctxtiaddr ~numParams ~block faddr
 		    else
 		      identify_arguments ~callAddress:ctxtiaddr ~block
 		| _ -> ())
 	  )
       with
       | BCH_failure p ->
-	ch_error_log#add "associate function arguments (push)"
-	  (LBLOCK [ STR "Function " ; assemblyFunction#get_address#toPretty ; STR ": " ; p ])
+	 ch_error_log#add
+           "associate function arguments (push)"
+	   (LBLOCK [
+                STR "Function ";
+                assemblyFunction#get_address#toPretty;
+                STR ": ";
+                p])
     )
 		
 let associate_function_arguments_mov () =
-  let _ = pverbose [ NL ; STR "Associating function arguments for gcc-like compilers" ; 
-		     NL ] in
+  let _ =
+    pverbose [
+        NL;
+        STR "Associating function arguments for gcc-like compilers" ;
+	NL] in
   let identify_known_arguments
         ~(callAddress:ctxt_iaddress_t)
         ~(numParams:int) 
@@ -1396,19 +1417,22 @@ let associate_function_arguments_mov () =
 	      | DirectCall _ | IndirectCall _ -> 
 		 let argumentsNotFound = 
 		   list_difference 
-		     (List.init numParams (fun i->i)) !argumentsFound (fun x y -> x=y) in
+		     (List.init
+                        numParams
+                        (fun i->i)) !argumentsFound (fun x y -> x=y) in
 		 begin
 		   (match argumentsNotFound with
 		    | [] -> ()
 		    | _ ->
 		       ch_error_log#add
                          "function arguments"
-		         (LBLOCK [ STR "Unable to collect all arguments for " ; 
-				   STR callAddress ; 
-				   STR ". Arguments " ;
-				   pretty_print_list argumentsNotFound 
-				                     (fun n -> INT n) "[" ";" "]" ;
-				   STR " are missing" ]));
+		         (LBLOCK [
+                              STR "Unable to collect all arguments for ";
+			      STR callAddress;
+			      STR ". Arguments ";
+			      pretty_print_list argumentsNotFound
+				(fun n -> INT n) "[" ";" "]";
+			      STR " are missing"]));
 		   active := false
 		 end
 	      | _ -> ()) 
@@ -1466,26 +1490,34 @@ let associate_function_arguments_mov () =
 		let floc = get_floc loc in
 		match instr#get_opcode with
 		| DirectCall op when 
-		    op#is_absolute_address && has_callsemantics op#get_absolute_address ->
+		       op#is_absolute_address
+                       && has_callsemantics op#get_absolute_address ->
 		  let semantics = get_callsemantics op#get_absolute_address in
 		  let numParams = semantics#get_parametercount in
 		  identify_known_arguments ~callAddress:ctxtiaddr ~numParams ~block
 		| DirectCall _	| IndirectCall _ ->  
 		   if floc#has_call_target
                       && floc#get_call_target#is_signature_valid then
-		      let api = floc#get_call_target#get_signature in
+		      let fintf = floc#get_call_target#get_function_interface in
 		      let numParams = 
-			List.length (get_stack_parameter_names api) in
-		      identify_known_arguments ~callAddress:ctxtiaddr ~numParams ~block
+			List.length (get_stack_parameter_names fintf) in
+		      identify_known_arguments
+                        ~callAddress:ctxtiaddr ~numParams ~block
 		    else
-		      let functionArgs = identify_arguments ~callAddress:ctxtiaddr ~block in
+		      let functionArgs =
+                        identify_arguments ~callAddress:ctxtiaddr ~block in
 		      sanitize_arguments functionArgs
 		| _ -> ())
 	  )
       with
       | BCH_failure p ->
-	ch_error_log#add "associate function arguments (gcc)"
-	  (LBLOCK [ STR "Function " ; assemblyFunction#get_address#toPretty ; STR ": " ; p ])
+	 ch_error_log#add
+           "associate function arguments (gcc)"
+	   (LBLOCK [
+                STR "Function ";
+                assemblyFunction#get_address#toPretty;
+                STR ": ";
+                p])
     )
 		
 let associate_function_arguments () =

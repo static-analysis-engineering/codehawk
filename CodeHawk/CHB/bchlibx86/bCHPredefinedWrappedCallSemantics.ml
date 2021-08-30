@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,11 +38,11 @@ open CHLogger
 open Xprt
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHBasicTypes
 open BCHCPURegisters
 open BCHFloc
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
@@ -101,14 +103,15 @@ object (self)
   method get_call_target (a:doubleword_int) =
     let par1 = mk_stack_parameter 1 in
     let par2 = mk_stack_parameter 2 in
-    let fapi = default_function_api faddr#to_hex_string [ par1 ] in
-    let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 8 } in
+    let fintf = default_function_interface faddr#to_hex_string [par1] in
+    let tgtloc =
+      make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 8 } in
     let tgtfloc = get_floc tgtloc in
     let wtgt = tgtfloc#get_call_target#get_target in
     let t1 = ArgValue par1 in
     let t2 = NumConstant numerical_zero in
-    let argmapping = [ (par1,t1) ; (par2,t2) ] in
-    mk_wrapped_target a fapi wtgt argmapping
+    let argmapping = [(par1,t1); (par2,t2)] in
+    mk_wrapped_target a fintf wtgt argmapping
       
   method get_description = "wraps a call to another function"
 
@@ -154,14 +157,15 @@ object (self)
 
   method get_call_target (a:doubleword_int) =
     let regpar = mk_register_parameter (CPURegister reg) in
-    let fapi = default_function_api faddr#to_hex_string [ regpar ] in
-    let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 1 } in    
+    let fintf = default_function_interface faddr#to_hex_string [regpar] in
+    let tgtloc =
+      make_location { loc_faddr = faddr; loc_iaddr = faddr#add_int 1 } in
     let tgtfloc = get_floc tgtloc in
     let wtgt = tgtfloc#get_call_target#get_target in
     let par1 = mk_stack_parameter 1 in
     let t1 = ArgValue regpar in
     let argmapping = [ (par1,t1) ] in
-    mk_wrapped_target a fapi wtgt argmapping
+    mk_wrapped_target a fintf wtgt argmapping
 
   method get_description = "wraps a call to another function"
 
@@ -207,13 +211,14 @@ object (self)
 
   method get_call_target (a:doubleword_int) =
     let tpar = mk_global_parameter argloc in
-    let fapi =  default_function_api faddr#to_hex_string [ tpar ] in
-    let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 6 } in        
+    let fintf =  default_function_interface faddr#to_hex_string [tpar] in
+    let tgtloc =
+      make_location { loc_faddr = faddr; loc_iaddr = faddr#add_int 6 } in
     let tgtfloc = get_floc tgtloc in
     let wtgt = tgtfloc#get_call_target#get_target in
     let par1 = mk_stack_parameter 1 in
     let t1 = ArgValue tpar in
-    mk_wrapped_target a fapi wtgt [ (par1,t1) ]
+    mk_wrapped_target a fintf wtgt [ (par1,t1) ]
 
   method get_description = "wraps a dll call"
 
@@ -257,13 +262,14 @@ object (self)
   method get_parametercount = 0
 
   method get_call_target (a:doubleword_int) =
-    let fapi =  default_function_api faddr#to_hex_string [ ] in
-    let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 5 } in        
+    let fintf =  default_function_interface faddr#to_hex_string [] in
+    let tgtloc =
+      make_location { loc_faddr = faddr; loc_iaddr = faddr#add_int 5 } in
     let tgtfloc = get_floc tgtloc in
     let wtgt = tgtfloc#get_call_target#get_target in
     let par1 = mk_stack_parameter 1 in
     let t1 = NumConstant arg#to_numerical in
-    mk_wrapped_target a fapi wtgt [ (par1,t1) ]
+    mk_wrapped_target a fintf wtgt [ (par1,t1) ]
 
   method get_description = "wraps a dll call"
 

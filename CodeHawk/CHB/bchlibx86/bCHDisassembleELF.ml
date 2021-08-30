@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +43,7 @@ open XprToPretty
 open BCHBasicTypes
 open BCHDoubleword
 open BCHFloc
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHJumpTable
@@ -109,7 +110,9 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
 
 let disassemble_elf_sections () =
   let xSections = elf_header#get_executable_sections in
-  let headers = List.sort (fun (h1,_) (h2,_) -> h1#get_addr#compare h2#get_addr) xSections in
+  let headers =
+    List.sort (fun (h1,_) (h2,_) ->
+        h1#get_addr#compare h2#get_addr) xSections in
   let (lowest,_) = List.hd headers in
   let (highest,_) = List.hd (List.rev headers) in
   let startOfCode = lowest#get_addr in
@@ -119,11 +122,14 @@ let disassemble_elf_sections () =
   let _ = chlog#add "initialization" 
     (LBLOCK [ STR "Create space for " ; sizeOfCode#toPretty ; STR " (" ;
 	      INT sizeOfCode#to_int ; STR ")" ; STR "instructions" ]) in
-  let _ = initialize_assembly_instructions 0 sizeOfCode#to_int sizeOfCode#to_int startOfCode [] [] in
-  let _ = List.iter 
-            (fun (h,x) ->
-              let displacement = (h#get_addr#subtract startOfCode)#to_int in
-              disassemble h#get_addr displacement x) xSections in
+  let _ =
+    initialize_assembly_instructions
+      0 sizeOfCode#to_int sizeOfCode#to_int startOfCode [] [] in
+  let _ =
+    List.iter
+      (fun (h,x) ->
+        let displacement = (h#get_addr#subtract startOfCode)#to_int in
+        disassemble h#get_addr displacement x) xSections in
   sizeOfCode
 
 let get_indirect_jump_targets (op:operand_int) =
@@ -845,16 +851,18 @@ let associate_function_arguments_push () =
                 | DirectCall _ | IndirectCall _ ->
                    if floc#has_call_target
                       && floc#get_call_target#is_signature_valid then
-                     let api = floc#get_call_target#get_signature in
-                     let numParams = List.length (get_stack_parameter_names api) in
-                     identify_known_arguments ~callAddress:ctxtiaddr ~numParams ~block faddr
+                     let fintf = floc#get_call_target#get_function_interface in
+                     let numParams = List.length (get_stack_parameter_names fintf) in
+                     identify_known_arguments
+                       ~callAddress:ctxtiaddr ~numParams ~block faddr
                    else
                      identify_arguments ~callAddress:ctxtiaddr ~block
                 | _ -> ()))
       with
       | BCH_failure p ->
-         ch_error_log#add "associate function arguments (push)"
-                          (LBLOCK [ STR "Function " ;  faddr#toPretty ; STR ": " ; p ]))
+         ch_error_log#add
+           "associate function arguments (push)"
+           (LBLOCK [STR "Function "; faddr#toPretty; STR ": "; p]))
   
 (* -----------------------------------------------------------------------------
    associate values that get moved onto the stack immediately before a call
@@ -969,12 +977,14 @@ let associate_function_arguments_mov () =
 		| DirectCall _	| IndirectCall _ ->  
 		   if floc#has_call_target
                       && floc#get_call_target#is_signature_valid then
-		      let api = floc#get_call_target#get_signature in
+		      let fintf = floc#get_call_target#get_function_interface in
 		      let numParams = 
-			List.length (get_stack_parameter_names api) in
-		      identify_known_arguments ~callAddress:ctxtiaddr ~numParams ~block
+			List.length (get_stack_parameter_names fintf) in
+		      identify_known_arguments
+                        ~callAddress:ctxtiaddr ~numParams ~block
 		    else
-		      let functionArgs = identify_arguments ~callAddress:ctxtiaddr ~block in
+		      let functionArgs =
+                        identify_arguments ~callAddress:ctxtiaddr ~block in
 		      sanitize_arguments functionArgs
 		| _ -> ())
 	  )
@@ -982,8 +992,11 @@ let associate_function_arguments_mov () =
       | BCH_failure p ->
 	 ch_error_log#add
            "associate function arguments (gcc)"
-	   (LBLOCK [ STR "Function " ; assemblyFunction#get_address#toPretty ;
-                     STR ": " ; p ])
+	   (LBLOCK [
+                STR "Function ";
+                assemblyFunction#get_address#toPretty;
+                STR ": ";
+                p])
     )
 
 let associate_function_arguments () =
