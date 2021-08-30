@@ -45,13 +45,13 @@ open XprTypes
 open Xsimplify
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHBasicTypes
 open BCHByteUtilities
 open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHFloc   
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
@@ -924,6 +924,19 @@ object (self)
          let rrhs = rewrite_expr rhs in
          ([ "a:vxxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ; xd#index_xpr rrhs ;
                          xd#index_xpr addr ])
+
+      | Subtract(dst, src1, src2) ->
+         let rhs1 = src1#to_expr floc in
+         let rhs2 = src2#to_expr floc in
+         let lhs = dst#to_variable floc in
+         let result = XOp (XMinus, [rhs1; rhs2]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
 
       | SubtractUnsigned (dst,src1,src2) ->
          let rhs1 = src1#to_expr floc in

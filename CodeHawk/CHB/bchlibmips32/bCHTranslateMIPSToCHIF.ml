@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -290,7 +291,7 @@ let translate_mips_instruction
      let rhs1 = src1#to_expr floc in
      let rhs2 = src2#to_expr floc in
      let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs (XOp (XPlus, [ rhs1 ; rhs2 ])) in
+     let cmds = floc#get_assign_commands lhs (XOp (XPlus, [rhs1; rhs2])) in
      default (lhscmds @ cmds)
      
   | AddImmediate (dst,src,imm) ->
@@ -336,7 +337,7 @@ let translate_mips_instruction
      let (lhs,lhscmds) = dst#to_lhs floc in
      let rhs1 = src1#to_expr floc in
      let rhs2 = src2#to_expr floc in
-     let result = XOp (XBAnd, [ rhs1 ; rhs2 ]) in
+     let result = XOp (XBAnd, [rhs1; rhs2]) in
      let cmds = floc#get_assign_commands lhs result in
      default (lhscmds @ cmds)
 
@@ -345,7 +346,7 @@ let translate_mips_instruction
      let (lhs,lhscmds) = dst#to_lhs floc in
      let rhs1 = src#to_expr floc in
      let rhs2 = imm#to_expr floc in
-     let result = XOp (XBAnd, [ rhs1 ; rhs2 ]) in
+     let result = XOp (XBAnd, [rhs1; rhs2]) in
      let cmds = floc#get_assign_commands lhs result in
      default (lhscmds @ cmds)
 
@@ -361,7 +362,7 @@ let translate_mips_instruction
      let (lhs2,lhs2cmds) = lo#to_lhs floc in
      let rhs1 = rs#to_expr floc in
      let rhs2 = rt#to_expr floc in
-     let result = XOp (XDiv, [ rhs1 ; rhs2 ]) in
+     let result = XOp (XDiv, [rhs1; rhs2]) in
      let cmds1 = floc#get_abstract_commands lhs1 () in
      let cmds2 = floc#get_assign_commands lhs2 result in
      default (lhs1cmds @ lhs2cmds @ cmds1 @ cmds2)
@@ -372,7 +373,7 @@ let translate_mips_instruction
      let (lhs2,lhs2cmds) = lo#to_lhs floc in
      let rhs1 = rs#to_expr floc in
      let rhs2 = rt#to_expr floc in
-     let result = XOp (XDiv, [ rhs1 ; rhs2 ]) in
+     let result = XOp (XDiv, [rhs1; rhs2]) in
      let cmds1 = floc#get_abstract_commands lhs1 () in
      let cmds2 = floc#get_assign_commands lhs2 result in
      default (lhs1cmds @ lhs2cmds @ cmds1 @ cmds2)
@@ -648,7 +649,8 @@ let translate_mips_instruction
      let (lhs2,lhs2cmds) = lo#to_lhs floc in
      let rhs1 = rs#to_expr floc in
      let rhs2 = rt#to_expr floc in
-     let cmd1 = floc#get_assign_commands lhs2 (XOp (XMult, [ rhs1 ; rhs2 ])) in
+     let xpr = XOp (XMult, [rhs1; rhs2]) in
+     let cmd1 = floc#get_assign_commands lhs2 xpr in
      let cmd2 = floc#get_abstract_commands lhs1 () in
      default (lhs1cmds @ lhs2cmds @ cmd1 @ cmd2 )
 
@@ -659,7 +661,7 @@ let translate_mips_instruction
      let rhs1 = rs#to_expr floc in
      let rhs2 = rt#to_expr floc in
      let rhslo = lo#to_expr floc in
-     let xpr = XOp (XPlus, [ rhslo ; XOp (XMult, [ rhs1 ; rhs2 ]) ])  in
+     let xpr = XOp (XPlus, [rhslo; XOp (XMult, [rhs1; rhs2])])  in
      let cmd1 = floc#get_assign_commands lhs2 xpr in
      let cmd2 = floc#get_abstract_commands lhs1 () in
      default (lhs1cmds @ lhs2cmds @ cmd1 @ cmd2 )
@@ -671,7 +673,7 @@ let translate_mips_instruction
      let rhs1 = rs#to_expr floc in
      let rhs2 = rt#to_expr floc in
      let rhslo = lo#to_expr floc in
-     let xpr = XOp (XPlus, [ rhslo; XOp (XMult, [ rhs1; rhs2 ]) ]) in
+     let xpr = XOp (XPlus, [rhslo; XOp (XMult, [rhs1; rhs2])]) in
      let cmd1 = floc#get_assign_commands lhs2 xpr in
      let cmd2 = floc#get_abstract_commands lhs1 () in
      default (lhs1cmds @ lhs2cmds @ cmd1 @ cmd2)
@@ -681,7 +683,7 @@ let translate_mips_instruction
      let (lhs,lhscmds) = rd#to_lhs floc in
      let rhs1 = rs#to_expr floc in
      let rhs2 = rt#to_expr floc in
-     let result = XOp (XMult, [ rhs1 ; rhs2 ]) in
+     let result = XOp (XMult, [rhs1; rhs2]) in
      let cmds = floc#get_assign_commands lhs result in
      default (lhscmds @ cmds)
 
@@ -691,7 +693,7 @@ let translate_mips_instruction
      let (lhs2,lhs2cmds) = lo#to_lhs floc in
      let rhs1 = rs#to_expr floc in
      let rhs2 = rt#to_expr floc in
-     let result = XOp (XMult, [ rhs1 ; rhs2 ]) in
+     let result = XOp (XMult, [rhs1; rhs2]) in
      let cmd1 = floc#get_abstract_commands lhs1 () in
      let cmd2 = floc#get_assign_commands lhs2 result in
      default (lhs1cmds @ lhs2cmds @ cmd1 @ cmd2 )
@@ -701,7 +703,7 @@ let translate_mips_instruction
      let (lhs,lhscmds) = rd#to_lhs floc in
      let rhs1 = rs#to_expr floc in
      let rhs2 = rt#to_expr floc in
-     let result = XOp (XBNor, [ rhs1 ; rhs2 ]) in
+     let result = XOp (XBNor, [rhs1; rhs2]) in
      let cmds = floc#get_assign_commands lhs result in
      default (lhscmds @ cmds)
 
@@ -710,7 +712,7 @@ let translate_mips_instruction
      let (lhs,lhscmds) = dst#to_lhs floc in
      let rhs1 = src1#to_expr floc in
      let rhs2 = src2#to_expr floc in
-     let result = XOp (XBOr, [ rhs1 ; rhs2 ])  in
+     let result = XOp (XBOr, [rhs1; rhs2])  in
      let cmds = floc#get_assign_commands lhs result in
      default (lhscmds @ cmds)
 
@@ -719,7 +721,7 @@ let translate_mips_instruction
      let (lhs,lhscmds) = dst#to_lhs floc in
      let rhs1 = src#to_expr floc in
      let rhs2 = imm#to_expr floc in
-     let result = XOp (XBOr, [ rhs1 ; rhs2 ]) in
+     let result = XOp (XBOr, [rhs1 ;rhs2]) in
      let cmds = floc#get_assign_commands lhs result in
      default (lhscmds @ cmds)
 
