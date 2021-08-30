@@ -55,8 +55,8 @@ MLIS := \
 	bCHCPURegisters \
 	bCHMemoryReference \
 	bCHMemoryAccesses \
-	bCHApiParameter \
-	bCHFunctionApi \
+	bCHFtsParameter \
+	bCHFunctionInterface \
 	bCHFunctionStub \
 	bCHCallTarget \
 	bCHBTerm \
@@ -125,8 +125,8 @@ SOURCES := \
 	bCHByteUtilities \
 	bCHCPURegisters \
 	bCHMemoryAccesses \
-	bCHApiParameter \
-	bCHFunctionApi \
+	bCHFtsParameter \
+	bCHFunctionInterface \
 	bCHBTerm \
 	bCHFunctionStub \
 	bCHCallTarget \

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +48,7 @@ open BCHXmlUtil
 
 module P = Pervasives
 
+
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
     LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
@@ -60,39 +63,46 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
 
 let postcondition_to_pretty (predicate:postcondition_t) =
   let default name terms =
-    LBLOCK [ STR name ; pretty_print_list terms bterm_to_pretty "(" ", " ")" ] in
+    LBLOCK [STR name; pretty_print_list terms bterm_to_pretty "(" ", " ")"] in
   let rec toPretty pred =
     match pred with
-    | PostNewMemoryRegion (t1,t2) -> default "new-memory-region" [ t1 ; t2 ]
-    | PostFunctionPointer (t1,t2) -> default "post-function-pointer" [ t1 ; t2 ]
-    | PostAllocationBase t -> default "allocation-base" [ t ]
-    | PostNull t -> default "null" [ t ]
-    | PostNotNull t -> default "not-null" [ t ]
+    | PostNewMemoryRegion (t1,t2) -> default "new-memory-region" [t1; t2]
+    | PostFunctionPointer (t1,t2) -> default "post-function-pointer" [t1; t2]
+    | PostAllocationBase t -> default "allocation-base" [t]
+    | PostNull t -> default "null" [t]
+    | PostNotNull t -> default "not-null" [t]
     | PostEnum (t,name) ->
-      LBLOCK [ STR "enum (" ; bterm_to_pretty t ; STR "," ; STR name ; STR ")" ]
+      LBLOCK [ STR "enum ("; bterm_to_pretty t; STR ","; STR name; STR ")"]
     | PostFalse  -> LBLOCK [ STR "non-returning" ]
-    | PostNullTerminated t -> default "null-terminated" [ t ]
+    | PostNullTerminated t -> default "null-terminated" [t]
     | PostRelationalExpr (op,x,y) ->
-      LBLOCK [ bterm_to_pretty x ; STR (relational_op_to_string op) ; 
-	       bterm_to_pretty y ]
+       LBLOCK [
+           bterm_to_pretty x;
+           STR (relational_op_to_string op);
+	   bterm_to_pretty y]
     | PostDisjunction predicateList ->
       let (_,pp) = List.fold_left
 	(fun (first,acc) p ->
 	  (false,
-           LBLOCK [ acc ; (if first then STR "" else LBLOCK [ STR " or " ; NL]) ;
-		    (INDENT (12, toPretty p)) ]))
+           LBLOCK [
+               acc;
+               (if first then STR "" else LBLOCK [STR " or "; NL]);
+	       (INDENT (12, toPretty p))]))
 	(true, STR "") predicateList in
       pp
     | PostConditional (guard, consequent) ->
-      LBLOCK [ STR "if " ; precondition_to_pretty guard ; STR " then " ; 
-	       toPretty consequent ] in
+       LBLOCK [
+           STR "if ";
+           precondition_to_pretty guard;
+           STR " then ";
+	   toPretty consequent] in
   toPretty predicate
 
 (* ----------------------------------------------------------------- read xml *)
 
 let read_xml_postcondition 
-    (node:xml_element_int)
-    (parameters:api_parameter_t list):postcondition_t =
+    (node: xml_element_int)
+    (parameters: fts_parameter_t list): postcondition_t =
   let get_term n = read_xml_bterm n parameters in
   let rec aux node =
     let cNodes = node#getChildren in
@@ -101,7 +111,8 @@ let read_xml_postcondition
     let arg n =
       try List.nth argNodes n with Failure _ ->
         raise_xml_error
-          node (LBLOCK [ STR "Expected " ; INT (n+1) ; STR " arguments" ]) in
+          node
+          (LBLOCK [STR "Expected "; INT (n+1); STR " arguments"]) in
     if is_relational_operator pNode#getTag then
       let op = get_relational_operator pNode#getTag in
       PostRelationalExpr (op, get_term (arg 0), get_term (arg 1))
@@ -125,25 +136,29 @@ let read_xml_postcondition
       | s ->
          raise_xml_error
            node
-	   (LBLOCK [ STR "Postcondition predicate " ; STR s ;
-                     STR " not recognized" ]) in
+	   (LBLOCK [
+                STR "Postcondition predicate ";
+                STR s;
+                STR " not recognized"]) in
   match (node#getTaggedChild "math")#getChild#getTag with
   | "non-returning" -> PostFalse
   | _ -> aux ((node#getTaggedChild "math")#getTaggedChild "apply")
 
 
 let read_xml_postconditions 
-    (node:xml_element_int)
-    (parameters:api_parameter_t list):postcondition_t list =
+    (node: xml_element_int)
+    (parameters: fts_parameter_t list): postcondition_t list =
   let getcc = node#getTaggedChildren in
   List.map (fun n -> read_xml_postcondition n parameters) (getcc "post")
 
+
 let read_xml_errorpostconditions 
-    (node:xml_element_int)
-    (parameters:api_parameter_t list):postcondition_t list = 
+    (node: xml_element_int)
+    (parameters: fts_parameter_t list): postcondition_t list =
   let getcc = node#getTaggedChildren in
   List.map (fun n ->
       read_xml_postcondition n parameters) (getcc "error-post")
+
 
 let read_xml_shortcut_postconditions (node:xml_element_int) =
   let zero = NumConstant numerical_zero in

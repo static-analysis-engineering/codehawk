@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,10 +41,10 @@ open Xprt
 open XprXml
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHBTerm
 open BCHDoubleword
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionStub
 open BCHLibTypes
 open BCHBTerm
@@ -50,6 +52,7 @@ open BCHUtilities
 open BCHXmlUtil
 
 module P = Pervasives
+
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
@@ -64,20 +67,27 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
 
 let rec call_target_to_pretty (tgt:call_target_t) =
   match tgt with
-  | StubTarget s -> LBLOCK [ STR "stub:" ; function_stub_to_pretty s ]
+  | StubTarget s -> LBLOCK [STR "stub:"; function_stub_to_pretty s]
   | StaticStubTarget (dw,s) ->
-     LBLOCK [ STR "staticstub(" ; dw#toPretty ; STR "):" ; function_stub_to_pretty s ]
-  | AppTarget a -> LBLOCK [ STR "app:" ; a#toPretty ]
+     LBLOCK [STR "staticstub("; dw#toPretty; STR "):"; function_stub_to_pretty s]
+  | AppTarget a -> LBLOCK [STR "app:"; a#toPretty]
   | InlinedAppTarget (a,name) ->
-    LBLOCK [ STR "app:" ; a#toPretty ; STR " (inlined:" ; STR name ; STR ")" ]
+    LBLOCK [STR "app:"; a#toPretty; STR " (inlined:"; STR name ; STR ")"]
   | WrappedTarget (a,_,wtgt,_) ->
-    LBLOCK [ STR "wrapped: " ; a#toPretty ; STR " -> " ; 
-	     call_target_to_pretty wtgt; STR ")" ]
+     LBLOCK [
+         STR "wrapped: ";
+         a#toPretty;
+         STR " -> ";
+         call_target_to_pretty wtgt;
+         STR ")"]
   | IndirectTarget (t,tgts) ->
-    LBLOCK [ STR "indirect targets on:" ; bterm_to_pretty t ;
-	     pretty_print_list tgts call_target_to_pretty "{" ", " "}" ]
-  | VirtualTarget a  -> LBLOCK [ STR "vrt:" ; STR (function_api_to_prototype_string a) ]
-  | UnknownTarget -> LBLOCK [ STR "unknown" ]
+     LBLOCK [
+         STR "indirect targets on:";
+         (match t with Some t -> bterm_to_pretty t | None -> STR "?");
+	 pretty_print_list tgts call_target_to_pretty "{" ", " "}"]
+  | VirtualTarget a  ->
+     LBLOCK [STR "vrt:"; STR (function_interface_to_prototype_string a)]
+  | UnknownTarget -> LBLOCK [STR "unknown"]
 
 
 (* --------------------------------------------------------------- comparison *)
@@ -97,20 +107,20 @@ let rec call_target_compare (t1:call_target_t) (t2:call_target_t) =
   | (InlinedAppTarget (a1,_),InlinedAppTarget (a2,_)) -> a1#compare a2
   | (InlinedAppTarget _,_) -> -1
   | (_, InlinedAppTarget _) -> 1
-  | (WrappedTarget (a1,fapi1,tgt1,_),WrappedTarget (a2,fapi2,tgt2,_)) -> 
+  | (WrappedTarget (a1, fintf1, tgt1, _), WrappedTarget (a2, fintf2, tgt2, _)) ->
     let l1 = a1#compare a2 in
     if l1 = 0 then 
-      let l2 = function_api_compare fapi1 fapi2 in
+      let l2 = function_interface_compare fintf1 fintf2 in
       if l2 = 0 then call_target_compare tgt1 tgt2
       else l2
     else l1
   | (WrappedTarget _, _) -> -1
   | (_, WrappedTarget _) -> 1
-  | (VirtualTarget a1, VirtualTarget a2) -> function_api_compare a1 a2
+  | (VirtualTarget a1, VirtualTarget a2) -> function_interface_compare a1 a2
   | (VirtualTarget _, _) -> -1
   | (_, VirtualTarget _) -> 1
   | (IndirectTarget (t1,tl1), IndirectTarget (t2,tl2)) ->
-    let l1 = bterm_compare t1 t2 in
+    let l1 = bterm_opt_compare t1 t2 in
     if l1 = 0 then list_compare tl1 tl2 call_target_compare else l1
   | (IndirectTarget _, _) -> -1
   | (_, IndirectTarget _) -> 1

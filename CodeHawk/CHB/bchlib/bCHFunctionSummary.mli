@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,8 +43,11 @@ open BCHLibTypes
 
 val read_xml_function_summary: xml_element_int -> function_summary_int
 
-val make_function_summary: api:function_api_t -> sem:function_semantics_t ->
-  doc:function_documentation_t -> function_summary_int
+val make_function_summary:
+  fintf:function_interface_t
+  ->  sem:function_semantics_t
+  ->  doc:function_documentation_t
+  -> function_summary_int
 
 val default_function_documentation: function_documentation_t
 

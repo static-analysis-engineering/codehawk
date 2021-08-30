@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +41,7 @@ open XprTypes
 open XprToPretty
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHBasicTypes
 open BCHBTerm
 open BCHCStructConstant
@@ -89,45 +91,78 @@ let rec precondition_to_pretty (predicate:precondition_t) =
   | PreNull t -> default "null" [ t ]
   | PreFormatString t -> default "format-string" [ t ]
   | PreEnum (t,s,flags) -> 
-    LBLOCK [ bterm_to_pretty t ; STR ": member of " ; STR s ;
-	    if flags then STR " (flags)" else STR "" ]
+     LBLOCK [
+         bterm_to_pretty t;
+         STR ": member of ";
+         STR s;
+	 if flags then STR " (flags)" else STR ""]
   | PreDerefRead (ty,x,size,b) ->
-    LBLOCK [ STR "deref-read (" ; STR (btype_to_string ty) ; 
-	     STR "," ; bterm_to_pretty x ; STR "," ;
-	     bterm_to_pretty size ; STR (if b then ", canbenull" else ", cannotbenull") ;
-	     STR ")" ]
+     LBLOCK [
+         STR "deref-read (";
+         STR (btype_to_string ty);
+	 STR ",";
+         bterm_to_pretty x;
+         STR ",";
+	 bterm_to_pretty size;
+         STR (if b then ", canbenull" else ", cannotbenull");
+	 STR ")"]
   | PreDerefWrite (ty,x,size,b) ->
-    LBLOCK [ STR "deref-write (" ; STR (btype_to_string ty) ; 
-	     STR "," ; bterm_to_pretty x ; STR "," ;
-	     bterm_to_pretty size ; STR (if b then ", canbenull" else ", cannotbenull") ;
-	     STR ")" ]
+     LBLOCK [
+         STR "deref-write (";
+         STR (btype_to_string ty);
+	 STR ",";
+         bterm_to_pretty x;
+         STR ",";
+	 bterm_to_pretty size;
+         STR (if b then ", canbenull" else ", cannotbenull");
+	 STR ")"]
   | PreFunctionPointer (ty,t) ->
-    LBLOCK [ STR "function-pointer (" ; STR  (btype_to_string ty) ; STR ", " ;
-	     bterm_to_pretty t ; STR ")" ]
+     LBLOCK [
+         STR "function-pointer (";
+         STR  (btype_to_string ty);
+         STR ", ";
+	 bterm_to_pretty t;
+         STR ")"]
   | PreAllocationBase t -> default "allocation-base" [ t ]
   | PreNoOverlap (t1,t2) -> default "no-overlap" [ t1 ; t2 ]
-  | PreIncludes (t,sc) -> LBLOCK [ bterm_to_pretty t ; NL ; cstructconstant_to_pretty sc ]
+  | PreIncludes (t,sc) ->
+     LBLOCK [bterm_to_pretty t; NL; cstructconstant_to_pretty sc]
   | PreRelationalExpr (op,x,y) ->
-    LBLOCK [ bterm_to_pretty x ; STR (relational_op_to_string op) ; bterm_to_pretty y ]
+     LBLOCK [
+         bterm_to_pretty x;
+         STR (relational_op_to_string op);
+         bterm_to_pretty y]
   | PreDisjunction predicateList ->
     let (_,pp) = List.fold_left
       (fun (first,acc) predicate ->
-	(false, LBLOCK [ acc ; (if first then NL else LBLOCK [ STR " or " ; NL ]) ;
-			 INDENT (12, LBLOCK [ STR "(" ; 
-					      precondition_to_pretty predicate ;
-					      STR ")" ])]))
+	(false,
+         LBLOCK [
+             acc;
+             (if first then
+                NL
+              else
+                LBLOCK [STR " or "; NL]);
+	     INDENT (
+                 12,
+                 LBLOCK [
+                     STR "(";
+		     precondition_to_pretty predicate;
+		     STR ")"])]))
       (true, STR "") predicateList in
     pp
   | PreConditional (guard, consequent) ->
-    LBLOCK [ STR "if "   ; precondition_to_pretty guard ;
-	     STR " then " ; precondition_to_pretty consequent ]
+     LBLOCK [
+         STR "if ";
+         precondition_to_pretty guard;
+	 STR " then ";
+         precondition_to_pretty consequent]
 
 
 (* --------------------------------------------------------------- comparison *)
 
 let rec precondition_compare p1 p2 =
   match (p1,p2) with
-    (PreNullTerminated n1, PreNullTerminated n2) -> bterm_compare n1 n2
+  | (PreNullTerminated n1, PreNullTerminated n2) -> bterm_compare n1 n2
   | (PreNullTerminated _, _) -> -1
   | (_, PreNullTerminated _) -> 1
   | (PreNotNull n1, PreNotNull n2) -> bterm_compare n1 n2
@@ -212,7 +247,7 @@ let read_xml_par_preconditions (node:xml_element_int):precondition_t list =
   let hasc = node#hasOneTaggedChild in
   let getc = node#getTaggedChild in
   let pNodes = if hasc "pre" then (getc "pre")#getChildren else [] in
-  let par = read_xml_api_parameter node in
+  let par = read_xml_fts_parameter node in
   let t = ArgValue par in
   let ty () = match resolve_type par.apar_type with 
     | TFun _ -> par.apar_type
@@ -220,8 +255,11 @@ let read_xml_par_preconditions (node:xml_element_int):precondition_t list =
     | THandle (s,_) -> TNamed (s,[])
     | _ ->
       raise_xml_error node 
-	(LBLOCK [ STR "Expected pointer type for " ; STR par.apar_name ;
-		  STR ", but found " ; btype_to_pretty par.apar_type ]) in
+	(LBLOCK [
+             STR "Expected pointer type for ";
+             STR par.apar_name;
+	     STR ", but found ";
+             btype_to_pretty par.apar_type]) in
   let getsize n typ = 
     let has = n#hasNamedAttribute in
     let geti = n#getIntAttribute in
@@ -237,29 +275,50 @@ let read_xml_par_preconditions (node:xml_element_int):precondition_t list =
     | "null-terminated" -> PreNullTerminated t
     | "not-null" -> PreNotNull t
     | "null" -> PreNull t
-    | "deref-read" -> let typ = ty () in PreDerefRead (typ,t,getsize node typ,false)
+    | "deref-read" ->
+       let typ = ty () in
+       PreDerefRead (typ, t, getsize node typ, false)
     | "deref-read-nt" -> PreDerefRead (ty (),t,ArgNullTerminatorPos t,false)
-    | "deref-read-null" -> let typ = ty () in PreDerefRead (typ,t,getsize node typ,true)
-    | "deref-read-null-nt" -> PreDerefRead (ty (),t,ArgNullTerminatorPos t, true)
-    | "deref-write" -> let typ = ty () in PreDerefWrite (typ,t,getsize node typ,false)
-    | "deref-write-null" -> let typ = ty () in PreDerefWrite (typ,t,getsize node typ,true)
+    | "deref-read-null" ->
+       let typ = ty () in
+       PreDerefRead (typ, t, getsize node typ, true)
+    | "deref-read-null-nt" ->
+       PreDerefRead (ty (), t, ArgNullTerminatorPos t, true)
+    | "deref-write" ->
+       let typ = ty () in
+       PreDerefWrite (typ, t, getsize node typ, false)
+    | "deref-write-null" ->
+       let typ = ty () in
+       PreDerefWrite (typ, t, getsize node typ, true)
     | "allocation-base" -> PreAllocationBase t
-    | "function-pointer" -> let typ = ty () in PreFunctionPointer (typ,t)
+    | "function-pointer" ->
+       let typ = ty () in PreFunctionPointer (typ, t)
     | "format-string" -> PreFormatString t
     | "includes" ->
       let name = node#getAttribute "name" in
       PreIncludes (t,get_structconstant name)  
     | "enum-value" -> 
-      let flags = node#hasNamedAttribute "flags" && (node#getAttribute "flags") = "true" in
-      PreEnum (t, node#getAttribute "name",flags)
-    | "non-negative" | "nonnegative" -> PreRelationalExpr (PGreaterEqual,t,zero)
-    | "positive" -> PreRelationalExpr (PGreaterThan,t,zero)
-    | s -> raise_xml_error node 
-      (LBLOCK [STR "Parameter precondition " ; STR s ; STR " not recognized"]) in
+       let flags =
+         node#hasNamedAttribute "flags"
+         && (node#getAttribute "flags") = "true" in
+       PreEnum (t, node#getAttribute "name", flags)
+    | "non-negative"
+      | "nonnegative" -> PreRelationalExpr (PGreaterEqual, t, zero)
+    | "positive" -> PreRelationalExpr (PGreaterThan, t, zero)
+    | s ->
+       raise_xml_error node
+         (LBLOCK [
+              STR "Parameter precondition ";
+              STR s;
+              STR " not recognized"]) in
   List.map aux pNodes
 
+
 let is_relational_operator (op:string) =
-  match op with "eq" | "neq" | "gt" | "lt" | "geq" | "leq" -> true | _ -> false
+  match op with
+  | "eq" | "neq" | "gt" | "lt" | "geq" | "leq" -> true
+  | _ -> false
+
 
 let get_relational_operator (op:string)  =
   match op with
@@ -277,16 +336,22 @@ let get_relational_operator (op:string)  =
     end 
 
 let read_xml_precondition_predicate
-    (node:xml_element_int) 
-    (parameters:api_parameter_t list):precondition_t = 
+    (node: xml_element_int)
+    (parameters: fts_parameter_t list): precondition_t =
   let get_term n = read_xml_bterm n parameters in
   let get_type = read_xml_type in 
   let rec aux node = 
     let cNodes = node#getChildren in
     let pNode = List.hd cNodes in
     let argNodes = List.tl cNodes in
-    let arg n = try List.nth argNodes n with Failure _ ->
-      raise_xml_error node (LBLOCK [ STR "Expected " ; INT (n+1) ; STR " arguments" ]) in
+    let arg n =
+      try
+        List.nth argNodes n
+      with
+      | Failure _ ->
+         raise_xml_error
+           node
+           (LBLOCK [STR "Expected "; INT (n+1); STR " arguments"]) in
     if is_relational_operator pNode#getTag then
       let op = get_relational_operator pNode#getTag in
       PreRelationalExpr (op, get_term (arg 0), get_term (arg 1))
@@ -299,18 +364,20 @@ let read_xml_precondition_predicate
       | "null-terminated" -> PreNullTerminated (get_term (arg 0))
       | "format-string" -> PreFormatString (get_term (arg 0))
       | "allocation-base" -> PreAllocationBase (get_term (arg 0))
-      | "function-pointer" -> PreFunctionPointer (get_type (arg 0), get_term (arg 1))
+      | "function-pointer" ->
+         PreFunctionPointer (get_type (arg 0), get_term (arg 1))
       | "enum-value" -> 
 	let flags = 
-	  (pNode#hasNamedAttribute "flags") && (pNode#getAttribute "flags") = "true" in
-	PreEnum (get_term (arg 0), pNode#getAttribute "name",flags)
+	  (pNode#hasNamedAttribute "flags")
+          && (pNode#getAttribute "flags") = "true" in
+	PreEnum (get_term (arg 0), pNode#getAttribute "name", flags)
       | "includes" -> 
 	let sc = read_xml_cstructconstant (pNode#getTaggedChild "sc") in
 	PreIncludes (get_term (arg 0), sc)
       | "deref-read" | "block-read" ->
-	PreDerefRead (get_type (arg 0), get_term (arg 1), get_term (arg 2),false)
+	PreDerefRead (get_type (arg 0), get_term (arg 1), get_term (arg 2), false)
       | "deref-read-null" ->
-	PreDerefRead (get_type (arg 0), get_term (arg 1), get_term (arg 2), true)
+	PreDerefRead (get_type (arg 0), get_term (arg 1), get_term (arg 2),  true)
       | "deref-read-nt" ->
 	let dest = get_term (arg 1) in
 	let len = ArgNullTerminatorPos dest in
@@ -323,19 +390,26 @@ let read_xml_precondition_predicate
 	PreDerefWrite (get_type (arg 0), get_term (arg 1), get_term (arg 2), false)
       | "deref-write-null" ->
 	PreDerefWrite (get_type (arg 0), get_term (arg 1), get_term (arg 2), true)
-      | s -> raise_xml_error node
-	(LBLOCK [ STR "Precondition predicate symbol " ; STR s ; STR " not recognized"]) in
+      | s ->
+         raise_xml_error
+           node
+	   (LBLOCK [
+                STR "Precondition predicate symbol ";
+                STR s;
+                STR " not recognized"]) in
   aux node
+
 
 let read_xml_precondition
     (node:xml_element_int) 
-    (parameters:api_parameter_t list):precondition_t = 
+    (parameters: fts_parameter_t list): precondition_t = 
   read_xml_precondition_predicate 
     ((node#getTaggedChild "math")#getTaggedChild "apply") parameters
 
+
 let read_xml_preconditions 
     (node:xml_element_int) 
-    (parameters:api_parameter_t list):precondition_t list =
+    (parameters: fts_parameter_t list): precondition_t list =
   let getcc = node#getTaggedChildren in
   List.map (fun n -> read_xml_precondition n parameters) (getcc "pre")
 
@@ -350,6 +424,7 @@ let relational_op_to_xop = function
   | PGreaterEqual -> XGe
   | PNotEqual -> XNe
 
+
 let xop_to_relational_op op =
   match op with
   | XEq -> PEquals
@@ -359,12 +434,18 @@ let xop_to_relational_op op =
   | XGe -> PGreaterEqual
   | XNe -> PNotEqual
   | _ ->
-     raise (BCH_failure
-              (LBLOCK [ STR "expr operator " ; STR (xop_to_string op) ; 
-			STR " cannot be represented by a relational operator" ]))
-      
-let is_relational_xop =
-  function XEq | XLt | XLe | XGt | XGe | XNe -> true | _ -> false
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "expr operator ";
+               STR (xop_to_string op);
+	       STR " cannot be represented by a relational operator"]))
+
+
+let is_relational_xop = function
+  | XEq | XLt | XLe | XGt | XGe | XNe -> true
+  | _ -> false
+
 
 let rec modify_types_pre (f:type_transformer_t) (p:precondition_t) =
   let auxt = modify_type f in

@@ -683,8 +683,13 @@ let extract_function_file (fname:string) (ext:string) (tag:string) =
       Some (root#getTaggedChild tag)
     else
       begin
-	ch_error_log#add "xml from jar" 
-	  (LBLOCK [ STR "No node found in " ; STR filename ; STR " with tag " ; STR tag ]) ;
+	ch_error_log#add
+          "xml from jar"
+	  (LBLOCK [
+               STR "No node found in ";
+               STR filename;
+               STR " with tag ";
+               STR tag]) ;
 	None
       end
   | _ -> None
@@ -709,7 +714,7 @@ let read_vars (fname:string) =
     with
     | Zip.Error (_,s,_) ->
        begin
-         ch_error_log#add "zip error" (LBLOCK [ STR fname ; STR ": " ; STR s ]) ;
+         ch_error_log#add "zip error" (LBLOCK [STR fname; STR ": "; STR s]);
          None
        end in
   make_variable_manager optnode

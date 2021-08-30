@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2020 Henny B. Sipma
+   Copyright (c) 2021 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +32,7 @@ open CHXmlDocument
 (* bchlib *)
 open BCHLibTypes
 
+
 val mk_unknown_target: unit -> call_target_info_int
 
 val mk_app_target: doubleword_int -> call_target_info_int
@@ -43,7 +45,7 @@ val mk_syscall_target: int -> call_target_info_int
 
 val mk_jni_target: int -> call_target_info_int
 
-val mk_virtual_target: function_api_t -> call_target_info_int
+val mk_virtual_target: function_interface_t -> call_target_info_int
 
 val mk_inlined_app_target: doubleword_int -> string -> call_target_info_int  
 
@@ -55,12 +57,14 @@ val mk_static_pck_stub_target:
 
 val mk_wrapped_target:
   doubleword_int
-  -> function_api_t
+  -> function_interface_t
   -> call_target_t
-  -> (api_parameter_t * bterm_t) list
+  -> (fts_parameter_t * bterm_t) list
   -> call_target_info_int
 
-val update_target_api:
-  call_target_info_int -> function_api_t -> call_target_info_int
+val mk_call_target_info: call_target_t -> call_target_info_int
+
+val update_target_interface:
+  call_target_info_int -> function_interface_t -> call_target_info_int
 
 

@@ -1264,7 +1264,7 @@ type formatstring_type_t =
   | PrintFormat
   | ScanFormat
 
-type api_parameter_t = {
+type fts_parameter_t = {
   apar_name: string ;
   apar_type: btype_t ;
   apar_desc: string ;
@@ -1281,32 +1281,34 @@ type arithmetic_op_t =
 type relational_op_t = 
   PEquals | PLessThan | PLessEqual | PGreaterThan | PGreaterEqual | PNotEqual
 
-type function_api_t = {
-  fapi_name : string ;
-  fapi_parameters: api_parameter_t list ;
-  fapi_varargs: bool ;
-  fapi_va_list: (api_parameter_t list) option ;
-  fapi_returntype: btype_t ;
-  fapi_rv_roles  : (string * string) list ;
-  fapi_stack_adjustment: int option ;
-  fapi_jni_index: int option ;
-  fapi_syscall_index: int option ;
-  fapi_calling_convention: string ;
-  fapi_registers_preserved: register_t list ; 
-  (* default PE: all are preserved except Eax, Ecx, Edx *)
-  fapi_inferred : bool              (* true if summary was inferred from code, rather than
-                                       provided externally *)
+
+type function_signature_t = {
+  fts_parameters: fts_parameter_t list;
+  fts_varargs: bool;
+  fts_va_list: (fts_parameter_t list) option;
+  fts_returntype: btype_t;
+  fts_rv_roles: (string * string) list;
+  fts_stack_adjustment: int option;
+  fts_calling_convention: string;
+  fts_registers_preserved: register_t list;
 }
 
+type function_interface_t = {
+    fintf_name: string;
+    fintf_jni_index: int option;
+    fintf_syscall_index: int option;
+    fintf_type_signature: function_signature_t;
+  }
+
 type bterm_t =
-  | ArgValue of api_parameter_t
+  | ArgValue of fts_parameter_t
   | RunTimeValue
   | ReturnValue
   | NamedConstant of string
   | NumConstant of numerical_t
   | ArgBufferSize of bterm_t        (* size of buffer pointed to by term in bytes *)
-  | IndexSize of bterm_t    (* value of term, to be interpreted as size in type units *)
-  | ByteSize of bterm_t             (* value of term, to be interpreted as size in bytes *)
+  | IndexSize of bterm_t (* value of term, to be interpreted as size in type units *)
+  | ByteSize of bterm_t  (* value of term, to be interpreted as size in bytes *)
   | ArgAddressedValue of bterm_t * bterm_t    (* address term, offset term *)
   | ArgNullTerminatorPos of bterm_t
   | ArgSizeOf of btype_t
@@ -1347,11 +1349,11 @@ type call_target_t =
   | InlinedAppTarget of doubleword_int * string
   | WrappedTarget of
       doubleword_int
-      * function_api_t
+      * function_interface_t
       * call_target_t
-      * (api_parameter_t * bterm_t) list
-  | VirtualTarget of function_api_t
-  | IndirectTarget of bterm_t * call_target_t list
+      * (fts_parameter_t * bterm_t) list
+  | VirtualTarget of function_interface_t
+  | IndirectTarget of bterm_t option * call_target_t list
   | UnknownTarget
 
 type c_struct_constant_t =
@@ -1432,12 +1434,13 @@ type function_documentation_t = {
 class type function_summary_int =
 object ('a)
   (* accessors *)
-  method get_function_api: function_api_t 
+  method get_function_interface: function_interface_t
+  method get_function_signature: function_signature_t
   method get_function_semantics: function_semantics_t
   method get_function_documentation: function_documentation_t
 
   method get_name: string
-  method get_parameters: api_parameter_t list
+  method get_parameters: fts_parameter_t list
   method get_returntype: btype_t
   method get_stack_adjustment: int option
   method get_jni_index: int
@@ -1450,7 +1453,7 @@ object ('a)
   method get_io_actions: io_action_t list
 
   method get_enums_referenced: string list
-  method get_enum_type: api_parameter_t -> (btype_t * bool) option  (* name, specified as flags *)
+  method get_enum_type: fts_parameter_t -> (btype_t * bool) option  (* name, specified as flags *)
 
   method get_registers_preserved: register_t list   (* deviation from default (Eax,Ecx,Edx) *)
 
@@ -1462,7 +1465,6 @@ object ('a)
   method has_unknown_sideeffects: bool
   method is_nonreturning: bool
   method is_jni_function: bool
-  method is_api_inferred: bool
 
   (* i/o *)
   method toPretty: pretty_t
@@ -1563,18 +1565,18 @@ end
 (* =============================================================== Cpp class === *)
 
 type cpp_datamember_t = {
-  cppdm_name    : string ;
-  cppdm_offset  : int ;
-  cppdm_size    : int ;
-  cppdm_type    : btype_t
+  cppdm_name: string;
+  cppdm_offset: int;
+  cppdm_size: int;
+  cppdm_type: btype_t
 }
 
-type cppvf_table_t = (int, function_api_t) Hashtbl.t
+type cppvf_table_t = (int, function_interface_t) Hashtbl.t
 
 type cpp_vfpointer_t = {
-  cppvf_offset  : int ;
-  cppvf_address : doubleword_int ;
-  cppvf_table   : cppvf_table_t
+  cppvf_offset: int;
+  cppvf_address: doubleword_int;
+  cppvf_table: cppvf_table_t
 }
 
 type cpp_member_t =
@@ -1583,16 +1585,17 @@ type cpp_member_t =
 
 class type cpp_class_int =
   object
-    method initialize_function_apis: (doubleword_int -> doubleword_int option) -> unit
-    method get_name  : string
+    method initialize_function_interfaces:
+             (doubleword_int -> doubleword_int option) -> unit
+    method get_name: string
     method get_member: int -> cpp_member_t
-    method get_function_api: doubleword_int -> function_api_t
+    method get_function_interface: doubleword_int -> function_interface_t
     method get_instance_functions: (doubleword_int * string) list  (* faddr, fname *)
     method get_class_functions: (doubleword_int * string) list   (* faddr, fname *)
     method is_class_function: doubleword_int -> bool
     method has_member: int -> bool
-    method dm_iter   : (cpp_datamember_t -> unit) -> unit
-    method vf_iter   : (cpp_vfpointer_t -> unit) -> unit
+    method dm_iter: (cpp_datamember_t -> unit) -> unit
+    method vf_iter: (cpp_vfpointer_t -> unit) -> unit
     method stats_to_pretty: pretty_t
 end
 
@@ -2122,11 +2125,12 @@ class type interface_dictionary_int =
     method index_parameter_location: parameter_location_t -> int
     method index_role: (string * string) -> int
     method index_roles: (string * string) list -> int
-    method index_api_parameter: api_parameter_t -> int
+    method index_fts_parameter: fts_parameter_t -> int
     method index_bterm: bterm_t -> int
-    method index_api_parameter_list: api_parameter_t list -> int
-    method index_api_parameter_value:  (api_parameter_t * bterm_t) -> int
-    method index_function_api: function_api_t -> int
+    method index_fts_parameter_list: fts_parameter_t list -> int
+    method index_fts_parameter_value:  (fts_parameter_t * bterm_t) -> int
+    method index_function_signature: function_signature_t -> int
+    method index_function_interface: function_interface_t -> int
     method index_function_stub: function_stub_t -> int
     method index_call_target: call_target_t -> int
     method index_c_struct_constant: c_struct_constant_t -> int
@@ -2135,29 +2139,43 @@ class type interface_dictionary_int =
     method get_parameter_location: int -> parameter_location_t
     method get_role: int -> (string * string)
     method get_roles: int -> (string * string) list
-    method get_api_parameter: int -> api_parameter_t
+    method get_fts_parameter: int -> fts_parameter_t
     method get_bterm: int -> bterm_t
-    method get_api_parameter_list: int -> api_parameter_t list
-    method get_api_parameter_value:  int -> (api_parameter_t * bterm_t)
-    method get_function_api: int -> function_api_t
+    method get_fts_parameter_list: int -> fts_parameter_t list
+    method get_fts_parameter_value:  int -> (fts_parameter_t * bterm_t)
+    method get_function_signature: int -> function_signature_t
+    method get_function_interface: int -> function_interface_t
     method get_function_stub: int -> function_stub_t
     method get_call_target: int -> call_target_t
     method get_c_struct_constant: int -> c_struct_constant_t
     method get_struct_field_value: int -> (int * c_struct_constant_t)
 
-    method write_xml_parameter_location: ?tag:string -> xml_element_int -> parameter_location_t -> unit
-    method write_xml_api_parameter: ?tag:string -> xml_element_int -> api_parameter_t -> unit
+    method write_xml_parameter_location:
+             ?tag:string -> xml_element_int -> parameter_location_t -> unit
+    method write_xml_fts_parameter:
+             ?tag:string -> xml_element_int -> fts_parameter_t -> unit
     method write_xml_bterm: ?tag:string -> xml_element_int -> bterm_t -> unit
-    method write_xml_function_stub: ?tag:string -> xml_element_int -> function_stub_t -> unit
-    method write_xml_call_target: ?tag:string -> xml_element_int -> call_target_t -> unit
-    method write_xml_function_api: ?tag:string -> xml_element_int -> function_api_t -> unit
+    method write_xml_function_stub:
+             ?tag:string -> xml_element_int -> function_stub_t -> unit
+    method write_xml_call_target:
+             ?tag:string -> xml_element_int -> call_target_t -> unit
+    method write_xml_function_signature:
+             ?tag:string -> xml_element_int -> function_signature_t -> unit
+    method write_xml_function_interface:
+             ?tag:string -> xml_element_int -> function_interface_t -> unit
         
-    method read_xml_parameter_location: ?tag:string -> xml_element_int -> parameter_location_t
-    method read_xml_api_parameter: ?tag:string -> xml_element_int -> api_parameter_t
+    method read_xml_parameter_location:
+             ?tag:string -> xml_element_int -> parameter_location_t
+    method read_xml_fts_parameter:
+             ?tag:string -> xml_element_int -> fts_parameter_t
     method read_xml_bterm: ?tag:string -> xml_element_int -> bterm_t
-    method read_xml_function_stub: ?tag:string -> xml_element_int -> function_stub_t
+    method read_xml_function_stub:
+             ?tag:string -> xml_element_int -> function_stub_t
     method read_xml_call_target: ?tag:string -> xml_element_int -> call_target_t
-    method read_xml_function_api: ?tag:string -> xml_element_int -> function_api_t
+    method read_xml_function_signature:
+             ?tag:string -> xml_element_int -> function_signature_t
+    method read_xml_function_interface:
+             ?tag:string -> xml_element_int -> function_interface_t
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
@@ -2206,20 +2224,21 @@ class type function_environment_int =
     method variable_names: variable_names_int
          
     (* setters *)
-    method set_variable_name              : variable_t -> string -> unit
-    method set_class_member_variable_names: (string * function_api_t * bool) list -> unit
+    method set_variable_name: variable_t -> string -> unit
+    method set_class_member_variable_names:
+             (string * function_interface_t * bool) list -> unit
     method set_java_native_method_signature: java_native_method_api_t -> unit
     method set_unknown_java_native_method_signature: unit
-    method set_argument_names             : doubleword_int -> function_api_t -> unit
-    method set_argument_structconstant    : api_parameter_t -> c_struct_constant_t -> unit
-    method register_virtual_call          : variable_t -> function_api_t -> unit
+    method set_argument_names: doubleword_int -> function_interface_t -> unit
+    method set_argument_structconstant: fts_parameter_t -> c_struct_constant_t -> unit
+    method register_virtual_call: variable_t -> function_interface_t -> unit
 
     (* memory reference / assembly variable constructors *)
-    method mk_unknown_memory_reference : string -> memory_reference_int
-    method mk_local_stack_reference    : memory_reference_int
+    method mk_unknown_memory_reference: string -> memory_reference_int
+    method mk_local_stack_reference: memory_reference_int
     method mk_realigned_stack_reference: memory_reference_int
-    method mk_base_variable_reference  : variable_t -> memory_reference_int
-    method mk_base_sym_reference       : symbol_t -> memory_reference_int
+    method mk_base_variable_reference: variable_t -> memory_reference_int
+    method mk_base_sym_reference: symbol_t -> memory_reference_int
 
     method mk_register_variable: register_t -> variable_t
     method mk_cpu_register_variable: cpureg_t -> variable_t
@@ -2246,11 +2265,11 @@ class type function_environment_int =
     method mk_index_offset_memory_variable:
              memory_reference_int -> memory_offset_t -> variable_t
     method mk_unknown_memory_variable: string -> variable_t
-    method mk_frozen_test_value :
+    method mk_frozen_test_value:
              variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t -> variable_t
-    method mk_special_variable  : string -> variable_t
-    method mk_runtime_constant  : string -> variable_t
-    method mk_return_value      : ctxt_iaddress_t -> variable_t
+    method mk_special_variable: string -> variable_t
+    method mk_runtime_constant: string -> variable_t
+    method mk_return_value: ctxt_iaddress_t -> variable_t
 
     method mk_calltarget_value: call_target_t -> variable_t
     method mk_function_pointer_value:
@@ -2278,7 +2297,7 @@ class type function_environment_int =
     method get_variables: variable_t list
     method get_local_variables: variable_t list
     method get_external_memory_variables: variable_t list
-    method get_virtual_target : variable_t -> function_api_t
+    method get_virtual_target : variable_t -> function_interface_t
     method get_global_sideeffect_target_address: variable_t -> doubleword_int
 
     method get_memory_reference: variable_t -> memory_reference_int
@@ -2398,7 +2417,7 @@ class type call_target_info_int =
     method get_app_address: doubleword_int
     method get_application_target: doubleword_int
     method get_wrapped_app_address: doubleword_int
-    method get_wrapped_app_parameter_mapping: (api_parameter_t * bterm_t) list
+    method get_wrapped_app_parameter_mapping: (fts_parameter_t * bterm_t) list
     method get_dll_target: string * string
     method get_inlined_target: doubleword_int * string
     method get_static_lib_target: doubleword_int * string * string list * string
@@ -2406,8 +2425,9 @@ class type call_target_info_int =
     method get_jni_index: int
 
     method get_semantics: function_semantics_t
-    method get_signature: function_api_t
-    method get_parameters: api_parameter_t list
+    method get_function_interface: function_interface_t
+    method get_signature: function_signature_t
+    method get_parameters: fts_parameter_t list
     method get_returntype: btype_t
     method get_target: call_target_t
     method get_stack_adjustment: int option
@@ -2420,7 +2440,7 @@ class type call_target_info_int =
 
     method get_enums_referenced : string list
     method get_enum_type:
-             api_parameter_t -> (btype_t * bool) option  (* name, specified as flags *)
+             fts_parameter_t -> (btype_t * bool) option  (* name, specified as flags *)
 
     (* predicates *)
     method is_nonreturning: bool
@@ -2461,11 +2481,11 @@ end
 class type function_info_int =
 object
 
-  method a  : doubleword_int                               (* address of this function *)
+  method a  : doubleword_int  (* address of this function *)
   method env: function_environment_int
-  method finv : invariant_io_int                                 (* function invariant *)
-  method ftinv: type_invariant_io_int                       (* function type invariant *)
-  method iinv : ctxt_iaddress_t -> location_invariant_int   (* instruction invariant *)
+  method finv : invariant_io_int   (* function invariant *)
+  method ftinv: type_invariant_io_int  (* function type invariant *)
+  method iinv : ctxt_iaddress_t -> location_invariant_int (* instruction invariant *)
   method itinv: ctxt_iaddress_t -> location_type_invariant_int
 
   (* setters *)
@@ -2491,21 +2511,23 @@ object
      it returns *)
   method set_stack_adjustment: int option -> unit
 
-  method set_global_par : doubleword_int -> btype_t -> api_parameter_t
-  method set_stack_par  : int -> btype_t -> api_parameter_t
-  method set_register_par: register_t -> btype_t -> api_parameter_t
+  method set_global_par: doubleword_int -> btype_t -> fts_parameter_t
+  method set_stack_par: int -> btype_t -> fts_parameter_t
+  method set_register_par: register_t -> btype_t -> fts_parameter_t
 
-  (* records the test expression and auxiliary variable mappings for a conditional jump 
-   * at the given address *)
-  method set_test_expr           : ctxt_iaddress_t -> xpr_t -> unit
-  method set_test_variables      : ctxt_iaddress_t -> (variable_t * variable_t) list -> unit
+  (* records the test expression and auxiliary variable mappings for a
+   * conditional jump at the given address *)
+  method set_test_expr: ctxt_iaddress_t -> xpr_t -> unit
+  method set_test_variables:
+           ctxt_iaddress_t -> (variable_t * variable_t) list -> unit
 
-  (* declares the variable to be a pointer that is dereferenced within the function, causing
-   * it to be added as a base to the value set domain    *)
+  (* declares the variable to be a pointer that is dereferenced within
+   * the function, causing it to be added as a base to the value set domain *)
   method add_base_pointer: variable_t -> unit
 
-  (* connects the user of a condition code (such as a conditional jump (at first address) 
-     to the address of the instruction that sets the condition code (second address)    *)
+  (* connects the user of a condition code (such as a conditional jump
+   * (at first address) to the address of the instruction that sets the
+   * condition code (second address) *)
   method connect_cc_user         : ctxt_iaddress_t -> ctxt_iaddress_t -> unit
 
   (* set targets for indirect jumps *)
@@ -2553,11 +2575,11 @@ object
   method get_callees         : call_target_info_int list
   method get_callees_located : (ctxt_iaddress_t * call_target_info_int) list
 
-  method get_address         : doubleword_int             (* address of this function *)
+  method get_address         : doubleword_int (* address of this function *)
   method get_name            : string
   method get_summary         : function_summary_int
   method get_constant        : variable_t -> numerical_t  (* auxiliary variable with constant value *)
-  method get_base_pointers   : variable_t list          (* list of base pointers used *)
+  method get_base_pointers   : variable_t list (* list of base pointers used *)
   method get_stack_adjustment: int option
 
   method get_test_exprs    : (ctxt_iaddress_t * xpr_t) list (* all test expressions in the function *)
@@ -2654,7 +2676,7 @@ object
   method tinv: location_type_invariant_int
 
   method evaluate_summary_address_term: bterm_t -> variable_t option
-  method evaluate_summary_term        : bterm_t -> variable_t -> xpr_t
+  method evaluate_summary_term: bterm_t -> variable_t -> xpr_t
 
   (* returns the bytes of the instruction as a hexstring *)
   method get_instruction_bytes: string
@@ -2663,7 +2685,7 @@ object
   method get_function_arg_value: int -> xpr_t
 
   (* returns the value of an api parameter *)
-  method get_api_parameter_expr: api_parameter_t -> xpr_t option
+  method get_fts_parameter_expr: fts_parameter_t -> xpr_t option
 
   (* rewrites the variable to an expression with external variables *)
   method rewrite_variable_to_external: variable_t -> xpr_t
@@ -2709,9 +2731,9 @@ object
   method get_jump_successors     : doubleword_int list
 
   method get_call_target: call_target_info_int
-  method get_call_args: (api_parameter_t * xpr_t) list
-  method get_mips_call_arguments : (api_parameter_t * xpr_t) list
-  method get_arm_call_arguments: (api_parameter_t * xpr_t) list
+  method get_call_args: (fts_parameter_t * xpr_t) list
+  method get_mips_call_arguments : (fts_parameter_t * xpr_t) list
+  method get_arm_call_arguments: (fts_parameter_t * xpr_t) list
 
   (* method get_jumptable_indexed_targets: (int * doubleword_int) list *)
 
@@ -2907,7 +2929,7 @@ object
   method get_data_blocks: data_block_int list
   method get_jumptables: jumptable_int list
   method get_call_target:
-           doubleword_int -> doubleword_int -> (string * string * string)
+           doubleword_int -> doubleword_int -> call_target_t
   method get_jump_table_target:
            doubleword_int
            -> doubleword_int
@@ -2930,7 +2952,7 @@ object
   method get_exported_data_spec: string -> data_export_spec_t
   method get_data_block: doubleword_int -> data_block_int
   method get_jumptable: doubleword_int -> jumptable_int
-  method get_class_infos: doubleword_int -> (string * function_api_t * bool) list
+  method get_class_infos: doubleword_int -> (string * function_interface_t * bool) list
   method get_jump_target: 
     doubleword_int -> (doubleword_int * jumptable_int * data_block_int)
   method get_lib_functions_loaded : (string * string list) list
@@ -3065,7 +3087,7 @@ object
        
   method add_virtual_edge:
            doubleword_int
-           -> function_api_t
+           -> function_interface_t
            -> ctxt_iaddress_t
            -> (int * string * xpr_t) list
            -> unit

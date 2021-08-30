@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,14 +43,16 @@ open XprTypes
 open XprToPretty
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHBasicTypes
 open BCHLibTypes
 open BCHUtilities
 open BCHVariableType
 open BCHXmlUtil
 
+
 module P = Pervasives
+
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
@@ -90,7 +94,11 @@ let rec bterm_to_string (t:bterm_t) =
     "null-terminator-pos (" ^ (bterm_to_string x) ^ ")"
   | ArgSizeOf ty -> "size-of (" ^ (btype_to_string ty) ^ ")"
   | ArithmeticExpr (op, x, y) ->
-    "(" ^ (bterm_to_string x) ^ (arithmetic_op_to_string op) ^ (bterm_to_string y) ^ ")"
+     "("
+     ^ (bterm_to_string x)
+     ^ (arithmetic_op_to_string op)
+     ^ (bterm_to_string y)
+     ^ ")"
 
 
 let rec bterm_to_pretty (t:bterm_t) =
@@ -100,25 +108,32 @@ let rec bterm_to_pretty (t:bterm_t) =
   | ReturnValue  -> STR "return-value"
   | NamedConstant name -> STR name
   | NumConstant num -> num#toPretty
-  | ArgBufferSize x -> LBLOCK [ STR "buffersize (" ; bterm_to_pretty x ; STR ")" ]
-  | IndexSize x -> LBLOCK [ STR "indexsize (" ; bterm_to_pretty x ; STR ")" ]
-  | ByteSize x -> LBLOCK [ STR "bytesize (" ; bterm_to_pretty x ; STR ")" ]
+  | ArgBufferSize x -> LBLOCK [STR "buffersize ("; bterm_to_pretty x; STR ")"]
+  | IndexSize x -> LBLOCK [STR "indexsize ("; bterm_to_pretty x; STR ")"]
+  | ByteSize x -> LBLOCK [STR "bytesize ("; bterm_to_pretty x ; STR ")"]
   | ArgAddressedValue (x,offset) ->
-    LBLOCK [ STR "addressed-val (" ; bterm_to_pretty x ; STR ", " ; 
-	     bterm_to_pretty offset ; STR ")" ]
+     LBLOCK [
+         STR "addressed-val (";
+         bterm_to_pretty x;
+         STR ", ";
+	 bterm_to_pretty offset;
+         STR ")"]
   | ArgNullTerminatorPos x -> 
-    LBLOCK [ STR "null-terminator-pos (" ; bterm_to_pretty x ; STR ")" ]
-  | ArgSizeOf ty -> LBLOCK [ STR "size-of (" ; STR (btype_to_string ty) ; STR ")" ]
+    LBLOCK [STR "null-terminator-pos ("; bterm_to_pretty x ; STR ")"]
+  | ArgSizeOf ty -> LBLOCK [STR "size-of ("; STR (btype_to_string ty); STR ")"]
   | ArithmeticExpr (op, x, y) ->
-    LBLOCK [ STR "(" ; bterm_to_pretty x ; STR (arithmetic_op_to_string op) ; 
-	     bterm_to_pretty y ; STR ")" ]
-
+     LBLOCK [
+         STR "(";
+         bterm_to_pretty x;
+         STR (arithmetic_op_to_string op);
+	 bterm_to_pretty y;
+         STR ")"]
 
 (* --------------------------------------------------------------- comparison *)
 
 let rec bterm_compare n1 n2 =
   match (n1,n2) with
-  | (ArgValue p1, ArgValue p2) -> api_parameter_compare p1 p2
+  | (ArgValue p1, ArgValue p2) -> fts_parameter_compare p1 p2
   | (ArgValue _, _) -> -1
   | (_, ArgValue _) -> 1
   | (RunTimeValue, RunTimeValue) -> 0
@@ -162,10 +177,19 @@ let rec bterm_compare n1 n2 =
       else l2
     else l1
 
+and bterm_opt_compare n1 n2 =
+  match (n1, n2) with
+  | (None, None) -> 0
+  | (None, Some _) -> -1
+  | (Some _, None) -> 1
+  | (Some b1, Some b2) -> bterm_compare b1 b2
+
 (* ----------------------------------------------------------------- read xml *)
 
 let is_arithmetic_operator (numOperator:string) =
-  match numOperator with "plus" | "minus" | "times" | "divide" -> true | _ -> false
+  match numOperator with
+  | "plus" | "minus" | "times" | "divide" -> true
+  | _ -> false
 
 let is_stack_parameter_term (t:bterm_t) =
   match t  with
@@ -204,7 +228,8 @@ let get_parameter_reference node parameters =
 		  pretty_print_list (List.map (fun p -> p.apar_name) parameters)
 		    (fun s -> STR s) "[" "," "]" ])
       
-let rec read_xml_bterm (node:xml_element_int) (parameters:api_parameter_t list) =
+let rec read_xml_bterm
+          (node: xml_element_int) (parameters: fts_parameter_t list) =
   let read_xml_type = read_xml_type in
   let recurse n = read_xml_bterm n parameters in
   match node#getTag with
@@ -220,7 +245,7 @@ let rec read_xml_bterm (node:xml_element_int) (parameters:api_parameter_t list) 
       try List.nth argNodes n with Failure _ ->
         raise_xml_error
           node
-          (LBLOCK [ STR "Expected " ; INT (n+1) ; STR " arguments"]) in
+          (LBLOCK [STR "Expected "; INT (n+1); STR " arguments"]) in
     if is_arithmetic_operator opNode#getTag then
       let op = get_arithmetic_operator opNode#getTag in
       ArithmeticExpr (op, recurse (arg 0), recurse (arg 1))
@@ -241,12 +266,14 @@ let rec read_xml_bterm (node:xml_element_int) (parameters:api_parameter_t list) 
   | s ->
      raise_xml_error
        node 
-       (LBLOCK [ STR "Numerical term type " ; STR s ; STR " not recognized" ])
+       (LBLOCK [STR "Numerical term type "; STR s; STR " not recognized"])
 
 (* ---------------------------------------------------------------- operators *)
 
 let is_arithmetic_operator (numOperator:string) =
-  match numOperator with "plus" | "minus" | "times" | "divide" -> true | _ -> false
+  match numOperator with
+  | "plus" | "minus" | "times" | "divide" -> true
+  | _ -> false
 
 let get_arithmetic_operator (numOperator:string) =
   match numOperator with
@@ -275,11 +302,16 @@ let xop_to_arithmetic_op op =
   | XDiv -> PDivide
   | XMult -> PTimes
   | _ ->
-     raise (BCH_failure
-              (LBLOCK [ STR "expr operator " ; STR (xop_to_string op) ;
-			STR " cannot be represented by an arithmetic operator" ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "expr operator ";
+               STR (xop_to_string op);
+	       STR " cannot be represented by an arithmetic operator"]))
 
-let is_arithmetic_xop = function XPlus | XMinus | XDiv | XMult -> true | _ -> false
+let is_arithmetic_xop = function
+  | XPlus | XMinus | XDiv | XMult -> true
+  | _ -> false
 
 let rec xpr_to_bterm (xpr:xpr_t) (subst:variable_t -> bterm_t) =
   match xpr with

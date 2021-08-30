@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,10 +39,12 @@ open BCHLibTypes
 val function_semantics_to_pretty: function_semantics_t -> pretty_t
 
 val read_xml_function_semantics:
-  xml_element_int -> api_parameter_t list -> function_semantics_t
+  xml_element_int -> fts_parameter_t list -> function_semantics_t
 
-val read_xml_function_api_semantics:
-  xml_element_int -> xml_element_int -> (function_api_t * function_semantics_t)
+val read_xml_function_interface_and_semantics:
+  xml_element_int
+  -> xml_element_int
+  -> (function_interface_t * function_semantics_t)
 
 val join_semantics:
   function_semantics_t -> function_semantics_t option -> function_semantics_t

@@ -48,7 +48,7 @@ open XprToPretty
 open Xsimplify
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHBasicTypes
 open BCHBTerm
 open BCHCallTarget
@@ -58,7 +58,7 @@ open BCHConstantDefinitions
 open BCHCppClass
 open BCHCStruct
 open BCHDoubleword
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionSemantics
 open BCHFunctionSummary
@@ -108,8 +108,13 @@ let id = BCHInterfaceDictionary.interface_dictionary
 
 let raise_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; INT node#getColumnNumber ; 
-	     STR ") " ; msg ] in
+    LBLOCK [
+        STR "(";
+        INT node#getLineNumber;
+        STR ",";
+        INT node#getColumnNumber;
+	STR ") ";
+        msg] in
   begin
     ch_error_log#add "xml parse error" error_msg ;
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
@@ -125,13 +130,15 @@ type po_anchor_t =                      (* proof obligation anchor *)
 | DirectAccess
 | IndirectAccess of bterm_t
 
+
 let po_anchor_compare a1 a2 =
   match (a1,a2) with
-    (DirectAccess, DirectAccess) -> 0
+  | (DirectAccess, DirectAccess) -> 0
   | (DirectAccess, _) -> -1
   | (_, DirectAccess ) -> 1
   | (IndirectAccess n1, IndirectAccess n2) -> bterm_compare n1 n2
-    
+
+
 let po_anchor_to_pretty a =
   match a with
   | DirectAccess -> STR "direct"
@@ -209,9 +216,16 @@ object (self:'a)
       | _ -> STR "not saved" in
     let pRestored = match restore_addresses#toList with
       | [] -> STR "not restored"
-      | l -> LBLOCK [ STR "restored: " ; 
-		      pretty_print_list l (fun a -> STR a) "[" ", " "]" ] in
-    LBLOCK [ STR (register_to_string reg) ; STR ". " ; pSaved ; STR "; " ; pRestored ]
+      | l ->
+         LBLOCK [
+             STR "restored: ";
+	     pretty_print_list l (fun a -> STR a) "[" ", " "]" ] in
+    LBLOCK [
+        STR (register_to_string reg);
+        STR ". ";
+        pSaved;
+        STR "; ";
+        pRestored]
       
 end
   
@@ -253,7 +267,10 @@ object (self)
 
   method variable_name_to_string v =
     let index = v#getName#getSeqNumber in
-    if variable_names#has index then variable_names#get index else v#getName#getBaseName
+    if variable_names#has index then
+      variable_names#get index
+    else
+      v#getName#getBaseName
 
   method variable_name_to_pretty v = STR (self#variable_name_to_string v)
 
@@ -264,7 +281,11 @@ object (self)
       let _ = chlog#add "c-struct field names" cstruct#toPretty in
       cstruct#iter (fun fld ->
           let memref = self#mk_base_variable_reference v in
-          let fldvar = self#mk_memory_variable ~save_name:false memref (mkNumerical fld.fld_offset) in
+          let fldvar =
+            self#mk_memory_variable
+              ~save_name:false
+              memref
+              (mkNumerical fld.fld_offset) in
           let fldname = vname ^ "->" ^ fld.fld_name in
           let fldtype = fld.fld_type in
           let ifldvar = self#mk_initial_memory_value fldvar in
@@ -274,7 +295,8 @@ object (self)
 	    self#set_variable_name fldvar fldname ;
             self#set_variable_name ifldvar ifldname ;
 	    if is_ptrto_known_struct fldtype then 
-	      self#set_pointedto_struct_field_names (level + 1) ifldvar fldname fldtype
+	      self#set_pointedto_struct_field_names
+                (level + 1) ifldvar fldname fldtype
           end)
 
   method set_java_native_method_signature (api:java_native_method_api_t) =
@@ -294,7 +316,8 @@ object (self)
 	self#set_variable_name initV name ;
         if offset = 4 then
 	  let jniInterfacePtrRef = self#mk_base_variable_reference initV in
-	  let jniInterfacePtr = self#mk_memory_variable jniInterfacePtrRef numerical_zero in
+	  let jniInterfacePtr =
+            self#mk_memory_variable jniInterfacePtrRef numerical_zero in
 	  let jniInterfacePtrIn = self#mk_initial_memory_value jniInterfacePtr in
 	  self#set_variable_name jniInterfacePtrIn "jni$Ifp"
       end ) stackPars	 
@@ -309,7 +332,8 @@ object (self)
 	self#set_variable_name initV name ;
         if offset = 4 then
 	  let jniInterfacePtrRef = self#mk_base_variable_reference initV in
-	  let jniInterfacePtr = self#mk_memory_variable jniInterfacePtrRef numerical_zero in
+	  let jniInterfacePtr =
+            self#mk_memory_variable jniInterfacePtrRef numerical_zero in
 	  let jniInterfacePtrIn = self#mk_initial_memory_value jniInterfacePtr in
 	  self#set_variable_name jniInterfacePtrIn "jni$Ifp"
       end ) stackPars	 
@@ -318,7 +342,8 @@ object (self)
     match par.apar_location with
     | StackParameter i ->
       let memref = self#mk_local_stack_reference  in
-      let argvar = self#mk_memory_variable ~save_name:false memref (mkNumerical (4*i)) in
+      let argvar =
+        self#mk_memory_variable ~save_name:false memref (mkNumerical (4*i)) in
       let argvarin = self#mk_initial_memory_value argvar in
       begin
 	match sc with 
@@ -330,17 +355,33 @@ object (self)
 	      match ssc with
 	      | FieldString s ->
 		begin
-		  H.add initial_string_values (argvarin#getName#getSeqNumber,offset) s ;
-		  chlog#add "struct constant string"
-		    (LBLOCK [ faddr#toPretty ; STR ": &" ; mvarin#toPretty ; STR " -- " ;
-			      STR s ])
+		  H.add
+                    initial_string_values
+                    (argvarin#getName#getSeqNumber,offset)
+                    s;
+		  chlog#add
+                    "struct constant string"
+		    (LBLOCK [
+                         faddr#toPretty;
+                         STR ": &";
+                         mvarin#toPretty;
+                         STR " -- ";
+			 STR s])
 		end
 	      | FieldCallTarget tgt ->
 		begin
-		  H.add initial_call_target_values mvarin#getName#getSeqNumber tgt ;
-		  chlog#add "struct constant invariant"
-		    (LBLOCK [ faddr#toPretty ; STR ": " ; mvarin#toPretty ; STR " -- " ; 
-			      call_target_to_pretty tgt ])
+		  H.add
+                    initial_call_target_values
+                    mvarin#getName#getSeqNumber
+                    tgt;
+		  chlog#add
+                    "struct constant invariant"
+		    (LBLOCK [
+                         faddr#toPretty;
+                         STR ": ";
+                         mvarin#toPretty;
+                         STR " -- ";
+			 call_target_to_pretty tgt])
 		end
 	      | FieldValues ll ->
 		List.iter (fun (offset,ssc) ->
@@ -350,10 +391,18 @@ object (self)
 		  match ssc with
 		  | FieldCallTarget tgt ->
 		    begin
-		      H.add initial_call_target_values mvarin#getName#getSeqNumber tgt ;
-		      chlog#add "struct constant invariant"
-			(LBLOCK [ faddr#toPretty ; STR ": " ; mvarin#toPretty ; STR " -- " ; 
-				  call_target_to_pretty tgt ])
+		      H.add
+                        initial_call_target_values
+                        mvarin#getName#getSeqNumber
+                        tgt;
+		      chlog#add
+                        "struct constant invariant"
+			(LBLOCK [
+                             faddr#toPretty;
+                             STR ": ";
+                             mvarin#toPretty;
+                             STR " -- ";
+			     call_target_to_pretty tgt])
 		    end
 		  | _ -> ()) ll
 	      | _ -> ()) l
@@ -362,122 +411,167 @@ object (self)
     | _ -> ()
 
   method set_class_member_variable_names 
-    (classinfos:(string * function_api_t * bool) list) =
+    (classinfos:(string * function_interface_t * bool) list) =
     match classinfos with
-    | [ (classname,api,isStatic) ] ->
+    | [(classname, fintf, isStatic)] ->
+       let fts = fintf.fintf_type_signature in
        let stackParams =
          List.fold_left (fun a p ->
 	     match p.apar_location with
              | StackParameter i -> (i,p.apar_name) :: a | _ -> a)
-	[] api.fapi_parameters in
+	[] fts.fts_parameters in
        let regParams =
          List.fold_left (fun a p ->
 	     match p.apar_location with
              | RegisterParameter r -> (r,p.apar_name) :: a | _ -> a)
-	[] api.fapi_parameters in
-      let stackVars = List.map (fun (i,name) ->
-	let memref = self#mk_local_stack_reference in
-	let memvar =
-          self#mk_memory_variable ~save_name:false memref (mkNumerical (i * 4)) in
-	let memInitVar = self#mk_initial_memory_value memvar in
-	(name,memInitVar)) stackParams in
-      let regVars = List.map (fun (r,name) ->
-	let regInitVar = self#mk_initial_register_value ~level:0 r in
-	(name,regInitVar)) regParams in
-      let paramVars = stackVars @ regVars in
-      let _ = List.iter (fun (name,v) -> self#set_variable_name v name) paramVars in
-      if isStatic then () else
-      let (_,thisVar) = 
-	try List.find (fun (name,_) -> name = "this") paramVars with Not_found ->
-	  raise
-            (BCH_failure
-               (LBLOCK [ STR "No this variable found in function " ;
-			 faddr#toPretty ; STR " in class " ;
-			 STR classname ])) in
-      let cppClass = get_cpp_class classname in
-      let add_dm_class_members (ty:btype_t) (basevar:variable_t) =
-	if is_class_type ty then
-	  let _= chlog#add "member class type" 
-	    (LBLOCK [ basevar#toPretty ; STR ": " ; STR (btype_to_string ty) ]) in
-	  let cls = get_class_from_type ty in
-	  begin
-	    cls#dm_iter (fun dm ->
-	      let memref = self#mk_base_variable_reference basevar in
-	      let memberVar =
-                self#mk_memory_variable
-                  ~save_name:false memref (mkNumerical dm.cppdm_offset) in
-	      let memberInitVar = self#mk_initial_memory_value memberVar in
-	      let mName = self#variable_name_to_string basevar in
-	      let name = mName ^ "->" ^ dm.cppdm_name in
-	      self#set_variable_name memberInitVar name ) ;
-	    cls#vf_iter (fun vf ->
-	      let memref = self#mk_base_variable_reference basevar in
-	      let vfptrVar =
-                self#mk_memory_variable
-                  ~save_name:false memref (mkNumerical vf.cppvf_offset) in
-	      let vfptrInitVar = self#mk_initial_memory_value vfptrVar in
-	      let mName = self#variable_name_to_string basevar in
-	      let vfptrName = mName ^ "->vtableptr" in
-	      let vfsummaries = get_vtable_summaries vf.cppvf_table in
-	      begin
-		List.iter (fun (vfOffset,summary) ->
-		  let vfmemref = self#mk_base_variable_reference vfptrInitVar in
-		  let vfVar =
-                    self#mk_memory_variable
-                      ~save_name:false vfmemref (mkNumerical vfOffset) in
-		  let vfInitVar = self#mk_initial_memory_value vfVar in
-		  self#register_virtual_call vfInitVar summary) vfsummaries ;
-		self#set_variable_name vfptrInitVar vfptrName
-	      end)
-	  end
-	else
-	  () in
-      begin
-	cppClass#dm_iter (fun dm ->
-	  let memref = self#mk_base_variable_reference thisVar in
-	  let memberVar =
-            self#mk_memory_variable
-              ~save_name:false memref (mkNumerical dm.cppdm_offset) in
-	  let memberInitVar = self#mk_initial_memory_value memberVar in
-	  let name = "this->" ^ dm.cppdm_name in
-	  begin
-	    self#set_variable_name memberInitVar name ;
-	    add_dm_class_members dm.cppdm_type memberInitVar
-	  end) ;
-	cppClass#vf_iter (fun vf ->
-	  let memref = self#mk_base_variable_reference thisVar in
-	  let vfptrVar =
-            self#mk_memory_variable
-              ~save_name:false memref (mkNumerical vf.cppvf_offset) in
-	  let vfptrInitVar = self#mk_initial_memory_value vfptrVar in
-	  let vfptrVarName = "this->" ^ "vtableptr" in
-	  let vfsummaries = get_vtable_summaries vf.cppvf_table in
-	  begin
-	    List.iter (fun (vfOffset,summary) ->
-	      let vfmemref = self#mk_base_variable_reference vfptrInitVar in
-	      let vfVar =
-                self#mk_memory_variable
-                  ~save_name:false vfmemref (mkNumerical vfOffset) in
-	      let vfInitVar = self#mk_initial_memory_value vfVar in
-	      self#register_virtual_call vfInitVar summary) vfsummaries ;
-	    self#set_variable_name vfptrInitVar vfptrVarName 
-	  end)
-      end
-    | _ ->
-      ch_error_log#add "class info ignored"
-	(LBLOCK [ faddr#toPretty ; STR ". Class-infos: " ; 
-		  pretty_print_list (List.map (fun (c,_,_) -> c) classinfos) (fun s -> STR s) 
-		                    "[" ", " "]" ])
+	[] fts.fts_parameters in
+       let stackVars =
+         List.map (fun (i,name) ->
+	     let memref = self#mk_local_stack_reference in
+	     let memvar =
+               self#mk_memory_variable
+                 ~save_name:false
+                 memref
+                 (mkNumerical
+                    (i * 4)) in
+	     let memInitVar = self#mk_initial_memory_value memvar in
+	     (name,memInitVar)) stackParams in
+       let regVars =
+         List.map (fun (r,name) ->
+	     let regInitVar = self#mk_initial_register_value ~level:0 r in
+	     (name,regInitVar)) regParams in
+       let paramVars = stackVars @ regVars in
+       let _ =
+         List.iter (fun (name,v) ->
+             self#set_variable_name v name) paramVars in
+       if isStatic then
+         ()
+       else
+         let (_, thisVar) =
+	   try
+             List.find (fun (name,_) -> name = "this") paramVars
+           with Not_found ->
+	     raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "No this variable found in function ";
+		       faddr#toPretty;
+                       STR " in class ";
+		       STR classname])) in
+         let cppClass = get_cpp_class classname in
+         let add_dm_class_members (ty:btype_t) (basevar:variable_t) =
+	   if is_class_type ty then
+	     let _=
+               chlog#add
+                 "member class type"
+	         (LBLOCK [
+                      basevar#toPretty;
+                      STR ": ";
+                      STR (btype_to_string ty)]) in
+	     let cls = get_class_from_type ty in
+	     begin
+	       cls#dm_iter (fun dm ->
+	           let memref = self#mk_base_variable_reference basevar in
+	           let memberVar =
+                     self#mk_memory_variable
+                       ~save_name:false
+                       memref
+                       (mkNumerical dm.cppdm_offset) in
+	           let memberInitVar = self#mk_initial_memory_value memberVar in
+	           let mName = self#variable_name_to_string basevar in
+	           let name = mName ^ "->" ^ dm.cppdm_name in
+	           self#set_variable_name memberInitVar name );
 
-  method set_argument_names (faddr:doubleword_int) (api:function_api_t) =
-    let pars = api.fapi_parameters in
-    let stackPars = List.fold_left (fun acc p ->
-      match p.apar_location with
-      | StackParameter i -> (i, p.apar_name,p.apar_type) :: acc | _ -> acc) [] pars in
-    let regPars = List.fold_left (fun acc p ->
-      match p.apar_location with
-      | RegisterParameter reg -> 
-	(reg, p.apar_name,p.apar_type) :: acc | _ -> acc) [] pars in
+	       cls#vf_iter (fun vf ->
+	           let memref = self#mk_base_variable_reference basevar in
+	           let vfptrVar =
+                     self#mk_memory_variable
+                       ~save_name:false
+                       memref
+                       (mkNumerical vf.cppvf_offset) in
+	           let vfptrInitVar = self#mk_initial_memory_value vfptrVar in
+	           let mName = self#variable_name_to_string basevar in
+	           let vfptrName = mName ^ "->vtableptr" in
+	           let vfsummaries = get_vtable_summaries vf.cppvf_table in
+	           begin
+		     List.iter (fun (vfOffset,summary) ->
+		         let vfmemref =
+                           self#mk_base_variable_reference vfptrInitVar in
+		         let vfVar =
+                           self#mk_memory_variable
+                             ~save_name:false
+                             vfmemref
+                             (mkNumerical vfOffset) in
+		         let vfInitVar = self#mk_initial_memory_value vfVar in
+		         self#register_virtual_call vfInitVar summary) vfsummaries ;
+		     self#set_variable_name vfptrInitVar vfptrName
+	           end)
+	     end
+	   else
+	     () in
+         begin
+	   cppClass#dm_iter (fun dm ->
+	       let memref = self#mk_base_variable_reference thisVar in
+	       let memberVar =
+                 self#mk_memory_variable
+                   ~save_name:false
+                   memref
+                   (mkNumerical dm.cppdm_offset) in
+	       let memberInitVar = self#mk_initial_memory_value memberVar in
+	       let name = "this->" ^ dm.cppdm_name in
+	       begin
+	         self#set_variable_name memberInitVar name ;
+	         add_dm_class_members dm.cppdm_type memberInitVar
+	       end) ;
+	   cppClass#vf_iter (fun vf ->
+	       let memref = self#mk_base_variable_reference thisVar in
+	       let vfptrVar =
+                 self#mk_memory_variable
+                   ~save_name:false
+                   memref
+                   (mkNumerical vf.cppvf_offset) in
+	       let vfptrInitVar = self#mk_initial_memory_value vfptrVar in
+	       let vfptrVarName = "this->" ^ "vtableptr" in
+	       let vfsummaries = get_vtable_summaries vf.cppvf_table in
+	       begin
+	         List.iter (fun (vfOffset,summary) ->
+	             let vfmemref = self#mk_base_variable_reference vfptrInitVar in
+	             let vfVar =
+                       self#mk_memory_variable
+                         ~save_name:false
+                         vfmemref
+                         (mkNumerical vfOffset) in
+	             let vfInitVar = self#mk_initial_memory_value vfVar in
+	             self#register_virtual_call vfInitVar summary) vfsummaries ;
+	         self#set_variable_name vfptrInitVar vfptrVarName
+	       end)
+         end
+    | _ ->
+       ch_error_log#add
+         "class info ignored"
+	 (LBLOCK [
+              faddr#toPretty;
+              STR ". Class-infos: ";
+	      pretty_print_list
+                (List.map (fun (c,_,_) -> c) classinfos)
+                (fun s -> STR s)
+		"[" ", " "]"])
+
+  method set_argument_names
+           (faddr: doubleword_int) (fintf: function_interface_t) =
+    let fts = fintf.fintf_type_signature in
+    let pars = fts.fts_parameters in
+    let stackPars =
+      List.fold_left (fun acc p ->
+          match p.apar_location with
+          | StackParameter i -> (i, p.apar_name,p.apar_type) :: acc
+          | _ -> acc) [] pars in
+    let regPars =
+      List.fold_left (fun acc p ->
+          match p.apar_location with
+          | RegisterParameter reg ->
+	     (reg, p.apar_name,p.apar_type) :: acc
+          | _ -> acc) [] pars in
     begin
       List.iter (fun (offset,name,ty) ->
 	let memref = self#mk_local_stack_reference  in
@@ -534,7 +628,8 @@ object (self)
         chifvar
       end
 
-  method private mk_variable (v:assembly_variable_int) = self#add_chifvar v NUM_VAR_TYPE
+  method private mk_variable (v:assembly_variable_int) =
+    self#add_chifvar v NUM_VAR_TYPE
 
   method private has_chifvar index = H.mem chifvars index
 
@@ -542,10 +637,14 @@ object (self)
 
   method get_variable (index:int) = 
     if H.mem chifvars index then H.find chifvars index else
-      raise  (BCH_failure (LBLOCK [ STR "Variable not found: " ; INT index ;
-                                    STR "; variables: " ;
-                                    pretty_print_list self#get_variables
-             (fun v -> v#toPretty) " [" "," "]" ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Variable not found: ";
+                INT index;
+                STR "; variables: ";
+                pretty_print_list self#get_variables
+                  (fun v -> v#toPretty) " [" "," "]" ]))
 
 
   (* -------------------------------------------------------- transactions -- *)
@@ -563,7 +662,8 @@ object (self)
       
   method end_transaction =
     let constant_assignments =
-      constant_table#fold (fun a num tmp -> (ASSIGN_NUM (tmp, NUM num)) :: a) [] in
+      constant_table#fold
+        (fun a num tmp -> (ASSIGN_NUM (tmp, NUM num)) :: a) [] in
     begin
       scope#endTransaction ;
       in_transaction <- false ;
@@ -584,10 +684,17 @@ object (self)
 
   method private mk_temp (t:variable_type_t):variable_t =
     if in_transaction then
-      if is_numerical_type t then self#mk_num_temp else self#mk_sym_temp
+      if is_numerical_type t then
+        self#mk_num_temp
+      else
+        self#mk_sym_temp
     else
       let _ = self#start_transaction in
-      let tmp = if is_numerical_type t then self#mk_num_temp else self#mk_sym_temp in
+      let tmp =
+        if is_numerical_type t then
+          self#mk_num_temp
+        else
+          self#mk_sym_temp in
       let _ = self#end_transaction in
       tmp
       
@@ -730,13 +837,16 @@ object (self)
           self#probe_global_var_field_values v iv in
       iv        
     else
+      let msg =
+	(LBLOCK [
+             STR "variable is not suitable for initial memory variable: ";
+	     v#toPretty;
+             STR " (";
+             faddr#toPretty;
+             STR ")"]) in
       begin
-	ch_error_log#add "function environment"
-	  (LBLOCK [ STR "variable is not suitable for initial memory variable: " ; 
-		    v#toPretty ; STR " (" ; faddr#toPretty ; STR ")" ]) ;
-	raise (BCH_failure 
-		 (LBLOCK [ STR "variable is not suitable for initial memory variable: " ;
-			   v#toPretty ]))
+	ch_error_log#add "function environment" msg;
+	raise (BCH_failure msg)
       end
 
   method mk_initial_register_value ?(level=0) (r:register_t) = 
@@ -753,36 +863,56 @@ object (self)
     if H.mem initial_call_target_values index then
       H.find initial_call_target_values index
     else
-      raise (BCH_failure (LBLOCK [ STR "initialized call target value not found for " ; 
-				   v#toPretty ; STR " in " ; faddr#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "initialized call target value not found for ";
+		v#toPretty;
+                STR " in ";
+                faddr#toPretty]))
 
   method has_initialized_string_value (v:variable_t) (offset:int) =
     H.mem initial_string_values (v#getName#getSeqNumber,offset)
 
   method get_initialized_string_value (v:variable_t) (offset:int) =
     let index = v#getName#getSeqNumber in
-    if H.mem initial_string_values (index,offset) then
-      H.find initial_string_values (index,offset)
+    if H.mem initial_string_values (index, offset) then
+      H.find initial_string_values (index, offset)
     else
-      raise (BCH_failure (LBLOCK [ STR "initialized string value not found for " ;
-				   v#toPretty ; STR " at offset " ; INT offset ; 
-				   STR " in " ; faddr#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "initialized string value not found for ";
+		v#toPretty;
+                STR " at offset ";
+                INT offset;
+		STR " in " ; faddr#toPretty]))
 
 
-  method private register_virtual_call (v:variable_t) (s:function_api_t) =
-    let _ = chlog#add "register virtual call"
-      (LBLOCK [ faddr#toPretty ; STR ": " ; v#toPretty ; STR ": " ; 
-		STR s.fapi_name ]) in
+  method private register_virtual_call
+                   (v:variable_t) (s:function_interface_t) =
+    let _ =
+      chlog#add
+        "register virtual call"
+        (LBLOCK [
+             faddr#toPretty;
+             STR ": ";
+             v#toPretty;
+             STR ": ";
+	     STR s.fintf_name]) in
     H.add virtual_calls v#getName#getSeqNumber s
 
-  method is_virtual_call (v:variable_t) = H.mem virtual_calls v#getName#getSeqNumber
+  method is_virtual_call (v:variable_t) =
+    H.mem virtual_calls v#getName#getSeqNumber
 
   method get_virtual_target (v:variable_t) =
     try
       H.find virtual_calls v#getName#getSeqNumber
     with
       Not_found ->
-	raise (BCH_failure (LBLOCK [ STR "No virtual target found for " ; v#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [STR "No virtual target found for "; v#toPretty]))
       
   method get_frozen_variable (variable:variable_t) =
     varmgr#get_frozen_variable variable 
@@ -837,7 +967,7 @@ object (self)
         varmgr#get_stack_parameter_index v
     with
     | BCH_failure p ->
-       raise (BCH_failure (LBLOCK [ STR "Finfo:get-stack-parameter-index: " ; p ]))
+       raise (BCH_failure (LBLOCK [STR "Finfo:get-stack-parameter-index: "; p]))
 
   method get_memvar_basevar (v:variable_t) = varmgr#get_memvar_basevar v
 
@@ -854,7 +984,9 @@ object (self)
       else if self#is_memory_variable v then
         self#get_memvar_offset v
       else
-        raise (BCH_failure (LBLOCK [ STR "Not a memory variable: " ; v#toPretty ])) in
+        raise
+          (BCH_failure
+             (LBLOCK [STR "Not a memory variable: "; v#toPretty])) in
     if is_constant_offset offset then
       Some (get_constant_offsets offset)
     else
@@ -906,11 +1038,11 @@ object (self)
     else if varmgr#is_initial_memory_value v then
       self#get_global_variable_address (varmgr#get_initial_memory_value_variable v)
     else
+      let msg =
+        LBLOCK [STR "variable is not a global variable: "; v#toPretty] in
       begin
-	ch_error_log#add "function environment"
-	  (LBLOCK [ STR "variable is not a global variable: " ; v#toPretty ]) ;
-	raise (BCH_failure 
-		 (LBLOCK [ STR "variable is not a global variable: " ; v#toPretty ]))
+	ch_error_log#add "function environment" msg;
+	raise (BCH_failure msg)
       end
 
   method is_local_variable = varmgr#is_local_variable
@@ -995,18 +1127,22 @@ object (self)
       else
         self#get_regarg_deref_val_register base
     else
-      raise (BCH_failure
-               (LBLOCK [ STR "variable is not a register arg deref variable: " ;
-                         v#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "variable is not a register arg deref variable: ";
+                v#toPretty]))
 
   method get_regarg_deref_val_register (v:variable_t) =
     if self#is_regarg_deref_val v then
       let initvar = self#get_init_value_variable v in
       self#get_regarg_deref_var_register initvar
     else
-      raise (BCH_failure
-               (LBLOCK [ STR "variable is nnot a register arg deref value: " ;
-                         v#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "variable is nnot a register arg deref value: ";
+                v#toPretty]))
 
   method private get_argbasevar_with_offsets_aux
                    (v:variable_t) (offsets:numerical_t list) =
@@ -1099,15 +1235,19 @@ object (self)
       | MIPSRegister r -> self#mk_mips_register_variable r
       | ARMRegister r -> self#mk_arm_register_variable r
       | _ ->
-         let msg = LBLOCK [ STR "Variable is not a cpu or mips register: " ;
-                            v#toPretty ] in
+         let msg =
+           LBLOCK [
+               STR "Variable is not a cpu or mips register: ";
+               v#toPretty] in
          begin
            ch_error_log#add "function environment" msg ;
            raise (BCH_failure msg)
          end           
     else
-      let msg = LBLOCK [ STR "Variable is not an initial value variable: " ;
-                         v#toPretty ] in
+      let msg =
+        LBLOCK [
+            STR "Variable is not an initial value variable: ";
+            v#toPretty] in
       begin
 	ch_error_log#add "function environment" msg ;
 	raise (BCH_failure msg)
@@ -1126,8 +1266,10 @@ object (self)
     if self#is_symbolic_value v then
       varmgr#get_symbolic_value_expr v
     else
-      let msg =  LBLOCK [ STR "Variable is not a symbolic value expr: " ;
-                          v#toPretty ] in
+      let msg =
+        LBLOCK [
+            STR "Variable is not a symbolic value expr: ";
+            v#toPretty] in
       begin
         ch_error_log#add "function environment" msg ;
         raise (BCH_failure msg)
@@ -1138,7 +1280,8 @@ object (self)
 
   method is_unknown_reference = varmgr#memrefmgr#is_unknown_reference
 
-  method private write_xml_assembly_variable_id (node:xml_element_int) (v:assembly_variable_int) =
+  method private write_xml_assembly_variable_id
+                   (node: xml_element_int) (v: assembly_variable_int) =
     begin
       node#setAttribute "vn" v#get_name ;
       node#setIntAttribute "vx" v#index
@@ -1146,42 +1289,53 @@ object (self)
 
 end
 
+
 class function_info_t 
         (faddr:doubleword_int)
         (varmgr:variable_manager_int)
         (invio:invariant_io_int)
         (tinvio:type_invariant_io_int):function_info_int = 
 object (self)
-  
+
+  (* Function info permanent state: ------------------------------------------ *
+   * These data items are saved and reloaded as part of the intermediate       *
+   * analysis results.                                                         *
+   * ------------------------------------------------------------------------- *)
   val env = new function_environment_t faddr varmgr
-  val constant_table = new VariableCollections.table_t
-  val calltargets = H.create 5       (* ctxt_iaddress_t -> call_target_info_int *)
-  val jump_targets = H.create 5  
-  val mutable base_pointers = new VariableCollections.set_t 
+  val constant_table = new VariableCollections.table_t    (* constants *)
+  val calltargets = H.create 5                            (* call-targets *)
+
+  val mutable base_pointers = new VariableCollections.set_t (* base-pointers *)
+  val mutable stack_adjustment = None                     (* stack-adjustment *)
+  val saved_registers = H.create 3                 (* saved-registers -- not read *)
+
+  val cc_user_to_setter = H.create 3                      (* cc-users *)
+  val test_expressions = H.create 3                       (* test-expressions *)
+  val test_variables   = H.create 3                       (* test-variables *)
+  (* ------------------------------------------------------------------------- *)
+
+  (* Function info transient state: ------------------------------------------ *
+   * These data items are lost/recreated from one analysis run to the next     *
+   * ------------------------------------------------------------------------- *)
   val memory_access_record = make_memory_access_record ()
-
   val instrbytes = H.create 5
-
-  val mutable stack_adjustment = None  (* number of bytes this function pops off the stack
-				          when it returns *)
-  val mutable complete = true
-  val saved_registers = H.create 3      (* str(register) -> saved_register_int *)
+  val jump_targets = H.create 5                           (* to be saved *)
   val return_values = H.create 3
   val sideeffects = new SideEffectCollections.set_t
-
-  val mutable user_summary = None
   val mutable nonreturning = false
-  val api_parameters = H.create 3
-
-  val cc_user_to_setter = H.create 3
-  val cc_setter_to_user = H.create 3
-  val test_expressions = H.create 3
-  val test_variables   = H.create 3
+  val mutable user_summary = None
+  val fts_parameters = H.create 3   (* function-type-signature parameters *)
+  val cc_setter_to_user = H.create 3                      (* to be saved ? *)
+  val mutable complete = true
 
   val mutable dynlib_stub = None                (* call_target_t option *)
   val mutable sideeffects_changed = false
   val mutable call_targets_set = false
+  val nonreturning_calls = new StringCollections.set_t
+  val mutable invariants_to_be_reset = false                         
+  (* ------------------------------------------------------------------------- *)
 
+                                     
   method set_instruction_bytes (ia:ctxt_iaddress_t) (b:string) =
     H.add instrbytes ia b
 
@@ -1191,13 +1345,16 @@ object (self)
     else
       raise
         (BCH_failure
-           (LBLOCK [ STR "No instruction bytes found for " ;
-                     STR ia ; STR " in function " ;
-                     faddr#toPretty ]))
+           (LBLOCK [
+                STR "No instruction bytes found for ";
+                STR ia;
+                STR " in function ";
+                faddr#toPretty]))
 
   method set_dynlib_stub (t:call_target_t) = dynlib_stub <- Some t
 
-  method is_dynlib_stub = match dynlib_stub with Some _ -> true | _ -> false
+  method is_dynlib_stub =
+    match dynlib_stub with Some _ -> true | _ -> false
 
   method get_dynlib_stub:call_target_t =
     match dynlib_stub with
@@ -1205,16 +1362,13 @@ object (self)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Function is not known to be dynamic library stub" ]))
+            (LBLOCK [
+                 STR "Function is not known to be dynamic library stub"]))
 
   method sideeffects_changed = sideeffects_changed
 
   method call_targets_were_set = call_targets_set
 
-  val nonreturning_calls = new StringCollections.set_t 
-
-  val mutable invariants_to_be_reset = false
-    
   method get_address = faddr
   method a = faddr
   method env = env
@@ -1278,9 +1432,9 @@ object (self)
       Some c -> c
     | _ -> raise (Invocation_error "function_info#get_constant")
             
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * record register arguments                                                            *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   * record register arguments                                                 *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method save_register (iaddr:ctxt_iaddress_t) (reg:register_t) =
     let regstr = register_to_string reg in
@@ -1317,9 +1471,9 @@ object (self)
                 LBLOCK l ; NL ;
 		STR (string_repeat "~" 80) ; NL]
       
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * record return values                                                                 *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   * record return values                                                    *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
     
   method record_return_value (iaddr:ctxt_iaddress_t) (x:xpr_t) =
     H.replace return_values iaddr x
@@ -1334,9 +1488,9 @@ object (self)
     LBLOCK [ STR "Return values: (" ; INT (H.length return_values) ; STR ")" ; NL ;
 	     INDENT (3, LBLOCK !p) ; NL ]									 
       
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * record side effects                                                                  *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   * record side effects                                                     *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
     
   method record_sideeffect (s:sideeffect_t) = 
     if sideeffects#has s then () else
@@ -1355,34 +1509,34 @@ object (self)
   method private make_postconditions (xlist:xpr_t list) = ([],[])
 
       
-    (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-     * create a function summary from locally available information                         *
-     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   * create a function summary from locally available information             *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
-  method private add_api_parameter (par:api_parameter_t) = 
+  method private add_fts_parameter (par: fts_parameter_t) =
     let _ = 
-      if H.mem api_parameters par.apar_name then
-	if (api_parameter_compare par (H.find api_parameters par.apar_name)) = 0
+      if H.mem fts_parameters par.apar_name then
+	if (fts_parameter_compare par (H.find fts_parameters par.apar_name)) = 0
 	|| is_unknown_type par.apar_type then
 	  ()
 	else
-	  H.replace api_parameters par.apar_name par
+	  H.replace fts_parameters par.apar_name par
       else
-	H.add api_parameters par.apar_name par in
-    H.find api_parameters par.apar_name 
+	H.add fts_parameters par.apar_name par in
+    H.find fts_parameters par.apar_name
 
-  method private get_api_parameters =
+  method private get_fts_parameters =
     let l = ref [] in
-    let _ = H.iter (fun _ v -> l := v :: !l) api_parameters in
+    let _ = H.iter (fun _ v -> l := v :: !l) fts_parameters in
     !l
      
   method set_global_par (gaddr:doubleword_int) (btype:btype_t) =
-    self#add_api_parameter (mk_global_parameter ~btype gaddr)
+    self#add_fts_parameter (mk_global_parameter ~btype gaddr)
 
   method set_stack_par (index:int) (btype:btype_t) =
     let set_defaultpar () =
       let par = mk_stack_parameter ~btype index in
-      begin ignore(self#add_api_parameter par) ; par end in
+      begin ignore(self#add_fts_parameter par) ; par end in
     match user_summary with 
     | Some summary ->
       begin
@@ -1396,7 +1550,7 @@ object (self)
     | _ -> set_defaultpar ()
 
   method set_register_par (reg:register_t) (btype:btype_t) =
-    self#add_api_parameter (mk_register_parameter ~btype reg)
+    self#add_fts_parameter (mk_register_parameter ~btype reg)
 
   method set_nonreturning = 
     if nonreturning then () else
@@ -1427,13 +1581,22 @@ object (self)
          (1) take user application function doc if present
   *)
   method get_summary  = 
-    let api = match user_summary with 
+    let fintf = match user_summary with
       | Some summary -> 
-	let sapi = summary#get_function_api in
-	let parameters = List.fold_left (fun acc par ->
-	  if List.exists (fun p -> (api_parameter_compare p par) = 0) acc then 
-	  acc else par::acc) sapi.fapi_parameters self#get_api_parameters in
-	{ sapi with fapi_parameters = parameters }
+	 let sumintf = summary#get_function_interface in
+         let sumfts = sumintf.fintf_type_signature in
+	 let parameters =
+           List.fold_left
+             (fun acc par ->
+	       if List.exists (fun p ->
+                      (fts_parameter_compare p par) = 0) acc then
+	         acc
+               else par::acc)
+             sumfts.fts_parameters self#get_fts_parameters in
+         let newfts = {
+             sumfts with
+             fts_parameters = parameters } in
+	{ sumintf with fintf_type_signature = newfts }
       | _ ->
          if system_info#is_mips then
            self#get_mips_local_function_api
@@ -1445,90 +1608,107 @@ object (self)
     let doc = match user_summary with
       | Some summary -> summary#get_function_documentation
       | _ -> (default_summary self#get_name)#get_function_documentation in
-    make_function_summary ~api ~sem ~doc
+    make_function_summary ~fintf ~sem ~doc
 
   method private get_function_semantics =
     let usem = match user_summary with 
       | Some summary -> Some summary#get_function_semantics
       | _ -> None in
-    let fsem = if self#is_complete then Some self#get_local_function_semantics else None in
-    List.fold_left join_semantics (default_summary self#get_name)#get_function_semantics
-      [ usem ; fsem ]
+    let fsem =
+      if self#is_complete then
+        Some self#get_local_function_semantics
+      else
+        None in
+    List.fold_left
+      join_semantics
+      (default_summary self#get_name)#get_function_semantics
+      [usem; fsem]
 
   method private get_mips_local_function_api =
     try
       let parameters = env#get_mips_argument_values in
       let paramregs =
         List.map self#env#get_initial_register_value_register parameters in
-      let apiparams = List.map mk_register_parameter paramregs in
-      let apiparams =
-        match apiparams with
+      let ftsparams = List.map mk_register_parameter paramregs in
+      let ftsparams =
+        match ftsparams with
         | [] ->
-           let argregs = [ MIPSRegister MRa0; MIPSRegister MRa1;
-                           MIPSRegister MRa2; MIPSRegister MRa3 ] in
+           let argregs = [
+               MIPSRegister MRa0;
+               MIPSRegister MRa1;
+               MIPSRegister MRa2;
+               MIPSRegister MRa3] in
            List.map mk_register_parameter argregs
-        | _ -> apiparams in
+        | _ -> ftsparams in
       let _ =
-        List.iter (fun p ->  ignore (self#add_api_parameter p)) apiparams in
-      default_function_api self#get_name self#get_api_parameters
+        List.iter (fun p ->  ignore (self#add_fts_parameter p)) ftsparams in
+      default_function_interface self#get_name self#get_fts_parameters
     with
     | BCH_failure p ->
-       raise (BCH_failure (LBLOCK [ STR "Finfo:get-mips-local-function-api: " ; p ]))
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Finfo:get-mips-local-function-api: "; p]))
 
   method private get_arm_local_function_api =
     try
       let parameters = env#get_arm_argument_values in
       let paramregs =
         List.map self#env#get_initial_register_value_register parameters in
-      let apiparams = List.map mk_register_parameter paramregs in
-      let apiparams =
-        match apiparams with
+      let ftsparams = List.map mk_register_parameter paramregs in
+      let ftsparams =
+        match ftsparams with
         | [] ->
-           let argregs = [ ARMRegister AR0; ARMRegister AR1;
-                           ARMRegister AR2; ARMRegister AR3 ] in
+           let argregs = [
+               ARMRegister AR0;
+               ARMRegister AR1;
+               ARMRegister AR2;
+               ARMRegister AR3] in
            List.map mk_register_parameter argregs
-        | _ -> apiparams in
+        | _ -> ftsparams in
       let _ =
-        List.iter (fun p ->  ignore (self#add_api_parameter p)) apiparams in
-      default_function_api self#get_name self#get_api_parameters
+        List.iter (fun p -> ignore (self#add_fts_parameter p)) ftsparams in
+      default_function_interface self#get_name self#get_fts_parameters
     with
     | BCH_failure p ->
-       raise (BCH_failure (LBLOCK [ STR "Finfo:get-arm-local-function-api: " ; p ]))
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Finfo:get-arm-local-function-api: "; p]))
 
   method private get_local_function_api =
     try
       let parameters =
         List.fold_left (fun acc v ->
             match env#get_stack_parameter_index v with 
-            | Some i -> (i,v) :: acc | _ -> acc) [] env#get_parent_stack_variables in
-      let parameters = List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2) parameters in
+            | Some i -> (i,v) :: acc
+            | _ -> acc) [] env#get_parent_stack_variables in
+      let parameters =
+        List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2) parameters in
       let parameters =
         List.fold_left (fun acc (nr,v) ->
             match env#get_stack_parameter_index v with
             | Some ix -> (mk_stack_parameter ix) :: acc
             | _ -> acc) [] parameters in  
-      let adj = self#get_stack_adjustment in  
+      let adj = self#get_stack_adjustment in
       let cc = match adj with
         | Some a -> if a > 0 then "stdcall" else "cdecl"
         | _ -> "unknown" in
-      let _ = List.iter (fun par -> 
-                  ignore (self#add_api_parameter par)) parameters in  
-      {  fapi_name = self#get_name;
-         fapi_jni_index = None;
-         fapi_syscall_index = None;
-         fapi_parameters = self#get_api_parameters;
-         fapi_varargs = false;
-         fapi_va_list = None;
-         fapi_returntype = t_unknown;
-         fapi_rv_roles = [];
-         fapi_calling_convention = cc;
-         fapi_inferred = true;
-         fapi_stack_adjustment = adj;
-         fapi_registers_preserved = []
-      }
+      let _ =
+        List.iter (fun par ->
+            ignore (self#add_fts_parameter par)) parameters in
+      match adj with
+      | Some adj ->
+         default_function_interface
+           ~cc
+           ~adj
+           self#get_name
+           self#get_fts_parameters
+      | _ ->
+         default_function_interface ~cc self#get_name self#get_fts_parameters
     with
     | BCH_failure p ->
-       raise (BCH_failure (LBLOCK [ STR "Finfo:get-local-function-api: " ; p ]))
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Finfo:get-local-function-api: "; p]))
 
   method private get_local_function_semantics:function_semantics_t =
     let post = if nonreturning then [ PostFalse ] else [] in
@@ -1545,21 +1725,22 @@ object (self)
     try
       let summary = read_xml_function_summary node in
       begin
-	user_summary <- Some summary ;
-	env#set_argument_names self#get_address summary#get_function_api ;
-	List.iter (fun p -> ignore (self#add_api_parameter p))
-	  summary#get_function_api.fapi_parameters ;
+	user_summary <- Some summary;
+	env#set_argument_names self#get_address summary#get_function_interface;
+	List.iter (fun p -> ignore (self#add_fts_parameter p))
+	  summary#get_function_interface.fintf_type_signature.fts_parameters;
 	List.iter (fun p -> match p with
 	| PreIncludes(ArgValue par,sc) -> 
 	  self#env#set_argument_structconstant par sc
-	| _ -> ()) summary#get_preconditions ;
-	chlog#add "user function summary" (LBLOCK [ self#get_address#toPretty ])
+	| _ -> ()) summary#get_preconditions;
+	chlog#add "user function summary" (LBLOCK [self#get_address#toPretty])
       end
     with
     | XmlDocumentError (line,col,p)
     | XmlReaderError (line,col,p) ->
-	let msg = LBLOCK [ STR "function summary " ; self#get_address#toPretty ; p ] in
-	raise (XmlReaderError (line,col,msg))
+       let msg =
+         LBLOCK [STR "function summary "; self#get_address#toPretty; p] in
+	raise (XmlReaderError (line, col, msg))
 
   method set_unknown_java_native_method_signature =
     self#env#set_unknown_java_native_method_signature
@@ -1570,44 +1751,47 @@ object (self)
     let isStatic = api.jnm_static in
     let jthis = if isStatic then "this$obj" else "this$class" in
     let stackPars = [ (8, jthis, t_voidptr) ; (4, "jni$Env", t_voidptr) ] in
-    let (_,_,stackPars) = List.fold_left (fun (count,off,pars) ty ->
-      let name = (get_java_type_name_prefix ty) ^ "_" ^ (string_of_int count) in
-      (count+1, off + (get_java_type_length ty), 
-       (off, name, (get_java_type_btype ty)) :: pars)) (3,12,stackPars) args in
+    let (_,_,stackPars) =
+      List.fold_left (fun (count,off,pars) ty ->
+          let name =
+            (get_java_type_name_prefix ty) ^ "_" ^ (string_of_int count) in
+          (count+1, off + (get_java_type_length ty),
+           (off, name, (get_java_type_btype ty)) :: pars)) (3,12,stackPars) args in
     let mkparam (offset, name, btype) =
       let desc = if offset = 0 then "JNI interface pointer" else "" in
       let par = mk_stack_parameter ~btype ~desc (offset/4) in
       modify_name_par name par in
-    let fapi = {
-      fapi_name = api.jnm_signature#name;
-      fapi_parameters = List.map mkparam stackPars;
-      fapi_varargs = false;
-      fapi_va_list = None;
-      fapi_returntype = 
+    let fts = {
+      fts_parameters = List.map mkparam stackPars;
+      fts_varargs = false;
+      fts_va_list = None;
+      fts_returntype =
 	(match api.jnm_signature#descriptor#return_value with
 	| Some ty -> get_java_type_btype ty
 	| _ -> t_void);
-      fapi_rv_roles = [];
-      fapi_stack_adjustment = Some (4 * (List.length stackPars));
-      fapi_jni_index = None;
-      fapi_syscall_index = None;
-      fapi_calling_convention = "stdcall";
-      fapi_registers_preserved = [];
-      fapi_inferred = false } in
+      fts_rv_roles = [];
+      fts_stack_adjustment = Some (4 * (List.length stackPars));
+      fts_calling_convention = "stdcall";
+      fts_registers_preserved = []} in
+    let fintf = {
+        fintf_name = api.jnm_signature#name;
+        fintf_jni_index = None;
+        fintf_syscall_index = None;
+        fintf_type_signature = fts } in
     let fsem = default_function_semantics in
     let fdoc = default_function_documentation in
-    let summary = make_function_summary ~api:fapi ~sem:fsem ~doc:fdoc in
+    let summary = make_function_summary ~fintf ~sem:fsem ~doc:fdoc in
     begin
       user_summary <- Some summary ;
-      List.iter (fun p -> ignore (self#add_api_parameter p))
-	summary#get_function_api.fapi_parameters
+      List.iter (fun p -> ignore (self#add_fts_parameter p))
+	summary#get_function_interface.fintf_type_signature.fts_parameters
     end      
 
   method summary_to_pretty = self#get_summary#toPretty
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * setters and users of condiditon codes; conditional jumps                              
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   * setters and users of condiditon codes; conditional jumps                 *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
     
   method connect_cc_user
            (user_addr:ctxt_iaddress_t) (setter_addr:ctxt_iaddress_t) =
@@ -1657,7 +1841,9 @@ object (self)
     let _ = H.iter (fun ix v -> result := (ix,v) :: !result) test_expressions in
     !result
       
-  method set_test_variables (test_iaddr:ctxt_iaddress_t) (vars:(variable_t * variable_t) list) = 
+  method set_test_variables
+           (test_iaddr: ctxt_iaddress_t)
+           (vars: (variable_t * variable_t) list) =
     H.replace test_variables test_iaddr vars
       
   method get_test_variables (test_iaddr:ctxt_iaddress_t) =
@@ -1903,7 +2089,10 @@ object (self)
 
   method has_unknown_jump_target =
     H.fold (fun _ v acc -> 
-        acc || match v with UnknownJumpTarget -> true | _ -> acc) jump_targets false
+        acc
+        || match v with
+           | UnknownJumpTarget -> true
+           | _ -> acc) jump_targets false
 
   method private write_xml_call_targets (node:xml_element_int) =
     let calltargets = H.fold (fun k v a -> (k,v)::a) calltargets [] in
@@ -2070,14 +2259,24 @@ object (self)
     with
     | XmlDocumentError (line,col,p)
     | XmlReaderError (line,col,p) ->
-      let msg = LBLOCK [ STR "function info " ; self#get_address#toPretty ; STR ": " ; p ] in
-      raise (XmlReaderError (line,col,msg))
+       let msg =
+         LBLOCK [
+             STR "function info ";
+             self#get_address#toPretty;
+             STR ": ";
+             p] in
+      raise (XmlReaderError (line, col, msg))
     | Failure s ->
-      pr_debug [ STR "error in reading function info xml: " ; STR s ; STR " (" ;
-		 self#get_address#toPretty ; STR ")" ; NL ]
+       pr_debug [
+           STR "error in reading function info xml: ";
+           STR s;
+           STR " (";
+	   self#get_address#toPretty;
+           STR ")";
+           NL]
     
   method state_to_pretty = 
-    LBLOCK [ self#conditional_jump_state_to_pretty ; NL ]
+    LBLOCK [self#conditional_jump_state_to_pretty; NL]
       
 end
   
@@ -2098,22 +2297,30 @@ let load_function_info ?(reload=false) (faddr:doubleword_int) =
       let invio = read_invs fname varmgr#vard in
       let tinvio = read_tinvs fname varmgr#vard in
       let finfo = new function_info_t faddr varmgr invio tinvio in
-      let _ = match extract_function_info_file fname with
+      let _ =
+        match extract_function_info_file fname with
         | Some node -> finfo#read_xml node
         | _ -> () in
-      let _ = match load_userdata_function_file faddr#to_hex_string with
+      let _ =
+        match load_userdata_function_file faddr#to_hex_string with
         | Some node -> finfo#read_xml_user_summary node
-        | _ -> match extract_inferred_function_summary_file faddr#to_hex_string with
-	       | _ -> () in
-      let _ = match extract_inferred_function_arguments_from_summary_file faddr#to_hex_string with
+        | _ ->
+           match extract_inferred_function_summary_file faddr#to_hex_string with
+	   | _ -> () in
+      let _ =
+        match extract_inferred_function_arguments_from_summary_file
+                faddr#to_hex_string with
         | _ -> () in
-      let _ = if system_info#is_class_member_function faddr then
-	        let classinfos = system_info#get_class_infos faddr in
-	        finfo#env#set_class_member_variable_names classinfos in
+      let _ =
+        if system_info#is_class_member_function faddr then
+	  let classinfos = system_info#get_class_infos faddr in
+	  finfo#env#set_class_member_variable_names classinfos in
       let _ =
         if is_java_native_method () then
-	  let names = List.filter is_java_native_method_name 
-	                          (functions_data#get_function faddr)#get_names in
+	  let names =
+            List.filter
+              is_java_native_method_name
+	      (functions_data#get_function faddr)#get_names in
 	  match get_java_native_method_signature faddr#to_hex_string names with
 	  | Some api -> finfo#set_java_native_method_signature api
 	  | _ -> finfo#set_unknown_java_native_method_signature in  

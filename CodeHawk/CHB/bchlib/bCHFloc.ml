@@ -49,7 +49,7 @@ open Xsimplify
 open XprXml
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHBasicTypes
 open BCHBTerm
 open BCHCallTarget
@@ -173,18 +173,18 @@ object (self)
   method tinv = self#f#itinv self#cia
 
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   *                                                                     return values *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   *                                                                return values *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method record_return_value =
     let eax = self#env#mk_cpu_register_variable Eax in
     let returnExpr = self#rewrite_variable_to_external eax in
     self#f#record_return_value self#cia returnExpr
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   *                                                                   type_invariants *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   *                                                              type_invariants *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method add_var_type_fact v ?(structinfo=[]) t = 
     if v#isTmp then () else 
@@ -225,8 +225,15 @@ object (self)
 	      end
           with
           | BCH_failure p ->
-             let msg = LBLOCK [ STR "add_const_type_fact: " ; c#toPretty ;
-                                STR "; " ; self#l#toPretty ; STR " (" ; p ; STR ")" ] in
+             let msg =
+               LBLOCK [
+                   STR "add_const_type_fact: ";
+                   c#toPretty;
+                   STR "; ";
+                   self#l#toPretty;
+                   STR " (";
+                   p;
+                   STR ")"] in
              begin
                ch_error_log#add "doubleword conversion" msg ;
                ()
@@ -280,9 +287,9 @@ object (self)
 	| Invalid_argument msg -> ()
 
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   *                                                                      call targets *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   *                                                                 call targets *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method set_call_target (ctinfo:call_target_info_int) =
     self#f#set_call_target self#cia ctinfo
@@ -296,24 +303,27 @@ object (self)
       let ctinfo = self#get_call_target in
       if ctinfo#is_signature_valid then
         try
-          match self#update_varargs ctinfo#get_signature with
-          | Some fapi ->
+          match self#update_varargs ctinfo#get_function_interface with
+          | Some fintf ->
              let _ =
                chlog#add
                  "update call target api"
-                 (LBLOCK [ self#l#toPretty ; STR ": " ;
-                           STR fapi.fapi_name ; STR ": " ;
-                           INT (List.length fapi.fapi_parameters) ]) in
-             self#set_call_target (update_target_api ctinfo fapi)
+                 (LBLOCK [
+                      self#l#toPretty;
+                      STR ": ";
+                      STR fintf.fintf_name;
+                      STR ": ";
+                      INT (List.length fintf.fintf_type_signature.fts_parameters)]) in
+             self#set_call_target (update_target_interface ctinfo fintf)
           | _ -> ()
         with _ ->
           ()
     else
       ()
 
-  method private update_x86_varargs (s:function_api_t) = None
+  method private update_x86_varargs (s: function_interface_t) = None
 
-  method private update_mips_varargs (s:function_api_t) =
+  method private update_mips_varargs (fintf: function_interface_t) =
     let args = self#get_mips_call_arguments in
     let argcount = List.length args in
     if argcount = 0 then
@@ -341,13 +351,19 @@ object (self)
              let pars =
                List.mapi
                  (fun i arg -> convert_fmt_spec_arg (argcount + i) arg) args in
-             let newpars = s.fapi_parameters @ pars in
+             let fts = fintf.fintf_type_signature in
+             let newpars = fts.fts_parameters @ pars in
+             let newfts = { fts with fts_parameters = newpars } in
              begin
                chlog#add
                  "format args"
-                 (LBLOCK [ self#l#toPretty ; STR ": " ;
-                           STR s.fapi_name ; STR ": " ; INT (List.length args) ]) ;
-               Some { s with fapi_parameters = newpars }
+                 (LBLOCK [
+                      self#l#toPretty;
+                      STR ": ";
+                      STR fintf.fintf_name;
+                      STR ": ";
+                      INT (List.length args)]);
+               Some { fintf with fintf_type_signature = newfts }
              end
            else
              None
@@ -355,14 +371,15 @@ object (self)
            None
       | _ -> None
 
-  method private update_varargs (s:function_api_t) =
-    match s.fapi_va_list with
+  method private update_varargs (fintf: function_interface_t) =
+    let fts = fintf.fintf_type_signature in
+    match fts.fts_va_list with
     | Some _ -> None
     | _ ->
        if system_info#is_mips then
-         self#update_mips_varargs s 
+         self#update_mips_varargs fintf
        else
-         self#update_x86_varargs s
+         self#update_x86_varargs fintf
 
   (* experience so far:
      the first four arguments are passed in $a0-$a3, remaining arguments are passed
@@ -386,23 +403,30 @@ object (self)
                | (0,sprange) ->
                   (match sprange#singleton with
                    | Some num -> 
-                      self#f#env#mk_memory_variable memref (num#add (mkNumerical 16))
-                   | _ -> self#f#env#mk_unknown_memory_variable p.apar_name)
-               | _ -> self#f#env#mk_unknown_memory_variable p.apar_name in
+                      self#f#env#mk_memory_variable
+                        memref (num#add (mkNumerical 16))
+                   | _ ->
+                      self#f#env#mk_unknown_memory_variable p.apar_name)
+               | _ ->
+                  self#f#env#mk_unknown_memory_variable p.apar_name in
              (p, self#inv#rewrite_expr (XVar argvar) self#env#get_variable_comparator)
           | _ ->
-             raise (BCH_failure (LBLOCK [ STR "Unexpected parameter type in " ;
-                                          self#l#toPretty ])))
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Unexpected parameter type in ";
+                       self#l#toPretty])))
         pars in
     let ctinfo = self#get_call_target in
     if ctinfo#is_signature_valid then
-      let fapi = ctinfo#get_signature in
-      let npars = List.length fapi.fapi_parameters in
+      let fintf = ctinfo#get_function_interface in
+      let fts = fintf.fintf_type_signature in
+      let npars = List.length fts.fts_parameters in
       if npars < 5 then
-        get_regargs fapi.fapi_parameters
+        get_regargs fts.fts_parameters
       else
-        let (regpars,stackpars) = split_list 4 fapi.fapi_parameters in
-        List.concat [ (get_regargs regpars);  (get_stackargs stackpars) ]
+        let (regpars,stackpars) = split_list 4 fts.fts_parameters in
+        List.concat [(get_regargs regpars); (get_stackargs stackpars)]
     else
       []
 
@@ -444,26 +468,29 @@ object (self)
         pars in
     let ctinfo = self#get_call_target in
     if ctinfo#is_signature_valid then
-      let fapi = ctinfo#get_signature in
-      let npars = List.length fapi.fapi_parameters in
+      let fintf = ctinfo#get_function_interface in
+      let fts = fintf.fintf_type_signature in
+      let npars = List.length fts.fts_parameters in
       if npars < 5 then
-        get_regargs fapi.fapi_parameters
+        get_regargs fts.fts_parameters
       else
-        let (regpars,stackpars) = split_list 4 fapi.fapi_parameters in
-        List.concat [(get_regargs regpars);  (get_stackargs stackpars)]
+        let (regpars,stackpars) = split_list 4 fts.fts_parameters in
+        List.concat [(get_regargs regpars); (get_stackargs stackpars)]
     else
       []
 
-  method set_instruction_bytes (b:string) = self#f#set_instruction_bytes self#cia b
+  method set_instruction_bytes (b:string) =
+    self#f#set_instruction_bytes self#cia b
 
-  method get_instruction_bytes = self#f#get_instruction_bytes self#cia
+  method get_instruction_bytes =
+    self#f#get_instruction_bytes self#cia
 
   method private get_wrapped_call_args =
     let ctinfo = self#get_call_target in
     let argmapping = ctinfo#get_wrapped_app_parameter_mapping in
     List.map (fun (p,t) -> 
       let x = match t with
-      | ArgValue p -> self#evaluate_api_argument p
+      | ArgValue p -> self#evaluate_fts_argument p
       | NumConstant x -> num_constant_expr x
       | _ -> random_constant_expr in
       (p,x)) argmapping
@@ -473,16 +500,19 @@ object (self)
     if ctinfo#is_wrapped_app_call then
       self#get_wrapped_call_args
     else if ctinfo#is_signature_valid then
-      let api = ctinfo#get_signature in
+      let fintf = ctinfo#get_function_interface in
+      let fts = fintf.fintf_type_signature in
       let pcompare p1 p2 = 
 	parameter_location_compare p1.apar_location p2.apar_location in
-      let parameters = List.sort pcompare api.fapi_parameters in 
-      List.map (fun p -> (p,self#evaluate_api_argument p)) parameters
+      let parameters = List.sort pcompare fts.fts_parameters in 
+      List.map (fun p -> (p,self#evaluate_fts_argument p)) parameters
     else if system_info#has_esp_adjustment self#l#base_f self#l#i then
       let adj = system_info#get_esp_adjustment self#l#base_f self#l#i in
       let adj = adj / 4 in
       let indices = 
-	let rec add acc n = if n <= 0 then acc else add (n::acc) (n-1) in add [] adj in
+	let rec add acc n =
+          if n <= 0 then acc else add (n::acc) (n-1) in
+        add [] adj in
       List.map (fun p ->
 	let par = mk_stack_parameter p in
 	let argvar = self#f#env#mk_bridge_value self#cia p in
@@ -491,9 +521,9 @@ object (self)
     else
       []
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save IndReg (cpureg, offset)   (memrefs1)
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 	
   method get_memory_variable_1 (var:variable_t) (offset:numerical_t) =
     let _ = track_function
@@ -511,9 +541,12 @@ object (self)
         let memref = self#env#mk_base_sym_reference base in
         let _ = track_function
                   ~iaddr:self#cia self#fa
-                  (LBLOCK [ STR "base-offset: " ;
-                            STR "memref: " ; memref#toPretty ;
-                            STR "; memoffset: " ; memoffset#toPretty ]) in
+                  (LBLOCK [
+                       STR "base-offset: ";
+                       STR "memref: ";
+                       memref#toPretty;
+                       STR "; memoffset: ";
+                       memoffset#toPretty]) in
         self#env#mk_memory_variable memref memoffset
       else
         default () in
@@ -522,12 +555,12 @@ object (self)
       let _ =
         track_function
           ~iaddr:self#cia self#fa
-          (LBLOCK [ STR "get_memory_variable_1: addr: " ; x2p addr ]) in
+          (LBLOCK [STR "get_memory_variable_1: addr: "; x2p addr]) in
       let address = inv#rewrite_expr addr (self#env#get_variable_comparator) in
       let _ =
         track_function
           ~iaddr:self#cia self#fa
-          (LBLOCK [ STR "get_memory_variable_1: address: " ; x2p address ]) in
+          (LBLOCK [STR "get_memory_variable_1: address: "; x2p address]) in
       match address with
       | XConst (IntConst n) ->
          (try
@@ -545,13 +578,18 @@ object (self)
       | _ ->
          let (memref,memoffset) = self#decompose_address  address in
          if is_constant_offset memoffset then
-           let memvar = self#env#mk_memory_variable memref (get_total_constant_offset memoffset) in
+           let memvar =
+             self#env#mk_memory_variable
+               memref (get_total_constant_offset memoffset) in
            let _ =
              track_function
                ~iaddr:self#cia self#fa
-               (LBLOCK [ STR "get_memory_variable_1: memvar: " ; memvar#toPretty ;
-                         STR " (from " ; memref#toPretty ; STR " and " ;
-                         memory_offset_to_pretty memoffset ]) in
+               (LBLOCK [
+                    STR "get_memory_variable_1: memvar: ";
+                    memvar#toPretty;
+                    STR " (from ";
+                    memref#toPretty ; STR " and ";
+                    memory_offset_to_pretty memoffset]) in
            memvar
          else
            default () in
@@ -559,17 +597,20 @@ object (self)
     let _ =
       track_function
         ~iaddr:self#cia self#fa
-        (LBLOCK [ STR "get_memory_variable_1: memvar " ; memvar#toPretty ]) in
+        (LBLOCK [
+             STR "get_memory_variable_1: memvar ";
+             memvar#toPretty]) in
     if self#env#is_unknown_memory_variable memvar || memvar#isTmp then
       get_var_from_address ()
     else
       memvar
       										    
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save ScaledReg (cpureg1, cpureg2, 1, offset)   (memrefs2)
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
-  method get_memory_variable_2 (var1:variable_t) (var2:variable_t) (offset:numerical_t) =
+  method get_memory_variable_2
+           (var1:variable_t) (var2:variable_t) (offset:numerical_t) =
     let _ = track_function
               ~iaddr:self#cia self#fa
               (LBLOCK [ STR "get_memory_variable_2: " ;
@@ -585,14 +626,15 @@ object (self)
     else
       self#env#mk_memory_variable (self#env#mk_unknown_memory_reference "memref-2") numerical_zero
       											    
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save ScaledReg (cpureg1, cpureg2, s, offset)  (memrefs3)
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method get_memory_variable_3 (base:variable_t) (index:variable_t) (scale:int) 
     (offset:numerical_t) =
     let default () =
-        self#env#mk_memory_variable (self#env#mk_unknown_memory_reference "memref-1") offset in      
+      self#env#mk_memory_variable
+        (self#env#mk_unknown_memory_reference "memref-1") offset in
     let inv = self#inv in
     let comparator = self#env#get_variable_comparator in
     let indexExpr = 
@@ -632,15 +674,17 @@ object (self)
                   memory_offset_to_pretty memoffset]);
            default ()
          end
-     											    
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save ScaledReg (None,indexreg, scale, offset)  (scale <> 1)  (memrefs4)
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 	
   method get_memory_variable_4 (index:variable_t) (scale:int) (offset:numerical_t) =
     let indexExpr = self#rewrite_variable_to_external index in
-    let offsetXpr = simplify_xpr (XOp (XMult, [ int_constant_expr scale ; indexExpr ])) in
-    let offsetXpr = simplify_xpr (XOp (XPlus, [num_constant_expr offset ; offsetXpr ])) in
+    let offsetXpr =
+      simplify_xpr (XOp (XMult, [ int_constant_expr scale ; indexExpr ])) in
+    let offsetXpr =
+      simplify_xpr (XOp (XPlus, [num_constant_expr offset ; offsetXpr ])) in
     let default () = self#env#mk_unknown_memory_variable (x2s offsetXpr) in
     match offsetXpr with
     | XConst (IntConst n) when n#geq nume32 ->
@@ -703,9 +747,9 @@ object (self)
   method private is_initial_value_variable (v:variable_t) =
     (self#f#env#is_initial_memory_value v) || (self#env#is_initial_register_value v)
       
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * esp offset                                                                         *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   * esp offset                                                                   *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method get_stackpointer_offset arch =
     match arch with
@@ -818,11 +862,12 @@ object (self)
 	  | _ -> "?" in
     openB ^ " " ^ offset ^ " " ^ closeB
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * jump tables                                                                         *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   * jump tables                                                                   *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
-  method set_jumptable_target (base:doubleword_int)  (t:jumptable_int) (reg:register_t) =
+  method set_jumptable_target
+           (base:doubleword_int)  (t:jumptable_int) (reg:register_t) =
     self#f#set_jumptable_target self#cia base t reg
       
   method get_jump_target = self#f#get_jump_target self#cia
@@ -863,12 +908,12 @@ object (self)
         
   method get_function_arg_value (argIndex:int) = random_constant_expr
 
-  method get_api_parameter_expr (api_parameter_int) = None
+  method get_fts_parameter_expr (p: fts_parameter_t) = None
     
   method private get_offset ox = 
     let oxs = simplify_xpr ox in
     match oxs with
-      XConst (IntConst n) -> ConstantOffset (n, NoOffset)
+    | XConst (IntConst n) -> ConstantOffset (n, NoOffset)
     | XVar v -> IndexOffset (v, 1, NoOffset)
     | XOp (XMult, [ XConst (IntConst n) ; XVar v ]) when n#is_int -> 
       IndexOffset (v, n#toInt, NoOffset)
@@ -890,9 +935,10 @@ object (self)
 	
 	
   (* the objective is to extract a base pointer and an offset expression 
-   * first check whether the expression contains any variables that are known base pointers;
-   * if so, that variable must be the base (any address can only have one pointer, as pointers
-   * cannot be added);
+   * first check whether the expression contains any variables that are known
+   * base pointers;
+   * if so, that variable must be the base (any address can only have one
+   * pointer, as pointers cannot be added);
    * if not, identify the variable most likely to be the base pointer.
    *)
   method decompose_address (x:xpr_t):(memory_reference_int * memory_offset_t) =
@@ -907,14 +953,16 @@ object (self)
      let vars = vars_as_positive_terms x in
      let _ = track_function
                ~iaddr:self#cia self#fa
-               (LBLOCK [ STR "decompose-address: vars: " ;
-                         pretty_print_list vars (fun v -> v#toPretty) "" "," "" ]) in
+               (LBLOCK [
+                    STR "decompose-address: vars: ";
+                    pretty_print_list vars (fun v -> v#toPretty) "" "," ""]) in
      let knownPointers = List.filter self#f#is_base_pointer vars in
      let _ =
        track_function
          ~iaddr:self#cia self#fa
-         (LBLOCK [ STR "decompose-address: pointers: " ;
-                   pretty_print_list knownPointers (fun v -> v#toPretty) "" "," "" ]) in           
+         (LBLOCK [
+              STR "decompose-address: pointers: " ;
+              pretty_print_list knownPointers (fun v -> v#toPretty) "" "," ""]) in
      let optBaseOffset = match knownPointers with
        | [ base ] ->
           let offset = simplify_xpr (XOp (XMinus, [ x ; XVar base ])) in
@@ -1206,7 +1254,8 @@ object (self)
        match x with
        | XOp (_, l) -> List.for_all is_symbolic_expr l
        | _ -> false in
-     
+
+     let rhs_expr = simplify_xpr rhs_expr in
      let rhs_expr = self#inv#rewrite_expr rhs_expr self#env#get_variable_comparator in
 
      (* if the rhs_expr is a composite symbolic expression, create a new variable for it *)
@@ -1274,7 +1323,7 @@ object (self)
      else
        rhsCmds @ [ ASSIGN_NUM (lhs,rhs) ]
 	 
-   method private evaluate_api_argument (p:api_parameter_t) =
+   method private evaluate_fts_argument (p: fts_parameter_t) =
      match p.apar_location with
      | StackParameter index ->
        let argvar = self#env#mk_bridge_value self#cia index in
@@ -1289,7 +1338,7 @@ object (self)
        
    method evaluate_summary_term (t:bterm_t) (returnvar:variable_t) =
      match t with
-     | ArgValue p -> self#evaluate_api_argument p
+     | ArgValue p -> self#evaluate_fts_argument p
      | ReturnValue -> XVar returnvar
      | NumConstant n -> num_constant_expr n
      | NamedConstant name -> XVar (self#env#mk_runtime_constant name)
@@ -1300,12 +1349,12 @@ object (self)
        XOp (arithmetic_op_to_xop op, [ xpr1 ; xpr2 ])
      | _ -> random_constant_expr
 
-   method private evaluate_api_address_argument (p:api_parameter_t) = None
+   method private evaluate_fts_address_argument (p: fts_parameter_t) = None
 
    method evaluate_summary_address_term (t:bterm_t) =
      try
        match t with
-       | ArgValue p -> self#evaluate_api_address_argument p
+       | ArgValue p -> self#evaluate_fts_address_argument p
        | NumConstant num ->
           (try
              let base = numerical_to_doubleword num in
@@ -1316,9 +1365,14 @@ object (self)
            with
            | BCH_failure p ->
               raise (BCH_failure
-                       (LBLOCK [ STR "evaluate_summary_address_term: " ;
-                                 num#toPretty ; STR "; " ;
-                                 self#l#toPretty ; STR " (" ; p ; STR ")" ])))
+                       (LBLOCK [
+                            STR "evaluate_summary_address_term: ";
+                            num#toPretty;
+                            STR "; ";
+                            self#l#toPretty;
+                            STR " (";
+                            p;
+                            STR ")"])))
        | ArgAddressedValue (subT,NumConstant offset) ->
 	 let optBase = self#evaluate_summary_address_term subT in
 	 begin
@@ -1332,9 +1386,13 @@ object (self)
      with
        Invalid_argument s ->
 	 begin
-	   ch_error_log#add "invalid argument"
-	     (LBLOCK [ STR "evaluate_summary_address_term: " ; self#l#toPretty ; STR ": " ;
-		       bterm_to_pretty t ]) ;
+	   ch_error_log#add
+             "invalid argument"
+	     (LBLOCK [
+                  STR "evaluate_summary_address_term: ";
+                  self#l#toPretty;
+                  STR ": ";
+		  bterm_to_pretty t]) ;
 	   None
 	 end
        
@@ -1397,8 +1455,9 @@ object (self)
 	     let msg = self#env#variable_name_to_pretty fpVar in
 	     begin
 	       translation_log#add
-                 "function-pointer variable" (LBLOCK [ self#l#toPretty ; STR ":  " ; msg ]) ;
-	       [ ASSERT (EQ (fpVar, returnvar)) ] 
+                 "function-pointer variable"
+                 (LBLOCK [self#l#toPretty; STR ":  "; msg]);
+	       [ASSERT (EQ (fpVar, returnvar))]
 	     end
 	 | _ -> 
 	   begin
@@ -1463,7 +1522,8 @@ object (self)
      let name = summary#get_name in
      let postCommands = List.concat 
        (List.map (fun post -> 
-	 self#assert_post name post returnvar string_retriever) summary#get_postconditions) in
+	    self#assert_post name post returnvar string_retriever)
+          summary#get_postconditions) in
      let errorPostCommands = List.concat
        (List.map (fun epost -> 
 	 self#assert_post name epost returnvar string_retriever) 
@@ -1510,7 +1570,9 @@ object (self)
 	 
        
    method private get_sideeffect_assign (side_effect:sideeffect_t) =
-     let msg = LBLOCK [ self#l#toPretty ; STR ": " ; sideeffect_to_pretty side_effect ] in
+     let msg =
+       LBLOCK [
+           self#l#toPretty; STR ": "; sideeffect_to_pretty side_effect] in
      match side_effect with
      | BlockWrite (ty, dest, size) ->
        let get_index_size k =
@@ -1525,7 +1587,7 @@ object (self)
 	     | IndexSize (NumConstant n) -> get_index_size n
 	     | IndexSize (ArgValue p) ->
 	       begin
-		 match self#evaluate_api_argument p with
+		 match self#evaluate_fts_argument p with
 		 | XConst (IntConst n) -> get_index_size n
 		 | _ -> random_constant_expr
 	       end
@@ -1605,7 +1667,8 @@ object (self)
    method get_sideeffect_assigns  (sem:function_semantics_t) = 
      List.concat (List.map self#get_sideeffect_assign sem.fsem_sideeffects)
 
-   method private record_call_argument_types api =
+   method private record_call_argument_types (fintf: function_interface_t) =
+     let fts = fintf.fintf_type_signature in
      let add_type_facts v x t =
        if is_known_type t then
 	 begin
@@ -1626,7 +1689,7 @@ object (self)
 	   let argvar = self#f#env#mk_global_variable a#to_numerical in
 	   let argval = self#rewrite_variable_to_external argvar in
 	   add_type_facts argvar argval p.apar_type
-	 | _ -> ()) api.fapi_parameters
+	 | _ -> ()) fts.fts_parameters
 
    method private record_memory_reads (pres:precondition_t list) =
      List.iter (fun pre ->
@@ -1646,7 +1709,7 @@ object (self)
 		 | IndexSize (NumConstant n) -> get_index_size n
 		 | IndexSize (ArgValue p) ->
 		   begin
-		     match self#evaluate_api_argument p with
+		     match self#evaluate_fts_argument p with
 		     | XConst (IntConst n) -> get_index_size n
 		     | _ -> random_constant_expr
 		   end
@@ -1662,15 +1725,16 @@ object (self)
 
    method get_call_commands (string_retriever:doubleword_int -> string option) =
      let ctinfo = self#get_call_target in
-     let api = ctinfo#get_signature in
-     (* ------------------------------------------------------------ abstract registers *)
+     let fintf = ctinfo#get_function_interface in
+     let fts = fintf.fintf_type_signature in
+     (* ---------------------------------------------------- abstract registers *)
      let eax = self#env#mk_cpu_register_variable Eax in
      let esp = self#env#mk_cpu_register_variable Esp in
 
-     (* --------------------------------------------------------- create operation name *)
-     let opName = new symbol_t ~atts:["CALL"] api.fapi_name in
+     (* ------------------------------------------------- create operation name *)
+     let opName = new symbol_t ~atts:["CALL"] fintf.fintf_name in
 
-     (* ----------------------------------------------------------- get return variable *)
+     (* --------------------------------------------------- get return variable *)
 
      let returnAssign = 
        let rvar = self#env#mk_return_value self#cia in
@@ -1722,7 +1786,7 @@ object (self)
      let defClobbered = List.map (fun r -> (CPURegister r)) [ Eax ; Ecx ; Edx ] in
      let regsClobbered = List.fold_left (fun acc reg ->
        List.filter (fun r -> not (r=reg)) acc)
-       defClobbered api.fapi_registers_preserved in
+       defClobbered fts.fts_registers_preserved in
      let abstrRegs = List.map self#env#mk_register_variable regsClobbered in
      [ OPERATION { op_name = opName ; op_args = [] } ;
        ABSTRACT_VARS abstrRegs ] @
