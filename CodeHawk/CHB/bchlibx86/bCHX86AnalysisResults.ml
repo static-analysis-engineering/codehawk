@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,12 +41,12 @@ open Xprt
 open XprTypes
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHBasicTypes
 open BCHByteUtilities
 open BCHConstantDefinitions
 open BCHFloc   
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
@@ -68,10 +70,13 @@ object (self)
   val finfo = get_function_info  fn#get_address
   val env = (get_function_info fn#get_address)#env
   val vard = (get_function_info fn#get_address)#env#varmgr#vard
-  val id = mk_x86_opcode_dictionary fn#get_address (get_function_info fn#get_address)#env#varmgr#vard
+  val id =
+    mk_x86_opcode_dictionary
+      fn#get_address (get_function_info fn#get_address)#env#varmgr#vard
 
   method private write_xml_instruction
-                   (node:xml_element_int) (ctxtiaddr:ctxt_iaddress_t)
+                   (node:xml_element_int)
+                   (ctxtiaddr:ctxt_iaddress_t)
                    (instr:assembly_instruction_int) =
     let loc = ctxt_string_to_location faddr ctxtiaddr in
     let floc = get_floc loc in

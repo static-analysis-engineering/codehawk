@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +35,7 @@ open Xprt
 
 (* bchlib *)
 open BCHFloc
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHLibTypes
 open BCHLocation
 open BCHMakeCallTargetInfo
@@ -217,15 +219,17 @@ object (self)
     let dArg1 = (absolute_op (base#add_int 20) 4 RD)#to_expr floc in
     let dArg2 = get_arg args 1 floc in
     let dArg3 = get_arg args 2 floc in
-    LBLOCK [ STR "RaiseException(dwExceptionCode:" ; xpr_to_pretty floc excode ;
-	     STR ",dwExceptionFlags:" ; xpr_to_pretty floc exflags ;
-	     STR ",nNumberArgs:" ; xpr_to_pretty floc nArgs ;
-	     STR ",dArg1:" ; xpr_to_pretty floc dArg1 ;
-	     STR ",dArg2:" ; xpr_to_pretty floc dArg2 ;
-	     STR ",dArg3:" ; xpr_to_pretty floc dArg3 ; STR ")" ]
+    LBLOCK [
+        STR "RaiseException(dwExceptionCode:"; xpr_to_pretty floc excode;
+	STR ",dwExceptionFlags:"; xpr_to_pretty floc exflags;
+	STR ",nNumberArgs:"; xpr_to_pretty floc nArgs;
+	STR ",dArg1:"; xpr_to_pretty floc dArg1;
+	STR ",dArg2:"; xpr_to_pretty floc dArg2;
+	STR ",dArg3:"; xpr_to_pretty floc dArg3; STR ")"]
 
   method get_commands (floc:floc_int) =
-    let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 46 } in
+    let tgtloc =
+      make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 46 } in
     let tgtfloc = get_floc tgtloc in
     get_wrapped_call_commands floc tgtfloc
 
@@ -235,8 +239,8 @@ object (self)
     let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 6 } in
     let tgtfloc = get_floc tgtloc in
     let wtgt = tgtfloc#get_call_target#get_target in
-    let fapi = default_function_api ~returntype:t_void self#get_name [] in
-    mk_wrapped_target a fapi wtgt []
+    let fintf = default_function_interface ~returntype:t_void self#get_name [] in
+    mk_wrapped_target a fintf wtgt []
 
   method get_description = "wraps CxxThrowException"
 

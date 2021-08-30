@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +47,7 @@ open BCHByteUtilities
 open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
@@ -175,8 +177,11 @@ let xpr_to_strpretty (floc:floc_int) (x:xpr_t) =
 	         let (memref,memoffset) = floc#decompose_address x in
 	         if is_constant_offset memoffset then
                    let offset = get_total_constant_offset memoffset in
-	           LBLOCK [ STR "&" ; 
-		            xpr_to_pretty floc (XVar (floc#env#mk_memory_variable memref offset )) ]
+	           LBLOCK [
+                       STR "&";
+		       xpr_to_pretty
+                         floc
+                         (XVar (floc#env#mk_memory_variable memref offset ))]
 	         else if memref#is_unknown_reference then
 	           default ()
 	         else
@@ -186,7 +191,8 @@ let xpr_to_strpretty (floc:floc_int) (x:xpr_t) =
   with
   | _ -> default ()
        
-let pr_argument_expr ?(typespec=None) (p:api_parameter_t) (xpr:xpr_t) (floc:floc_int) =
+let pr_argument_expr
+      ?(typespec=None) (p: fts_parameter_t) (xpr: xpr_t) (floc: floc_int) =
   match get_string_reference floc xpr with
   | Some s -> STR ("\"" ^ s ^ "\"")
   | _ -> 
@@ -419,21 +425,23 @@ let get_fnhashes (name:string) (f:string -> int -> predefined_callsemantics_int)
   List.map (fun (hash,instrs) -> f hash instrs) (get_function_hashes name)
 
 let get_return_assign summary floc = 
-  let api = summary#get_function_api in
-  let rty = api.fapi_returntype in
+  let fintf = summary#get_function_interface in
+  let fts = fintf.fintf_type_signature in
+  let rty = fts.fts_returntype in
   if is_void rty then [] else
-    let name = api.fapi_name in
-    let (lhs,lhscmds) = get_reg_lhs Eax floc in
+    let name = fintf.fintf_name in
+    let (lhs, lhscmds) = get_reg_lhs Eax floc in
     let rv = get_return_value name floc in
     let cmds = floc#get_assign_commands lhs (XVar rv) in
-    List.concat [ lhscmds ; cmds ]
+    List.concat [lhscmds; cmds]
 
-let get_esp_adjustment_assign summary floc = 
-  let api = summary#get_function_api in
-  match api.fapi_stack_adjustment with
+let get_esp_adjustment_assign (summary: function_summary_int) (floc: floc_int) =
+  let fintf = summary#get_function_interface in
+  let fts = fintf.fintf_type_signature in
+  match fts.fts_stack_adjustment with
   | Some adj when adj > 0 -> get_adjustment_commands adj floc
   | Some _ -> []
-  | _ -> [ floc#get_abstract_cpu_registers_command [ Esp ] ]
+  | _ -> [ floc#get_abstract_cpu_registers_command [Esp]]
 
 let get_side_effects summary floc = 
   floc#get_sideeffect_assigns summary#get_function_semantics
@@ -477,7 +485,7 @@ object (self)
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name =
-    let name = summary#get_function_api.fapi_name in "__" ^ name ^ "__"
+    let name = summary#get_function_interface.fintf_name in "__" ^ name ^ "__"
 
   method get_annotation (floc:floc_int) =
     (* let api = summary#get_function_api in *)
@@ -498,10 +506,11 @@ object (self)
       [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ] in
     List.concat [ abstrassign ; sideeffects ; returnassign ; adjassign ]
 
-  method get_parametercount = get_stack_parameter_count summary#get_function_api
+  method get_parametercount =
+    get_stack_parameter_count summary#get_function_interface
 
-  method get_call_target (a:doubleword_int) =
-    let name = summary#get_function_api.fapi_name in
+  method get_call_target (a: doubleword_int) =
+    let name = summary#get_function_interface.fintf_name in
     mk_static_dll_stub_target a dll name
 
 end
@@ -550,7 +559,8 @@ object (self)
     let abstrassign = [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ] in
     List.concat [ abstrassign ; sideeffects ; returnassign ; adjassign ]
       
-  method get_parametercount = get_stack_parameter_count summary#get_function_api
+  method get_parametercount =
+    get_stack_parameter_count summary#get_function_interface
     
   method get_call_target (a:doubleword_int) =
     mk_static_pck_stub_target a "RTL" pkgs fname

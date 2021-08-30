@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +42,7 @@ open BCHBasicTypes
 open BCHByteUtilities
 open BCHFunctionInfo
 open BCHFloc
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
@@ -86,12 +87,16 @@ object (self)
       H.find blocktable bctxt
     else
       begin
-	ch_error_log#add "invocation error" 
-	                 (LBLOCK [ STR "assembly_function#get_block: " ;
-                                   STR bctxt ]) ;
-	raise (BCH_failure
-                 (LBLOCK [ STR "No assembly block found at " ; STR bctxt ;
-                           STR " in function " ; faddr#toPretty ]))
+	ch_error_log#add
+          "invocation error"
+	  (LBLOCK [STR "assembly_function#get_block: "; STR bctxt]);
+	raise
+          (BCH_failure
+             (LBLOCK [
+                  STR "No assembly block found at ";
+                  STR bctxt;
+                  STR " in function ";
+                  faddr#toPretty]))
       end
 
   method get_block_count = List.length blocks
@@ -155,8 +160,10 @@ object (self)
                else
 	         let default () =
 	           match instr#get_opcode with
-	           | Ret None | BndRet None  -> adjustments := 0 :: !adjustments
-	           | Ret (Some n) | BndRet (Some n) -> adjustments := n :: !adjustments
+	           | Ret None
+                     | BndRet None  -> adjustments := 0 :: !adjustments
+	           | Ret (Some n)
+                     | BndRet (Some n) -> adjustments := n :: !adjustments
 	           | _ -> () in
 	         let floc = get_floc iloc in
 	         let (level,offset) = floc#get_stackpointer_offset "x86" in
@@ -165,8 +172,9 @@ object (self)
 	           | Some n when n#is_zero -> default ()
 	           | Some n -> 
 	              begin
-	                chlog#add "stack adjustment" 
-		                  (LBLOCK [ faddr#toPretty ; STR ": offset is " ; n#toPretty ]) ;
+	                chlog#add
+                          "stack adjustment"
+		          (LBLOCK [faddr#toPretty; STR ": offset is "; n#toPretty]);
 	                valid := false
 	              end
 	           | _ ->
@@ -177,15 +185,19 @@ object (self)
 		           begin
 		             chlog#add
                                "stack adjustment"
-		               (LBLOCK [ faddr#toPretty ; STR ": esp is manipulated at " ;
-			                 pretty_print_list l (fun a -> STR a) "[" "," "]" ]) ;
+		               (LBLOCK [
+                                    faddr#toPretty;
+                                    STR ": esp is manipulated at ";
+			            pretty_print_list
+                                      l (fun a -> STR a) "[" "," "]"]);
 		             valid := false
 		           end
 	              end
 	         else
 	           begin
-	             chlog#add "stack adjustment"
-	                       (LBLOCK [ faddr#toPretty ; STR ": level is " ; INT level ]) ;
+	             chlog#add
+                       "stack adjustment"
+	               (LBLOCK [faddr#toPretty; STR ": level is "; INT level]) ;
 	             valid := false
 	           end
             | IndirectJmp _ ->
@@ -260,8 +272,8 @@ object (self)
 	  let argExprs =
             if floc#has_call_target
                && floc#get_call_target#is_signature_valid then
-	      let api = floc#get_call_target#get_signature in
-	      let parNames = get_stack_parameter_names api in
+	      let fintf = floc#get_call_target#get_function_interface in
+	      let parNames = get_stack_parameter_names fintf in
 	      let argExprs =
 		List.map (fun (index,name) ->
 		  let argvar = env#mk_bridge_value floc#cia index in
@@ -278,26 +290,32 @@ object (self)
                  callgraph#add_so_edge faddr name ctxtiaddr argExprs
               | StubTarget (LinuxSyscallFunction index)
                 | StaticStubTarget (_, LinuxSyscallFunction index) ->
-                 callgraph#add_so_edge faddr ("syscall-" ^ (string_of_int index)) ctxtiaddr argExprs
+                 callgraph#add_so_edge
+                   faddr ("syscall-" ^ (string_of_int index)) ctxtiaddr argExprs
 	      | StubTarget (DllFunction (_,name))
 	        | StaticStubTarget (_, DllFunction(_,name)) -> 
 		 callgraph#add_dll_edge faddr name ctxtiaddr argExprs
 	      | AppTarget a -> callgraph#add_app_edge faddr a ctxtiaddr argExprs
               | StubTarget (PckFunction(_,pkgs,name)) 
 	        | StaticStubTarget (_,PckFunction(_,pkgs,name)) ->
-		 callgraph#add_dll_edge faddr ((String.concat "::" pkgs) ^ name) ctxtiaddr argExprs
+		 callgraph#add_dll_edge
+                   faddr ((String.concat "::" pkgs) ^ name) ctxtiaddr argExprs
 	      | InlinedAppTarget _ -> ()
 	      | WrappedTarget(_,_,tgt,_) -> add_call_target tgt
 	      | StubTarget (JniFunction n)
-                | StaticStubTarget  (_,JniFunction n) -> callgraph#add_jni_edge faddr n ctxtiaddr argExprs
-	      | VirtualTarget s -> callgraph#add_virtual_edge faddr s ctxtiaddr argExprs
-	      | UnknownTarget -> callgraph#add_unresolved_edge faddr (-1) ctxtiaddr argExprs
+                | StaticStubTarget (_,JniFunction n) ->
+                 callgraph#add_jni_edge faddr n ctxtiaddr argExprs
+	      | VirtualTarget s ->
+                 callgraph#add_virtual_edge faddr s ctxtiaddr argExprs
+	      | UnknownTarget ->
+                 callgraph#add_unresolved_edge faddr (-1) ctxtiaddr argExprs
 	      | IndirectTarget (_,tgts) -> List.iter add_call_target tgts in
 	    add_call_target (finfo#get_call_target ctxtiaddr)#get_target
 	  else 
 	    begin 
 	      match instr#get_opcode with 
-		IndirectCall _ -> callgraph#add_unresolved_edge faddr (-1) ctxtiaddr argExprs
+		IndirectCall _ ->
+                 callgraph#add_unresolved_edge faddr (-1) ctxtiaddr argExprs
 	      | _ -> ()
 	    end
       | _ -> ())
@@ -308,7 +326,8 @@ object (self)
   method itera (f:ctxt_iaddress_t -> assembly_block_int -> unit) =
     List.iter (fun block -> f block#get_context_string block) self#get_blocks
       
-  method iteri (f:doubleword_int -> ctxt_iaddress_t -> assembly_instruction_int -> unit) =
+  method iteri
+           (f:doubleword_int -> ctxt_iaddress_t -> assembly_instruction_int -> unit) =
     List.iter (fun (block:assembly_block_int) -> 
       block#itera (fun iaddr instr -> f faddr iaddr instr)) self#get_blocks
 

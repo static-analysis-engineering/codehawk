@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -66,13 +68,13 @@ val xpr_to_hexpretty: floc_int -> xpr_t -> pretty_t
 
 val patternrhs_to_string: patternrhs_t -> string
 
-val get_arg: (api_parameter_t * xpr_t) list -> int -> floc_int -> xpr_t
+val get_arg: (fts_parameter_t * xpr_t) list -> int -> floc_int -> xpr_t
 val get_reg_value: cpureg_t -> floc_int -> xpr_t
 val get_gv_value: doubleword_int -> floc_int -> xpr_t
 val get_reg_derefvalue: cpureg_t -> int -> floc_int -> xpr_t
 val get_x_derefvalue: xpr_t -> int -> floc_int -> xpr_t
 val get_patternrhs_value: 
-  ?args:(api_parameter_t * xpr_t) list -> patternrhs_t -> floc_int -> xpr_t
+  ?args:(fts_parameter_t * xpr_t) list -> patternrhs_t -> floc_int -> xpr_t
 
 val get_var_lhs: int -> floc_int -> (variable_t * cmd_t list)  
 val get_arg_lhs: int -> floc_int -> (variable_t * cmd_t list)   (* byte offset *)
