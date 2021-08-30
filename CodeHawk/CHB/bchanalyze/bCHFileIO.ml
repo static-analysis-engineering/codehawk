@@ -45,7 +45,7 @@ open Xsimplify
 open BCHBasicTypes
 open BCHDisassemblySummary
 open BCHFloc
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHFunctionSummary
