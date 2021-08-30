@@ -38,7 +38,7 @@ open BCHBasicTypes
 open BCHByteUtilities
 open BCHDataBlock
 open BCHDoubleword
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionSummary
 open BCHLibTypes
