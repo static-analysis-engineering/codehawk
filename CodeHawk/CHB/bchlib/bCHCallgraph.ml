@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -66,7 +68,7 @@ type callgraph_node_t =
   | DllNode of string
   | SONode of string
   | JniNode of int    (* jni index *)
-  | VirtualNode of function_api_t
+  | VirtualNode of function_interface_t
   | UnresolvedNode of int    (* likely number of arguments *)
 
 
@@ -85,7 +87,7 @@ let callgraph_node_data_to_string n =
   | DllNode s -> s
   | SONode s -> s
   | JniNode i -> (string_of_int i)
-  | VirtualNode s -> s.fapi_name ^ "(V)"
+  | VirtualNode s -> s.fintf_name ^ "(V)"
   | UnresolvedNode i -> string_of_int i
     
 let callgraph_node_to_pretty n = 
@@ -94,8 +96,8 @@ let callgraph_node_to_pretty n =
   | DllNode s -> (STR s)
   | SONode s -> (STR s)
   | JniNode i -> LBLOCK [ STR "jni_" ; INT i ]
-  | VirtualNode s -> LBLOCK [ STR s.fapi_name ; STR "(V)" ]
-  | UnresolvedNode i -> LBLOCK [ STR "unresolved( " ; INT i ; STR " )" ]
+  | VirtualNode s -> LBLOCK [STR s.fintf_name; STR "(V)"]
+  | UnresolvedNode i -> LBLOCK [STR "unresolved( "; INT i; STR " )"]
     
 let callgraph_node_compare n1 n2 =
   match (n1, n2) with
@@ -111,7 +113,7 @@ let callgraph_node_compare n1 n2 =
   | (JniNode i1,JniNode i2) -> P.compare i1 i2
   | (JniNode _, _) -> -1
   | (_, JniNode _) -> 1
-  | (VirtualNode s1,VirtualNode s2) -> P.compare s1.fapi_name s2.fapi_name 
+  | (VirtualNode s1,VirtualNode s2) -> P.compare s1.fintf_name s2.fintf_name 
   | (VirtualNode _, _) -> -1
   | (_, VirtualNode _) -> 1
   | (UnresolvedNode i1, UnresolvedNode i2) -> P.compare i1 i2
@@ -189,7 +191,7 @@ object
     | SONode name -> name
     | DllNode name -> name
     | JniNode i -> "jni_" ^ (string_of_int i)
-    | VirtualNode s -> s.fapi_name
+    | VirtualNode s -> s.fintf_name
     | UnresolvedNode n -> "unresolved_" ^ (string_of_int n)
     
   method get_num_arguments = 0
@@ -219,7 +221,7 @@ object
     | SONode name -> begin set "kd" "so" ; set "fn" name end
     | DllNode name -> begin set "kd" "dll" ; set "fn" name end
     | JniNode i -> begin set "kd" "jni" ; seti "jx" i end
-    | VirtualNode s -> begin set "kd" "virtual" ; set "sum" s.fapi_name end
+    | VirtualNode s -> begin set "kd" "virtual"; set "sum" s.fintf_name end
     | UnresolvedNode i -> begin set "kd" "unr" ; seti "numa" i end
       
   method toPretty = callgraph_node_to_pretty cgnode
@@ -349,7 +351,7 @@ object (self)
 
   method add_virtual_edge
            (srcfa:doubleword_int)
-           (s:function_api_t)
+           (s:function_interface_t)
            (callsite:ctxt_iaddress_t)
            (argExprs:(int * string * xpr_t) list) = 
     self#add_edge srcfa (VirtualNode s) callsite argExprs

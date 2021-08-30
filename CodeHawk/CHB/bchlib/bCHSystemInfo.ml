@@ -136,8 +136,8 @@ object (self)
   val mutable readonly_ranges = []
   val initialized_memory = H.create 3
     
-  val function_call_targets = H.create 13  (* indexed with faddr, iaddr *)
-  val function_call_targets_i = H.create 13 (* indexed with iaddr *)
+  val function_call_targets = H.create 13  (* (faddr, iaddr) -> call_target_t *)
+
   val esp_adjustments = H.create 3         (* indexed with faddr, iaddr *)
   val esp_adjustments_i = H.create 3       (* indexed with iaddr *)
   val cfnops = H.create 3                  (* indexed with iaddr, cfg obfuscations *)
@@ -316,19 +316,21 @@ object (self)
       raise (BCH_failure (LBLOCK [ STR "No esp adjustment found for " ;
 				   faddr#toPretty ; STR "@" ; iaddr#toPretty ]))
 
-  method has_call_target (faddr:doubleword_int) (iaddr:doubleword_int) =
-    (H.mem function_call_targets_i iaddr#index) ||
-      (H.mem function_call_targets (faddr#index,iaddr#index))
+  method has_call_target (faddr: doubleword_int) (iaddr: doubleword_int) =
+    H.mem function_call_targets (faddr#index, iaddr#index)
 
-  method get_call_target (faddr:doubleword_int) (iaddr:doubleword_int) =
+  method get_call_target
+           (faddr: doubleword_int) (iaddr: doubleword_int): call_target_t =
     if self#has_call_target faddr iaddr then
-      if H.mem function_call_targets_i iaddr#index then
-	H.find function_call_targets_i iaddr#index
-      else
-	H.find function_call_targets (faddr#index,iaddr#index)
+      H.find function_call_targets (faddr#index, iaddr#index)
     else
-      raise (BCH_failure (LBLOCK [ STR "No user call target found for " ;
-				   faddr#toPretty ; STR "@" ; iaddr#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "No user call target found for ";
+		faddr#toPretty;
+                STR "@";
+                iaddr#toPretty]))
 
   method has_indirect_jump_targets (faddr:doubleword_int) (iaddr:doubleword_int) =
     H.mem indirect_jump_targets (faddr#index,iaddr#index)
@@ -380,56 +382,7 @@ object (self)
     else
       raise (BCH_failure (LBLOCK [ STR "No jump-table targets found for " ;
                                    faddr#toPretty ; STR "@" ; iaddr#toPretty ]))
-
-  method private add_call_target (faddr:doubleword_int) (iaddr:doubleword_int) 
-    (tgt:(string * string * string)) =
-    let (tgtty,tgt1,tgt2) = tgt in
-    let _ = chlog#add "user call target" 
-      (LBLOCK [ STR "(" ; faddr#toPretty ; STR "," ; iaddr#toPretty ; STR "): " ; 
-		STR tgtty ; STR ", " ; STR tgt1 ;
-		STR (if tgt2 = "" then "" else ", " ^ tgt2) ]) in
-    match tgtty with
-    | "dll" -> 
-      begin
-	H.add function_call_targets (faddr#index,iaddr#index) tgt ;
-	self#add_lib_function_loaded tgt1 tgt2
-      end
-    | "app" -> 
-      let a = string_to_doubleword tgt1 in
-      let _ = functions_data#add_function a in
-      let _ = chlog#add
-                "add call target as function"
-                (LBLOCK [ faddr#toPretty ; STR ", " ; iaddr#toPretty ; STR ": " ;
-                          a#toPretty ])  in
-      H.add function_call_targets (faddr#index,iaddr#index) tgt
-    | "jni" ->
-      H.add function_call_targets (faddr#index,iaddr#index) tgt
-    | _ -> raise (BCH_failure (STR "Internal error in system_info#add_call_target"))
  
-  method private add_call_target_i (iaddr:doubleword_int) 
-    (tgt:(string * string * string)) =
-    let (tgtty,tgt1,tgt2) = tgt in
-    let _ = chlog#add "user call target by instruction" 
-      (LBLOCK [ STR "(" ; iaddr#toPretty ; STR "): " ; 
-		STR tgtty ; STR ", " ; STR tgt1 ;
-		STR (if tgt2 = "" then "" else ", " ^ tgt2) ]) in
-    match tgtty with
-    | "dll" -> 
-      begin
-	H.add function_call_targets_i iaddr#index tgt ;
-	self#add_lib_function_loaded tgt1 tgt2
-      end
-    | "app" -> 
-      let a = string_to_doubleword tgt1 in
-      let _ = functions_data#add_function a in
-      let _ = chlog#add
-                "add call target as function"
-                (LBLOCK [ iaddr#toPretty ; STR ": " ; a#toPretty ])  in
-      H.add function_call_targets_i iaddr#index tgt
-    | "jni" ->
-      H.add function_call_targets_i iaddr#index tgt
-    | _ -> raise (BCH_failure (STR "Internal error in system_info#add_call_target"))
-
   method private add_jump_table_target
                    (faddr:doubleword_int)
                    (iaddr:doubleword_int)
@@ -470,17 +423,26 @@ object (self)
 				     faddr#toPretty ]))
 
   method private add_class_member 
-    (faddr:doubleword_int) 
-    (classinfo:string * function_api_t * bool) =
+    (faddr: doubleword_int)
+    (classinfo: string * function_interface_t * bool) =
     let index = faddr#index in
-    let (classname,fnapi,_) = classinfo in
-    let entry = if H.mem class_membership index then H.find class_membership index else [] in
-    let entry = if List.exists (fun (cname,api,_) ->
-      cname = classname && api.fapi_name = fnapi.fapi_name) entry then entry else
+    let (classname, fnintf, _) = classinfo in
+    let entry =
+      if H.mem class_membership index then
+        H.find class_membership index
+      else
+        [] in
+    let entry =
+      if List.exists
+           (fun (cname, fintf,_) ->
+             cname = classname && fintf.fintf_name = fnintf.fintf_name) entry then
+        entry
+      else
 	classinfo :: entry in
     H.replace class_membership index entry
 
-  method set_filename s = begin filename <- s ; system_data#set_filename s end
+
+  method set_filename s = begin filename <- s; system_data#set_filename s end
   method get_filename = filename
 
   method set_elf = is_elf <- true
@@ -614,19 +576,13 @@ object (self)
 	  begin
 	    self#read_xml_data_blocks dnode ;
 	    user_data_blocks <- List.length dnode#getChildren
-	  end) ;
+	  end);
       (if hasc "call-targets" then
 	  let cnode = getc "call-targets" in
 	  begin
-	    self#read_xml_call_targets cnode ;
+	    self#read_xml_call_targets cnode;
 	    user_call_targets <- user_call_targets + List.length cnode#getChildren
-	  end) ;
-      (if hasc "call-targets-i" then
-	  let cnode = getc "call-targets-i" in
-	  begin
-	    self#read_xml_call_targets_i cnode ;
-	    user_call_targets <- user_call_targets + List.length cnode#getChildren
-	  end) ;
+	  end);
       (if hasc "successors" then
          let snode = getc "successors" in
          begin
@@ -784,34 +740,60 @@ object (self)
         let fa = string_to_doubleword (n#getAttribute "a") in
         if functions_data#is_function_entry_point fa then () else
           ignore (functions_data#add_function fa))
-              (node#getTaggedChildren "fe")
+      (node#getTaggedChildren "fe")
 
-  method private read_xml_call_targets (node:xml_element_int) =
-    List.iter (fun n ->
-      let get = n#getAttribute in
-      let geta n tag = string_to_doubleword (get tag) in
-      let faddr = geta n "fa" in
-      let iaddr = geta n "ia" in
-      match get "ctag" with
-      | "dll" -> self#add_call_target faddr iaddr ("dll", get "dll", get "name")
-      | "app" -> self#add_call_target faddr iaddr ("app", get "appa", "")
-      | "jni" -> self#add_call_target faddr iaddr ("jni", get "index","")
-      | s ->
-         raise (BCH_failure
-                  (LBLOCK [ STR "User data: tag " ; STR s ; 
-			    STR " not recognized" ]))) (node#getTaggedChildren "tgt")
+  method private read_xml_call_target(node: xml_element_int): call_target_t =
+    let get = node#getAttribute in
+    let geti = node#getIntAttribute in
+    let geta tag = string_to_doubleword (get tag) in
+    match get "ctag" with
+    | "dll" ->
+       let dll = get "dll" in
+       let name = get "name" in
+       let _ = self#add_lib_function_loaded dll name in
+       StubTarget (DllFunction (dll, name))
+    | "so" -> StubTarget (SOFunction (get "name"))
+    | "jni" -> StubTarget (JniFunction (geti "index"))
+    | "app" -> AppTarget (geta "appa")
+    | s ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Call target tag ";
+                 STR s;
+                 STR " not recognized"]))
 
-  method private read_xml_call_targets_i (node:xml_element_int) =
-    List.iter (fun n ->
-      let get = n#getAttribute in
-      let geta n tag = string_to_doubleword (get tag) in
-      let iaddr = geta n "ia" in
-      match get "ctag" with
-      | "dll" -> self#add_call_target_i iaddr ("dll", get "dll", get "name")
-      | "app" -> self#add_call_target_i iaddr ("app", get "appa", "")
-      | "jni" -> self#add_call_target_i iaddr ("jni", get "index","")
-      | s -> raise (BCH_failure (LBLOCK [ STR "User data: tag " ; STR s ; 
-					  STR " not recognized" ])))					        (node#getTaggedChildren "tgt")
+  method private read_xml_call_target_callsite (node: xml_element_int) =
+    let get = node#getAttribute in
+    let geta tag = string_to_doubleword (get tag) in
+    let faddr = geta "fa" in
+    let iaddr = geta "ia" in
+    let tgts = List.map self#read_xml_call_target (node#getTaggedChildren "tgt") in
+    let callsitetgt = match List.length tgts with
+      | 0 -> raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Found zero targets for call targets at ";
+                       faddr#toPretty;
+                       STR ", ";
+                       iaddr#toPretty]))
+    | 1 -> List.hd tgts
+    | _ -> IndirectTarget (None, tgts) in
+    H.add function_call_targets (faddr#index, iaddr#index) callsitetgt
+
+  method private read_xml_call_targets (node: xml_element_int) =
+    (* <call-targets>
+         <callsite fa= ia=
+             <tgt ctag=[dll|so|jni|app] [dll= | app= | index= | name= ]/>
+             <tgt ... />
+             ...
+         </callsite>
+         <callsite fa= ia=
+             <...>
+         </callsite>
+         ....
+     *)
+    List.iter self#read_xml_call_target_callsite (node#getTaggedChildren "callsite")
 
   method private read_xml_jump_table_targets (node:xml_element_int) =
     List.iter (fun n ->

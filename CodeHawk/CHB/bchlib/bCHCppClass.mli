@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,10 +36,14 @@ open CHXmlDocument
 (* bchlib *)
 open BCHLibTypes
 
+
 val read_xml_cpp_class: xml_element_int -> cpp_class_int
 val add_user_cpp_class_file: string -> unit
 
-val get_vtable_summaries: cppvf_table_t -> (int * function_api_t) list  (* offset, api *)
+val get_vtable_summaries:
+  cppvf_table_t
+  -> (int * function_interface_t) list  (* offset, api *)
+
 val get_cpp_classes: unit -> cpp_class_int list
 val get_cpp_class: string -> cpp_class_int
 

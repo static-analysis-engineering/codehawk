@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,19 +39,20 @@ open CHXmlReader
 open CHXmlDocument
 
 (* bchlib *)
-open BCHSystemSettings
 open BCHBasicTypes
 open BCHConstantDefinitions
 open BCHDemangler
 open BCHFunctionSummary
 open BCHLibTypes
 open BCHSystemInfo
+open BCHSystemSettings
 open BCHTypeDefinitions
 open BCHUtilities
 open BCHVariableType
 open BCHXmlUtil
 
 module H = Hashtbl
+
 
 let summary_directories = [
   "advapi32_dll" ;
@@ -312,23 +314,42 @@ object (self)
     then
       ()
     else
-      raise_xml_error node
-	(LBLOCK [ STR "Dll in file " ; STR (node#getAttribute "name") ; 
-		  STR " does not correspond with lib listed: " ; STR lib ])
+      raise_xml_error
+        node
+	(LBLOCK [
+             STR "Dll in file ";
+             STR (node#getAttribute "name");
+	     STR " does not correspond with lib listed: ";
+             STR lib])
 
-  method private check_summary_name (summary:function_summary_int) (fname:string) =
-    if fname = summary#get_name then () else
-      raise (BCH_failure (LBLOCK [ STR "File name " ; STR fname ; 
-				   STR " is not the same as summary name : " ;
-				   STR summary#get_name ]))
+  method private check_summary_name
+                   (summary:function_summary_int) (fname:string) =
+    if fname = summary#get_name
+    then
+      ()
+    else
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "File name ";
+                STR fname;
+		STR " is not the same as summary name : ";
+		STR summary#get_name]))
 
-  method private check_aw_referred_name (node:xml_element_int) (name:string) (fname:string) =
+  method private check_aw_referred_name
+                   (node:xml_element_int) (name:string) (fname:string) =
     if name = fname then
-      raise_xml_error node
-	(LBLOCK [ STR "Name and referred name are the same in " ; STR fname ])
+      raise_xml_error
+        node
+	(LBLOCK [STR "Name and referred name are the same in "; STR fname])
 
   method private get_demangled_name (name:string) =
-    let dname = demangle name in if dname = name then "" else " (" ^ dname ^ ")"
+    let dname = demangle name in
+    if dname = name
+    then
+      ""
+    else
+      " (" ^ dname ^ ")"
 
   method private read_jni_function_summary_string (index:int) (xstring:string) =
     let doc = readXmlDocumentString xstring in
@@ -386,9 +407,17 @@ object (self)
       | CHXmlReader.XmlParseError(line,col,p)
         | XmlReaderError (line,col,p)
         | XmlDocumentError (line,col,p) ->
-         raise (BCH_failure (LBLOCK [ STR "Xml problem in reading syscall " ;
-                                      INT index ; STR ": (" ; INT line ;
-                                      STR "," ; INT col ; STR "): " ; p ]))
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Xml problem in reading syscall ";
+                   INT index;
+                   STR ": (";
+                   INT line;
+                   STR ",";
+                   INT col;
+                   STR "): ";
+                   p]))
 
 
   method private read_template_jni_summary (node:xml_element_int) (index:int) =
@@ -432,15 +461,23 @@ object (self)
 	  else if rNode#hasNamedAttribute "lib" then
 	    self#read_alternate_summary node dll fname
 	  else
-	    raise_xml_error node
-	      (LBLOCK [ STR "Reference in file " ; STR fname ; STR " not recognized" ])
+	    raise_xml_error
+              node
+	      (LBLOCK [
+                   STR "Reference in file ";
+                   STR fname;
+                   STR " not recognized"])
 	  else
 	    let summary = read_xml_function_summary node in
 	    let _ = self#check_summary_name summary fname in
 	    begin
 	      chlog#add "function summary"
-		(LBLOCK [ STR fname ; STR " (" ; STR dll ; STR ")" ; 
-			  STR (self#get_demangled_name fname) ]) ;
+		(LBLOCK [
+                     STR fname;
+                     STR " (";
+                     STR dll;
+                     STR ")";
+		     STR (self#get_demangled_name fname)]);
 	      H.add dllsummaries (dll,fname) summary ;
 	      H.add dllnames dll fname ;
 	      self#load_summary_dependencies summary
@@ -455,10 +492,11 @@ object (self)
     | XmlParseError (line,col,p)
     | XmlReaderError (line,col,p)
     | XmlDocumentError (line,col,p) ->
-      let msg = LBLOCK [ STR "Error in file " ; STR fname ; STR ": " ; p ] in
-      raise (XmlDocumentError (line,col,msg))
+      let msg = LBLOCK [STR "Error in file "; STR fname; STR ": "; p] in
+      raise (XmlDocumentError (line, col, msg))
 
-  method private read_so_function_summary_string (fname:string) (xstring:string) =
+  method private read_so_function_summary_string
+                   (fname:string) (xstring:string) =
     try
       let doc = readXmlDocumentString xstring in
       let root = doc#getRoot in
@@ -468,7 +506,7 @@ object (self)
         let summary = read_xml_function_summary node in
         let _ = self#check_summary_name summary fname in
         begin
-          chlog#add "function summary" (LBLOCK [ STR fname ]) ;
+          chlog#add "function summary" (LBLOCK [STR fname]);
           H.add sosummaries fname summary ;
         end
       else
@@ -477,11 +515,12 @@ object (self)
     | XmlParseError (line,col,p)
     | XmlReaderError (line,col,p)
     | XmlDocumentError (line,col,p) ->
-      let msg = LBLOCK [ STR "Error in file " ; STR fname ; STR ": " ; p ] in
+      let msg = LBLOCK [STR "Error in file "; STR fname; STR ": "; p] in
       raise (XmlDocumentError (line,col,msg))
       
 			      
-  method private read_aw_summary (node:xml_element_int) (dll:string) (fname:string) =
+  method private read_aw_summary
+                   (node: xml_element_int) (dll: string) (fname: string) =
     let rNode = node#getTaggedChild "refer-to" in
     let rName = rNode#getAttribute "name" in
     let _ = self#check_aw_referred_name node rName fname in
@@ -491,23 +530,34 @@ object (self)
       let transformer = read_xml_type_transformer rNode in
       let awsummary = base#modify_types fname transformer in
       begin
-	chlog#add "aw function summary"
-	  (LBLOCK [ STR fname ; STR " from " ; STR rName ]) ;
-	H.add dllsummaries (dll,fname) awsummary ;
+	chlog#add
+          "aw function summary"
+	  (LBLOCK [STR fname; STR " from "; STR rName]) ;
+	H.add dllsummaries (dll, fname) awsummary ;
 	H.add dllnames dll fname 
       end
     else
       raise_xml_error node
-	(LBLOCK [ STR "Base summary for " ; STR fname ; STR " in " ; STR dll ;
-		  STR " not found" ])
+	(LBLOCK [
+             STR "Base summary for ";
+             STR fname;
+             STR " in ";
+             STR dll;
+	     STR " not found"])
 
   method private check_alternate_name 
-    (dll:string) (fname:string) (newdll:string) (newname:string) =
+    (dll: string) (fname: string) (newdll: string) (newname: string) =
     if dll = newdll && fname = newname then
-      raise (BCH_failure (LBLOCK [ STR "Alternate summary and original are the same: " ;
-				   STR dll ; STR ", " ; STR fname ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Alternate summary and original are the same: ";
+		STR dll;
+                STR ", ";
+                STR fname]))
 
-  method private get_alternate_summary (rNode:xml_element_int) (rLib:string) (rName:string) =
+  method private get_alternate_summary
+                   (rNode: xml_element_int) (rLib: string) (rName: string) =
     let has = rNode#hasNamedAttribute in
     let get = rNode#getAttribute in
     let geti = rNode#getIntAttribute in
@@ -515,26 +565,36 @@ object (self)
     if has "cc" then
       let cc = get "cc" in
       let adj = if has "adj" then Some (geti "adj") else Some 0 in
-      let rApi = alternate#get_function_api in
+      let rIntf = alternate#get_function_interface in
+      let rFts = rIntf.fintf_type_signature in
       let rSem = alternate#get_function_semantics in
       let rDoc = alternate#get_function_documentation in
       let padj adj  = match adj with Some n -> INT n | _ -> STR "none" in
       let _ =
         chlog#add
           "modify calling convention"
-          (LBLOCK [ STR "From: " ; STR rApi.fapi_calling_convention ;
-                    STR " and adj: " ; padj rApi.fapi_stack_adjustment ;
-                    STR " to: " ; STR cc ;
-                    STR " and adj: " ; padj adj ]) in
-      let newApi =
-        { rApi with
-          fapi_calling_convention = cc ;
-          fapi_stack_adjustment = adj } in
-      make_function_summary ~api:newApi ~sem:rSem ~doc:rDoc
+          (LBLOCK [
+               STR "From: ";
+               STR rFts.fts_calling_convention;
+               STR " and adj: ";
+               padj rFts.fts_stack_adjustment;
+               STR " to: ";
+               STR cc;
+               STR " and adj: ";
+               padj adj]) in
+      let newFts = {
+          rFts with
+          fts_calling_convention = cc;
+          fts_stack_adjustment = adj } in
+      let newIntf =
+        { rIntf with
+          fintf_type_signature = newFts } in
+      make_function_summary ~fintf:newIntf ~sem:rSem ~doc:rDoc
     else
       alternate
 
-  method private read_alternate_summary (node:xml_element_int) (dll:string) (fname:string) =
+  method private read_alternate_summary
+                   (node: xml_element_int) (dll: string) (fname: string) =
     let rNode = node#getTaggedChild "refer-to" in
     let rName = rNode#getAttribute "name" in
     let dll = self#get_internal_dll_name dll in
@@ -546,15 +606,29 @@ object (self)
       let alternate = self#get_alternate_summary rNode rLib rName in
       begin
 	H.add dllsummaries (dll,fname) alternate ;
-	chlog#add "referred summary"
-	  (LBLOCK [ STR "Retrieved summary for " ; STR dll ; STR ", " ; STR fname ;
-		    STR " from " ; STR rLib ; STR ", " ; STR rName ]) ;
+	chlog#add
+          "referred summary"
+	  (LBLOCK [
+               STR "Retrieved summary for ";
+               STR dll;
+               STR ", ";
+               STR fname;
+	       STR " from ";
+               STR rLib;
+               STR ", ";
+               STR rName]) ;
 	H.add dllnames rLib fname
       end
     else
-      raise_xml_error node
-	(LBLOCK [ STR "Alternate summary for " ; STR fname ; STR " in " ; STR dll ;
-		  STR " not found in " ; STR rLib ])
+      raise_xml_error
+        node
+	(LBLOCK [
+             STR "Alternate summary for ";
+             STR fname;
+             STR " in ";
+             STR dll;
+	     STR " not found in ";
+             STR rLib])
 
   method private get_internal_dll_name (dll:string) =
     let dll = String.lowercase_ascii dll in
@@ -637,13 +711,15 @@ object (self)
       let pkgs = String.lowercase_ascii (node#getAttribute "package") in
       let summary = read_xml_function_summary node in
       begin
-	chlog#add "lib function summary"
-	  (LBLOCK [ STR fname ; STR " (" ; STR dir ; STR ")" ]) ;
+	chlog#add
+          "lib function summary"
+	  (LBLOCK [STR fname; STR " ("; STR dir; STR ")"]) ;
 	H.add libsummaries (pkgs,fname) summary
       end
     else
-      ch_error_log#add "error in library function"
-	(LBLOCK [ STR fname ; STR " (" ; STR dir ; STR ")" ])
+      ch_error_log#add
+        "error in library function"
+	(LBLOCK [STR fname; STR " ("; STR dir; STR ")"])
 	  
   (* reads all summary files from the jars provided *)	
   method read_summary_files =
@@ -671,23 +747,34 @@ object (self)
     self#write_xml_summary_table node requested_summaries
 
   method private write_xml_summary_table 
-    (node:xml_element_int) (t:StringCollections.set_t StringCollections.table_t)=
+                   (node: xml_element_int)
+                   (t: StringCollections.set_t StringCollections.table_t) =
     node#appendChildren
-      (List.map (fun (dll,nameset) ->
-           let safedll = if has_control_characters dll then "__xx__" ^ (hex_string dll) else dll in
-                 let dNode = xmlElement "dll" in
-                 let names = nameset#toList in
-                 begin
-	           dNode#appendChildren
-                     (List.map (fun name ->
-                          let safename  = if has_control_characters name then
-                                            "__xx__"  ^ (hex_string name) else name in
-	                  let nNode = xmlElement "fn" in
-	                  begin nNode#setAttribute "fname" safename ; nNode end) names) ;
-	           dNode#setAttribute "dllname" safedll ;
-	           dNode#setIntAttribute "count" (List.length names) ;
-	           dNode
-                 end) t#listOfPairs)
+      (List.map (fun (dll, nameset) ->
+           let safedll =
+             if has_control_characters dll
+             then "__xx__" ^ (hex_string dll)
+             else
+               dll in
+           let dNode = xmlElement "dll" in
+           let names = nameset#toList in
+           begin
+	     dNode#appendChildren
+               (List.map (fun name ->
+                    let safename  =
+                      if has_control_characters name then
+                        "__xx__"  ^ (hex_string name)
+                      else
+                        name in
+	            let nNode = xmlElement "fn" in
+	            begin
+                      nNode#setAttribute "fname" safename;
+                      nNode end)
+                  names);
+	     dNode#setAttribute "dllname" safedll ;
+	     dNode#setIntAttribute "count" (List.length names) ;
+	     dNode
+           end) t#listOfPairs)
 
   method search_for_library_function (name:string) =
     let path = system_settings#get_summary_paths in

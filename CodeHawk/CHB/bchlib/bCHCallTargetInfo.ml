@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2020 Henny B. Sipma
+   Copyright (c) 2021 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,12 +34,12 @@ open CHLogger
 open CHXmlDocument
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHBasicTypes
 open BCHBTerm
 open BCHCallTarget
 open BCHDoubleword
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionSemantics
 open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
@@ -46,21 +47,24 @@ open BCHInterfaceDictionary
 open BCHLibTypes
 open BCHVariableType
 
+
 let raise_error tgt msg =
   begin
     ch_error_log#add "call target" msg ;
     raise (BCH_failure  (LBLOCK [ msg ; STR ": " ; call_target_to_pretty tgt ]))
   end
 
+
 let id = interface_dictionary
 
+
 class call_target_info_t
-        (api:function_api_t)
-        (sem:function_semantics_t)
-        (tgt:call_target_t):call_target_info_int =
+        (fintf: function_interface_t)
+        (sem: function_semantics_t)
+        (tgt: call_target_t):call_target_info_int =
 object (self)
 
-  method get_name = api.fapi_name
+  method get_name = fintf.fintf_name
                   
   method get_target = tgt
                     
@@ -113,7 +117,8 @@ object (self)
 
   method get_static_lib_target =
     match tgt with
-    | StaticStubTarget (a,PckFunction (lib,pkgs,name)) -> (a,lib,pkgs,name)
+    | StaticStubTarget (a, PckFunction (lib, pkgs, name)) ->
+       (a, lib, pkgs, name)
     | _ ->
        let msg = STR "Call target is not a static library function" in
        raise_error tgt msg
@@ -125,27 +130,31 @@ object (self)
        let msg = STR "Call target is not a JNI function" in
        raise_error tgt msg
 
-  method get_signature = api
+  method get_function_interface = fintf
 
-  method get_parameters = api.fapi_parameters
+  method get_signature = fintf.fintf_type_signature
+
+  method get_parameters = self#get_signature.fts_parameters
                        
-  method get_returntype = api.fapi_returntype
+  method get_returntype = self#get_signature.fts_returntype
                         
-  method get_stack_adjustment = api.fapi_stack_adjustment                        
-                        
+  method get_stack_adjustment = self#get_signature.fts_stack_adjustment
+
   method get_semantics = sem
                        
   method get_jni_index =
-    match api.fapi_jni_index with
+    match fintf.fintf_jni_index with
     | Some i -> i
     | _ ->
        begin
 	 ch_error_log#add
            "invocation error" 
-	   (LBLOCK [ STR "function_summary#get_jni_index" ]) ;
-	 raise (BCH_failure
-                  (LBLOCK [ STR "Call target is not a jni target: " ;
-                            call_target_to_pretty tgt ] ))
+	   (LBLOCK [ STR "function_summary#get_jni_index" ]);
+	 raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Call target is not a jni target: ";
+                   call_target_to_pretty tgt]))
        end
 
   method get_preconditions = sem.fsem_pre
@@ -161,20 +170,26 @@ object (self)
   method get_enums_referenced =
     let l = ref [] in
     let add s = if List.mem s !l then () else l := s :: !l in
-    let _ = List.iter (fun p -> 
-      match p with PreEnum (_,s,_) -> add s | _ -> ()) self#get_preconditions in
-    let _ = List.iter (fun p ->      
-      match p with PostEnum (_,s) -> add s | _ -> ()) self#get_postconditions in
+    let _ =
+      List.iter (fun p ->
+          match p with
+          | PreEnum (_,s,_) -> add s
+          | _ -> ()) self#get_preconditions in
+    let _ =
+      List.iter (fun p ->
+          match p with
+          | PostEnum (_,s) -> add s
+          | _ -> ()) self#get_postconditions in
     !l
 
-  method get_enum_type (par:api_parameter_t) =
+  method get_enum_type (par: fts_parameter_t) =
     List.fold_left (fun acc pre ->
         match acc with
         | Some _ -> acc
         | _ ->
 	   match pre with
 	   | PreEnum (ArgValue p,s,flags) ->
-	      if api_parameter_compare p par = 0 then
+	      if fts_parameter_compare p par = 0 then
                 Some (t_named s,flags)
               else
                 None
@@ -192,7 +207,7 @@ object (self)
 
   method is_signature_valid = (* not api.fapi_inferred *) true
                             
-  method is_semantics_valid = not api.fapi_inferred
+  method is_semantics_valid = true
                             
   method is_app_call = match tgt with AppTarget _ -> true | _ -> false
 
@@ -282,10 +297,13 @@ object (self)
       | (StubTarget (DllFunction _), "dll") -> true
       | (AppTarget _, "app") -> true
       | (StubTarget (JniFunction _), "jni") -> true
-      | (IndirectTarget (v,_), "arg") -> is_stack_parameter_term v
-      | (IndirectTarget (v,[]), "arg-no-targets") -> is_stack_parameter_term v
-      | (IndirectTarget (v,_), "global") -> is_global_parameter_term v
-      | (IndirectTarget (v,[]), "global-no-targets") -> is_global_parameter_term v
+      | (IndirectTarget (Some v,_), "arg") -> is_stack_parameter_term v
+      | (IndirectTarget (Some v,[]), "arg-no-targets") ->
+         is_stack_parameter_term v
+      | (IndirectTarget (Some v,_), "global") ->
+         is_global_parameter_term v
+      | (IndirectTarget (Some v,[]), "global-no-targets") ->
+         is_global_parameter_term v
       | (UnknownTarget, "unresolved") -> true
       | (IndirectTarget (_,[]), "unresolved") -> true
       | (StubTarget (DllFunction (dll,fname)), "dll-no-sum")
@@ -303,7 +321,7 @@ object (self)
   method write_xml (node:xml_element_int) =
     begin
       id#write_xml_call_target node tgt;
-      id#write_xml_function_api node api
+      id#write_xml_function_interface node fintf
     end
 
   method toPretty = call_target_to_pretty tgt
@@ -313,8 +331,6 @@ let mk_call_target_info = new call_target_info_t
 
 let read_xml_call_target_info (node:xml_element_int) =
   new call_target_info_t
-    (id#read_xml_function_api node)
+    (id#read_xml_function_interface node)
     default_function_semantics
     (id#read_xml_call_target node)
-
-

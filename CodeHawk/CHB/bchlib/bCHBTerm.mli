@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,34 +40,45 @@ open XprTypes
 (* bchlib *)
 open BCHLibTypes
 
-val arithmetic_op_to_string    : arithmetic_op_t -> string
+
+val arithmetic_op_to_string: arithmetic_op_t -> string
 val arithmetic_op_to_xml_string: arithmetic_op_t -> string
 
-val bterm_to_string : bterm_t -> string
-val bterm_to_pretty : bterm_t -> pretty_t
+val bterm_to_string: bterm_t -> string
+val bterm_to_pretty: bterm_t -> pretty_t
 
-val bterm_compare   : bterm_t -> bterm_t -> int
+val bterm_compare: bterm_t -> bterm_t -> int
+val bterm_opt_compare: bterm_t option -> bterm_t option -> int
 
-val is_arithmetic_operator : string -> bool
+val is_arithmetic_operator: string -> bool
 val get_arithmetic_operator: string -> arithmetic_op_t
 
-val read_xml_bterm: xml_element_int -> api_parameter_t list -> bterm_t
+val read_xml_bterm: xml_element_int -> fts_parameter_t list -> bterm_t
 
 val mk_global_parameter_term:
-    ?btype:btype_t -> ?desc:string -> ?roles:(string * string) list
-  -> ?io:arg_io_t -> ?size:int -> doubleword_int -> bterm_t
+  ?btype:btype_t
+  -> ?desc:string
+  -> ?roles:(string * string) list
+  -> ?io:arg_io_t
+  -> ?size:int
+  -> doubleword_int
+  -> bterm_t
 
 (* stack parameters are numbered starting from 1 
    (located at 4 bytes above the return address) *)
 val mk_stack_parameter_term:
-  ?btype:btype_t -> ?desc:string -> ?roles:(string * string) list
-  -> ?io:arg_io_t -> ?size:int -> int -> bterm_t
+  ?btype:btype_t
+  -> ?desc:string
+  -> ?roles:(string * string) list
+  -> ?io:arg_io_t
+  -> ?size:int
+  -> int -> bterm_t
 
 val arithmetic_op_to_xop: arithmetic_op_t -> xop_t
 val xop_to_arithmetic_op: xop_t -> arithmetic_op_t
-val is_arithmetic_xop   : xop_t -> bool
-val is_stack_parameter_term  : bterm_t -> bool
-val is_global_parameter_term : bterm_t -> bool
+val is_arithmetic_xop: xop_t -> bool
+val is_stack_parameter_term: bterm_t -> bool
+val is_global_parameter_term: bterm_t -> bool
 
 val xpr_to_bterm: xpr_t -> (variable_t -> bterm_t) -> bterm_t option
 

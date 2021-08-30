@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,12 +38,13 @@ open BCHLibTypes
 
 val sideeffect_to_pretty: sideeffect_t -> pretty_t
 
-val sideeffect_compare  : sideeffect_t -> sideeffect_t -> int
+val sideeffect_compare: sideeffect_t -> sideeffect_t -> int
 
 val read_xml_par_sideeffects: xml_element_int -> sideeffect_t list
 
-val read_xml_sideeffect : xml_element_int -> api_parameter_t list -> sideeffect_t
+val read_xml_sideeffect: xml_element_int -> fts_parameter_t list -> sideeffect_t
 
-val read_xml_sideeffects: xml_element_int -> api_parameter_t list -> sideeffect_t list
+val read_xml_sideeffects:
+  xml_element_int -> fts_parameter_t list -> sideeffect_t list
 
-val modify_types_se : type_transformer_t -> sideeffect_t -> sideeffect_t
+val modify_types_se: type_transformer_t -> sideeffect_t -> sideeffect_t

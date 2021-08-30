@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,13 +40,13 @@ open BCHLibTypes
 val postcondition_to_pretty : postcondition_t -> pretty_t
 
 val read_xml_postcondition :
-  xml_element_int -> api_parameter_t list -> postcondition_t
+  xml_element_int -> fts_parameter_t list -> postcondition_t
   
 val read_xml_postconditions:
-  xml_element_int -> api_parameter_t list -> postcondition_t list
+  xml_element_int -> fts_parameter_t list -> postcondition_t list
   
 val read_xml_errorpostconditions:
-  xml_element_int -> api_parameter_t list -> postcondition_t list
+  xml_element_int -> fts_parameter_t list -> postcondition_t list
   
 val read_xml_shortcut_postconditions: 
   xml_element_int -> (postcondition_t list * postcondition_t list)

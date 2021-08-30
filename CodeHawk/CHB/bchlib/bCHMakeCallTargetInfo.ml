@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2020 Henny B. Sipma
+   Copyright (c) 2021 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,9 +30,11 @@
 open CHXmlDocument
 
 (* bchlib *)
+open BCHBasicTypes
+open BCHCallTarget
 open BCHCallTargetInfo
 open BCHDoubleword
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHFunctionSemantics
 open BCHFunctionSummaryLibrary
@@ -39,13 +42,13 @@ open BCHLibTypes
 
 
 let mk_default_target (name:string) (tgt:call_target_t) =
-  let api = default_function_api name [] in
-  mk_call_target_info api default_function_semantics tgt
+  let fintf = default_function_interface name [] in
+  mk_call_target_info fintf default_function_semantics tgt
 
 let mk_function_summary_target (fs:function_summary_int) (tgt:call_target_t) =
-  let api = fs#get_function_api in
+  let fintf = fs#get_function_interface in
   let sem = fs#get_function_semantics in
-  mk_call_target_info api sem tgt
+  mk_call_target_info fintf sem tgt
 
 let mk_unknown_target () =
   mk_default_target "unknown" UnknownTarget
@@ -88,8 +91,8 @@ let mk_jni_target (index:int) =
   else
     mk_default_target ("jni_" ^ (string_of_int index)) tgt
 
-let mk_virtual_target (fapi:function_api_t) =
-  mk_default_target fapi.fapi_name (VirtualTarget fapi)
+let mk_virtual_target (fintf: function_interface_t) =
+  mk_default_target fintf.fintf_name (VirtualTarget fintf)
 
 let mk_inlined_app_target (a:doubleword_int) (name:string) =
   mk_default_target name (InlinedAppTarget (a,name))
@@ -107,13 +110,27 @@ let mk_static_pck_stub_target
   mk_default_target name (StaticStubTarget (a, PckFunction (lib,pkgs,name)))
 
 let mk_wrapped_target
-      (a:doubleword_int)
-      (fapi:function_api_t)
-      (tgt:call_target_t)
-      (parameters:(api_parameter_t * bterm_t) list) =
-  mk_default_target fapi.fapi_name ( WrappedTarget (a, fapi, tgt, parameters))
+      (a: doubleword_int)
+      (fintf: function_interface_t)
+      (tgt: call_target_t)
+      (parameters:(fts_parameter_t * bterm_t) list) =
+  mk_default_target fintf.fintf_name ( WrappedTarget (a, fintf, tgt, parameters))
 
-let update_target_api (ctinfo:call_target_info_int) (fapi:function_api_t) =
+let update_target_interface
+      (ctinfo: call_target_info_int) (fintf: function_interface_t) =
   let semantics = ctinfo#get_semantics in
   let tgt = ctinfo#get_target in
-  mk_call_target_info fapi semantics tgt
+  mk_call_target_info fintf semantics tgt
+
+let mk_call_target_info (ctgt: call_target_t): call_target_info_int =
+  match ctgt with
+  | StubTarget (DllFunction (dll, name)) -> mk_dll_target dll name
+  | StubTarget (SOFunction name) -> mk_so_target name
+  | StubTarget (JniFunction index) -> mk_jni_target index
+  | AppTarget addr -> mk_app_target addr
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "mk_call_target_info: call target not covered: ";
+               call_target_to_pretty ctgt]))

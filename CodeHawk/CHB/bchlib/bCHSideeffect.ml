@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +40,7 @@ open CHXmlReader
 open Xprt
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHBTerm
 open BCHLibTypes
 open BCHPrecondition
@@ -48,6 +50,7 @@ open BCHVariableType
 open BCHXmlUtil
 
 module P = Pervasives
+
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
@@ -65,23 +68,32 @@ let sideeffect_to_pretty (sideEffect:sideeffect_t) =
   let rec toPretty effect =
     match effect with
     | BlockWrite (ty, x, size) ->
-	LBLOCK [ STR "block-write (" ; STR (btype_to_string ty) ; 
-		 STR ", " ; bterm_to_pretty x ; STR ", " ;
-		 bterm_to_pretty size  ; STR ")" ]
+       LBLOCK [
+           STR "block-write (";
+           STR (btype_to_string ty);
+	   STR ", ";
+           bterm_to_pretty x;
+           STR ", ";
+	   bterm_to_pretty size ;
+           STR ")"]
     | Modifies x             -> 
-      LBLOCK [ STR "modifies (" ; bterm_to_pretty x ; STR ")" ]
+      LBLOCK [STR "modifies ("; bterm_to_pretty x; STR ")"]
     | Invalidates x          -> 
-      LBLOCK [ STR "invalidates (" ; bterm_to_pretty x ; STR ")" ]
+      LBLOCK [STR "invalidates ("; bterm_to_pretty x; STR ")"]
     | AllocatesStackMemory x -> 
-      LBLOCK [ STR "allocates-stack-memory " ; bterm_to_pretty x ; STR ")" ]
+      LBLOCK [STR "allocates-stack-memory "; bterm_to_pretty x; STR ")"]
     | StartsThread (sa,pars) ->
-       LBLOCK [ STR "starts-thread(" ;
-                pretty_print_list pars bterm_to_pretty "(" "," ")" ]
-    | SetsErrno -> LBLOCK [ STR "sets-errno" ]
-    | UnknownSideeffect -> LBLOCK [ STR "unknown-sideeffect" ]
+       LBLOCK [
+           STR "starts-thread(";
+           pretty_print_list pars bterm_to_pretty "(" "," ")"]
+    | SetsErrno -> LBLOCK [STR "sets-errno"]
+    | UnknownSideeffect -> LBLOCK [STR "unknown-sideeffect"]
     | ConditionalSideeffect (guard, consequent) ->
-      LBLOCK [ STR "if " ; precondition_to_pretty guard ; STR " then " ; 
-	       toPretty consequent ] in
+       LBLOCK [
+           STR "if ";
+           precondition_to_pretty guard;
+           STR " then ";
+	   toPretty consequent] in
   toPretty sideEffect
 
 
@@ -142,8 +154,12 @@ let read_xml_par_sideeffects (node:xml_element_int):sideeffect_t list =
       IndexSize (NumConstant (mkNumerical (geti "indexsize")))
     else
       one in
-  let sNodes = if hasc "sideeffects" then (getc "sideeffects")#getChildren else [] in
-  let par = read_xml_api_parameter node in
+  let sNodes =
+    if hasc "sideeffects" then
+      (getc "sideeffects")#getChildren
+    else
+      [] in
+  let par = read_xml_fts_parameter node in
   let t = ArgValue par in
   let ty () = 
     let t = match resolve_type par.apar_type with 
@@ -152,10 +168,14 @@ let read_xml_par_sideeffects (node:xml_element_int):sideeffect_t list =
       | THandle (s,_) -> TNamed (s,[])
       | _ ->
 	raise_xml_error node 
-	  (LBLOCK [ STR "Expected pointer type for " ; STR par.apar_name ;
-		    STR ", but found " ; btype_to_pretty par.apar_type ]) in
+	  (LBLOCK [
+               STR "Expected pointer type for ";
+               STR par.apar_name;
+	       STR ", but found ";
+               btype_to_pretty par.apar_type]) in
     match t with
-    | TNamed (name,_) when type_definitions#has_type name -> type_definitions#get_type name
+    | TNamed (name,_) when type_definitions#has_type name ->
+       type_definitions#get_type name
     | _ -> t in
   let aux node = 
     match node#getTag with
@@ -164,14 +184,19 @@ let read_xml_par_sideeffects (node:xml_element_int):sideeffect_t list =
       ConditionalSideeffect (PreNotNull t, BlockWrite (ty (),t,getsize node))
     | "invalidates" -> Invalidates t 
     | "modifies" -> Modifies t
-    | s -> raise_xml_error node 
-      (LBLOCK [ STR "Parameter side effect " ; STR s ; STR " not recognized" ]) in
+    | s ->
+       raise_xml_error
+         node
+         (LBLOCK [
+              STR "Parameter side effect ";
+              STR s;
+              STR " not recognized"]) in
   List.map aux sNodes
 
  
 let read_xml_sideeffect
-    (node:xml_element_int)
-    (parameters:api_parameter_t list):sideeffect_t =
+    (node: xml_element_int)
+    (parameters: fts_parameter_t list): sideeffect_t =
   let get_term n = read_xml_bterm n parameters in
   let get_type n = 
     let t = read_xml_type n in
@@ -186,7 +211,8 @@ let read_xml_sideeffect
     let arg n =
       try List.nth argNodes n with Failure _ ->
         raise_xml_error
-          node (LBLOCK [ STR "Expected " ; INT (n+1) ; STR " arguments" ]) in
+          node
+          (LBLOCK [STR "Expected "; INT (n+1); STR " arguments"]) in
     match pNode#getTag with
     | "block-write" -> 
       BlockWrite (get_type (arg 0), get_term (arg 1), get_term (arg 2))
@@ -200,8 +226,13 @@ let read_xml_sideeffect
       read_xml_precondition_predicate
 	((node#getTaggedChild "pre")#getTaggedChild "apply") parameters,
       aux (node#getTaggedChild "apply"))
-    | s -> raise_xml_error node
-      (LBLOCK [ STR "Sideeffect predicate " ; STR s ; STR " not recognized" ]) in
+    | s ->
+       raise_xml_error
+         node
+         (LBLOCK [
+              STR "Sideeffect predicate ";
+              STR s;
+              STR " not recognized"]) in
   match (node#getTaggedChild "math")#getChild#getTag with
   | "sets-errno" -> SetsErrno
   | "unknown-sideeffect" -> UnknownSideeffect
@@ -209,8 +240,8 @@ let read_xml_sideeffect
 
 
 let read_xml_sideeffects 
-    (node:xml_element_int)
-    (parameters:api_parameter_t list):sideeffect_t list =
+    (node: xml_element_int)
+    (parameters: fts_parameter_t list): sideeffect_t list =
   let getcc = node#getTaggedChildren in
   List.map (fun n -> read_xml_sideeffect n parameters) (getcc "sideeffect")
 

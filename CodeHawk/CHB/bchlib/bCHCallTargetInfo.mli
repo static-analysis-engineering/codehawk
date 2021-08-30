@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2020 Henny B. Sipma
+   Copyright (c) 2021 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,10 +33,9 @@ open CHXmlDocument
 open BCHLibTypes
 
 val mk_call_target_info:
-  function_api_t
+  function_interface_t
   -> function_semantics_t
-  -> call_target_t
-  -> call_target_info_int
+  -> call_target_t -> call_target_info_int
 
 val read_xml_call_target_info: xml_element_int -> call_target_info_int
 
