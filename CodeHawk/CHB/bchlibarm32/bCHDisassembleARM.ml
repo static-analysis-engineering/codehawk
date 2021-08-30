@@ -44,7 +44,7 @@ open BCHByteUtilities
 open BCHDataBlock
 open BCHDoubleword
 open BCHFloc
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHFunctionSummaryLibrary

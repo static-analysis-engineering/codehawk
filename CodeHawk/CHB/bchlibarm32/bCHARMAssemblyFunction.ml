@@ -40,7 +40,7 @@ open BCHBasicTypes
 open BCHByteUtilities
 open BCHFunctionInfo
 open BCHFloc
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionSummary
 open BCHFunctionSummaryLibrary

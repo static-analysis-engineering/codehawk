@@ -39,12 +39,12 @@ open Xprt
 open XprTypes
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHBasicTypes
 open BCHByteUtilities
 open BCHConstantDefinitions
 open BCHFloc
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation

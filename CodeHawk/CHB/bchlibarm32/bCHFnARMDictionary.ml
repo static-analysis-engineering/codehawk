@@ -44,14 +44,14 @@ open XprTypes
 open Xsimplify
 
 (* bchlib *)
-open BCHApiParameter
+open BCHFtsParameter
 open BCHBasicTypes
 open BCHByteUtilities
 open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc   
-open BCHFunctionApi
+open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
