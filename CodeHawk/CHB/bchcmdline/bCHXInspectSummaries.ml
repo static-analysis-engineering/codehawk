@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,10 +53,12 @@ module P = Pervasives
 
 let const_files = ref []
 
-let speclist = [ ("-use", Arg.String (fun s -> const_files := s :: !const_files),
-		  "use constants for given type") ]
+let speclist = [
+    ("-use", Arg.String (fun s -> const_files := s :: !const_files),
+     "use constants for given type")]
   
 let usage_msg = "inspect_summaries <jar name>"
+
 let read_args () = 
   Arg.parse speclist (fun s -> system_settings#set_summary_jar s) usage_msg
   
@@ -90,10 +94,12 @@ let print_statistics () =
       let roles = List.sort P.compare p.apar_roles in
       (p.apar_name,roles) :: acc1) [] params in
     match roles with [] -> acc | _ -> (name,roles) :: acc) [] summaries in *)
-  let nParamRoles = List.fold_left (fun acc s ->
-    let nRoles = List.fold_left (fun acc1 p -> acc1 + List.length (p.apar_roles)) 
-      0 s#get_function_api.fapi_parameters in
-    acc + nRoles) 0 summaries in
+  let nParamRoles =
+    List.fold_left (fun acc s ->
+        let nRoles =
+          List.fold_left (fun acc1 p -> acc1 + List.length (p.apar_roles))
+            0 s#get_function_interface.fintf_type_signature.fts_parameters in
+        acc + nRoles) 0 summaries in
   (* let pRoles = List.map (fun (fname,froles) ->
     LBLOCK [ STR fname ; NL ;
 	     INDENT (3, LBLOCK (List.map (fun (pname,proles) ->
