@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,41 +37,42 @@ open CHXmlDocument
 open BCHLibTypes
 
    
-val function_api_to_prototype_string:
-  ?fullname:string option -> function_api_t -> string
+val function_interface_to_prototype_string:
+  ?fullname:string option -> function_interface_t -> string
 
-val function_api_to_pretty: function_api_t -> pretty_t
+val function_interface_to_pretty: function_interface_t -> pretty_t
 
-val function_api_compare: function_api_t -> function_api_t -> int
+val function_interface_compare:
+  function_interface_t -> function_interface_t -> int
 
-val read_xml_function_api: xml_element_int -> function_api_t
+val read_xml_function_interface: xml_element_int -> function_interface_t
 
-val modify_types_api:
-  type_transformer_t -> string -> function_api_t -> function_api_t
+val modify_function_interface:
+  type_transformer_t -> string -> function_interface_t -> function_interface_t
 
-val is_stack_parameter: api_parameter_t -> int -> bool
+val is_stack_parameter: fts_parameter_t -> int -> bool
 
 val get_stack_parameter:
-  function_api_t -> int -> api_parameter_t (* index starts at 1 *)
+  function_interface_t -> int -> fts_parameter_t (* index starts at 1 *)
 
 val get_stack_parameter_name :
-  function_api_t -> int -> string          (* index starts at 1 *)
+  function_interface_t -> int -> string          (* index starts at 1 *)
 
-val get_stack_parameter_names: function_api_t -> (int * string) list
+val get_stack_parameter_names: function_interface_t -> (int * string) list
 
-val get_stack_parameter_count: function_api_t -> int
+val get_stack_parameter_count: function_interface_t -> int
 
-val has_fmt_parameter: function_api_t -> bool
+val has_fmt_parameter: function_interface_t -> bool
 
-val get_fmt_parameter_index: function_api_t -> int
+val get_fmt_parameter_index: function_interface_t -> int
 
-val demangled_name_to_function_api: demangled_name_t -> function_api_t
+val demangled_name_to_function_interface: demangled_name_t -> function_interface_t
 
-val default_function_api:
+val default_function_interface:
   ?cc:string
   -> ?adj:int
   -> ?returntype:btype_t
   -> string
-  -> api_parameter_t list
-  -> function_api_t
+  -> fts_parameter_t list
+  -> function_interface_t
 
