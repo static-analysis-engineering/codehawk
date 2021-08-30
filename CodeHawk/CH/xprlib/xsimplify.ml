@@ -844,9 +844,22 @@ and reduce_logical_not m e =
 
 and reduce_bor m e1 e2 =
   let default = (m, XOp (XBOr, [e1 ; e2])) in
-  if is_zero e1 then (true, e2)
-  else if is_zero e2 then (true, e1)
-  else default
+  if is_zero e1 then
+    (true, e2)
+  else if is_zero e2 then
+    (true, e1)
+  else
+    match (get_const e1, get_const e2) with
+    | (Some c1, Some c2) when c1#is_int && c2#is_int ->
+       (try
+          let i32 = c1#toInt32 in
+          let j32 = c2#toInt32 in
+          let result = Int32.logor i32 j32 in
+          let result = mkNumericalFromInt32 result in
+          (true, num_constant_expr result)
+        with
+        | _ -> default)
+    | _ -> default
 
 and reduce_or m e1 e2 =
   let default = (m, XOp (XLOr, [e1 ; e2])) in
