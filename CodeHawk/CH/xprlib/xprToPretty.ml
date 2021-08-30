@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -92,6 +94,7 @@ object (self)
 
 end
 
+
 class xpr_formatter_t attr_printer sym_printer var_printer:xpr_pretty_printer_int =
 object (self)
 
@@ -152,14 +155,14 @@ object (self)
 	 | _ ->
 	    begin
 	      pr_debug [
-		  STR "Unrecognized expression in two-argument pr_op"
-	        ];
-	      failwith "CExprToPretty: pr_op"
+		  STR "Unrecognized expression in two-argument pr_op: ";
+                  STR (xop_to_string op)];
+	      failwith ("CExprToPretty: pr_op " ^ (xop_to_string op))
 	    end
        end
     | [e] ->
        let f = self#pr_expr e in
-       let wrap p = LBLOCK [ STR "(" ; p ; f  ; STR ")" ] in
+       let wrap p = LBLOCK [STR "(" ; p ; f  ; STR ")"] in
        begin
 	 match op with
 	 | XNeg -> wrap (STR "-")
@@ -171,9 +174,9 @@ object (self)
 	 | _ ->
 	    begin
 	      pr_debug [
-	          STR "Unrecognized expression in single-argument pr_op"
-	        ];
-	      failwith "CExprToPretty: pr_op"
+	          STR "Unrecognized expression in single-argument pr_op: ";
+                  STR (xop_to_string op)];
+	      failwith ("CExprToPretty: pr_op " ^ (xop_to_string op))
 	    end
 	   
        end
@@ -194,20 +197,26 @@ object (self)
 	 | Xf s -> LBLOCK [ STR s ; pretty_print_list l self#pr_expr "(" "," ")" ]
 	 | _ ->
 	    begin
-	      pr_debug [ STR "Unrecognized expression in multiple-argument pr_op" ];
-	      failwith "CExprToPretty: pr_op"
+	      pr_debug [
+                  STR "Unrecognized expression in multiple-argument pr_op: ";
+                  STR (xop_to_string op)];
+	      failwith ("CExprToPretty: pr_op " ^ (xop_to_string op))
 	    end
        end
        
 end
   
-let default_attr_to_pretty s = ((LBLOCK [ STR s ; STR " of "] ), (STR "")) 
+let default_attr_to_pretty s = ((LBLOCK [ STR s ; STR " of "] ), (STR ""))
+
 let default_sym_to_pretty s = STR s#getBaseName
+
 let default_var_to_pretty v = STR v#getName#getBaseName
 
 let xpr_printer = new xpr_pretty_printer_t
+
 let xpr_formatter =
-  new xpr_formatter_t default_attr_to_pretty default_sym_to_pretty default_var_to_pretty
+  new xpr_formatter_t
+    default_attr_to_pretty default_sym_to_pretty default_var_to_pretty
 
 let xpr_formatter_customized f = new xpr_formatter_t f
 
