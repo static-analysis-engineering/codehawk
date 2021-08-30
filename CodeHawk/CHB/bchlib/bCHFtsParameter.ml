@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -56,9 +58,10 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
   end
 
-(* ------------------------------------------------------------------- printing *)
+(* ----------------------------------------------------------------- printing *)
 
-let calling_convention_to_string = function StdCall -> "stdcall" | CDecl -> "cdecl"
+let calling_convention_to_string =
+  function StdCall -> "stdcall" | CDecl -> "cdecl"
 
 let arg_io_to_string (i:arg_io_t) =
   match i with
@@ -78,10 +81,10 @@ let parameter_location_to_string = function
   | GlobalParameter g -> "g_arg " ^ g#to_hex_string
   | UnknownParameterLocation -> "unknown"
 
-let api_parameter_to_pretty (p:api_parameter_t) =
-  LBLOCK [ STR p.apar_name ; STR ": " ; btype_to_pretty p.apar_type ]
+let fts_parameter_to_pretty (p: fts_parameter_t) =
+  LBLOCK [STR p.apar_name ; STR ": "; btype_to_pretty p.apar_type]
 
-(* ----------------------------------------------------------------- comparison *)
+(* --------------------------------------------------------------- comparison *)
 
 let parameter_location_compare l1 l2 =
   match (l1,l2) with
@@ -96,13 +99,14 @@ let parameter_location_compare l1 l2 =
   | (_, GlobalParameter _) -> 1
   | (UnknownParameterLocation, UnknownParameterLocation) -> 0 
 
-let api_parameter_compare (p1:api_parameter_t) (p2:api_parameter_t) =
+let fts_parameter_compare (p1: fts_parameter_t) (p2: fts_parameter_t) =
   parameter_location_compare p1.apar_location p2.apar_location
 
 
-(* ------------------------------------------------------------------ write xml *)
+(* ---------------------------------------------------------------- write xml *)
 
-let write_xml_parameter_location (node:xml_element_int) (loc:parameter_location_t) =
+let write_xml_parameter_location
+      (node:xml_element_int) (loc:parameter_location_t) =
   let set = node#setAttribute in
   let seti = node#setIntAttribute in
   match loc with
@@ -121,7 +125,7 @@ let write_xml_roles (node:xml_element_int) (l:(string * string) list) =
     begin set "rt" rtype ; set "rn" rname ; rNode end) l)
 
 
-let write_xml_api_parameter (node:xml_element_int) (p:api_parameter_t) =
+let write_xml_fts_parameter (node:xml_element_int) (p: fts_parameter_t) =
   let append = node#appendChildren in
   let set = node#setAttribute in
   let seti = node#setIntAttribute in
@@ -129,11 +133,11 @@ let write_xml_api_parameter (node:xml_element_int) (p:api_parameter_t) =
   begin
     write_xml_btype tNode p.apar_type ;
     write_xml_parameter_location node p.apar_location ;
-    append [ tNode ] ;
+    append [tNode];
     (match p.apar_roles with [] -> () | l ->
       let rrNode = xmlElement "roles" in 
       begin write_xml_roles rrNode l ; append [ rrNode ] end) ;
-    (match p.apar_desc with "" -> () | s -> set "desc" s) ;
+    (match p.apar_desc with "" -> () | s -> set "desc" s);
     set "io" (arg_io_to_string p.apar_io) ;
     set "name" p.apar_name ;
     seti "size" p.apar_size ;
@@ -147,7 +151,10 @@ let read_xml_arg_io (s:string) =
   | "r" -> ArgRead
   | "w" -> ArgWrite
   | "rw" -> ArgReadWrite
-  | _ -> raise (BCH_failure (LBLOCK [ STR "Arg io " ; STR s ; STR " not recognized" ]))
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK [STR "Arg io "; STR s; STR " not recognized"]))
 
 let read_xml_formatstring_type (s:string) =
   match s with
@@ -157,11 +164,12 @@ let read_xml_formatstring_type (s:string) =
   | _ ->
      raise
        (BCH_failure
-          (LBLOCK [ STR "Formatstring type " ; STR s ; STR " not recognized" ]))
+          (LBLOCK [STR "Formatstring type "; STR s; STR " not recognized"]))
 
 let read_xml_roles (node:xml_element_int) =
   List.map (fun n -> 
-    let get = n#getAttribute in (get "rt", get "rn")) (node#getTaggedChildren "role")
+      let get = n#getAttribute in
+      (get "rt", get "rn")) (node#getTaggedChildren "role")
 
 let read_xml_parameter_location (node:xml_element_int):parameter_location_t =
   let get = node#getAttribute in
@@ -171,14 +179,17 @@ let read_xml_parameter_location (node:xml_element_int):parameter_location_t =
   | "register" -> RegisterParameter (register_from_string (get "reg"))
   | "global" -> GlobalParameter (string_to_doubleword (get "dw"))
   | "unknown" -> UnknownParameterLocation
-  | s -> raise_xml_error node (LBLOCK [ STR "Parameter location not recognized: " ; STR s ])
+  | s ->
+     raise_xml_error
+       node
+       (LBLOCK [STR "Parameter location not recognized: "; STR s])
 
 (* Api parameters are numbered with two attributes:
    - nr : stack position (times 4, starting at 1)
    - ix : argument index number
    If ix is missing, it is assumed that the ix is the same as nr
 *)
-let read_xml_api_parameter (node:xml_element_int):api_parameter_t =
+let read_xml_fts_parameter (node:xml_element_int): fts_parameter_t =
   let get = node#getAttribute in
   let geti = node#getIntAttribute in
   let getc = node#getTaggedChild in
@@ -198,27 +209,27 @@ let read_xml_api_parameter (node:xml_element_int):api_parameter_t =
 
 (* --------------------------------------------------------------- predicates *)
 
-let is_global_parameter (p:api_parameter_t) =
+let is_global_parameter (p: fts_parameter_t) =
   match p.apar_location with GlobalParameter _ -> true | _ -> false
 
-let is_stack_parameter (p:api_parameter_t) =
+let is_stack_parameter (p: fts_parameter_t) =
   match p.apar_location with StackParameter _ -> true | _ -> false
 
-let is_register_parameter (p:api_parameter_t) =
+let is_register_parameter (p: fts_parameter_t) =
   match p.apar_location with RegisterParameter _ -> true | _ -> false
 
-let is_arg_parameter (p:api_parameter_t) =
+let is_arg_parameter (p: fts_parameter_t) =
   is_register_parameter p || is_stack_parameter p
 
-let is_formatstring_parameter (p:api_parameter_t) =
+let is_formatstring_parameter (p: fts_parameter_t) =
   match p.apar_fmt with
   | NoFormat -> false
   | _ -> true
 
 (* ---------------------------------------------------------------- operators *)
 
-let default_api_parameter = {
-  apar_name = "unnknown-api-parameter" ;
+let default_fts_parameter = {
+  apar_name = "unnknown-fts-parameter" ;
   apar_type = t_unknown ;
   apar_roles = [] ;
   apar_desc = "" ;
@@ -228,10 +239,10 @@ let default_api_parameter = {
   apar_fmt = NoFormat
 }
 
-let modify_types_par (f:type_transformer_t) (p:api_parameter_t) =
+let modify_types_par (f:type_transformer_t) (p: fts_parameter_t) =
   { p with apar_type = modify_type f p.apar_type }
 
-let modify_name_par (name:string) (p:api_parameter_t) =
+let modify_name_par (name:string) (p: fts_parameter_t) =
   { p with apar_name = name }
 
 let mk_global_parameter
@@ -291,7 +302,7 @@ let mk_register_parameter
 (* Convert a format string specification to an api_parameter *)
 let convert_fmt_spec_arg
       (index:int)         (* index of argument, zero-based *)
-      (spec:argspec_int):api_parameter_t =
+      (spec:argspec_int): fts_parameter_t =
   { apar_name = "vararg_" ^ (string_of_int index);
     apar_type = get_fmt_spec_type spec;
     apar_desc = "vararg";

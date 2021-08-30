@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +37,7 @@ open CHXmlDocument
 (* bchlib *)
 open BCHLibTypes
 
-val default_api_parameter: api_parameter_t
+val default_fts_parameter: fts_parameter_t
 
 val mk_global_parameter:
   ?btype:btype_t
@@ -45,7 +47,7 @@ val mk_global_parameter:
   -> ?size:int
   -> ?fmt:formatstring_type_t
   -> doubleword_int
-  -> api_parameter_t
+  -> fts_parameter_t
 
 (* stack parameters are numbered starting from 1 
    (located at 4 bytes above the return address) *)
@@ -57,7 +59,7 @@ val mk_stack_parameter:
   -> ?size:int
   -> ?fmt:formatstring_type_t
   -> int
-  -> api_parameter_t
+  -> fts_parameter_t
 
 val mk_register_parameter:
   ?btype:btype_t
@@ -67,18 +69,18 @@ val mk_register_parameter:
   -> ?size:int
   -> ?fmt:formatstring_type_t
   -> register_t
-  -> api_parameter_t
+  -> fts_parameter_t
 
-val convert_fmt_spec_arg: int -> argspec_int -> api_parameter_t
+val convert_fmt_spec_arg: int -> argspec_int -> fts_parameter_t
 
 val calling_convention_to_string: calling_convention_t -> string
 
-val api_parameter_to_pretty: api_parameter_t -> pretty_t
+val fts_parameter_to_pretty: fts_parameter_t -> pretty_t
 
 val parameter_location_compare:
   parameter_location_t -> parameter_location_t -> int
 
-val api_parameter_compare: api_parameter_t -> api_parameter_t -> int
+val fts_parameter_compare: fts_parameter_t -> fts_parameter_t -> int
 
 val write_xml_roles: xml_element_int -> (string * string) list -> unit
 
@@ -90,22 +92,22 @@ val write_xml_parameter_location:
 val read_xml_parameter_location :
   xml_element_int -> parameter_location_t
 
-val write_xml_api_parameter: xml_element_int -> api_parameter_t -> unit
+val write_xml_fts_parameter: xml_element_int -> fts_parameter_t -> unit
 
-val read_xml_api_parameter: xml_element_int -> api_parameter_t
+val read_xml_fts_parameter: xml_element_int -> fts_parameter_t
 
-val modify_types_par: type_transformer_t -> api_parameter_t -> api_parameter_t
+val modify_types_par: type_transformer_t -> fts_parameter_t -> fts_parameter_t
 
-val modify_name_par: string -> api_parameter_t -> api_parameter_t
+val modify_name_par: string -> fts_parameter_t -> fts_parameter_t
 
-val is_global_parameter: api_parameter_t -> bool
+val is_global_parameter: fts_parameter_t -> bool
 
-val is_stack_parameter: api_parameter_t -> bool
+val is_stack_parameter: fts_parameter_t -> bool
 
-val is_register_parameter: api_parameter_t -> bool
+val is_register_parameter: fts_parameter_t -> bool
 
-val is_arg_parameter: api_parameter_t -> bool
+val is_arg_parameter: fts_parameter_t -> bool
 
-val is_formatstring_parameter: api_parameter_t -> bool
+val is_formatstring_parameter: fts_parameter_t -> bool
 
 
