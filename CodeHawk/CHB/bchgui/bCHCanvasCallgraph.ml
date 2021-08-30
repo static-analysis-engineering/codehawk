@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -106,7 +108,7 @@ let trace_forward_arg (graph:dot_graph_int) faddress op_n =
   let make_call_node faddr iaddr par = 
     "n" ^ faddr#to_hex_string ^ iaddr#to_hex_string ^ (string_of_int par) in
   let make_dll_node name par = "n" ^ name ^ (string_of_int par) in
-  let make_jni_node api par = "n" ^ api.fapi_name ^ (string_of_int par) in
+  let make_jni_node fintf par = "n" ^ fintf.fintf_name ^ (string_of_int par) in
   let make_sig_label faddr op =
     (get_fname faddr) ^ "(" ^ (string_of_int op) ^ ")" in
   let make_call_label floc invio par =
@@ -125,8 +127,9 @@ let trace_forward_arg (graph:dot_graph_int) faddress op_n =
       name ^ "(" ^ (string_of_int par) ^ pname ^ ")" 
     else 
       name ^ "(" ^ (string_of_int par) ^ ")" in
-  let make_jni_label api par =
-    let pars = api.fapi_parameters in
+  let make_jni_label fintf par =
+    let fts = fintf.fintf_type_signature in
+    let pars = fts.fts_parameters in
       let pname = 
 	try
 	  let par = List.find (fun p -> match p.apar_location with
@@ -134,7 +137,7 @@ let trace_forward_arg (graph:dot_graph_int) faddress op_n =
 	  "," ^ par.apar_name
 	with
 	  Not_found -> "" in
-      api.fapi_name ^ "(" ^ (string_of_int par) ^ pname ^ ")" in
+      fintf.fintf_name ^ "(" ^ (string_of_int par) ^ pname ^ ")" in
   let table = H.create 5 in
   let dllNodes = ref [] in
   let add_dll_node n =
@@ -188,10 +191,10 @@ let trace_forward_arg (graph:dot_graph_int) faddress op_n =
 		     else if ctinfo#is_jni_call then
 		       let jniIndex = ctinfo#get_jni_index in
 		       if function_summary_library#has_jni_function jniIndex then
-		         let api =
-                           (function_summary_library#get_jni_function jniIndex)#get_function_api in
-		         let label = make_jni_label api par in
-		         let jniNode = make_jni_node api par in
+		         let fintf =
+                           (function_summary_library#get_jni_function jniIndex)#get_function_interface in
+		         let label = make_jni_label fintf par in
+		         let jniNode = make_jni_node fintf par in
 		         begin
 		           graph#addNode ~label jniNode ;
 		           graph#addEdge callNode jniNode ;
@@ -404,11 +407,11 @@ object (self)
 	        else if ctinfo#is_jni_call then
 	          let jniIndex = ctinfo#get_jni_index in
 	          if function_summary_library#has_jni_function jniIndex then
-		    let api = function_summary_library#get_jni_function jniIndex in
-		    let api = api#get_function_api in
+		    let fsum = function_summary_library#get_jni_function jniIndex in
+		    let fintf = fsum#get_function_interface in
 		    begin 
-		      add_jni_node api.fapi_name  ;
-		      graph#addEdge nodename api.fapi_name
+		      add_jni_node fintf.fintf_name  ;
+		      graph#addEdge nodename fintf.fintf_name
 		    end
                   else
                     ()
