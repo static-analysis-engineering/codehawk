@@ -38,6 +38,8 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
+val align: int -> int -> int
+
 val get_dmb_option: int -> dmb_option_t
 
 val get_opcode_cc: int -> arm_opcode_cc_t

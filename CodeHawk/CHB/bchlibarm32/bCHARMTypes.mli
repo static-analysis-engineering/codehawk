@@ -166,6 +166,8 @@ type arm_instr_class_t =
 type arm_operand_kind_t =
   | ARMDMBOption of dmb_option_t
   | ARMReg of arm_reg_t
+  | ARMSpecialReg of arm_special_reg_t
+  | ARMFPReg of int * int
   | ARMRegList of arm_reg_t list
   | ARMShiftedReg of arm_reg_t * register_shift_rotate_t
   | ARMRegBitSequence of arm_reg_t * int * int (* lsb, widthm1 *)
@@ -174,6 +176,7 @@ type arm_operand_kind_t =
   | ARMMemMultiple of arm_reg_t * int  (* number of locations *)
   | ARMOffsetAddress of
       arm_reg_t                  (* base register *)
+      * int                      (* alignment of register value *)
       * arm_memory_offset_t      (* offset *)
       * bool                     (* isadd *)
       * bool                     (* iswback *)
@@ -187,12 +190,13 @@ class type arm_operand_int =
     (* accessors *)
     method get_kind: arm_operand_kind_t
     method get_mode: arm_operand_mode_t
+    method get_size: int  (* operand size in bytes *)
     method get_register: arm_reg_t
     method get_register_count: int
     method get_register_list: arm_reg_t list
     method get_register_op_list: 'a list
     method get_absolute_address: doubleword_int
-    method get_pc_relative_address: doubleword_int -> doubleword_int
+    method get_pc_relative_address: doubleword_int -> int -> doubleword_int
 
     (* converters *)
     method to_numerical: numerical_t
@@ -210,6 +214,7 @@ class type arm_operand_int =
     method is_write: bool
     method is_immediate: bool
     method is_register: bool
+    method is_special_register: bool
     method is_register_list: bool
     method is_absolute_address: bool
     method is_pc_relative_address: bool
@@ -677,6 +682,37 @@ type arm_opcode_t =
       * arm_operand_int (* rdhi: destination 2 *)
       * arm_operand_int (* rn: source 1 *)
       * arm_operand_int (* rm: source 2 *)
+  | VCompare of
+      bool   (* if true NaN operand causes invalie operation *)
+      * arm_opcode_cc_t (* condition *)
+      * string          (* data type (F64 or F32) *)
+      * arm_operand_int (* operand 1 *)
+      * arm_operand_int (* operand 2 *)
+  | VConvert of
+      bool   (* rounding specified *)
+      * arm_opcode_cc_t (* condition *)
+      * string          (* destination data type (F64, S32, ... *)
+      * string          (* source data type (F64, S32, ... *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
+  | VLoadRegister of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* floating-point destination register *)
+      * arm_operand_int (* base register *)
+      * arm_operand_int (* mem: memory location *)
+  | VMove of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
+  | VMoveRegisterStatus of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
+  | VStoreRegister of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* floating-point source register *)
+      * arm_operand_int (* base register *)
+      * arm_operand_int (* mem: memory location *)
 
   (* SupervisorType *)
   | SupervisorCall of arm_opcode_cc_t * arm_operand_int
@@ -723,6 +759,7 @@ class type arm_assembly_instruction_int =
     method get_aggregate_dst: arm_operand_int
 
     (* predicates *)
+    method is_arm32: bool
     method is_block_entry: bool
     method is_inlined_call: bool
     method is_valid_instruction: bool
