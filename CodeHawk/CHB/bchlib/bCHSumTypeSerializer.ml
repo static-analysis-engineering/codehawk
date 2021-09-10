@@ -99,7 +99,12 @@ let arm_reg_mfts: arm_reg_t mfts_int =
       (ARPC, "PC") ]
                                                               
 let mips_special_reg_mfts: mips_special_reg_t mfts_int =
-  mk_mfts "mips_special_reg_t" [ (MMHi,"hi") ;  (MMLo,"lo") ]
+  mk_mfts "mips_special_reg_t" [(MMHi,"hi");  (MMLo,"lo")]
+
+let arm_special_reg_mfts: arm_special_reg_t mfts_int =
+  mk_mfts
+    "arm_special_reg_t"
+    [(APSR, "APSR"); (FPSCR, "FPSCR"); (APSR_nzcv, "APSR_nzcv")]
 
 let segment_mfts: segment_t mfts_int =
   mk_mfts
@@ -137,10 +142,13 @@ let ikind_mfts: ikind mfts_int =
          | [ "nt" ; n ] -> INonStandard (true,int_of_string n)
          | [ "nf" ; n ] -> INonStandard (false,int_of_string n)
          | _ ->
-            raise (BCH_failure (LBLOCK [ STR "Invalid ikind specifier: " ; STR s ]))
+            raise
+              (BCH_failure (LBLOCK [STR "Invalid ikind specifier: "; STR s]))
        with
        | Failure _ ->
-          raise (BCH_failure (LBLOCK [ STR "Invalid ikind specifier size: " ; STR s ])))
+          raise
+            (BCH_failure
+               (LBLOCK [STR "Invalid ikind specifier size: "; STR s])))
   
   
 class register_mcts_t:[register_t] mfts_int =
@@ -162,8 +170,12 @@ object
     | MIPSSpecialRegister _ -> "ps"
     | MIPSFloatingPointRegister _ -> "pfp"
     | ARMRegister _ -> "a"
+    | ARMSpecialRegister _ -> "as"
+    | ARMFloatingPointRegister _ -> "afp"
 
-  method tags = [ "a"; "c"; "ctr"; "d"; "dbg"; "f"; "m"; "s"; "x" ; "p" ; "ps" ; "pfp" ]
+  method tags = [
+      "a"; "afp"; "as"; "c"; "ctr"; "d"; "dbg"; "f";
+      "m"; "s"; "x" ; "p" ; "ps" ; "pfp"]
 
 end
 

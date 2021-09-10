@@ -35,12 +35,16 @@ open BCHLibTypes
 val calling_convention_mfts: calling_convention_t mfts_int
 val arg_io_mfts: arg_io_t mfts_int
 val formatstring_type_mfts: formatstring_type_t mfts_int
+
 val eflag_mfts: eflag_t mfts_int
 val cpureg_mfts: cpureg_t mfts_int
 val segment_mfts: segment_t mfts_int
+
 val mips_reg_mfts: mips_reg_t mfts_int
 val mips_special_reg_mfts: mips_special_reg_t mfts_int
+
 val arm_reg_mfts: arm_reg_t mfts_int
+val arm_special_reg_mfts: arm_special_reg_t mfts_int
 
 val ikind_mfts: ikind mfts_int
 val fkind_mfts: fkind mfts_int
