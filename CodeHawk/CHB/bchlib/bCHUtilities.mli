@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,9 +46,9 @@ val track_function:
   -> doubleword_int                     (* function address *)
   -> pretty_t -> unit
 
-val get_date_and_time: unit -> string                 (* raises Invalid_argument *)
+val get_date_and_time: unit -> string           (* raises Invalid_argument *)
 
-val make_date_and_time_string: Unix.tm -> string      (* raises Invalid_argument *)
+val make_date_and_time_string: Unix.tm -> string (* raises Invalid_argument *)
 
 val today:string
 
@@ -71,17 +73,23 @@ val get_summary_file: (string * Zip.in_file) list -> string -> string
 val get_file_from_jar: (string * Zip.in_file) list -> string -> string option
 
 val apply_to_xml_jar:
-  (string -> string -> unit) -> (Zip.in_file -> Zip.entry -> unit) -> Zip.in_file -> unit
+  (string -> string -> unit)
+  -> (Zip.in_file -> Zip.entry -> unit)
+  -> Zip.in_file -> unit
 
-val add_to_sumtype_tables : ('a,string) Hashtbl.t -> (string,'a) Hashtbl.t -> 'a -> string -> unit
+val add_to_sumtype_tables:
+  ('a,string) Hashtbl.t -> (string,'a) Hashtbl.t -> 'a -> string -> unit
+
 val get_string_from_table : string -> ('a,string) Hashtbl.t -> 'a -> string
 val get_sumtype_from_table: string -> (string,'a) Hashtbl.t -> string -> 'a
 val is_string_of_sumtype  : (string,'a) Hashtbl.t -> string -> bool
 val get_sumtype_table_keys: ('a,string) Hashtbl.t -> 'a list
 
 val interval_compare : interval_t -> interval_t -> int
-val list_compare     : 'a list -> 'a list -> ('a -> 'a -> int) -> int
-val optvalue_compare : 'a option -> 'a option -> ('a -> 'a -> int) -> int
+
+val list_compare: 'a list -> 'a list -> ('a -> 'a -> int) -> int
+
+val optvalue_compare: 'a option -> 'a option -> ('a -> 'a -> int) -> int
 
 val has_control_characters: string -> bool
 val hex_string: string -> string

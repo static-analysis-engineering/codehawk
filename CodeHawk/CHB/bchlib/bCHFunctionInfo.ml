@@ -784,6 +784,9 @@ object (self)
   method mk_arm_register_variable (reg:arm_reg_t) =
     self#mk_register_variable (ARMRegister reg)
 
+  method mk_arm_fp_register_variable (size: int) (index: int) =
+    self#mk_register_variable (ARMFloatingPointRegister (size, index))
+
   method mk_bridge_value (address:ctxt_iaddress_t) (argnr:int) =
     self#mk_variable (varmgr#make_bridge_value address argnr)
       

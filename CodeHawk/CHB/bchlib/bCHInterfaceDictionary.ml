@@ -50,11 +50,15 @@ let bd = BCHDictionary.bdictionary
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
-    LBLOCK [ STR "Type " ; STR name ; STR " tag: " ; STR tag ;
-             STR " not recognized. Accepted tags: " ;
-             pretty_print_list accepted (fun s -> STR s) "" ", " "" ] in
+    LBLOCK [
+        STR "Type ";
+        STR name;
+        STR " tag: ";
+        STR tag;
+        STR " not recognized. Accepted tags: ";
+        pretty_print_list accepted (fun s -> STR s) "" ", " ""] in
   begin
-    ch_error_log#add "serialization tag" msg ;
+    ch_error_log#add "serialization tag" msg;
     raise (BCH_failure msg)
   end
 
