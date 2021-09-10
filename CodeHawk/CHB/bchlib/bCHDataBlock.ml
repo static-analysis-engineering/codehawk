@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +43,10 @@ open BCHStreamWrapper
 open BCHByteUtilities
 
 
+module H = Hashtbl
+module P = Pervasives
+
+
 let extract_offset_range s =
   let ch = make_pushback_stream s in
   let len = String.length s in
@@ -64,6 +70,7 @@ class data_block_t
 object (self:'a)
 
   val mutable data_string = None
+  val mutable data_table = H.create 3
   val mutable name = bname
 
   method compare (other:'a) =
@@ -76,9 +83,12 @@ object (self:'a)
     
   method get_end_address   = end_address
 
-  method get_name          = name
+  method get_name = name
 
-  method set_name s = name <- s 
+  method set_name s = name <- s
+
+  method set_data_table (items: (string * string) list) =
+    List.iter (fun (a, s) -> H.add data_table a s) items
 
   method get_length = 
     try
@@ -167,6 +177,11 @@ object (self:'a)
 	(List.map (fun (a,v) -> "  " ^ a#to_hex_string ^ "  " ^ v) (List.rev !records))
     end
 
+  method private data_table_to_string =
+    let items =
+      List.sort P.compare (H.fold (fun a s acc -> (a, s)::acc) data_table []) in
+    String.concat "\n" (List.map (fun (a, s) -> a ^ "  " ^ s) items)
+
   method private rawdata_to_string =
     let len = self#get_length in
     let data = self#get_data_string in
@@ -214,6 +229,8 @@ object (self:'a)
 	     self#seh4_scopetable_to_string
            else if name = "seh4" then
              self#seh4_to_string
+           else if name = "data_table" then
+             self#data_table_to_string
 	   else if len > 1024 then
 	     self#largerawdata_to_string
 	   else
