@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,10 +43,10 @@ object
 end
 
 class version_info_t 
-  ~(version:string) 
-  ~(date:string) 
   ?(maxfilesize=None)
-  ?(licensee=None) =
+  ?(licensee=None)
+  ~(version:string)
+  ~(date:string) =
 object (self)
 
   method get_version = version
@@ -56,27 +58,36 @@ object (self)
   method get_maxfilesize = maxfilesize
 
   method toPretty =
-    LBLOCK [ STR (string_repeat "=" 80) ; NL ;
-	     STR "* CodeHawk Binary Analyzer. Version " ; STR self#get_version ; NL ;
-	     STR "* Date: " ; STR self#get_date ; NL ;
-	     (match self#get_licensee with
-	     | Some u -> LBLOCK [ STR "* " ; STR (string_repeat "-" 78) ; NL ;
-				  STR "* Licensed to: " ; STR u ; NL ]
-	     | _ -> STR "") ;
-	     (match self#get_maxfilesize with
-	     | Some v -> LBLOCK [ STR "* Maximum file size allowed: " ; INT v ;
-				  STR " bytes" ; NL ]
-	     | _ -> STR "") ;
-	     STR (string_repeat "-" 80) ; NL ; 
-	     STR "* Changes since version 0.2.0:" ; NL ;
-	     STR "* - enhanced MIPS functionality" ; NL ;
-	     STR (string_repeat "=" 80) ; NL ]
+    LBLOCK [
+        STR (string_repeat "=" 80); NL ;
+	STR "* CodeHawk Binary Analyzer. Version ";
+        STR self#get_version; NL ;
+	STR "* Date: ";
+        STR self#get_date ; NL ;
+	(match self#get_licensee with
+	 | Some u ->
+            LBLOCK [
+                STR "* ";
+                STR (string_repeat "-" 78); NL;
+		STR "* Licensed to: "; STR u; NL]
+	 | _ -> STR "");
+	(match self#get_maxfilesize with
+	 | Some v ->
+            LBLOCK [
+                STR "* Maximum file size allowed: ";
+                INT v;
+		STR " bytes"; NL]
+	 | _ -> STR "");
+	STR (string_repeat "-" 80); NL;
+	STR "* Changes since version 0.3.0:"; NL;
+	STR "* - support for arm32/thumb2"; NL;
+	STR (string_repeat "=" 80); NL]
 
 end
 
 
 let version = new version_info_t 
-  ~version:"0.3.0"
-  ~date:"Feb 12, 2021"
+  ~version:"0.4.0_20210910"
+  ~date:"Sept 10, 2021"
   ~licensee: None
   ~maxfilesize: None
