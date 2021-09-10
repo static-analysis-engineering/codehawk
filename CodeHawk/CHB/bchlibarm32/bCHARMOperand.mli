@@ -56,6 +56,11 @@ val arm_dmb_option_from_int_op: int -> arm_operand_int
   
 val arm_register_op: arm_reg_t -> arm_operand_mode_t -> arm_operand_int
 
+val arm_special_register_op:
+  arm_special_reg_t -> arm_operand_mode_t -> arm_operand_int
+
+val arm_fp_register_op: int -> int -> arm_operand_mode_t -> arm_operand_int
+
 val arm_register_list_op: arm_reg_t list -> arm_operand_mode_t -> arm_operand_int
 
 val arm_immediate_op: immediate_int -> arm_operand_int
@@ -103,7 +108,8 @@ val mk_arm_absolute_target_op:
   -> arm_operand_int
 
 val mk_arm_offset_address_op:
-  arm_reg_t
+  ?align:int    (* alignment of value in arm_reg *)
+  -> arm_reg_t
   -> arm_memory_offset_t   (* nonnegative offset *)
   -> isadd:bool
   -> iswback:bool

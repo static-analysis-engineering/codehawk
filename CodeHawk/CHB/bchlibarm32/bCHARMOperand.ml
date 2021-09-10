@@ -70,6 +70,7 @@ let e16  = e8 * e8
 let e31 = e16 * e15
 let e32 = e16 * e16
 
+
 let arm_operand_mode_to_string = function RD -> "RD" | WR -> "WR" | RW -> "RW"
 
 let dmb_option_to_string = dmb_option_mfts#ts
@@ -114,6 +115,16 @@ object (self:'a)
 
   method get_kind = kind
   method get_mode = mode
+
+  method get_size =
+    match kind with
+    | ARMReg r -> 4
+    | ARMFPReg (size, _) -> size / 8
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand size not implemented for "; self#toPretty]))
 
   method get_register =
     match kind with
@@ -160,13 +171,14 @@ object (self:'a)
             (LBLOCK [ STR "Operand is not an absolute address: " ;
                       self#toPretty ]))
 
-  method get_pc_relative_address (va: doubleword_int) =
+  method get_pc_relative_address (va: doubleword_int) (pcoffset: int) =
     match kind with
-    | ARMOffsetAddress (ARPC, ARMImmOffset off,isadd, _, _) ->
+    | ARMOffsetAddress (ARPC, align, ARMImmOffset off, isadd, _, _) ->
+       let va = int_to_doubleword (((va#to_int + pcoffset) / align) * align) in
        if isadd then
-         va#add_int (8 + off)
+         va#add_int off
        else
-         va#add_int (8 - off)
+         va#add_int (-off)
     | _ ->
        raise
          (BCH_failure
@@ -184,7 +196,7 @@ object (self:'a)
 
   method to_address (floc: floc_int): xpr_t =
     match kind with
-    | ARMOffsetAddress (r, offset, isadd, iswback, isindex) ->
+    | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex) ->
        let env = floc#f#env in
        let memoff =
          if isindex then
@@ -195,7 +207,13 @@ object (self:'a)
          else
            zero_constant_expr in
        let rvar = env#mk_arm_register_variable r in
-       let addr = XOp (XPlus, [XVar rvar; memoff]) in
+       let rvarx =
+         if align > 1 then
+           let alignx = int_constant_expr align in
+           XOp (XMult, [XOp (XDiv, [XVar rvar; alignx]); alignx])
+         else
+           XVar rvar in
+       let addr = XOp (XPlus, [rvarx; memoff]) in
        floc#inv#rewrite_expr addr env#get_variable_comparator
     | _ ->
        raise
@@ -205,7 +223,7 @@ object (self:'a)
 
   method to_updated_offset_address (floc: floc_int): xpr_t =
     match kind with
-    | ARMOffsetAddress (r, offset, isadd, iswback, isindex) ->
+    | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex) ->
        let env = floc#f#env in
        if isindex then
          self#to_address floc
@@ -228,7 +246,15 @@ object (self:'a)
     let env = floc#f#env in
     match kind with
     | ARMReg r -> env#mk_arm_register_variable r
-    | ARMOffsetAddress (r, offset, isadd, iswback, isindex) ->
+    | ARMFPReg (size, r) -> env#mk_arm_fp_register_variable size r
+    | ARMSpecialReg r ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Semantics of special register ";
+                 STR (arm_special_reg_to_string r);
+                 STR " should be handled separaly"]))
+    | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex) ->
        (match offset with
         | ARMImmOffset _ ->
            let rvar = env#mk_arm_register_variable r in
@@ -241,7 +267,7 @@ object (self:'a)
                   (BCH_failure
                      (LBLOCK [STR "to_variable: offset not implemented: ";
                               self#toPretty])) in
-           floc#get_memory_variable_1 rvar memoff
+           floc#get_memory_variable_1 ~align rvar memoff
         | ARMShiftedIndexOffset _ ->
            let rvar = env#mk_arm_register_variable r in
            (match (offset, isadd) with
@@ -285,6 +311,29 @@ object (self:'a)
     | ARMImmediate imm ->
        big_int_constant_expr imm#to_big_int
     | ARMReg _ -> XVar (self#to_variable floc)
+    | ARMSpecialReg r ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Semantics of special register ";
+                 STR (arm_special_reg_to_string r);
+                 STR " should be handled separately"]))
+    | ARMFPReg _ -> XVar (self#to_variable floc)
+    | ARMOffsetAddress (ARPC, align, ARMImmOffset offset, true, false, false) ->
+       let pc = floc#env#mk_arm_register_variable ARPC in
+       let pcx =
+         if align > 1 then
+           let alignx = int_constant_expr align in
+           XOp (XMult, [XOp (XDiv, [XVar pc; alignx]); alignx])
+         else
+           XVar pc in
+       let addr = XOp (XPlus, [pcx; int_constant_expr offset]) in
+       let addr = floc#inv#rewrite_expr addr floc#env#get_variable_comparator in
+       let n2d = numerical_to_doubleword in
+       (match addr with
+        | XConst (IntConst n) when elf_header#is_program_address (n2d n) ->
+           num_constant_expr (elf_header#get_program_value (n2d n))#to_numerical
+        | _ -> XVar (self#to_variable floc))
     | ARMOffsetAddress _ -> XVar (self#to_variable floc)
     | ARMAbsolute a when elf_header#is_program_address a ->
        num_constant_expr a#to_numerical
@@ -331,11 +380,12 @@ object (self:'a)
             (LBLOCK [STR "Immediate cannot be a lhs: ";
                      self#toPretty]))
     | ARMReg _ -> (self#to_variable floc, [])
+    | ARMFPReg _ -> (self#to_variable floc, [])
     | ARMOffsetAddress _ -> (self#to_variable floc, [])
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [STR "Not implemented"]))
+            (LBLOCK [STR "Lhs not implemented for "; self#toPretty]))
 
   method to_multiple_lhs (floc: floc_int) =
     match kind with
@@ -351,6 +401,9 @@ object (self:'a)
 
   method is_register = match kind with ARMReg _ -> true | _ -> false
 
+  method is_special_register =
+    match kind with ARMSpecialReg _ -> true | _ -> false
+
   method is_register_list = match kind with ARMRegList _ -> true | _ -> false
 
   method is_read = match mode with RW | RD -> true | _ -> false
@@ -362,7 +415,7 @@ object (self:'a)
 
   method is_pc_relative_address =
     match kind with
-    | ARMOffsetAddress (ARPC, ARMImmOffset _, _, _, _) -> true
+    | ARMOffsetAddress (ARPC, _, ARMImmOffset _, _, _, _) -> true
     | _ -> false
 
   method includes_pc =
@@ -372,13 +425,26 @@ object (self:'a)
 
   method is_offset_address_writeback =
     match kind with
-    | ARMOffsetAddress (_, _, _, true, _) -> true
+    | ARMOffsetAddress (_, _, _, _, true, _) -> true
     | _ -> false
 
   method toString =
     match kind with
     | ARMDMBOption o -> dmb_option_to_string o
     | ARMReg r -> armreg_to_string r
+    | ARMSpecialReg r -> arm_special_reg_to_string r
+    | ARMFPReg (size, index) ->
+       let r = string_of_int index in
+       (match size with
+        | 32 -> "S" ^ r
+        | 64 -> "D" ^ r
+        | 128 -> "Q" ^ r
+        | _ ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Size of floating point register not recognized: ";
+                     INT size])))
     | ARMRegList l ->
        "{" ^ String.concat "," (List.map armreg_to_string l) ^ "}"
     | ARMShiftedReg (r,rs) ->
@@ -392,14 +458,14 @@ object (self:'a)
     | ARMAbsolute addr -> addr#to_hex_string
     | ARMMemMultiple (r,n) ->
        (armreg_to_string r) ^ "<" ^ (string_of_int n) ^ ">"
-    | ARMOffsetAddress (reg,offset,isadd,iswback,isindex) ->
+    | ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex) ->
        let poffset = arm_memory_offset_to_string offset in
        let poffset = if isadd then poffset else "-" ^ poffset in
-       (match (iswback,isindex) with
-        | (false,false) -> "??[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
-        | (false,true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
-        | (true,true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]!"
-        | (true,false) -> "[" ^ (armreg_to_string reg) ^ "], " ^ poffset)
+       (match (iswback, isindex) with
+        | (false, false) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
+        | (false, true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
+        | (true, true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]!"
+        | (true, false) -> "[" ^ (armreg_to_string reg) ^ "], " ^ poffset)
 
   method toPretty = STR self#toString
 
@@ -420,6 +486,12 @@ let arm_dmb_option_from_int_op (option:int) =
 
 let arm_register_op (r:arm_reg_t) (mode:arm_operand_mode_t) =
   new arm_operand_t (ARMReg r) mode
+
+let arm_fp_register_op (size: int) (index: int) (mode: arm_operand_mode_t) =
+  new arm_operand_t (ARMFPReg (size, index)) mode
+
+let arm_special_register_op (r: arm_special_reg_t) (mode: arm_operand_mode_t) =
+  new arm_operand_t (ARMSpecialReg r) mode
 
 let arm_register_list_op (l:arm_reg_t list) (mode:arm_operand_mode_t) =
   new arm_operand_t (ARMRegList l) mode
@@ -491,12 +563,13 @@ let mk_arm_absolute_target_op
   arm_absolute_op tgtaddr mode
 
 let mk_arm_offset_address_op
+      ?(align=1)
       (reg:arm_reg_t)
       (offset:arm_memory_offset_t)
       ~(isadd:bool)
       ~(iswback:bool)
       ~(isindex:bool) =
-  new arm_operand_t (ARMOffsetAddress (reg,offset,isadd,iswback,isindex))
+  new arm_operand_t (ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex))
 
 let mk_arm_mem_multiple_op (reg:arm_reg_t) (n:int) =
   new arm_operand_t (ARMMemMultiple (reg,n))
