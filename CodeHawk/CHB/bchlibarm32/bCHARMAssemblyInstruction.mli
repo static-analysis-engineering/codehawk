@@ -31,5 +31,10 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
+
 val make_arm_assembly_instruction:
-  doubleword_int -> arm_opcode_t -> string -> arm_assembly_instruction_int
+  doubleword_int   (* instruction address *)
+  -> bool          (* is-arm: true if arm32, false if thumb2 *)
+  -> arm_opcode_t
+  -> string        (* instruction bytes *)
+  -> arm_assembly_instruction_int
