@@ -58,10 +58,10 @@ let numArrays = 1000
 let arrayLength = 100000
 
 let arm_instructions =
-  ref (Array.make 1 (make_arm_assembly_instruction wordzero OpInvalid ""))
+  ref (Array.make 1 (make_arm_assembly_instruction wordzero true OpInvalid ""))
 
 let arm_instructions =
-  Array.make numArrays (Array.make 1 (make_arm_assembly_instruction wordzero OpInvalid ""))
+  Array.make numArrays (Array.make 1 (make_arm_assembly_instruction wordzero true OpInvalid ""))
 
 let initialize_arm_instructions (len:int) =
   let _ =
@@ -73,7 +73,7 @@ let initialize_arm_instructions (len:int) =
   begin
     while !remaining > 0 && !index < numArrays do
       arm_instructions.(!index) <-
-        Array.make arrayLength (make_arm_assembly_instruction wordzero OpInvalid "");
+        Array.make arrayLength (make_arm_assembly_instruction wordzero true OpInvalid "");
       remaining := !remaining - arrayLength;
       index := !index + 1
     done;
@@ -90,7 +90,7 @@ let set_instruction (index:int) (instr:arm_assembly_instruction_int) =
 
 let initialize_instruction_segment (endindex:int) =
   for index = 0 to (endindex - 1) do
-    set_instruction index (make_arm_assembly_instruction wordzero OpInvalid "")
+    set_instruction index (make_arm_assembly_instruction wordzero true OpInvalid "")
   done
 
 let get_instruction (index:int) =
@@ -153,13 +153,13 @@ object (self)
       let startindex = (startaddr#subtract codeBase)#to_int in
       let startinstr =
         make_arm_assembly_instruction
-          startaddr (NotCode (Some (DataBlock db))) "" in
+          startaddr true (NotCode (Some (DataBlock db))) "" in
       let endindex = (endaddr#subtract codeBase)#to_int in
       begin
         set_instruction startindex startinstr;
         for i = startindex + 1 to endindex - 1 do
           set_instruction
-            i (make_arm_assembly_instruction (codeBase#add_int i) (NotCode None) "")
+            i (make_arm_assembly_instruction (codeBase#add_int i) true (NotCode None) "")
         done
       end
 
@@ -170,16 +170,20 @@ object (self)
       let instr = get_instruction index in
       if instr#get_address#equal wordzero then
         let newInstr =
-          make_arm_assembly_instruction (codeBase#add_int index) OpInvalid "" in
-        begin set_instruction index newInstr ; newInstr end
+          make_arm_assembly_instruction (codeBase#add_int index) true OpInvalid "" in
+        begin set_instruction index newInstr; newInstr end
       else
         instr
     with
     | Invalid_argument _ ->
-       raise (BCH_failure
-                (LBLOCK [ STR "at index: Instruction index out of range: " ;
-                          INT index ;
-                          STR " (length is " ; INT length ; STR ")" ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "at index: Instruction index out of range: ";
+                 INT index ;
+                 STR " (length is ";
+                 INT length;
+                 STR ")"]))
 
   method at_address (va:doubleword_int) =
     try
@@ -339,39 +343,36 @@ object (self)
         (fun va instr ->
           try
             if filter instr then
-              let statusString = Bytes.make 4 ' ' in
-              let _ =
-                if functions_data#is_function_entry_point va then
-                  Bytes.set statusString 0 'F' in
-              let  _ =
-                if instr#is_block_entry then
-                  Bytes.set statusString 2 'B' in
-              let _ =
-                if instr#is_aggregate then
-                  Bytes.set statusString 2 'A' in
-              let _ =
-                if instr#is_subsumed then
-                  Bytes.set statusString 2 'S' in
-              let instrbytes = instr#get_instruction_bytes in
-              let spacedstring = byte_string_to_spaced_string instrbytes in
-              let len = String.length spacedstring in
-              let bytestring =
-                if len <= 16 then
-                  let s = Bytes.make 16 ' ' in
-                  begin
-                    Bytes.blit (Bytes.of_string spacedstring) 0 s 0 len;
-                    Bytes.to_string s
-                  end
-                else
-                  spacedstring ^ "\n" ^ (String.make 24 ' ') in
               match instr#get_opcode with
-              | OpInvalid  -> ()
-              (* let line = (Bytes.to_string statusString) ^ va#to_hex_string
-                 ^ "  " ^ bytestring ^ "  **invalid**" in
-               li  nes := line :: !lines *)
+              | OpInvalid -> ()
               | NotCode None -> ()
               | NotCode (Some b) -> lines := (not_code_to_string b) :: !lines
               | _ ->
+                 let statusString = Bytes.make 4 ' ' in
+                 let _ =
+                   if functions_data#is_function_entry_point va then
+                     Bytes.set statusString 0 'F' in
+                 let  _ =
+                   if instr#is_block_entry then
+                     Bytes.set statusString 2 'B' in
+                 let _ =
+                   if instr#is_aggregate then
+                     Bytes.set statusString 2 'A' in
+                 let _ =
+                   if instr#is_subsumed then
+                     Bytes.set statusString 2 'S' in
+                 let instrbytes = instr#get_instruction_bytes in
+                 let spacedstring = byte_string_to_spaced_string instrbytes in
+                 let len = String.length spacedstring in
+                 let bytestring =
+                   if len <= 16 then
+                     let s = Bytes.make 16 ' ' in
+                     begin
+                       Bytes.blit (Bytes.of_string spacedstring) 0 s 0 len;
+                       Bytes.to_string s
+                     end
+                   else
+                     spacedstring ^ "\n" ^ (String.make 24 ' ') in
                  let _ = 
                    if !firstNew then
                      begin lines := "\n" :: !lines ; firstNew := false end in
@@ -392,7 +393,7 @@ object (self)
           | _ ->
              raise
                (BCH_failure
-                  (LBLOCK [STR "Error in instruction: "; va#toPretty;
+                  (LBLOCK [STR "Unknown error in instruction: "; va#toPretty;
                            STR ": "; STR instr#toString])));
       String.concat "\n" (List.rev !lines)
     end
@@ -437,12 +438,9 @@ let set_data_references (lst: doubleword_int list) =
              get tl [ hd ] blocks
            else
              let db = make_data_block firstaddr (lastaddr#add_int 4) "" in
-             let sdata =
-               String.concat
-                 ""
-                 (List.map (fun a ->
-                      (!arm_assembly_instructions#at_address a)#get_instruction_bytes) w) in
-             let _ = db#set_data_string sdata in
+             let datalen = (List.length w) * 4 in
+             let datastring = elf_header#get_xsubstring firstaddr datalen in
+             let _ = db#set_data_string datastring in
              get tl [ hd ] (db::blocks)) in
   let datablocks = get lst [] [] in
   !arm_assembly_instructions#set_not_code datablocks

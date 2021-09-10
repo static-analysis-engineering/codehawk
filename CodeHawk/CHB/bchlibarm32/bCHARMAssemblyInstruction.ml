@@ -50,9 +50,10 @@ open BCHARMOpcodeRecords
 open BCHARMTypes
 
 class arm_assembly_instruction_t
-        (vaddr:doubleword_int)
-        (opcode:arm_opcode_t)
-        (instruction_bytes:string): arm_assembly_instruction_int =
+        (vaddr: doubleword_int)
+        (is_arm: bool)
+        (opcode: arm_opcode_t)
+        (instruction_bytes: string): arm_assembly_instruction_int =
 object (self)
      
   val mutable block_entry = false
@@ -90,6 +91,8 @@ object (self)
   method set_subsumed = subsumed <- true
 
   method is_subsumed = subsumed
+
+  method is_arm32 = is_arm
 
   method is_block_entry = block_entry
 
@@ -153,7 +156,8 @@ object (self)
 end
 
 let make_arm_assembly_instruction
-      (va:doubleword_int)
-      (opcode:arm_opcode_t)
-      (instruction_bytes:string) =
-  new arm_assembly_instruction_t va opcode instruction_bytes
+      (va: doubleword_int)
+      (is_arm: bool)
+      (opcode: arm_opcode_t)
+      (instruction_bytes: string): arm_assembly_instruction_int =
+  new arm_assembly_instruction_t va is_arm opcode instruction_bytes
