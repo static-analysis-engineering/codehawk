@@ -67,6 +67,7 @@ open BCHARMAssemblyFunction
 open BCHARMAssemblyFunctions
 open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
+open BCHARMPseudocode
 open BCHARMOpcodeRecords
 open BCHARMTypes
 open BCHDisassembleARMInstruction
@@ -91,7 +92,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   let add_instruction position opcode bytes =
     let index = position + displacement in 
     let addr = base#add_int position in
-    let instr = make_arm_assembly_instruction addr opcode bytes in
+    let instr = make_arm_assembly_instruction addr (!mode="arm") opcode bytes in
     begin
       !arm_assembly_instructions#set index instr ;
       (* opcode_monitor#check_instruction instr *)
@@ -284,11 +285,17 @@ let disassemble_arm_sections () =
          0x38f20  0b ca 8c e2       ADD      R12, R12, #0xb000
          0x38f24  e8 f0 bc e5       LDR      PC, [R12], #232
 
+     F B 0x674    00 c6 8f e2       ADR      R12, 0x67c
+         0x678    11 ca 8c e2       ADD      R12, R12, #0x11000
+         0x67c    98 f9 bc e5       LDR      PC, [R12, #2456]!
+
+
  *)
 let is_library_stub faddr =
   if elf_header#is_program_address faddr
      && elf_header#has_xsubstring faddr 12 then
-    let bytestring = byte_string_to_printed_string (elf_header#get_xsubstring faddr 12) in
+    let bytestring =
+      byte_string_to_printed_string (elf_header#get_xsubstring faddr 12) in
     let instrsegs = [
         "\\(..\\)c68fe2\\(..\\)ca8ce2\\(....\\)bce5"
       ] in
@@ -297,6 +304,44 @@ let is_library_stub faddr =
         Str.string_match regex bytestring 0) instrsegs
   else
     false
+
+
+let set_library_stub_name faddr =
+  if elf_header#is_program_address faddr then
+    let to_int h = Int64.to_int (Int64.of_string h) in
+    let bytestring =
+      byte_string_to_printed_string (elf_header#get_xsubstring faddr 12) in
+    let regex = Str.regexp "\\(..\\)c68fe2\\(..\\)ca8ce2\\(..\\)f\\(.\\)bce5" in
+    if Str.string_match regex bytestring 0 then
+      let imm8 = "0x" ^ (Str.matched_group 1 bytestring) in
+      let imm8 = to_int imm8 in
+      let offset1 = faddr#add_int ((arm_expand_imm 0 imm8) + 8) in
+      let imm8 = "0x" ^ (Str.matched_group 2 bytestring) in
+      let imm8 = to_int imm8 in
+      let offset2 = arm_expand_imm 10 imm8 in
+      let imm8 = Str.matched_group 3 bytestring in
+      let imm4 = "0x" ^ (Str.matched_group 4 bytestring) in
+      let imm12 = imm4 ^ imm8 in
+      let imm12 = to_int imm12 in
+      let addr = offset1#add_int (offset2 + imm12) in
+      if functions_data#has_function_name addr then
+        let fndata = functions_data#add_function faddr in
+        begin
+          fndata#add_name (functions_data#get_function addr)#get_function_name;
+          fndata#set_library_stub;
+          chlog#add
+            "ELF library stub relocated"
+            (LBLOCK [faddr#toPretty; STR ": "; STR fndata#get_function_name])
+        end
+      else
+        chlog#add
+          "no stub name found"
+          (LBLOCK [faddr#toPretty; STR " -> "; addr#toPretty])
+    else
+      chlog#add "no string match for stub" faddr#toPretty
+  else
+    chlog#add "presumed library stub not a program address" faddr#toPretty
+
 
 let get_so_target (tgtaddr:doubleword_int) (instr:arm_assembly_instruction_int) =
   if functions_data#has_function_name tgtaddr then
@@ -308,9 +353,15 @@ let get_so_target (tgtaddr:doubleword_int) (instr:arm_assembly_instruction_int) 
   else
     None
 
+
+(* The Load Literal instruction loads a value from a location specified
+   relative to the PC. It is common for these locations to be interspersed
+   between the functions, that is, in the text section. This function marks
+   these locations as addresses, so they are not disassembled.
+ *)
 let collect_data_references () =
   let table = H.create 11 in
-  let add (a:doubleword_int) (instr:arm_assembly_instruction_int) =
+  let add (a:doubleword_int) (instr: arm_assembly_instruction_int) =
     let hxa = a#to_hex_string in
     let entry =
       if H.mem table hxa then
@@ -323,12 +374,25 @@ let collect_data_references () =
       (fun va instr ->
         match instr#get_opcode with
         | LoadRegister (_,_,_, mem, _) when mem#is_pc_relative_address ->
-           let a = mem#get_pc_relative_address va in
+           let pcoffset = if instr#is_arm32 then 8 else 4 in
+           let a = mem#get_pc_relative_address va pcoffset in
            if !arm_assembly_instructions#is_code_address a then
              add a instr
            else
              ch_error_log#add
                "LDR from non-code-address"
+               (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
+        | VLoadRegister (_, vd, _, mem) when mem#is_pc_relative_address ->
+           let pcoffset = if instr#is_arm32 then 8 else 4 in
+           let a = mem#get_pc_relative_address va pcoffset in
+           if !arm_assembly_instructions#is_code_address a then
+             begin
+               add a instr;
+               if (vd#get_size = 8) then add (a#add_int 4) instr;
+             end
+           else
+             ch_error_log#add
+               "VLDR from non-code-address"
                (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
         | _ -> ());
     H.fold (fun k v a -> (k,v)::a) table []
@@ -633,12 +697,6 @@ let construct_assembly_function (count:int) (faddr:doubleword_int) =
                           faddr#toPretty ; STR ": " ; p ]))
          end
 
-let set_library_stub_name faddr =
-  begin
-    chlog#add "set library stub (no name)" (faddr#toPretty);
-    pverbose [ STR "Encountered set library stub name: " ;
-               faddr#toPretty ; NL ]
-  end
 
 let record_call_targets_arm () =
   arm_assembly_functions#itera
