@@ -131,6 +131,8 @@ object
     match k with
     | ARMDMBOption _ -> "d"
     | ARMReg _ -> "r"
+    | ARMSpecialReg _ -> "sr"
+    | ARMFPReg _ -> "f"
     | ARMRegList _ -> "l"
     | ARMRegBitSequence _ -> "b"
     | ARMShiftedReg _ -> "s"
@@ -139,7 +141,7 @@ object
     | ARMMemMultiple _ -> "m"
     | ARMOffsetAddress _ -> "o"
 
-  method tags = [ "a"; "b"; "d"; "i"; "l"; "m"; "o"; "r"; "r"; "s" ]
+  method tags = ["a"; "b"; "d"; "f"; "i"; "l"; "m"; "o"; "r"; "r"; "s"; "sr"]
 
 end
 
