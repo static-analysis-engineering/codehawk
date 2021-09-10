@@ -397,9 +397,25 @@ let translate_arm_instruction
       | _ -> x in
     simplify_xpr (expand xpr) in
   let default newcmds =
+    (* arm reference A2.3 (page A2-45):
+       PC, the program counter
+       - when executing an ARM instruction, PC reads as the address of the
+         current instruction plus 8;
+       - when executing a Thumb instruction, PC reads as the address of the
+         current instruction plus 4
+
+       Here the pc is assigned for the next instruction, so it is set to
+       the address of the current instruction plus 12 (8+4) for ARM and to
+       the length of the current instruction + 4 for Thumb.
+     *)
     let floc = get_floc loc in
     let pcv = (pc_r RD)#to_variable floc in
-    let iaddr12 = (loc#i#add_int 12)#to_numerical in
+    let iaddr12 =
+      if instr#is_arm32 then
+        (loc#i#add_int 12)#to_numerical
+      else
+        let incr = (String.length instr#get_instruction_bytes) + 4 in
+        (loc#i#add_int incr)#to_numerical in
     let pcassign = floc#get_assign_commands pcv (XConst (IntConst iaddr12)) in
     ([], [], cmds @ frozenAsserts @ (invop :: (newcmds @ pcassign))) in
   let make_conditional_commands (c: arm_opcode_cc_t) (cmds: cmd_t list) =
@@ -842,7 +858,7 @@ let translate_arm_instruction
      let (lhs, lhscmds) = dst#to_lhs floc in
      let cmd = floc#get_assign_commands lhs rhs in
      (match c with
-      | ACCAlways ->  default (cmd @ lhscmds)
+      | ACCAlways -> default (cmd @ lhscmds)
       | _ -> make_conditional_commands c (cmd @ lhscmds))
 
   | MoveRegisterCoprocessor (_, _, _, dst, _, _, _) ->
@@ -1161,6 +1177,15 @@ let translate_arm_instruction
      let cmdslo = floc#get_abstract_commands vlo () in
      let cmdshi = floc#get_abstract_commands vhi () in
      default (cmdslo @ cmdshi)
+
+  | VMove (c, dst, src) ->
+     let floc = get_floc loc in
+     let rhs = src#to_expr floc in
+     let (lhs, lhscmds) = dst#to_lhs floc in
+     let cmd = floc#get_assign_commands lhs rhs in
+     (match c with
+      | ACCAlways -> default (cmd @ lhscmds)
+      | _ -> make_conditional_commands c (cmd @ lhscmds))
 
   | instr ->
      let _ =

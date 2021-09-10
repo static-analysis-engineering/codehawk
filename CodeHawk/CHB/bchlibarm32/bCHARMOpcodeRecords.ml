@@ -685,6 +685,57 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UMULL" c [rdlo; rdhi; rn; rm])
     }
+  | VCompare (nan, c, dt, op1, op2) ->
+     let mnemonic =
+       "VCMP" ^ (if nan then "E" else "") ^ "." ^ dt in
+     { mnemonic = mnemonic;
+       operands = [op1; op2];
+       flags_set = [];   (* floating point status word not yet supported *)
+       ccode = Some c;
+       ida_asm = (fun f -> f#opscc mnemonic c [op1; op2])
+     }
+  | VConvert (round, c, dstdt, srcdt, dst, src) ->
+     let mnemonic =
+       "VCVT" ^ (if round then "R" else "") ^ "." ^ dstdt ^ "." ^ srcdt in
+     { mnemonic = mnemonic;
+       operands = [dst; src];
+       flags_set = [];
+       ccode = Some c;
+       ida_asm = (fun f -> f#opscc mnemonic c [dst; src])
+     }
+  | VLoadRegister (c, dst, base, mem) -> {
+      mnemonic = "VLDR";
+      operands = [dst; base; mem];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "VLDR" c [dst; mem])
+    }
+  | VMove (c, dst, src) -> {
+      mnemonic = "VMOV";
+      operands = [dst; src];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "VMOV" c [dst; src])
+    }
+  | VMoveRegisterStatus (c, dst, src) ->
+     let flags_set =
+       if dst#is_special_register then
+         [APSR_N; APSR_Z; APSR_C; APSR_V]
+       else
+         [] in
+     { mnemonic = "VMRS";
+       operands = [dst; src];
+       flags_set = flags_set;
+       ccode = Some c;
+       ida_asm = (fun f -> f#opscc "VMRS" c [dst; src])
+     }
+  | VStoreRegister (c, src, base, mem) -> {
+      mnemonic = "VSTR";
+      operands = [src; base; mem];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "VSTR" c [src; mem])
+    }
   | NoOperation c -> {
       mnemonic = "NOP";
       operands = [];

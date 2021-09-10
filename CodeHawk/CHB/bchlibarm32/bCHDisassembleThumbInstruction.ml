@@ -214,6 +214,7 @@ module B = Big_int_Z
    11101101UD01<rn><vd>1010<-imm8->   VLDR
    11101101UD01<rn><vd>1011<-imm8->   VLDR
    11101110000o<vn><rt>1010N0010000   VMOV (register to single-prec register)
+   11101110<o>1<rn><rt><co><o>1<rm>   MRC (from coprocessor to arm core register)
    111011101D110100<vd>101sE1M0<vm>   VCMP, VCMPE
    111011101D11<i4><vd>101s0000<i4>   VMOV (immediate)
    111011101D111<o><vd>101so1M0<vm>   VCVT (floating point to integer)
@@ -457,6 +458,10 @@ let parse_thumb32_29
   let mk_imm5 i3 i2 = (i3 lsl 2) + i2 in
   let mk_imm_shift_reg reg ty imm =
     mk_arm_imm_shifted_register_op reg ty imm in
+  let prefix_bit (bit: int) (reg: int) =
+    if bit = 1 then reg + 16 else reg in
+  let postfix_bit (bit: int) (reg: int) =
+    if bit = 1 then (2 * reg) + 1 else 2 * reg in
   let op = b 26 21 in
   match op with
   (* 111010000100<rn><rt><rd><-imm8->   STREX *)
@@ -466,7 +471,9 @@ let parse_thumb32_29
      let rnreg = get_arm_reg (b 19 16) in
      let rn = arm_register_op rnreg in
      let offset = ARMImmOffset (b 7 0) in
-     let mem = mk_arm_offset_address_op rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+     let mem =
+       mk_arm_offset_address_op
+         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
      (* STREX<c> <Rd>, <Rt>, [<Rn>{, #<imm>}] *)
      StoreRegisterExclusive (cc, rd WR, rt RD, rn RD, mem WR)
 
@@ -476,7 +483,9 @@ let parse_thumb32_29
      let rnreg = get_arm_reg (b 19 16) in
      let rn = arm_register_op rnreg in
      let offset = ARMImmOffset (b 7 0) in
-     let mem = mk_arm_offset_address_op rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+     let mem =
+       mk_arm_offset_address_op
+         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
      (* LDREX<c> <Rt>, [<Rn>{, #<imm>}] *)
      LoadRegisterExclusive (cc, rt WR, rn RD, mem RD)
 
@@ -508,7 +517,9 @@ let parse_thumb32_29
      let rn = arm_register_op rnreg in
      let rm = arm_register_op rmreg in
      let offset = arm_index_offset rmreg in
-     let mem = mk_arm_offset_address_op rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+     let mem =
+       mk_arm_offset_address_op
+         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
      (* TBB<c> [<Rn>, <Rm>] *)
      TableBranchByte (cc, rn RD, rm RD, mem RD)
 
@@ -519,7 +530,9 @@ let parse_thumb32_29
      let rn = arm_register_op rnreg in
      let rm = arm_register_op rmreg in
      let offset = arm_index_offset rmreg in
-     let mem = mk_arm_offset_address_op rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+     let mem =
+       mk_arm_offset_address_op
+         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
      (* TBB<c> [<Rn>, <Rm>] *)
      TableBranchHalfword (cc, rn RD, rm RD, mem RD)
 
@@ -702,8 +715,55 @@ let parse_thumb32_29
      (* RSB{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
      ReverseSubtract (setflags, cc, rd WR, rn RD, rm RD, false)
 
+  (* 11101101UD00<rn><vd>1011<-imm8->   VSTR *)
+  | 44 when (b 20 20) = 0 && (b 11 9) = 5 ->
+     let dp = b 8 8 in
+     let size = if dp = 1 then 64 else 32 in
+     let d = b 6 6 in
+     let vd = b 15 12 in
+     let vd = prefix_bit d vd in
+     let vd = arm_fp_register_op size vd in
+     let rnreg = get_arm_reg (b 19 16) in
+     let rn = arm_register_op rnreg in
+     let imm = 4 * (b 7 0) in
+     let offset = ARMImmOffset imm in
+     let mem =
+       mk_arm_offset_address_op
+         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+     (* VSTR<c> <Dd>, [<Rn>{, #+/-<imm>}] *)
+     VStoreRegister (cc, vd RD, rn RD, mem WR)
+
+  (* 11101101UD01<rn><vd>1011<-imm8->   VLDR *)
+  | 44 when (b 20 20) = 1 && (b 11 9) = 5 ->
+     let dp = b 8 8 in
+     let size = if dp = 1 then 64 else 32 in
+     let d = b 6 6 in
+     let vd = b 15 12 in
+     let vd = prefix_bit d vd in
+     let vd = arm_fp_register_op size vd in
+     let rnreg = get_arm_reg (b 19 16) in
+     let rn = arm_register_op rnreg in
+     let imm = 4 * (b 7 0) in
+     let offset = ARMImmOffset imm in
+     let mem =
+       mk_arm_offset_address_op
+         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+     (* VLDR<c> <Dd>, [<Rn>{, #+/-<imm>}] *)
+     VLoadRegister (cc, vd RD, rn RD, mem WR)
+
+  (* 11101110000o<vn><rt>1010N0010000   VMOV *)
+  | 48 when (b 6 5) = 0 && (b 4 4) = 1 && (b 3 0) = 0->
+     let rt = arm_register_op (get_arm_reg (b 15 12)) in
+     let op = b 20 20 in
+     let n = b 7 7 in
+     let vn = b 19 16 in
+     let fpindex = if n = 1 then (2 * vn) + 1 else 2 * vn in
+     let vn = arm_fp_register_op 32 fpindex in
+     let (dst, src) = if op = 1 then (rt, vn) else (vn, rt) in
+     VMove (cc, dst WR, src RD)
+
   (* 11101110<1>1<cn><rt><co><2>1<cm>   MRC *)
-  | 48 when (b 20 20) = 1 && (b 4 4) = 1 ->
+  | 48 when (b 20 20) = 1 && (b 21 23) = 1 && (b 4 4) = 1 ->
      let rt = arm_register_op (get_arm_reg (b 15 12)) in
      let opc1 = 0 in
      let crn = b 19 16 in
@@ -712,6 +772,65 @@ let parse_thumb32_29
      let crm = b 3 0 in
      (* MRC<c> <coproc>, <opc1>, <Rt>, <CRn>, <CRm>, <opc2> *)
      MoveRegisterCoprocessor (cc, coproc, opc1, rt WR, crn, crm, opc2)
+
+  (* 111011101D110100<vd>101sE1M0<vm>   VCMP *)
+  | 53 when
+         (b 20 19) = 2
+         && (b 18 16) = 4
+         && (b 11 9) = 5
+         && (b 6 6) = 1
+         && (b 4 4) = 0 ->
+     let vd = b 15 12 in
+     let vm = b 3 0 in
+     let d = b 22 22 in
+     let sz = b 8 8 in
+     let e = b 7 7 in
+     let m = b 5 5 in
+     let src1 = if sz = 1 then prefix_bit d vd else postfix_bit d vd in
+     let src2 = if sz = 1 then prefix_bit m vm else postfix_bit m vm in
+     let size = if sz = 1 then 64 else 32 in
+     let dt = if sz = 1 then "F64" else "F32" in
+     let src1 = arm_fp_register_op size src1 RD in
+     let src2 = arm_fp_register_op size src2 RD in
+     (*VCMP{E}<c>.F64 <Dd>, <Dm> *)
+     (*VCMP{E}<c>.F32 <Sd>, <Sm> *)
+     VCompare (e = 1, cc, dt, src1, src2)
+
+  (* 111011101D111<o><vd>101so1M0<vm>   VCVT *)
+  | 53 when
+         (b 20 19) = 3
+         && (b 18 16) = 0    (* opc2 = 0 *)
+         && (b 11 9) = 5
+         && (b 8 8) = 1   (* sz = 1 *)
+         && (b 6 6) = 1
+         && (b 4 4) = 0 ->
+     let vd = b 15 12 in
+     let vm = b 3 0 in
+     let m = b 5 5 in
+     let m = if m = 1 then (2 * vm) + 1 else (2 * vm) in
+     let d = b 22 22 in
+     let d = if d = 1 then vd + 16 else vd in
+     let dst = arm_fp_register_op 64 d WR in
+     let src = arm_fp_register_op 32 m RD in
+  (* VCVT.F64.S32 <Dd>, <Sm> *)
+     VConvert (false, cc, "F64", "S32", dst, src)
+
+  (* 1110111011110001<rt>101000010000   VMRS *)
+  | 55 when
+         (b 20 16) = 17
+         && (b 11 8) = 10
+         && (b 7 5) = 0
+         && (b 4 4) = 1
+         && (b 3 0) = 0 ->
+     let rt = b 15 12 in
+     let dst =
+       if rt = 15 then
+         arm_special_register_op APSR_nzcv WR
+       else
+         arm_register_op (get_arm_reg rt) WR in
+     let src = arm_special_register_op FPSCR RD in
+     (* VMRS<c> <Rt>, FPSCR *)
+     VMoveRegisterStatus (cc, dst, src)
 
   | _ ->
      NotRecognized ("parse_thumb32_29:" ^ (string_of_int op), instr)
@@ -950,7 +1069,8 @@ let parse_t32_branch
        + (4 * (b 10 1)) in
      let imm32 = sign_extend 32 25 imm32 in
      let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
-     let tgt = iaddr#add_int (imm32 + 2) in
+     let tgt = ((iaddr#to_int + 2) / 4) * 4 in
+     let tgt = int_to_doubleword (tgt + imm32) in
      let tgtop = arm_absolute_op tgt RD in
      (* BLX<c> <label> *)
      BranchLinkExchange (cc, tgtop)
@@ -1658,10 +1778,13 @@ let parse_t16_load_literal
       (instr: doubleword_int) =
   let b = instr#get_segval in
   let rt = arm_register_op (get_arm_reg (b 10 8)) WR in
+  let pcreg = get_arm_reg 15 in
   let pc = arm_register_op (get_arm_reg 15) RD in
   let imm = 4 * (b 7 0) in
-  let offset = iaddr#add_int (2 + imm) in
-  let addr = arm_absolute_op offset RD in
+  let offset = ARMImmOffset imm in
+  let addr =
+    mk_arm_offset_address_op
+      ~align:4 pcreg offset ~isadd:true ~isindex:false ~iswback:false RD in
   (* LDR<c> <Rt>, <label> *)
   LoadRegister (cc, rt, pc, addr, false)
   

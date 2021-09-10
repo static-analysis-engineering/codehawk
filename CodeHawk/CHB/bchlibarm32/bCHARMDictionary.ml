@@ -129,27 +129,30 @@ object (self)
 
   method index_arm_opkind (k:arm_operand_kind_t) =
     let setb x = if x then 1 else 0 in
-    let tags = [ arm_opkind_mcts#ts k ] in
+    let tags = [arm_opkind_mcts#ts k] in
     let key = match k with
-      | ARMDMBOption o -> (tags @ [ dmb_option_mfts#ts o], [])
-      | ARMReg r -> (tags @ [ arm_reg_mfts#ts r ],[])
+      | ARMDMBOption o -> (tags @ [dmb_option_mfts#ts o], [])
+      | ARMReg r -> (tags @ [arm_reg_mfts#ts r], [])
+      | ARMSpecialReg r -> (tags @ [arm_special_reg_mfts#ts r], [])
+      | ARMFPReg (size, index) -> (tags, [size; index])
       | ARMRegList rl -> (tags @ (List.map arm_reg_mfts#ts rl),[])
       | ARMShiftedReg (r,rs) ->
-         (tags @ [ arm_reg_mfts#ts r ], [ self#index_register_shift_rotate rs ])
-      | ARMRegBitSequence (r,lsb,widthm1) ->
+         (tags @ [arm_reg_mfts#ts r], [self#index_register_shift_rotate rs])
+      | ARMRegBitSequence (r, lsb, widthm1) ->
          (tags @ [ arm_reg_mfts#ts r ],[ lsb; widthm1 ])
       | ARMAbsolute addr -> (tags, [ bd#index_address addr ])
       | ARMMemMultiple (r,n) -> (tags @ [ arm_reg_mfts#ts r ],[n])
-      | ARMOffsetAddress (r,offset,isadd,iswback,isindex) ->
+      | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex) ->
          let ioffset = self#index_arm_memory_offset offset in
-         (tags @ [ arm_reg_mfts#ts r],
-          [ ioffset; setb isadd; setb iswback; setb isindex ])
-      | ARMImmediate imm -> (tags @ [ imm#to_numerical#toString ],[]) in
+         (tags @ [arm_reg_mfts#ts r],
+          [align; ioffset; setb isadd; setb iswback; setb isindex])
+      | ARMImmediate imm -> (tags @ [imm#to_numerical#toString], []) in
     arm_opkind_table#add key
 
   method index_arm_operand (op:arm_operand_int) =
-    let key = ([ arm_operand_mode_to_string op#get_mode ],
-               [ self#index_arm_opkind op#get_kind ]) in
+    let key =
+      ([arm_operand_mode_to_string op#get_mode],
+       [self#index_arm_opkind op#get_kind]) in
     arm_operand_table#add key
 
   method index_arm_opcode (opc:arm_opcode_t) =
@@ -282,6 +285,16 @@ object (self)
         | UnsignedExtendHalfword (c,rd,rm) -> (ctags c, [oi rd; oi rm])
       | UnsignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) ->
          (ctags c,[setb s; oi rdlo; oi rdhi; oi rn; oi rm])
+      | VCompare (nan, c, dt, op1, op2) ->
+         ((ctags c) @ [dt], [if nan then 1 else 0; oi op1; oi op2])
+      | VConvert (round, c, dstdt, srcdt, dst, src) ->
+         ((ctags c) @ [dstdt; srcdt], [if round then 1 else 0; oi dst; oi src])
+      | VLoadRegister (c, dst, base, mem) ->
+         (ctags c, [oi dst; oi base; oi mem])
+      | VMove (c, dst, src) -> (ctags c, [oi dst; oi src])
+      | VMoveRegisterStatus (c, dst, src) -> (ctags c, [oi dst; oi src])
+      | VStoreRegister (c, src, base, mem) ->
+         (ctags c, [oi src; oi base; oi mem])
       | OpInvalid | NotCode _ -> (tags,[])
       | NoOperation c -> (ctags c, [])
       | PermanentlyUndefined (c,op) -> (ctags c, [oi op])
@@ -294,7 +307,8 @@ object (self)
   method write_xml_arm_bytestring ?(tag="ibt") (node:xml_element_int) (s:string) =
     node#setIntAttribute tag (self#index_arm_bytestring s)
 
-  method write_xml_arm_opcode ?(tag="iopc") (node:xml_element_int) (opc:arm_opcode_t) =
+  method write_xml_arm_opcode
+           ?(tag="iopc") (node:xml_element_int) (opc:arm_opcode_t) =
     node#setIntAttribute tag (self#index_arm_opcode opc)
 
   method write_xml (node:xml_element_int) =

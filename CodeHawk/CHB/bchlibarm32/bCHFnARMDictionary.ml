@@ -189,6 +189,7 @@ object (self)
          let xrm = rm#to_expr floc in
          let result = XOp (XPlus, [xrn; xrm]) in
          let rresult = rewrite_expr result in
+         let _ = ignore (get_string_reference floc rresult) in
          (["a:vxxxx"], [xd#index_variable vrd;
                         xd#index_xpr xrn;
                         xd#index_xpr xrm;
@@ -764,6 +765,40 @@ object (self)
            xd#index_xpr rhs2;
            xd#index_xpr result;
            xd#index_xpr rresult])
+
+      | VCompare (_, _, _, op1, op2) ->
+         let src1 = op1#to_expr floc in
+         let src2 = op2#to_expr floc in
+         let rsrc1 = rewrite_expr src1 in
+         let rsrc2 = rewrite_expr src2 in
+         (["a:xxxx"],
+          [xd#index_xpr src1;
+           xd#index_xpr src2;
+           xd#index_xpr rsrc1;
+           xd#index_xpr rsrc2])
+      | VConvert (_, _, _, _, dst, src) ->
+         let vdst = dst#to_variable floc in
+         let src = src#to_expr floc in
+         let rsrc = rewrite_expr src in
+         (["a:vxx"],
+          [xd#index_variable vdst; xd#index_xpr src; xd#index_xpr rsrc])
+
+      | VLoadRegister (_, vd, rn, mem) ->
+         let vvd = vd#to_variable floc in
+         let xmem = mem#to_expr floc in
+         (["a:vx"], [xd#index_variable vvd; xd#index_xpr xmem])
+
+      | VMove (_, dst, src) ->
+         let vdst = dst#to_variable floc in
+         let src = src#to_expr floc in
+         let rsrc = rewrite_expr src in
+         (["a:vxx"],
+          [xd#index_variable vdst; xd#index_xpr src; xd#index_xpr rsrc])
+
+      | VStoreRegister (c, vd, rn, mem) ->
+         let vmem = mem#to_variable floc in
+         let xvd = vd#to_expr floc in
+         (["a:vx"], [xd#index_variable vmem; xd#index_xpr xvd])
 
       | _ -> ([], []) in
     instrx_table#add key

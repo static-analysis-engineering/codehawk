@@ -37,6 +37,7 @@ open CHPretty
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHDoubleword
 open BCHLibTypes
    
 (* bchlibarm32 *)
@@ -125,6 +126,10 @@ let get_reglist_from_int (width:int) (reglist:int) =
       else
         collect (n-1) l in
   collect (width-1) []
+
+
+(* Round down to the next lower multiple of size *)
+let align (a: int) (size: int): int = (a / size) * size
 
 
 (* Application Program Status Register (APSR) (pg A2-49)
