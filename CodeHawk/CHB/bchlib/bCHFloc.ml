@@ -173,28 +173,31 @@ object (self)
   method tinv = self#f#itinv self#cia
 
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   *                                                                return values *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   *                                                           return values *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method record_return_value =
     let eax = self#env#mk_cpu_register_variable Eax in
     let returnExpr = self#rewrite_variable_to_external eax in
     self#f#record_return_value self#cia returnExpr
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   *                                                              type_invariants *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   *                                                         type_invariants *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method add_var_type_fact v ?(structinfo=[]) t = 
-    if v#isTmp then () else 
-      if self#f#env#is_initial_memory_value v || 
-	self#f#env#is_initial_register_value v then
+    if v#isTmp then
+      ()
+    else 
+      if self#f#env#is_initial_memory_value v
+         || self#f#env#is_initial_register_value v then
 	self#f#ftinv#add_function_var_fact v ~structinfo t
-      else 
+      else
 	self#f#ftinv#add_var_fact self#cia v ~structinfo t 
 
-  method add_const_type_fact c t =
+
+  method add_const_type_fact (c: numerical_t) (t: btype_t) =
     begin
       self#f#ftinv#add_const_fact self#cia c t ;
       match t with
@@ -204,13 +207,14 @@ object (self)
 	    if system_info#get_image_base#le base then
 	      let gv = self#f#env#mk_global_variable c in
 	      begin
-	        self#add_var_type_fact gv tty ;
+	        self#add_var_type_fact gv tty;
 	        match tty with
 	        | TNamed (name,_) when type_definitions#has_type name ->
 	           let tinfo = type_definitions#get_type name in
 	           begin
 		     match tinfo with
-		     | TComp (SimpleName cname,[],_) when type_definitions#has_compinfo cname ->
+		     | TComp (SimpleName cname, [], _)
+                          when type_definitions#has_compinfo cname ->
 		        let cinfo = type_definitions#get_compinfo cname in
 		        List.iter (fun fldinfo ->
                             let goffset = c#add (mkNumerical fldinfo.bfoffset) in
@@ -241,33 +245,42 @@ object (self)
       | _ -> ()
     end
 
-  method add_xpr_type_fact x t =
-    if is_random x then () else
-      if List.exists (fun v -> v#isTmp) (variables_in_expr x) then () else
+
+  method add_xpr_type_fact (x: xpr_t) (t: btype_t) =
+    if is_random x then
+      ()
+    else
+      if List.exists (fun v -> v#isTmp) (variables_in_expr x) then
+        ()
+      else
 	try
 	  begin
 	    match x with
 	    | XVar v -> self#add_var_type_fact v t
 	    | XConst (IntConst c) -> self#add_const_type_fact c t
-	    | XOp (XPlus, [ XVar v ; XConst _ ])
-	    | XOp (XMinus, [ XVar v ; XConst _ ]) when (not (is_pointer t)) -> 
+	    | XOp (XPlus, [XVar v; XConst _])
+	    | XOp (XMinus, [XVar v; XConst _]) when (not (is_pointer t)) ->
 	      self#add_var_type_fact v t
-	    | XOp (XMinus, [ XVar v ; XConst (IntConst n) ])
-		when self#f#env#is_initial_stackpointer_value v && n#gt numerical_zero ->
+	    | XOp (XMinus, [XVar v; XConst (IntConst n)])
+		 when self#f#env#is_initial_stackpointer_value v
+                      && n#gt numerical_zero ->
 	      let memref = self#f#env#mk_local_stack_reference in
 	      let localVar = self#f#env#mk_memory_variable memref n#neg in
 	      let tty = match t with
 		| TPtr (tty,_) -> tty
 		| _ ->
-                   raise (BCH_failure (STR "Internal error in add_xpr_type_fact")) in
+                   raise
+                     (BCH_failure
+                        (STR "Internal error in add_xpr_type_fact")) in
 	      begin
-		self#add_var_type_fact localVar tty ;
+		self#add_var_type_fact localVar tty;
 		match tty with 
 		| TNamed (name,_) when type_definitions#has_type name ->
 		  let tinfo = type_definitions#get_type name in
 		  begin
 		    match tinfo with
-		    | TComp (SimpleName cname,[],_) when type_definitions#has_compinfo cname ->
+		    | TComp (SimpleName cname, [], _)
+                         when type_definitions#has_compinfo cname ->
 		      let cinfo = type_definitions#get_compinfo cname in
 		      List.iter (fun fldinfo ->
 			let off = n#neg#add (mkNumerical fldinfo.bfoffset) in
@@ -287,9 +300,9 @@ object (self)
 	| Invalid_argument msg -> ()
 
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   *                                                                 call targets *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   *                                                            call targets *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method set_call_target (ctinfo:call_target_info_int) =
     self#f#set_call_target self#cia ctinfo
@@ -525,7 +538,10 @@ object (self)
    * resolve and save IndReg (cpureg, offset)   (memrefs1)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 	
-  method get_memory_variable_1 (var:variable_t) (offset:numerical_t) =
+  method get_memory_variable_1
+           ?(align=1)    (* alignment of var value *)
+           (var:variable_t)
+           (offset:numerical_t) =
     let _ = track_function
               ~iaddr:self#cia self#fa
               (LBLOCK [ STR "get_memory_variable_1: " ;  var#toPretty ; STR  " @ " ;
@@ -551,7 +567,13 @@ object (self)
       else
         default () in
     let get_var_from_address () =
-      let addr = XOp (XPlus, [ XVar var ; num_constant_expr offset ]) in
+      let varx =
+        if align > 1 then
+          let alignx = int_constant_expr align in
+          XOp (XMult, [XOp (XDiv, [XVar var; alignx]); alignx])
+        else
+          XVar var in
+      let addr = XOp (XPlus, [varx; num_constant_expr offset]) in
       let _ =
         track_function
           ~iaddr:self#cia self#fa
@@ -1258,7 +1280,8 @@ object (self)
      let rhs_expr = simplify_xpr rhs_expr in
      let rhs_expr = self#inv#rewrite_expr rhs_expr self#env#get_variable_comparator in
 
-     (* if the rhs_expr is a composite symbolic expression, create a new variable for it *)
+     (* if the rhs_expr is a composite symbolic expression, create a
+        new variable for it *)
      let rhs_expr =
        if is_composite_symbolic_value rhs_expr then
          XVar (self#env#mk_symbolic_value rhs_expr)
