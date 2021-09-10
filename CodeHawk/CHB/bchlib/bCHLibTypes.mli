@@ -334,6 +334,11 @@ type arm_reg_t =
   | ARLR
   | ARPC
 
+type arm_special_reg_t =
+  | APSR   (* Core processor status word *)
+  | FPSCR   (* Floating point processor status word *)
+  | APSR_nzcv  (* Condition codes in core processor status word *)
+
 
 type register_t = 
 | SegmentRegister of segment_t
@@ -348,6 +353,8 @@ type register_t =
 | MIPSSpecialRegister of mips_special_reg_t
 | MIPSFloatingPointRegister of int
 | ARMRegister of arm_reg_t
+| ARMSpecialRegister of arm_special_reg_t
+| ARMFloatingPointRegister of int * int
 
 
 (* =============================================================== Doubleword === *)
@@ -510,28 +517,29 @@ object ('a)
   method compare: 'a -> int
 
   (* setters *)
-  method set_data_string  : string -> unit
-  method set_name         : string -> unit
+  method set_data_string: string -> unit
+  method set_name: string -> unit
+  method set_data_table: (string * string) list -> unit
 
   (* accessors *)
-  method get_start_address  : doubleword_int
-  method get_end_address    : doubleword_int
-  method get_name           : string
-  method get_length         : int
-  method get_data_string    : string
-  method get_offset_range   : (int * int) option
+  method get_start_address: doubleword_int
+  method get_end_address: doubleword_int
+  method get_name: string
+  method get_length: int
+  method get_data_string: string
+  method get_offset_range: (int * int) option
 
   (* predicates *)
-  method has_name         : bool
-  method has_data_string  : bool
-  method is_offset_table  : bool
+  method has_name: bool
+  method has_data_string: bool
+  method is_offset_table: bool
 
   (* saving *)
-  method write_xml   : xml_element_int -> unit
+  method write_xml: xml_element_int -> unit
 
   (* printing *)
-  method toPretty : pretty_t
-  method toString : string
+  method toPretty: pretty_t
+  method toString: string
 end
 
 (* =============================================================== Jump table === *)
@@ -855,30 +863,30 @@ and btype_t =
 and bfunarg_t = string * btype_t
 
 and bcompinfo_t = {
-  bcstruct : bool ;
-  bcname   : string ;
-  bcfields : bfieldinfo_t list 
+  bcstruct: bool;
+  bcname: string;
+  bcfields: bfieldinfo_t list
 }
 
 and bfieldinfo_t = {
-  bfname   : string ;
-  bftype   : btype_t ;
-  bfenum   : (string * bool) option ;
-  bfoffset : int  ;
-  bfsize   : int  ;
+  bfname: string;
+  bftype: btype_t;
+  bfenum: (string * bool) option;
+  bfoffset: int ;
+  bfsize: int;
 }
 
 and beitem_t = string * exp
 
 and benuminfo_t = {
-  bename   : string ;
-  beitems  : beitem_t list ;
-  bekind   : ikind
+  bename: string;
+  beitems: beitem_t list;
+  bekind: ikind
 }
 
 and btypeinfo_t = {
-  btname   : string ;
-  bttype   : btype_t
+  btname: string;
+  bttype: btype_t
 }
 
 and exp = Const of constant
@@ -893,42 +901,42 @@ and constant =
 
 type type_transformer_t = string -> string
 
-(* ================================================================= C struct === *)
+(* ============================================================== C struct === *)
 
 type struct_field_t = {
-  fld_name  : string ;
-  fld_offset: int ;
-  fld_size  : int ;
-  fld_type  : btype_t
+  fld_name: string;
+  fld_offset: int;
+  fld_size: int;
+  fld_type: btype_t
 }
 
 class type c_struct_int =
 object
-  method get_name : string
+  method get_name: string
   method get_field: int -> struct_field_t
   method has_field: int -> bool
-  method iter     : (struct_field_t -> unit) -> unit
-  method toPretty : pretty_t
+  method iter: (struct_field_t -> unit) -> unit
+  method toPretty: pretty_t
 end
 
-(* ===================================================== Constant definitions === *)
+(* ================================================== Constant definitions === *)
 
 type constant_definition_t = {
-  xconst_name : string ;
-  xconst_value: doubleword_int ;
-  xconst_type : btype_t ;
-  xconst_desc : string ;
+  xconst_name: string;
+  xconst_value: doubleword_int;
+  xconst_type: btype_t;
+  xconst_desc: string;
   xconst_is_addr: bool
 }
 
 type flag_definition_t = {
-  xflag_name : string ;
-  xflag_pos  : int    ;    (* lowest order bit is zero *)
-  xflag_desc : string ;
-  xflag_type : btype_t
+  xflag_name: string;
+  xflag_pos: int;    (* lowest order bit is zero *)
+  xflag_desc: string;
+  xflag_type: btype_t
 }
 
-(* ========================================================= Type definitions === *)
+(* ====================================================== Type definitions === *)
 
 class type type_definitions_int =
   object
@@ -936,25 +944,25 @@ class type type_definitions_int =
     method add_builtin_compinfo: string -> bcompinfo_t -> unit
     method add_builtin_enuminfo: string -> benuminfo_t -> unit
          
-    method add_typeinfo : string -> btype_t -> unit
-    method add_compinfo : string -> bcompinfo_t -> unit
-    method add_enuminfo : string -> benuminfo_t -> unit
+    method add_typeinfo: string -> btype_t -> unit
+    method add_compinfo: string -> bcompinfo_t -> unit
+    method add_enuminfo: string -> benuminfo_t -> unit
          
-    method get_type     : string -> btype_t
-    method get_compinfo : string -> bcompinfo_t
-    method get_enuminfo : string -> benuminfo_t
+    method get_type: string -> btype_t
+    method get_compinfo: string -> bcompinfo_t
+    method get_enuminfo: string -> benuminfo_t
          
-    method has_type     : string -> bool
-    method has_compinfo : string -> bool
-    method has_enuminfo : string -> bool
+    method has_type: string -> bool
+    method has_compinfo: string -> bool
+    method has_enuminfo: string -> bool
 
     method write_xml: xml_element_int -> unit
-    method read_xml : xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
          
     method toPretty: pretty_t
 end
 
-(* =========================================================== Demangled name === *)
+(* ======================================================== Demangled name === *)
 
 type demangled_name_t = {
   dm_name : tname_t ;
@@ -974,7 +982,7 @@ type demangled_name_t = {
   dm_vftable      : bool 
   }
 
-(* ========================================================== Type invariants === *)
+(* ======================================================= Type invariants === *)
 
 type type_invariant_fact_t = 
 | VarTypeFact of variable_t * btype_t * string list    (* struct, fields *)
@@ -983,12 +991,12 @@ type type_invariant_fact_t =
 
 class type type_invariant_int =
 object ('a)
-  method index        : int
-  method compare      : 'a -> int
-  method get_fact     : type_invariant_fact_t
+  method index: int
+  method compare: 'a -> int
+  method get_fact: type_invariant_fact_t
   method get_variables: variable_t list
-  method write_xml    : xml_element_int -> unit
-  method toPretty     : pretty_t
+  method write_xml: xml_element_int -> unit
+  method toPretty: pretty_t
 end
 
 class type location_type_invariant_int =
@@ -996,7 +1004,7 @@ object
   method add_fact: type_invariant_fact_t -> unit
 
   (* accessors *)
-  method get_var_facts : variable_t -> type_invariant_int list
+  method get_var_facts: variable_t -> type_invariant_int list
   method get_facts: type_invariant_int list
   method get_count: int
 
@@ -1013,8 +1021,11 @@ object
            string -> variable_t -> ?structinfo:string list -> btype_t -> unit
   method add_const_fact: string -> numerical_t -> btype_t -> unit
   method add_xpr_fact: string -> xpr_t -> btype_t -> unit
-  method add_function_var_fact:
-           variable_t -> ?structinfo:string list -> btype_t -> unit (* location independent *)
+  method add_function_var_fact:    (* location independent *)
+           variable_t
+           -> ?structinfo:string list
+           -> btype_t
+           -> unit
 
   (* accessors *)
   method get_location_type_invariant: string -> location_type_invariant_int
@@ -2252,6 +2263,7 @@ class type function_environment_int =
     method mk_mips_special_register_variable: mips_special_reg_t -> variable_t
     method mk_mips_fp_register_variable: int -> variable_t
     method mk_arm_register_variable: arm_reg_t -> variable_t
+    method mk_arm_fp_register_variable: int -> int -> variable_t
     method mk_global_variable: numerical_t -> variable_t
 
     method mk_initial_register_value: ?level:int -> register_t -> variable_t
@@ -2700,7 +2712,7 @@ object
   method get_interval: variable_t -> interval_t
 
   (* returns the memory reference corresponding to the address in variable plus offset *)
-  method get_memory_variable_1: variable_t -> numerical_t -> variable_t
+  method get_memory_variable_1: ?align:int -> variable_t -> numerical_t -> variable_t
 
   (* returns the memory reference corresponding to a base and index variable plust offset *)
   method get_memory_variable_2: variable_t -> variable_t -> numerical_t -> variable_t

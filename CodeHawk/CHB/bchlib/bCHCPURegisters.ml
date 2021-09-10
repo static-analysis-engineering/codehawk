@@ -86,6 +86,10 @@ let mips_special_regs_from_string_table = H.create 3
 let armregs_to_string_table = H.create 17
 let armregs_from_string_table = H.create 17
 
+let arm_special_regs_to_string_table = H.create 3
+let arm_special_regs_from_string_table = H.create 3
+
+
 let _ = List.iter (fun (r,s) -> 
   add_to_sumtype_tables cpuregs_to_string_table cpuregs_from_string_table r s)
   [ (Eax,"eax") ; (Ebx,"ebx") ; (Ecx,"ecx") ; (Edx,"edx") ;
@@ -99,7 +103,7 @@ let cpureg_to_string (r:cpureg_t) =
   get_string_from_table "cpuregs_to_string_table" cpuregs_to_string_table r
 
 let cpureg_from_string (name:string) = 
-  get_sumtype_from_table "cpuregs_from_string_table" cpuregs_from_string_table name 
+  get_sumtype_from_table "cpuregs_from_string_table" cpuregs_from_string_table name
 
 
 let _ = List.iter (fun (r,s) -> 
@@ -156,9 +160,10 @@ let mips_temporaries = [
 
 let _ =
   List.iter (fun (r,s) ->
-      add_to_sumtype_tables mips_special_regs_to_string_table
-                            mips_special_regs_from_string_table r s)
-            [ (MMHi,"hi") ; (MMLo,"lo") ]
+      add_to_sumtype_tables
+        mips_special_regs_to_string_table
+        mips_special_regs_from_string_table r s)
+    [(MMHi,"hi"); (MMLo,"lo")]
 
 let mips_special_reg_to_string (r:mips_special_reg_t) =
   get_string_from_table
@@ -193,9 +198,51 @@ let arm_regular_registers = get_sumtype_table_keys armregs_to_string_table
 let armreg_to_string (r:arm_reg_t) =
   get_string_from_table "armregs_to_string_table" armregs_to_string_table r
 
+let arm_fp_reg_to_string (size: int) (index: int) =
+  let reg = string_of_int index in
+  match size with
+  | 32 -> "S" ^ reg
+  | 64 -> "D" ^ reg
+  | 128 -> "Q" ^ reg
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "ARM Floating point register of size ";
+               INT size;
+               STR " not recognized"]))
+
 let armreg_from_string (name:string) =
   get_sumtype_from_table
     "armregs_from_string_table" armregs_from_string_table name
+
+let _ =
+  List.iter (fun (r,s) ->
+      add_to_sumtype_tables
+        arm_special_regs_to_string_table
+        arm_special_regs_from_string_table r s)
+    [(APSR, "APSR"); (FPSCR, "FPSCR"); (APSR_nzcv, "APSR_nzcv")]
+
+let arm_special_reg_to_string (r: arm_special_reg_t) =
+  get_string_from_table
+    "arm_special_regs_to_string_table" arm_special_regs_to_string_table r
+
+let arm_special_reg_from_string (name:string) =
+  get_sumtype_from_table
+    "arm_special_regs_from_string_table" arm_special_regs_from_string_table name
+
+let register_from_string (name: string) =
+  if H.mem cpuregs_from_string_table name then
+    CPURegister (cpureg_from_string name)
+  else if H.mem armregs_from_string_table name then
+    ARMRegister (armreg_from_string name)
+  else if H.mem mipsregs_from_string_table name then
+    MIPSRegister (mipsreg_from_string name)
+  else
+    raise
+      (BCH_failure
+         (LBLOCK [
+              STR "No x86, mips, or arm register found with name "; STR name]))
 
 let get_armreg_argument (index: int) =
   match index with
@@ -215,7 +262,8 @@ let cpureg_to_asm_string reg = (cpureg_to_string reg)
 
 let cpureg_option_to_string reg =
   match reg with Some r -> cpureg_to_asm_string r | None -> ""
-  
+
+
 let register_compare r1 r2 =
   match (r1, r2) with
   | (CPURegister c1, CPURegister c2) ->
@@ -226,6 +274,14 @@ let register_compare r1 r2 =
      P.compare (armreg_to_string a1) (armreg_to_string a2)
   | (ARMRegister _, _) -> -1
   | (_, ARMRegister _) -> 1
+  | (ARMSpecialRegister r1, ARMSpecialRegister r2) ->
+     P.compare (arm_special_reg_to_string r1) (arm_special_reg_to_string r2)
+  | (ARMSpecialRegister _, _) -> -1
+  | (_, ARMSpecialRegister _) -> 1
+  | (ARMFloatingPointRegister (s1, i1), ARMFloatingPointRegister (s2, i2)) ->
+     P.compare (s1, i1) (s2, i2)
+  | (ARMFloatingPointRegister _, _) -> -1
+  | (_, ARMFloatingPointRegister _) -> 1
   | (MIPSRegister m1, MIPSRegister m2) ->
      P.compare (mipsreg_to_string m1) (mipsreg_to_string m2)
   | (MIPSRegister _, _) -> -1
@@ -262,6 +318,7 @@ let register_compare r1 r2 =
 	(cpureg_to_string c11, cpureg_to_string c12)
         (cpureg_to_string c21, cpureg_to_string c22)
 
+
 let register_to_string register = match register with
   | CPURegister r -> cpureg_to_string r
   | SegmentRegister r -> segment_to_string r
@@ -275,6 +332,9 @@ let register_to_string register = match register with
   | MIPSSpecialRegister r -> mips_special_reg_to_string r
   | MIPSFloatingPointRegister i -> "$f" ^ (string_of_int i)
   | ARMRegister r -> armreg_to_string r
+  | ARMSpecialRegister r -> arm_special_reg_to_string r
+  | ARMFloatingPointRegister (s, i) -> arm_fp_reg_to_string s i
+
 
 let extract_cpu_reg s =
   let len = String.length s in
@@ -305,12 +365,14 @@ let register_from_string (s:string) =
     MIPSRegister (extract_mips_reg s)
   else
     try
-      CPURegister (cpureg_from_string s)
+      register_from_string s
     with
-    | _ ->
+    | BCH_failure p ->
        raise (BCH_failure
-                (LBLOCK [ STR "register string conversion not supported for " ;
-                          STR s ]))    
+                (LBLOCK [ STR "register string conversion not supported for ";
+                          STR s;
+                          STR ": ";
+                          p]))
 
 let byte_reg_of_reg r = 
   match r with
