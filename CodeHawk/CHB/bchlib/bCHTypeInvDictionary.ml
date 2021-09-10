@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,13 +48,18 @@ let bd = BCHDictionary.bdictionary
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
-    LBLOCK [ STR "Type " ; STR name ; STR " tag: " ; STR tag ;
-             STR " not recognized. Accepted tags: " ;
-             pretty_print_list accepted (fun s -> STR s) "" ", " "" ] in
+    LBLOCK [
+        STR "Type ";
+        STR name;
+        STR " tag: ";
+        STR tag;
+        STR " not recognized. Accepted tags: ";
+        pretty_print_list accepted (fun s -> STR s) "" ", " ""] in
   begin
-    ch_error_log#add "serialization tag" msg ;
+    ch_error_log#add "serialization tag" msg;
     raise (BCH_failure msg)
   end
+
 
 class tinvdictionary_t (vard:vardictionary_int):tinvdictionary_int =
 object (self)
@@ -71,11 +78,12 @@ object (self)
   method index_type_invariant_fact (f:type_invariant_fact_t) =
     let tags = [ type_invariant_fact_mcts#ts f ] in
     let key = match f with
-      | VarTypeFact (v,t,sl) -> 
-         (tags, [ self#xd#index_variable v ; bd#index_btype t ]
-                @ (List.map bd#index_string sl))
-      | ConstTypeFact (n,t) -> (tags @ [ n#toString ],[bd#index_btype t ])
-      | XprTypeFact (x,t) -> (tags,[ self#xd#index_xpr x ; bd#index_btype t ]) in
+      | VarTypeFact (v, t, sl) ->
+         (tags,
+          [self#xd#index_variable v; bd#index_btype t]
+          @ (List.map bd#index_string sl))
+      | ConstTypeFact (n, t) -> (tags @ [n#toString ], [bd#index_btype t])
+      | XprTypeFact (x, t) -> (tags,[self#xd#index_xpr x; bd#index_btype t]) in
     type_invariant_fact_table#add key
 
   method get_type_invariant_fact (index:int) =
@@ -84,10 +92,15 @@ object (self)
     let t = t name tags in
     let a = a name args in
     match (t 0) with
-    | "v" -> VarTypeFact (self#xd#get_variable (a 0), bd#get_btype (a 1),
-                          List.map bd#get_string (get_list_suffix args 2))
-    | "c" -> ConstTypeFact (mkNumericalFromString (t 1), bd#get_btype (a 0))
-    | "x" -> XprTypeFact (self#xd#get_xpr (a 0), bd#get_btype (a 1))
+    | "v" ->
+       VarTypeFact
+         (self#xd#get_variable (a 0),
+          bd#get_btype (a 1),
+          List.map bd#get_string (get_list_suffix args 2))
+    | "c" ->
+       ConstTypeFact (mkNumericalFromString (t 1), bd#get_btype (a 0))
+    | "x" ->
+       XprTypeFact (self#xd#get_xpr (a 0), bd#get_btype (a 1))
     | s -> raise_tag_error name s type_invariant_fact_mcts#tags
 
   method write_xml_type_invariant_fact
@@ -102,7 +115,7 @@ object (self)
     node#appendChildren
       (List.map (fun t ->
            let tnode = xmlElement t#get_name in
-           begin t#write_xml tnode ; tnode end) tables)
+           begin t#write_xml tnode; tnode end) tables)
 
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
@@ -110,7 +123,7 @@ object (self)
 
   method toPretty =
     LBLOCK (List.map (fun t ->
-                LBLOCK [ STR t#get_name ; STR ": " ; INT t#size ; NL ]) tables)
+                LBLOCK [STR t#get_name; STR ": "; INT t#size; NL]) tables)
 
 
 end

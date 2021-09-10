@@ -108,9 +108,9 @@ class system_info_t:system_info_int  =
 object (self)
 
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   *                                                                    initialization *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *) 
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   *                                                           initialization *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
   val mutable has_file = false
   val mutable filename = ""
   val mutable is_elf = false
@@ -123,7 +123,10 @@ object (self)
   val mutable jumptables = []
   val data_blocks = new DataBlockCollections.set_t
   val jumptargets = H.create 13
-  val jumptabletargets = H.create 13   (* fa,ia of jmp* instr -> (base address,lb option, ub option) *)
+
+  (* fa,ia of jmp* instr -> (base address,lb option, ub option) *)
+  val jumptabletargets = H.create 13
+
   val indirect_jump_targets = H.create 13  (* fa,ia -> target list *)
     
   val nonreturning_calls = new DoublewordCollections.table_t
@@ -138,15 +141,17 @@ object (self)
     
   val function_call_targets = H.create 13  (* (faddr, iaddr) -> call_target_t *)
 
-  val esp_adjustments = H.create 3         (* indexed with faddr, iaddr *)
-  val esp_adjustments_i = H.create 3       (* indexed with iaddr *)
-  val cfnops = H.create 3                  (* indexed with iaddr, cfg obfuscations *)
-  val cfjmps = H.create 3                  (* indexed with iaddr, cfg obfuscated jumps *)
+  val esp_adjustments = H.create 3      (* indexed with faddr, iaddr *)
+  val esp_adjustments_i = H.create 3    (* indexed with iaddr *)
+  val cfnops = H.create 3               (* indexed with iaddr, cfg obfuscations *)
+  val cfjmps = H.create 3      (* indexed with iaddr, cfg obfuscated jumps *)
   val thread_start_functions = H.create 13 
   val exported_item_names = H.create 3
   val class_membership = H.create 2
   val mutable constant_files = []
-  val lib_functions_loaded = H.create 3 (* functions loaded via LoadLibrary/GetProcAddress *)
+
+  (* functions loaded via LoadLibrary/GetProcAddress *)
+  val lib_functions_loaded = H.create 3
   val successors = H.create 3
   val arm_thumb_switches = H.create 3
 
@@ -463,11 +468,11 @@ object (self)
     
   method initialize =
     begin
-      self#initialize_system_file ;
-      self#initialize_type_definitions ;
-      self#initialize_user_data ;
-      self#initialize_annotation_data ;
-      self#initialize_user_directory_data ;
+      self#initialize_system_file;
+      self#initialize_type_definitions;
+      self#initialize_user_data;
+      self#initialize_annotation_data;
+      self#initialize_user_directory_data;
       set_functions_file_path ()
     end
 
@@ -476,20 +481,26 @@ object (self)
       match load_system_file () with
       | Some node -> 
          begin 
-	   has_file <- true ; 
-	   self#read_xml node ;
+	   has_file <- true;
+	   self#read_xml node;
 	   chlog#add "initialization" (STR "system_info: initialization from file")
          end
       | _ -> ()
     with
-    | XmlParseError (line,col,p)
-    | XmlReaderError (line,col,p)
+    | XmlParseError (line, col, p)
+    | XmlReaderError (line, col, p)
     | XmlDocumentError (line,col,p) ->
-       let msg = LBLOCK [ STR "Xml error in system-info-file (" ; INT line ;
-                          STR "," ; INT col ; STR "): " ; p ] in
+       let msg =
+         LBLOCK [
+             STR "Xml error in system-info-file (";
+             INT line;
+             STR ",";
+             INT col;
+             STR "): ";
+             p] in
       begin
-	ch_error_log#add "xml error in system-info file"  p ;
-	raise (XmlDocumentError (line,col,msg))
+	ch_error_log#add "xml error in system-info file"  p;
+	raise (XmlDocumentError (line, col, msg))
       end
       
 
@@ -500,7 +511,9 @@ object (self)
     | Some node ->
        begin
          self#read_xml_annotation_data node ;
-         chlog#add "initialization" (STR "system_info: supplemented with annotation data")
+         chlog#add
+           "initialization"
+           (STR "system_info: supplemented with annotation data")
        end
     | _ -> ()
 
@@ -522,7 +535,8 @@ object (self)
     | Some node ->
       begin
 	self#read_xml_user_data node ;
-	chlog#add "initialization" (STR "system_info: supplemented with user data")
+	chlog#add
+          "initialization" (STR "system_info: supplemented with user data")
       end
     | _ -> ()
       
@@ -532,108 +546,146 @@ object (self)
     let getc = node#getTaggedChild in
     let hasc = node#hasOneTaggedChild in
     begin
-      (if has "app" then system_settings#set_app_summary_jars (get "app")) ;
+      (if has "app" then
+         system_settings#set_app_summary_jars (get "app"));
+
       (if hasc "settings" then
-	  self#read_xml_settings (getc "settings") ) ;
+	 self#read_xml_settings (getc "settings") );
+
       (if hasc "function-entry-points" then 
-	  let fenode = getc "function-entry-points" in
-	  self#read_xml_user_function_entry_points fenode) ;
+	 let fenode = getc "function-entry-points" in
+	 self#read_xml_user_function_entry_points fenode);
+
       (if hasc "function-names" then 
-	  self#read_xml_user_function_names (getc "function-names")) ;
+	 self#read_xml_user_function_names (getc "function-names"));
+
       (if hasc "non-returning-functions" then 
-	  let nrnode = getc "non-returning-functions" in
-	  begin
-	    self#read_xml_user_nonreturning_functions nrnode ;
-	    user_nonreturning <- List.length nrnode#getChildren
-	  end) ;
+	 let nrnode = getc "non-returning-functions" in
+	 begin
+	   self#read_xml_user_nonreturning_functions nrnode;
+	   user_nonreturning <- List.length nrnode#getChildren
+	 end);
+
       (if hasc "non-returning-calls" then
-	  let nrnode = getc "non-returning-calls" in
-	  begin
-	    self#read_xml_nonreturning_calls nrnode 
-	  end) ;
+	 let nrnode = getc "non-returning-calls" in
+	 begin
+	   self#read_xml_nonreturning_calls nrnode
+	 end);
+
       (if hasc "initialized-memory" then
-         let inode = getc "initialized-memory"  in
-         self#read_xml_initialized_memory inode ) ;
+         let inode = getc "initialized-memory" in
+         self#read_xml_initialized_memory inode);
+
       (if hasc "readonly-ranges" then
-	  let ronode = getc "readonly-ranges" in
-	  begin
-	    self#read_xml_readonly_ranges ronode 
-	  end) ;
+	 let ronode = getc "readonly-ranges" in
+	 begin
+	   self#read_xml_readonly_ranges ronode
+	 end);
+
       (if hasc "classes" then 
-	  let cnode = getc "classes" in
-	  begin
-	    self#read_xml_classes cnode ;
-	    user_classes <- List.length cnode#getChildren
-	  end) ;
+	 let cnode = getc "classes" in
+	 begin
+	   self#read_xml_classes cnode;
+	   user_classes <- List.length cnode#getChildren
+	 end);
+
       (if hasc "structs" then 
-	  let snode = getc "structs" in
-	  begin
-	    self#read_xml_structs snode ;
-	    user_structs <- List.length snode#getChildren
-	  end) ;
+	 let snode = getc "structs" in
+	 begin
+	   self#read_xml_structs snode;
+	   user_structs <- List.length snode#getChildren
+	 end);
+
       (if hasc "data-blocks" then 
-	  let dnode = getc "data-blocks" in
-	  begin
-	    self#read_xml_data_blocks dnode ;
-	    user_data_blocks <- List.length dnode#getChildren
-	  end);
+	 let dnode = getc "data-blocks" in
+	 begin
+	   self#read_xml_data_blocks dnode;
+	   user_data_blocks <- List.length dnode#getChildren
+	 end);
+
       (if hasc "call-targets" then
 	  let cnode = getc "call-targets" in
 	  begin
 	    self#read_xml_call_targets cnode;
 	    user_call_targets <- user_call_targets + List.length cnode#getChildren
 	  end);
+
       (if hasc "successors" then
          let snode = getc "successors" in
          begin
            self#read_xml_successors snode
          end);
+
       (if hasc "jump-table-targets" then
          let jnode = getc "jump-table-targets" in
          begin
            self#read_xml_jump_table_targets jnode
-         end) ;
+         end);
+
       (if hasc "indirect-jumps" then
          self#read_xml_indirect_jumps (getc "indirect-jumps"));
+
       (if hasc "arm-thumb" then
          self#read_xml_arm_thumb_switches (getc "arm-thumb"));
-      (if hasc "encodings" then self#read_xml_encodings (getc "encodings"));
-      (if hasc "cfnops" then self#read_xml_cfnops (getc "cfnops"));
+
+      (if hasc "encodings" then
+         self#read_xml_encodings (getc "encodings"));
+
+      (if hasc "cfnops" then
+         self#read_xml_cfnops (getc "cfnops"));
+
       (if hasc "fixed-conditionals" then 
-	  self#read_xml_fixed_true_conditionals (getc "fixed-conditionals"));
+	 self#read_xml_fixed_true_conditionals (getc "fixed-conditionals"));
+
       (if hasc "excluded-jumptables" then 
-	  self#read_xml_excluded_jumptables (getc "excluded-jumptables"));
+	 self#read_xml_excluded_jumptables (getc "excluded-jumptables"));
+
       (if hasc "invalidated-jumptable-startaddresses" then
 	  self#read_xml_invalidated_jumptable_startaddresses 
-	    (getc "invalidated-jumptable-startaddresses")) ;
+	    (getc "invalidated-jumptable-startaddresses"));
+
       (if hasc "jumptable-splits" then
-         self#read_xml_jumptable_splits (getc "jumptable-splits")) ;
+         self#read_xml_jumptable_splits (getc "jumptable-splits"));
+
       (if hasc "virtual-function-tables" then
 	  self#read_xml_virtual_function_tables
-	    (getc "virtual-function-tables")) ;
+	    (getc "virtual-function-tables"));
+
       (if hasc "esp-adjustments" then
 	  let enode = getc "esp-adjustments" in
-	  self#read_xml_esp_adjustments enode )	;
+	  self#read_xml_esp_adjustments enode) ;
+
       (if hasc "inlined-functions" then
          let inode = getc "inlined-functions" in
-         self#read_xml_inlined_functions inode) ;
+         self#read_xml_inlined_functions inode);
+
       (if hasc "inlined-blocks" then
          let inode = getc "inlined-blocks" in
-         self#read_xml_inlined_blocks inode) ;
+         self#read_xml_inlined_blocks inode);
+
       (if hasc "specializations" then
-         specializations#read_xml (getc "specializations")) ;
+         specializations#read_xml (getc "specializations"));
+
       (if hasc "section-headers" then
-         section_header_infos#read_xml (getc "section-headers")) ;
+         section_header_infos#read_xml (getc "section-headers"));
+
       (if hasc "esp-adjustments-i" then
 	  let enode = getc "esp-adjustments-i" in
-	  self#read_xml_esp_adjustments_i enode) ;
+	  self#read_xml_esp_adjustments_i enode);
+
       (if hasc "use-struct-constants" then 
-	  self#read_xml_structconstants (getc "use-struct-constants")) ;
-      (if hasc "use-constants" then self#read_xml_constants_files (getc "use-constants")) ;
+	 self#read_xml_structconstants (getc "use-struct-constants"));
+
+      (if hasc "use-constants" then
+         self#read_xml_constants_files (getc "use-constants"));
+
       (if hasc "symbolic-addresses" then 
-	  read_xml_symbolic_addresses (getc "symbolic-addresses")) ;
+	 read_xml_symbolic_addresses (getc "symbolic-addresses"));
+
       (if hasc "userdeclared-codesections" then
-	 self#read_xml_userdeclared_codesections (getc "userdeclared-codesections"));
+	 self#read_xml_userdeclared_codesections
+           (getc "userdeclared-codesections"));
+
       (if hasc "arg-constraints" then
          self#read_xml_argument_constraints (getc "arg-constraints"))
     end
@@ -891,7 +943,9 @@ object (self)
     if H.mem jumptable_splits a then
       H.find jumptable_splits a
     else
-      raise (BCH_failure (LBLOCK [ STR "No jumptable splits found for " ; STR a ]))
+      raise
+        (BCH_failure
+           (LBLOCK [STR "No jumptable splits found for "; STR a]))
 
   method private read_xml_virtual_function_tables (node:xml_element_int) =
     List.iter (fun n ->
@@ -1035,7 +1089,7 @@ object (self)
         let _ =
           chlog#add
             "set inlined block"
-            (LBLOCK [ faddr#toPretty ; STR ":" ; baddr#toPretty ]) in
+            (LBLOCK [faddr#toPretty; STR ":"; baddr#toPretty]) in
         self#add_inlined_block faddr baddr) (node#getTaggedChildren "inline")
 
   method private read_xml_readonly_ranges (node:xml_element_int) =
@@ -1045,10 +1099,13 @@ object (self)
       let e = geta "end" in
       begin
 	readonly_ranges <- (s,e) :: readonly_ranges ;
-        chlog#add "readonly range" (LBLOCK [ s#toPretty ; STR " - " ; e#toPretty ])
+        chlog#add
+          "readonly range"
+          (LBLOCK [s#toPretty; STR " - "; e#toPretty])
       end) 
       (node#getTaggedChildren "ror")
 
+  (* reads type definitions from the bchsummaries jar. *)
   method initialize_type_definitions =
     try
       let filename = "typedefinitions" in
@@ -1062,9 +1119,10 @@ object (self)
 	  let name = n#getAttribute "tname" in
 	  let ty = read_xml_type (n#getTaggedChild "type") in
 	  begin
-	    type_definitions#add_typeinfo name ty ;
+	    type_definitions#add_typeinfo name ty;
 	    match ty with
-	    | TComp (SimpleName cname,[],_) -> self#read_xml_struct_file cname
+	    | TComp (SimpleName cname, [], _) ->
+               self#read_xml_struct_file cname
 	    | _ -> ()
 	  end) (node#getTaggedChildren "type-info")
       else
@@ -1074,7 +1132,7 @@ object (self)
     | XmlReaderError (line,col,p)
     | XmlDocumentError (line,col,p) ->
       begin
-	ch_error_log#add "xml error in type definitions"  p ;
+	ch_error_log#add "xml error in type definitions"  p;
 	raise (XmlDocumentError (line,col,p))
       end
 
@@ -1096,18 +1154,20 @@ object (self)
 	    read_xml_symbolic_flags node
 	  else
 	    raise (BCH_failure 
-		     (LBLOCK [ STR "Symbolic constant file " ; STR filename ;
-			       STR " has neither constants nor flags specified" ]))
-	  else
-	    chlog#add "symbolic constants" (LBLOCK [ STR name ; STR " not found" ])
+		     (LBLOCK [
+                          STR "Symbolic constant file ";
+                          STR filename ;
+			  STR " has neither constants nor flags specified" ]))
+	else
+	  chlog#add "symbolic constants" (LBLOCK [STR name; STR " not found"])
     with
     | XmlParseError (line,col,p)
     | XmlReaderError (line,col,p)
     | XmlDocumentError (line,col,p) ->
-      let msg = LBLOCK [ STR name ; STR ": " ; p ] in
+      let msg = LBLOCK [STR name; STR ": "; p] in
       begin
 	ch_error_log#add "xml error" msg ;
-	raise (XmlDocumentError (line,col,msg))
+	raise (XmlDocumentError (line, col, msg))
       end
 
   method private read_xml_struct_file (name:string) =
@@ -1126,16 +1186,17 @@ object (self)
 	  type_definitions#add_compinfo name cinfo
 	end
       else
-	ch_error_log#add "initialization" 
-	  (LBLOCK [ STR "No struct definition found for " ; STR name ])	
+	ch_error_log#add
+          "initialization"
+	  (LBLOCK [STR "No struct definition found for "; STR name])
     with
-    | XmlParseError (line,col,p)
-    | XmlReaderError (line,col,p)
-    | XmlDocumentError (line,col,p) ->
-      let msg = LBLOCK [ STR name ; STR ": " ; p ] in
+    | XmlParseError (line, col, p)
+    | XmlReaderError (line, col, p)
+    | XmlDocumentError (line, col, p) ->
+      let msg = LBLOCK [STR name; STR ": "; p] in
       begin
 	ch_error_log#add "xml error" msg ;
-	raise (XmlDocumentError (line,col,msg))
+	raise (XmlDocumentError (line, col, msg))
       end
 
 
@@ -1175,32 +1236,38 @@ object (self)
       | Some s -> s#add ia
       | _ ->
 	let s = new DoublewordCollections.set_t in
-	begin s#add ia ; nonreturning_calls#set fa s end) (getcc "nrc")
+	begin s#add ia; nonreturning_calls#set fa s end) (getcc "nrc")
 
   method private read_xml_classes (node:xml_element_int) =
     List.iter add_user_cpp_class_file 
-      (List.map (fun n -> n#getAttribute "name") (node#getTaggedChildren "cls"))
+      (List.map
+         (fun n -> n#getAttribute "name") (node#getTaggedChildren "cls"))
 
+  (* expects files in the structs directory for each named struct. *)
   method private read_xml_structs (node:xml_element_int) =
     List.iter add_user_c_struct
-      (List.map (fun n -> n#getAttribute "name") (node#getTaggedChildren "struct"))
+      (List.map
+         (fun n -> n#getAttribute "name") (node#getTaggedChildren "struct"))
 
   method private read_xml_structconstants (node:xml_element_int) =
     List.iter (fun n ->
       let name = n#getAttribute "name" in
-      let _ = pr_debug [ STR "Read struct constant for " ; STR name ; NL ] in
       match load_userdata_structconstant_file name with
       | Some scNode ->
 	let sc = read_xml_cstructconstant scNode in
 	begin
-	  add_structconstant name sc ;
+	  add_structconstant name sc;
 	  chlog#add "c struct constant" (STR name)
 	end
       | _ ->
 	begin
-	  ch_error_log#add "struct constant file not found" (STR name) ;
-	  raise (BCH_failure (LBLOCK [ STR "Struct constant file for " ; STR name ; 
-				       STR " not found" ]))
+	  ch_error_log#add "struct constant file not found" (STR name);
+	  raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "Struct constant file for ";
+                    STR name;
+		    STR " not found"]))
 	end)
       (node#getTaggedChildren "sc")
 	
@@ -1255,9 +1322,9 @@ object (self)
       
   method get_userdeclared_codesections = userdeclared_codesections#listOfKeys
       
-   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-    *                                            stage 1: jump-tables and data-blocks *
-    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *) 
+   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+    *                                     stage 1: jump-tables and data-blocks *
+    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method private is_excluded_jumptable (iaddr:doubleword_int) =
     excluded_jumptables#has iaddr
@@ -1386,20 +1453,25 @@ object (self)
       let dNode = xmlElement "db" in 
       begin d#write_xml dNode ; dNode end) data_blocks#toList)
       
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   *                                                   stage 2: function entry points *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *) 
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   *                                            stage 2: function entry points *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
       
-  method initialize_function_entry_points (collect_targets:unit -> doubleword_int list) =
+  method initialize_function_entry_points
+           (collect_targets:unit -> doubleword_int list) =
     if has_file then 
-      chlog#add "initialization" 
-	        (STR "system-info: initialization of function entry points from file")
+      chlog#add
+        "initialization"
+	(STR "system-info: initialization of function entry points from file")
     else
       let feps = collect_targets () in
       begin
-	chlog#add "initialization"
-	          (LBLOCK [ STR "system-info: collected " ; INT (List.length feps) ; 
-			    STR " function entry points" ]) ;
+	chlog#add
+          "initialization"
+	  (LBLOCK [
+               STR "system-info: collected ";
+               INT (List.length feps);
+	       STR " function entry points"]) ;
 	List.iter (fun fe -> ignore (functions_data#add_function fe)) feps
       end
 
@@ -1411,15 +1483,17 @@ object (self)
   (* true if the condition of a conditional jump is guaranteed to be true *)
   method is_fixed_true_branch (a:doubleword_int) = fixedtrueconditionals#has a
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   *                                                                   function names *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *) 
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   *                                                             function names *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
                                                  
   method get_exported_item_name (a:doubleword_int) = 
     if H.mem exported_item_names a#index then
       H.find exported_item_names a#index
     else
-      raise (BCH_failure (LBLOCK [ STR "No exported item name found for " ; a#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [STR "No exported item name found for "; a#toPretty]))
 
   method has_exported_item_name (a:doubleword_int) = 
     H.mem exported_item_names a#index
@@ -1428,16 +1502,18 @@ object (self)
     if self#has_exported_data_spec name then
       H.find data_export_specs name 
     else
-      raise (BCH_failure (LBLOCK [ STR "No export spec found for " ; STR name ]))
+      raise (BCH_failure (LBLOCK [STR "No export spec found for "; STR name]))
 	
   method has_exported_data_spec (name:string) = H.mem data_export_specs name
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ goto returns ~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ goto returns ~ *)
 
   method add_goto_return (iaddr:doubleword_int) (tgt:doubleword_int) =
     begin
       goto_returns#set iaddr tgt ;
-      chlog#add "add goto return" (LBLOCK [ iaddr#toPretty ; STR ": " ; tgt#toPretty ])
+      chlog#add
+        "add goto return"
+        (LBLOCK [ iaddr#toPretty ; STR ": " ; tgt#toPretty ])
     end
 
   method is_goto_return (iaddr:doubleword_int) = 
@@ -1447,11 +1523,13 @@ object (self)
     match goto_returns#get iaddr with
     | Some tgt -> tgt
     | _ ->
-      raise (BCH_failure (LBLOCK [ STR "No goto-return found for " ; iaddr#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [STR "No goto-return found for "; iaddr#toPretty]))
       
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   *                                                                file information *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   *                                                          file information *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
   val mutable file_stream_wrapper_function = make_little_endian_stream_wrapper
   val mutable little_endian = true
   val mutable image_base = wordzero
@@ -1484,7 +1562,9 @@ object (self)
     end
 
   method get_code_size = 
-    List.fold_left (fun acc cs -> acc#add cs) code_size userdeclared_codesections#listOfValues
+    List.fold_left
+      (fun acc cs -> acc#add cs)
+      code_size userdeclared_codesections#listOfValues
 
   method get_size = String.length !file_as_string
 
@@ -1493,13 +1573,23 @@ object (self)
     file_stream_wrapper_function (IO.input_string fString)
 
   method private get_encodings (va:doubleword_int) (len:int) =
-    let encoding_to_pretty (ty,va,size,key,width) =
-      LBLOCK [ STR "(" ; STR ty ; STR "," ; va#toPretty ; STR "," ; size#toPretty ;
-	       STR "," ; key#toPretty ; STR "," ; INT width ; STR ")" ] in
-    let encs = List.filter (fun (ty,start,size,_,_) ->
+    let encoding_to_pretty (ty, va, size, key, width) =
+      LBLOCK [
+          STR "(" ;
+          STR ty;
+          STR ",";
+          va#toPretty;
+          STR ",";
+          size#toPretty;
+	  STR ",";
+          key#toPretty;
+          STR ",";
+          INT width; STR ")"] in
+    let encs = List.filter (fun (ty, start, size, _, _) ->
       ty = "xor" && va#le start && start#lt (va#add_int len)) encodings in
     begin
-      List.iter (fun enc -> chlog#add "use encoding" (encoding_to_pretty enc)) encs ;
+      List.iter
+        (fun enc -> chlog#add "use encoding" (encoding_to_pretty enc)) encs;
       encs
     end
 
@@ -1518,50 +1608,79 @@ object (self)
       if offset > len then
 	let hexLen = int_to_doubleword len in
 	begin
-	  ch_error_log#add "invalid argument"
-	    (LBLOCK [ STR "Unable to return input at offset " ; hexOffset#toPretty ;
-		      STR " -- file size = " ; hexLen#toPretty ]);
-	  raise (Invalid_argument "assembly_xreference_t#get_exe_string_at_offset")
+	  ch_error_log#add
+            "invalid argument"
+	    (LBLOCK [
+                 STR "Unable to return input at offset ";
+                 hexOffset#toPretty;
+		 STR " -- file size = ";
+                 hexLen#toPretty ]);
+	  raise
+            (Invalid_argument
+               "assembly_xreference_t#get_exe_string_at_offset")
 	end
       else
 	if offset + size > len then
 	  let sizeAvailable = len - offset in
           if size - sizeAvailable < 10 then
 	    begin
-	      ch_error_log#add "continue operation with error"
-	        (LBLOCK [ STR "Unable to return the requested size " ;
-			  STR " (" ; INT size ; STR " ); " ;
-			  STR "only returning " ; INT sizeAvailable ;
-                          STR " and filling up the rest with zeroes" ] ) ;
+	      ch_error_log#add
+                "continue operation with error"
+	        (LBLOCK [
+                     STR "Unable to return the requested size ";
+		     STR " (";
+                     INT size; STR " ); ";
+		     STR "only returning ";
+                     INT sizeAvailable;
+                     STR " and filling up the rest with zeroes"]);
               if len > offset then
                 let missing = Bytes.make (size - sizeAvailable) (Char.chr 0) in
-	        String.concat "" [ string_suffix !file_as_string offset; Bytes.to_string missing ]
+	        String.concat
+                  ""
+                  [string_suffix !file_as_string offset;
+                   Bytes.to_string missing]
               else
                 raise (BCH_failure
-                         (LBLOCK [ STR "get-file-string (error case): String.suffix: Length: " ;
-                                   INT len ; STR "; offset: " ; INT offset ]))
+                         (LBLOCK [
+                              STR "get-file-string (error case): ";
+                              STR "String.suffix: Length: ";
+                              INT len;
+                              STR "; offset: ";
+                              INT offset]))
 	    end
           else
             begin
-              ch_error_log#add "continue operation with error"
-                (LBLOCK [ STR "Unable to return the requested size ";
-                          STR " (" ; INT size ; STR " ); ";
-                          STR "only returning " ; INT sizeAvailable ]);
+              ch_error_log#add
+                "continue operation with error"
+                (LBLOCK [
+                     STR "Unable to return the requested size ";
+                     STR " (" ; INT size ; STR " ); ";
+                     STR "only returning ";
+                     INT sizeAvailable]);
               if len > offset then
                 string_suffix !file_as_string offset
               else
                 raise (BCH_failure
-                         (LBLOCK [ STR "get-file-string (error case): String.suffix: Length: ";
-                                   INT len ; STR "; offset: " ; INT offset ]))
+                         (LBLOCK [
+                              STR "get-file-string (error case): ";
+                              STR "String.suffix: Length: ";
+                              INT len;
+                              STR "; offset: ";
+                              INT offset]))
             end
 	else
-	    String.sub !file_as_string offset size
+	  String.sub !file_as_string offset size
     else
       if len > offset then
         string_suffix !file_as_string offset
       else
-        raise (BCH_failure (LBLOCK [ STR "get-file-string: String.suffix: Length: " ;
-                                     INT len ; STR "; offset: " ; INT offset ]))
+        raise
+          (BCH_failure
+             (LBLOCK [
+                  STR "get-file-string: String.suffix: Length: " ;
+                  INT len;
+                  STR "; offset: ";
+                  INT offset]))
 	
   method set_image_base (a:doubleword_int) = 
     begin image_base <- a ; system_data#set_image_base a end
@@ -1593,8 +1712,10 @@ object (self)
       H.find bound_library_functions a#index
     else
       begin
-	ch_error_log#add "invocation error"
-	  (LBLOCK [ STR "No bound library function found for " ; a#toPretty ]);
+	ch_error_log#add
+          "invocation error"
+	  (LBLOCK [
+               STR "No bound library function found for "; a#toPretty]);
 	raise (Invocation_error "system_info#get_bound_library_function")
       end
 	

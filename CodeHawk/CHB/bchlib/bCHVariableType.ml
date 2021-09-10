@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,14 +49,21 @@ open BCHXmlUtil
 module H = Hashtbl
 module P = Pervasives
 
+
 let raise_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
-	     INT node#getColumnNumber ; STR ") " ; msg ] in
+    LBLOCK [
+        STR "(";
+        INT node#getLineNumber;
+        STR ",";
+	INT node#getColumnNumber;
+        STR ") ";
+        msg] in
   begin
     ch_error_log#add "xml parse error" error_msg ;
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
   end
+
 
 let int_type_to_string (k:ikind) =
   match k with
@@ -73,6 +82,7 @@ let int_type_to_string (k:ikind) =
   | IULongLong -> "unsigned long long"
   | INonStandard _ -> "non-standard"
 
+
 let ikind_type_size (k:ikind) =
   match k with
   | IChar | ISChar | IUChar -> 1
@@ -82,8 +92,9 @@ let ikind_type_size (k:ikind) =
   | IShort | IUShort -> 2
   | ILong | IULong -> 4
   | ILongLong | IULongLong -> 8
-  | INonStandard (_,s) -> s
-    
+  | INonStandard (_, s) -> s
+
+
 let get_ikind_from_size ?(signed=true) (size:int) =
   match size with
   | 1 -> if signed then ISChar else IUChar
@@ -91,28 +102,28 @@ let get_ikind_from_size ?(signed=true) (size:int) =
   | 4 -> if signed then IInt else IUInt
   | 8 -> if signed then ILongLong else IULongLong
   | _ -> INonStandard (signed,size)
-      
+
+
 let float_type_to_string (k:fkind) =
   match k with
   | FFloat -> "float"
   | FDouble -> "double"
   | FLongDouble -> "long double"
-    
+
+
 let float_representation_to_string (r:frepresentation) =
   match r with FScalar -> "scalar" | FPacked -> "packed"
-    
+
+
 let fkind_type_size (k:fkind) =
   match k with
   | FFloat -> 4
   | FDouble -> 8
   | FLongDouble -> 16
 
-    
-let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
-  let length = List.length in
-  if (length l1) < (length l2) then -1
-  else if (length l1) > (length l2) then 1 
-  else List.fold_right2 (fun e1 e2 a -> if a = 0 then (f e1 e2) else a) l1 l2 0
+
+let list_compare = BCHUtilities.list_compare
+
 
 let attribute_compare a1 a2 =
   match (a1,a2) with (Attr s1, Attr s2) -> P.compare s1 s2
@@ -139,24 +150,31 @@ let t_named name = TNamed (name,[])
 
 let to_tname s = SimpleName s
 
-let t_comp ?(name_space=[]) name = TComp (to_tname name,List.map to_tname name_space,[])
-let t_enum ?(name_space=[]) name = TEnum (to_tname name,List.map to_tname name_space,[])
-let t_class ?(name_space=[]) name = TClass (to_tname name,List.map to_tname name_space,[])
+let t_comp ?(name_space=[]) name =
+  TComp (to_tname name, List.map to_tname name_space, [])
 
-let t_tcomp ?(name_space=[]) name = TComp (name,name_space,[])
-let t_tenum ?(name_space=[]) name = TEnum (name,name_space,[])
-let t_tclass ?(name_space=[]) name = TClass (name,name_space,[])
+let t_enum ?(name_space=[]) name =
+  TEnum (to_tname name, List.map to_tname name_space, [])
+
+let t_class ?(name_space=[]) name =
+  TClass (to_tname name, List.map to_tname name_space, [])
+
+let t_tcomp ?(name_space=[]) name = TComp (name, name_space, [])
+
+let t_tenum ?(name_space=[]) name = TEnum (name, name_space, [])
+
+let t_tclass ?(name_space=[]) name = TClass (name, name_space, [])
 
 let t_function (returntype:btype_t) (args:bfunarg_t list) =
-  TFun (returntype,Some args,false,[])
+  TFun (returntype, Some args, false, [])
 
 let t_vararg_function (returntype:btype_t) (args:bfunarg_t list) =
-  TFun (returntype,Some args,true,[])
+  TFun (returntype, Some args, true, [])
 
 let t_function_anon (returntype:btype_t) =
-  TFun (returntype,None,false,[])
+  TFun (returntype, None, false, [])
 
-let t_voidptr = TPtr (TVoid [],[])
+let t_voidptr = TPtr (TVoid [], [])
 
 
 let t_refto t = TRef (t,[])
@@ -237,7 +255,8 @@ let rec btype_compare t1 t2 =
   | (TVoid _,_) -> -1
   | (_, TVoid _) -> 1
   | (TInt (i1,attrs1), TInt (i2,attrs2)) -> 
-    let l0 = P.compare i1 i2 in if l0 = 0 then attributes_compare attrs1 attrs2 else l0
+     let l0 = P.compare i1 i2 in
+     if l0 = 0 then attributes_compare attrs1 attrs2 else l0
   | (TInt _, _) -> -1
   | (_, TInt _) -> 1
   | (TFloat (f1,r1,attrs1), TFloat (f2,r2,attrs2)) -> 
@@ -316,6 +335,7 @@ let rec btype_compare t1 t2 =
   | (_, TClass _) -> 1
   | (TVarArg attrs1, TVarArg attrs2) -> attributes_compare attrs1 attrs2
 
+
 and tname_compare t1 t2 =
   match (t1,t2) with
   | (SimpleName n1, SimpleName n2) -> P.compare n1 n2
@@ -324,7 +344,8 @@ and tname_compare t1 t2 =
   | (TemplatedName (b1,args1), TemplatedName (b2,args2)) ->
     let l0 = tname_compare b1 b2 in
     if l0 = 0 then list_compare args1 args2 btype_compare else l0
-    
+
+
 and opt_arg_list_compare a1 a2 =
   match (a1,a2) with
   | (Some l1, Some l2) ->
@@ -332,18 +353,21 @@ and opt_arg_list_compare a1 a2 =
   | (Some _, _) -> -1
   | (_, Some _) -> 1
   | _ -> 0
-    
+
+
 and opt_exp_compare x1 x2 =
   match (x1,x2) with
   | (Some e1, Some e2) -> exp_compare e1 e2
   | (Some _,_) -> -1
   | (_, Some _) -> 1
   | _ -> 0
-    
+
+
 and exp_compare e1 e2 =
   match (e1,e2) with
     (Const c1, Const c2) -> constant_compare c1 c2
-      
+
+
 and constant_compare c1 c2 =
   match (c1,c2) with
   | (CInt64 (i1,k1,_), CInt64 (i2,k2,_)) ->
@@ -426,8 +450,9 @@ let rec btype_to_string (t:btype_t) =
   | TVoid attrs -> (a attrs) ^ "void"
   | TInt (ikind,attrs) -> (a attrs) ^ int_type_to_string ikind
   | TFloat (fkind,frep,attrs) -> 
-    (a attrs) ^ 
-      (float_type_to_string fkind) ^ (match frep with FPacked -> ":packed" | _ -> "")
+     (a attrs)
+     ^ (float_type_to_string fkind)
+     ^ (match frep with FPacked -> ":packed" | _ -> "")
   | TPtr (tt,attrs) -> (a attrs) ^ "(" ^ (btype_to_string tt) ^ "*)"
   | TRef (tt,attrs) -> (a attrs) ^ "(" ^ (btype_to_string tt) ^ "&)"
   | THandle (s,attrs) -> (a attrs) ^ "H" ^ s
@@ -436,9 +461,18 @@ let rec btype_to_string (t:btype_t) =
   | TArray (tt,None,attrs) -> 
     (a attrs) ^ (btype_to_string tt) ^ "[]"
   | TFun (tt,optArgs,vararg,attrs) -> 
-    (a attrs) ^ "(" ^ (btype_to_string tt) ^ " (" ^
-    (String.concat "," (match optArgs with None -> [] | Some args ->
-      (List.map (fun (name,ty) -> name ^ ":" ^ (btype_to_string ty)) args))) ^ ") )"
+     (a attrs)
+     ^ "("
+     ^ (btype_to_string tt)
+     ^ " ("
+     ^ (String.concat
+          ","
+          (match optArgs with
+           | None -> []
+           | Some args ->
+              (List.map
+                 (fun (name,ty) -> name ^ ":" ^ (btype_to_string ty)) args)))
+     ^ ") )"
   | TNamed (name,attrs) -> (a attrs) ^ name
   | TComp (name,ns,attrs) -> 
     (a attrs) ^ "struct " ^ (ns_to_string ns)  ^ (tname_to_string name)
@@ -448,6 +482,7 @@ let rec btype_to_string (t:btype_t) =
   | TClass (name,ns,attrs) -> 
     (a attrs) ^ "class " ^ (ns_to_string ns) ^ (tname_to_string name)
   | TUnknown attrs -> (a attrs) ^ "unknown"
+
 
 and tname_to_string t =
   match t with
@@ -486,9 +521,9 @@ let get_struct_field_enums (cinfo:bcompinfo_t) =
     
 exception Invalid_enumeration of string * string
     
-(* ------------------------------------------------------------------------------ *
- * implements simpleType:ikindSelectorType                                        *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements simpleType:ikindSelectorType                                   *
+ * ------------------------------------------------------------------------- *)
 let ikind_of_string s =
   match s with
   | "ichar" -> IChar
@@ -506,9 +541,9 @@ let ikind_of_string s =
   | "iulonglong" -> IULongLong
   | _ -> raise (Invalid_enumeration ("ikind", s))
     
-(* ------------------------------------------------------------------------------ *
- * implements simpleType:ikindSelectorType                                        *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements simpleType:ikindSelectorType                                   *
+ * ------------------------------------------------------------------------- *)
 let ikind_to_string (kind:ikind) =
   match kind with
     IChar -> "ichar"
@@ -526,9 +561,9 @@ let ikind_to_string (kind:ikind) =
   | IULongLong -> "iulonglong"
   | _ -> raise (Invalid_enumeration ("ikind","INonStandard"))
     
-(* ------------------------------------------------------------------------------ *
- * implements simpleType:fkindSelectorType                                        *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements simpleType:fkindSelectorType                                   *
+ * ------------------------------------------------------------------------- *)
 let fkind_of_string s =
   match s with
   | "ffloat" -> FFloat
@@ -542,18 +577,18 @@ let frep_of_string s =
   | "packed" -> FPacked
   | _ -> raise (Invalid_enumeration ("frep",s))
     
-(* ------------------------------------------------------------------------------ *
- * implements simpleType:fkindSelectorType                                        *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements simpleType:fkindSelectorType                                   *
+ * ------------------------------------------------------------------------- *)
 let fkind_to_string (kind:fkind) =
   match kind with
     FFloat -> "ffloat"
   | FDouble -> "fdouble"
   | FLongDouble -> "flongdouble"
     
-(* ------------------------------------------------------------------------------ *
- * implements simpleType:typSelectorType                                          *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements simpleType:typSelectorType                                     *
+ * ------------------------------------------------------------------------- *)
 let typ_tag_to_string (t:btype_t) =
   match t with
     TVoid _ -> "tvoid"
@@ -571,9 +606,9 @@ let typ_tag_to_string (t:btype_t) =
   | TClass _ -> "class"
   | TUnknown _ -> "tunknown"
     
-(* ------------------------------------------------------------------------------ *
- * implements simpleType:constantSelectorType                                     *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements simpleType:constantSelectorType                                *
+ * ------------------------------------------------------------------------- *)
 let constant_tag_to_string (c:constant) =
   match c with
     CInt64 _ -> "cint64"
@@ -583,36 +618,36 @@ let constant_tag_to_string (c:constant) =
   | CReal _ -> "creal"
   | CEnum _ -> "cenum"
     
-(* ------------------------------------------------------------------------------ *
- * implements complexType:intElementType                                          *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements complexType:intElementType                                     *
+ * ------------------------------------------------------------------------- *)
 let read_xml_int64 (node:xml_element_int) : int64 =
   Int64.of_string (node#getAttribute "intValue")
     
-(* ------------------------------------------------------------------------------ *
- * implements complexType:intElementType                                          *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements complexType:intElementType                                     *
+ * ------------------------------------------------------------------------- *)
 let write_xml_int64_element (node:xml_element_int) (i:int64) =	
   node#setAttribute "intValue" (Int64.to_string i)
     
-(* ------------------------------------------------------------------------------ *
- * implements complexType:intListType                                             *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements complexType:intListType                                        *
+ * ------------------------------------------------------------------------- *)
 let read_xml_int64_list (node:xml_element_int) : int64 list =
   List.map read_xml_int64 (node#getTaggedChildren "int")
     
-(* ------------------------------------------------------------------------------ *
- * implements complexType:intListType                                             *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements complexType:intListType                                        *
+ * ------------------------------------------------------------------------- *)
 let write_xml_int64_list (node:xml_element_int) (l:int64 list) =
   node#appendChildren 
     (List.map (fun i -> 
          let inode = xmlElement "int" in
          begin write_xml_int64_element inode i ; inode end) l)
     
-(* ------------------------------------------------------------------------------ *
- * implements complexType:constantType                                            *
- * ------------------------------------------------------------------------------ *) 				
+(* ------------------------------------------------------------------------- *
+ * implements complexType:constantType                                       *
+ * ------------------------------------------------------------------------- *)
 let rec read_xml_constant (node:xml_element_int) : constant =
   let has = node#hasNamedAttribute in
   let get = node#getAttribute in
@@ -621,40 +656,47 @@ let rec read_xml_constant (node:xml_element_int) : constant =
   let get_text () = if has "textrep" then Some (get "textrep") else None in
   match get "ctag" with
   | "cint64" ->
-    CInt64 (Int64.of_string (get "intValue"),ikind_of_string (get "ikind"),get_text ())
+     CInt64
+       (Int64.of_string
+          (get "intValue"), ikind_of_string (get "ikind"), get_text ())
   | "cstr" -> CStr (get "strValue")
   | "cwstr" -> CWStr (read_xml_int64_list (getc "wlist"))
   | "cchr" -> CChr (Char.chr (get_int "charValue"))
   | "creal" -> 
-    CReal (float_of_string (get "floatValue"),fkind_of_string (get "fkind"),get_text ())
+     CReal
+       (float_of_string
+          (get "floatValue"), fkind_of_string (get "fkind"), get_text ())
   | "cenum" -> CEnum (read_xml_exp (getc "exp"),get "eitem",get "ename")
-  | s -> raise_error node (LBLOCK [ STR s ; STR " not recognized as a constant type" ])
+  | s ->
+     raise_error node
+       (LBLOCK [STR s; STR " not recognized as a constant type"])
     
-(* ------------------------------------------------------------------------------ *
- * implements complexType:expressionType                                          *
- * ------------------------------------------------------------------------------ *) 				
+(* ------------------------------------------------------------------------- *
+ * implements complexType:expressionType                                     *
+ * ------------------------------------------------------------------------- *)
 and read_xml_exp (node:xml_element_int) : exp =
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
   match get "etag" with
   | "const" -> Const (read_xml_constant (getc "const"))
-  | s -> raise_error node (LBLOCK [ STR s ; STR " not recognized as an exp tag" ])
+  | s ->
+     raise_error node (LBLOCK [STR s; STR " not recognized as an exp tag"])
     
-(* ------------------------------------------------------------------------------ *
- * implements complexType:eitemType                                               *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements complexType:eitemType                                          *
+ * ------------------------------------------------------------------------- *)
 let read_xml_eitem (node:xml_element_int) : (string * exp) =
   (node#getAttribute "eitemname", read_xml_exp (node#getTaggedChild "exp"))
     
-(* ------------------------------------------------------------------------------ *
- * implements complexType:eitemListType                                           *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements complexType:eitemListType                                      *
+ * ------------------------------------------------------------------------- *)
 let read_xml_eitem_list (node:xml_element_int) : (string * exp) list =
   List.map read_xml_eitem (node#getTaggedChildren "eitem")
     
-(* ------------------------------------------------------------------------------ *
- * implements complexType:enumInfoType                                            *
- * ------------------------------------------------------------------------------ *) 
+(* ------------------------------------------------------------------------- *
+ * implements complexType:enumInfoType                                       *
+ * ------------------------------------------------------------------------- *)
 let read_xml_enuminfo (node:xml_element_int) : benuminfo_t = 
   let getc = node#getTaggedChild in
   {	bename = node#getAttribute "ename" ;
@@ -662,9 +704,9 @@ let read_xml_enuminfo (node:xml_element_int) : benuminfo_t =
 	bekind = ikind_of_string (node#getAttribute "ekind") ;
   }
     
-(* ------------------------------------------------------------------------------ *
- * implements complexType:fieldInfoType                                           *
- * ------------------------------------------------------------------------------ *) 			
+(* ------------------------------------------------------------------------- *
+ * implements complexType:fieldInfoType                                      *
+ * ------------------------------------------------------------------------- *)
 let rec read_xml_fieldinfo (node:xml_element_int) : bfieldinfo_t =
   let getc = node#getTaggedChild in
   let geti = node#getIntAttribute in

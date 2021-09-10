@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +30,8 @@
 (* bchlib *)
 open BCHLibTypes
 
-val type_definitions:type_definitions_int
+
+val type_definitions: type_definitions_int
 
 val get_size_of_type: btype_t -> int option
 
