@@ -46,13 +46,18 @@ open BCHUtilities
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
-    LBLOCK [ STR "Type " ; STR name ; STR " tag: " ; STR tag ;
-             STR " not recognized. Accepted tags: " ;
-             pretty_print_list accepted (fun s -> STR s) "" ", " "" ] in
+    LBLOCK [
+        STR "Type ";
+        STR name;
+        STR " tag: ";
+        STR tag;
+        STR " not recognized. Accepted tags: ";
+        pretty_print_list accepted (fun s -> STR s) "" ", " ""] in
   begin
-    ch_error_log#add "serialization tag" msg ;
+    ch_error_log#add "serialization tag" msg;
     raise (BCH_failure msg)
   end
+
 
 let mk_constantstring (s:string):constantstring =
   if has_control_characters s then
@@ -100,7 +105,7 @@ object (self)
         enumitem_table ;
         constant_table ;
         exp_table 
-      ] ;
+      ];
       stringtables <- [
           string_table
         ]
@@ -145,9 +150,11 @@ object (self)
         | MmxRegister i
         | XmmRegister i -> (tags,[i])
       | MIPSRegister r ->  (tags @ [ mips_reg_mfts#ts r ],[])
-      | MIPSSpecialRegister r -> (tags @ [ mips_special_reg_mfts#ts r ],[])
-      | MIPSFloatingPointRegister i -> (tags,[i])
-      | ARMRegister r -> (tags @ [arm_reg_mfts#ts r], []) in
+      | MIPSSpecialRegister r -> (tags @ [mips_special_reg_mfts#ts r], [])
+      | MIPSFloatingPointRegister i -> (tags, [i])
+      | ARMRegister r -> (tags @ [arm_reg_mfts#ts r], [])
+      | ARMSpecialRegister r -> (tags @ [arm_special_reg_mfts#ts r], [])
+      | ARMFloatingPointRegister (s, i) -> (tags, [s; i]) in
     register_table#add key
 
   method get_register (index:int) =
@@ -168,6 +175,8 @@ object (self)
     | "ps" -> MIPSSpecialRegister (mips_special_reg_mfts#fs (t 1))
     | "pfp" -> MIPSFloatingPointRegister (a 0)
     | "a" -> ARMRegister (arm_reg_mfts#fs (t 1))
+    | "as" -> ARMSpecialRegister (arm_special_reg_mfts#fs (t 1))
+    | "afp" -> ARMFloatingPointRegister (a 0, a 1)
     | s -> raise_tag_error name s register_mcts#tags
 
   method index_attributes (attrs:attributes) =
@@ -234,34 +243,37 @@ object (self)
     if index = (-1) then None else Some (self#get_bfunargs index)
 
   method index_btype (t:btype_t) =
-    let tags = [ btype_mcts#ts t ] in
+    let tags = [btype_mcts#ts t] in
     let ia = self#index_attributes in
     let key = match t with
-      | TVoid attrs -> (tags, [ ia attrs ])
-      | TInt (ik,attrs) -> (tags @ [ ikind_mfts#ts ik ],[ ia attrs ])
-      | TFloat (fk,frep,attrs) ->
-         let tags = tags @ [ fkind_mfts#ts fk ; frepresentation_mfts#ts frep ] in
+      | TVoid attrs -> (tags, [ia attrs])
+      | TInt (ik, attrs) -> (tags @ [ikind_mfts#ts ik ], [ ia attrs])
+      | TFloat (fk, frep, attrs) ->
+         let tags = tags @ [fkind_mfts#ts fk; frepresentation_mfts#ts frep] in
          (tags,[ ia attrs ])
-      | TPtr (tt,attrs) -> (tags, [ self#index_btype tt ; ia attrs ])
-      | TRef (tt,attrs) -> (tags, [ self#index_btype tt ; ia attrs ])
-      | THandle (s,attrs) -> (tags, [ self#index_string s ; ia attrs ])
-      | TArray (tt,optx,attrs) ->
-         (tags, [ self#index_btype tt ; self#index_opt_exp optx ; ia attrs ])
-      | TFun (tt,optargs,varargs,attrs) ->
-         (tags,  [ self#index_btype tt ; self#index_opt_bfunargs optargs ;
-                   (if varargs then 1 else 0) ; ia attrs ])
-      | TNamed (s,attrs) -> (tags,[ self#index_string s ; ia attrs ])
-      | TComp (tn,tnlist,attrs)
-        | TEnum (tn,tnlist,attrs)
-        | TClass (tn,tnlist,attrs) ->
-         (tags, [ self#index_tname tn ; self#index_tname_list tnlist ; ia attrs ])
-      | TVarArg attrs -> (tags, [ ia attrs ])
-      | TUnknown attrs -> (tags, [ ia attrs ]) in
+      | TPtr (tt,attrs) -> (tags, [self#index_btype tt; ia attrs])
+      | TRef (tt,attrs) -> (tags, [self#index_btype tt; ia attrs])
+      | THandle (s,attrs) -> (tags, [self#index_string s; ia attrs])
+      | TArray (tt, optx, attrs) ->
+         (tags, [self#index_btype tt; self#index_opt_exp optx; ia attrs])
+      | TFun (tt, optargs, varargs, attrs) ->
+         (tags,
+          [self#index_btype tt;
+           self#index_opt_bfunargs optargs;
+           (if varargs then 1 else 0);
+           ia attrs])
+      | TNamed (s, attrs) -> (tags, [self#index_string s; ia attrs])
+      | TComp (tn, tnlist, attrs)
+        | TEnum (tn, tnlist, attrs)
+        | TClass (tn, tnlist, attrs) ->
+         (tags, [self#index_tname tn; self#index_tname_list tnlist; ia attrs])
+      | TVarArg attrs -> (tags, [ia attrs])
+      | TUnknown attrs -> (tags, [ia attrs]) in
     btype_table#add key
 
   method  get_btype (index:int) =
     let name = btype_mcts#name in
-    let (tags,args) = btype_table#retrieve index in
+    let (tags, args) = btype_table#retrieve index in
     let t = t name tags in
     let a = a name args in
     let ia = self#get_attributes in
@@ -290,61 +302,62 @@ object (self)
     | s -> raise_tag_error name s btype_mcts#tags
 
   method index_compinfo (c:bcompinfo_t) =
-    let args = (if c.bcstruct then 1 else 0)
-               :: (List.map self#index_fieldinfo c.bcfields) in
-    compinfo_table#add ([ c.bcname ],args)
+    let args =
+      (if c.bcstruct then 1 else 0)
+      :: (List.map self#index_fieldinfo c.bcfields) in
+    compinfo_table#add ([c.bcname ], args)
 
   method get_compinfo (index:int) =
-    let (tags,args) = compinfo_table#retrieve index in
+    let (tags, args) = compinfo_table#retrieve index in
     let name = "compinfo" in
     let t = t name tags in
     let a = a name args in
-    { bcstruct = (a 0) = 1 ;
-      bcname = t 0 ;
+    { bcstruct = (a 0) = 1;
+      bcname = t 0;
       bcfields = List.map self#get_fieldinfo (List.tl args)
     }
 
   method index_fieldinfo (f:bfieldinfo_t) =
-    let tags = [ f.bfname ] in
-    let args = [ self#index_btype f.bftype ; f.bfoffset ; f.bfsize ] in
+    let tags = [f.bfname] in
+    let args = [self#index_btype f.bftype; f.bfoffset; f.bfsize] in
     let (tags,args) =
       match f.bfenum with
-      | Some (name,flags) ->
-         (tags @ [ name ], args @ [ if flags then 1 else 0 ])
+      | Some (name, flags) ->
+         (tags @ [name], args @ [if flags then 1 else 0])
       | _ -> (tags,args) in
-    fieldinfo_table#add (tags,args)
+    fieldinfo_table#add (tags, args)
 
   method get_fieldinfo (index:int) =
-    let (tags,args) = fieldinfo_table#retrieve index in
+    let (tags, args) = fieldinfo_table#retrieve index in
     let name = "fieldinfo" in
     let t = t name tags in
     let a = a name args in
-    { bfname = t 0 ;
-      bftype = self#get_btype (a 0) ;
-      bfenum = if (List.length tags) = 2 then Some (t 1, (a 3) = 1) else None ;
-      bfoffset = a 1 ;
+    { bfname = t 0;
+      bftype = self#get_btype (a 0);
+      bfenum = if (List.length tags) = 2 then Some (t 1, (a 3) = 1) else None;
+      bfoffset = a 1;
       bfsize = a 2
     }
 
   method index_enuminfo (e:benuminfo_t) =
-    let tags = [ e.bename ; ikind_mfts#ts e.bekind ] in
+    let tags = [e.bename; ikind_mfts#ts e.bekind] in
     let args = List.map self#index_enumitem e.beitems in
-    enuminfo_table#add (tags,args)
+    enuminfo_table#add (tags, args)
          
   method get_enuminfo (index:int) =
-    let (tags,args) = enuminfo_table#retrieve index in
+    let (tags, args) = enuminfo_table#retrieve index in
     let name = "enuminfo" in
     let t = t name tags in
-    { bename = t 0 ;
-      beitems = List.map self#get_enumitem args ;
+    { bename = t 0;
+      beitems = List.map self#get_enumitem args;
       bekind = ikind_mfts#fs (t 1)
     }
 
   method index_enumitem (i:beitem_t) =
-    enumitem_table#add ([ fst i ],[ self#index_exp (snd i) ])
+    enumitem_table#add ([fst i], [self#index_exp (snd i)])
 
   method get_enumitem (index:int) =
-    let (tags,args) = enumitem_table#retrieve index in
+    let (tags, args) = enumitem_table#retrieve index in
     let name = "enumitem" in
     let t = t name tags in
     let a = a name args in
@@ -377,16 +390,16 @@ object (self)
     let t = t name tags in
     let a = a name args in
     match (t 0) with
-    | "int" ->
+    | "int"| "c64" ->
        CInt64 (Int64.of_string (t 1), ikind_mfts#fs (t 2),None)
-    | "str" -> CStr (self#get_string (a 0))
-    | "wstr" -> CWStr (List.map Int64.of_string (List.tl tags))
-    | "chr" -> CChr (Char.chr (a 0))
-    | "real" ->
+    | "str" | "s" -> CStr (self#get_string (a 0))
+    | "wstr" | "ws" -> CWStr (List.map Int64.of_string (List.tl tags))
+    | "chr" | "c" -> CChr (Char.chr (a 0))
+    | "real" | "r" ->
        let t3 = if (List.length tags) > 3 then (t 3) else "" in
        CReal (float_of_string (t 1), fkind_mfts#fs (t 2),
               let s = t3 in if s = "" then None else Some s)
-    | "enum" -> CEnum (self#get_exp (a 0), t 1, t 2)
+    | "enum" | "e" -> CEnum (self#get_exp (a 0), t 1, t 2)
     | s -> raise_tag_error name s constant_mcts#tags
 
   method index_exp (x:exp) =
