@@ -173,8 +173,8 @@ object (self)
          (ctags c, [oi rd; lsb; width; msb])
       | BitwiseAnd (s, c, rd, rn, imm, tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
-      | BitwiseNot (setflags,cond,rd,imm) ->
-         (tags @ [ ci cond ], [ setb setflags ; oi rd ; oi imm ])
+      | BitwiseNot (s ,c,rd, imm, tw) ->
+         (ctags c, [setb s; oi rd; oi imm; setb tw])
       | BitwiseOrNot (setflags,cond,rd,rn,imm) ->
          (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm])
       | BitwiseBitClear (s,c,rd,rn,imm,tw) ->
@@ -188,7 +188,7 @@ object (self)
         | BranchLink (cond,addr)
         | BranchLinkExchange (cond,addr) ->
          (tags @ [ ci cond ], [ oi addr ])
-      | ByteReverseWord (c,rd,rm) -> (ctags c,[ oi rd; oi rm ])
+      | ByteReverseWord (c, rd, rm, tw) -> (ctags c,[oi rd; oi rm; setb tw])
       | Compare (c,op1,op2,tw) ->
          (ctags c, [oi op1; oi op2; setb tw])
       | CompareNegative (cond,op1,op2)
@@ -242,8 +242,9 @@ object (self)
       | RotateRightExtend (s,c,rd,rm) ->
          (ctags c,[setb s; oi rd; oi rm])
       | SignedDivide (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
-      | SignedExtendHalfword (c,rd,rm)
-        | SignedExtendByte (c,rd,rm) -> (ctags c, [ oi rd; oi rm ])
+      | SignedExtendHalfword (c, rd, rm, tw) ->
+         (ctags c, [oi rd; oi rm; setb tw])
+      | SignedExtendByte (c,rd,rm) -> (ctags c, [ oi rd; oi rm ])
       | SignedMostSignificantWordMultiply (c, rd, rm, rn, roundf) ->
          (ctags c, [oi rd; oi rm; oi rn; roundf])
       | SignedMostSignificantWordMultiplyAccumulate (c, rd, rm, rn, ra, roundf) ->

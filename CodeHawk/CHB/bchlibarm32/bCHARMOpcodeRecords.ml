@@ -175,12 +175,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "EOR" c [rd;rn;rm])
     }
-  | BitwiseNot (s, c, rd, rm) -> {
+  | BitwiseNot (s, c, rd, rm, tw) -> {
       mnemonic = "MVN";
       operands = [rd; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "MVN" c [rd;rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "MVN" c [rd;rm])
     }
   | BitwiseOr (s, c, rd, rn, rm, tw) -> {
       mnemonic = "ORR";
@@ -224,12 +224,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "BLX" c [ addr ])
     }
-  | ByteReverseWord (c, rd, rm) -> {
+  | ByteReverseWord (c, rd, rm, tw) -> {
       mnemonic = "REV";
       operands = [rd; rm];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "REV" c [rd; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "REV" c [rd; rm])
     }
   | Compare (c, rn, rm, tw) -> {
       mnemonic = "CMP";
@@ -487,12 +487,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SXTB" c [rd; rm])
     }
-  | SignedExtendHalfword (c, rd, rm) -> {
+  | SignedExtendHalfword (c, rd, rm, tw) -> {
       mnemonic = "SXTH";
       operands = [rd; rm];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "SXTH" c [rd; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "SXTH" c [rd; rm])
     }
   | SignedMostSignificantWordMultiply (c, rd, rm, rn, rf) ->
      let mnemonic = "SMMUL" ^ (if rf = 1 then "R" else "") in

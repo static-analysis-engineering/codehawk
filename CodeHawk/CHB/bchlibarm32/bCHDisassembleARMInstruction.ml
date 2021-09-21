@@ -714,7 +714,7 @@ let parse_data_proc_reg_type
      let imm5 = mk_imm5 bit11_8 bit7 in
      let rm = mk_imm_shift_reg bit3_0 bit6_5 imm5 RD in
      (* MVN{S}<c> <Rd>, <Rm>{, <shift>} *)
-     BitwiseNot (s,c,rd,rm)
+     BitwiseNot (s, c, rd, rm, false)
 
   (* <cc><0><15>s< 0><rd><rs>0ty1<rm> *)   (* MVN-reg-shifted *)
   | 15 when (bit19_16 = 0) && (bit4 = 1) ->
@@ -722,7 +722,7 @@ let parse_data_proc_reg_type
      let rd = arm_register_op (get_arm_reg bit15_12) WR in
      let rm = mk_reg_shift_reg bit3_0 bit6_5 bit11_8 RD in
      (* MVN{S}<c> <Rd>, <Rm>, <type> <Rs> *)
-     BitwiseNot (s,c,rd,rm)
+     BitwiseNot (s, c, rd, rm, false)
 
   (* <cc><0>.................1..1.... *)
   | _ when (bit7 = 1) && (bit4 = 1) ->
@@ -915,7 +915,7 @@ let parse_data_proc_imm_type
      let rd = arm_register_op (get_arm_reg bit15_12) WR in
      let imm = mk_imm bit11_8 bit7_0 in
      (* MVN{S}<c> <Rd>, #<const> *)
-     BitwiseNot (s,c,rd,imm)
+     BitwiseNot (s, c, rd, imm, false)
 
   | tag ->
      NotRecognized ("data_proc_imm_type:" ^ (stri tag), wordzero)
@@ -1164,7 +1164,7 @@ let parse_media_type
      let rd = arm_register_op (get_arm_reg bit15_12) WR in
      let rm = arm_register_op (get_arm_reg bit3_0) RD in
      (* REV<c> <Rd>, <Rm> *)
-     ByteReverseWord (c,rd,rm)
+     ByteReverseWord (c, rd, rm, false)
 
   (* <cc><3>< 11><15><rd>ro000111<rm> *)   (* SXTH *)
   | 11 when (bit19_16 = 15) && (bit9_8 = 0) && (bit7_5 = 3) ->
@@ -1172,7 +1172,7 @@ let parse_media_type
      let rotation = bit11_10 lsl 3 in
      let rm = mk_arm_rotated_register_op (get_arm_reg bit3_0) rotation RD in
      (* SXTH<c> <Rd>, <Rm>{, <rotation>} *)
-     SignedExtendHalfword (c,rd,rm)
+     SignedExtendHalfword (c, rd, rm, false)
 
   (* <cc><3>< 14><15><rd>ro000111<rm> *)   (* UXTB   *)
   | 14 when (bit19_16 = 15) && (bit9_8 = 0) && (bit7_5 = 3) ->
