@@ -551,6 +551,8 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
     let opcode = (get_instr baddr)#get_opcode in
     if is_return_instruction opcode then
       (Some [],baddr#add_int 4,[])
+    else if system_info#is_nonreturning_call faddr baddr then
+      (Some [], baddr#add_int 4, [])
     else if is_indirect_jump_instruction opcode then
       if system_info#has_jump_table_target faddr baddr then
         let (jt,_,lb,ub) = system_info#get_jump_table_target faddr baddr in
