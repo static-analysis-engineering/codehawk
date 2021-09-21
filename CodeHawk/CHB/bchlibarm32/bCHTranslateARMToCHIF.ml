@@ -573,7 +573,7 @@ let translate_arm_instruction
    *     APSR.Z = IsZeroBit(result);
    *     APSR.C = carry;
    * ------------------------------------------------------------------------ *)
-  | BitwiseNot (setflags, ACCAlways, dst, src) when src#is_immediate ->
+  | BitwiseNot (setflags, ACCAlways, dst, src, _) when src#is_immediate ->
      let floc = get_floc loc in
      let rhs = src#to_expr floc in
      let notrhs =
@@ -586,7 +586,7 @@ let translate_arm_instruction
      let cmd = floc#get_assign_commands lhs notrhs in
      default (cmd @ lhscmds)
 
-  | BitwiseNot (_, _, dst, src) ->
+  | BitwiseNot (_, _, dst, src, _) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = dst#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
@@ -616,7 +616,7 @@ let translate_arm_instruction
   | BranchLinkExchange (ACCAlways, tgt) when tgt#is_absolute_address ->
      default (get_floc loc)#get_arm_call_commands
 
-  | ByteReverseWord (_, dst, _) ->
+  | ByteReverseWord (_, dst, _, _) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = dst#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
@@ -876,7 +876,7 @@ let translate_arm_instruction
      let xrdm16 = XOp (XMod, [rhs; int_constant_expr e16]) in
      let rhsxpr = XOp (XPlus, [xrdm16; ximm16]) in
      let cmds = floc#get_assign_commands lhs rhsxpr in
-     default (cmds @ lhscmds)
+     default (lhscmds @ cmds)
 
   | MoveWide (c, dst, src) ->
      let floc = get_floc loc in
@@ -887,13 +887,25 @@ let translate_arm_instruction
       | ACCAlways -> default (cmds @ lhscmds)
       | _ -> make_conditional_commands c (cmds @ lhscmds))
 
-  | MultiplySubtract (_, rd, _, _, ra) ->
+  | MultiplyAccumulate (_, _, rd, rn, rm, ra) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = rd#to_lhs floc in
-     let (lhsa, lhsacmds) = ra#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     let cmdsa = floc#get_abstract_commands lhsa () in
-     default (lhscmds @ lhsacmds @ cmds @ cmdsa)
+     let rhs1 = rn#to_expr floc in
+     let rhs2 = rm#to_expr floc in
+     let rhsa = ra#to_expr floc in
+     let result = XOp (XPlus, [XOp (XMult, [rhs1; rhs2]); rhsa]) in
+     let cmds = floc#get_assign_commands lhs result in
+     default (lhscmds @ cmds)
+
+  | MultiplySubtract (_, rd, rn, rm, ra) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = rd#to_lhs floc in
+     let rhs1 = rn#to_expr floc in
+     let rhs2 = rm#to_expr floc in
+     let rhsa = ra#to_expr floc in
+     let result = XOp (XMinus, [rhsa; XOp (XMult, [rhs1; rhs2])]) in
+     let cmds = floc#get_assign_commands lhs result in
+     default (lhscmds @ cmds)
 
   (* ----------------------------------------------------------------- Pop -- *
    * address = SP;
@@ -1012,7 +1024,7 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands lhs rhs in
      default (lhscmds @ cmds)
 
-  | SignedExtendHalfword (_, rd, _) ->
+  | SignedExtendHalfword (_, rd, _, _) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = rd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in

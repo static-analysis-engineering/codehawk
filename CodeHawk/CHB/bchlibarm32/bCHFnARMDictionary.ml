@@ -247,7 +247,7 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | BitwiseNot (_, _, rd, rm) ->
+      | BitwiseNot (_, _, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
          let result = XOp (XBNot, [xrm]) in
@@ -306,7 +306,7 @@ object (self)
          let xtgt = tgt#to_expr floc in
          (["a:x"], [xd#index_xpr xtgt])
 
-      | ByteReverseWord(_, rd, rm) ->
+      | ByteReverseWord(_, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
          let xrmm = rewrite_expr xrm in
@@ -483,9 +483,27 @@ object (self)
          let _ = ignore (get_string_reference floc ximm) in
          (["a:vx"], [xd#index_variable vrd; xd#index_xpr ximm])
 
+      | MultiplyAccumulate (_, _, rd, rn, rm, ra) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         let xra = ra#to_expr floc in
+         let xprd = XOp (XMult, [xrn; xrm]) in
+         let xrprd = rewrite_expr xprd in
+         let xrhs = XOp (XPlus, [xprd; xra]) in
+         let xrrhs = rewrite_expr xrhs in
+         (["a:vxxxxxxx"],
+          [xd#index_variable vrd;
+           xd#index_xpr xrn;
+           xd#index_xpr xrm;
+           xd#index_xpr xra;
+           xd#index_xpr xprd;
+           xd#index_xpr xrprd;
+           xd#index_xpr xrhs;
+           xd#index_xpr xrrhs])
+
       | MultiplySubtract (_, rd, rn, rm, ra) ->
          let vrd = rd#to_variable floc in
-         let vra = ra#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let xra = ra#to_expr floc in
@@ -493,9 +511,8 @@ object (self)
          let xxprod = rewrite_expr xprod in
          let xdiff = XOp (XMinus, [xra; xprod]) in
          let xxdiff = rewrite_expr xdiff in
-         (["a:vvxxxxxxx"],
+         (["a:vxxxxxxx"],
           [xd#index_variable vrd;
-           xd#index_variable vra;
            xd#index_xpr xrn;
            xd#index_xpr xrm;
            xd#index_xpr xra;
@@ -505,12 +522,14 @@ object (self)
            xd#index_xpr xxdiff])
 
       | Pop (c, sp, rl, _) ->
-         let lhsvars = List.map (fun op -> op#to_variable floc) rl#get_register_op_list in
+         let lhsvars =
+           List.map (fun op -> op#to_variable floc) rl#get_register_op_list in
          let rhsexprs =
            List.map (fun offset ->
                arm_sp_deref ~with_offset:offset RD)
              (List.init rl#get_register_count (fun i -> 4 * i)) in
-         let rhsexprs = List.map (fun x -> rewrite_expr (x#to_expr floc)) rhsexprs in
+         let rhsexprs =
+           List.map (fun x -> rewrite_expr (x#to_expr floc)) rhsexprs in
          let xtag =
            "a:"
            ^ (string_repeat "v" rl#get_register_count)
@@ -575,7 +594,7 @@ object (self)
          let xrhs = rewrite_expr rhs in
          (["a:vxx"], [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr xrhs])
 
-      | SignedExtendHalfword (_, rd, rm) ->
+      | SignedExtendHalfword (_, rd, rm, _) ->
          let lhs = rd#to_variable floc in
          let rhs = rm#to_expr floc in
          let xrhs = rewrite_expr rhs in

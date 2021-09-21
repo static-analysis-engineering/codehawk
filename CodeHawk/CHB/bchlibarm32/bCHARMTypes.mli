@@ -305,6 +305,7 @@ type arm_opcode_t =
       * arm_opcode_cc_t  (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm/imm: source *)
+      * bool             (* T.W. *)
   | BitwiseOr of
       bool (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -335,6 +336,7 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
+      * bool             (* T.W *)
   | Compare of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn: source 1 *)
@@ -532,6 +534,7 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
+      * bool             (* T.W. *)
   | SignedMostSignificantWordMultiply of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
