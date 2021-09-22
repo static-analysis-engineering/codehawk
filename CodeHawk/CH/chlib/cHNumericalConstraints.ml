@@ -3,8 +3,10 @@
    Author: Arnaud Venet
    -----------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +36,6 @@ open CHNumerical
 open CHPretty
 open CHUtils
 
-module P = Pervasives
 
 class numerical_factor_t ?(index: numerical_t option) ?(tag = "") (v: variable_t)  =
 object (_: 'a)
@@ -73,7 +74,7 @@ object (_: 'a)
       | (None, None) ->
 	 variable#compare f#getVariable
     else
-      P.compare tag f#getTag
+      Stdlib.compare tag f#getTag
     
   method toPretty =
     LBLOCK [

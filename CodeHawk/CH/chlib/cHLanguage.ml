@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,14 +33,13 @@ open CHNumerical
 open CHCommon
 
 module H = Hashtbl
-module P = Pervasives
 
 let tab = 2
         
 module StringInternalization =
   CHInternalization.Make (struct
                            type t = string
-                           let compare = P.compare
+                           let compare = Stdlib.compare
                            let toPretty s = STR s
                            let hash = H.hash
                          end)
@@ -79,14 +80,14 @@ class internal_symbol_t (atts: string list) (seqnr: int) (s: string) =
       | ([], _) -> -1
       | (_, []) -> 1
       | (s1 :: t1, s2 :: t2) ->
-	 let c = P.compare s1 s2 in
+	 let c = Stdlib.compare s1 s2 in
 	 if c = 0 then
 	   self#lexComp t1 t2
 	 else
 	   c
 	 
     method compare (s: 'a) =
-      let c = P.compare seq_number s#getSeqNumber in
+      let c = Stdlib.compare seq_number s#getSeqNumber in
       if c = 0 then
 	self#lexComp self#getSymbol s#getSymbol
       else
@@ -122,7 +123,7 @@ class symbol_t ?(atts = []) ?(seqnr = -1) (s: string) =
                          
     method getIndex = index
                     
-    method compare (s': 'a) = P.compare index s'#getIndex
+    method compare (s': 'a) = Stdlib.compare index s'#getIndex
                             
     method equal (s': 'a) = index = s'#getIndex
                           
@@ -309,7 +310,7 @@ let rec compare_types t1 t2 =
      scan f1s f2s      
   | (STRUCT_TYPE _, _) -> -1
   | (_, STRUCT_TYPE _) -> 1
-  | _ -> P.compare t1 t2
+  | _ -> Stdlib.compare t1 t2
        
 let variable_index = ref (-1)
                    
@@ -412,9 +413,9 @@ object (self: 'a)
 	  if isRegister = v#isRegister then
 	    self#compare_paths self#getPath v#getPath
 	  else
-	    P.compare isRegister v#isRegister
+	    Stdlib.compare isRegister v#isRegister
 	else
-	  P.compare suffix v#getSuffix
+	  Stdlib.compare suffix v#getSuffix
       else
 	name#compare v#getName
     else
@@ -515,7 +516,7 @@ class variable_t
       
     method equal (v: 'a) = index = v#getIndex
                          
-    method compare (v: 'a) = P.compare index v#getIndex
+    method compare (v: 'a) = Stdlib.compare index v#getIndex
                            
     method isRegister = internal_variable#isRegister
                       
