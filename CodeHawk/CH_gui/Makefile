@@ -2,7 +2,7 @@ CODEHAWK = ..
 
 CHLIB = $(CODEHAWK)/CH/chlib
 CHUTIL = $(CODEHAWK)/CH/chutil
-EXTLIB = $(CODEHAWK)/CH_extern/extlib
+EXTLIB = $(shell ocamlfind query extlib)
 
 # ----------------------------------------------------------------------------
 # Note for Mac installation:
