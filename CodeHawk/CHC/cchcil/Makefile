@@ -4,7 +4,7 @@ ZARITHLIB = $(shell ocamlfind query zarith)
 
 
 CHLIB  = $(CODEHAWK)/CH/chlib
-EXTLIB = $(CODEHAWK)/CH_extern/extlib
+EXTLIB = $(shell ocamlfind query extlib)
 CILSRC = $(CIL)/src
 CILFRONTC = $(CIL)/_build/src/frontc
 CILUTIL = $(CIL)/_build/src/ocamlutil

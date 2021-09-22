@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +33,7 @@ open CHUtilities
 open CHXml
    
 module H = Hashtbl
-module P = Pervasives
+
 
 class type string_index_table_int =
   object
@@ -58,7 +60,9 @@ let value_from_byte (b:int) =
   else if b >= 97 && b < 103 then
     b - 87
   else
-    raise (CCFailure (LBLOCK [ STR "Unexpected value in value_from_byte: " ; INT b ]))
+    raise
+      (CCFailure
+         (LBLOCK [STR "Unexpected value in value_from_byte: "; INT b]))
     
 let hex_string s =
   let ch = IO.input_string s in
@@ -80,8 +84,10 @@ let dehex_string (h:string) =
       let ich = b1 * 16 + b2 in
       if ich > 255 then
         begin
-          pr_debug [ STR "Unexpected value in dehex_string: " ; INT ich ; NL ] ;
-          raise (CCFailure (LBLOCK [ STR "Unexpected value in dehex_string: " ; INT ich ]))
+          pr_debug [STR "Unexpected value in dehex_string: "; INT ich; NL];
+          raise
+            (CCFailure
+               (LBLOCK [STR "Unexpected value in dehex_string: "; INT ich]))
         end
       else
         s := !s ^ (String.make 1 (Char.chr ich))
@@ -137,14 +143,17 @@ object (self)
       H.find revtable index
     with
     | Not_found ->
-       raise (CCFailure (LBLOCK [ STR "Index " ; INT index ; STR " not found in string table" ]))
+       raise
+         (CCFailure
+            (LBLOCK [
+                 STR "Index "; INT index; STR " not found in string table"]))
 
   method values = H.fold (fun k _ r -> k :: r) table []
 
   method items = H.fold (fun k index r -> (k,index) :: r) table []
 
   method private get_indexed_keys =
-    List.sort P.compare (H.fold (fun k v r -> (k,v) :: r) revtable [])               
+    List.sort Stdlib.compare (H.fold (fun k v r -> (k,v) :: r) revtable [])
 
   method size = H.length table
 

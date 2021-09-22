@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +33,7 @@ open CHUtilities
 open CHXml
 
 module H = Hashtbl
-module P = Pervasives
+
 
 exception CCFailure of pretty_t
 
@@ -63,8 +65,11 @@ let list_pairup (lst:'a list):('a * 'a) list =
     | x :: y :: tl -> aux tl ((x,y)::r)
     | [] -> List.rev r
     | _ ->
-       raise (CCFailure (LBLOCK [ STR "Odd number of entries in list to pair up: " ;
-                                   INT (List.length lst) ])) in
+       raise
+         (CCFailure
+            (LBLOCK [
+                 STR "Odd number of entries in list to pair up: ";
+                 INT (List.length lst)])) in
   aux lst []
 
 let list_tripleup (lst:'a list):('a * 'a * 'a) list =
@@ -73,8 +78,11 @@ let list_tripleup (lst:'a list):('a * 'a * 'a) list =
     | x :: y :: z :: tl -> aux tl ((x,y,z)::r)
     | [] -> List.rev r
     | _ ->
-       raise (CCFailure (LBLOCK [ STR "Number of entries is not a multiple of 3: " ;
-                                   INT (List.length lst) ])) in
+       raise
+         (CCFailure
+            (LBLOCK [
+                 STR "Number of entries is not a multiple of 3: ";
+                 INT (List.length lst)])) in
   aux lst []
 
 
@@ -82,19 +90,29 @@ let t (name:string) (tags:string list) (n:int) =
   if List.length tags > n then
     List.nth tags n
   else
-    raise (CCFailure
-             (LBLOCK [ STR "Expected to find at least " ; INT (n+1) ;
-                       STR " tags in " ; STR name ; STR ", but found only " ;
-                       INT (List.length tags) ]))
+    raise
+      (CCFailure
+         (LBLOCK [
+              STR "Expected to find at least ";
+              INT (n+1);
+              STR " tags in ";
+              STR name;
+              STR ", but found only ";
+              INT (List.length tags)]))
 
 let a (name:string) (args:int list) (n:int) =
   if List.length args > n then
     List.nth args n
   else
-    raise (CCFailure
-             (LBLOCK [ STR "Expected to find at least " ; INT (n+1) ;
-                       STR " args in " ; STR name ; STR ", but found only " ;
-                       INT (List.length args) ]))
+    raise
+      (CCFailure
+         (LBLOCK [
+              STR "Expected to find at least ";
+              INT (n+1);
+              STR " args in ";
+              STR name;
+              STR ", but found only ";
+              INT (List.length args)]))
 
 let tags_args_string (tags:string list) (args:int list) =
   "t_" ^ (String.concat "," tags) ^ "_a_" ^
@@ -128,8 +146,13 @@ object (self: _)
       H.find revtable index
     with
     | Not_found ->
-       raise (CCFailure (LBLOCK [ STR "Index not found in indexed hash table " ;
-                                   STR name ; STR ": " ; INT index ]))
+       raise
+         (CCFailure
+            (LBLOCK [
+                 STR "Index not found in indexed hash table ";
+                 STR name;
+                 STR ": ";
+                 INT index]))
 
   method values = H.fold (fun k _ r -> k :: r) table []
 
@@ -138,7 +161,7 @@ object (self: _)
   method size = H.length table
 
   method private get_indexed_keys =
-    List.sort P.compare (H.fold (fun k v r -> (k,v) :: r) revtable [])
+    List.sort Stdlib.compare (H.fold (fun k v r -> (k,v) :: r) revtable [])
 
   method get_name = name
 
@@ -152,7 +175,9 @@ object (self: _)
            | [] -> () | _ -> knode#setAttribute "t" (String.concat "," tags)) ;
           (match args with
            | [] -> ()
-           | _ -> knode#setAttribute "a" (String.concat "," (List.map string_of_int args))) ;
+           | _ ->
+              knode#setAttribute
+                "a" (String.concat "," (List.map string_of_int args)));
           knode
         end) indexed_keys)
 
@@ -172,8 +197,13 @@ object (self: _)
                 []
             with
               Failure _ ->
-              raise (CCFailure (LBLOCK [ STR "int_of_string on " ; STR (get "a") ;
-                                          STR " in table " ; STR self#get_name ])) in
+              raise
+                (CCFailure
+                   (LBLOCK [
+                        STR "int_of_string on ";
+                        STR (get "a");
+                        STR " in table ";
+                        STR self#get_name])) in
           begin
             H.add table (tags,args) ix ;
             H.add revtable ix (tags,args) ;
