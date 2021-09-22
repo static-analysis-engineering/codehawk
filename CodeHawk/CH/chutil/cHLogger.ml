@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +47,7 @@
 open CHPretty
 
 module H = Hashtbl
-module P = Pervasives
+
 
 class log_message_t (index:int) (tag:string) (msg:pretty_t) =
 object (self: 'a)
@@ -58,7 +60,7 @@ object (self: 'a)
   method getTag = tag
   method getMsg = msg
 
-  method compare (m: 'a) = Pervasives.compare index m#getIndex
+  method compare (m: 'a) = Stdlib.compare index m#getIndex
   method toPretty = LBLOCK [ STR tag ; STR ": " ; msg ]
 
 end
@@ -129,7 +131,7 @@ object (self)
   method toPretty = 
     let tags = ref [] in
     let _ = H.iter (fun k _ -> tags := (k,H.find order k) :: !tags) store in
-    let tags = List.sort (fun (_,i1) (_,i2) -> P.compare i2 i1) !tags in
+    let tags = List.sort (fun (_,i1) (_,i2) -> Stdlib.compare i2 i1) !tags in
     let pp = ref [] in
     let _ = List.iter (fun (t,_) ->
       let entry = H.find store t in

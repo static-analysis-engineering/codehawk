@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -122,7 +124,7 @@ let list_maxf (l:'a list) (f:'a -> 'a -> int):'a =
 let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
     if (List.length l1) = (List.length l2) then
       let c = List.fold_left2 (fun a e1 e2 -> if a = 0 then (f e1 e2) else a) 0 l1 l2 in
-      Pervasives.compare c 0
+      Stdlib.compare c 0
     else
       failwith "List.lcompare : not applicable to lists of unequal length"
 

@@ -1,5 +1,5 @@
 CHLIB = ../chlib
-EXTLIB = ../../CH_extern/extlib
+EXTLIB = $(shell ocamlfind query extlib)
 ZARITHLIB = $(shell ocamlfind query zarith)
 
 CAMLC := ocamlopt -I cmi -I cmx \

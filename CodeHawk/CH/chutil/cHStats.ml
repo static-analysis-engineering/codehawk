@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +38,7 @@ open CHPrettyUtil
 open CHXmlDocument
 
 module H = Hashtbl
+
 
 class type category_statistics_int =
 object ('a)
@@ -240,7 +243,7 @@ object (self:'a)
     let sepString = fixed_length_pretty (STR " ") colsep in
     let innerCats = 
       List.map (fun s -> (s,(String.length s) + colsep)) self#get_inner_categories in
-    let cats = List.sort Pervasives.compare self#get_categories in
+    let cats = List.sort Stdlib.compare self#get_categories in
     let maxCat =
       List.fold_left 
         (fun a s -> let l = String.length s in if l > a then l else a) 0 cats in
