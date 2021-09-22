@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -54,12 +56,13 @@ struct
   module PreStringMap =
     Map.Make (struct
 	       type t = string
-	       let compare = Pervasives.compare
+	       let compare = Stdlib.compare
 	     end)
 
   include PreStringMap
 
-  let get (k:string) (m:'a t):'a option = try Some (find k m) with Not_found -> None
+  let get (k:string) (m:'a t):'a option =
+    try Some (find k m) with Not_found -> None
 
   let keys (m:'a t):string list = fold (fun k _ a -> k::a) m []
 
@@ -71,10 +74,12 @@ struct
   let addUniquePairs (pairs:((string * 'a) list)) (m:'a t):'a t = 
     List.fold_right (fun (k,v) a -> addUnique k v a) pairs m
     
-  let listOfPairs (m:'a t):(string * 'a) list = fold (fun k v a -> (k,v) :: a) m []
+  let listOfPairs (m:'a t):(string * 'a) list =
+    fold (fun k v a -> (k,v) :: a) m []
                                               
   let toPretty (m:'a t) (p:'a -> pretty_t):pretty_t =
-    fold (fun k v a -> LBLOCK [ a ; NL ; STR k ; STR  " -> " ; p v ]) m (LBLOCK [])
+    fold (fun k v a ->
+        LBLOCK [a; NL; STR k; STR  " -> "; p v]) m (LBLOCK [])
 
 end
 
@@ -94,7 +99,7 @@ struct
   module PreIntMap =
     Map.Make (struct
 	       type t = int
-	       let compare = Pervasives.compare
+	       let compare = Stdlib.compare
 	     end)
     
   include PreIntMap
@@ -108,7 +113,8 @@ struct
               else
                 add k v a) m1 m2
       
-  let get (k:int) (m:'a t):'a option = try Some (find k m) with Not_found -> None
+  let get (k:int) (m:'a t):'a option =
+    try Some (find k m) with Not_found -> None
     
   let toPretty (m:'a t) (p:'a -> pretty_t):pretty_t =
     let elts = fold (fun k v a -> LBLOCK [INT k; STR " -> "; p v; NL; a]) 
