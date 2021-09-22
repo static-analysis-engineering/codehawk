@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +48,7 @@ open CCHPreSumTypeSerializer
 open CCHPreTypes
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let cd = CCHDictionary.cdictionary
 let cdecls = CCHDeclarations.cdeclarations
@@ -64,7 +66,9 @@ let raise_tag_error (name:string) (tag:string) (accepted:string list) =
     raise (CCHFailure msg)
   end
 
-class podictionary_t (fname:string) (fdecls:cfundeclarations_int):podictionary_int =
+
+class podictionary_t
+        (fname:string) (fdecls:cfundeclarations_int):podictionary_int =
 object (self)
 
   val assumption_table = mk_index_table "assumption-table"
@@ -124,10 +128,12 @@ object (self)
     let t = t name tags in
     let a = a name args in
     match (t 0) with
-    | "p" -> PPOprog (cdecls#get_location (a 0), contexts#get_context (a 1),
-                  pd#get_po_predicate (a 2))
-    | "pl" -> PPOlib (cdecls#get_location (a 0), contexts#get_context (a 1),
-                      pd#get_po_predicate (a  2), t 1, id#get_xpredicate (a 3))
+    | "p" ->
+       PPOprog (cdecls#get_location (a 0), contexts#get_context (a 1),
+                pd#get_po_predicate (a 2))
+    | "pl" ->
+       PPOlib (cdecls#get_location (a 0), contexts#get_context (a 1),
+               pd#get_po_predicate (a  2), t 1, id#get_xpredicate (a 3))
     | s -> raise_tag_error name s ppo_type_mcts#tags
 
   method index_spo_type (s:spo_type_t) =
@@ -150,30 +156,47 @@ object (self)
     let t = t name tags in
     let a = a name args in
     match (t 0) with
-    | "ls" -> LocalSPO  (cdecls#get_location (a 0), contexts#get_context (a 1),
-                         pd#get_po_predicate (a 2))
-    | "cs" -> CallsiteSPO (cdecls#get_location (a 0), contexts#get_context (a 1),
-                           pd#get_po_predicate (a 2), a 3)
-    | "rs" -> ReturnsiteSPO (cdecls#get_location (a 0), contexts#get_context (a 1),
-                             pd#get_po_predicate (a 2), id#get_xpredicate (a 3))
+    | "ls" ->
+       LocalSPO (
+           cdecls#get_location (a 0),
+           contexts#get_context (a 1),
+           pd#get_po_predicate (a 2))
+    | "cs" ->
+       CallsiteSPO (
+           cdecls#get_location (a 0),
+           contexts#get_context (a 1),
+           pd#get_po_predicate (a 2),
+           a 3)
+    | "rs" ->
+       ReturnsiteSPO (
+           cdecls#get_location (a 0),
+           contexts#get_context (a 1),
+           pd#get_po_predicate (a 2),
+           id#get_xpredicate (a 3))
     | s -> raise_tag_error name s spo_type_mcts#tags
 
-  method write_xml_assumption ?(tag="iast") (node:xml_element_int) (a:assumption_type_t) =
+  method write_xml_assumption
+           ?(tag="iast") (node:xml_element_int) (a:assumption_type_t) =
     node#setIntAttribute tag (self#index_assumption a)
 
-  method read_xml_assumption ?(tag="iast") (node:xml_element_int):assumption_type_t =
+  method read_xml_assumption
+           ?(tag="iast") (node:xml_element_int):assumption_type_t =
     self#get_assumption (node#getIntAttribute tag)
 
-  method write_xml_ppo_type ?(tag="ippo") (node:xml_element_int) (p:ppo_type_t) =
+  method write_xml_ppo_type
+           ?(tag="ippo") (node:xml_element_int) (p:ppo_type_t) =
     node#setIntAttribute tag (self#index_ppo_type p)
 
-  method read_xml_ppo_type ?(tag="ippo") (node:xml_element_int):ppo_type_t =
+  method read_xml_ppo_type
+           ?(tag="ippo") (node:xml_element_int):ppo_type_t =
     self#get_ppo_type (node#getIntAttribute tag)
 
-  method write_xml_spo_type ?(tag="ispo") (node:xml_element_int) (s:spo_type_t) =
+  method write_xml_spo_type
+           ?(tag="ispo") (node:xml_element_int) (s:spo_type_t) =
     node#setIntAttribute tag (self#index_spo_type s)
 
-  method read_xml_spo_type ?(tag="ispo") (node:xml_element_int):spo_type_t =
+  method read_xml_spo_type
+           ?(tag="ispo") (node:xml_element_int):spo_type_t =
     self#get_spo_type (node#getIntAttribute tag)
     
   method write_xml (node:xml_element_int) =
@@ -188,12 +211,10 @@ object (self)
     List.iter (fun t -> t#read_xml (getc t#get_name)) tables
 
   method toPretty =
-    LBLOCK (List.map (fun t ->
-                LBLOCK [ STR t#get_name ; STR ": " ; INT t#size ; NL ]) tables)
-
+    LBLOCK (
+        List.map (fun t ->
+            LBLOCK [STR t#get_name; STR ": "; INT t#size; NL]) tables)
 
 end
 
 let mk_podictionary = new podictionary_t
-
-  

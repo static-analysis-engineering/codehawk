@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,36 +47,39 @@ open CCHUtilities
 (* cchpre *)
 open CCHPreTypes
 
-module P = Pervasives
 
 let memory_base_compare (b1:memory_base_t) (b2:memory_base_t) =
   match (b1,b2) with
-  | (CNull i1,CNull i2) -> P.compare i1 i2
+  | (CNull i1,CNull i2) -> Stdlib.compare i1 i2
   | (CNull _,_) -> -1
   | (_, CNull _) -> 1
-  | (CStringLiteral i1,CStringLiteral i2) -> P.compare i1 i2
+  | (CStringLiteral i1,CStringLiteral i2) -> Stdlib.compare i1 i2
   | (CStringLiteral _, _) -> -1
   | (_, CStringLiteral _) -> 1
   | (CStackAddress v1,CStackAddress v2) ->
-     P.compare v1#getName#getSeqNumber v2#getName#getSeqNumber
+     Stdlib.compare v1#getName#getSeqNumber v2#getName#getSeqNumber
   | (CStackAddress _,_) -> -1
   | (_, CStackAddress _) -> 1
   | (CGlobalAddress v1, CGlobalAddress v2) ->
-     P.compare v1#getName#getSeqNumber v2#getName#getSeqNumber
+     Stdlib.compare v1#getName#getSeqNumber v2#getName#getSeqNumber
   | (CGlobalAddress _, _) -> -1
   | (_, CGlobalAddress _) -> 1
   | (CBaseVar v1, CBaseVar v2) ->
-     P.compare v1#getName#getSeqNumber v2#getName#getSeqNumber
+     Stdlib.compare v1#getName#getSeqNumber v2#getName#getSeqNumber
   | (CBaseVar _,_) -> -1
   | (_, CBaseVar _) -> 1
-  | (CUninterpreted s1, CUninterpreted s2) -> P.compare s1 s2
+  | (CUninterpreted s1, CUninterpreted s2) -> Stdlib.compare s1 s2
 
 let memory_base_to_string (b:memory_base_t) =
   match b with
   | CNull i -> "NULL(" ^ (string_of_int i) ^ ")"
-  | CStringLiteral s -> "addrof-" ^ (string_of_int (String.length s)) ^ "-char-string"
+  | CStringLiteral s ->
+     "addrof-" ^ (string_of_int (String.length s)) ^ "-char-string"
   | CStackAddress v ->
-     "addrof_localvar_" ^ v#getName#getBaseName ^ "_" ^ (string_of_int v#getName#getSeqNumber)
+     "addrof_localvar_"
+     ^ v#getName#getBaseName
+     ^ "_"
+     ^ (string_of_int v#getName#getSeqNumber)
   | CGlobalAddress v -> "addrof_globalvar_" ^ v#getName#getBaseName
   | CBaseVar v -> "addr_in_" ^ v#getName#getBaseName
   | CUninterpreted s -> "uninterpreted_" ^ s

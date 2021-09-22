@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +54,7 @@ open CCHPostRequest
 open CCHPreTypes
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let cd = CCHDictionary.cdictionary
 let pd = CCHPredicateDictionary.predicate_dictionary
@@ -211,17 +213,17 @@ object (self)
 			 STR " in function " ; STR fname ]))
 	
   method get_api_assumptions =
-    List.sort (fun a1 a2 -> P.compare a1#index a2#index)
+    List.sort (fun a1 a2 -> Stdlib.compare a1#index a2#index)
               (H.fold (fun _ v r -> v::r) api_assumptions [])
 
   method get_contract_assumptions =
     List.sort
       (fun a1 a2 ->
-        P.compare (a1#index,a1#get_callee) (a2#index,a2#get_callee))
+        Stdlib.compare (a1#index,a1#get_callee) (a2#index,a2#get_callee))
       (H.fold  (fun _ v r -> v::r) contract_assumptions [])
 
   method get_assumption_requests =
-    List.sort (fun a1 a2 -> P.compare a1#index a2#index)
+    List.sort (fun a1 a2 -> Stdlib.compare a1#index a2#index)
               (H.fold (fun _ v r -> v::r) assumption_requests [])
 
   method get_postcondition_requests =
@@ -232,7 +234,7 @@ object (self)
 
   method private get_unevaluated =
     List.sort
-      (fun (p,_) (q,_) -> P.compare p q)
+      (fun (p,_) (q,_) -> Stdlib.compare p q)
       (H.fold (fun poid xlist r -> (poid,xlist#toList)::r) unevaluated [])
 
   method get_library_call_names =
@@ -308,7 +310,8 @@ object (self)
               let pnode = xmlElement "uu" in
               begin
                 pnode#setIntAttribute "po-id" poid ;
-                node#setAttribute "xlst" (String.concat "," (List.map string_of_int xlst)) ;
+                node#setAttribute
+                  "xlst" (String.concat "," (List.map string_of_int xlst));
                 pnode
               end) self#get_unevaluated)) ;
       (match contractcondition_failures with
@@ -319,14 +322,14 @@ object (self)
               (List.map (fun (name,desc) ->
                    let xnode = xmlElement "failure" in
                    begin
-                     xnode#setAttribute "name" name ;
-                     xnode#setAttribute "desc" desc ;
+                     xnode#setAttribute "name" name;
+                     xnode#setAttribute "desc" desc;
                      xnode
                    end) l) ;
             node#appendChildren [ xxnode ]
           end) ;
       node#appendChildren
-        [ aanode ; ccnode ; hhnode ; ppnode ; ggnode ; llnode ; mmnode ; unode ]
+        [aanode; ccnode; hhnode; ppnode; ggnode; llnode; mmnode; unode]
     end
            
   method read_xml (node:xml_element_int) =
@@ -372,5 +375,6 @@ object (self)
     end
       
 end
-     
+
+
 let mk_function_api = new function_api_t    

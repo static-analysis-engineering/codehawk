@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +47,7 @@ open CCHIndexedCollections
 open CCHMemoryBase
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let pr2s = CHPrettyUtil.pretty_to_string
 
@@ -56,7 +58,7 @@ class memory_region_t
 object (self:'a)
 
   method index = index
-  method compare (other:'a) = P.compare index other#index
+  method compare (other:'a) = Stdlib.compare index other#index
 
   method is_valid =
     match memory_base with
@@ -74,25 +76,31 @@ object (self:'a)
     match memory_base with
     | CBaseVar v -> v
     | _ ->
-       raise (CCHFailure
-                (LBLOCK [ STR "memory region is not a base variable: " ;
-                          self#toPretty ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "memory region is not a base variable: ";
+                 self#toPretty]))
 
   method get_stack_var =
     match memory_base with
     | CStackAddress v -> v
     | _ ->
-       raise (CCHFailure
-                (LBLOCK [ STR "memory region is not a stack variable: " ;
-                          self#toPretty ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "memory region is not a stack variable: ";
+                 self#toPretty]))
 
   method get_null_region =
     match memory_base with
     | CNull i -> i
     | _ ->
-       raise (CCHFailure
-                (LBLOCK [ STR "memory region is not a null region: " ;
-                          self#toPretty ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "memory region is not a null region: ";
+                 self#toPretty]))
 
   method is_stack_region =
     match memory_base with CStackAddress _ -> true | _ -> false
@@ -144,7 +152,7 @@ object (self)
     else
       raise
         (CCHFailure
-           (LBLOCK [ STR "No memory region found with index: " ; INT index ]))
+           (LBLOCK [STR "No memory region found with index: "; INT index]))
 
   method private mk_memory_region (memory_base:memory_base_t) =
     let index = vard#index_memory_base memory_base in

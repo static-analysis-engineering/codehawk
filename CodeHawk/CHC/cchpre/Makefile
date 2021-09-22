@@ -1,8 +1,7 @@
 CODEHAWK = ../..
 CCH = ..
 
-EXTLIB = $(CODEHAWK)/CH_extern/extlib
-ZIPLIB = $(CODEHAWK)/CH_extern/camlzip
+EXTLIB = $(shell ocamlfind query extlib)
 CHLIB  = $(CODEHAWK)/CH/chlib
 CHUTIL = $(CODEHAWK)/CH/chutil
 XPRLIB = $(CODEHAWK)/CH/xprlib
@@ -10,7 +9,6 @@ CCHLIB = $(CCH)/cchlib
 
 CAMLC := ocamlopt -I str -I nums -I cmi -I cmx \
 	-I $(EXTLIB) \
-	-I $(ZIPLIB) \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
@@ -18,14 +16,12 @@ CAMLC := ocamlopt -I str -I nums -I cmi -I cmx \
 
 CAMLLINK := ocamlopt  \
 	-I $(EXTLIB) \
-	-I $(ZIPLIB) \
 	-I $(CHLIB) \
 	-I $(CHUTIL) \
 	-I $(XPRLIB) \
 	-I $(CCHLIB)/cmi \
 
 CAMLBUILD := ocamlopt str.cmxa unix.cmxa \
-	-I $(ZIPLIB) \
 	-I $(CCHLIB)/cmi \
 	$(EXTLIB)/extLib.cmxa \
 	$(CHLIB)/chlib.cmxa \
