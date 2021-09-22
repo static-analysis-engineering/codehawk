@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +50,7 @@ open CCHPreFileIO
 open CCHInterrupt
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let filename = ref ""
 let source_directory = ref ""
@@ -72,12 +74,13 @@ let window =
     ~width:1400 ~height:900 ()
 
 let root_table = 
-  GPack.table ~row_spacings:5 ~col_spacings:5 ~columns:1 ~rows:4 ~packing:window#add ()
+  GPack.table
+    ~row_spacings:5 ~col_spacings:5 ~columns:1 ~rows:4 ~packing:window#add ()
 
 let menubar =
   GMenu.menu_bar ~packing:(root_table#attach ~top:0 ~left:0 ~expand:`NONE) ()
 
-(* ------------------------------------------------------------- message area -- *)
+(* -------------------------------------------------------- message area -- *)
 let message_area =
   GBin.scrolled_window ~height:60
     ~packing:(root_table#attach ~left:0 ~top:1 ~expand:`X) ()
@@ -85,33 +88,55 @@ let message_area =
 let message_viewport = GBin.viewport ~packing:message_area#add ()
 let message_contents:GObj.widget option ref = ref None
 
-let add_message_viewport w =
-  let _ = match !message_contents with Some m -> message_viewport#remove m | _ -> () in
-  begin message_contents := Some w#coerce ; message_viewport#add w end
 
-let message_box = GMisc.label ~text:"message" ~justify:`LEFT ~packing:add_message_viewport ()
+let add_message_viewport w =
+  let _ =
+    match !message_contents with
+    | Some m -> message_viewport#remove m
+    | _ -> () in
+  begin
+    message_contents := Some w#coerce;
+    message_viewport#add w
+  end
+
+
+let message_box =
+  GMisc.label ~text:"message" ~justify:`LEFT ~packing:add_message_viewport ()
+
 
 let write_message (msg:string) =
   begin
-    message_box#set_text msg ;
-    print_endline (msg ^ "\n") ;
-    flush_x () ;
-    flush P.stdout
+    message_box#set_text msg;
+    print_endline (msg ^ "\n");
+    flush_x ();
+    flush Stdlib.stdout
   end
+
 
 let write_message_pp (msg:pretty_t) =
   write_message (string_printer#print msg)
 
-(* -------------------------------------------------------------- progress bar -- *)
+(* -------------------------------------------------------- progress bar -- *)
 
-let progress_box = GPack.hbox ~border_width:10 ~homogeneous:false 
-    ~packing:(root_table#attach ~left:0 ~top:2 ~expand:`X ~shrink:`X) ()
+let progress_box =
+  GPack.hbox
+    ~border_width:10
+    ~homogeneous:false
+    ~packing:(root_table#attach ~left:0 ~top:2 ~expand:`X ~shrink:`X)
+    ()
 
-let skip_button = GButton.button ~stock:`GO_FORWARD ~packing:progress_box#pack ()
-let progress_bar = GRange.progress_bar ~packing:progress_box#add ()
-let interrupt_button = GButton.button ~stock:`STOP  ~packing:progress_box#pack ()
+let skip_button =
+  GButton.button ~stock:`GO_FORWARD ~packing:progress_box#pack ()
+
+let progress_bar =
+  GRange.progress_bar ~packing:progress_box#add ()
+
+let interrupt_button =
+  GButton.button ~stock:`STOP  ~packing:progress_box#pack ()
+
 
 let reset_progress_bar () = progress_bar#set_fraction 0.0
+
 
 let set_progress_bar (finished:int) (total:int) =
   let fraction = (float finished) /. (float total) in
@@ -119,6 +144,7 @@ let set_progress_bar (finished:int) (total:int) =
     progress_bar#set_fraction fraction ;
     flush_x () 
   end
+
 
 let _ = reset_progress_bar ()
 
@@ -141,11 +167,11 @@ let _ = skip_button#connect#clicked ~callback:set_skip_requested
 
 let _ = interrupt_button#connect#clicked ~callback:set_interrupt_requested
 
-(* -------------------------------------------------------------~~-- main area -- *)
+(* --------------------------------------------------------- main area -- *)
 let main_notebook = GPack.notebook ~tab_pos:`TOP 
     ~packing:(root_table#attach ~top:3 ~left:0 ~expand:`BOTH) ()
 
-(* ----------------------------------------------------------- system display -- *)
+(* ---------------------------------------------------- system display -- *)
 
 let system_table =
   GPack.table
@@ -171,7 +197,7 @@ let system_contents_string = ref None
                            
 let system_contents_name = ref "none"
 
-(* ------------------------------------------------------------~~-- search bar -- *)
+(* -------------------------------------------------------- search bar -- *)
 let search_bar =
   GPack.table
     ~row_spacings:5
@@ -200,7 +226,7 @@ let search_entry =
     ~packing:(search_bar#attach ~left:1 ~top:0)
     ()
 
-(* ------------------------------------------------------------~~-- message area -- *)
+(* ------------------------------------------------------ message area -- *)
 
 let log_message_area =
   GBin.scrolled_window
@@ -228,7 +254,10 @@ let _ = log_message "---------------------"
    str: string to be displayed
 *)
 let write_to_system_display (name:string) (str:string) =
-  let _ = match !system_contents with Some s -> system_display#remove s | _ -> () in 
+  let _ =
+    match !system_contents with
+    | Some s -> system_display#remove s
+    | _ -> () in
   let view = GText.view  () in
   let _ = view#set_pixels_above_lines 5 in
   let _ = view#set_left_margin 10 in
@@ -269,7 +298,8 @@ let write_to_system_display (name:string) (str:string) =
     match start#forward_search text with
 	Some (found_begin, found_end) ->
 	  let _ = last_search := Some (text,found_end) in
-	  let _ = buffer#apply_tag_by_name "yellow_background" found_begin found_end in
+	  let _ =
+            buffer#apply_tag_by_name "yellow_background" found_begin found_end in
 	  let _ = add_tag found_begin found_end in
 	  let _ = view#scroll_to_iter ~yalign:(0.5) ~use_align:true found_begin in
 	  ()
@@ -289,14 +319,21 @@ let get_time_string () =
   let day = tm.tm_mday in
   let hr = tm.tm_hour in
   let min = tm.tm_min in
-  (string_of_int yr) ^ "_" ^ (string_of_int mo) ^ "_" ^ (string_of_int day) ^
-    "_" ^ (string_of_int hr) ^ "_" ^ (string_of_int min)
+  (string_of_int yr)
+  ^ "_"
+  ^ (string_of_int mo)
+  ^ "_"
+  ^ (string_of_int day)
+  ^ "_" ^ (string_of_int hr)
+  ^ "_" ^ (string_of_int min)
+
 
 let output_path = ref ""
 let application_name = ref ""
-                
+
 let set_output_path s = output_path := s
 let set_application_name s = application_name := s
+
 
 let save_system_display_contents ():unit =
   match !system_contents_string with 
@@ -321,15 +358,19 @@ let save_system_display_contents ():unit =
   | _ ->
     write_message ("No data to be saved")
 
+
 let write_to_system_display_pp (name:string) (p:pretty_t) = 
   write_to_system_display name (string_printer#print p)
+
 
 let system_page = 
   let label = GMisc.label ~text:"               SYSTEM               " () in
   main_notebook#append_page ~tab_label:label#coerce system_table#coerce
 
+
 let goto_system_page ():unit = main_notebook#goto_page system_page
-                                                          
+
+
 let read_source filename =
   let sourcefile =
     if (Filename.is_relative filename)

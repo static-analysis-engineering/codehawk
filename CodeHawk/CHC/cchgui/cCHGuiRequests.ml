@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +37,6 @@ open CHPrettyUtil
 open CCHSystemDisplay
 
 module H = Hashtbl
-module P = Pervasives
 
 let flp = CHPrettyUtil.fixed_length_pretty
 let fls = CHPrettyUtil.fixed_length_string
@@ -54,7 +55,7 @@ let record_missing_summary filename fname nppos nspos=
 
 let display_missing_summaries () =
   let txt = H.fold (fun k v a ->  (k,v) :: a) missing_summaries [] in
-  let txt = List.sort (fun (k1,_) (k2,_) -> P.compare k1 k2) txt in
+  let txt = List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) txt in
   let ptitle  =
     LBLOCK [ STR (fls "count" 7) ;
              STR (fls "ppos" 7) ;
@@ -106,7 +107,7 @@ let record_postcondition_request filename fname pc nppos nspos =
 
 let display_postcondition_requests () =
   let txt = H.fold (fun k v a -> (k,v) :: a)  postcondition_requests [] in
-  let txt = List.sort  (fun (k1,_) (k2,_) -> P.compare k1 k2) txt in
+  let txt = List.sort  (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) txt in
   let txt =
     List.concat
       (List.map (fun (k,t) ->
@@ -195,19 +196,19 @@ let diagnostic_report_to_pretty r =
 let diagnostic_fentry_to_pretty fentry t =
   let (filename,fname) = fentry in
   let pos = H.fold (fun k v a -> (k,v)::a) t [] in
-  let pos = List.sort (fun (k1,_) (k2,_) -> P.compare k1 k2) pos in
+  let pos = List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) pos in
   let p = LBLOCK (List.map (fun (_,r) -> diagnostic_report_to_pretty r) pos) in
   LBLOCK [ STR filename ; STR " : " ; STR fname ; NL ; p ]
 
 let diagnostic_tag_to_pretty tag t =
   let fentries = H.fold (fun k v a -> (k,v)::a) t [] in
-  let fentries = List.sort (fun (k1,_) (k2,_) -> P.compare k1 k2) fentries in
+  let fentries = List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) fentries in
   let p = LBLOCK (List.map (fun (k,v) -> diagnostic_fentry_to_pretty k v) fentries) in
   LBLOCK [ STR tag ; NL ; STR (string_repeat "-" 80) ; NL ; p ; NL ]
 
 let display_reports table =
   let tags = H.fold (fun k v a -> (k,v)::a) table [] in
-  let tags = List.sort (fun (k1,_) (k2,_) -> P.compare k1 k2) tags in
+  let tags = List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) tags in
   let p = LBLOCK (List.map (fun (k,v) -> diagnostic_tag_to_pretty k v) tags) in
   begin
     write_to_system_display_pp "diagnostic_reports" p ;

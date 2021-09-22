@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +49,7 @@ open CCHGuiRequests
 open CCHGtkUtils
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let string_printer = CHPrettyUtil.string_printer
 let pp_str p = string_printer#print p
@@ -570,7 +572,7 @@ let show_ppo_group_dialog
         H.add groups group [ ppo ] in 
     let _ = List.iter add_group ppos in
     let groupList = H.fold (fun i l acc -> (i,l) :: acc) groups [] in
-    let groupList = List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2) groupList in
+    let groupList = List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) groupList in
     let maxLine =
       List.fold_left (fun acc (_,l) ->
           let len = List.length l in if len > acc then len else acc) 0 groupList in
@@ -673,7 +675,7 @@ let show_ppo_line_dialog
         H.add lines line [ ppo ] in 
     let _ = List.iter add_line ppos in
     let lineList = H.fold (fun i l acc -> (i,l) :: acc) lines [] in
-    let lineList = List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2) lineList in
+    let lineList = List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) lineList in
     let rows =
       if !showcode then
         2 * (List.length lineList)
@@ -823,14 +825,14 @@ let show_ppo_dialog
   let invio = read_invs fname varmgr#vard in
   let ppos = (proof_scaffolding#get_ppo_manager fname)#get_ppos in
   let sortpposbyid ppos =
-    List.sort (fun p1 p2 -> P.compare p1#index p2#index) ppos in
+    List.sort (fun p1 p2 -> Stdlib.compare p1#index p2#index) ppos in
 (*  let sortpposbylinenumber ppos =
     List.sort (fun p1 p2 ->
-        P.compare p1#get_location.line p2#get_location.line) ppos in *)
+        Stdlib.compare p1#get_location.line p2#get_location.line) ppos in *)
   let ppos = sortpposbyid ppos in
   let sortpposbypredicate ppos =
     List.sort (fun p1 p2 ->
-        P.compare (pp_str (po_predicate_to_pretty p1#get_predicate))
+        Stdlib.compare (pp_str (po_predicate_to_pretty p1#get_predicate))
                   (pp_str (po_predicate_to_pretty p2#get_predicate))) ppos in
   let pposelection = ref false in
   let set_pposelection s = pposelection := s in

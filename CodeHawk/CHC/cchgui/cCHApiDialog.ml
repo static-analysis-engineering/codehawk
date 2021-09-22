@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +63,7 @@ open CCHGuiRequests
 open CCHGuiUtils
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let stri = string_of_int
 let string_printer = CHPrettyUtil.string_printer
@@ -190,7 +192,7 @@ let show_proof_obligations (fname:string) ?(is_spo=false) (pos:int list) (parent
     else
       let ppomanager = proof_scaffolding#get_ppo_manager fname  in
       List.map ppomanager#get_ppo pos in
-  let pos = List.sort (fun p1 p2 -> P.compare p1#get_location.line p2#get_location.line) pos in
+  let pos = List.sort (fun p1 p2 -> Stdlib.compare p1#get_location.line p2#get_location.line) pos in
   let title = "Dependent proof obligations for " ^  fname in
   let dialog = GWindow.dialog ~title ~parent ~modal:false ~show:true ~width:650 ~height:480 () in
   let window =
@@ -761,7 +763,7 @@ let show_function_assumptions_dialog cfilename fname parent =
                  | Const _ | CastE (_,Const _) -> acc
                  | _ -> (a,e)::acc) [] el) lst) in                     
     let lst = List.map (fun (a,e) -> (a, e2s e)) lst in
-    let lst = List.sort (fun (_,e1) (_,e2) -> P.compare e1 e2) lst in
+    let lst = List.sort (fun (_,e1) (_,e2) -> Stdlib.compare e1 e2) lst in
     let rows = List.length lst + 1 in
     let frame =
       GBin.frame
@@ -982,7 +984,7 @@ let show_function_requests_dialog cfilename fname parent =
         (List.map
            (fun (a,gl) ->
              List.fold_left (fun acc g -> (a,g) :: acc) [] gl) lst) in
-    let lst = List.sort (fun (_,g1) (_,g2) -> P.compare g1 g2) lst in
+    let lst = List.sort (fun (_,g1) (_,g2) -> Stdlib.compare g1 g2) lst in
     let rows = List.length lst in
     let frame =
       GBin.frame
@@ -1042,7 +1044,7 @@ let show_function_requests_dialog cfilename fname parent =
   let _ =
     let lst = fnApi#get_postcondition_requests in
     let lst = List.map (fun pc -> (pc,get_callee  pc#get_callee)) lst in
-    let lst = List.sort (fun (_,c1) (_,c2) -> P.compare c1 c2) lst in
+    let lst = List.sort (fun (_,c1) (_,c2) -> Stdlib.compare c1 c2) lst in
     let rows = List.length lst + 1 in
     let frame =
       GBin.frame
@@ -1303,7 +1305,7 @@ let show_global_variables_dialog cfilename parent =
   let gvars =
     List.filter (fun v ->
         match v.vtype with TFun _ -> false | _ -> true) gvars in
-  let gvars = List.sort (fun v1 v2 -> P.compare v1.vname v2.vname) gvars in
+  let gvars = List.sort (fun v1 v2 -> Stdlib.compare v1.vname v2.vname) gvars in
   let _ = mkTable "global variables" gvars in
   let opaquevars =
     try
