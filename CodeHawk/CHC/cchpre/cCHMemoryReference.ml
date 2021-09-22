@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +50,7 @@ open CCHIndexedCollections
 open CCHMemoryBase
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let cd = CCHDictionary.cdictionary
     	
@@ -60,7 +62,7 @@ object (self:'a)
   
   method index = index
     
-  method compare (other:'a) = P.compare index other#index
+  method compare (other:'a) = Stdlib.compare index other#index
 
   method get_data = data
     
@@ -83,31 +85,36 @@ object (self:'a)
       | CGlobalAddress v
       | CBaseVar v -> v
     | _ ->
-       raise (CCHFailure
-                (LBLOCK [ STR "Memory reference does not have a base variable: " ;
-                          self#toPretty ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Memory reference does not have a base variable: ";
+                 self#toPretty]))
     
   method get_stack_address_var =
     match data.memrefbase with
     | CStackAddress v -> v
     | _ ->
-       raise (CCHFailure
-                (LBLOCK [ STR "Not a regular stack address: " ;
-                          STR self#get_name ]))
+       raise
+         (CCHFailure
+            (LBLOCK [STR "Not a regular stack address: ";
+                     STR self#get_name]))
 
   method get_global_address_var =
     match data.memrefbase with
     | CGlobalAddress v -> v
     | _ ->
-       raise (CCHFailure
-                (LBLOCK [ STR "Not a global address: " ; STR self#get_name ]))
+       raise
+         (CCHFailure
+            (LBLOCK [STR "Not a global address: "; STR self#get_name]))
       
   method get_external_basevar =
     match data.memrefbase with
     | CBaseVar v -> v
     | _ ->
-       raise (CCHFailure 
-		(LBLOCK [ STR "Not a base variable: " ; STR self#get_name ]))
+       raise
+         (CCHFailure
+	    (LBLOCK [STR "Not a base variable: "; STR self#get_name]))
       
   method has_external_base =
     match data.memrefbase with CBaseVar _ -> true | _ -> false
@@ -148,7 +155,9 @@ object (self)
     else
       raise
         (CCHFailure
-           (LBLOCK [ STR "No memory reference found with index: "  ; INT index ]))
+           (LBLOCK [
+                STR "No memory reference found with index: ";
+                INT index]))
 
   method private mk_memory_reference (data:memory_reference_data_t) =
     let index = vard#index_memory_reference_data data in

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -64,7 +66,7 @@ open CCHPreTypes
 open CCHVariable
 
 module H = Hashtbl
-module P = Pervasives
+
 
 module ProgramContextCollections =
   CHCollections.Make
@@ -147,7 +149,7 @@ let non_relational_value_compare v1 v2 =
   | (FSymbolicExpr _, _) -> -1
   | (_, FSymbolicExpr _) -> 1
   | (FSymbolicBound (bt1,x1), FSymbolicBound (bt2,x2)) ->
-     let l0 = P.compare bt1 bt2 in
+     let l0 = Stdlib.compare bt1 bt2 in
      if l0 = 0 then xpr_list_list_compare x1 x2 else l0
   | (FSymbolicBound _, _) -> -1
   | (_, FSymbolicBound _) -> 1
@@ -165,7 +167,7 @@ let non_relational_value_compare v1 v2 =
   | (FBaseOffsetValue _,_) -> -1
   | (_,FBaseOffsetValue _) -> 1
   | (FInitializedSet lst1, FInitializedSet lst2) ->
-     let lenc = P.compare (List.length lst1) (List.length lst2) in
+     let lenc = Stdlib.compare (List.length lst1) (List.length lst2) in
      if lenc = 0 then slist_compare lst1 lst2 else lenc
   | (FInitializedSet _, _) -> -1
   | (_, FInitializedSet _) -> 1
@@ -183,32 +185,44 @@ let non_relational_value_to_pretty v =
   match v with
   | FSymbolicExpr v -> LBLOCK [ STR "(" ; pr_expr v ; STR ")" ]
   | FSymbolicBound (bt,xll) ->
-     LBLOCK [ STR (bound_type_mfts#ts bt) ; STR ":[" ;
-              xll_to_pretty xll ]
+     LBLOCK [
+         STR (bound_type_mfts#ts bt) ; STR ":[";
+         xll_to_pretty xll]
   | FIntervalValue (lb,ub) ->
-    LBLOCK [ STR "["   ; 
-	     (match lb with Some v -> v#toPretty | _ -> STR "-oo") ; 
-	     STR " ; " ; 
-	     (match ub with Some v -> v#toPretty | _ -> STR "oo") ; STR "]" ]
+     LBLOCK [
+         STR "[";
+	 (match lb with Some v -> v#toPretty | _ -> STR "-oo");
+	 STR " ; ";
+	 (match ub with Some v -> v#toPretty | _ -> STR "oo") ; STR "]"]
   | FBaseOffsetValue (a,b,lb,ub,canbenull) ->
-    LBLOCK [ STR "(" ; pr_expr b ; STR ")#" ; 
-	     STR (match a with Heap -> "H" | Stack -> "S" | External -> "F") ;
-	     (match (lb,ub) with
-	     | (None,None) -> STR "[?]"
-	     | (Some lb,None) -> LBLOCK [ STR "[ " ; lb#toPretty ; STR " ; oo ]" ]
-	     | (None,Some ub) -> LBLOCK [ STR "[ -oo ; " ; ub#toPretty ; STR " ]" ]
-	     | (Some lb, Some ub) -> LBLOCK [ STR "[" ; lb#toPretty ; STR ";" ;
-					      ub#toPretty ; STR "]" ]) ; 
+     LBLOCK [
+         STR "(";
+         pr_expr b;
+         STR ")#";
+	 STR (match a with Heap -> "H" | Stack -> "S" | External -> "F");
+	 (match (lb,ub) with
+	  | (None,None) -> STR "[?]"
+	  | (Some lb,None) -> LBLOCK [STR "[ "; lb#toPretty; STR "; oo ]"]
+	  | (None,Some ub) -> LBLOCK [STR "[ -oo ; "; ub#toPretty; STR " ]"]
+	  | (Some lb, Some ub) ->
+             LBLOCK [
+                 STR "[";
+                 lb#toPretty;
+                 STR ";";
+		 ub#toPretty;
+                 STR "]"]);
 	     (if canbenull then STR "" else STR " (not-null)") ]
-  | FInitializedSet lst -> pretty_print_list lst (fun s -> s#toPretty) "{" "," "}"
-  | FRegionSet lst -> pretty_print_list lst (fun s -> s#toPretty) "R#{" "," "}"
-  | FPolicyStateSet lst -> pretty_print_list lst (fun s -> s#toPretty) "PS#{" "," "}"
-        
-    
+  | FInitializedSet lst ->
+     pretty_print_list lst (fun s -> s#toPretty) "{" "," "}"
+  | FRegionSet lst ->
+     pretty_print_list lst (fun s -> s#toPretty) "R#{" "," "}"
+  | FPolicyStateSet lst ->
+     pretty_print_list lst (fun s -> s#toPretty) "PS#{" "," "}"
+
 
 let invariant_fact_compare f1 f2 =
   match (f1,f2) with
-  | (Unreachable d1,Unreachable d2) -> P.compare d1 d2
+  | (Unreachable d1,Unreachable d2) -> Stdlib.compare d1 d2
   | (Unreachable _,_) -> -1
   | (_,Unreachable _) -> 1
   | (NonRelationalFact (p1,v1),NonRelationalFact (p2,v2)) ->
@@ -217,7 +231,8 @@ let invariant_fact_compare f1 f2 =
   | (NonRelationalFact _, _) -> -1
   | (_, NonRelationalFact _) -> 1
   | (ParameterConstraint x1, ParameterConstraint x2) -> xpr_compare x1 x2
-    
+
+
 let invariant_fact_to_pretty f =
   match f with 
   | Unreachable s -> LBLOCK [ STR "unreachable(" ; STR s ; STR ")" ]
@@ -225,11 +240,13 @@ let invariant_fact_to_pretty f =
      LBLOCK [ v#toPretty ; STR " = " ; non_relational_value_to_pretty nrv ]
   | ParameterConstraint x -> LBLOCK [ pr_expr x ]
 
+
 let non_relational_fact_to_pretty f =
   match f with
   | Unreachable s -> LBLOCK [ STR "unreachable(" ; STR s ; STR ")" ]
   | NonRelationalFact (_,nrv) -> non_relational_value_to_pretty nrv
   | ParameterConstraint x -> pr_expr x
+
 
 let is_smaller_nrv (f1:non_relational_value_t) (f2:non_relational_value_t) =
   let is_smaller_bound b1 b2 =
@@ -255,16 +272,22 @@ let is_smaller_nrv (f1:non_relational_value_t) (f2:non_relational_value_t) =
   | (FPolicyStateSet s1, FPolicyStateSet s2) -> is_subset s1 s2
   | _ ->
     begin
-      ch_error_log#add "invariant comparison"
-	(LBLOCK [ STR "Invariant facts are not intervals: " ; 
-		  non_relational_value_to_pretty f1 ; STR " and " ;
-		  non_relational_value_to_pretty f2 ]) ;
-      raise (CCHFailure
-	       (LBLOCK [  STR "Invariant facts are not intervals: " ; 
-		  non_relational_value_to_pretty f1 ; STR " and " ;
-		  non_relational_value_to_pretty f2 ]))
+      ch_error_log#add
+        "invariant comparison"
+	(LBLOCK [
+             STR "Invariant facts are not intervals: ";
+	     non_relational_value_to_pretty f1;
+             STR " and ";
+	     non_relational_value_to_pretty f2]);
+      raise
+        (CCHFailure
+	   (LBLOCK [
+                STR "Invariant facts are not intervals: ";
+		non_relational_value_to_pretty f1;
+                STR " and ";
+		non_relational_value_to_pretty f2]))
     end
-       
+
 
 class invariant_t
         ~(invd:invdictionary_int)
@@ -276,7 +299,7 @@ object (self:'a)
 
   method index = index
 
-  method compare (other:'a) = P.compare self#index other#index
+  method compare (other:'a) = Stdlib.compare self#index other#index
 
   method compare_lb (other:'a) =
     match (self#lower_bound, other#lower_bound) with
@@ -479,7 +502,9 @@ object (self:'a)
 
 end
 
-let read_xml_invariant (invd:invdictionary_int) (node:xml_element_int):invariant_int =
+
+let read_xml_invariant
+      (invd:invdictionary_int) (node:xml_element_int):invariant_int =
   let index = node#getIntAttribute "index" in
   let fact = invd#read_xml_invariant_fact node in
   new invariant_t ~invd ~index ~fact
@@ -492,6 +517,7 @@ module InvariantFactCollections = CHCollections.Make
     let toPretty = invariant_fact_to_pretty
    end)
 
+
 (* container for multiple invariants at one location *)
 module InvariantCollections = CHCollections.Make
   (struct
@@ -499,6 +525,7 @@ module InvariantCollections = CHCollections.Make
     let compare f1 f2 = f1#compare f2
     let toPretty f = f#toPretty
    end)
+
 
 class location_invariant_t (invd:invdictionary_int):location_invariant_int =
 object (self)
@@ -553,12 +580,14 @@ object (self)
                 | [ p ] when inv#is_smaller p -> [ inv ]
                 | [ p ] -> [ p ]
                 | _ ->
-                   let msg = LBLOCK [ STR "Multiple interval facts: " ;
-                                      pretty_print_list
-                                        intervalfacts
-                                        (fun p -> p#toPretty) "{" ", " "}" ] in
+                   let msg =
+                     LBLOCK [
+                         STR "Multiple interval facts: ";
+                         pretty_print_list
+                           intervalfacts
+                           (fun p -> p#toPretty) "{" ", " "}"] in
                    begin
-                     ch_error_log#add "interval facts" msg ;
+                     ch_error_log#add "interval facts" msg;
                      raise (CCHFailure msg)
                    end in
               intervalfacts @ (List.filter (fun i -> not i#is_interval) entry)
@@ -569,12 +598,14 @@ object (self)
                 | [ p ] when inv#is_smaller p -> [ inv ]
                 | [ p ] -> [ p ]
                 | _ ->
-                   let msg = LBLOCK [ STR "Multiple regions facts: " ;
-                                      pretty_print_list
-                                        regionfacts
-                                        (fun p -> p#toPretty) "{" ", " "}" ] in
+                   let msg =
+                     LBLOCK [
+                         STR "Multiple regions facts: ";
+                         pretty_print_list
+                           regionfacts
+                           (fun p -> p#toPretty) "{" ", " "}"] in
                    begin
-                     ch_error_log#add "regions facts" msg ;
+                     ch_error_log#add "regions facts" msg;
                      raise (CCHFailure msg)
                    end in
               regionfacts @ (List.filter (fun i -> not i#is_regions) entry)
@@ -584,7 +615,7 @@ object (self)
     | _ -> ()
 
   method write_xml (node:xml_element_int) =
-    let invs = List.sort P.compare (H.fold (fun k _ a -> k::a) facts []) in
+    let invs = List.sort Stdlib.compare (H.fold (fun k _ a -> k::a) facts []) in
     if (List.length invs) > 0 then
       let attr = String.concat "," (List.map string_of_int invs) in
       node#setAttribute "ifacts" attr
@@ -596,9 +627,11 @@ object (self)
           List.map int_of_string (nsplit ',' (node#getAttribute "ifacts"))
         with
           Failure _ ->
-          raise (CCHFailure
-                   (LBLOCK [ STR "location_invariant:read_xml: int_of_string on " ;
-                             STR (node#getAttribute "ifacts") ])) in
+          raise
+            (CCHFailure
+               (LBLOCK [
+                    STR "location_invariant:read_xml: int_of_string on ";
+                    STR (node#getAttribute "ifacts")])) in
       let facts = List.map invd#get_invariant_fact attr in
       let facts = List.sort invariant_fact_compare facts in
       List.iter self#add_fact facts       
@@ -616,16 +649,24 @@ object (self)
          begin
            match h#get_fact with
            | NonRelationalFact(v,_) ->
-              LBLOCK [ v#toPretty ; NL ;
-                       INDENT( 3, LBLOCK (List.map (fun f -> LBLOCK [ f#toPretty ; NL ]) vf)) ;
-                       NL ]
+              LBLOCK [
+                  v#toPretty;
+                  NL;
+                  INDENT(
+                      3,
+                      LBLOCK (List.map (fun f -> LBLOCK [f#toPretty; NL]) vf));
+                  NL]
            | _ -> STR ""
          end
       | _ -> STR "" in
-    LBLOCK [ LBLOCK (List.map pvfact vfacts) ; NL ;
-             LBLOCK (List.map (fun f -> LBLOCK [ f#toPretty ; NL ]) otherfacts) ; NL ]
-    
+    LBLOCK [
+        LBLOCK (List.map pvfact vfacts);
+        NL;
+        LBLOCK (List.map (fun f -> LBLOCK [f#toPretty; NL]) otherfacts);
+        NL]
+
 end
+
 
 class invariant_io_t
         ?(all=true)
@@ -681,7 +722,8 @@ object (self)
       List.iter (fun n ->
           let c = ccontexts#read_xml_context n in
           let locinv =  self#get_location_invariant c in
-          locinv#read_xml n ) ((getc "location-invariants")#getTaggedChildren "loc")
+          locinv#read_xml n )
+        ((getc "location-invariants")#getTaggedChildren "loc")
     end
 
 end
@@ -694,5 +736,5 @@ let get_invariant_messages (invio:invariant_io_int) (l:(int * int list) list) =
   List.fold_left (fun acc (k,ilist) ->
       List.fold_left (fun acci invindex ->
           let inv = invio#get_invariant invindex in
-          let p = LBLOCK [ STR "[" ; INT k ; STR "] " ; inv#value_to_pretty ] in
+          let p = LBLOCK [STR "["; INT k; STR "] "; inv#value_to_pretty] in
           p::acci) acc ilist) [] l

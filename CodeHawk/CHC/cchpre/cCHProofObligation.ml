@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +47,7 @@ open CCHPreSumTypeSerializer
 open CCHPreTypes
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let contexts = CCHContext.ccontexts
 let cdecls = CCHDeclarations.cdeclarations
@@ -55,7 +57,7 @@ let join_invs (invs1:int list) (invs2:int list):int list =
   begin
     s#addList invs1 ;
     s#addList invs2 ;
-    List.sort P.compare  s#toList
+    List.sort Stdlib.compare s#toList
   end
 
 let join_dependencies (d1:dependencies_t) (d2:dependencies_t) =
@@ -137,11 +139,14 @@ let read_xml_dependencies
                                    STR " not recognized" ]))
   with
     Failure _ ->
-    raise (CCHFailure
-             (LBLOCK [ STR "read_xml_dependencies: int_of_string on " ;
-                       STR (if has "invs" then (get "invs") else " -- ") ;
-                       STR " and " ;
-                       STR (if has "ids" then (get "ids") else " -- ") ]))
+    raise
+      (CCHFailure
+         (LBLOCK [
+              STR "read_xml_dependencies: int_of_string on ";
+              STR (if has "invs" then (get "invs") else " -- ");
+              STR " and ";
+              STR (if has "ids" then (get "ids") else " -- ")]))
+
 
 let get_po_type_location (pt:po_type_t) =
   match pt with
@@ -151,6 +156,7 @@ let get_po_type_location (pt:po_type_t) =
     | SPO (ReturnsiteSPO (loc,_,_,_))
     | SPO (LocalSPO (loc,_,_)) -> loc
 
+
 let get_po_type_context (pt:po_type_t) =
   match pt with
   | PPO (PPOprog (_,ctxt,_))
@@ -159,6 +165,7 @@ let get_po_type_context (pt:po_type_t) =
     | SPO (ReturnsiteSPO (_,ctxt,_,_))
     | SPO (LocalSPO (_,ctxt,_)) -> ctxt
 
+
 let get_po_type_predicate (pt:po_type_t) =
   match pt with
   | PPO (PPOprog (_,_,pred))
@@ -166,6 +173,7 @@ let get_po_type_predicate (pt:po_type_t) =
     | SPO (CallsiteSPO (_,_,pred,_))
     | SPO (ReturnsiteSPO (_,_,pred,_))
     | SPO (LocalSPO (_,_,pred)) -> pred
+
 
 class diagnostic_t =
 object (self)
@@ -243,10 +251,11 @@ object (self)
         (List.map (fun (index,invs) ->
              let xnode = xmlElement "arg" in
              begin
-               xnode#setIntAttribute "a" index ;
-               xnode#setAttribute "i" (String.concat "," (List.map string_of_int invs)) ;
+               xnode#setIntAttribute "a" index;
+               xnode#setAttribute
+                 "i" (String.concat "," (List.map string_of_int invs));
                xnode
-             end) self#get_invariants)) ;
+             end) self#get_invariants));
       (anode#appendChildren
          (List.map (fun (index,msgs) ->
               let xnode = xmlElement "arg" in
@@ -255,7 +264,7 @@ object (self)
                 xnode#appendChildren
                   (List.map (fun msg ->
                        let snode = xmlElement "msg" in
-                       begin snode#setAttribute "t" msg ; snode end) msgs) ;
+                       begin snode#setAttribute "t" msg; snode end) msgs);
                 xnode
               end) self#get_arg_messages)) ;
       (knode#appendChildren
@@ -287,25 +296,27 @@ object (self)
            H.add invarianttable (n#getIntAttribute "a") invs)
                  (inode#getTaggedChildren "arg")) ;
       (List.iter (fun n ->
-           let amsgs = List.map (fun k -> k#getAttribute "t") (n#getTaggedChildren "msg") in
+           let amsgs =
+             List.map (fun k -> k#getAttribute "t") (n#getTaggedChildren "msg") in
            List.iter (self#add_arg_msg (n#getIntAttribute "a")) amsgs)
-                 (anode#getTaggedChildren "arg")) ;
+         (anode#getTaggedChildren "arg"));
       (List.iter (fun n ->
-           let kmsgs = List.map (fun k -> k#getAttribute "t") (n#getTaggedChildren "msg") in
+           let kmsgs =
+             List.map (fun k -> k#getAttribute "t") (n#getTaggedChildren "msg") in
            List.iter (self#add_key_msg (n#getAttribute "k")) kmsgs)
-                 (knode#getTaggedChildren "key")) ;
-      (List.iter (fun n -> self#add_msg (n#getAttribute "t"))
-                 (mnode#getTaggedChildren "msg")) 
+         (knode#getTaggedChildren "key"));
+      (List.iter
+         (fun n -> self#add_msg (n#getAttribute "t"))
+         (mnode#getTaggedChildren "msg"))
     end
 
   method toPretty =
-    LBLOCK (List.map (fun s -> LBLOCK [ STR s ; NL ]) messages#toList)
+    LBLOCK (List.map (fun s -> LBLOCK [STR s; NL]) messages#toList)
         
 
 end
       
-         
-   
+
 class proof_obligation_t
         (pod:podictionary_int)
         (pt:po_type_t):proof_obligation_int =
@@ -313,7 +324,7 @@ object (self)
 
   val mutable status = Orange
   val mutable dependencies = None
-  val mutable diagnostic = new diagnostic_t       (* information on reason for failure of discharge *)
+  val mutable diagnostic = new diagnostic_t   (* information on reason for failure of discharge *)
   val mutable explanation = None
   val mutable timestamp = None
 
@@ -343,7 +354,9 @@ object (self)
     match timestamp with
     | Some t -> t
     | _ ->
-       raise (CCHFailure (LBLOCK [ STR "Proof obligation has not been resolved yet" ]))
+       raise
+         (CCHFailure
+            (LBLOCK [STR "Proof obligation has not been resolved yet"]))
 
   method get_location = get_po_type_location pt
 
@@ -383,7 +396,7 @@ object (self)
       (match explanation with
        | Some e ->
           let enode = xmlElement "e" in
-          begin enode#setAttribute "txt" e ; node#appendChildren [ enode ] end
+          begin enode#setAttribute "txt" e; node#appendChildren [enode] end
        | _ -> ()) ;
       (match dependencies with
        | Some d -> write_xml_dependencies node pod d
@@ -394,10 +407,15 @@ object (self)
     end
 
   method toPretty =
-    LBLOCK [ STR "  " ; po_predicate_to_pretty self#get_predicate ; STR "  " ;
-             STR (po_status_mfts#ts status) ; NL ]
+    LBLOCK [
+        STR "  ";
+        po_predicate_to_pretty self#get_predicate;
+        STR "  ";
+        STR (po_status_mfts#ts status);
+        NL]
 
 end
+
 
 class ppo_t
         (pod:podictionary_int)
@@ -417,12 +435,14 @@ object
     end
 
   method toPretty =
-    LBLOCK [ STR "ppo " ; INT (pod#index_ppo_type pt) ; super#toPretty ]
+    LBLOCK [STR "ppo "; INT (pod#index_ppo_type pt); super#toPretty]
 
 end
 
+
 let mk_ppo = new ppo_t
-                                
+
+
 class callsite_spo_t
         (pod:podictionary_int)
         (st:spo_type_t): proof_obligation_int =
@@ -436,14 +456,15 @@ object
 
   method write_xml (node:xml_element_int) =
     begin
-      super#write_xml node ;
+      super#write_xml node;
       pod#write_xml_spo_type node st
     end
 
   method toPretty =
-    LBLOCK [ STR "spo " ; INT (pod#index_spo_type st) ; super#toPretty ]
+    LBLOCK [STR "spo "; INT (pod#index_spo_type st); super#toPretty]
 
 end
+
 
 class returnsite_spo_t
         (pod:podictionary_int)
@@ -463,11 +484,13 @@ object
     end
 
   method toPretty =
-    LBLOCK [ STR "spo " ; INT (pod#index_spo_type st) ; super#toPretty ]
+    LBLOCK [STR "spo "; INT (pod#index_spo_type st); super#toPretty]
 
 end
 
+
 let mk_returnsite_spo = new returnsite_spo_t
+
 
 class local_spo_t
         (pod:podictionary_int)
@@ -487,14 +510,18 @@ object
     end
 
   method toPretty =
-    LBLOCK [ STR "spo " ; INT (pod#index_spo_type st) ; super#toPretty ]
+    LBLOCK [STR "spo "; INT (pod#index_spo_type st); super#toPretty]
 
 end
 
+
 let mk_local_spo = new local_spo_t
-                      
+
+
 let read_xml_proof_obligation
-      (node:xml_element_int) (pod:podictionary_int) (po:proof_obligation_int) =
+      (node:xml_element_int)
+      (pod:podictionary_int)
+      (po:proof_obligation_int) =
   let get = node#getAttribute in
   let has = node#hasNamedAttribute in
   let getc = node#getTaggedChild in
@@ -504,11 +531,11 @@ let read_xml_proof_obligation
        let status = po_status_mfts#fs (get "s") in
        po#set_status status) ;
     (if hasc "e" then
-       po#set_explanation ((getc "e")#getAttribute "txt")) ;
+       po#set_explanation ((getc "e")#getAttribute "txt"));
     (if hasc "d" then
        po#get_diagnostic#read_xml (getc "d")) ;
     (if has "deps" then
-       po#set_dependencies (read_xml_dependencies node pod)) ;
+       po#set_dependencies (read_xml_dependencies node pod));
     (if has "ts" then
        po#set_resolution_timestamp (node#getAttribute "ts")) 
   end

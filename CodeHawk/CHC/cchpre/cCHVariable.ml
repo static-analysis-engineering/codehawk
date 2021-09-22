@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +65,7 @@ open CCHPreTypes
 open CCHVarDictionary
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let cd = CCHDictionary.cdictionary
 let cdecls = CCHDeclarations.cdeclarations
@@ -87,14 +89,16 @@ let constant_value_variable_compare c1 c2 =
      location_compare loc1 loc2
   | (ExpReturnValue _, _) -> -1
   | (_, ExpReturnValue _) -> 1
-  | (FunctionSideEffectValue (loc1,_,_,_,a1,_), FunctionSideEffectValue (loc2,_,_,_,a2,_)) ->
+  | (FunctionSideEffectValue (loc1, _, _, _, a1, _),
+     FunctionSideEffectValue (loc2, _, _, _, a2, _)) ->
      let l0 = location_compare loc1 loc2 in
-     if l0 = 0 then P.compare a1 a2 else l0
+     if l0 = 0 then Stdlib.compare a1 a2 else l0
   | (FunctionSideEffectValue _,_) -> -1
   | (_, FunctionSideEffectValue _) -> 1
-  | (ExpSideEffectValue (loc1,_,_,_,a1,_),ExpSideEffectValue (loc2,_,_,_,a2,_)) ->
+  | (ExpSideEffectValue (loc1, _, _, _, a1, _),
+     ExpSideEffectValue (loc2, _, _, _, a2, _)) ->
      let l0 = location_compare loc1 loc2 in
-     if l0 = 0 then P.compare a1 a2 else l0
+     if l0 = 0 then Stdlib.compare a1 a2 else l0
   | (ExpSideEffectValue _,_) -> -1
   | (_, ExpSideEffectValue _) -> 1
   | (SymbolicValue (x1,t1), SymbolicValue (x2,t2)) ->
@@ -109,26 +113,27 @@ let constant_value_variable_compare c1 c2 =
   | (ByteSequence _, _) -> -1
   | (_, ByteSequence _) -> 1
   | (MemoryAddress (i1,o1), MemoryAddress (i2,o2)) ->
-     let l0 = P.compare i1 i2 in if l0 = 0 then offset_compare o1 o2 else l0
+     let l0 = Stdlib.compare i1 i2 in
+     if l0 = 0 then offset_compare o1 o2 else l0
 
 let c_variable_denotation_compare v1 v2 =
   match (v1,v2) with
   | (LocalVariable (v1,o1), LocalVariable (v2,o2)) -> 
-    let l0 = P.compare v1.vid v2.vid in 
+    let l0 = Stdlib.compare v1.vid v2.vid in
     if l0 = 0 then offset_compare o1 o2 else l0
   | (LocalVariable _, _) -> -1
   | (_, LocalVariable _) -> 1
   | (GlobalVariable (v1,o1), GlobalVariable (v2,o2)) ->
-     let l0 = P.compare v1.vid v2.vid in
+     let l0 = Stdlib.compare v1.vid v2.vid in
      if l0 = 0 then offset_compare o1 o2 else l0
   | (GlobalVariable _,_) -> -1
   | (_, GlobalVariable _) -> 1
   | (MemoryVariable (i1,o1), MemoryVariable (i2,o2)) ->
-     let l0 = P.compare i1 i2 in
+     let l0 = Stdlib.compare i1 i2 in
      if l0 = 0 then offset_compare o1 o2 else l0
   | (MemoryVariable _, _) -> -1
   | (_, MemoryVariable _) -> 1
-  | (MemoryRegionVariable i1, MemoryRegionVariable i2) -> P.compare i1 i2
+  | (MemoryRegionVariable i1, MemoryRegionVariable i2) -> Stdlib.compare i1 i2
   | (MemoryRegionVariable _, _) -> -1
   | (_, MemoryRegionVariable _) -> 1
   | (ReturnVariable _, ReturnVariable _) -> 0   (* there is only one return variable per function *)
@@ -138,7 +143,9 @@ let c_variable_denotation_compare v1 v2 =
   | (FieldVariable _, _) -> -1
   | (_, FieldVariable _) -> 1
   | (CheckVariable (lst1,_), CheckVariable (lst2,_)) ->
-     list_compare lst1 lst2 (fun x y -> triple_compare x y P.compare P.compare P.compare)
+     list_compare lst1 lst2
+       (fun x y ->
+         triple_compare x y Stdlib.compare Stdlib.compare Stdlib.compare)
   | (CheckVariable _, _) -> -1
   | (_, CheckVariable _) -> 1
   | (AuxiliaryVariable a1, AuxiliaryVariable a2) ->
@@ -146,11 +153,11 @@ let c_variable_denotation_compare v1 v2 =
   | (AuxiliaryVariable _,_) -> -1
   | (_, AuxiliaryVariable _) -> 1
   | (AugmentationVariable (n1,p1,i1), AugmentationVariable (n2,p2,i2)) ->
-     let l0 = P.compare n1 n2 in
+     let l0 = Stdlib.compare n1 n2 in
      if l0 = 0 then
-       let l1 = P.compare p1 p2 in
+       let l1 = Stdlib.compare p1 p2 in
        if l1 = 0 then
-         P.compare i1 i2
+         Stdlib.compare i1 i2
        else l1
      else l0
       
@@ -163,7 +170,8 @@ let opt_args_to_pretty opt_args =
       | _ -> STR "_") "" "^" ""
 
 let constant_value_variable_to_pretty c =
-  let optx_to_pretty optx = match optx with Some x -> pr_expr x | _ -> STR "?" in
+  let optx_to_pretty optx =
+    match optx with Some x -> pr_expr x | _ -> STR "?" in
   match c with
   | InitialValue (v,_) -> LBLOCK [ STR "(" ; v#toPretty ; STR ")#init" ]
   | FunctionReturnValue (loc,_,vinfo,opt_args) ->
@@ -190,8 +198,9 @@ let constant_value_variable_to_pretty c =
      match o with
      | NoOffset ->  LBLOCK [ STR "memaddr-" ; INT i ]
      | _ ->
-        LBLOCK [ STR "memaddr-" ; INT i ; STR ":" ; offset_to_pretty o ] 
-      
+        LBLOCK [STR "memaddr-"; INT i; STR ":"; offset_to_pretty o]
+
+
 let c_variable_denotation_to_pretty v =
   match v with
   | LocalVariable (vinfo,offset)
@@ -205,25 +214,33 @@ let c_variable_denotation_to_pretty v =
   | FieldVariable ((fname,fkey)) ->
      LBLOCK [ STR "field(" ; STR fname ; STR "_" ; INT fkey ; STR ")" ]
   | CheckVariable (l,_) ->
-     let pp (x,y,z) = LBLOCK [ STR "(" ; STR (if x then "ppo:" else "spo:") ;
-                               INT y ; STR ":" ; INT z ; STR ")" ] in
-    LBLOCK [ STR "check#" ; 
-	     (match l with 
-	     | [] -> STR "" 
-	     | [p] -> pp p 
-	     | _ -> pretty_print_list l pp "{" ";" "}") ]     
+     let pp (x,y,z) =
+       LBLOCK [
+           STR "(";
+           STR (if x then "ppo:" else "spo:");
+           INT y;
+           STR ":";
+           INT z;
+           STR ")"] in
+     LBLOCK [
+         STR "check#";
+	 (match l with
+	  | [] -> STR ""
+	  | [p] -> pp p
+	  | _ -> pretty_print_list l pp "{" ";" "}")]
   | AuxiliaryVariable a -> constant_value_variable_to_pretty a
   | AugmentationVariable (name,purpose,index) ->
      LBLOCK [ STR "augv[" ; STR purpose ; STR "]:" ; STR name ;
               STR "(" ; INT index ; STR ")" ]
- 	
+
+
 class c_variable_t 
         ~(vard:vardictionary_int)
         ~(index:int)
         ~(denotation:c_variable_denotation_t):c_variable_int =
 object (self:'a)
   method index = index
-  method compare (other:'a) = P.compare index other#index
+  method compare (other:'a) = Stdlib.compare index other#index
     
   method get_name =
     match denotation with
@@ -241,7 +258,8 @@ object (self:'a)
       let fdecls = vard#fdecls in
       match denotation with
       | LocalVariable (vinfo,offset)
-        | GlobalVariable (vinfo,offset) -> type_of_offset fdecls vinfo.vtype offset
+        | GlobalVariable (vinfo,offset) ->
+         type_of_offset fdecls vinfo.vtype offset
       | MemoryVariable (i,offset) ->
          type_of_offset fdecls (memrefmgr#get_memory_reference i)#get_type offset
       | MemoryRegionVariable i -> TVoid []
@@ -258,8 +276,9 @@ object (self:'a)
               | TFun (t,_,_,_) -> t
               | _ ->
                  raise (CCHFailure
-                          (LBLOCK [ STR "Unexpected type for function return value: " ;
-                                    typ_to_pretty vinfo.vtype ] ))
+                          (LBLOCK [
+                               STR "Unexpected type for function return value: ";
+                               typ_to_pretty vinfo.vtype]))
             end
          | ExpReturnValue (_,_,_,_,t) -> t
          | FunctionSideEffectValue (_,_,_,_,_,t) -> t
@@ -269,12 +288,14 @@ object (self:'a)
          | ByteSequence _ -> TVoid []
          | MemoryAddress (i,offset) ->
             TPtr (type_of_offset
-                    fdecls ((memrefmgr#get_memory_reference i)#get_type) offset,[])
+                    fdecls
+                    ((memrefmgr#get_memory_reference i)#get_type) offset, [])
     with
     | CCHFailure p ->
        begin
-         ch_error_log#add "c_variable:get_type"
-                          (LBLOCK [ self#toPretty ; STR ": " ; p ]) ;
+         ch_error_log#add
+           "c_variable:get_type"
+           (LBLOCK [self#toPretty; STR ": "; p]) ;
          raise (CCHFailure p)
        end
 
@@ -284,8 +305,11 @@ object (self:'a)
     match denotation with
     | AuxiliaryVariable (InitialValue (v,_)) -> v
     | _ ->
-       raise (CCHFailure (LBLOCK [ STR "Variable is not an initial value: " ;
-                                   self#toPretty ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Variable is not an initial value: ";
+                 self#toPretty]))
 
   method get_function_return_value_callee =
     match denotation with
@@ -476,17 +500,25 @@ object (self)
 
   method get_symbolic_value (index:int) =
     let v = self#get_variable index in
-    match v#get_denotation with AuxiliaryVariable (SymbolicValue (x,_)) -> x | _ ->
-      raise (CCHFailure 
-	       (LBLOCK [ STR "Index does not belong to a frozen value: " ;
-			 v#toPretty ]))	 
+    match v#get_denotation with
+    | AuxiliaryVariable (SymbolicValue (x,_)) -> x
+    | _ ->
+       raise
+         (CCHFailure
+	    (LBLOCK [
+                 STR "Index does not belong to a frozen value: ";
+		 v#toPretty]))
 	
   method get_check_variable (index:int) =
     let v = self#get_variable index in
-    match v#get_denotation with CheckVariable (l,t) -> (l,t) | _ ->
-      raise (CCHFailure 
-	       (LBLOCK [ STR "Index does not belong to check value variable: " ;
-			 v#toPretty ]))
+    match v#get_denotation with
+    | CheckVariable (l,t) -> (l,t)
+    | _ ->
+       raise
+         (CCHFailure
+	    (LBLOCK [
+                 STR "Index does not belong to check value variable: ";
+		 v#toPretty]))
 
   method private mk_variable (denotation:c_variable_denotation_t) =
     let index = vard#index_c_variable_denotation denotation in
@@ -525,7 +557,8 @@ object (self)
            (pctxt:program_context_int)
            (callee:varinfo)
            (args:xpr_t option list) =
-    self#mk_variable (AuxiliaryVariable (FunctionReturnValue (loc,pctxt,callee,args)))
+    self#mk_variable
+      (AuxiliaryVariable (FunctionReturnValue (loc,pctxt,callee,args)))
 
   method mk_function_sideeffect_value
            (loc:location)
@@ -575,13 +608,15 @@ object (self)
       let initvar = (self#get_variable index)#get_initial_value_variable in
       if self#is_program_lval initvar#getName#getSeqNumber then
         match (self#get_variable initvar#getName#getSeqNumber)#get_denotation with
-        | LocalVariable (vinfo,offset) -> Lval (Var (vinfo.vname,vinfo.vid), offset)
+        | LocalVariable (vinfo,offset) ->
+           Lval (Var (vinfo.vname,vinfo.vid), offset)
         | MemoryVariable (i,offset) ->
            let memref = memrefmgr#get_memory_reference i in
            if memref#has_external_base then
              let basevar = memref#get_external_basevar in
              if self#is_initial_value basevar#getName#getSeqNumber then
-               let bvar = self#get_initial_value_variable basevar#getName#getSeqNumber in
+               let bvar =
+                 self#get_initial_value_variable basevar#getName#getSeqNumber in
                begin
                  match (self#get_variable bvar#getName#getSeqNumber)#get_denotation with
                  | LocalVariable (vinfo,voffset) ->
@@ -786,13 +821,17 @@ object (self)
           (self#mk_function_sideeffect_value
              loc ctxt vinfo (List.map (fun _ -> None) args) argindex typ)#index
        | _ ->
-          raise (CCHFailure
-                   (LBLOCK [ STR "Not a function return value or sideeffect value: " ;
-                             INT index ])))
+          raise
+            (CCHFailure
+               (LBLOCK [
+                    STR "Not a function return value or sideeffect value: ";
+                    INT index])))
     else
-      raise (CCHFailure
-               (LBLOCK [ STR "Not a function return value or sideeffect value: " ;
-                         INT index ]))
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Not a function return value or sideeffect value: ";
+                INT index]))
 
   method is_program_lval (index:int) =
     index > 0 &&
@@ -894,7 +933,8 @@ object (self)
       
 end
   
-let mk_variable_manager (optnode:xml_element_int option) (fdecls:cfundeclarations_int) =
+let mk_variable_manager
+      (optnode:xml_element_int option) (fdecls:cfundeclarations_int) =
   let xd = mk_xprdictionary () in
   let vard = mk_vardictionary xd fdecls in
   let memregmgr = mk_memory_region_manager vard in

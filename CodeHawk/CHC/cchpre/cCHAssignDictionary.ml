@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +50,7 @@ open CCHPreSumTypeSerializer
 open CCHPreTypes
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let cd = CCHDictionary.cdictionary
 let cdecls = CCHDeclarations.cdeclarations
@@ -109,7 +111,7 @@ object (self)
   val mutable tables = []
 
   initializer
-    tables <- [ function_name_table ; assignment_table ; global_value_table ]
+    tables <- [function_name_table; assignment_table; global_value_table]
 
   method reset = List.iter (fun t -> t#reset) tables
 
@@ -131,8 +133,9 @@ object (self)
   method index_assignment (a:assignment_t) =
     let tags = [ assignment_mcts#ts a ] in
     let argsdata d =
-      [ cd#index_exp d.asg_rhs ; cdecls#index_location d.asg_loc ;
-        ccontexts#index_context d.asg_context ] in
+      [cd#index_exp d.asg_rhs;
+       cdecls#index_location d.asg_loc;
+       ccontexts#index_context d.asg_context] in
     let ifun = self#index_function_name in
     let key = match a with
       | InitAssignment (vname,vid,init) ->
@@ -176,8 +179,10 @@ object (self)
     let tags = [ global_value_mcts#ts v ] in
     let key = match v with
       | GlobalValue (vname,vid,initexp, exps) ->
-         let initix = match initexp with Some e -> cd#index_exp e | _ -> (-1) in
-         (tags @ [ vname ], [ vid ; initix ] @ (List.map cd#index_exp exps)) in
+         let initix = match initexp with
+           | Some e -> cd#index_exp e
+           | _ -> (-1) in
+         (tags @ [vname ], [vid; initix] @ (List.map cd#index_exp exps)) in
     global_value_table#add key
 
   method get_global_value (index:int) =
@@ -187,19 +192,25 @@ object (self)
     let t = t name tags in
     match (t 0) with
     | "gv" ->
-       let init = if (a 1) = -1 then None else Some (cd#get_exp (a 1)) in
+       let init =
+         if (a 1) = -1 then
+           None
+         else
+           Some (cd#get_exp (a 1)) in
        let exps = List.map cd#get_exp (get_list_suffix args 2) in
        GlobalValue(t 1, a 0, init, exps)
     | s -> raise_tag_error name s  global_value_mcts#tags
 
-  method read_xml_assignment ?(tag="iasg") (node:xml_element_int):assignment_t =
+  method read_xml_assignment
+           ?(tag="iasg") (node:xml_element_int):assignment_t =
     self#get_assignment (node#getIntAttribute tag)
 
   method write_xml_assignment
            ?(tag="iasg") (node:xml_element_int) (a:assignment_t) =
     node#setIntAttribute tag (self#index_assignment a)
 
-  method read_xml_global_value ?(tag="igv") (node:xml_element_int):global_value_t =
+  method read_xml_global_value
+           ?(tag="igv") (node:xml_element_int):global_value_t =
     self#get_global_value (node#getIntAttribute tag)
 
   method write_xml_global_value
@@ -209,16 +220,18 @@ object (self)
   method write_xml (node:xml_element_int) =
     node#appendChildren
       (List.map
-         (fun t -> let tnode = xmlElement t#get_name in
-                   begin t#write_xml tnode ; tnode end) tables)
+         (fun t ->
+           let tnode = xmlElement t#get_name in
+           begin t#write_xml tnode; tnode end) tables)
 
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
     List.iter (fun t -> t#read_xml (getc t#get_name)) tables
 
   method toPretty =
-    LBLOCK (List.map (fun t ->
-                LBLOCK [ STR t#get_name ; STR ": " ; INT t#size ; NL ]) tables)
+    LBLOCK (
+        List.map (fun t ->
+            LBLOCK [STR t#get_name; STR ": "; INT t#size; NL]) tables)
 
 end
 

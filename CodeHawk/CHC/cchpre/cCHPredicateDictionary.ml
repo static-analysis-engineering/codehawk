@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +47,7 @@ open CCHPreSumTypeSerializer
 open CCHPreTypes
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let cd = CCHDictionary.cdictionary
 let id = CCHInterfaceDictionary.interface_dictionary
@@ -234,10 +236,12 @@ object (self)
     | s -> raise_tag_error name s po_predicate_mcts#tags
 
 
-  method read_xml_po_predicate ?(tag="ipr") (node:xml_element_int):po_predicate_t =
+  method read_xml_po_predicate
+           ?(tag="ipr") (node:xml_element_int):po_predicate_t =
     self#get_po_predicate (node#getIntAttribute tag)
 
-  method write_xml_po_predicate ?(tag="ipr") (node:xml_element_int) (p:po_predicate_t) =
+  method write_xml_po_predicate
+           ?(tag="ipr") (node:xml_element_int) (p:po_predicate_t) =
     node#setIntAttribute tag (self#index_po_predicate p)    
 
   method write_xml (node:xml_element_int) =
@@ -253,7 +257,7 @@ object (self)
 
   method toPretty =
     LBLOCK (List.map (fun t ->
-                LBLOCK [ STR t#get_name ; STR ": " ; INT t#size ; NL ]) tables)
+                LBLOCK [STR t#get_name; STR ": "; INT t#size; NL]) tables)
 
 
 end

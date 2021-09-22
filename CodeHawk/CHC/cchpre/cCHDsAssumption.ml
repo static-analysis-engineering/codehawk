@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,10 +47,13 @@ open CCHPreTypes
 
 let pd = CCHPredicateDictionary.predicate_dictionary
 
-let write_xml_dependent_proof_obligations (node:xml_element_int) (l:string list) =
-  let l = List.sort Pervasives.compare l in
-  node#appendChildren (List.map (fun i ->
-    let iNode = xmlElement "po" in begin iNode#setAttribute "id" i ; iNode end) l) 
+let write_xml_dependent_proof_obligations
+      (node:xml_element_int) (l:string list) =
+  let l = List.sort Stdlib.compare l in
+  node#appendChildren
+    (List.map (fun i ->
+         let iNode = xmlElement "po" in
+         begin iNode#setAttribute "id" i; iNode end) l)
 
 class ds_assumption_t ?(pos=[]) (index:int):ds_assumption_int =
 object (self)
@@ -75,27 +80,35 @@ object (self)
     let seti = node#setIntAttribute in
     begin
       (if (List.length dependent_ppos) > 0 then
-         set "ppos" (String.concat "," (List.map string_of_int dependent_ppos))) ;
+         set "ppos" (String.concat "," (List.map string_of_int dependent_ppos)));
       (if (List.length dependent_spos) > 0 then
          let spos = List.map (fun i -> (-i)) dependent_spos in
-         set "spos" (String.concat "," (List.map string_of_int spos))) ;
+         set "spos" (String.concat "," (List.map string_of_int spos)));
       seti "ipr" index
     end
 
 end
 
+
 let mk_ds_assumption ?(pos=[]) (index:int):ds_assumption_int = 
   new ds_assumption_t ~pos index
+
 
 let read_xml_ds_assumption (node:xml_element_int) =
   let get = node#getAttribute in
   let geti = node#getIntAttribute in
   let has = node#hasNamedAttribute in
   let index = geti "ipr" in
-  let ppos = if has "ppos" then
-               List.map int_of_string (nsplit ',' (get "ppos")) else [] in
-  let spos = if has "spos" then
-               List.map int_of_string (nsplit ',' (get "spos")) else [] in
+  let ppos =
+    if has "ppos" then
+      List.map int_of_string (nsplit ',' (get "ppos"))
+    else
+      [] in
+  let spos =
+    if has "spos" then
+      List.map int_of_string (nsplit ',' (get "spos"))
+    else
+      [] in
   let spos = List.map (fun i -> (-i)) spos in
   mk_ds_assumption ~pos:(ppos@spos) index
     
