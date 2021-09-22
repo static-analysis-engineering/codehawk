@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +32,6 @@ open CHPEPRTypes
 open CHPretty
 
 module H = Hashtbl
-module P = Pervasives
 
 class indexed_htable_t (name:string):indexed_htable_int =
 object (self)
@@ -53,7 +54,7 @@ object (self)
 
   method toPretty =
     let pairs = H.fold (fun k v acc -> (k,v) :: acc) table [] in
-    let pairs = List.sort (fun (_,v) (_,v') -> P.compare v v') pairs in
+    let pairs = List.sort (fun (_,v) (_,v') -> Stdlib.compare v v') pairs in
     let pr_key (tags,args) =
       LBLOCK [ pretty_print_list tags (fun t -> STR t) "[" "," "]" ; STR " ; " ;
                pretty_print_list args (fun a -> INT a) "[" "," "]" ] in

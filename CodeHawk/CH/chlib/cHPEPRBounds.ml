@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +37,7 @@ open CHPEPRTypes
 open CHPretty
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let pd = CHPEPRDictionary.pepr_dictionary
 
@@ -120,7 +122,7 @@ object (self:'a)
   val k = k
 
   method index = index
-  method compare (a:'a) = P.compare index a#index
+  method compare (a:'a) = Stdlib.compare index a#index
   method get_k = k
                         
   method equal (a:'a) = index = a#index
@@ -214,7 +216,7 @@ object (self:'a)
   method get_k = k
   method get_pt = pt
 
-  method compare (a:'a) = P.compare index a#index
+  method compare (a:'a) = Stdlib.compare index a#index
 
   method equal (a:'a) = index = a#index
 
@@ -245,7 +247,7 @@ object (self:'a)
 
   method index = index
   method get_s = s
-  method compare (a:'a) = P.compare index a#index
+  method compare (a:'a) = Stdlib.compare index a#index
   method equal (a:'a) = index = a#index
 
   method leq (a:'a) =
@@ -318,7 +320,7 @@ object (self:'a)
   method get_k = k
   method get_bt = bt
 
-  method compare (a:'a) = P.compare index a#index
+  method compare (a:'a) = Stdlib.compare index a#index
   method equal (a:'a) = index = a#index
 
   method is_number = k#is_zero 
@@ -459,7 +461,7 @@ let normalize_pex_list (s:pex_int list):pex_int list =
               H.replace t kindex (x::entry)) s in
   let r = 
     List.sort
-      (fun x x' -> P.compare x#index x'#index)
+      (fun x x' -> Stdlib.compare x#index x'#index)
       (H.fold (fun _ v acc ->
            match v with
            | [] -> acc
@@ -482,7 +484,7 @@ object (self:'a)
   method index = index
   method get_s = s
         
-  method compare (a:'a) = P.compare index a#index
+  method compare (a:'a) = Stdlib.compare index a#index
   method equal (a:'a) = index = a#index
 
   method leq (a:'a) =
@@ -608,7 +610,7 @@ let normalize_pex_set_list (p:pex_set_int list):pex_set_int list =
   else
     let r =
       List.sort
-        (fun s s' -> P.compare s#index s'#index)
+        (fun s s' -> Stdlib.compare s#index s'#index)
         (List.fold_left (fun acc s ->
              if List.exists (fun s' -> s#index = s'#index) acc then
                acc
@@ -633,7 +635,7 @@ object (self)
   method index = index
   method get_p = p
 
-  method compare (a:'a) = P.compare index a#index
+  method compare (a:'a) = Stdlib.compare index a#index
   method equal (a:'a) = index = a#index
 
   method leq (a:'a) =

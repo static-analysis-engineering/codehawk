@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -103,7 +105,7 @@ module FwdBwdTable =
   CHCollections.Make
     (struct
       type t = int * int
-      let compare = Pervasives.compare
+      let compare = Stdlib.compare
       let toPretty (id1, id2) = LBLOCK [INT id1; STR "@"; INT id2]
     end)
   

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +33,6 @@ open CHLanguage
 open CHNumerical   
 open CHPretty
 
-module P = Pervasives
 
 class type graph_t =
   object
@@ -43,7 +44,7 @@ module IntCollections =
   CHCollections.Make
     (struct
       type t = int
-      let compare = P.compare
+      let compare = Stdlib.compare
       let toPretty n = INT n
     end)
   
@@ -51,7 +52,7 @@ module StringCollections =
   CHCollections.Make
     (struct
       type t = string
-      let compare = P.compare
+      let compare = Stdlib.compare
       let toPretty s = STR s
     end)
   
@@ -78,4 +79,3 @@ module NumericalCollections =
       let compare s1 s2 = s1#compare s2
       let toPretty s = s#toPretty
     end)
-  
