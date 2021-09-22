@@ -2,8 +2,8 @@ CODEHAWK = ../..
 CCH = ..
 ZARITHLIB = $(shell ocamlfind query zarith)
 
-EXTLIB = $(CODEHAWK)/CH_extern/extlib
-ZIPLIB = $(CODEHAWK)/CH_extern/camlzip
+EXTLIB = $(shell ocamlfind query extlib)
+ZIPLIB = $(shell ocamlfind query zip)
 CHLIB  = $(CODEHAWK)/CH/chlib
 CHUTIL = $(CODEHAWK)/CH/chutil
 XPRLIB = $(CODEHAWK)/CH/xprlib

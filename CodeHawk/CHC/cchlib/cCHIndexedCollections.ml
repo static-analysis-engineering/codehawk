@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -61,17 +63,19 @@ end
 
 let table_to_pretty t =
   let p = ref [] in
-  let _ = Hashtbl.iter (fun k v -> p := (LBLOCK [ INT k ; STR " -> " ; INT v ; NL ]) :: !p) t in
-  LBLOCK [ STR "table: " ; NL ; INDENT (3,LBLOCK !p) ; NL ]
+  let _ =
+    H.iter (fun k v ->
+        p := (LBLOCK [INT k; STR " -> "; INT v; NL]) :: !p) t in
+  LBLOCK [STR "table: "; NL; INDENT (3,LBLOCK !p); NL]
   
   
 class virtual ['a,'b] indexed_table_with_retrieval_t =
 object (self: _)
   
   val mutable next = 1
-  val store = Hashtbl.create 5
+  val store = H.create 5
     
-  method reset = begin Hashtbl.clear store ; next <- 1 end
+  method reset = begin H.clear store ; next <- 1 end
     
   method virtual lookup: 'a -> 'b option
     
@@ -85,16 +89,19 @@ object (self: _)
     | None ->
       let e = mk next in
       let _ = self#insert k e in
-      let _ = Hashtbl.add store next e in
+      let _ = H.add store next e in
       let _ = next <- next + 1 in
       e
 	
   method retrieve (index:int) =
     try
-      Hashtbl.find store index
+      H.find store index
     with
       Not_found ->
-	raise (CCHFailure (LBLOCK [ STR "Index not found in indexed table: " ; INT index ]))
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Index not found in indexed table: "; INT index]))
 
   method private get_values =
     let rec aux n l =
@@ -119,8 +126,8 @@ object (self: _)
       let i = get_index e in
       begin
 	self#insert k e ;
-	Hashtbl.add store i e ;
-	next <- Pervasives.max (i+1) next
+	H.add store i e ;
+	next <- Stdlib.max (i+1) next
       end ) node#getChildren
 
 end

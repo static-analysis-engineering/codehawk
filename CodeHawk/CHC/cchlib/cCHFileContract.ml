@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +41,7 @@ open CCHLibTypes
 open CCHUtilities
 
 module H = Hashtbl
-module P = Pervasives
+
    
 let id = CCHInterfaceDictionary.interface_dictionary
 
@@ -443,7 +445,7 @@ object (self)
   method private write_xml_global_variables (node:xml_element_int) =
     let gvars =
       List.sort (fun g1 g2 ->
-          P.compare g1.cgv_name g2.cgv_name) globalvars in
+          Stdlib.compare g1.cgv_name g2.cgv_name) globalvars in
     node#appendChildren
       (List.map (fun gv ->
            let gnode = xmlElement "gvar" in
@@ -463,7 +465,7 @@ object (self)
   method private write_xml_function_contracts (node:xml_element_int) =
     let fncontracts =
       List.sort (fun f1 f2 ->
-          P.compare f1#get_name f2#get_name) self#get_function_contracts in
+          Stdlib.compare f1#get_name f2#get_name) self#get_function_contracts in
     node#appendChildren
       (List.map  (fun fn ->
            let fnode = xmlElement "function" in

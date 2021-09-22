@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +42,7 @@ open CCHSumTypeSerializer
 open CCHUtilities
 
 module H = Hashtbl
-module P = Pervasives
+
    
 let cd = CCHDictionary.cdictionary
 let cdecls = CCHDeclarations.cdeclarations
@@ -79,10 +81,16 @@ object (self)
     tables <- [ varinfo_table ]
 
   method private getrep (vinfo:varinfo) =
-    let tags = [ vinfo.vname; storage_mfts#ts vinfo.vstorage ] in
-    let args = [ vinfo.vid; cd#index_typ vinfo.vtype; cd#index_attributes vinfo.vattr;
-                 ibool vinfo.vglob ; ibool vinfo.vinline; cdecls#index_location vinfo.vdecl;
-                 ibool vinfo.vaddrof ; vinfo.vparam ] in
+    let tags = [vinfo.vname; storage_mfts#ts vinfo.vstorage] in
+    let args = [
+        vinfo.vid;
+        cd#index_typ vinfo.vtype;
+        cd#index_attributes vinfo.vattr;
+        ibool vinfo.vglob;
+        ibool vinfo.vinline;
+        cdecls#index_location vinfo.vdecl;
+        ibool vinfo.vaddrof;
+        vinfo.vparam] in
     (tags,args)
 
   method private xrep (tags,args): varinfo =
@@ -135,9 +143,12 @@ object (self)
        if cdecls#has_varinfo_by_name name then
          cdecls#get_varinfo_by_name name
        else
-         raise (CCHFailure
-                  (LBLOCK [ STR "Global variable with name: " ;  STR name ;
-                            STR " not found" ]))
+         raise
+           (CCHFailure
+              (LBLOCK [
+                   STR "Global variable with name: ";
+                   STR name;
+                   STR " not found"]))
       
   method get_varinfo_by_vid (vid:int) =
     if H.mem vidtable vid then
@@ -170,9 +181,11 @@ object (self)
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
     begin
-      List.iter (fun t -> t#read_xml (getc t#get_name)) tables ;
-      List.iter (fun (index,vinfo) -> H.add vidtable vinfo.vid index)
-                (List.map (fun (key,index) -> (index,self#xrep key)) varinfo_table#items)
+      List.iter (fun t -> t#read_xml (getc t#get_name)) tables;
+      List.iter
+        (fun (index,vinfo) -> H.add vidtable vinfo.vid index)
+        (List.map
+           (fun (key,index) -> (index,self#xrep key)) varinfo_table#items)
     end
     
 end
