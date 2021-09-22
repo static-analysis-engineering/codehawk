@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +54,6 @@ open CCHPreTypes
 open CCHProofObligation
 open CCHProofScaffolding
 
-
 (* cchanalyze *)
 open CCHEnvironment
 open CCHOrakel
@@ -77,7 +78,7 @@ let process_function fname =
   let _ = pr_debug [ fixed_length_pretty
                        (LBLOCK [ STR "  check " ; fmsg ]) 72 ] in
   let _ = read_proof_files fname fdecls in
-  let _ = read_api fname in
+  let _ = read_api fname fdecls in
   let varmgr = read_vars fname fdecls in
   let env = mk_c_environment fundec varmgr in
   let invio = read_invs fname varmgr#vard in
@@ -89,7 +90,9 @@ let process_function fname =
         check_proof_obligations env fnApi invio proofObligations ;
         save_proof_files fname ;
         save_api fname ;
-        pr_debug [ STR (Printf.sprintf "%8.2f sec" ((Unix.gettimeofday ()) -. starttime)) ; NL ]
+        pr_debug [
+            STR (Printf.sprintf "%8.2f sec" ((Unix.gettimeofday ()) -. starttime));
+            NL]
       end
   with
   | CCHFailure p ->

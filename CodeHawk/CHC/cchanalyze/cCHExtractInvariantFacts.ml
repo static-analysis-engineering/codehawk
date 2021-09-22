@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -73,13 +75,14 @@ open CCHOperationsProvider
 open CCHVariable
 
 module H = Hashtbl
-module P = Pervasives
+
 
 exception TimeOut of float
 
 let fenv = CCHFileEnvironment.file_environment
 
 let pr_expr = xpr_formatter#pr_expr
+
 
 let get_context name =
   if (String.length name) > 4 && (String.sub name 0 4) = "inv_" then
@@ -90,15 +93,19 @@ let get_context name =
           ccontexts#get_context (int_of_string ctxt)
         with
         | Failure _ ->
-           raise (CCHFailure
-                    (LBLOCK [ STR "get_context: int_of_string on " ; STR ctxt ])))
+           raise
+             (CCHFailure
+                (LBLOCK [STR "get_context: int_of_string on "; STR ctxt])))
     | _ ->
-       raise (CCHFailure
-                (LBLOCK [ STR "unexpected format for invariant name: " ;
-                                   STR name ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "unexpected format for invariant name: ";
+                 STR name]))
   else
-    raise (CCHFailure
-             (LBLOCK [ STR "unexpected invariant name: " ; STR name ]))
+    raise
+      (CCHFailure
+         (LBLOCK [STR "unexpected invariant name: "; STR name]))
 
 
 let timeout_value = ref 120.0
@@ -118,7 +125,8 @@ let extract_external_value_pairs
   let programVars = List.filter is_program_var vars in
   let unIndexedVars = List.filter (fun v -> not (is_indexed v)) vars in
   let domain = domain#projectOut unIndexedVars in
-  let numConstraints = domain#observer#getNumericalConstraints ~variables:None () in
+  let numConstraints =
+    domain#observer#getNumericalConstraints ~variables:None () in
   let constraintSets = get_constraint_sets numConstraints in
   let newConstraints = mk_constraint_set () in
   let _ = 
@@ -175,9 +183,11 @@ let extract_external_value_pairs
     try
       let factors =
         if invert_factors then
-	  List.map (fun f -> ((konstraint#getCoefficient f)#neg, f#getVariable)) factors 
+	  List.map (fun f ->
+              ((konstraint#getCoefficient f)#neg, f#getVariable)) factors
 	else
-	  List.map (fun f -> (konstraint#getCoefficient f, f#getVariable)) factors in
+	  List.map (fun f ->
+              (konstraint#getCoefficient f, f#getVariable)) factors in
       let constant = if invert_factors then constant else constant#neg in
       let pointerVariables =
         List.filter (fun (_,v) ->
@@ -210,19 +220,29 @@ let extract_external_value_pairs
 	begin
 	  ch_info_log#add
             "constraint with two pointers"
-	    (LBLOCK [ STR fname ; STR ": " ; konstraint#toPretty ;
-		      STR " with pointer variables " ; p1#toPretty ; STR " and " ;
-		      p2#toPretty ]) ;
+	    (LBLOCK [
+                 STR fname;
+                 STR ": ";
+                 konstraint#toPretty;
+		 STR " with pointer variables ";
+                 p1#toPretty;
+                 STR " and ";
+		 p2#toPretty]);
 	  None
 	end
        (* more than two pointers in expression *)
       | _ ->
 	begin
-	  ch_info_log#add "constraint with multiple pointers"
-	    (LBLOCK [ STR fname  ; STR ": " ; konstraint#toPretty ;
-		      STR " with pointer variables" ; 
-		      pretty_print_list pointerVariables 
-			(fun (_,v) -> v#toPretty) "[" ";" "]"]) ;
+	  ch_info_log#add
+            "constraint with multiple pointers"
+	    (LBLOCK [
+                 STR fname;
+                 STR ": ";
+                 konstraint#toPretty;
+		 STR " with pointer variables";
+		 pretty_print_list
+                   pointerVariables
+		   (fun (_,v) -> v#toPretty) "[" ";" "]"]);
 	  None
 	end 
     with
@@ -240,8 +260,8 @@ let extract_external_value_pairs
       match c#getFactors with
       | [ f ] when is_program_var f#getVariable ->
          let pval = f#getVariable in
-         if (c#getCoefficient f)#equal numerical_one || 
-	      (c#getCoefficient f)#equal numerical_one#neg then
+         if (c#getCoefficient f)#equal numerical_one
+            || (c#getCoefficient f)#equal numerical_one#neg then
 	   if (c#getCoefficient f)#equal numerical_one then  (* p = c *)
 	     let num = c#getConstant in
 	     (pval, FIntervalValue (Some num, Some num)) :: acc
@@ -250,13 +270,14 @@ let extract_external_value_pairs
 	     (pval, FIntervalValue (Some num, Some num)) :: acc
 	   else
 	     begin
-	       ch_info_log#add "unexpected constraint"
-	                       (LBLOCK [ STR fname ; STR ": " ; c#toPretty ]) ;
+	       ch_info_log#add
+                 "unexpected constraint"
+	         (LBLOCK [STR fname; STR ": "; c#toPretty]);
 	       acc
 	     end
 	 else
 	   acc
-      | l ->                                              (* p = sum (c_i . f_i) *)
+      | l ->                                          (* p = sum (c_i . f_i) *)
          let (pfactors,ffactors) =
            List.fold_left (fun (pf,ff) f ->
 	       if is_program_var f#getVariable then
@@ -267,19 +288,27 @@ let extract_external_value_pairs
 	         begin
 	           ch_error_log#add
                      "unexpected variable in constraint"
-	             (LBLOCK [ STR fname ; STR ": " ; f#getVariable#toPretty ; STR " in " ; 
-			       c#toPretty ]) ;
+	             (LBLOCK [
+                          STR fname;
+                          STR ": ";
+                          f#getVariable#toPretty;
+                          STR " in ";
+			  c#toPretty]);
 	           (pf,ff)
 	         end) ([],[]) l in
          match (pfactors,ffactors) with
          | ([],_) -> acc
-         | ([ pf ],ff::_) when let pcoeff = c#getCoefficient pf in 
-			       pcoeff#equal numerical_one || pcoeff#neg#equal numerical_one ->
+         | ([ pf ],ff::_)
+              when let pcoeff = c#getCoefficient pf in
+		   pcoeff#equal numerical_one || pcoeff#neg#equal numerical_one ->
 	    begin
-	      (* invert the factors if the coefficient of the program variable equals one 
-	     otherwise invert the constant *)
-	      match get_symbolic_expr c ((c#getCoefficient pf)#equal numerical_one) 
-	                              ffactors c#getConstant with
+	      (* invert the factors if the coefficient of the program 
+                 variable equals one 
+	         otherwise invert the constant *)
+	      match get_symbolic_expr
+                      c
+                      ((c#getCoefficient pf)#equal numerical_one)
+	              ffactors c#getConstant with
 	      | Some fxpr -> (pf#getVariable, FSymbolicExpr fxpr) :: acc
 	      | _ -> acc
 	    end
@@ -309,16 +338,25 @@ let extract_external_value_facts
     TimeOut timeUsed ->
     ch_info_log#add
       "time-out"
-      (LBLOCK [ STR env#get_functionname ; STR ": " ;
-		STR (Printf.sprintf "%4.1f" timeUsed) ; STR " secs" ; 
-		STR "(invariants: " ; INT numInvariants ; 
-		STR " ; current location: " ; INT !currentContext ; STR ")" ; NL ])
-    
+      (LBLOCK [
+           STR env#get_functionname;
+           STR ": ";
+	   STR (Printf.sprintf "%4.1f" timeUsed);
+           STR " secs";
+	   STR "(invariants: ";
+           INT numInvariants;
+	   STR "; current location: ";
+           INT !currentContext;
+           STR ")";
+           NL])
+
+
 let extract_ranges 
       (env:c_environment_int)
       (invio:invariant_io_int)
       (invariants:(string, (string,atlas_t) H.t) H.t) =
-  let get_bound b = match b with MINUS_INF | PLUS_INF -> None | NUMBER n -> Some n in
+  let get_bound b =
+    match b with MINUS_INF | PLUS_INF -> None | NUMBER n -> Some n in
   let is_cvv v = env#is_fixed_value v in
   H.iter (fun k v ->
     if H.mem v intervals_domain then
@@ -342,12 +380,14 @@ let extract_ranges
                 let fact = NonRelationalFact (v,invValue) in
                 invio#add_fact context fact ) programVars ) invariants
 
+
 let extract_pepr
       (env:c_environment_int)
       (invio:invariant_io_int)
       (invariants:(string, (string,atlas_t) H.t) H.t) =
   let params = mk_pepr_params env#get_parameters in                           
-  let get_bound b = match b with MINUS_INF | PLUS_INF -> None | NUMBER n -> Some n in
+  let get_bound b =
+    match b with MINUS_INF | PLUS_INF -> None | NUMBER n -> Some n in
   H.iter (fun k v ->
       if H.mem v pepr_domain then
         let inv = H.find v pepr_domain in
@@ -394,8 +434,10 @@ let extract_pepr
                          let fact = NonRelationalFact (v,invValue) in
                          invio#add_fact context fact) peprX.pepr_bounds)
                   end) vars) invariants
-  
-let extract_base_values (env:c_environment_int) (inv:atlas_t):invariant_fact_t list =
+
+
+let extract_base_values
+      (env:c_environment_int) (inv:atlas_t):invariant_fact_t list =
   let result = ref [] in
   let domain = inv#getDomain valueset_domain in
   let varObserver = domain#observer#getNonRelationalVariableObserver in
@@ -425,7 +467,8 @@ let extract_base_values (env:c_environment_int) (inv:atlas_t):invariant_fact_t l
       else
 	()) programVars  in
   !result
-    
+
+
 let extract_symbol_facts domainname (inv:atlas_t):invariant_fact_t list =
   let result = ref [] in
   let domain = inv#getDomain domainname in
@@ -443,16 +486,18 @@ let extract_symbol_facts domainname (inv:atlas_t):invariant_fact_t list =
             | SET symbols ->
                let symbols =
                  (List.sort (fun s1 s2 ->
-                      P.compare s1#getBaseName s2#getBaseName) symbols#toList) in
+                      Stdlib.compare
+                        s1#getBaseName s2#getBaseName) symbols#toList) in
                let invValue =
                  if domainname = symbolic_sets_domain then
                    FInitializedSet symbols
                  else
                    FRegionSet symbols in
                let fact = NonRelationalFact (v, invValue) in
-               result := fact :: !result				       	            
+               result := fact :: !result
             | _ -> ()) programVars in
     !result
+
 
 let extract_state_facts domainname (inv:atlas_t):invariant_fact_t list =
   let result = ref [] in
@@ -471,14 +516,15 @@ let extract_state_facts domainname (inv:atlas_t):invariant_fact_t list =
             | SET symbols ->
                let symbols =
                  (List.sort (fun s1 s2 ->
-                      P.compare s1#getBaseName s2#getBaseName) symbols#toList) in
+                      Stdlib.compare
+                        s1#getBaseName s2#getBaseName) symbols#toList) in
                let invValue =
                  if domainname = "state sets" then
                    FPolicyStateSet symbols
                  else
                    FRegionSet symbols in
                let fact = NonRelationalFact (v, invValue) in
-               result := fact :: !result				       	            
+               result := fact :: !result
             | _ -> ()) programVars in
     !result
   
@@ -496,10 +542,11 @@ let extract_valuesets
           List.iter (fun f -> invio#add_fact context f) facts) invariants
   with
   | CCHFailure p ->
-     raise (CCHFailure (LBLOCK [ STR "Error in extracting valueset invariants: " ; p ]))
-  
+     raise
+       (CCHFailure
+          (LBLOCK [STR "Error in extracting valueset invariants: "; p]))
 
- 
+
 let extract_symbols
       (env:c_environment_int)
       (invio:invariant_io_int)
@@ -513,7 +560,10 @@ let extract_symbols
           List.iter (fun f -> invio#add_fact context f) facts) invariants
   with
   | CCHFailure p ->
-     raise (CCHFailure (LBLOCK [ STR "Error in extracting symbolic invariants: " ; p ]))
+     raise
+       (CCHFailure
+          (LBLOCK [STR "Error in extracting symbolic invariants: "; p]))
+
 
 let extract_states
       (env:c_environment_int)
@@ -528,8 +578,10 @@ let extract_states
           List.iter (fun f -> invio#add_fact context f) facts) invariants
   with
   | CCHFailure p ->
-     raise (CCHFailure (LBLOCK [ STR "Error in extracting state invariants: " ; p ]))
-  
+     raise
+       (CCHFailure
+          (LBLOCK [STR "Error in extracting state invariants: "; p]))
+
 
 let extract_sym_pointersets
       (env:c_environment_int)
