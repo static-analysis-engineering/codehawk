@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,16 +44,19 @@ open CCHUtilities
 open CCHSumTypeSerializer
 
 module H = Hashtbl
-module P = Pervasives
 
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
-    LBLOCK [ STR "Type " ; STR name ; STR " tag: " ; STR tag ;
-             STR " not recognized. Accepted tags: " ;
-             pretty_print_list accepted (fun s -> STR s) "" ", " "" ] in
+    LBLOCK [
+        STR "Type ";
+        STR name;
+        STR " tag: ";
+        STR tag;
+        STR " not recognized. Accepted tags: ";
+        pretty_print_list accepted (fun s -> STR s) "" ", " ""] in
   begin
-    ch_error_log#add "serialization tag" msg ;
+    ch_error_log#add "serialization tag" msg;
     raise (CCHFailure msg)
   end
   
@@ -399,7 +404,8 @@ object (self)
 
   method index_typ (typ:typ):int =
     let tags = [ typ_mcts#ts typ ] in
-    let ia attrs = match attrs with [] -> [] | _ -> [ self#index_attributes attrs ] in
+    let ia attrs =
+      match attrs with [] -> [] | _ -> [self#index_attributes attrs] in
     let key = match typ with
       | TVoid attrs -> (tags, ia attrs )
       | TInt (ik,attrs) -> (tags @ [ikind_mfts#ts ik], ia attrs)
@@ -414,7 +420,7 @@ object (self)
       | TNamed (name,attrs) -> (tags @ [ name], ia attrs)
       | TComp (key, attrs) -> (tags, key :: ia attrs )
       | TEnum (name, attrs) -> (tags @ [ name], ia attrs)
-      | TBuiltin_va_list attrs -> (tags, ia attrs) in                                       
+      | TBuiltin_va_list attrs -> (tags, ia attrs) in
     typ_table#add key
 
   method get_typ (index:int):typ =
@@ -442,8 +448,13 @@ object (self)
       | s -> raise_tag_error name s typ_mcts#tags
     with
     | Failure s ->
-       raise (CCHFailure (LBLOCK [ STR "Failure in cdictionary get_typ " ; INT index ;
-                                   STR ": " ; STR s ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Failure in cdictionary get_typ ";
+                 INT index;
+                 STR ": ";
+                 STR s]))
 
   method private index_opti64(i64:int64 option):string =
     match i64 with Some i -> Int64.to_string i | _ -> ""

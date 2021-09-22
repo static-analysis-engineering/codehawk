@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +43,6 @@ open CCHIndexedCollections
 open CCHLibTypes
 open CCHUtilities
 
-module P = Pervasives
 	
 let mk_context_node (key:string list * int list) =
   let (tags,args) = key in
@@ -75,7 +76,7 @@ module IntListCollections =
   CHCollections.Make
     (struct
       type t = int list
-      let compare = P.compare
+      let compare = Stdlib.compare
       let toPretty r = pretty_print_list r (fun i -> INT i) "[" "," "]"
     end)
   
@@ -88,7 +89,7 @@ object (self:'a)
 
   method index = index
 
-  method compare (other:'a) = lcompare nodes other#get_context P.compare
+  method compare (other:'a) = lcompare nodes other#get_context Stdlib.compare
   
   method equal (other:'a) = (self#compare other) = 0
     
@@ -211,7 +212,7 @@ object (self:'a)
 
   method index = index
     
-  method compare (other:'a) = lcompare nodes other#get_context P.compare
+  method compare (other:'a) = lcompare nodes other#get_context Stdlib.compare
     
   method private add s = 
     {< nodes = (context_node_table#add([s],[])) :: nodes >}
@@ -251,9 +252,10 @@ object (self:'a)
     
   method get_complexity = 
     5 * (List.length
-           (List.filter (fun n ->
-                         let (tags,_) = context_node_table#retrieve n in
-                             List.hd tags = "mem") nodes))
+           (List.filter
+              (fun n ->
+                let (tags,_) = context_node_table#retrieve n in
+                List.hd tags = "mem") nodes))
     
   method write_xml (node:xml_element_int) =
     begin
@@ -265,13 +267,15 @@ object (self:'a)
     String.concat
       "_"
       (List.map (fun ix ->
-           context_node_to_string (mk_context_node (context_node_table#retrieve ix))) nodes)
+           context_node_to_string
+             (mk_context_node (context_node_table#retrieve ix))) nodes)
       
   method toPretty = 
     pretty_print_list
       nodes (fun n ->
-        let cn = mk_context_node (context_node_table#retrieve n) in
-                        LBLOCK [ context_node_to_pretty cn ; NL ]) "" "" ""
+        let cn =
+          mk_context_node (context_node_table#retrieve n) in
+        LBLOCK [context_node_to_pretty cn; NL]) "" "" ""
       
 end
   
@@ -281,15 +285,18 @@ let read_xml_exp_context (node:xml_element_int):exp_context_int =
       List.map int_of_string (nsplit ',' (node#getAttribute "a"))
     with
       Failure _ ->
-      raise (CCHFailure (LBLOCK [ STR "read_xml_exp_context: int_of_string on " ;
-                                  STR (node#getAttribute "a") ])) in
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "read_xml_exp_context: int_of_string on ";
+                STR (node#getAttribute "a")])) in
   let index = node#getIntAttribute "ix" in
   new exp_context_t ~index ~nodes
 
 class exp_context_table_t =
 object (self)
 
-  inherit [ int list, exp_context_int ] indexed_table_with_retrieval_t as super
+  inherit [int list, exp_context_int] indexed_table_with_retrieval_t as super
 
   val map = new IntListCollections.table_t
 
@@ -297,7 +304,8 @@ object (self)
   method lookup = map#get
   method values = map#listOfValues
 
-  method reset = begin map#removeList map#listOfKeys ; super#reset end
+  method reset =
+    begin map#removeList map#listOfKeys; super#reset end
 
 end
 
