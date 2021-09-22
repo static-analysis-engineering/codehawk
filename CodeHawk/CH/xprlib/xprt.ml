@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -246,32 +248,54 @@ let syntactically_equal expr1 expr2 =
 
 
 let op_strings =
-  [ (XNeg, "XNeg") ; (XBNot, "XBNot") ; (XLNot, "XLNot") ; 
-    (XPlus, "XPlus") ; (XMinus, "XMinus") ; (XMult, "XMult") ; (XDiv, "XDiv") ;
-    (XMod, "XMod") ; (XShiftlt, "XShiftlt") ; (XShiftrt, "XShiftrt") ;
-    (XLt, "XLt") ; (XGt, "XGt") ; (XGe, "XGe") ; (XLe, "XLe") ; (XEq, "XEq") ; (XNe, "XNe") ;
-    (XSubset, "XSubset") ; (XDisjoint, "XDisjoint") ;
-    (XBAnd, "XBAnd") ; (XBXor, "XBXOr") ; (XLAnd, "XLAnd") ; (XLOr, "XLOr") ;
-    (XBOr, "XBOr") ; (XBNor, "XBNor") ;
-    (XNumJoin, "XNumJoin") ; (XNumRange, "XNumRange") ; (Xf "","Xf")  ]
+  [(XNeg, "XNeg");
+   (XBNot, "XBNot");
+   (XLNot, "XLNot");
+   (XPlus, "XPlus");
+   (XMinus, "XMinus");
+   (XMult, "XMult");
+   (XDiv, "XDiv");
+   (XMod, "XMod");
+   (XShiftlt, "XShiftlt");
+   (XShiftrt, "XShiftrt");
+   (XLt, "XLt");
+   (XGt, "XGt");
+   (XGe, "XGe");
+   (XLe, "XLe");
+   (XEq, "XEq");
+   (XNe, "XNe");
+   (XSubset, "XSubset");
+   (XDisjoint, "XDisjoint");
+   (XBAnd, "XBAnd");
+   (XBXor, "XBXOr");
+   (XLAnd, "XLAnd");
+   (XLOr, "XLOr");
+   (XBOr, "XBOr");
+   (XBNor, "XBNor");
+   (XNumJoin, "XNumJoin");
+   (XNumRange, "XNumRange");
+   (Xf "","Xf")]
+
 
 let get_op_string op = 
   try
     let (_,s) = List.find (fun (o,s) -> op = o) op_strings in s
   with
-    Not_found -> raise (CHFailure (LBLOCK [ STR  "Operator not found in get_op_string" ]))
+  | Not_found ->
+     raise (CHFailure (LBLOCK [STR  "Operator not found in get_op_string"]))
+
 
 let compare_op op1 op2 =
   let op1_string = get_op_string op1 in
   let op2_string = get_op_string op2 in
-  Pervasives.compare op1_string op2_string
+  Stdlib.compare op1_string op2_string
 
 
 let syntactic_comparison expr1 expr2 =
   let c_compare c1 c2 =
     match (c1,c2) with
     | (SymSet s1, SymSet s2) -> 
-       let l = Pervasives.compare (List.length s1) (List.length s2) in
+       let l = Stdlib.compare (List.length s1) (List.length s2) in
        if l = 0 then
 	 list_compare s1 s2 (fun x y -> x#compare y)
        else
@@ -303,9 +327,10 @@ let syntactic_comparison expr1 expr2 =
       (XConst c1, XConst c2) -> c_compare c1 c2
     | (XVar v1, XVar v2) -> v1#compare v2
     | (XOp (op1, l1), XOp (op2, l2)) -> 
-       let l = compare_op op1 op2 in if l = 0 then list_compare l1 l2 e_compare else l 
+       let l = compare_op op1 op2 in
+       if l = 0 then list_compare l1 l2 e_compare else l
     | (XAttr (s1,ee1), XAttr (s2,ee2)) ->
-       let l = Pervasives.compare s1 s2 in if l = 0 then e_compare ee1 ee2 else l
+       let l = Stdlib.compare s1 s2 in if l = 0 then e_compare ee1 ee2 else l
     | (XConst _, _) -> -1
     | (_, XConst _) -> 1
     | (XVar _, _) -> -1
