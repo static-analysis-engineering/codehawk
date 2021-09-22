@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +43,7 @@ open CHPrettyUtil
 open CHUtil
    
 module H = Hashtbl
-module P = Pervasives
+
 
 exception XmlDocumentError of int * int * pretty_t
 
@@ -559,7 +561,7 @@ let xml_interval (i:interval_t) =
    Write list of integers as a sequence of nodes with comma-separated values
    ------------------------------------------------------------------------------- *)
 let write_xml_indices (node:xml_element_int) (indices:int list) =
-  let indices = List.sort P.compare indices in
+  let indices = List.sort Stdlib.compare indices in
   let maxlen = 20 in
     let split (n:int) (l:int list) =
       let rec loop i p l =

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +35,7 @@ open CHPretty
 open CHXmlDocument
    
 module H = Hashtbl
-module P = Pervasives
+
 
 class type string_index_table_int =
   object
@@ -157,7 +159,7 @@ object (self)
   method items = H.fold (fun k index r -> (k,index) :: r) table []
 
   method private get_indexed_keys =
-    List.sort P.compare (H.fold (fun k v r -> (k,v) :: r) revtable [])               
+    List.sort Stdlib.compare (H.fold (fun k v r -> (k,v) :: r) revtable [])
 
   method size = H.length table
 
