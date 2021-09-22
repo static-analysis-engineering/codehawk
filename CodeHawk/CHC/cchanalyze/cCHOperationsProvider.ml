@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -64,34 +66,47 @@ let x2p = xpr_formatter#pr_expr
 
 let fenv = CCHFileEnvironment.file_environment
 
+
 module ProgramContextCollections = CHCollections.Make
   (struct
     type t = program_context_int
     let compare c1 c2 = c1#compare c2
     let toPretty c = c#toPretty
    end)
-  
+
+
 module ExpCollections = CHCollections.Make
   (struct
     type t = exp
     let compare  = exp_compare
     let toPretty = exp_to_pretty
    end)
-  
+
+
 class checkset_t (isppo:bool) (x:int) (y:int) =
 object (self)
+
   val mutable triples = [ (isppo,x,y) ]
     
   method add (isppo:bool) (x:int) (y:int) =
-    if List.exists (fun (i,a,b) -> i=isppo && a=x && b=y) triples then () else
-      triples <- List.sort Pervasives.compare ((isppo,x,y) :: triples)
+    if List.exists (fun (i,a,b) -> i=isppo && a=x && b=y) triples then
+      ()
+    else
+      triples <- List.sort Stdlib.compare ((isppo,x,y) :: triples)
 	
   method get = triples
     
   method toPretty = 
-    pretty_print_list triples (fun (isppo,x,y) -> 
-                        LBLOCK [ STR "(" ; STR (if isppo then "ppo:" else "spo:") ;
-                                 INT x ; STR "," ; INT y ; STR ")" ])
+    pretty_print_list
+      triples
+      (fun (isppo, x, y) ->
+        LBLOCK [
+            STR "(";
+            STR (if isppo then "ppo:" else "spo:");
+            INT x;
+            STR ",";
+            INT y;
+            STR ")"])
     "[" ";" "]"
     
 end
@@ -104,8 +119,12 @@ let add_proof_obligation_to_set
     List.iter (fun (seqnr,e) -> 
         match exps#get e with
         | Some checkset -> checkset#add p#is_ppo p#index seqnr
-        | _ -> let checkset = new checkset_t p#is_ppo p#index seqnr in exps#set e checkset) expsList    
-    
+        | _ ->
+           let checkset =
+             new checkset_t
+               p#is_ppo p#index seqnr in exps#set e checkset) expsList
+
+
 let add_proof_obligation 
     (t:(checkset_t ExpCollections.table_t) ProgramContextCollections.table_t)
     (p:proof_obligation_int) =
@@ -116,7 +135,8 @@ let add_proof_obligation
       let expSet = new ExpCollections.table_t in 
       begin t#set cfgcontext expSet ; expSet end in
   add_proof_obligation_to_set expSet p
-    
+
+
 class operations_provider_t 
   (env:c_environment_int)
   (exp_translator:exp_translator_int)
@@ -150,7 +170,10 @@ object (self)
     [ make_transaction tlabel tmps (assigns @ cmds ) ]
 	
   method get_c_cmd_operations (context:program_context_int) =
-    if op_contexts#has context then self#make_context_operation context else []
+    if op_contexts#has context then
+      self#make_context_operation context
+    else
+      []
       
   method private make_context_operation context =
     let assign_check_value v e =
@@ -188,25 +211,40 @@ object (self)
     let name = self#mk_invariant_label context in
     let vars = ref [] in
     let code = ref [] in
-    let exps = match op_contexts#get context with Some t -> t | _ ->
-      raise (CCHFailure (LBLOCK [ STR "Internal error in make_context_operation" ])) in
+    let exps = match op_contexts#get context with
+      | Some t -> t
+      | _ ->
+         raise
+           (CCHFailure
+              (LBLOCK [
+                   STR "Internal error in make_context_operation"])) in
     let _ =
       exps#iter
         (fun e checkset ->
-          let checkVar = env#mk_check_variable checkset#get (type_of_exp fdecls e) vtype in
+          let checkVar =
+            env#mk_check_variable checkset#get (type_of_exp fdecls e) vtype in
           try
             let assign = make_c_cmd_block (assign_check_value checkVar e) in
-            begin vars := checkVar :: !vars ; code := assign :: !code end
+            begin
+              vars := checkVar :: !vars;
+              code := assign :: !code
+            end
           with
           | CCHFailure p ->
              ch_error_log#add
                "proof obligation expression translation"
-               (LBLOCK [ STR "Variable: " ; checkVar#toPretty ;
-                         STR "; Expr: " ; exp_to_pretty e ; STR ": " ;  p]))  in
+               (LBLOCK [
+                    STR "Variable: ";
+                    checkVar#toPretty;
+                    STR "; Expr: ";
+                    exp_to_pretty e;
+                    STR ": ";
+                    p]))  in
     let args = List.map (fun v -> (v#getName#getBaseName,v,READ)) !vars in
-    let op = make_c_cmd (OPERATION { op_name = new symbol_t name ; op_args = args }) in
+    let op =
+      make_c_cmd (OPERATION {op_name = new symbol_t name; op_args = args}) in
     let abstract = make_c_cmd (ABSTRACT_VARS !vars) in
-    !code @ [ op ; abstract ]
+    !code @ [op; abstract]
 
   method private make_return_operation context e =
     let assign_return_value v e =
@@ -219,14 +257,15 @@ object (self)
     let rVar = env#get_return_var in
     let assign = make_c_cmd_block (assign_return_value rVar e) in
     let args = [ (rVar#getName#getBaseName,rVar,READ) ] in
-    let op = make_c_cmd (OPERATION { op_name = new symbol_t name ;  op_args = args }) in
-    [ assign ; op ]
+    let op =
+      make_c_cmd (OPERATION {op_name = new symbol_t name; op_args = args}) in
+    [assign; op]
          
   method private mk_invariant_label context =
     let _ = count <- count + 1 in
     let ictxt = ccontexts#index_context context in
     "inv_" ^ (string_of_int ictxt) ^ "_" ^ (string_of_int count)
 end
-  
+
+
 let get_operations_provider = new operations_provider_t
-  

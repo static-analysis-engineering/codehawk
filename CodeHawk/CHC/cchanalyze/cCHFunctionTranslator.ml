@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -76,7 +78,9 @@ module H = Hashtbl
 
 let fenv = CCHFileEnvironment.file_environment
 
-class ptrvar_abstraction_transformer_t (replacement:variable_t -> variable_t list) =
+
+class ptrvar_abstraction_transformer_t
+        (replacement:variable_t -> variable_t list) =
 object
 
   inherit code_transformer_t as super
@@ -90,8 +94,8 @@ object
 
 end
 
-let get_replacer_function env fname = (fun (v:variable_t) -> []) 
 
+let get_replacer_function env fname = (fun (v:variable_t) -> [])
 
 
 class num_function_translator_t 
@@ -106,13 +110,16 @@ object (self)
         let ttyp = fenv#get_type_unrolled vinfo.vtype in
         match ttyp with
         | TPtr ((TInt _ | TFloat _),_) ->
-           let (v,vInit,vm,vmInit) = env#mk_par_deref_init vinfo NoOffset ttyp NUM_VAR_TYPE in
+           let (v,vInit,vm,vmInit) =
+             env#mk_par_deref_init vinfo NoOffset ttyp NUM_VAR_TYPE in
            (ASSIGN_NUM (v, NUM_VAR vInit)) :: (ASSIGN_NUM (vm, NUM_VAR vmInit)) :: acc
         | TPtr (TComp (ckey,_),_) ->
-           (List.map (fun (v,vInit) -> ASSIGN_NUM (v, NUM_VAR vInit) )
-                     (env#mk_struct_par_deref vinfo ttyp ckey NUM_VAR_TYPE)) @ acc
+           (List.map
+              (fun (v,vInit) -> ASSIGN_NUM (v, NUM_VAR vInit) )
+              (env#mk_struct_par_deref vinfo ttyp ckey NUM_VAR_TYPE)) @ acc
         | TPtr (TPtr _,_) ->
-           let (v,vInit,vm,vmInit) = env#mk_par_deref_init vinfo NoOffset ttyp NUM_VAR_TYPE in
+           let (v,vInit,vm,vmInit) =
+             env#mk_par_deref_init vinfo NoOffset ttyp NUM_VAR_TYPE in
            (ASSIGN_NUM (v, NUM_VAR vInit)) :: (ASSIGN_NUM (vm, NUM_VAR vmInit)) :: acc
         | _ -> acc) [] formals
 
@@ -144,7 +151,8 @@ object (self)
     let _ = env#register_program_locals f.sdecls#get_locals NUM_VAR_TYPE in
     let _ = env#register_function_return f.svar.vtype NUM_VAR_TYPE in
     let formals = env#register_formals f.sdecls#get_formals NUM_VAR_TYPE in
-    let globalvars = List.map f.sdecls#get_varinfo_by_vid (get_block_variables f.sbody) in
+    let globalvars =
+      List.map f.sdecls#get_varinfo_by_vid (get_block_variables f.sbody) in
     let globalvars = List.filter (fun vinfo -> vinfo.vglob) globalvars in
     let contractglobals = file_contract#get_global_variables in
     let contractglobals =
@@ -179,19 +187,22 @@ object (self)
       
 end
 
+
 let make_non_negative_assert env (v:variable_t) = 
   let tmpProvider = (fun () -> env#mk_num_temp) in
   let cstProvider = (fun (n:numerical_t) -> env#mk_num_constant n) in
   let x = XOp (XGe, [ XVar v ; zero_constant_expr ]) in
   let (code,bExp) = xpr2boolexpr tmpProvider cstProvider x in
   make_c_cmd_block [ code ; make_c_cmd (make_assert bExp) ]
- 
+
+
 let make_positive_assert env (v:variable_t) = 
   let tmpProvider = (fun () -> env#mk_num_temp) in
   let cstProvider = (fun (n:numerical_t) -> env#mk_num_constant n) in
   let x = XOp (XGt, [ XVar v ; zero_constant_expr ]) in
   let (code,bExp) = xpr2boolexpr tmpProvider cstProvider x in
   make_c_cmd_block [ code ; make_c_cmd (make_assert bExp) ]
+
 
 let make_range_assert env (v:variable_t) (lb:numerical_t) (ub:numerical_t) =
   let tmpProvider = (fun () -> env#mk_num_temp) in
@@ -200,9 +211,13 @@ let make_range_assert env (v:variable_t) (lb:numerical_t) (ub:numerical_t) =
   let ubx = XOp (XLe, [ XVar v ; num_constant_expr ub ])  in
   let (lbcode,bLbExp) = xpr2boolexpr tmpProvider cstProvider lbx in
   let (ubcode,bUbExp) = xpr2boolexpr tmpProvider cstProvider ubx in
-  make_c_cmd_block [ lbcode ; ubcode ; make_c_cmd (make_assert bLbExp) ;
-                     make_c_cmd  (make_assert bUbExp) ]
-         
+  make_c_cmd_block [
+      lbcode;
+      ubcode;
+      make_c_cmd (make_assert bLbExp);
+      make_c_cmd (make_assert bUbExp)]
+
+
 class interval_function_translator_t
   (env:c_environment_int)
   (cfg_translator:cfg_translator_int)
@@ -215,7 +230,8 @@ object
     let _ = env#register_program_locals f.sdecls#get_locals NUM_VAR_TYPE in
     let _ = env#register_function_return f.svar.vtype NUM_VAR_TYPE in
     let formals = env#register_formals f.sdecls#get_formals NUM_VAR_TYPE in
-    let globalvars = List.map f.sdecls#get_varinfo_by_vid (get_block_variables f.sbody) in
+    let globalvars =
+      List.map f.sdecls#get_varinfo_by_vid (get_block_variables f.sbody) in
     let globalvars = List.filter (fun vinfo -> vinfo.vglob) globalvars in
     let globals = env#register_globals globalvars NUM_VAR_TYPE in
     let preamble =
@@ -228,7 +244,8 @@ object
           | (TInt (IChar,_)) | (TInt (ISChar,_)) ->
              let _= chlog#add "range constraint"
                   (LBLOCK [ STR vname ])  in
-             (make_range_assert env vInit (mkNumerical (-128)) (mkNumerical 127)) :: acc
+             (make_range_assert
+                env vInit (mkNumerical (-128)) (mkNumerical 127)) :: acc
           | _ -> acc) [] (formals @ globals)  in
     let (tmps,rangecode) = env#end_transaction  in
     let rangecode = List.map make_c_cmd rangecode in
@@ -243,7 +260,8 @@ object
     let transformer = new ptrvar_abstraction_transformer_t replacer in
     let _ = transformer#transformCode (EU.mkCode fblock) in
     let derefAssigns = [] in                                  (* TBD: see ref *)
-    let fbody = EU.mkCode ([ rangeconstraints ] @ preamble @ derefAssigns @ fblock) in 
+    let fbody =
+      EU.mkCode ([ rangeconstraints ] @ preamble @ derefAssigns @ fblock) in
     let scope = env#get_scope in
     let fsymbol = EU.symbol f.svar.vname in
     let proc = EU.mkProcedure fsymbol [] [] scope fbody in
@@ -253,7 +271,7 @@ object
       
 end
   
-  
+
 let get_valueset_preamble (env:c_environment_int) fundec =
   let arrayLocals =
     List.filter (fun v -> is_array_type v.vtype) (fundec.sdecls#get_locals) in
@@ -330,12 +348,13 @@ object
   
   method translate (f:fundec) =
     let context = mk_program_context () in
-    let _ = env#register_program_locals f.sdecls#get_locals in
+    let _ = env#register_program_locals f.sdecls#get_locals SYM_VAR_TYPE in
     let _ = env#register_function_return f.svar.vtype SYM_VAR_TYPE in
     let formals = env#register_formals f.sdecls#get_formals SYM_VAR_TYPE in
     let callvar = env#mk_call_vars in
     let callvarassign = [ ASSIGN_SYM (callvar, SYM env#get_p_entry_sym) ] in
-    let preamble = List.map (fun (_,_,v,vInit) -> ASSIGN_SYM (v, SYM_VAR vInit)) formals in
+    let preamble =
+      List.map (fun (_,_,v,vInit) -> ASSIGN_SYM (v, SYM_VAR vInit)) formals in
     let gotos = make_gotos f.sbody in
     let fblock = if gotos#is_goto_function then 
 	cfg_translator#translate_cfg_breakout_block f.sbody gotos context
@@ -343,7 +362,8 @@ object
 	cfg_translator#translate_breakout_block f.sbody gotos context in
     let derefAssigns = [] in 
     let addressAssigns = [] in
-    let fbody = EU.mkCode (preamble @ callvarassign @ derefAssigns @ addressAssigns @ fblock) in
+    let fbody =
+      EU.mkCode (preamble @ callvarassign @ derefAssigns @ addressAssigns @ fblock) in
     let scope = env#get_scope in
     let fsymbol = EU.symbol f.svar.vname in
     let proc = EU.mkProcedure fsymbol [] [] scope fbody in
@@ -352,7 +372,8 @@ object
     (None,csystem)
       
 end
-                         
+
+
 class statesets_function_translator_t
         (env:c_environment_int)
         (cfg_translator:cfg_translator_int)
@@ -362,10 +383,11 @@ object
   
   method translate (f:fundec) =
     let context = mk_program_context () in
-    let _ = env#register_program_locals f.sdecls#get_locals in
+    let _ = env#register_program_locals f.sdecls#get_locals SYM_VAR_TYPE in
     let _ = env#register_function_return f.svar.vtype SYM_VAR_TYPE in
     let formals = env#register_formals f.sdecls#get_formals SYM_VAR_TYPE in
-    let preamble = List.map (fun (_,_,v,vInit) -> ASSIGN_SYM (v, SYM_VAR vInit)) formals in
+    let preamble =
+      List.map (fun (_,_,v,vInit) -> ASSIGN_SYM (v, SYM_VAR vInit)) formals in
     let gotos = make_gotos f.sbody in
     let fblock = if gotos#is_goto_function then 
 	cfg_translator#translate_cfg_breakout_block f.sbody gotos context
@@ -383,7 +405,6 @@ object
       
 end
 
-  
 
 class sym_pointersets_function_translator_t
   (env:c_environment_int)
@@ -396,7 +417,7 @@ object
   method translate (f:fundec) =
     let context = mk_program_context () in
     let memregmgr = env#get_variable_manager#memregmgr in
-    let _ = env#register_program_locals f.sdecls#get_locals in
+    let _ = env#register_program_locals f.sdecls#get_locals SYM_VAR_TYPE in
     let _ = env#register_function_return f.svar.vtype SYM_VAR_TYPE in
     let formals = env#register_formals f.sdecls#get_formals SYM_VAR_TYPE in
     let preamble =
@@ -409,10 +430,11 @@ object
                       EU.mkCode [ ASSIGN_SYM (v, SYM nullsym) ] ]) :: acc
           else acc) [] formals in
     let gotos = make_gotos f.sbody in
-    let fblock = if gotos#is_goto_function then
-                   cfg_translator#translate_cfg_breakout_block f.sbody gotos context
-                 else
-                   cfg_translator#translate_breakout_block f.sbody gotos context in
+    let fblock =
+      if gotos#is_goto_function then
+        cfg_translator#translate_cfg_breakout_block f.sbody gotos context
+      else
+        cfg_translator#translate_breakout_block f.sbody gotos context in
     let fbody = EU.mkCode (preamble @ fblock) in
     let scope = env#get_scope in
     let fsymbol = EU.symbol f.svar.vname in
@@ -422,53 +444,68 @@ object
     (None, csystem)
 
 end
-  
+
+
 let get_num_translator env orakel ops_provider = 
   let expTranslator = get_num_exp_translator env orakel in
   let assignmentTranslator = get_num_assignment_translator env expTranslator in
   let callTranslator = get_num_call_translator env orakel expTranslator in
   let cfgTranslator =
-    get_cfg_translator env assignmentTranslator callTranslator expTranslator ops_provider in
+    get_cfg_translator
+      env assignmentTranslator callTranslator expTranslator ops_provider in
   new num_function_translator_t env cfgTranslator expTranslator callTranslator
-    
+
+
 let get_interval_translator env orakel ops_provider = 
   let expTranslator = get_num_exp_translator env orakel in
   let assignmentTranslator = get_num_assignment_translator env expTranslator in
   let callTranslator = get_num_call_translator env orakel expTranslator in
   let cfgTranslator =
-    get_cfg_translator env assignmentTranslator callTranslator expTranslator ops_provider in
+    get_cfg_translator
+      env assignmentTranslator callTranslator expTranslator ops_provider in
   new interval_function_translator_t env cfgTranslator expTranslator callTranslator
-    
+
+
 let get_valueset_translator env orakel ops_provider =
   let expTranslator = get_num_exp_translator env orakel in
   let assignmentTranslator = get_num_assignment_translator env expTranslator in
   let callTranslator = get_valueset_call_translator env orakel expTranslator in
   let cfgTranslator =
-    get_cfg_translator env assignmentTranslator callTranslator expTranslator ops_provider in
+    get_cfg_translator
+      env assignmentTranslator callTranslator expTranslator ops_provider in
   new valueset_function_translator_t env cfgTranslator expTranslator callTranslator
-    
+
 
 let get_symbolicsets_translator (env:c_environment_int) orakel ops_provider =
   let expTranslator = get_sym_exp_translator env orakel in
   let assignmentTranslator = get_sym_assignment_translator env expTranslator in
   let callTranslator = get_sym_call_translator env orakel expTranslator in
   let cfgTranslator =
-    get_cfg_translator env assignmentTranslator callTranslator expTranslator ops_provider in
-  new symbolicsets_function_translator_t env cfgTranslator expTranslator callTranslator
+    get_cfg_translator
+      env assignmentTranslator callTranslator expTranslator ops_provider in
+  new symbolicsets_function_translator_t
+    env cfgTranslator expTranslator callTranslator
+
 
 let get_statesets_translator (env:c_environment_int) orakel ops_provider =
   let expTranslator = get_sym_exp_translator env orakel in
   let assignmentTranslator = get_statesets_assignment_translator env expTranslator in
   let callTranslator = get_stateset_call_translator env orakel expTranslator in
   let cfgTranslator =
-    get_cfg_translator env assignmentTranslator callTranslator expTranslator ops_provider in
+    get_cfg_translator
+      env assignmentTranslator callTranslator expTranslator ops_provider in
   new statesets_function_translator_t env cfgTranslator expTranslator callTranslator
+
 
 let get_sym_pointersets_translator (env:c_environment_int) orakel ops_provider =
   let expTranslator = get_sym_pointersets_exp_translator env orakel in
-  let assignmentTranslator = get_sym_pointersets_assignment_translator env expTranslator in
-  let callTranslator = get_sym_pointersets_call_translator env orakel expTranslator  in
+  let assignmentTranslator =
+    get_sym_pointersets_assignment_translator env expTranslator in
+  let callTranslator =
+    get_sym_pointersets_call_translator env orakel expTranslator  in
   let cfgTranslator =
-    get_cfg_translator env assignmentTranslator callTranslator expTranslator ops_provider in
-  new sym_pointersets_function_translator_t env cfgTranslator expTranslator callTranslator []
+    get_cfg_translator
+      env assignmentTranslator callTranslator expTranslator ops_provider in
+  new sym_pointersets_function_translator_t
+    env cfgTranslator expTranslator callTranslator []
   

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -59,7 +61,6 @@ open CCHAnalysisTypes
 open CCHEnvironment
 open CCHVariable
 
-module P = Pervasives
 
 let x2p = xpr_formatter#pr_expr
   	
@@ -117,16 +118,19 @@ object (self)
              | _ -> None) None (self#get_expressions context v) in
     match xpr with
     | XConst (IntConst _) -> Some xpr
-    | XVar v when (match v#getName#getAttributes with ["symsize"] -> true | _ -> false) -> Some xpr
+    | XVar v when (
+      match v#getName#getAttributes with
+      | ["symsize"] -> true
+      | _ -> false) -> Some xpr
     | XVar v -> find_value v
     | XOp (op, l) ->
        let xl = List.map (fun x -> self#get_external_value context x) l in
        if List.for_all (fun x -> match x with Some _ -> true | _ -> false) xl then
          Some (XOp (op, List.map Option.get xl))
        else
-         begin logmsg () ; None end
+         begin logmsg (); None end
     | _ ->
-       begin logmsg () ; None end
+       begin logmsg (); None end
 
   method get_regions (context:program_context_int) (xpr:xpr_t):symbol_t list =
     let find_value v =
@@ -139,13 +143,17 @@ object (self)
        begin
          match find_value v with
          | [] -> []
-         | l -> List.hd (List.sort (fun x1 x2 -> P.compare (List.length x1) (List.length x2)) l)
+         | l ->
+            List.hd (
+                List.sort
+                  (fun x1 x2 ->
+                    Stdlib.compare (List.length x1) (List.length x2)) l)
        end
     | _ -> []
-         
-         
-end
   
+end
+
+
 let get_function_orakel = new orakel_t 
   
   

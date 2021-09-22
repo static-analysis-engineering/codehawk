@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -59,7 +61,7 @@ let numerical_constraint_compare c1 c2 =
   if l1 = 0 then
     let fl1 = c1#getFactors in
     let fl2 = c2#getFactors in
-    let l2 = Pervasives.compare (List.length fl1) (List.length fl2) in
+    let l2 = Stdlib.compare (List.length fl1) (List.length fl2) in
     if l2 = 0 then
       let fl1 = List.sort fcompare fl1 in
       let fl2 = List.sort fcompare fl2 in
@@ -73,7 +75,8 @@ let numerical_constraint_compare c1 c2 =
       else l3
     else l2
   else l1
-	
+
+
 module ConstraintCollections = CHCollections.Make
   (struct 
     type t = numerical_constraint_t
@@ -81,8 +84,10 @@ module ConstraintCollections = CHCollections.Make
     let toPretty n = n#toPretty
    end)
 
+
 class constraint_set_t:constraint_set_int =
 object (self)
+
   val constraints = new ConstraintCollections.set_t
   val variables = new VariableCollections.set_t 
 
@@ -109,8 +114,10 @@ object (self)
 	let cs = dom#observer#getNumericalConstraints ~variables:None () in
 	let _ =
           List.iter (fun c -> 
-	      begin (List.iter (fun f ->
-                         vset#add f#getVariable) c#getFactors) ; cset#add c end) cs in
+	      begin
+                (List.iter (fun f -> vset#add f#getVariable) c#getFactors);
+                cset#add c
+              end) cs in
 	Some {< variables = vset ; constraints = cset >} 
     else
       Some {< >}
@@ -126,15 +133,20 @@ object (self)
 	    let coeff2 = c2#getCoefficient factor in
 	    let _ =
               if coeff1#equal numerical_zero || coeff2#equal numerical_zero then
-		raise (CCHFailure
-                         (LBLOCK [ STR "Internal error in elimination of " ;
-                                   v#toPretty ; STR " in " ; c1#toPretty ;
-                                   STR " and " ; c2#toPretty ])) in
+		raise
+                  (CCHFailure
+                     (LBLOCK [
+                          STR "Internal error in elimination of ";
+                          v#toPretty;
+                          STR " in ";
+                          c1#toPretty;
+                          STR " and ";
+                          c2#toPretty])) in
 	    let newC = c1#affineCombination coeff2#neg coeff1 c2 in
 	    if newC#isTrivial then
 	      ()
 	    else
-	      let _ = newC#normalize in
+	      let _ = newC#normalize () in
 	      newSet#add newC) cs in
       let rec aux l =
 	match l with
@@ -148,22 +160,44 @@ object (self)
       let _ = aux constraints#toList in
       let newVariables = variables#filter (fun vv -> not (v#equal vv)) in
       if newSet#size > constraints#size + 10 then
-	raise (CCHConstraintFailure (constraints#size, newSet#size, constraints#toList))
+	raise
+          (CCHConstraintFailure
+             (constraints#size, newSet#size, constraints#toList))
       else
 	{< constraints = newSet ; variables = newVariables >}
     else
       {< >}
 
   method toPretty = 
-    LBLOCK [ STR "variables: (" ; INT variables#size ; STR ")" ; NL ; 
-	     INDENT (3, LBLOCK [ pretty_print_list variables#toList
-				   (fun v -> LBLOCK [ v#toPretty ; NL ]) "" "" "" ]) ; NL ;
-	     STR "constraints: (" ; INT constraints#size ; STR ")" ; NL ; 
-	     INDENT (3, LBLOCK [ pretty_print_list constraints#toList
-				   (fun c -> LBLOCK [ c#toPretty ; NL ]) "" "" "" ]) ; NL ]
+    LBLOCK [
+        STR "variables: (";
+        INT variables#size;
+        STR ")";
+        NL;
+	INDENT (
+            3,
+            LBLOCK [
+                pretty_print_list
+                  variables#toList
+		  (fun v -> LBLOCK [v#toPretty; NL]) "" "" ""]);
+        NL;
+	STR "constraints: (";
+        INT constraints#size;
+        STR ")";
+        NL;
+	INDENT (
+            3,
+            LBLOCK [
+                pretty_print_list
+                  constraints#toList
+		  (fun c -> LBLOCK [c#toPretty; NL]) "" "" ""]);
+        NL]
 end
 
-let project_out (c:constraint_set_t) (vars:variable_t list) =  c#project_out vars
+
+let project_out (c:constraint_set_t) (vars:variable_t list) =
+  c#project_out vars
+
 
 let set_union l =
   let constraints = List.concat (List.map (fun s -> s#get_constraints) l) in
@@ -171,7 +205,9 @@ let set_union l =
   let _ = List.iter s#add constraints in
   s
 
+
 let mk_constraint_set () = new constraint_set_t
+
 
 let get_constraint_sets constraints =
   List.fold_left (fun acc c ->

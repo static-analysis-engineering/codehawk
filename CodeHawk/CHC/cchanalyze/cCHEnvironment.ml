@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -449,9 +451,13 @@ object(self)
       | Field (fuse, foffset) -> Field (fuse, compose_offset foffset offset)
       | Index _ ->
          begin
-           ch_error_log#add "compose offset"
-                            (LBLOCK [ STR "base: " ; offset_to_pretty base ;
-                                      STR "; offset: " ; offset_to_pretty offset ]) ;
+           ch_error_log#add
+             "compose offset"
+             (LBLOCK [
+                  STR "base: ";
+                  offset_to_pretty base;
+                  STR "; offset: ";
+                  offset_to_pretty offset]);
            NoOffset
          end in
     let rec register_fields v baseoffset comp =

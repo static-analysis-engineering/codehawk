@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -154,7 +156,7 @@ let process_function gspecs fname =
       let fundec = read_function_semantics fname in
       let fdecls = fundec.sdecls in
       let _ = read_proof_files fname fdecls in
-      let _ = read_api fname in
+      let _ = read_api fname fdecls in
       let varmgr = read_vars fname fdecls in
       let invio = read_invs fname varmgr#vard in
       let proofObligations = proof_scaffolding#get_proof_obligations fname in
