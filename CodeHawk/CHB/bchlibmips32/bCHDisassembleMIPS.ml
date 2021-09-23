@@ -75,7 +75,6 @@ open BCHMIPSOperand
 open BCHMIPSTypes
 open BCHMIPSDisassemblyUtils
 
-module P = Pervasives
 
 (* ------------------------------------------------------------------------------
  * Constants used:
@@ -595,7 +594,7 @@ let trace_function (faddr:doubleword_int) =
   let _ = add_block faddr in
   let blocklist =
     List.sort (fun b1 b2 ->
-        P.compare b1#get_context_string b2#get_context_string) !blocks in
+        Stdlib.compare b1#get_context_string b2#get_context_string) !blocks in
   let successors =
     List.fold_left (fun acc b ->
         let src = b#get_context_string in
