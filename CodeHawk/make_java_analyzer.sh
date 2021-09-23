@@ -1,7 +1,5 @@
 #!/bin/bash
 set -e
-make -C CH_extern/extlib
-make -C CH_extern/camlzip
 make -C CH/chlib
 make -C CH/chutil
 make -C CH/xprlib
