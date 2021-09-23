@@ -51,7 +51,6 @@ open BCHStrings
 open BCHSystemInfo
 open BCHVariable
 
-module P = Pervasives
 
 let pr_expr = xpr_formatter#pr_expr
 
@@ -104,19 +103,19 @@ let callgraph_node_compare n1 n2 =
   | (AppNode a1,AppNode a2) -> a1#compare a2
   | (AppNode _, _) -> -1
   | (_, AppNode _) -> 1
-  | (DllNode n1,DllNode n2) -> P.compare n1 n2
+  | (DllNode n1,DllNode n2) -> Stdlib.compare n1 n2
   | (DllNode _, _) -> -1
   | (_, DllNode _) -> 1
-  | (SONode a1, SONode a2) -> P.compare a1 a2
+  | (SONode a1, SONode a2) -> Stdlib.compare a1 a2
   | (SONode _,_ ) -> -1
   | (_, SONode _) -> 1
-  | (JniNode i1,JniNode i2) -> P.compare i1 i2
+  | (JniNode i1,JniNode i2) -> Stdlib.compare i1 i2
   | (JniNode _, _) -> -1
   | (_, JniNode _) -> 1
-  | (VirtualNode s1,VirtualNode s2) -> P.compare s1.fintf_name s2.fintf_name 
+  | (VirtualNode s1,VirtualNode s2) -> Stdlib.compare s1.fintf_name s2.fintf_name 
   | (VirtualNode _, _) -> -1
   | (_, VirtualNode _) -> 1
-  | (UnresolvedNode i1, UnresolvedNode i2) -> P.compare i1 i2
+  | (UnresolvedNode i1, UnresolvedNode i2) -> Stdlib.compare i1 i2
     
 module CallgraphNodeCollections = CHCollections.Make (
   struct
@@ -241,7 +240,7 @@ object (self:'a)
     if l0 = 0 then
       let l1 = callgraph_node_compare tgt other#get_target in
       if l1 = 0 then
-	P.compare  callsite other#get_callsite
+	Stdlib.compare  callsite other#get_callsite
       else l1
     else l0
       

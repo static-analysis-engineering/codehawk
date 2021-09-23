@@ -157,7 +157,7 @@ object (self:'a)
 
   method index = index
 
-  method compare (other:'a) = Pervasives.compare self#index other#index
+  method compare (other:'a) = Stdlib.compare self#index other#index
 
   method get_base = base
 

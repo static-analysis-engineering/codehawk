@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +46,6 @@ open BCHLibTypes
 open BCHVariableType
 
 module H = Hashtbl
-module P = Pervasives
 
 (* Memory accesses are kept track of per memory location *)
 
@@ -73,34 +74,34 @@ let memaccess_compare (m1:memaccess_t) (m2:memaccess_t) =
   let tc = btype_compare in
   match (m1,m2) with
   | (MARead (t1,w1), MARead (t2,w2)) -> 
-    let l0 = tc t1 t2 in if l0 = 0 then P.compare w1 w2 else l0
+    let l0 = tc t1 t2 in if l0 = 0 then Stdlib.compare w1 w2 else l0
   | (MARead _, _) -> -1
   | (_, MARead _) -> 1
   | (MAWrite (t1,w1), MAWrite (t2,w2)) ->
-    let l0 = tc t1 t2 in if l0 = 0 then P.compare w1 w2 else l0
+    let l0 = tc t1 t2 in if l0 = 0 then Stdlib.compare w1 w2 else l0
   | (MAWrite _, _) -> -1
   | (_, MAWrite _) -> 1
-  | (MAWriteNull w1, MAWriteNull w2) -> P.compare w1 w2
+  | (MAWriteNull w1, MAWriteNull w2) -> Stdlib.compare w1 w2
   | (MAWriteNull _,_) -> -1
   | (_, MAWriteNull _) -> 1
   | (MAIndexedWrite (r1,i1,w1), MAIndexedWrite (r2,i2,w2)) ->
-    let l0 = P.compare (register_to_string r1) (register_to_string r2) in
+    let l0 = Stdlib.compare (register_to_string r1) (register_to_string r2) in
     if l0 = 0 then
-      let l1 = P.compare i1 i2 in 
-      if l1 = 0 then P.compare w1 w2 else l1
+      let l1 = Stdlib.compare i1 i2 in
+      if l1 = 0 then Stdlib.compare w1 w2 else l1
     else l0
   | (MAIndexedWrite _, _) -> -1
   | (_, MAIndexedWrite _) -> 1
   | (MAIndexedRead (r1,i1,w1), MAIndexedRead (r2,i2,w2)) ->
-    let l0 = P.compare (register_to_string r1) (register_to_string r2) in
+    let l0 = Stdlib.compare (register_to_string r1) (register_to_string r2) in
     if l0 = 0 then
-      let l1 = P.compare i1 i2 in 
-      if l1 = 0 then P.compare w1 w2 else l1
+      let l1 = Stdlib.compare i1 i2 in
+      if l1 = 0 then Stdlib.compare w1 w2 else l1
     else l0
   | (MAIndexedRead _, _) -> -1
   | (_, MAIndexedRead _) -> 1
   | (MABlockWrite (t1,n1,x1), MABlockWrite (t2,n2,x2)) ->
-    let l0 = P.compare n1 n2 in
+    let l0 = Stdlib.compare n1 n2 in
     if l0 = 0 then 
       let l1 = tc t1 t2 in
       if l1 = 0 then syntactic_comparison x1 x2 else l1
@@ -108,7 +109,7 @@ let memaccess_compare (m1:memaccess_t) (m2:memaccess_t) =
   | (MABlockWrite _ ,_) -> -1
   | (_, MABlockWrite _) -> 1
   |  (MABlockRead (t1,n1,x1), MABlockRead (t2,n2,x2)) ->
-    let l0 = P.compare n1 n2 in
+    let l0 = Stdlib.compare n1 n2 in
     if l0 = 0 then 
       let l1 = tc t1 t2 in
       if l1 = 0 then syntactic_comparison x1 x2 else l1

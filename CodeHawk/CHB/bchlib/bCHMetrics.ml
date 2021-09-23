@@ -45,7 +45,7 @@ open BCHPreFileIO
 open BCHSystemInfo
 
 module H = Hashtbl
-module P = Pervasives
+
 
 module DoublewordCollections = CHCollections.Make (
   struct
@@ -187,8 +187,8 @@ let compute_aggregate_metrics (l:result_metrics_t list) =
   let median l = 
     match l with
     | [] -> 0
-    | _ -> List.nth (List.sort P.compare l) (len / 2) in
-  let max l = List.fold_left (fun acc v -> P.max acc v) 0 l in
+    | _ -> List.nth (List.sort Stdlib.compare l) (len / 2) in
+  let max l = List.fold_left (fun acc v -> Stdlib.max acc v) 0 l in
   let maxf l = List.fold_left (fun acc v -> if v > acc then v else acc) 0.0 l in
   {
     agg_avg_function_size = avg (List.map (fun r -> r.mres_cfg.mcfg_instrs) l) len ;
@@ -245,7 +245,8 @@ object (self)
       else
         function_results_handler#init_value in
     let results = get_result_metrics finfo memacc_metrics cfg_metrics in
-    let newResults = combine_results index skip nonrel reset time prevResults results  in
+    let newResults =
+      combine_results index skip nonrel reset time prevResults results  in
     let _ = if skip then skips <- skips + 1 in
     let _ = if nonrel then nonrelational <- nonrelational + 1 in
     let _ = if reset then resets <- resets + 1 in
@@ -271,7 +272,8 @@ object (self)
     let delta = ref 0 in
     let _ = H.iter (fun _ v ->
       List.iter (fun r -> 
-	if r.frun_index = index then delta := !delta + r.frun_delta_instrs) v.fres_runs)
+	  if r.frun_index = index then
+            delta := !delta + r.frun_delta_instrs) v.fres_runs)
       table in
     !delta
 
@@ -279,7 +281,8 @@ object (self)
     let delta = ref 0 in
     let _ = H.iter (fun _ v ->
       List.iter (fun r ->
-	if r.frun_index = index then delta := !delta + r.frun_delta_vars) v.fres_runs)
+	  if r.frun_index = index then
+            delta := !delta + r.frun_delta_vars) v.fres_runs)
       table in
     !delta
 
@@ -287,7 +290,8 @@ object (self)
     let delta = ref 0 in
     let _ = H.iter (fun _ v ->
       List.iter (fun r ->
-	if r.frun_index = index then delta := !delta + r.frun_delta_invs) v.fres_runs)
+	  if r.frun_index = index then
+            delta := !delta + r.frun_delta_invs) v.fres_runs)
       table in
     !delta
 
@@ -305,7 +309,10 @@ object (self)
 
   method private get_unresolved_jumps =
     let get_unresolved (d:jumps_metrics_t) =
-      d.mjumps_jumptable_norange + d.mjumps_global + d.mjumps_argument + d.mjumps_unknown in
+      d.mjumps_jumptable_norange
+      + d.mjumps_global
+      + d.mjumps_argument
+      + d.mjumps_unknown in
     let unrjumps = ref 0 in
     let _ = H.iter (fun _ v ->
       unrjumps := !unrjumps + (get_unresolved v.fres_results.mres_jumps)) table in
@@ -313,14 +320,18 @@ object (self)
 
   method private get_vc_complexity =
     let vc = ref 0.0 in
-    let _ = H.iter (fun _ v -> vc := !vc +. v.fres_results.mres_cfg.mcfg_vc_complexity) table in
+    let _ =
+      H.iter
+        (fun _ v -> vc := !vc +. v.fres_results.mres_cfg.mcfg_vc_complexity)
+        table in
     !vc
 
   method private get_function_runtime =
     let frt = ref 0.0 in
     let _ = H.iter (fun _ v -> 
       List.iter (fun r ->
-	if r.frun_index = index then frt := !frt +. r.frun_time) v.fres_runs) table in
+	  if r.frun_index = index then
+            frt := !frt +. r.frun_time) v.fres_runs) table in
     !frt
 
   method private get_ida_function_entry_points =
@@ -348,7 +359,8 @@ object (self)
     let fnResults = ref [] in
     let _ = H.iter (fun _ v -> fnResults := v :: !fnResults) table in
     let fnResults = 
-      List.sort (fun r1 r2 -> P.compare r2.fres_addr r1.fres_addr) !fnResults in
+      List.sort
+        (fun r1 r2 -> Stdlib.compare r2.fres_addr r1.fres_addr) !fnResults in
     let fileRun = {
       ffrun_index = index ;
       ffrun_time = runtime ;
@@ -375,7 +387,8 @@ object (self)
       ffres_aggregate = compute_aggregate_metrics metricsLst ;
       ffres_disassembly = disassembly_metrics ;
       ffres_userdata = get_userdata_metrics () ;
-      ffres_idadata = { ida_function_entry_points = self#get_ida_function_entry_points}
+      ffres_idadata = {
+          ida_function_entry_points = self#get_ida_function_entry_points}
     }
 
   method write_xml_analysis_stats (node:xml_element_int) =

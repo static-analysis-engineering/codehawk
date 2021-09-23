@@ -62,7 +62,7 @@ open BCHVariable
 open BCHXmlUtil
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
@@ -260,7 +260,7 @@ let linear_equality_compare e1 e2 =
 
 let invariant_fact_compare f1 f2 =
   match (f1,f2) with
-  | (Unreachable d1,Unreachable d2) -> Pervasives.compare d1 d2
+  | (Unreachable d1,Unreachable d2) -> Stdlib.compare d1 d2
   | (Unreachable _,_) -> -1
   | (_,Unreachable _) -> 1
   | (NonRelationalFact (x1,v1),NonRelationalFact (x2,v2)) ->
@@ -279,7 +279,7 @@ let invariant_fact_compare f1 f2 =
   | (TestVarEquality (v1,_,ta1,ja1), TestVarEquality (v2,_,ta2,ja2)) -> 
     let l0 = v1#compare v2 in 
     if l0 = 0 then 
-      let l1 = P.compare ta1 ta2 in if l1 = 0 then P.compare ja1 ja2 else l1
+      let l1 = Stdlib.compare ta1 ta2 in if l1 = 0 then Stdlib.compare ja1 ja2 else l1
     else l0
 		   
 
@@ -334,7 +334,7 @@ object (self:'a)
   method index = index
 
   method compare (other:'a) =
-    P.compare self#index other#index
+    Stdlib.compare self#index other#index
 
   method transfer (v: variable_t) =
     match fact with
@@ -840,7 +840,7 @@ object (self)
 	| _ -> false) false (self#get_var_facts v)
 
   method write_xml (node:xml_element_int) = 
-    let invs = List.sort P.compare (H.fold (fun k _ a -> k::a) facts []) in
+    let invs = List.sort Stdlib.compare (H.fold (fun k _ a -> k::a) facts []) in
     if (List.length invs) > 0  then
       let attr = String.concat "," (List.map string_of_int invs) in
       node#setAttribute "ifacts" attr
@@ -875,7 +875,7 @@ object (self)
     let initFactVars = List.fold_left (fun acc f ->
       match f with InitialVarEquality (v,_) -> v :: acc | _ -> acc) [] facts in
     let initFactVars = List.sort (fun v1 v2 -> 
-      P.compare v2#getName#getBaseName v1#getName#getBaseName) initFactVars in
+      Stdlib.compare v2#getName#getBaseName v1#getName#getBaseName) initFactVars in
     let pInit = List.map  (fun v -> 
       LBLOCK [ STR "   " ; STR v#getName#getBaseName ; NL ]) initFactVars in
     let pInit = match pInit with
@@ -891,7 +891,7 @@ object (self)
     let nrFacts = List.fold_left (fun acc f ->
       match f with NonRelationalFact (v,x) -> (v,x) :: acc | _ -> acc) [] facts in
     let nrFacts = List.sort (fun (v1,_) (v2,_) -> 
-      P.compare v2#getName#getBaseName v1#getName#getBaseName) nrFacts in
+      Stdlib.compare v2#getName#getBaseName v1#getName#getBaseName) nrFacts in
     let maxNameLen = List.fold_left (fun acc (v,_) ->
       let len = String.length v#getName#getBaseName in
       if len > acc then len else acc) 0 nrFacts in

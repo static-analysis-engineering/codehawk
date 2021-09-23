@@ -47,7 +47,6 @@ open BCHLibTypes
 open BCHXmlUtil
 
 module H = Hashtbl
-module P = Pervasives
 
 
 let raise_error (node:xml_element_int) (msg:pretty_t) =
@@ -126,7 +125,7 @@ let list_compare = BCHUtilities.list_compare
 
 
 let attribute_compare a1 a2 =
-  match (a1,a2) with (Attr s1, Attr s2) -> P.compare s1 s2
+  match (a1,a2) with (Attr s1, Attr s2) -> Stdlib.compare s1 s2
 
 (* Common types and type constructors *)
 
@@ -255,14 +254,14 @@ let rec btype_compare t1 t2 =
   | (TVoid _,_) -> -1
   | (_, TVoid _) -> 1
   | (TInt (i1,attrs1), TInt (i2,attrs2)) -> 
-     let l0 = P.compare i1 i2 in
+     let l0 = Stdlib.compare i1 i2 in
      if l0 = 0 then attributes_compare attrs1 attrs2 else l0
   | (TInt _, _) -> -1
   | (_, TInt _) -> 1
   | (TFloat (f1,r1,attrs1), TFloat (f2,r2,attrs2)) -> 
-    let l0 = P.compare f1 f2 in 
+    let l0 = Stdlib.compare f1 f2 in
     if l0 = 0 then 
-      let l1 = P.compare r1 r2 in
+      let l1 = Stdlib.compare r1 r2 in
       if l1 = 0 then
 	attributes_compare attrs1 attrs2 
       else l1
@@ -280,7 +279,7 @@ let rec btype_compare t1 t2 =
   | (TRef _,_) -> -1
   | (_, TRef _) -> 1
   | (THandle (s1,attrs1),THandle (s2,attrs2)) -> 
-    let l0 = P.compare s1 s2 in
+    let l0 = Stdlib.compare s1 s2 in
     if l0 = 0 then attributes_compare attrs1 attrs2 else l0
   | (THandle _,_) -> -1
   | (_, THandle _) -> 1
@@ -305,7 +304,7 @@ let rec btype_compare t1 t2 =
   | (TFun _, _) -> -1
   | (_, TFun _) -> 1
   | (TNamed (n1,attrs1), TNamed (n2,attrs2)) -> 
-    let l0 = P.compare n1 n2 in
+    let l0 = Stdlib.compare n1 n2 in
     if l0 = 0 then attributes_compare attrs1 attrs2 else l0
   | (TNamed _,_) -> -1
   | (_, TNamed _) -> 1
@@ -338,7 +337,7 @@ let rec btype_compare t1 t2 =
 
 and tname_compare t1 t2 =
   match (t1,t2) with
-  | (SimpleName n1, SimpleName n2) -> P.compare n1 n2
+  | (SimpleName n1, SimpleName n2) -> Stdlib.compare n1 n2
   | (SimpleName _,_) -> -1
   | (_, SimpleName _) -> 1
   | (TemplatedName (b1,args1), TemplatedName (b2,args2)) ->
@@ -371,10 +370,10 @@ and exp_compare e1 e2 =
 and constant_compare c1 c2 =
   match (c1,c2) with
   | (CInt64 (i1,k1,_), CInt64 (i2,k2,_)) ->
-    let l0 = Int64.compare i1 i2 in if l0 = 0 then P.compare k1 k2 else l0
+    let l0 = Int64.compare i1 i2 in if l0 = 0 then Stdlib.compare k1 k2 else l0
   | (CInt64 _, _) -> -1
   | (_, CInt64 _) -> 1
-  | (CStr s1, CStr s2) -> P.compare s1 s2
+  | (CStr s1, CStr s2) -> Stdlib.compare s1 s2
   | (CStr _, _) -> -1
   | (_, CStr _) -> 1
   | (CWStr l1, CWStr l2) ->  list_compare l1 l2 Int64.compare
@@ -383,13 +382,13 @@ and constant_compare c1 c2 =
   | (CChr c1, CChr c2) -> Char.compare c1 c2
   | (CChr _, _) -> -1
   | (_, CChr _) -> 1
-  | (CReal (f1,_,_), CReal (f2,_,_)) -> P.compare f1 f2
+  | (CReal (f1,_,_), CReal (f2,_,_)) -> Stdlib.compare f1 f2
   | (CReal _, _) -> -1
   | (_, CReal _) -> 1
   | (CEnum (e1,iname1,ename1), CEnum (e2,iname2,ename2)) ->
-    let l0 = P.compare iname1 iname2 in
+    let l0 = Stdlib.compare iname1 iname2 in
     if l0 = 0 then 
-      let l1 = P.compare ename1 ename2 in
+      let l1 = Stdlib.compare ename1 ename2 in
       if l1 = 0 then
 	exp_compare e1 e2
       else l1

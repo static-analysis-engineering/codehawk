@@ -58,7 +58,7 @@ open BCHVariableNames
 open BCHXmlUtil
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
@@ -147,7 +147,7 @@ class assembly_variable_t
 object (self:'a)
   method index = index
 
-  method compare (other:'a) = P.compare self#index other#index
+  method compare (other:'a) = Stdlib.compare self#index other#index
 
   method get_denotation = denotation
 
@@ -763,7 +763,7 @@ object (self)
 	    | (_, AuxiliaryVariable (FrozenTestValue _)) -> 1
 	    | (AuxiliaryVariable (BridgeVariable _), _) -> -1
 	    | (_, AuxiliaryVariable (BridgeVariable _)) -> 1
-	    | _ -> P.compare var1#index var2#index
+	    | _ -> Stdlib.compare var1#index var2#index
 
   method is_stack_parameter_variable (v:variable_t) =
     (self#has_var v) && (self#has_memvar v)

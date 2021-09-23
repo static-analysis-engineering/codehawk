@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +41,7 @@ open BCHLibTypes
 open BCHStreamWrapper
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let read_xml_data_export_spec_item (node:xml_element_int) =
   let get = node#getAttribute in
@@ -74,7 +76,8 @@ let data_export_spec_to_pretty (spec:data_export_spec_t) =
 	     INDENT ( 3, LBLOCK (List.map item_to_pretty spec.dex_items) ) ; NL ]
 
 let extract_export_spec_values (spec:data_export_spec_t) (ch:pushback_stream_int) =
-  let items = List.sort (fun i1 i2 -> P.compare i1.dex_offset i2.dex_offset) spec.dex_items in
+  let items =
+    List.sort (fun i1 i2 -> Stdlib.compare i1.dex_offset i2.dex_offset) spec.dex_items in
   let result = ref [] in
   begin
     List.iter (fun item ->

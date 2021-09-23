@@ -52,8 +52,6 @@ open BCHVariableType
 open BCHXmlUtil
 
 
-module P = Pervasives
-
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
     LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
@@ -177,7 +175,7 @@ let rec precondition_compare p1 p2 =
       let l2 = bterm_compare d1 d2 in
       if l2 = 0 then 
 	let l3 = bterm_compare s1 s2 in
-	if l3 = 0 then P.compare b1 b2
+	if l3 = 0 then Stdlib.compare b1 b2
 	else l3
       else l2
     else l1
@@ -189,7 +187,7 @@ let rec precondition_compare p1 p2 =
       let l2 = bterm_compare d1 d2 in
       if l2 = 0 then 
 	let l3 = bterm_compare s1 s2 in
-	if l3 = 0 then P.compare b1 b2
+	if l3 = 0 then Stdlib.compare b1 b2
 	else l3
       else l2
     else l1
@@ -209,11 +207,11 @@ let rec precondition_compare p1 p2 =
   | (PreFormatString _, _) -> -1
   | (_, PreFormatString _) -> 1
   | (PreEnum (t1,s1,_), PreEnum (t2,s2,_)) -> 
-    let l1 = bterm_compare t1 t2 in if l1 = 0 then P.compare s1 s2 else l1
+    let l1 = bterm_compare t1 t2 in if l1 = 0 then Stdlib.compare s1 s2 else l1
   | (PreEnum _, _) -> -1
   | (_, PreEnum _) -> 1
   | (PreRelationalExpr (op1,x1,y1), PreRelationalExpr (op2,x2,y2)) ->
-    let l1 = P.compare op1 op2 in
+    let l1 = Stdlib.compare op1 op2 in
     if l1 = 0 then 
       let l2 = bterm_compare x1 x2 in
       if l2 = 0 then

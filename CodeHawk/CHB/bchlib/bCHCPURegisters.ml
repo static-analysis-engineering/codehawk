@@ -40,7 +40,7 @@ open BCHUtilities
 open BCHXmlUtil
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let starts_with (s:string) (p:string) =
   let slen = String.length s in
@@ -267,54 +267,54 @@ let cpureg_option_to_string reg =
 let register_compare r1 r2 =
   match (r1, r2) with
   | (CPURegister c1, CPURegister c2) ->
-     P.compare (cpureg_to_string c1) (cpureg_to_string c2)
+     Stdlib.compare (cpureg_to_string c1) (cpureg_to_string c2)
   | (CPURegister _, _) -> -1
   | (_, CPURegister _) -> 1
   | (ARMRegister a1, ARMRegister a2) ->
-     P.compare (armreg_to_string a1) (armreg_to_string a2)
+     Stdlib.compare (armreg_to_string a1) (armreg_to_string a2)
   | (ARMRegister _, _) -> -1
   | (_, ARMRegister _) -> 1
   | (ARMSpecialRegister r1, ARMSpecialRegister r2) ->
-     P.compare (arm_special_reg_to_string r1) (arm_special_reg_to_string r2)
+     Stdlib.compare (arm_special_reg_to_string r1) (arm_special_reg_to_string r2)
   | (ARMSpecialRegister _, _) -> -1
   | (_, ARMSpecialRegister _) -> 1
   | (ARMFloatingPointRegister (s1, i1), ARMFloatingPointRegister (s2, i2)) ->
-     P.compare (s1, i1) (s2, i2)
+     Stdlib.compare (s1, i1) (s2, i2)
   | (ARMFloatingPointRegister _, _) -> -1
   | (_, ARMFloatingPointRegister _) -> 1
   | (MIPSRegister m1, MIPSRegister m2) ->
-     P.compare (mipsreg_to_string m1) (mipsreg_to_string m2)
+     Stdlib.compare (mipsreg_to_string m1) (mipsreg_to_string m2)
   | (MIPSRegister _, _) -> -1
   | (_, MIPSRegister _) -> 1
   | (MIPSSpecialRegister s1,MIPSSpecialRegister s2) ->
-     P.compare (mips_special_reg_to_string s1) (mips_special_reg_to_string s2)
+     Stdlib.compare (mips_special_reg_to_string s1) (mips_special_reg_to_string s2)
   | (MIPSSpecialRegister _, _) -> -1
   | (_, MIPSSpecialRegister _) -> 1
   | (MIPSFloatingPointRegister i1,MIPSFloatingPointRegister i2) ->
-     P.compare i1 i2
+     Stdlib.compare i1 i2
   | (MIPSFloatingPointRegister _,_) -> -1
   | (_, MIPSFloatingPointRegister _) -> 1
-  | (FloatingPointRegister i1, FloatingPointRegister i2) -> P.compare i1 i2
+  | (FloatingPointRegister i1, FloatingPointRegister i2) -> Stdlib.compare i1 i2
   | (FloatingPointRegister _,_) -> -1
   | (_,FloatingPointRegister _) -> 1
-  | (ControlRegister i1, ControlRegister i2) -> P.compare i1 i2
+  | (ControlRegister i1, ControlRegister i2) -> Stdlib.compare i1 i2
   | (ControlRegister _, _) -> -1
   | (_, ControlRegister _) -> 1
-  | (DebugRegister i1, DebugRegister i2) -> P.compare i1 i2
+  | (DebugRegister i1, DebugRegister i2) -> Stdlib.compare i1 i2
   | (DebugRegister _, _) -> -1
   | (_, DebugRegister _) -> 1
-  | (MmxRegister i1, MmxRegister i2) -> P.compare i1 i2
+  | (MmxRegister i1, MmxRegister i2) -> Stdlib.compare i1 i2
   | (MmxRegister _, _) -> -1
   | (_, MmxRegister _) -> 1
-  | (XmmRegister i1, XmmRegister i2) -> P.compare i1 i2
+  | (XmmRegister i1, XmmRegister i2) -> Stdlib.compare i1 i2
   | (XmmRegister _, _) -> -1
   | (_, XmmRegister _) -> 1
   | (SegmentRegister s1, SegmentRegister s2) -> 
-      P.compare (segment_to_string s1) (segment_to_string s2)
+      Stdlib.compare (segment_to_string s1) (segment_to_string s2)
   | (SegmentRegister _, _) -> -1
   | (_, SegmentRegister _) -> 1
   | (DoubleRegister (c11,c12), DoubleRegister (c21,c22)) -> 
-      P.compare 
+      Stdlib.compare 
 	(cpureg_to_string c11, cpureg_to_string c12)
         (cpureg_to_string c21, cpureg_to_string c22)
 

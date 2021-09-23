@@ -61,8 +61,6 @@ open BCHUtilities
 open BCHVariableType
 open BCHXmlUtil
 
-module P = Pervasives
-
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =

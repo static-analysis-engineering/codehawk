@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +60,7 @@ end
 class user_provided_directions_t:user_provided_directions_int =
 object (self)
 
-  val dll_ordinal_mappings = Hashtbl.create 1
+  val dll_ordinal_mappings = H.create 1
   val ds_es_are_the_same_segment = true
 
   method load_dll_ordinal_mappings (dllname:string) =
@@ -68,32 +70,39 @@ object (self)
       let mapping = self#read_xml_ordinal_table node in
       begin
 	self#set_dll_ordinal_mappings dllname mapping ;
-	chlog#add "ordinal table" 
-	  (LBLOCK [ STR dllname ; STR ": " ; INT (List.length mapping) ; STR " entries" ])
+	chlog#add
+          "ordinal table"
+	  (LBLOCK [
+               STR dllname;
+               STR ": ";
+               INT (List.length mapping);
+               STR " entries"])
       end
     | _ -> 
-      chlog#add "ordinal table" 
-	(LBLOCK [ STR "No ordinal table found for " ; STR dllname ])
+       chlog#add
+         "ordinal table"
+	 (LBLOCK [STR "No ordinal table found for "; STR dllname])
 
   method private read_xml_ordinal_table (node:xml_element_int) =
-    List.map (fun eNode -> (eNode#getIntAttribute "ordinal", eNode#getAttribute "name"))
+    List.map
+      (fun eNode -> (eNode#getIntAttribute "ordinal", eNode#getAttribute "name"))
       (node#getTaggedChildren "entry")
 
   method set_dll_ordinal_mappings (dllname:string) (l:(int * string) list) =
-    let table = if Hashtbl.mem dll_ordinal_mappings dllname then
-	Hashtbl.find dll_ordinal_mappings dllname 
+    let table = if H.mem dll_ordinal_mappings dllname then
+	H.find dll_ordinal_mappings dllname
       else
-	let t = Hashtbl.create 5 in
+	let t = H.create 5 in
 	begin
-	  Hashtbl.add dll_ordinal_mappings dllname t ;
+	  H.add dll_ordinal_mappings dllname t;
 	  t
 	end in
-    List.iter (fun (hint,fname) -> Hashtbl.add table hint fname) l
+    List.iter (fun (hint,fname) -> H.add table hint fname) l
 
   method get_dll_ordinal_mapping (dllname:string) (hint:int) =
-    if Hashtbl.mem dll_ordinal_mappings dllname then 
+    if H.mem dll_ordinal_mappings dllname then
       try 
-	Hashtbl.find (Hashtbl.find dll_ordinal_mappings dllname) hint 
+	H.find (H.find dll_ordinal_mappings dllname) hint
       with 
 	Not_found -> "_ordinal_" ^ (string_of_int hint)
     else
@@ -107,7 +116,7 @@ object (self)
       let table = H.find dll_ordinal_mappings name in
       let l = ref [] in
       let _ = H.iter (fun k v -> l := (k,v) :: !l) table in
-      let l = List.sort (fun (k1,_) (k2,_) -> Pervasives.compare k1 k2) !l in
+      let l = List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) !l in
       begin
 	append (List.map (fun (k,v) ->
 	  let eNode = xmlElement "entry" in

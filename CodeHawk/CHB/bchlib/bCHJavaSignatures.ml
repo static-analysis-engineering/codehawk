@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +46,7 @@ open BCHVariableType
 open BCHXmlUtil
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let c_atsign       = 0x0040   (* @ *)
 let c_dollarsign   = 0x0024   (* $ *)
@@ -135,7 +137,7 @@ object (self:'a)
 
   method equal (cn:'a) = self#index = cn#index
 
-  method compare (cn:'a) = P.compare (self#index, self#name) (cn#index, cn#name)
+  method compare (cn:'a) = Stdlib.compare (self#index, self#name) (cn#index, cn#name)
 
   method package = fst self#split_package_class
 
@@ -156,7 +158,7 @@ let rec compare_value_types t1 t2 =
   match (t1, t2) with
   | (TBasic _, TObject _) -> -1
   | (TObject _, TBasic _) -> 1
-  | (TBasic b1, TBasic b2) -> P.compare b1 b2
+  | (TBasic b1, TBasic b2) -> Stdlib.compare b1 b2
   | (TObject o1, TObject o2) -> compare_object_types o1 o2
 
 and compare_object_types t1 t2 =
@@ -301,7 +303,7 @@ object (self:'a)
   method descriptor = field_descriptor
 
   method compare (f:'a) =
-    let c = P.compare self#name f#name in
+    let c = Stdlib.compare self#name f#name in
     if c = 0 then compare_value_types self#descriptor f#descriptor else c
 
   method to_string = self#name ^ ":" ^ (value_type_to_string self#descriptor)
@@ -324,7 +326,7 @@ object (self:'a)
 
   method equal (f:'a) = self#index = f#index
 
-  method compare (f:'a) = P.compare self#index f#index
+  method compare (f:'a) = Stdlib.compare self#index f#index
 
   method to_string = self#field_signature_data#to_string
 
@@ -371,7 +373,7 @@ object (self:'a)
   method descriptor = method_descriptor
 
   method compare (m:'a) =
-    let c = P.compare self#name m#name in
+    let c = Stdlib.compare self#name m#name in
     if c = 0 then self#descriptor#compare m#descriptor else c
 
   method to_string =
@@ -401,7 +403,7 @@ object (self:'a)
 
   method equal (ms:'a) = self#index = ms#index
 
-  method compare (ms:'a) = P.compare self#index ms#index
+  method compare (ms:'a) = Stdlib.compare self#index ms#index
 
   method to_string = method_signature_data#to_string
 
@@ -609,7 +611,7 @@ let read_xml_method_args (node:xml_element_int) =
     let nr = geti "nr" in
     let ty = read_xml_value_type n in
     (nr,ty)) (node#getTaggedChildren "arg") in
-  List.map (fun (_,t) -> t) (List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2) args)
+  List.map (fun (_,t) -> t) (List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) args)
 
 let read_xml_method_signature (node:xml_element_int) (name:string): method_signature_t =
   let hasc = node#hasOneTaggedChild in
@@ -956,15 +958,16 @@ let noclasses = ref []
 let nomethods = ref []
 let classes = H.create 3
 
-let get_java_classes_not_found () = List.sort P.compare !noclasses
-let get_java_methods_not_found () = List.sort P.compare !nomethods
+let get_java_classes_not_found () = List.sort Stdlib.compare !noclasses
+let get_java_methods_not_found () = List.sort Stdlib.compare !nomethods
 
 let get_java_classes_loaded () = 
   let l = ref [] in
   let _ = H.iter (fun _ v -> l := v :: !l) classes in
   !l
 
-let write_xml_java_classes_loaded (node:xml_element_int) (jclasses:java_native_method_class_t list) =
+let write_xml_java_classes_loaded
+      (node:xml_element_int) (jclasses:java_native_method_class_t list) =
   node#appendChildren (List.map (fun c ->
     let cNode = xmlElement "class" in
     begin write_xml_java_native_method_class cNode c ; cNode end) jclasses)
