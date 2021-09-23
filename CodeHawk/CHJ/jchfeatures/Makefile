@@ -1,8 +1,7 @@
 CODEHAWK = ../..
 JCH = ..
 
-EXTLIB = $(CODEHAWK)/CH_extern/extlib
-ZIPLIB = $(CODEHAWK)/CH_extern/camlzip
+EXTLIB = $(shell ocamlfind query extlib)
 CHLIB  = $(CODEHAWK)/CH/chlib
 CHUTIL = $(CODEHAWK)/CH/chutil
 JCHLIB = $(JCH)/jchlib
@@ -10,7 +9,6 @@ JCHPRE = $(JCH)/jchpre
 
 CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(EXTLIB) \
-	-I $(ZIPLIB) \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
 	-I $(JCHLIB)/cmi \
@@ -43,7 +41,7 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-jchfeatures: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+jchfeatures: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLC) -a -o jchfeatures.cmxa $(OBJECTS)
 
 cmi/%.cmi: %.mli
