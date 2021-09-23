@@ -52,12 +52,12 @@ open BCHARMOpcodeRecords
 open BCHARMTypes
 
 module H = Hashtbl
-module P = Pervasives
+
 
 module IntSet = Set.Make
     (struct
       type t = int
-      let compare = Pervasives.compare
+      let compare = Stdlib.compare
     end)
 
 let create_ordering 
