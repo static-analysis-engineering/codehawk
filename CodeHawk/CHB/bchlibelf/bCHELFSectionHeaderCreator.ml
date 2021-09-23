@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +46,7 @@ open BCHELFSectionHeader
 open BCHELFTypes
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let s2d = string_to_doubleword
 
@@ -911,7 +912,7 @@ object (self)
 
   method toPretty =
     let headers =
-      List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2) self#get_section_headers in
+      List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) self#get_section_headers in
     let addressmap =
       List.rev
         (List.fold_left (fun a (i,h) ->
