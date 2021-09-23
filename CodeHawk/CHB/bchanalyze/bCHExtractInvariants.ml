@@ -63,7 +63,7 @@ open BCHAssemblyFunctions
 open BCHNumericalConstraints
 
 module H = Hashtbl
-module P = Pervasives
+
 
 module ConstraintCollections = CHCollections.Make
   (struct 
@@ -348,7 +348,7 @@ let extract_linear_equalities
       not (finfo#env#is_in_test_jump_range v k) in
   let invList = ref [] in
   let _ = H.iter (fun k v -> invList := (k,v) :: !invList) invariants in
-  let invList = List.sort (fun (k1,_) (k2,_) -> P.compare k1 k2) !invList in
+  let invList = List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) !invList in
   try
     List.iter (fun (k, v) ->
       if H.mem v "karr" then
@@ -357,7 +357,8 @@ let extract_linear_equalities
 	let knownVars = flocinv#get_known_variables in
 	let domain = inv#getDomain "karr" in
 	let vars = domain#observer#getObservedVariables in
-	let outvars = List.filter (fun v -> v#isTmp || outside_test_jump_range v k) vars in
+	let outvars =
+          List.filter (fun v -> v#isTmp || outside_test_jump_range v k) vars in
         let _ =
           track_location
             k
@@ -381,7 +382,8 @@ let extract_linear_equalities
                  STR "initVars: ";
                  pretty_print_list initVars (fun v -> v#toPretty) "[" "," "]"]) in
 	let domain = domain#projectOut (knownVars @ initVars @ testVals) in
-	let extVars = extract_external_value_equalities finfo k domain flocinv starttime in
+	let extVars =
+          extract_external_value_equalities finfo k domain flocinv starttime in
 	let domain = domain#projectOut extVars in
 	extract_relational_facts finfo k domain) invList
   with

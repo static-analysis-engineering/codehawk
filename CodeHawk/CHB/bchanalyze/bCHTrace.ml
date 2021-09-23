@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -71,7 +73,7 @@ open BCHTranslateToCHIF
 open BCHX86Opcodes
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let get_fname (faddr:doubleword_int) =
   if functions_data#has_function_name faddr then
@@ -242,13 +244,13 @@ let get_unresolved_calls () =
     f#iter_calls (fun _ floc -> ())) in
   let fns = ref [] in
   let _ = H.iter (fun k v -> fns := (k,v) :: !fns) flocs in
-  let fns = List.sort (fun (f1,_) (f2,_) -> P.compare f2 f1) !fns in
+  let fns = List.sort (fun (f1,_) (f2,_) -> Stdlib.compare f2 f1) !fns in
   let pp = ref [] in
   let _ = List.iter (fun (faddr, calls) ->
     let env = (get_function_info (string_to_doubleword faddr))#env in
     let xpr_formatter = make_xpr_formatter sym_printer env#variable_name_to_pretty in
     let ppp = ref [] in
-    let calls = List.sort (fun (i1,_) (i2,_) -> P.compare i2 i1) calls in
+    let calls = List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i2 i1) calls in
     let _ = List.iter (fun (iaddr,x) ->
       let p = LBLOCK [ STR iaddr ; STR "   " ; xpr_formatter#pr_expr x ; NL ] in
       ppp := p :: !ppp) calls in

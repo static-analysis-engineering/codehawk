@@ -61,7 +61,7 @@ let numerical_constraint_compare c1 c2 =
   if l1 = 0 then
     let fl1 = c1#getFactors in
     let fl2 = c2#getFactors in
-    let l2 = Pervasives.compare (List.length fl1) (List.length fl2) in
+    let l2 = Stdlib.compare (List.length fl1) (List.length fl2) in
     if l2 = 0 then
       let fl1 = List.sort fcompare fl1 in
       let fl2 = List.sort fcompare fl2 in
@@ -126,15 +126,22 @@ object (self:'a)
 	    let factor = new numerical_factor_t v in
 	    let coeff1 = c1#getCoefficient factor in
 	    let coeff2 = c2#getCoefficient factor in
-	    let _ = if coeff1#equal numerical_zero || coeff2#equal numerical_zero then
-		raise (BCH_failure 
-			 (LBLOCK [ STR "Internal error in elimination of " ; v#toPretty ; 
-				   STR " in " ; c1#toPretty ; STR " and " ; c2#toPretty ])) in
+	    let _ =
+              if coeff1#equal numerical_zero || coeff2#equal numerical_zero then
+		raise
+                  (BCH_failure
+		     (LBLOCK [
+                          STR "Internal error in elimination of ";
+                          v#toPretty;
+			  STR " in ";
+                          c1#toPretty;
+                          STR " and ";
+                          c2#toPretty])) in
 	    let newC = c1#affineCombination coeff2#neg coeff1 c2 in
 	    if newC#isTrivial then
 	      ()
 	    else
-	      let _ = newC#normalize in
+	      let _ = newC#normalize () in
 	      newSet#add newC) cs in
       let rec aux l =
 	match l with
