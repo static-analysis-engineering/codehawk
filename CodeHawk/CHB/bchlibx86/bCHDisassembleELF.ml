@@ -71,7 +71,6 @@ open BCHOperand
 open BCHPredefinedCallSemantics
 open BCHX86OpcodeRecords
 
-module P = Pervasives
 
 let pr_expr = xpr_formatter#pr_expr
 let x2p = xpr_formatter#pr_expr
@@ -618,8 +617,9 @@ let trace_function (faddr:doubleword_int) =
       match workSet#choose with Some a -> add_block a | _ -> ()
     end in
   let _ = add_block faddr in
-  let blockList = List.sort (fun b1 b2 ->
-                      P.compare b1#get_context_string b2#get_context_string) !blocks in
+  let blockList =
+    List.sort (fun b1 b2 ->
+        Stdlib.compare b1#get_context_string b2#get_context_string) !blocks in
   let successors =
     List.fold_left (fun acc b ->
         let src = b#get_context_string in
@@ -948,7 +948,7 @@ let associate_function_arguments_mov () =
       (fun op1 op2 ->
 	let (_,nr1) = op1#get_function_argument in
 	let (_,nr2) = op2#get_function_argument in
-	Pervasives.compare nr1 nr2) arguments in
+	Stdlib.compare nr1 nr2) arguments in
     let (arguments, notArguments,_) =
       List.fold_left
 	(fun (args,notArgs,seqNr) op ->

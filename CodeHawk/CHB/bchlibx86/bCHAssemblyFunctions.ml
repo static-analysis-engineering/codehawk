@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -53,13 +55,13 @@ open BCHLibx86Types
 open BCHX86OpcodeRecords
 
 module H = Hashtbl
-module P = Pervasives
 module FFU = BCHFileFormatUtil
+
 
 module IntSet = Set.Make
     (struct
       type t = int
-      let compare = Pervasives.compare
+      let compare = Stdlib.compare
     end)
 
 
@@ -277,7 +279,8 @@ object (self)
           largeentries := f :: !largeentries
         end in
     let _ = List.iter add self#get_functions in
-    let entries = List.sort P.compare (H.fold (fun k v a -> (k,v)::a) table []) in
+    let entries =
+      List.sort Stdlib.compare (H.fold (fun k v a -> (k,v)::a) table []) in
     (entries,!largeentries)
     
   method get_application_functions = self#get_functions

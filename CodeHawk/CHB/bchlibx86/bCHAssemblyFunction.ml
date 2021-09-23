@@ -58,8 +58,8 @@ open BCHPredefinedCallSemantics
 open BCHX86OpcodeRecords
 
 module H = Hashtbl
-module P = Pervasives
 module FFU = BCHFileFormatUtil
+
 
 class assembly_function_t 
         (faddr:doubleword_int)                 (* function entry address *)
@@ -419,7 +419,7 @@ let make_assembly_function
       (successors:(ctxt_iaddress_t * ctxt_iaddress_t) list) =
   let blocks =
     List.sort (fun b1 b2 ->
-        P.compare b1#get_context_string b2#get_context_string)
+        Stdlib.compare b1#get_context_string b2#get_context_string)
     blocks in
   let fn = new assembly_function_t va blocks successors in
   begin
