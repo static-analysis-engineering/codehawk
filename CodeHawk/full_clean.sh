@@ -1,7 +1,5 @@
 #!/bin/bash
 set -e
-make -C CH_extern/extlib clean
-make -C CH_extern/camlzip clean
 make -C CH/chlib clean
 make -C CH/chutil clean
 make -C CH/xprlib clean
