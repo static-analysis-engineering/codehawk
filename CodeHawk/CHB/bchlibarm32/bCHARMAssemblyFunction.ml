@@ -54,7 +54,7 @@ open BCHARMOpcodeRecords
 open BCHARMTypes
 
 module H = Hashtbl
-module P = Pervasives
+
 
 class arm_assembly_function_t
         (faddr:doubleword_int)
@@ -149,5 +149,5 @@ let make_arm_assembly_function
       (successors:(ctxt_iaddress_t * ctxt_iaddress_t) list) =
   let blocks =
     List.sort (fun b1 b2 ->
-        P.compare b1#get_context_string b2#get_context_string) blocks in
+        Stdlib.compare b1#get_context_string b2#get_context_string) blocks in
   new arm_assembly_function_t va blocks successors
