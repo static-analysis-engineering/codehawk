@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -68,7 +70,6 @@ open BCHDllFunctionsDisplay
 open BCHCanvasUtil
 open BCHStateDialogs
 open BCHStackFrame
-
 
 
 let string_printer = CHPrettyUtil.string_printer
@@ -544,8 +545,9 @@ object (self)
 
   method set_model (functions:assembly_function_int list) =
     let functions = List.sort (fun f1 f2 -> 
-      Pervasives.compare f1#get_address#index f2#get_address#index) functions in
-    let (store, indexColumn, nameColumn,blockSizeColumn,instrSizeColumn) = self#get_model in
+      Stdlib.compare f1#get_address#index f2#get_address#index) functions in
+    let (store, indexColumn, nameColumn,blockSizeColumn,instrSizeColumn) =
+      self#get_model in
     let view = self#get_view in
     let _ = view#set_model None in
     let _ = store#clear () in
