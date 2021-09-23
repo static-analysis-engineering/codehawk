@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +43,7 @@ open JCHDictionary
 open JCHSumTypeSerializer
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let byte_to_string (b:int) =
   let l = b mod 16 in
@@ -76,11 +77,13 @@ let mk_constantstring (s:string):constantstring =
     (hex_string s, true, String.length s)
   else
     (s,false, String.length s)
-    
+
+
 class jtdictionary_t:jtdictionary_int =
 object (self)
 
-  val symbolic_jterm_constant_table = mk_index_table "symbolic-jterm-constant-table"
+  val symbolic_jterm_constant_table =
+    mk_index_table "symbolic-jterm-constant-table"
   val jterm_table = mk_index_table "jterm-table"
   val relational_expr_table = mk_index_table "relational-expr-table"
   val jterm_list_table = mk_index_table "jterm-list-table"
@@ -107,10 +110,11 @@ object (self)
 
   method index_symbolic_jterm_constant (t:symbolic_jterm_constant_t) =
     let (typ,lbopt,ubopt,name) = t in
-    let args = [ common_dictionary#index_value_type typ;
-                 (match lbopt with Some n -> self#index_numerical n | _ -> -1) ;
-                 (match ubopt with Some n -> self#index_numerical n | _ -> -1) ;
-                 self#index_string name ] in
+    let args = [
+        common_dictionary#index_value_type typ;
+        (match lbopt with Some n -> self#index_numerical n | _ -> -1);
+        (match ubopt with Some n -> self#index_numerical n | _ -> -1);
+        self#index_string name] in
     symbolic_jterm_constant_table#add ([],args)
 
   method get_symbolic_jterm_constant (index:int) =
@@ -164,11 +168,13 @@ object (self)
     | "pw" -> JPower (self#get_jterm (a 0), a 1)
     | "un" -> JUninterpreted ((t 1), (List.map self#get_jterm args))
     | "ar" ->
-       JArithmeticExpr (arithmetic_op_serializer#from_string (t 1),
-                        self#get_jterm (a 0), self#get_jterm (a 1))
+       JArithmeticExpr
+         (arithmetic_op_serializer#from_string (t 1),
+          self#get_jterm (a 0), self#get_jterm (a 1))
     | s ->
-       raise (JCH_failure
-                (LBLOCK [ STR "jterm tag " ; STR s ; STR " not recognizezd" ]))
+       raise
+         (JCH_failure
+            (LBLOCK [STR "jterm tag "; STR s; STR " not recognizezd"]))
 
   method index_relational_expr (x:relational_expr_t) =
     let (op,t1,t2) = x in
@@ -184,7 +190,8 @@ object (self)
      self#get_jterm (a 0),self#get_jterm (a 1))    
 
   method index_jterm_list (l:jterm_t list):int =
-    jterm_list_table#add ([],List.sort P.compare (List.map self#index_jterm l))
+    jterm_list_table#add
+      ([],List.sort Stdlib.compare (List.map self#index_jterm l))
 
   method get_jterm_list (index:int):jterm_t list  =
     let (_,args) = jterm_list_table#retrieve index in
@@ -192,7 +199,7 @@ object (self)
 
   method index_relational_expr_list (l:relational_expr_t list) =
     relational_expr_list_table#add
-      ([],List.sort P.compare (List.map self#index_relational_expr l))
+      ([],List.sort Stdlib.compare (List.map self#index_relational_expr l))
 
   method get_relational_expr_list (index:int):relational_expr_t list =
     let (_,args) = relational_expr_list_table#retrieve index in
@@ -233,13 +240,14 @@ object (self)
     let (tags,args) = string_table#retrieve index in
     let (s,_,_) = if (List.length tags) > 0  && (List.length args) > 0 then
       (List.hd tags, List.length tags > 1, List.hd args)
-    else if (List.length args) > 0 && (List.hd args) = 0 then    (* empty string *)
+    else if (List.length args) > 0 && (List.hd args) = 0 then  (* empty string *)
       ("", false, 0)
     else if (List.length args) > 0 then
       (" ", false, (List.hd args))                (* string of spaces of lengt n *)
     else
-      raise (JCH_failure
-               (LBLOCK [ STR "Invalid string record: " ; INT (List.hd args) ])) in
+      raise
+        (JCH_failure
+           (LBLOCK [STR "Invalid string record: "; INT (List.hd args)])) in
     s
 
   method write_xml_jterm ?(tag="ijt") (node:xml_element_int) (t:jterm_t) =
@@ -272,7 +280,10 @@ object (self)
     self#get_relational_expr_list (node#getIntAttribute tag)
 
   method write_xml_jterm_range
-           ?(tag="ijtr") (node:xml_element_int) (lbs:jterm_t list) (ubs:jterm_t list) =
+           ?(tag="ijtr")
+           (node:xml_element_int)
+           (lbs:jterm_t list)
+           (ubs:jterm_t list) =
     node#setIntAttribute tag (self#index_jterm_range lbs ubs)
 
   method read_xml_jterm_range
@@ -301,7 +312,7 @@ object (self)
     node#appendChildren
       (List.map
          (fun t -> let tnode = xmlElement t#get_name in
-           begin t#write_xml tnode ; tnode end) tables)
+           begin t#write_xml tnode; tnode end) tables)
     
 
   method read_xml (node:xml_element_int) =
@@ -309,9 +320,11 @@ object (self)
     List.iter (fun t -> t#read_xml (getc t#get_name)) tables ;
 
   method toPretty =
-    LBLOCK (List.map (fun t ->
-                LBLOCK [ STR t#get_name ; STR ": " ; INT t#size ; NL ]) tables)
+    LBLOCK
+      (List.map (fun t ->
+           LBLOCK [STR t#get_name; STR ": "; INT t#size; NL]) tables)
 
 end
+
 
 let jtdictionary = new jtdictionary_t

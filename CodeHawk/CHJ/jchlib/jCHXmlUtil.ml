@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +44,6 @@ open JCHBasicTypes
 open JCHBasicTypesAPI
 open JCHDictionary
 
-module P = Pervasives
 
 let make_desc args r = match r with
   | Some ty -> make_method_descriptor ~arguments:args ~return_value:ty ()
@@ -61,7 +61,7 @@ let raise_error (node:xml_element_int) (msg:pretty_t) =
 (* ----------------------------------------------------------------- Indices *)
 
 let write_xml_indices (node:xml_element_int) (indices:int list) =
-  let indices = List.sort P.compare indices in
+  let indices = List.sort Stdlib.compare indices in
   let maxlen = 20 in
     let split (n:int) (l:int list) =
       let rec loop i p l =
@@ -96,7 +96,8 @@ let nsplit (separator:char) (s:string):string list =
   try
     begin
       while !start < len do
-        let s_index = try String.index_from s !start separator with Not_found -> len in
+        let s_index =
+          try String.index_from s !start separator with Not_found -> len in
         let substring = String.sub s !start (s_index - !start) in
         begin
 	  result := substring :: !result ;
@@ -107,7 +108,7 @@ let nsplit (separator:char) (s:string):string list =
     end
   with
   | Invalid_argument _ ->
-     raise (JCH_failure (LBLOCK [ STR "Error in nsplit: " ; STR s ]))
+     raise (JCH_failure (LBLOCK [STR "Error in nsplit: "; STR s]))
 
 
 let read_xml_indices (node:xml_element_int) =
@@ -118,10 +119,11 @@ let read_xml_indices (node:xml_element_int) =
   if has "ixs" then 
     get_indices (get "ixs")
   else
-    let strings = List.map (fun iNode -> iNode#getAttribute "ixs") (getcc "ix-list") in
+    let strings =
+      List.map (fun iNode -> iNode#getAttribute "ixs") (getcc "ix-list") in
     get_indices (String.concat "," strings)
 
-(* -------------------------------------------------------------------- variable_t *)
+(* --------------------------------------------------------------- variable_t *)
 
 let chvariable_type_to_string (vt:variable_type_t) = 
   match vt with
@@ -134,7 +136,10 @@ let chvariable_type_to_string (vt:variable_type_t) =
   | SYM_VAR_TYPE -> "SYMBOLIC"
   | NUM_ARRAY_TYPE -> "NUMERICAL[]"
   | SYM_ARRAY_TYPE -> "SYMBOLIC[]"
-  | _ -> raise (JCH_failure (STR "struct and table type not supported in saving to xml"))
+  | _ ->
+     raise
+       (JCH_failure (
+            STR "struct and table type not supported in saving to xml"))
 
 
 let string_to_chvariable_type (s:string) =
@@ -148,7 +153,11 @@ let string_to_chvariable_type (s:string) =
   | "SYMBOLIC" -> SYM_VAR_TYPE
   | "NUMERICAL[]" -> NUM_ARRAY_TYPE
   | "SYMBOLIC[]" -> SYM_ARRAY_TYPE
-  | s -> raise (JCH_failure (LBLOCK [ STR "Not a valid CH variable type: " ; STR s ]))
+  | s ->
+     raise
+       (JCH_failure
+          (LBLOCK [STR "Not a valid CH variable type: "; STR s]))
+
 
 let write_xml_variable (node:xml_element_int) (var:variable_t) =
   let set = node#setAttribute in
@@ -170,7 +179,7 @@ let read_xml_variable (node:xml_element_int):variable_t =
   let sym = new symbol_t ~atts name in
   new variable_t sym vtype
 
-(* ------------------------------------------------------------ ASM representation *)
+(* -------------------------------------------------------- ASM representation *)
 
 let basic_type_to_asm_string (t:java_basic_type_t) =
   match t with
@@ -186,6 +195,7 @@ let basic_type_to_asm_string (t:java_basic_type_t) =
   | ByteBool -> "XBZX"
   | Object -> "XLX"
   | Void -> "V"
+
 
 let rec value_type_to_asm_string (v:value_type_t) =
   match v with
@@ -210,7 +220,7 @@ and object_type_to_asm_cnix_string (v:object_type_t) =
 let method_arguments_to_asm_string (ms:method_signature_int) =
   String.concat "_" (List.map value_type_to_asm_string ms#descriptor#arguments)
 
-(* --------------------------------------------------------------------- Constants *)
+(* ----------------------------------------------------------------- Constants *)
 
 let max_string_size = 1000
 
@@ -269,12 +279,16 @@ let write_xml_asm_parameter (node:xml_element_int) (index:int) (v:value_type_t) 
     node#setAttribute "type" (value_type_to_asm_string v)
   end
 
-let write_xml_asm_method_signature (node:xml_element_int) (ms:method_signature_int) =
+let write_xml_asm_method_signature
+      (node:xml_element_int) (ms:method_signature_int) =
   let append = node#appendChildren in
   begin
     append (List.mapi (fun i a ->
       let aNode = xmlElement "arg" in
-      begin write_xml_asm_parameter aNode (i+1) a ; aNode end) ms#descriptor#arguments) ;
+      begin
+        write_xml_asm_parameter aNode (i+1) a;
+        aNode
+      end) ms#descriptor#arguments) ;
     match ms#descriptor#return_value with
       Some v -> 
 	let rNode = xmlElement "return" in
@@ -285,37 +299,40 @@ let write_xml_asm_method_signature (node:xml_element_int) (ms:method_signature_i
     | _ -> () 
   end
 
-let write_xml_asm_value_types (node:xml_element_int) (types:value_type_t list) =	
+let write_xml_asm_value_types (node:xml_element_int) (types:value_type_t list) =
   let set = node#setAttribute in
   let append = node#appendChildren in
   match types with
   | [] -> ()
   | [ t ] -> set "type" (value_type_to_asm_string t)
-  | l -> let lNode = xmlElement "types" in
-	 begin
-	   lNode#appendChildren
-	     (List.map (fun t ->
-	       let tNode = xmlElement "type" in
-	       let set = tNode#setAttribute in
-	       begin set "type" (value_type_to_asm_string t) ; tNode end) l) ;
-	   append [ lNode ]
-	 end
+  | l ->
+     let lNode = xmlElement "types" in
+     begin
+       lNode#appendChildren
+	 (List.map (fun t ->
+	      let tNode = xmlElement "type" in
+	      let set = tNode#setAttribute in
+	      begin set "type" (value_type_to_asm_string t); tNode end) l);
+       append [ lNode ]
+     end
 
-let write_xml_asm_cnix_value_types (node:xml_element_int) (types:value_type_t list) =	
+let write_xml_asm_cnix_value_types
+      (node:xml_element_int) (types:value_type_t list) =
   let set = node#setAttribute in
   let append = node#appendChildren in
   match types with
   | [] -> ()
   | [ t ] -> set "ty" (value_type_to_asm_cnix_string t)
-  | l -> let lNode = xmlElement "types" in
-	 begin
-	   lNode#appendChildren
-	     (List.map (fun t ->
-	       let tNode = xmlElement "type" in
-	       let set = tNode#setAttribute in
-	       begin set "type" (value_type_to_asm_cnix_string t) ; tNode end) l) ;
-	   append [ lNode ]
-	 end
+  | l ->
+     let lNode = xmlElement "types" in
+     begin
+       lNode#appendChildren
+	 (List.map (fun t ->
+	      let tNode = xmlElement "type" in
+	      let set = tNode#setAttribute in
+	      begin set "type" (value_type_to_asm_cnix_string t); tNode end) l);
+       append [ lNode ]
+     end
  				
 let write_xml_interval (node:xml_element_int) (i:interval_t) =
   if i#isBottom then
@@ -329,7 +346,7 @@ let write_xml_interval (node:xml_element_int) (i:interval_t) =
       (match i#getMin#getBound with
       | MINUS_INF -> ()
       | PLUS_INF -> node#setAttribute "lb" "plus-inf"
-      | NUMBER n -> node#setPrettyAttribute "lb" n#toPretty) ;
+      | NUMBER n -> node#setPrettyAttribute "lb" n#toPretty);
       (match i#getMax#getBound with
       | MINUS_INF -> node#setAttribute "ub" "minus-inf"
       | PLUS_INF -> ()

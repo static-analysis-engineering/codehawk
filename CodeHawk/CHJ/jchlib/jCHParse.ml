@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,17 +46,23 @@ open JCHRawBasicTypes
 open JCHRawClass
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let unknown_attributes = H.create 3
 
 let add_unknown_attribute s =
-  let entry = if H.mem unknown_attributes s then H.find unknown_attributes s else 0 in
+  let entry =
+    if H.mem unknown_attributes s then
+      H.find unknown_attributes s
+    else
+      0 in
   H.replace unknown_attributes s (entry + 1)
+
 
 let get_unknown_attributes () =
   let lst = H.fold (fun k v a -> (k,v)::a) unknown_attributes [] in
-  List.sort ~cmp:(fun (k1,_) (k2,_) -> P.compare k1 k2) lst
+  List.sort ~cmp:(fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) lst
+
 
 type tmp_constant =
   | ConstantClass of int                            (*  7 *)
@@ -73,6 +80,7 @@ type tmp_constant =
   | ConstantMethodType of int                       (* 16 *)                        
   | ConstantInvokeDynamic of int  * int             (* 18 *)
   | ConstantUnusable                      (* second part of 64-bit entry *)
+
 
 type attribute_name_t =
   (* Code *)
@@ -103,6 +111,7 @@ type attribute_name_t =
   | SourceDebugExtension
   | BootstrapMethods
 
+
 let parse_reference_kind ch =
   match IO.read_byte ch with
   | 1 -> REFGetField
@@ -115,16 +124,19 @@ let parse_reference_kind ch =
   | 8 -> REFNewInvokeSpecial
   | 9 -> REFInvokeInterface
   | k ->
-     raise (JCH_class_structure_error
-           (LBLOCK [ STR "Illegal reference kind: " ; INT k ]))
+     raise
+       (JCH_class_structure_error
+          (LBLOCK [STR "Illegal reference kind: "; INT k]))
+
 
 let parse_constant max ch =
   let cid = IO.read_byte ch in
   let index() =
     let n = read_ui16 ch in
-      if n = 0 || n >= max
-      then raise (JCH_class_structure_error
-                    (LBLOCK [STR "Illegal index in constant pool: " ; INT n ]));
+    if n = 0 || n >= max then
+      raise
+        (JCH_class_structure_error
+           (LBLOCK [STR "Illegal index in constant pool: "; INT n]));
       n
   in
   match cid with
@@ -187,7 +199,7 @@ let parse_constant max ch =
   (* CONSTANT_Long_info {
      u1: 5
      u4: high_bytes
-     u4: low_bytes       ((long) high_bytes shift-left 32) + low_bytes  (big-endian)
+     u4: low_bytes   ((long) high_bytes shift-left 32) + low_bytes  (big-endian)
      } *)
   | 5 -> ConstantLong (read_i64 ch)
 
@@ -261,26 +273,31 @@ let parse_constant max ch =
      raise (JCH_class_structure_error
               (LBLOCK [ STR "Illegal constant kind: " ; INT cid ]))
 
+
 let class_flags =
   [|AccPublic; AccRFU 0x2; AccRFU 0x4; AccRFU 0x8;
     AccFinal; AccSuper; AccRFU 0x40; AccRFU 0x80;
     AccRFU 0x100; AccInterface; AccAbstract; AccRFU 0x800;
     AccSynthetic; AccAnnotation; AccEnum; AccRFU 0x8000|]
+
 let innerclass_flags =
   [|AccPublic; AccPrivate; AccProtected; AccStatic;
     AccFinal; AccRFU 0x20; AccRFU 0x40; AccRFU 0x80;
     AccRFU 0x100; AccInterface; AccAbstract; AccRFU 0x800;
     AccSynthetic; AccAnnotation; AccEnum; AccRFU 0x8000|]
+
 let field_flags =
   [|AccPublic; AccPrivate; AccProtected; AccStatic;
     AccFinal; AccRFU 0x20; AccVolatile; AccTransient;
     AccRFU 0x100; AccRFU 0x200; AccRFU 0x400; AccRFU 0x800;
     AccSynthetic; AccRFU 0x2000; AccEnum; AccRFU 0x8000|]
+
 let method_flags =
   [|AccPublic; AccPrivate; AccProtected; AccStatic;
     AccFinal; AccSynchronized; AccBridge; AccVarArgs;
     AccNative; AccRFU 0x200; AccAbstract; AccStrict;
     AccSynthetic; AccRFU 0x2000; AccRFU 0x4000; AccRFU 0x8000|]
+
 let method_parameter_flags =
   [|AccRFU 0x1; AccRFU 0x2; AccRFU 0x4; AccRFU 0x8;
     AccFinal; AccRFU 0x20; AccRFU 0x40; AccRFU 0x80;
@@ -296,6 +313,7 @@ let parse_access_flags all_flags ch =
       all_flags;
     !flags
 
+
 let parse_stackmap_type_info consts ch = match IO.read_byte ch with
   | 0 -> VTop
   | 1 -> VInteger
@@ -306,8 +324,11 @@ let parse_stackmap_type_info consts ch = match IO.read_byte ch with
   | 6 -> VUninitializedThis
   | 7 -> VObject (get_object_type consts (read_ui16 ch))
   | 8 -> VUninitialized (read_ui16 ch)
-  | n -> raise (JCH_class_structure_error
-                  (LBLOCK [ STR "Illegal stackmap type: " ; INT n ]))
+  | n ->
+     raise
+       (JCH_class_structure_error
+          (LBLOCK [STR "Illegal stackmap type: "; INT n]))
+
 
 let parse_stackmap_frame consts ch =
   let parse_type_info_array ch nb_item =
@@ -317,7 +338,8 @@ let parse_stackmap_frame consts ch =
   let locals = parse_type_info_array ch number_of_locals in
   let number_of_stack_items = read_ui16 ch in
   let stack = parse_type_info_array ch number_of_stack_items in
-    (offset,locals,stack)
+  (offset,locals,stack)
+
 
 let parse_stackmap_table consts ch =
   let kind = IO.read_byte ch in
@@ -349,7 +371,8 @@ let parse_stackmap_table consts ch =
       let stack = List.init nstack
 	(fun _ -> parse_stackmap_type_info consts ch) in
 	FullFrame(kind,offset_delta,locals,stack)
-    else (print_string("Invalid stackmap kind\n");SameLocals(-1,VTop))
+    else
+      (print_string("Invalid stackmap kind\n"); SameLocals(-1, VTop))
   in stackmap
 
 
@@ -378,25 +401,26 @@ let rec parse_element_value consts ch =
   let tag = IO.read_byte ch in 
     match Char.chr tag with
       | ('B' | 'C' | 'S' | 'Z' | 'I' | 'D' | 'F' | 'J' ) as c -> (* constants *)
-          let constant_value_index = read_ui16 ch in
-          let cst = get_constant_value consts constant_value_index in
-          begin
-            match c,cst with
-            | 'B', ConstInt i -> EVCstByte (Int32.to_int i)
-            | 'C', ConstInt i -> EVCstChar (Int32.to_int i)
-            | 'S', ConstInt i -> EVCstShort (Int32.to_int i)
-            | 'Z', ConstInt i -> EVCstBoolean (Int32.to_int i)
-            | 'I', ConstInt i -> EVCstInt i
-            | 'D', ConstDouble d -> EVCstDouble d
-            | 'F', ConstFloat f -> EVCstFloat f
-            | 'J', ConstLong l -> EVCstLong l
-            | ('B' | 'C' | 'S' | 'Z' | 'I' | 'D' | 'F' | 'J' ),_ ->
-                    raise
-                      (JCH_class_structure_error
-                         (LBLOCK [ STR "A such constant cannot be referenced in such  an " ;
-                                   STR "annotation element"]))
-            | _,_ -> assert false
-          end
+         let constant_value_index = read_ui16 ch in
+         let cst = get_constant_value consts constant_value_index in
+         begin
+           match c,cst with
+           | 'B', ConstInt i -> EVCstByte (Int32.to_int i)
+           | 'C', ConstInt i -> EVCstChar (Int32.to_int i)
+           | 'S', ConstInt i -> EVCstShort (Int32.to_int i)
+           | 'Z', ConstInt i -> EVCstBoolean (Int32.to_int i)
+           | 'I', ConstInt i -> EVCstInt i
+           | 'D', ConstDouble d -> EVCstDouble d
+           | 'F', ConstFloat f -> EVCstFloat f
+           | 'J', ConstLong l -> EVCstLong l
+           | ('B' | 'C' | 'S' | 'Z' | 'I' | 'D' | 'F' | 'J' ),_ ->
+              raise
+                (JCH_class_structure_error
+                   (LBLOCK [
+                        STR "A such constant cannot be referenced in such  an ";
+                        STR "annotation element"]))
+           | _,_ -> assert false
+         end
       | 's' ->                            (* string *)
          let constant_value_index = read_ui16 ch in
          let cst = get_string consts constant_value_index in
@@ -431,6 +455,7 @@ let rec parse_element_value consts ch =
          raise (JCH_class_structure_error
                   (STR "invalid tag in a element_value of an annotation"))
 
+
 (* annotation {
    u2 type index            : CONSTANT_Utf8_info (representing field descriptor)
    u2 num_element_value_pairs
@@ -464,9 +489,11 @@ let parse_annotations consts ch =
   let num_annotations = read_ui16 ch in
     ExtList.List.init num_annotations (fun _ -> parse_annotation consts ch)
 
+
 let parse_parameter_annotations consts ch =
   let num_parameters = IO.read_byte ch in
   ExtList.List.init num_parameters (fun _ -> parse_annotations consts ch)
+
 
 let parse_bootstrap_method consts ch =
   let (kind,handle) = get_method_handle consts (read_ui16 ch)
@@ -477,6 +504,7 @@ let parse_bootstrap_method consts ch =
       (fun _ -> get_bootstrap_argument consts (read_ui16 ch)) in
   let data = { bm_kind = kind ; bm_handle = handle ; bm_args = argrefs } in
   make_bootstrap_method data              
+
 
 (* BootstrapMethods_attribute {
    ...                     
@@ -505,8 +533,11 @@ let rec parse_code consts ch =
   let clen =
     match read_i32 ch with
     | toobig when toobig > 65535 ->
-       raise (JCH_class_structure_error
-		(STR "There must be less than 65536 bytes of instructions in a Code attribute"))
+       raise
+         (JCH_class_structure_error
+	    (LBLOCK [
+                 STR "There must be less than 65536 bytes of instructions ";
+                 STR "in a Code attribute"]))
     | ok -> ok in
   let code = JCHParseCode.parse_code ch clen in
   let exc_tbl_length = read_ui16 ch in
@@ -539,7 +570,7 @@ let rec parse_code consts ch =
       attrib_count
       (fun _ ->
 	parse_attribute
-	  [LineNumberTable ; LocalVariableTable ; LocalVariableTypeTable ; StackMap]
+	  [LineNumberTable; LocalVariableTable; LocalVariableTypeTable; StackMap]
 	  consts ch) in
     {
       c_max_stack = max_stack;
@@ -549,11 +580,14 @@ let rec parse_code consts ch =
       c_code = code;
     }
 
+
 (* Parse an attribute, if its name is in list. *)
 and parse_attribute list consts ch =
   let aname = get_string_ui16 consts ch in
   let error() =
-    raise (JCH_class_structure_error (LBLOCK [ STR "Ill-formed attribute " ; STR aname])) in
+    raise
+      (JCH_class_structure_error
+         (LBLOCK [STR "Ill-formed attribute "; STR aname])) in
   let alen = read_i32 ch in
   let check name = if not (List.mem name list) then raise Exit in
   try
@@ -587,8 +621,11 @@ and parse_attribute list consts ch =
 	      | k ->
                  raise
                    (JCH_class_structure_error
-                      (LBLOCK [ STR "EnclosingMethod attribute cannot refer to a constant which is " ;
-                                STR "not a NameAndType: " ; constant_to_pretty k ])) in
+                      (LBLOCK [
+                           STR "EnclosingMethod attribute cannot refer ";
+                           STR "to a constant which is ";
+                           STR "not a NameAndType: ";
+                           constant_to_pretty k])) in
          AttributeEnclosingMethod (c,m)
        end
 
@@ -668,20 +705,20 @@ and parse_attribute list consts ch =
 	   (List.init
 	      nentry
 	      (function _ ->
-		        let inner =
-			  match (read_ui16 ch) with
-			  | 0 -> None
-			  | i -> Some (get_class consts i) in
-		        let outer =
-			  match (read_ui16 ch) with
-			  | 0 -> None
-			  | i -> Some (get_class consts i) in
-		        let inner_name =
-			  match (read_ui16 ch) with
-			  | 0 -> None
-			  | i -> Some (get_string consts i) in
-		        let flags = parse_access_flags innerclass_flags ch in
-		        inner, outer, inner_name, flags))
+		 let inner =
+		   match (read_ui16 ch) with
+		   | 0 -> None
+		   | i -> Some (get_class consts i) in
+		 let outer =
+		   match (read_ui16 ch) with
+		   | 0 -> None
+		   | i -> Some (get_class consts i) in
+		 let inner_name =
+		   match (read_ui16 ch) with
+		   | 0 -> None
+		   | i -> Some (get_string consts i) in
+		 let flags = parse_access_flags innerclass_flags ch in
+		 inner, outer, inner_name, flags))
        end
 
     (* Synthetic_attribute {
@@ -762,12 +799,13 @@ and parse_attribute list consts ch =
 	   (List.init
 	      nentry
 	      (function _ ->
-		        let start_pc = read_ui16 ch in
-		        let length = read_ui16 ch in
-		        let name = (get_string_ui16 consts ch) in
-		        let signature = parse_field_type_signature (get_string_ui16 consts ch) in
-		        let index = read_ui16 ch in
-		        start_pc, length, name, signature, index))
+		 let start_pc = read_ui16 ch in
+		 let length = read_ui16 ch in
+		 let name = (get_string_ui16 consts ch) in
+		 let signature =
+                   parse_field_type_signature (get_string_ui16 consts ch) in
+		 let index = read_ui16 ch in
+		 start_pc, length, name, signature, index))
        end
       
     (* BootstrapMethods_attribute {
@@ -800,7 +838,8 @@ and parse_attribute list consts ch =
          let ch, count = IO.pos_in ch in
          let nb_stackmap_frames = read_ui16 ch in
          let stackmap =
-	   List.init nb_stackmap_frames (fun _ -> parse_stackmap_frame consts ch ) in
+	   List.init
+             nb_stackmap_frames (fun _ -> parse_stackmap_frame consts ch ) in
          (if count() <> alen then error());
          AttributeStackMap stackmap
        end
@@ -868,19 +907,20 @@ and parse_attribute list consts ch =
            (List.init
               nentry
               (function _ ->
-                        let name =
-                          match read_ui16 ch with
-                          | 0 -> None
-                          | i -> Some (get_string consts i) in
-                        let flags = parse_access_flags method_parameter_flags ch in
-                        name, flags))
+                 let name =
+                   match read_ui16 ch with
+                   | 0 -> None
+                   | i -> Some (get_string consts i) in
+                 let flags = parse_access_flags method_parameter_flags ch in
+                 name, flags))
        end
        | _ ->
           let _ = add_unknown_attribute aname in
           raise Exit
   with
     Exit -> AttributeUnknown (aname,Bytes.to_string (IO.really_nread ch alen))
-	
+
+
 let parse_field consts ch =
   let acc = parse_access_flags field_flags ch in
   let name = get_string_ui16 consts ch in
@@ -906,7 +946,8 @@ let parse_field consts ch =
     f_attributes = attribs;
     f_flags = acc;
   }
-  
+
+
 let parse_method consts ch =
   let acc = parse_access_flags method_flags ch in
   let name = get_string_ui16 consts ch in
@@ -930,6 +971,7 @@ let parse_method consts ch =
     m_flags = acc;
   }
 
+
 let rec expand_constant consts n =
   let expand name cl nt =
     match expand_constant consts cl  with
@@ -937,14 +979,21 @@ let rec expand_constant consts n =
        (match expand_constant consts nt with
         | ConstNameAndType (n,s) -> (c,n,s)
         | k -> 
-	   raise (JCH_class_structure_error 
-		    (LBLOCK [STR "Illegal constant refered in place of NameAndType in " ;
-                             STR name ; STR " constant: " ;
-                             constant_to_pretty k] )))
+	   raise
+             (JCH_class_structure_error
+		(LBLOCK [
+                     STR "Illegal constant refered in place of NameAndType in ";
+                     STR name;
+                     STR " constant: ";
+                     constant_to_pretty k])))
     | k -> 
-       raise (JCH_class_structure_error 
-	        (LBLOCK [ STR "Illegal constant refered in place of a ConstValue in " ;
-                          STR name ; STR " constant: " ; constant_to_pretty k ]))
+       raise
+         (JCH_class_structure_error 
+	    (LBLOCK [
+                 STR "Illegal constant refered in place of a ConstValue in ";
+                 STR name ;
+                 STR " constant: ";
+                 constant_to_pretty k]))
   in
   match consts.(n) with
   (* index(CONSTANT_Utf8) *)
@@ -952,22 +1001,30 @@ let rec expand_constant consts n =
      (match expand_constant consts i with
       | ConstStringUTF8 s -> ConstValue (ConstClass (parse_object_type s))
       | k -> 
-         raise (JCH_class_structure_error 
-	          (LBLOCK [ STR "Illegal constant refered in place of a Class constant: " ;
-                            constant_to_pretty k ])))
+         raise
+           (JCH_class_structure_error
+	      (LBLOCK [
+                   STR "Illegal constant refered in place of a Class constant: ";
+                   constant_to_pretty k])))
 
   (* index(CONSTANT_Class_info), index(CONSTANT_NameAndType_info) *)
   | ConstantField (cl,nt) ->
      (match expand "Field" cl nt with
       | TClass c, n, SValue v -> ConstField (c, make_fs n v)
       | TClass c, s, _ -> 
-         raise (JCH_class_structure_error
-                  (LBLOCK [ STR "Illegal type in Field constant: " ; c#toPretty ; STR ", " ;
-                            STR s ]))
+         raise
+           (JCH_class_structure_error
+              (LBLOCK [
+                   STR "Illegal type in Field constant: ";
+                   c#toPretty;
+                   STR ", ";
+                   STR s]))
       | t,_,_ -> 
-         raise (JCH_class_structure_error 
-	          (LBLOCK [ STR "Illegal constant refered in place of a Field constant: " ;
-                            object_type_to_pretty t ])))
+         raise
+           (JCH_class_structure_error 
+	      (LBLOCK [
+                   STR "Illegal constant refered in place of a Field constant: ";
+                   object_type_to_pretty t])))
     
   (* index(CONSTANT_Class_info), index(CONSTANT_NameAndType_info) *)
   | ConstantMethod (cl,nt) ->
@@ -986,19 +1043,26 @@ let rec expand_constant consts n =
      | TClass c, n, SMethod desc ->
         ConstInterfaceMethod (c, make_ms false n desc)
     | TClass _, _, _ -> 
-      raise (JCH_class_structure_error (STR "Illegal type in Interface Method constant"))
+       raise
+         (JCH_class_structure_error (
+              STR "Illegal type in Interface Method constant"))
     | _, _, _ -> 
-      raise (JCH_class_structure_error 
-	       (STR "Illegal constant refered in place of an Interface Method constant")))
+       raise
+         (JCH_class_structure_error 
+	    (LBLOCK [
+                 STR "Illegal constant refered in place of an ";
+                 STR "Interface Method constant"])))
 
   (* index(CONSTANT_Utf8) *)
   | ConstantString i ->
     (match expand_constant consts i with
     | ConstStringUTF8 s -> ConstValue (ConstString s)
     | k -> 
-      raise (JCH_class_structure_error 
-	       (LBLOCK [ STR "Illegal constant refered in place of a String constant" ;
-                         constant_to_pretty k ])))
+       raise
+         (JCH_class_structure_error
+	    (LBLOCK [
+                 STR "Illegal constant refered in place of a String constant";
+                 constant_to_pretty k])))
 
   (* integer value *)
   | ConstantInt i -> ConstValue (ConstInt i)
@@ -1015,13 +1079,20 @@ let rec expand_constant consts n =
   (* index(CONSTANT_Utf8_info), index(CONSTANT_Utf8_info) *)
   | ConstantNameAndType (n,t) ->
     (match expand_constant consts n , expand_constant consts t with
-    | ConstStringUTF8 n , ConstStringUTF8 t -> ConstNameAndType (n,parse_descriptor t)
-    | ConstStringUTF8 _ , _ ->
-      raise (JCH_class_structure_error (STR "Illegal type in a NameAndType constant"))
+     | ConstStringUTF8 n , ConstStringUTF8 t ->
+        ConstNameAndType (n,parse_descriptor t)
+     | ConstStringUTF8 _ , _ ->
+        raise
+          (JCH_class_structure_error (
+               STR "Illegal type in a NameAndType constant"))
     | k1, k2 -> 
-      raise (JCH_class_structure_error
-	       (LBLOCK [ STR "Illegal constant refered in place of a NameAndType constant" ;
-                         constant_to_pretty k1 ; STR " and " ; constant_to_pretty k2 ])))
+       raise
+         (JCH_class_structure_error
+	    (LBLOCK [
+                 STR "Illegal constant refered in place of a NameAndType constant";
+                 constant_to_pretty k1;
+                 STR " and ";
+                 constant_to_pretty k2])))
     
   (* string *)
   | ConstantStringUTF8 s -> ConstStringUTF8 s
@@ -1033,35 +1104,45 @@ let rec expand_constant consts n =
          (match expand_constant consts index with
           | ConstField (c,fs) -> ConstMethodHandle (kind,FieldHandle(c,fs))
           | k ->
-             raise (JCH_class_structure_error
-                      (LBLOCK [ STR "Illegal constant referenced in ConstantMethodHandle: " ;
-                                STR " field expected, but found: " ;
-                                constant_to_pretty k ])))
+             raise
+               (JCH_class_structure_error
+                  (LBLOCK [
+                       STR "Illegal constant referenced in ConstantMethodHandle: ";
+                       STR " field expected, but found: ";
+                       constant_to_pretty k])))
       | REFInvokeVirtual | REFNewInvokeSpecial ->
          (match expand_constant consts index with
           | ConstMethod (t,ms) -> ConstMethodHandle (kind,MethodHandle(t,ms))
           | k ->
-             raise (JCH_class_structure_error
-                      (LBLOCK [ STR "Illegal constant referenced in ConstantMethodHandle: " ;
-                                STR "method expected, but found: " ;
-                                constant_to_pretty k ])))
+             raise
+               (JCH_class_structure_error
+                  (LBLOCK [
+                       STR "Illegal constant referenced in ConstantMethodHandle: ";
+                       STR "method expected, but found: ";
+                       constant_to_pretty k])))
       | REFInvokeStatic | REFInvokeSpecial ->
          (match expand_constant consts index with
           | ConstMethod (t,ms) -> ConstMethodHandle (kind,MethodHandle(t,ms))
-          | ConstInterfaceMethod (c,ms) -> ConstMethodHandle(kind,InterfaceHandle(c,ms))
+          | ConstInterfaceMethod (c,ms) ->
+             ConstMethodHandle(kind,InterfaceHandle(c,ms))
           | k ->
-             raise (JCH_class_structure_error
-                      (LBLOCK [ STR "Illegal constant referenced in ConstantMethodHandle: " ;
-                                STR "method or interface expected, but found: " ;
-                                constant_to_pretty k ])))
+             raise
+               (JCH_class_structure_error
+                  (LBLOCK [
+                       STR "Illegal constant referenced in ConstantMethodHandle: ";
+                       STR "method or interface expected, but found: ";
+                       constant_to_pretty k])))
       | REFInvokeInterface ->
          (match expand_constant consts index with
-          | ConstInterfaceMethod (c,ms) -> ConstMethodHandle(kind,InterfaceHandle(c,ms))
+          | ConstInterfaceMethod (c,ms) ->
+             ConstMethodHandle(kind,InterfaceHandle(c,ms))
           | k ->
-             raise (JCH_class_structure_error
-                      (LBLOCK [ STR "Illegal constant referenced in ConstantMethodHandle: " ;
-                                STR "interface expected, but found: " ;
-                                constant_to_pretty k ]))))
+             raise
+               (JCH_class_structure_error
+                  (LBLOCK [
+                       STR "Illegal constant referenced in ConstantMethodHandle: ";
+                       STR "interface expected, but found: ";
+                       constant_to_pretty k]))))
     
   (* index(CONSTANT_Utf8_info *)
   | ConstantMethodType index ->
@@ -1070,30 +1151,39 @@ let rec expand_constant consts n =
          (match parse_descriptor t with
           | SMethod desc -> ConstMethodType desc
           | SValue v ->
-             raise (JCH_class_structure_error
-                      (LBLOCK [ STR "Illegal descriptor type: method descriptor expected: " ;
-                                value_type_to_pretty v ])))
+             raise
+               (JCH_class_structure_error
+                  (LBLOCK [
+                       STR "Illegal descriptor type: method descriptor expected: ";
+                       value_type_to_pretty v])))
       | k ->
-         raise (JCH_class_structure_error
-                  (LBLOCK [ STR "Illegal constant referenced in ConstantMethodType: " ;
-                            STR "constant string expected" ;
-                            constant_to_pretty k ])))
+         raise
+           (JCH_class_structure_error
+              (LBLOCK [
+                   STR "Illegal constant referenced in ConstantMethodType: ";
+                   STR "constant string expected";
+                   constant_to_pretty k])))
 
   (* bootstrap method attr index, index(CONSTANT_NameAndType_info) *)
   | ConstantInvokeDynamic (aindex,index) ->
      (match expand_constant consts index with
-      | ConstNameAndType (n,SMethod desc) -> ConstDynamicMethod (aindex,make_ms false  n desc)
+      | ConstNameAndType (n,SMethod desc) ->
+         ConstDynamicMethod (aindex,make_ms false  n desc)
       | k ->
-         raise (JCH_class_structure_error
-                  (LBLOCK [ STR "Illegal constant referenced in ConstantInvokeDynamic: " ;
-                            STR "name and method descriptor expected, but found: " ;
-                            constant_to_pretty k ])))
+         raise
+           (JCH_class_structure_error
+              (LBLOCK [
+                   STR "Illegal constant referenced in ConstantInvokeDynamic: ";
+                   STR "name and method descriptor expected, but found: ";
+                   constant_to_pretty k])))
 
   | ConstantUnusable -> ConstUnusable
-    
+
+
 let parse_class_low_level ch origin md5 =
   let magic = read_real_i32 ch in
-  if magic <> 0xCAFEBABEl then raise (JCH_class_structure_error (STR "Invalid magic number"));
+  if magic <> 0xCAFEBABEl then
+    raise (JCH_class_structure_error (STR "Invalid magic number"));
   let version_minor = read_ui16 ch in
   let version_major = read_ui16 ch in
   let constant_count = read_ui16 ch in
@@ -1103,16 +1193,22 @@ let parse_class_low_level ch origin md5 =
       Array.init
         constant_count
         (fun _ ->
-	  if !const_big then begin
+	  if !const_big then
+            begin
 	      const_big := false;
 	      ConstantUnusable
-	    end else
+	    end
+          else
 	    let c = parse_constant constant_count ch in
-	    (match c with ConstantLong _ | ConstantDouble _ -> const_big := true | _ -> ());
+	    (match c with
+             | ConstantLong _
+               | ConstantDouble _ -> const_big := true
+             | _ -> ());
 	    c)
     with
     | Invalid_argument s ->
-       let msg = LBLOCK [ STR s ; STR " with constant count " ; INT constant_count ] in
+       let msg =
+         LBLOCK [STR s; STR " with constant count "; INT constant_count] in
        begin
          ch_error_log#add "parse-class-low-level" msg ;
          raise (JCH_failure msg)
@@ -1121,9 +1217,11 @@ let parse_class_low_level ch origin md5 =
   let flags = parse_access_flags class_flags ch in
   let this = get_class_ui16 consts ch in
   let super_idx = read_ui16 ch in
-  let super = if super_idx = 0 then None else Some (get_class consts super_idx) in
+  let super =
+    if super_idx = 0 then None else Some (get_class consts super_idx) in
   let interface_count = read_ui16 ch in
-  let interfaces = List.init interface_count (fun _ -> get_class_ui16 consts ch) in
+  let interfaces =
+    List.init interface_count (fun _ -> get_class_ui16 consts ch) in
   let field_count = read_ui16 ch in
   let fields = List.init field_count (fun _ -> parse_field consts ch) in
   let method_count = read_ui16 ch in
@@ -1154,5 +1252,5 @@ let parse_class_low_level ch origin md5 =
    rc_md5 = md5 
   }
     
-let parse_class ch origin md5 = JCHRaw2IF.low2high_class (parse_class_low_level ch origin md5)
-  
+let parse_class ch origin md5 =
+  JCHRaw2IF.low2high_class (parse_class_low_level ch origin md5)
