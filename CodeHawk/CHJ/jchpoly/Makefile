@@ -3,8 +3,7 @@ JCH = ..
 
 ZARITHLIB = $(shell ocamlfind query zarith)
 
-EXTLIB = $(CODEHAWK)/CH_extern/extlib
-ZIPLIB = $(CODEHAWK)/CH_extern/camlzip
+EXTLIB = $(shell ocamlfind query extlib)
 CHLIB  = $(CODEHAWK)/CH/chlib
 CHUTIL = $(CODEHAWK)/CH/chutil
 JCHLIB = $(JCH)/jchlib
@@ -13,7 +12,6 @@ JCHSYS = $(JCH)/jchsys
 
 CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(EXTLIB) \
-	-I $(ZIPLIB) \
 	-I $(ZARITHLIB) \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
@@ -79,7 +77,7 @@ make_dirs:
 	@mkdir -p cmi
 
 
-jchpoly: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHSYS)/jchsys.cmxa
+jchpoly: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHSYS)/jchsys.cmxa
 	$(CAMLC) -a -o jchpoly.cmxa $(OBJECTS)
 
 cmi/%.cmi: %.mli
