@@ -7,8 +7,8 @@ THISDIR=$(shell pwd)
 COBJ=$(THISDIR)/cobj
 
 CHLIB  = $(CODEHAWK)/CH/chlib
-EXTLIB = $(CODEHAWK)/CH_extern/extlib
-ZIPLIB = $(CODEHAWK)/CH_extern/camlzip
+EXTLIB = $(shell ocamlfind query extlib)
+ZIPLIB = $(shell ocamlfind query zip)
 CHUTIL = $(CODEHAWK)/CH/chutil
 XPRLIB = $(CODEHAWK)/CH/xprlib
 BCHLIB = $(CHB)/bchlib

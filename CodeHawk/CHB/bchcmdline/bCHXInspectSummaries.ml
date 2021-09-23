@@ -49,7 +49,7 @@ open BCHSystemSettings
 open BCHTypeDefinitions
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let const_files = ref []
 
@@ -91,7 +91,7 @@ let print_statistics () =
     let name = s#get_name in
     let params = s#get_function_api.fapi_parameters in
     let roles = List.fold_left (fun acc1 p -> match p.apar_roles with [] -> acc1 | l ->
-      let roles = List.sort P.compare p.apar_roles in
+      let roles = List.sort Stdlib.compare p.apar_roles in
       (p.apar_name,roles) :: acc1) [] params in
     match roles with [] -> acc | _ -> (name,roles) :: acc) [] summaries in *)
   let nParamRoles =
