@@ -20,7 +20,7 @@ jobs:
         rm CodeHawk-Binary/chb/bin/binaries/linux/chx86_analyze
     - uses: avsm/setup-ocaml@v1
       with:
-        ocaml-version: 4.07.1
+        ocaml-version: 4.09.0
     - name: Install dependencies
       run: |
         sudo apt-get install -y libgtksourceview2.0-dev libgnomecanvas2-dev
