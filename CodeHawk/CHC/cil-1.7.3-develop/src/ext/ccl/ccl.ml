@@ -280,7 +280,7 @@ let getSizeIndex (t : typ) : int =
     match List.hd (filterAttributes "cclmalloc" (typeAttrs t)) with
     | Attr ("cclmalloc", [AInt n]) -> n
     | a -> 0
-  with Failure "hd" ->
+  with Failure _ ->
     0
 
 let listToFactSet (facts : fact list) : FactSet.t =
@@ -1696,7 +1696,7 @@ let analyzeFundec (fd : fundec) : unit =
         let getBranchStmt (branch : block) : stmt =
           try
             List.hd branch.bstmts
-          with Failure "hd" ->
+          with Failure _ ->
             dummyStmt
         in
         let thenStmt = getBranchStmt thenBranch in

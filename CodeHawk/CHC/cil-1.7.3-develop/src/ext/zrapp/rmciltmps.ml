@@ -16,7 +16,7 @@ module S = Stats
 module IS = 
   Set.Make(struct
     type t = int
-    let compare = Pervasives.compare
+    let compare = Stdlib.compare
   end)
 
 let debug = RD.debug
@@ -839,7 +839,7 @@ class callTempElimClass (fd:fundec) = object (self)
     (try
       cur_rd_dat <- Some(List.hd rd_dat_lst);
       rd_dat_lst <- List.tl rd_dat_lst
-    with Failure "hd" -> 
+    with Failure _ -> 
       if !debug then ignore(E.log "rdVis: il rd_dat_lst mismatch\n"));
     match i with
       Set((Var vi,off),_,_) ->

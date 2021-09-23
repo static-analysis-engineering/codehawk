@@ -41,7 +41,7 @@ module IOS =
     type t = int option
     let compare io1 io2 =
       match io1, io2 with
-	Some i1, Some i2 -> Pervasives.compare i1 i2
+	Some i1, Some i2 -> Stdlib.compare i1 i2
       | Some i1, None -> 1
       | None, Some i2 -> -1
       | None, None -> 0
@@ -467,7 +467,7 @@ let computeRDs fdec =
     if compare fdec.svar.vname (!debug_fn) = 0 then
       debug := false
     (* now ReachingDef.stmtStartData has the reaching def data in it *)
-  with Failure "hd" -> if compare fdec.svar.vname (!debug_fn) = 0 then
+  with Failure _ -> if compare fdec.svar.vname (!debug_fn) = 0 then
     debug := false
 
 (* return the definitions that reach the statement
@@ -553,7 +553,7 @@ class rdVisitorClass = object (self)
       cur_rd_dat <- Some(List.hd rd_dat_lst);
       rd_dat_lst <- List.tl rd_dat_lst;
       DoChildren
-    with Failure "hd" -> 
+    with Failure _ -> 
       if !debug then ignore(E.log "rdVis: il rd_dat_lst mismatch\n");
       DoChildren
 
