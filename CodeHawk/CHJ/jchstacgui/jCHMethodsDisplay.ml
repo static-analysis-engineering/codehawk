@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +59,7 @@ open JCHDialogWindow
 open JCHSystemDisplay
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let string_printer = CHPrettyUtil.string_printer
 let pp_str p = string_printer#print p
@@ -544,7 +545,7 @@ object (self)
     let (store, indexColumn, nameColumn) = self#get_model in
     let view = self#get_view in
     let _ = view#set_model None in
-    let _ = store#clear in
+    let _ = store#clear () in
     let methods = List.filter (fun m -> m#has_bytecode) app#get_methods in
     let class_table = H.create 13 in
     let _ =
@@ -576,7 +577,7 @@ object (self)
     let fill_class (c:class_info_int) =
       let methods = get_methods_analyzed  c#get_index in
       let methods = List.sort (fun m1 m2 -> 
-	P.compare m1#get_class_method_signature#name 
+	Stdlib.compare m1#get_class_method_signature#name 
 	  m2#get_class_method_signature#name) methods in
       match methods with
         [] -> ()
@@ -589,7 +590,8 @@ object (self)
         end in
     let classes =
       List.sort (fun c1 c2 -> 
-          P.compare c1#get_class_name#name c2#get_class_name#name) app#get_classes in
+          Stdlib.compare
+            c1#get_class_name#name c2#get_class_name#name) app#get_classes in
     let _ = List.iter fill_class classes in
     let _ = view#set_model (Some store#coerce) in
     ()

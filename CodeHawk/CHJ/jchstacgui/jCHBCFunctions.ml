@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -57,7 +58,7 @@ open JCHPreAPI
 open JCHCostValues
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let reflectiveops = [
   ("java.lang.Class", "forName") ;
@@ -152,7 +153,7 @@ object (self)
 	    let ann = opcode_annotation mInfo pc opc in
 	    result := (pc,opc,ann) :: !result
 	  | _ -> ())) blocks ;
-      List.sort (fun (pc1,_,_) (pc2,_,_) -> P.compare pc1 pc2) !result
+      List.sort (fun (pc1,_,_) (pc2,_,_) -> Stdlib.compare pc1 pc2) !result
     end
 
   method get_pushpop_calls =
@@ -165,7 +166,7 @@ object (self)
 	    let ann = opcode_annotation mInfo pc opc in
 	    result := (pc,opc,ann) :: !result
 	  | _ -> ())) blocks ;
-      List.sort (fun (pc1,_,_) (pc2,_,_) -> P.compare pc1 pc2) !result
+      List.sort (fun (pc1,_,_) (pc2,_,_) -> Stdlib.compare pc1 pc2) !result
     end
 
   method get_thread_calls =
@@ -182,7 +183,7 @@ object (self)
 	    let ann = opcode_annotation mInfo pc opc in
 	    result := (pc,opc,ann) :: !result
 	  | _ -> ())) blocks ;
-      List.sort (fun (pc1,_,_) (pc2,_,_) -> P.compare pc1 pc2) !result
+      List.sort (fun (pc1,_,_) (pc2,_,_) -> Stdlib.compare pc1 pc2) !result
     end
 
   method get_append_calls =
@@ -195,7 +196,7 @@ object (self)
 	    let ann = opcode_annotation mInfo pc opc in
 	    result := (pc,opc,ann) :: !result
 	  | _ -> ())) blocks ;
-      List.sort (fun (pc1,_,_) (pc2,_,_) -> P.compare pc1 pc2) !result
+      List.sort (fun (pc1,_,_) (pc2,_,_) -> Stdlib.compare pc1 pc2) !result
     end
 
 	

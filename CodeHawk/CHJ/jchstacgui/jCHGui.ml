@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020=2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,7 +52,7 @@ open JCHMethodsDisplay
 open JCHSystemDisplay
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let pp_str p = string_printer#print p
 
@@ -174,7 +175,7 @@ let view_class_package_names () =
       H.add table apname [ pname ]) classnames in
   let lst = ref [] in
   let _ = H.iter (fun apn pns -> lst := (apn,pns) :: !lst) table in
-  let lst = List.sort (fun (p1,_) (p2,_) -> P.compare p1 p2) !lst in
+  let lst = List.sort (fun (p1,_) (p2,_) -> Stdlib.compare p1 p2) !lst in
   let maxlen = List.fold_left (fun m (apn,_) -> 
     let len = String.length apn in if len > m then len else m) 15 lst in
   let pp = List.map (fun (apn,pns) ->
@@ -207,7 +208,7 @@ let view_jump_conditions () =
   let _ = pr_debug [ STR "Found " ; INT (List.length !lst) ; STR " conditions" ; NL ] in
   let maxlen = List.fold_left (fun m (c,_) ->
     let len = String.length c in if len > m then len else m) 0 !lst in
-  let lst = List.sort (fun (c1,_) (c2,_) -> P.compare c1 c2) !lst in
+  let lst = List.sort (fun (c1,_) (c2,_) -> Stdlib.compare c1 c2) !lst in
   let _ = pr_debug [ STR "Found " ; INT (List.length lst) ; STR " conditions" ; NL ] in
   let pp = LBLOCK (List.map (fun (c,sites) ->
     let pSites = 
@@ -242,7 +243,7 @@ let view_reflective_calls () =
       with _ -> ()) minfos in
   let lst = ref [] in
   let _ = H.iter (fun s l -> lst := (s,l) :: !lst) table in
-  let lst = List.sort (fun (s1,_) (s2,_) -> P.compare s1 s2) !lst in
+  let lst = List.sort (fun (s1,_) (s2,_) -> Stdlib.compare s1 s2) !lst in
   let pp =
     LBLOCK [
         STR "Reflective calls " ; NL ; NL ;
@@ -272,7 +273,7 @@ let view_pushpop_calls () =
       with _ -> ()) minfos in
   let lst = ref [] in
   let _ = H.iter (fun s l -> lst := (s,l) :: !lst) table in
-  let lst = List.sort (fun (s1,_) (s2,_) -> P.compare s1 s2) !lst in
+  let lst = List.sort (fun (s1,_) (s2,_) -> Stdlib.compare s1 s2) !lst in
   let pp =
     LBLOCK [ STR "Calls to push and pop methods " ; NL ; NL ;
 	     LBLOCK ( List.map (fun (cms,calls) ->
@@ -301,7 +302,7 @@ let view_thread_calls () =
       with _ -> ()) minfos in
   let lst = ref [] in
   let _ = H.iter (fun s l -> lst := (s,l) :: !lst) table in
-  let lst = List.sort (fun (s1,_) (s2,_) -> P.compare s1 s2) !lst in
+  let lst = List.sort (fun (s1,_) (s2,_) -> Stdlib.compare s1 s2) !lst in
   let pp = LBLOCK [ STR "Calls to thread methods " ; NL ; NL ;
 		    LBLOCK ( List.map (fun (cms,calls) ->
 		      LBLOCK [ STR cms ; NL ;
@@ -328,7 +329,7 @@ let view_append_calls () =
       with _ -> ()) minfos in
   let lst = ref [] in
   let _ = H.iter (fun s l -> lst := (s,l) :: !lst) table in
-  let lst = List.sort (fun (s1,_) (s2,_) -> P.compare s1 s2) !lst in
+  let lst = List.sort (fun (s1,_) (s2,_) -> Stdlib.compare s1 s2) !lst in
   let pp = LBLOCK [ STR "Calls to thread methods " ; NL ; NL ;
 		    LBLOCK ( List.map (fun (cms,calls) ->
 		      LBLOCK [ STR cms ; NL ;

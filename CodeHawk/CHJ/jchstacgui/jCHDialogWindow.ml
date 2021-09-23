@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +59,6 @@ open JCHBCFunctions
 open JCHGuiUtil
 open JCHSystemDisplay
 
-module P = Pervasives
 
 module LF = CHOnlineCodeSet.LanguageFactory
 
@@ -562,7 +562,7 @@ let show_variable_table_dialog (cmsId:int) (parent:GWindow.window) =
       mInfo#get_local_variable_table 
     else [] in
   let vartable =
-    List.sort (fun (_,_,_,_,i1) (_,_,_,_,i2) -> P.compare i1 i2) vartable in
+    List.sort (fun (_,_,_,_,i1) (_,_,_,_,i2) -> Stdlib.compare i1 i2) vartable in
   let count = List.length vartable in
   let table =
     GPack.table
