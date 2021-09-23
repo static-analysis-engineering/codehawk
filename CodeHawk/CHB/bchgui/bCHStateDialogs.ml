@@ -94,13 +94,13 @@ open BCHSystemDisplay
 open BCHGuiUtil
 
 module H = Hashtbl
-module P = Pervasives
+
 
 module BTypeCollections = CHCollections.Make
   (struct
     type t = btype_t * string list
     let compare (t1,lst1) (t2,lst2) = 
-      let l1 = btype_compare t1 t2 in if l1 = 0 then P.compare lst1 lst2 else l1
+      let l1 = btype_compare t1 t2 in if l1 = 0 then Stdlib.compare lst1 lst2 else l1
     let toPretty (t,l) = 
       LBLOCK [ btype_to_pretty t ; 
 	       match l with 
@@ -1407,7 +1407,7 @@ let get_type_invs_pretty fname finfo =
       ppl := (LBLOCK [ STR loc ; NL ; INDENT (3, LBLOCK lpp) ; NL ]) :: !ppl) lInvs in
   let l = ref [] in
   let _ = H.iter (fun k v -> l := (k,v) :: !l) table in
-  let l = List.sort P.compare !l in
+  let l = List.sort Stdlib.compare !l in
   let _ = List.iter (fun (k,v) ->
     let sInfo l = match l with [] -> STR "" | h::tl ->
 	  LBLOCK [ STR " (" ; STR h ; STR ":" ; pretty_print_list tl (fun s -> STR s)

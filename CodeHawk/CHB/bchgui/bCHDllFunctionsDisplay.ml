@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -128,7 +130,7 @@ object (self)
     let (store, nameColumn) = self#get_model in
     let view = self#get_view in
     let _ = view#set_model None in
-    let _ = store#clear in
+    let _ = store#clear () in
     let fill_function dllIter (functionName:string) =
       let functionIter = store#append ~parent:dllIter () in
       begin

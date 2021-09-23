@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -89,7 +91,7 @@ open BCHSystemDisplay
 open BCHStateDialogs
 
 module H = Hashtbl
-module P = Pervasives
+
 
 module BTypeCollections = CHCollections.Make
   (struct
@@ -802,7 +804,7 @@ let view_global_types () =
       | _ -> ()) varFacts) in
   let result = ref [] in
   let _ = H.iter (fun k v -> result := (k,v) :: !result) table in
-  let result = List.sort P.compare !result in
+  let result = List.sort Stdlib.compare !result in
   let pp = List.map (fun (k,v) ->
     LBLOCK [ STR k ; NL ; 
 	     INDENT (3, LBLOCK (List.map (fun t -> 
