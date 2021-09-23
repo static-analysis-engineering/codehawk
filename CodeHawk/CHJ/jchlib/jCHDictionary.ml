@@ -1,10 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Arnaud Venet and Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -43,12 +44,11 @@ open JCHBasicTypesAPI
 open JCHSumTypeSerializer
 
 module H = Hashtbl
-module P = Pervasives
 
-         
+
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
+    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ;
 	     INT node#getColumnNumber ; STR ") " ; msg ] in
   begin
     ch_error_log#add "xml parse error" error_msg ;
@@ -59,7 +59,7 @@ let byte_to_string (b:int) =
   let l = b mod 16 in
   let h = b lsr 4 in
   Printf.sprintf "%x%x" h l
-    
+
 let hex_string s =
   let ch = IO.input_string s in
   let h = ref "" in
@@ -68,11 +68,11 @@ let hex_string s =
     for i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done ;
     !h
   end
-    
+
 let has_control_characters s =
   let found = ref false in
   let _ = String.iter (fun c ->
-              if ((Char.code c) < 32) || (Char.code c) > 126 then 
+              if ((Char.code c) < 32) || (Char.code c) > 126 then
       found  := true) s in
   !found
 
@@ -86,7 +86,7 @@ let rec value_type_to_asm_string (v:value_type_t) =
   match v with
   | TBasic t -> java_basic_type_serializer#to_string t
   | TObject t -> object_type_to_asm_string t
-    
+
 and object_type_to_asm_string (v:object_type_t) =
   match v with
   | TClass cn -> "L" ^ (string_replace '.' "/" cn#name) ^ ";"
@@ -106,26 +106,43 @@ object (self: _)
   val cached_methodsignatures = H.create 3
   val cached_classfieldsignatures = H.create 3
   val cached_classmethodsignatures = H.create 3
-                                  
 
   val mutable unrecognizedclassindex = 0
 
   val string_table = mk_index_table "string-table"
+
   val class_name_table = mk_index_table "class-name-table"
-  val field_signature_data_table = mk_index_table "field-signature-data-table"
-  val method_signature_data_table = mk_index_table "method-signature-data-table"
-  val class_field_signature_data_table = mk_index_table "class-field-signature-data-table"
-  val class_method_signature_data_table = mk_index_table "class-method-signature-data-table"
+
+  val field_signature_data_table =
+    mk_index_table "field-signature-data-table"
+
+  val method_signature_data_table =
+    mk_index_table "method-signature-data-table"
+
+  val class_field_signature_data_table =
+    mk_index_table "class-field-signature-data-table"
+
+  val class_method_signature_data_table =
+    mk_index_table "class-method-signature-data-table"
+
   val object_type_table = mk_index_table "object-type-table"
+
   val value_type_table = mk_index_table "value-type-table"
+
   val method_descriptor_table = mk_index_table "method-descriptor-table"
+
   val descriptor_table = mk_index_table "descriptor-table"
+
   val constant_value_table = mk_index_table "constant-value-table"
+
   val method_handle_type_table = mk_index_table "method-handle-type-table"
+
   val constant_table = mk_index_table "constant-table"
+
   val bootstrap_argument_table = mk_index_table "bootstrap-argument-table"
-  val bootstrap_method_data_table = mk_index_table "bootstrap-method-data-table"
-                          
+
+  val bootstrap_method_data_table =
+    mk_index_table "bootstrap-method-data-table"
 
   val mutable tables = []
 
@@ -151,7 +168,8 @@ object (self: _)
   method index_class_name (name:string) =
     let l =  ExtString.String.nsplit name "." in
     match l with
-    | [] -> raise (JCH_failure (LBLOCK [ STR "Error in split package: " ; STR name ]))
+    | [] ->
+       raise (JCH_failure (LBLOCK [STR "Error in split package: "; STR name]))
     | l -> class_name_table#add ([],List.map self#index_string l)
 
   method get_class_name (index:int) =
@@ -159,7 +177,7 @@ object (self: _)
     String.concat "." (List.map self#get_string args)
 
   method index_field_signature_data (d:field_signature_data_int) =
-    let args = [ self#index_string d#name ; self#index_value_type d#descriptor ] in
+    let args = [self#index_string d#name; self#index_value_type d#descriptor] in
     field_signature_data_table#add ([],args)
 
   method get_field_signature_data (index:int) =
@@ -181,8 +199,10 @@ object (self: _)
     make_class_field_signature_data ~class_name ~field_signature
 
   method index_method_signature_data (d:method_signature_data_int) =
-    let args = [ self#index_string d#name ; self#index_method_descriptor d#descriptor ;
-                 if d#is_static then 1 else 0 ] in
+    let args = [
+        self#index_string d#name;
+        self#index_method_descriptor d#descriptor;
+        if d#is_static then 1 else 0]  in
     method_signature_data_table#add ([],args)
 
   method get_method_signature_data (index:int) =
@@ -219,13 +239,16 @@ object (self: _)
     | "c" -> TClass (self#retrieve_class_name (a 0))
     | "a" -> TArray (self#get_value_type (a 0))
     | s ->
-       raise (JCH_failure
-                (LBLOCK [ STR "object-type tag " ; STR s ; STR " not recognized" ]))
+       raise
+         (JCH_failure
+            (LBLOCK [STR "object-type tag "; STR s; STR " not recognized"]))
 
-  method write_xml_object_type ?(tag="iobj") (node:xml_element_int) (t:object_type_t) =
+  method write_xml_object_type
+           ?(tag="iobj") (node:xml_element_int) (t:object_type_t) =
     node#setIntAttribute tag (self#index_object_type t)
 
-  method read_xml_object_type ?(tag="iobj") (node:xml_element_int):object_type_t =
+  method read_xml_object_type
+           ?(tag="iobj") (node:xml_element_int):object_type_t =
     self#get_object_type (node#getIntAttribute tag)
 
   method index_value_type (t:value_type_t) =
@@ -243,13 +266,16 @@ object (self: _)
     | "b" -> TBasic (java_basic_type_serializer#from_string (t 1))
     | "o" -> TObject (self#get_object_type (a 0))
     | s ->
-       raise (JCH_failure
-                (LBLOCK [ STR "value-type tag "; STR s ; STR " not recognized" ]))
+       raise
+         (JCH_failure
+            (LBLOCK [STR "value-type tag "; STR s; STR " not recognized"]))
 
-  method write_xml_value_type ?(tag="ivty") (node:xml_element_int) (t:value_type_t) =
+  method write_xml_value_type
+           ?(tag="ivty") (node:xml_element_int) (t:value_type_t) =
     node#setIntAttribute tag (self#index_value_type t)
 
-  method read_xml_value_type ?(tag="ivty") (node:xml_element_int):value_type_t =
+  method read_xml_value_type
+           ?(tag="ivty") (node:xml_element_int):value_type_t =
     self#get_value_type (node#getIntAttribute tag)
 
   method index_method_descriptor (d:method_descriptor_int) =
@@ -294,10 +320,12 @@ object (self: _)
     | "v" -> SValue (self#get_value_type (a 0))
     | "m" -> SMethod (self#get_method_descriptor (a 0))
     | s ->
-       raise (JCH_failure
-                (LBLOCK [ STR "descriptor tag " ; STR s ; STR " not recognized" ]))
+       raise
+         (JCH_failure
+            (LBLOCK [STR "descriptor tag "; STR s; STR " not recognized"]))
 
-  method write_xml_descriptor ?(tag="id") (node:xml_element_int) (d:descriptor_t) =
+  method write_xml_descriptor
+           ?(tag="id") (node:xml_element_int) (d:descriptor_t) =
     node#setIntAttribute tag (self#index_descriptor d)
 
   method read_xml_descriptor ?(tag="id") (node:xml_element_int):descriptor_t =
@@ -326,8 +354,9 @@ object (self: _)
     | "d" -> ConstDouble (float_of_string (t 1))
     | "c" -> ConstClass (self#get_object_type (a 0))
     | s ->
-       raise (JCH_failure
-                (LBLOCK [ STR "Constant value tag " ; STR s ; STR " not recognized" ]))
+       raise
+         (JCH_failure
+            (LBLOCK [STR "Constant value tag "; STR s; STR " not recognized"]))
 
   method write_xml_constant_value
            ?(tag="icv") (node:xml_element_int) (cv:constant_value_t) =
@@ -351,17 +380,24 @@ object (self: _)
     let a = a "method-handle-type" args in
     match (t 0) with
     | "f" ->
-       FieldHandle(self#retrieve_class_name (a 0),
-                   self#retrieve_field_signature (a 1))
+       FieldHandle(
+           self#retrieve_class_name (a 0),
+           self#retrieve_field_signature (a 1))
     | "m" ->
-       MethodHandle(self#get_object_type (a 0),
-                    self#retrieve_method_signature (a 1))
+       MethodHandle(
+           self#get_object_type (a 0),
+           self#retrieve_method_signature (a 1))
     | "i" ->
-       InterfaceHandle(self#retrieve_class_name (a 0),
-                       self#retrieve_method_signature (a 1))
+       InterfaceHandle(
+           self#retrieve_class_name (a 0),
+           self#retrieve_method_signature (a 1))
     | s ->
-       raise (JCH_failure (LBLOCK [ STR "Method handle type tag " ; STR s ;
-                                    STR " not recognized" ]))
+       raise
+         (JCH_failure
+            (LBLOCK [
+                 STR "Method handle type tag ";
+                 STR s;
+                 STR " not recognized"]))
 
   method write_xml_method_handle_type
            ?(tag="imh") (node:xml_element_int) (h:method_handle_type_t) =
@@ -412,8 +448,9 @@ object (self: _)
     | "t" -> ConstMethodType (self#get_method_descriptor (a 0))
     | "u" -> ConstUnusable
     | s ->
-       raise (JCH_failure
-                (LBLOCK [ STR "Constant tag " ; STR s ; STR " not recognized" ]))
+       raise
+         (JCH_failure
+            (LBLOCK [STR "Constant tag "; STR s; STR " not recognized"]))
 
   method write_xml_constant ?(tag="ict") (node:xml_element_int) (c:constant_t) =
     node#setIntAttribute tag (self#index_constant c)
@@ -426,8 +463,8 @@ object (self: _)
     let key = match a with
       | BootstrapArgConstantValue cv -> (tags,[ self#index_constant_value cv ])
       | BootstrapArgMethodHandle (k,h) ->
-         (tags @ [ reference_kind_serializer#to_string k ],
-          [ self#index_method_handle_type h ])
+         (tags @ [reference_kind_serializer#to_string k],
+          [self#index_method_handle_type h])
       | BootstrapArgMethodType md -> (tags,[self#index_method_descriptor md ]) in
     bootstrap_argument_table#add key
 
@@ -437,12 +474,19 @@ object (self: _)
     let a = a "bootstrap-argument" args in
     match (t 0) with
     | "c" -> BootstrapArgConstantValue (self#get_constant_value (a 0))
-    | "h" -> BootstrapArgMethodHandle (reference_kind_serializer#from_string (t 1),
-                                       self#get_method_handle_type (a 0))
-    | "t" -> BootstrapArgMethodType (self#get_method_descriptor (a 0))
+    | "h" ->
+       BootstrapArgMethodHandle (
+           reference_kind_serializer#from_string (t 1),
+           self#get_method_handle_type (a 0))
+    | "t" ->
+       BootstrapArgMethodType (self#get_method_descriptor (a 0))
     | s ->
-       raise (JCH_failure (LBLOCK [ STR "Bootstrap argument tag " ; STR s ;
-                                    STR " not recognized" ]))
+       raise
+         (JCH_failure
+            (LBLOCK [
+                 STR "Bootstrap argument tag ";
+                 STR s;
+                 STR " not recognized"]))
 
   method write_xml_bootstrap_argument
            ?(tag="iba") (node:xml_element_int) (a:bootstrap_argument_t) =
@@ -465,7 +509,7 @@ object (self: _)
     { bm_kind = reference_kind_serializer#from_string (t 0) ;
       bm_handle = self#get_method_handle_type (a 0) ;
       bm_args = List.map self#get_bootstrap_argument (List.tl args) }
-         
+
   method write_xml_bootstrap_method_data
            ?(tag="ibm") (node:xml_element_int) (d:bootstrap_method_data_t) =
     node#setIntAttribute tag (self#index_bootstrap_method_data d)
@@ -473,7 +517,7 @@ object (self: _)
   method read_xml_bootstrap_method_data
            ?(tag="ibm") (node:xml_element_int):bootstrap_method_data_t =
     self#get_bootstrap_method_data (node#getIntAttribute tag)
-    
+
   method index_string (s:string):int =
     let cs = mk_constantstring s in
     let (s,ishex,len) = cs in
@@ -481,24 +525,26 @@ object (self: _)
     let tags = if len = 0 then [] else [ s ] @ x in
     let args = [ len ] in
     string_table#add (tags,args)
-    
+
   method get_string (index:int) =
     let (tags,args) = string_table#retrieve index in
     let (s,_,_) = if (List.length tags) > 0  && (List.length args) > 0 then
       (List.hd tags, List.length tags > 1, List.hd args)
-    else if (List.length args) > 0 && (List.hd args) = 0 then    (* empty string *)
+    else if (List.length args) > 0 && (List.hd args) = 0 then  (* empty string *)
       ("", false, 0)
     else if (List.length args) > 0 then
-      (" ", false, (List.hd args))                (* string of spaces of lengt n *)
+      (" ", false, (List.hd args))              (* string of spaces of lengt n *)
     else
-      raise (JCH_failure (LBLOCK [ STR "Invalid string record: " ; INT (List.hd args) ])) in
+      raise
+        (JCH_failure
+           (LBLOCK [STR "Invalid string record: "; INT (List.hd args)])) in
     s
 
   method write_xml_string ?(tag="istr") (node:xml_element_int) (s:string) =
     node#setIntAttribute tag (self#index_string s)
 
   method private read_xml_string ?(tag="istr") (node:xml_element_int):string =
-    self#get_string (node#getIntAttribute tag)    
+    self#get_string (node#getIntAttribute tag)
 
   method private make_substitute_cn (cn:string) =
     if H.mem unrecognizedclassnames cn then
@@ -509,7 +555,7 @@ object (self: _)
 	unrecognizedclassindex <- unrecognizedclassindex + 1 ;
 	H.add unrecognizedclassnames cn name ;
 	name
-      end   
+      end
 
   method private check_method_name_encoding (name:string) =
     if H.mem convertedmethodnames name then
@@ -523,15 +569,15 @@ object (self: _)
     else
       name
 
-  method list_unrecognized_class_names = 
+  method list_unrecognized_class_names =
     let lst = ref [] in
     let _ = H.iter (fun k v -> lst := (k,v) :: !lst) unrecognizedclassnames in
-    List.sort (fun (k1,_) (k2,_) -> P.compare k1 k2) !lst
+    List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) !lst
 
   method list_converted_method_names =
     let lst = ref [] in
     let _ = H.iter (fun k v -> lst := (k,v) :: !lst) convertedmethodnames in
-    List.sort (fun (k1,_) (k2,_) -> P.compare k1 k2) !lst
+    List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) !lst
 
   method list_class_names =
     H.fold (fun _ v acc -> v :: acc) cached_classnames []
@@ -558,10 +604,16 @@ object (self: _)
       (* Str.regexp "^\\([a-zA-Z_$-][a-zA-Z_$0-9-]*\\.\\)*\\([a-zA-Z_0-9-]+\\$\\)*[a-zA-Z_0-9-]+$" *)
       Str.regexp "^\\([a-zA-Z_$-][a-zA-Z_$0-9-]*\\.\\)*\\([a-zA-Z_$0-9-]+\\$\\)*[a-zA-Z_$0-9-]+$"
     in
-      if not (Str.string_match valid_class_name cn 0) then 
+      if not (Str.string_match valid_class_name cn 0) then
 	let substitute_cn = self#make_substitute_cn cn in
-	let _ = pr_debug [STR cn; STR " is not recognized as a valid name for a class; "; NL ;
-			  STR "replacing it with " ; STR substitute_cn ; NL ] in
+	let _ =
+          pr_debug [
+              STR cn;
+              STR " is not recognized as a valid name for a class; ";
+              NL;
+	      STR "replacing it with ";
+              STR substitute_cn;
+              NL] in
         let index = self#index_class_name substitute_cn in
         self#cache_class_name index substitute_cn
       else
@@ -595,7 +647,7 @@ object (self: _)
     else
       let cfsd = self#get_class_field_signature_data index in
       self#cache_class_field_signature index cfsd
-      
+
   method retrieve_class_method_signature index =
     if H.mem cached_classmethodsignatures index then
       H.find cached_classmethodsignatures index
@@ -603,7 +655,8 @@ object (self: _)
       let cmsd = self#get_class_method_signature_data index in
       self#cache_class_method_signature index cmsd
 
-  method private cache_field_signature (index:int) (fsd:field_signature_data_int) =
+  method private cache_field_signature
+                   (index:int) (fsd:field_signature_data_int) =
     if H.mem cached_fieldsignatures index then
       H.find cached_fieldsignatures index
     else
@@ -618,7 +671,8 @@ object (self: _)
     let index = self#index_field_signature_data fsd in
     self#cache_field_signature index fsd
 
-  method private cache_method_signature (index:int) (msd:method_signature_data_int) =
+  method private cache_method_signature
+                   (index:int) (msd:method_signature_data_int) =
     if H.mem cached_methodsignatures index then
       H.find cached_methodsignatures index
     else
@@ -627,7 +681,8 @@ object (self: _)
 
   method make_method_signature is_static name mdesc =
     let name = self#check_method_name_encoding name in
-    let msd = make_method_signature_data ~is_static ~name ~method_descriptor:mdesc in
+    let msd =
+      make_method_signature_data ~is_static ~name ~method_descriptor:mdesc in
     let index = self#index_method_signature_data msd in
     self#cache_method_signature index msd
 
@@ -636,11 +691,13 @@ object (self: _)
     if H.mem cached_classfieldsignatures index then
       H.find cached_classfieldsignatures index
     else
-      let cfs = make_class_field_signature ~index ~class_field_signature_data:cfsd in
+      let cfs =
+        make_class_field_signature ~index ~class_field_signature_data:cfsd in
       begin H.add cached_classfieldsignatures index cfs ; cfs end
 
   method make_class_field_signature class_name fsig =
-    let cfsd = make_class_field_signature_data ~class_name ~field_signature:fsig in
+    let cfsd =
+      make_class_field_signature_data ~class_name ~field_signature:fsig in
     let index = self#index_class_field_signature_data cfsd in
     self#cache_class_field_signature index cfsd
 
@@ -649,11 +706,13 @@ object (self: _)
     if H.mem cached_classmethodsignatures index then
       H.find cached_classmethodsignatures index
     else
-      let cms = make_class_method_signature ~index ~class_method_signature_data:cmsd in
+      let cms =
+        make_class_method_signature ~index ~class_method_signature_data:cmsd in
       begin H.add cached_classmethodsignatures index cms ; cms end
-    
+
   method make_class_method_signature class_name msig =
-    let cmsd = make_class_method_signature_data ~class_name ~method_signature:msig in
+    let cmsd =
+      make_class_method_signature_data ~class_name ~method_signature:msig in
     let index = self#index_class_method_signature_data cmsd in
     self#cache_class_method_signature index cmsd
 
@@ -664,7 +723,7 @@ object (self: _)
     node#appendChildren
       (List.map
          (fun t -> let tnode = xmlElement t#get_name in
-           begin t#write_xml tnode ; tnode end) tables)    
+           begin t#write_xml tnode ; tnode end) tables)
 
   method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
@@ -681,7 +740,7 @@ object (self: _)
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
     self#read_xml_type_dictionary (getc "type-dictionary") ;
-	
+
 end
 
 let common_dictionary = new dictionary_t
@@ -697,26 +756,33 @@ let retrieve_ms  = common_dictionary#retrieve_method_signature
 let retrieve_cms = common_dictionary#retrieve_class_method_signature
 let retrieve_cfs = common_dictionary#retrieve_class_field_signature
 
+
 let list_class_names () = common_dictionary#list_class_names
+
 
 let rec read_xmlx_value_type (node:xml_element_int) =
   match node#getChild#getTag with
   | "array" -> TObject (TArray (read_xmlx_value_type node#getChild))
   | "object" -> TObject (TClass (make_cn node#getChild#getText))
-  | s -> 
-    try 
-      TBasic (java_basic_type_of_string s) 
+  | s ->
+    try
+      TBasic (java_basic_type_of_string s)
     with JCH_failure p ->
-      raise_xml_error node (LBLOCK [ STR "Error in reading value type: " ; p ])
+      raise_xml_error node (LBLOCK [STR "Error in reading value type: "; p])
+
 
 let read_xmlx_object_type (node:xml_element_int) =
   match node#getChild#getTag with
   | "array" -> TArray (read_xmlx_value_type node#getChild)
   | "object" -> TClass (make_cn node#getChild#getText)
   | s ->
-     raise_xml_error node (LBLOCK [ STR "Error in reading object type: tag " ; 
-                                    STR s ; STR " not recognized" ])
-     
+     raise_xml_error node
+       (LBLOCK [
+            STR "Error in reading object type: tag ";
+            STR s;
+            STR " not recognized"])
+
+
 let read_xmlx_method_descriptor (node:xml_element_int) =
   let hasc = node#hasOneTaggedChild in
   let getc = node#getTaggedChild in
@@ -726,13 +792,17 @@ let read_xmlx_method_descriptor (node:xml_element_int) =
     let nr = geti "nr" in
     let ty = read_xmlx_value_type n in
     (nr,ty)) (getcc "arg") in
-  let argtypes = List.map (fun (_,t) -> t)  
-  (List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2) argtypes) in
-  let returnType = 
-    if hasc "return" then Some (read_xmlx_value_type (getc "return")) else None in
+  let argtypes = List.map (fun (_,t) -> t)
+  (List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) argtypes) in
+  let returnType =
+    if hasc "return" then
+      Some (read_xmlx_value_type (getc "return"))
+    else
+      None in
   (argtypes,returnType)
 
-let read_xmlx_method_signature 
+
+let read_xmlx_method_signature
     (node:xml_element_int) (name:string) (isstatic:bool):method_signature_int =
   let (args,rettype) = read_xmlx_method_descriptor node in
   let descr = match rettype with
@@ -740,10 +810,12 @@ let read_xmlx_method_signature
     | _ -> make_method_descriptor ~arguments:args () in
   make_ms isstatic name descr
 
+
 let read_xmlx_constructor_signature (node:xml_element_int) (cn:class_name_int) =
   let getc = node#getTaggedChild in
   let ms = read_xmlx_method_signature (getc "signature") "<init>" false in
   make_cms cn ms
+
 
 let read_xmlx_class_method_signature (node:xml_element_int) (cn:class_name_int) =
   let get = node#getAttribute in
