@@ -19,14 +19,12 @@ GTKLIB = $(shell ocamlfind query lablgtk2)
 CAMLDOC := ocamldoc
 
 CAMLC := ocamlopt \
-	-p \
 	-I nums \
 	-I $(EXTLIB) \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
 
 CAMLCG := ocamlopt \
-	-p \
 	-I $(EXTLIB) \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
