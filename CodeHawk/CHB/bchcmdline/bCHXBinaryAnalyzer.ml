@@ -96,9 +96,6 @@ open BCHVersion
  *       default setting: disabled
  *)
 
-
-module P = Pervasives
-
 let cmd = ref "version"
 let export_directory = ref ""
 let savecfgs = ref false
@@ -198,7 +195,7 @@ let function_stats_to_pretty l =
                               (LBLOCK [ f#get_address#toPretty ; STR "; " ; p ]) ;
              (f#get_address,0,0,0)
            end) largeentries in
-  let dlarge = List.sort (fun (_,l1,_,_) (_,l2,_,_) -> P.compare l1 l2) dlarge in
+  let dlarge = List.sort (fun (_,l1,_,_) (_,l2,_,_) -> Stdlib.compare l1 l2) dlarge in
   let plarge =
     LBLOCK (List.map (fun (faddr,flen,fblocks,fcompl) ->
                 LBLOCK [ flp faddr#toPretty 10 ; STR "  " ;
