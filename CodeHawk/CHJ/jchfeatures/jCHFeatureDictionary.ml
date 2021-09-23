@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +48,7 @@ open  JCHFeaturesAPI
 open JCHFeatureSumTypeSerializer
 
 module H = Hashtbl
-module P = Pervasives
+
 
 class feature_dictionary_t:feature_dictionary_int =
 object (self)

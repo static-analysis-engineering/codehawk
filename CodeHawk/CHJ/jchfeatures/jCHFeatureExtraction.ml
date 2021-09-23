@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -55,9 +56,9 @@ open JCHFeaturesAPI
 open JCHSubgraph
 
 module H = Hashtbl
-module P = Pervasives
 
-let blockSize = 10000                    (* maximum size of a block when saving in xml *)
+
+let blockSize = 10000   (* maximum size of a block when saving in xml *)
 let libcall_packages =
   [ "java.lang" ; "java.util" ; "java.io" ; "java.math" ;
     "java.net"  ; "java.nio"  ; "java.sql" ; "java.text" ]
@@ -207,7 +208,7 @@ object (self)
   method private add_features (tag:string) (kvtable:(string, feature_value_t) H.t) =
     let l = ref [] in
     let _ = H.iter (fun k v -> l := (k,v) :: !l) kvtable in
-    let l = List.sort (fun (_,v1) (_,v2) -> P.compare v2 v1) !l in
+    let l = List.sort (fun (_,v1) (_,v2) -> Stdlib.compare v2 v1) !l in
     H.add table tag l
 
   method count_key_value_pairs = H.fold (fun _ v a -> a + (List.length v)) table 0
@@ -375,7 +376,7 @@ object (self)
   method private add_features (tag:string) (kvtable:(string, feature_value_t) H.t) =
     let l = ref [] in
     let _ = H.iter (fun k v -> l := (k,v) :: !l) kvtable in
-    let l = List.sort (fun (_,v1) (_,v2) -> P.compare v2 v1) !l in
+    let l = List.sort (fun (_,v1) (_,v2) -> Stdlib.compare v2 v1) !l in
     H.add table tag l
 
   method private get_code =
@@ -698,13 +699,15 @@ object (self)
 
   method count_key_value_pairs = 
     let classKv = H.fold (fun _ v a -> a + (List.length v)) table 0 in
-    let methodKv = H.fold (fun _ v a -> a + v#count_key_value_pairs) methodtable 0 in
+    let methodKv =
+      H.fold (fun _ v a -> a + v#count_key_value_pairs) methodtable 0 in
     classKv + methodKv
 
-  method private add_features (tag:string) (kvtable:(string, feature_value_t) H.t) =
+  method private add_features
+                   (tag:string) (kvtable:(string, feature_value_t) H.t) =
     let l = ref [] in
     let _ = H.iter (fun k v -> l := (k,v) :: !l) kvtable in
-    let l = List.sort (fun (_,v1) (_,v2) -> P.compare v2 v1) !l in
+    let l = List.sort (fun (_,v1) (_,v2) -> Stdlib.compare v2 v1) !l in
     H.add table tag l
 
   method private get_table = 
@@ -719,7 +722,7 @@ object (self)
     let _ = H.iter (fun _ v -> l := v :: !l)  methodtable in
     let l =
       List.sort (fun m1 m2 -> 
-          P.compare
+          Stdlib.compare
             m1#get_method_info#get_method_name
             m2#get_method_info#get_method_name) !l in
     l
@@ -826,7 +829,8 @@ object (self)
       | "class_op-types" -> 
 	 self#add_features "op-types" (self#accumulate_method_frequency "op-types") ;
       | "class_ksubgraph" -> 
-	 self#add_features "ksubgraph" (self#accumulate_method_frequency "ksubgraph") ;
+	 self#add_features
+           "ksubgraph" (self#accumulate_method_frequency "ksubgraph") ;
       | "class_literals" -> 
 	 self#add_features "literals" (self#accumulate_method_count "literals") ;
       | "class_sizes" -> self#add_features "sizes" self#generate_size_features ;
