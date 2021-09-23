@@ -147,7 +147,7 @@ let wbtowc wstr =
   let len = String.length wstr in 
   let dest = Bytes.make (len * 2) '\000' in 
   for i = 0 to len-1 do 
-    dest.[i*2] <- wstr.[i] ;
+    Bytes.set dest (i*2) (String.get wstr i)
   done ;
   Bytes.to_string dest
 
