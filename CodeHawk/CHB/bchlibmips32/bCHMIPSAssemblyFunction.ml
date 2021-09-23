@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +58,7 @@ open BCHMIPSOpcodeRecords
 open BCHMIPSTypes
 
 module H = Hashtbl
-module P = Pervasives
+
 
 class mips_assembly_function_t
         (faddr:doubleword_int)
@@ -132,7 +134,11 @@ object (self)
   method itera (f:ctxt_iaddress_t -> mips_assembly_block_int -> unit) =
     List.iter (fun block -> f block#get_context_string block) self#get_blocks
 
-  method iteri (f:doubleword_int -> ctxt_iaddress_t -> mips_assembly_instruction_int -> unit) =
+  method iteri
+           (f:doubleword_int
+            -> ctxt_iaddress_t
+            -> mips_assembly_instruction_int
+            -> unit) =
     List.iter (fun (block:mips_assembly_block_int) ->
         block#itera (fun iaddr instr -> f faddr iaddr instr)) self#get_blocks
 
@@ -148,8 +154,10 @@ let make_mips_assembly_function
       (va:doubleword_int)
       (blocks:mips_assembly_block_int list)
       (successors:(ctxt_iaddress_t * ctxt_iaddress_t) list) =
-  let blocks = List.sort (fun b1 b2 -> P.compare b1#get_context_string b2#get_context_string)
-                         blocks in
+  let blocks =
+    List.sort (fun b1 b2 ->
+        Stdlib.compare b1#get_context_string b2#get_context_string)
+      blocks in
   new mips_assembly_function_t va blocks successors
 
 let inline_blocks
