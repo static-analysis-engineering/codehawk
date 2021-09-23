@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +59,7 @@ open JCHSystemSettings
 (* standalone main program to parse all summary files and collect statistics *)
 
 module H = Hashtbl
-module P = Pervasives
+
 
 module ClassNameCollections = CHCollections.Make (
   struct
@@ -124,7 +125,7 @@ let patterns = ref []
 let default_implementations_to_pretty () =
   let lst = ref [] in
   let _ = H.iter (fun k v -> lst := (k,v) :: !lst) default_implementations in
-  let lst = List.sort (fun (k1,_) (k2,_) -> P.compare k1 k2) !lst in
+  let lst = List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) !lst in
   LBLOCK (List.map (fun (k,v) ->
     LBLOCK [ fixed_length_pretty (STR k) 32 ; STR ": " ; 
 	     pretty_print_list v (fun s -> s#toPretty) "" ", " "" ; NL ]) lst)
@@ -191,7 +192,7 @@ let pkg_recs_to_pretty () =
              STR " | " ; INT r.resourcesink_count ;
              STR " | " ] in
   let recs = H.fold (fun k v a -> (k,v) :: a) packages [] in
-  let recs = List.sort (fun (p1,_) (p2,_) -> P.compare p1 p2) recs in
+  let recs = List.sort (fun (p1,_) (p2,_) -> Stdlib.compare p1 p2) recs in
   let totals =
     List.fold_left (fun acc (_,r) ->
         { class_count = acc.class_count + r.class_count ;
@@ -279,11 +280,11 @@ let print_string_sinks () =
   let forms = H.fold (fun k v a -> (k,v)::a) stringforms [] in
   let dests = H.fold (fun k v a -> (k,v)::a) stringdests [] in
   let exns = H.fold (fun k v a -> (k,v)::a) stringexceptions [] in
-  let sort l = List.sort (fun (s1,_) (s2,_) -> P.compare s1 s2) l in
+  let sort l = List.sort (fun (s1,_) (s2,_) -> Stdlib.compare s1 s2) l in
   let pl l =
     List.map (fun (s,cms)  ->
         LBLOCK [ STR s  ; STR "  " ; cms#toPretty ; NL ])
-             (List.sort (fun (s1,_) (s2,_) -> P.compare s1 s2) l) in
+             (List.sort (fun (s1,_) (s2,_) -> Stdlib.compare s1 s2) l) in
   pr_debug [
       STR "Forms:" ; NL ;
       LBLOCK (List.map (fun (s,l)  ->
@@ -300,7 +301,7 @@ let print_string_sinks () =
 
 let exception_guards_to_pretty () =
   let exns =  H.fold (fun k v a -> (k,v) :: a) exception_info_exns [] in
-  let exns = List.sort (fun (x1,_) (x2,_) -> P.compare x1 x2) exns in
+  let exns = List.sort (fun (x1,_) (x2,_) -> Stdlib.compare x1 x2) exns in
   LBLOCK
     (List.map (fun (k,v) ->
          LBLOCK [ STR "| " ; STR k ; STR " | " ; INT v ; STR " | " ; NL ]) exns)
@@ -334,7 +335,7 @@ let print_input_sources sources =
         pr_debug [ cms#toPretty ; STR ": " ; jterm_to_pretty term ; NL ]) sources ;
     let packages =
       List.sort
-        (fun (_,c1) (_,c2) -> P.compare c2 c1)
+        (fun (_,c1) (_,c2) -> Stdlib.compare c2 c1)
         (H.fold (fun k v a -> (k,v)::a) packages []) in
     pr_debug [ NL ; STR "Input sources per package: " ; NL ;
                STR "------------------------------------------------------------" ; NL  ] ;
@@ -589,7 +590,7 @@ let inspect_summaries (name:string) =
 
     (if !showinvalid || !showinvalidfinal then
        let comparesummaries s1 s2 =
-         P.compare
+         Stdlib.compare
            s1#get_cms#class_method_signature_string
            s2#get_cms#class_method_signature_string in
        let summaries = function_summary_library#get_invalid_methods in
@@ -623,27 +624,44 @@ let inspect_summaries (name:string) =
     (if !showimmutable then
        let cns =
          List.sort
-           (fun cn1 cn2 -> P.compare cn1#name cn2#name)
+           (fun cn1 cn2 -> Stdlib.compare cn1#name cn2#name)
            function_summary_library#get_immutable_classes in
-       pr_debug [ NL ; STR "Immutable classes: " ; NL ;
-                  LBLOCK (List.map (fun cn -> LBLOCK [ STR "  " ; cn#toPretty ; NL ]) cns) ]);
+       pr_debug [
+           NL;
+           STR "Immutable classes: ";
+           NL;
+           LBLOCK
+             (List.map (fun cn -> LBLOCK [ STR "  "; cn#toPretty; NL]) cns)]);
 
     (if !showranges then
        let rangepost = get_range_postconditions () in
        let rangepost =
          List.sort
-           (fun (cn1,_) (cn2,_) -> P.compare cn1 cn2) rangepost in
-       pr_debug [ NL ; STR "Range post conditions: " ; NL ;
-                  LBLOCK (List.map (fun (cn,l) ->
-                              LBLOCK [ NL ; STR "  " ; STR cn ; STR " (" ;
-                                       INT (List.length l) ; STR ")" ; NL ;
-                                         LBLOCK (List.map (fun r ->
-                                                     LBLOCK [ STR "    " ;
-                                                              relational_expr_to_pretty r ;
-                                                              NL  ]) l)  ]) rangepost) ] ) ;
+           (fun (cn1,_) (cn2,_) -> Stdlib.compare cn1 cn2) rangepost in
+       pr_debug [
+           NL;
+           STR "Range post conditions: ";
+           NL;
+           LBLOCK
+             (List.map (fun (cn,l) ->
+                  LBLOCK [
+                      NL;
+                      STR "  ";
+                      STR cn;
+                      STR " (";
+                      INT (List.length l);
+                      STR ")";
+                      NL;
+                      LBLOCK
+                        (List.map (fun r ->
+                             LBLOCK [
+                                 STR "    ";
+                                 relational_expr_to_pretty r;
+                                 NL]) l)]) rangepost)]);
 
-    (if !showstringsinks then print_string_sinks ()) ;
-    (if !showinputsources then print_input_sources (get_input_sources !allsummaries))
+    (if !showstringsinks then print_string_sinks ());
+    (if !showinputsources then
+       print_input_sources (get_input_sources !allsummaries))
 
   end
 
@@ -679,8 +697,24 @@ let main () =
   | JCH_class_structure_error p ->
      pr_debug [ NL ; STR "Class structure error: " ; p ; NL ]
   | CHXmlReader.XmlParseError (l,c,p) ->
-    pr_debug [ NL ; STR "Xml parse error at (" ; INT l ; STR "," ; INT c ; STR "): " ; p ; NL ]
+     pr_debug [
+         NL;
+         STR "Xml parse error at (";
+         INT l;
+         STR ",";
+         INT c;
+         STR "): ";
+         p;
+         NL]
   | XmlDocumentError(line, col, p) ->
-    pr_debug [ NL ; STR "XML document error at (" ; INT line; STR ","; INT col; STR "): "; p; NL]
+     pr_debug [
+         NL;
+         STR "XML document error at (";
+         INT line;
+         STR ",";
+         INT col;
+         STR "): ";
+         p;
+         NL]
 
 let _ = Printexc.print main ()
