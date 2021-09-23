@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -331,7 +333,7 @@ object (self)
   method write_xml_ordinal_table (node:xml_element_int) =
     let append = node#appendChildren in
     let ordinalLst = Array.to_list export_name_ordinal_table in
-    let ordinalLst = List.sort (fun e1 e2 -> Pervasives.compare e1.ordinal e2.ordinal)
+    let ordinalLst = List.sort (fun e1 e2 -> Stdlib.compare e1.ordinal e2.ordinal)
       ordinalLst in
     begin
       append (List.map (fun e ->
