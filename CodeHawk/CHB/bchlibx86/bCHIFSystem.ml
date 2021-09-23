@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -116,7 +118,8 @@ object (self)
 
   method get_procedure_locations (procName:symbol_t) =
     let collector = new location_collector_t procName in
-    let _ = collector#walkCmd in
+    let proc = self#get_procedure procName in
+    let _ = collector#walkCode proc#getBody in
     let locations = collector#get_locations in
     List.map (fun locName -> (procName,locName)) locations
 

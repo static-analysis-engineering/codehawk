@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -139,7 +141,7 @@ object
     end
 
   method collect =
-    let sort l = List.sort (fun (_,i1) (_,i2) -> Pervasives.compare i2 i1) l in
+    let sort l = List.sort (fun (_,i1) (_,i2) -> Stdlib.compare i2 i1) l in
     begin
       opcode_groups <- sort !assembly_instructions#get_opcode_group_stats ;
       opcode_stats <- sort !assembly_instructions#get_opcode_stats ;

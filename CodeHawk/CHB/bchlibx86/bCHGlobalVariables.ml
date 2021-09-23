@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +45,7 @@ open BCHRecordMemoryAccesses
 open BCHLibx86Types
 
 module H = Hashtbl
-module P = Pervasives
+
 
 class global_var_accesses_t:global_var_accesses_int =
 object
@@ -79,7 +81,7 @@ object
     let _ = H.iter add table in
     let _ = H.iter (fun k v -> result := (k,v) :: !result) gtable in
     List.map (fun (k,v) -> (index_to_doubleword k, v))
-      (List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2) !result)
+      (List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) !result)
 
   (* returns a list of
       (global-var, (instr-address, memory-access) list ) *)
@@ -88,7 +90,7 @@ object
     if H.mem table faddr#index then
       let _ = H.iter (fun k v -> result := (k,v) :: !result) (H.find table faddr#index) in
       List.map (fun (k,v) -> (index_to_doubleword k,v))
-	(List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2) !result)
+	(List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) !result)
     else
       []
 
@@ -99,7 +101,7 @@ object
     let _ = H.iter (fun k v -> 
       if H.mem v gvar#index then result := (k,H.find v gvar#index) :: !result) table in
     List.map  (fun (k,v) -> (index_to_doubleword k, v))
-      (List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2) !result)
+      (List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) !result)
 
 end  
       
