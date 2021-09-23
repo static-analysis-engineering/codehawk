@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +70,6 @@ open JCHCostBounds
 
 module H = Hashtbl
 module LF = CHOnlineCodeSet.LanguageFactory
-module P = Pervasives
 module Q = Queue
 
 let dbg = ref false
@@ -149,13 +149,13 @@ object (self)
     let missing =
       H.fold (fun index count acc ->
           (retrieve_cms index,count) :: acc) missingcost [] in
-    List.sort (fun (_,c1) (_,c2) -> Pervasives.compare c1 c2) missing
+    List.sort (fun (_,c1) (_,c2) -> Stdlib.compare c1 c2) missing
 
   method private get_top =
     let top = H.fold (fun (caller,pc) callee acc ->
                   (retrieve_cms caller, pc, callee) :: acc) topcost [] in
     List.sort
-      (fun (c1,p1,_) (c2,p2,_) -> P.compare (c1#index,p1) (c2#index,p2)) top
+      (fun (c1,p1,_) (c2,p2,_) -> Stdlib.compare (c1#index,p1) (c2#index,p2)) top
 
   method private get_jterms =
     H.fold (fun (caller,pc,callee) cost acc ->
@@ -176,7 +176,7 @@ object (self)
              
   method private write_xml_missing (node:xml_element_int) =
     let l = H.fold (fun k v a -> (k,v) :: a) missingcost [] in
-    let l = List.sort P.compare l in
+    let l = List.sort Stdlib.compare l in
     node#appendChildren (self#write_xml_cms_counts l)
 
   method private write_xml_covered (node:xml_element_int) =
@@ -186,7 +186,7 @@ object (self)
           let _ = if H.mem table callee then () else H.add table callee 0 in
           H.replace table callee ((H.find table callee) + 1)) expcost in
     let l = H.fold (fun k v a -> (k,v) :: a) table [] in
-    let l = List.sort P.compare l in
+    let l = List.sort Stdlib.compare l in
     node#appendChildren (self#write_xml_cms_counts l)
 
   method write_xml (node:xml_element_int) =
@@ -263,7 +263,7 @@ object (self:_)
   method private get_path_costs =
     let lst = ref [] in
     let _ = H.iter (fun k v -> lst := (k,v) :: !lst) costs in
-    List.sort (fun (pc1,_) (pc2,_) -> P.compare pc1 pc2) !lst
+    List.sort (fun (pc1,_) (pc2,_) -> Stdlib.compare pc1 pc2) !lst
     
 
   method set_path_cost (predecessorpc:int) (cost: cost_bounds_t) =
@@ -1072,7 +1072,9 @@ object (self:_)
          let pcsNode = xmlElement "blocks" in
          let blocks = ref [] in
          let _ = H.iter (fun pc cost -> blocks := (pc,cost) :: !blocks) pct in
-         let blocks = List.sort (fun (pc1,_) (pc2,_) -> P.compare pc1 pc2) !blocks in
+         let blocks =
+           List.sort (fun (pc1,_) (pc2,_) ->
+               Stdlib.compare pc1 pc2) !blocks in
          begin
            pcsNode#appendChildren
              (List.map (fun (pc,cost) ->
