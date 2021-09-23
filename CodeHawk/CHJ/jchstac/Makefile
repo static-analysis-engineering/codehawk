@@ -2,8 +2,8 @@ CODEHAWK := ../..
 JCH = ..
 ZARITHLIB = $(shell ocamlfind query zarith)
 
-EXTLIB = $(CODEHAWK)/CH_extern/extlib
-ZIPLIB = $(CODEHAWK)/CH_extern/camlzip
+EXTLIB = $(shell ocamlfind query extlib)
+ZIPLIB = $(shell ocamlfind query zip)
 CHLIB  = $(CODEHAWK)/CH/chlib
 CHUTIL = $(CODEHAWK)/CH/chutil
 JCHLIB = $(JCH)/jchlib
@@ -63,7 +63,6 @@ CAMLPREBUILD := ocamlopt str.cmxa unix.cmxa \
 	$(ZIPLIB)/zip.cmxa \
 	$(JCHLIB)/jchlib.cmxa \
 	$(JCHPRE)/jchpre.cmxa \
-
 
 
 all: make_dirs initialize classinvariants translateclass
