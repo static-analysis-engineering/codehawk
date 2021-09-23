@@ -2,8 +2,8 @@ CODEHAWK := ../..
 JCH = ..
 ZARITHLIB = $(shell ocamlfind query zarith)
 
-EXTLIB = $(CODEHAWK)/CH_extern/extlib
-ZIPLIB = $(CODEHAWK)/CH_extern/camlzip
+EXTLIB = $(shell ocamlfind query extlib)
+ZIPLIB = $(shell ocamlfind query zip)
 CHLIB  = $(CODEHAWK)/CH/chlib
 CHUTIL = $(CODEHAWK)/CH/chutil
 JCHLIB = $(JCH)/jchlib
@@ -14,7 +14,6 @@ JCHPOLY= $(JCH)/jchpoly
 
 DEP_INCLUDES := -I cmi -I cmx \
 	-I $(EXTLIB) \
-	-I $(ZIPLIB) \
 	-I $(ZARITHLIB) \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
@@ -27,7 +26,6 @@ CAMLCPOLY := ocamlopt $(DEP_INCLUDES) -I cmi -I cmx
 
 CAMLC := ocamlopt -I cmi -I cmx \
 	-I $(EXTLIB) \
-	-I $(ZIPLIB) \
 	-I $(ZARITHLIB) \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \

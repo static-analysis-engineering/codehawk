@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +53,7 @@ open JCHPreSumTypeSerializer
 open JCHSystemSettings
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let methodcount = ref 0
 let maxlog = ref 24
@@ -65,8 +66,10 @@ let native_method_count = ref 0
 let speclist =
   [("-o", Arg.String (fun s -> outputname := s), "name of outputfile");
    ("-md5", Arg.String (fun s -> md5 := s), "md5 hash of jarfile") ;
-   ("-maxmatch", Arg.Int (fun i -> maxmatch := i), "maximum length of method to be matched");
-   ("-maxlog", Arg.Int (fun i -> maxlog := i), "maximum length of method to be logged")]
+   ("-maxmatch", Arg.Int (fun i -> maxmatch := i),
+    "maximum length of method to be matched");
+   ("-maxlog", Arg.Int (fun i -> maxlog := i),
+    "maximum length of method to be logged")]
 
 let usage_msg = "chj_patterns -md5 <md5 of jarfile> -o <outputfile> <jarfile>"
 
@@ -89,8 +92,9 @@ let categorize_patterns plist =
     H.replace exceptions_ignored e#index (entry + 1) in
   let get_exceptions_ignored () =
     let lst =
-      H.fold (fun k v a -> ((retrieve_cn k)#name, v) :: a) exceptions_ignored [] in
-    List.sort (fun (_,v1) (_,v2) -> P.compare v1 v2) lst in
+      H.fold
+        (fun k v a -> ((retrieve_cn k)#name, v) :: a) exceptions_ignored [] in
+    List.sort (fun (_,v1) (_,v2) -> Stdlib.compare v1 v2) lst in
   let exceptions_handled = H.create 3 in
   let add_exception_handled e =
     let entry =
@@ -101,8 +105,9 @@ let categorize_patterns plist =
     H.replace exceptions_handled e#index (entry + 1) in
   let get_exceptions_handled () =
     let lst =
-      H.fold (fun k v a -> ((retrieve_cn k)#name, v) :: a) exceptions_handled [] in
-    List.sort (fun (_,v1) (_,v2) -> P.compare v1 v2) lst in
+      H.fold
+        (fun k v a -> ((retrieve_cn k)#name, v) :: a) exceptions_handled [] in
+    List.sort (fun (_,v1) (_,v2) -> Stdlib.compare v1 v2) lst in
   let rec add_basic_value a =
     let _ = basicvalues := a :: !basicvalues in
     match a with
@@ -211,7 +216,7 @@ let categorize_patterns plist =
           let entry = if H.mem t tag then H.find t tag else 0 in
           H.replace t tag (entry + 1)) l in
     let counts = H.fold (fun k v a -> (k,v) :: a)  t [] in
-    List.sort (fun (_,v1) (_,v2) -> P.compare v1 v2) counts in
+    List.sort (fun (_,v1) (_,v2) -> Stdlib.compare v1 v2) counts in
   (countlist !basicvalues bc_basicvalue_serializer,
    countlist !objectvalues bc_objectvalue_serializer,
    countlist !actions bc_action_serializer,
@@ -365,22 +370,47 @@ let noteworthy_to_pretty () =
       let lst = ref [] in
       let _ = opcodes#iteri (fun _ opc -> lst := opc :: !lst) in
       List.rev !lst in
-    LBLOCK [ cms#toPretty ; STR " (" ; STR jar ; STR ")" ;
-             STR " (" ; INT cms#index ; STR ")" ; NL ;
-             LBLOCK (List.map (fun p ->
-                         LBLOCK [ STR "   " ; opcode_to_pretty p ; NL ]) instrs) ; NL ] in
-  LBLOCK [ STR "Noteworthy methods: " ; NL ; NL ;
-           LBLOCK (List.map (fun (msg,mInfos) ->
-                       LBLOCK [ STR msg ; NL ;
-                                INDENT (3, LBLOCK (List.map p mInfos)) ; NL ]) noteworthy) ; NL ]
+    LBLOCK [
+        cms#toPretty;
+        STR " (";
+        STR jar;
+        STR ")";
+        STR " (";
+        INT cms#index;
+        STR ")";
+        NL;
+        LBLOCK
+          (List.map
+             (fun p ->
+               LBLOCK [STR "   "; opcode_to_pretty p; NL]) instrs);
+        NL] in
+  LBLOCK [
+      STR "Noteworthy methods: ";
+      NL;
+      NL;
+      LBLOCK
+        (List.map
+           (fun (msg,mInfos) ->
+             LBLOCK [
+                 STR msg;
+                 NL;
+                 INDENT (3, LBLOCK (List.map p mInfos)); NL]) noteworthy);
+      NL]
 
 let interesting_to_pretty () =
   let interesting = get_interesting () in
   let p (m:(string * pretty_t)):pretty_t = LBLOCK [ snd m ; NL ] in
-  LBLOCK [ STR "Interesting methods: " ; NL ; NL ;
-           LBLOCK (List.map (fun (msg,txts) ->
-                       LBLOCK [ STR msg ; NL ;
-                                INDENT (3, LBLOCK (List.map p txts)) ; NL ]) interesting) ; NL ]
+  LBLOCK [
+      STR "Interesting methods: ";
+      NL;
+      NL;
+      LBLOCK
+        (List.map (fun (msg,txts) ->
+             LBLOCK [
+                 STR msg;
+                 NL;
+                 INDENT (3, LBLOCK (List.map p txts)); NL]) interesting);
+      NL]
 
 
 let main () =
