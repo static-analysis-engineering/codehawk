@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +47,6 @@ open JCHApplication
 open JCHPreAPI
 open JCHXmlUtil
 
-module P = Pervasives
 
 (*
 let get_parameter_name (mInfo:method_info_int) (par:int) =
@@ -130,7 +130,8 @@ let write_xml_user_class_template (node:xml_element_int) (cn:class_name_int) =
   let (constructors,cmss) = 
     List.fold_left (fun (c,m) cms -> 
       if cms#name = "<init>" then (cms::c,m) else (c,cms::m)) ([],[]) cmss in
-  let cmss = List.sort (fun cms1 cms2 -> P.compare cms1#name cms2#name) cmss in
+  let cmss =
+    List.sort (fun cms1 cms2 -> Stdlib.compare cms1#name cms2#name) cmss in
   begin
     mmNode#appendChildren (List.map (fun cms ->
       let mNode = xmlElement "method" in

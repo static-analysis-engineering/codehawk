@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -60,7 +61,7 @@ open JCHTaintOrigin
 open JCHXmlUtil
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let cd = JCHDictionary.common_dictionary
 
@@ -110,7 +111,7 @@ object (self)
 
   method write_xml (node:xml_element_int) =
     let invs = H.fold (fun pc xl acc -> (pc,xl) :: acc) pctable [] in
-    let invs = List.sort (fun (pc1,_) (pc2,_) -> P.compare pc1 pc2) invs in
+    let invs = List.sort (fun (pc1,_) (pc2,_) -> Stdlib.compare pc1 pc2) invs in
     node#appendChildren (List.map (fun (pc,xl) ->
         let pcnode = xmlElement "pc-invs" in
         begin
@@ -164,7 +165,8 @@ object (self)
 	
   method write_xml (node:xml_element_int) = 
     let pctaints = H.fold (fun k v acc -> (k,v) :: acc) pctable [] in
-    let pctaints = List.sort (fun (pc1,_) (pc2,_) -> P.compare pc1 pc2) pctaints in
+    let pctaints =
+      List.sort (fun (pc1,_) (pc2,_) -> Stdlib.compare pc1 pc2) pctaints in
     node#appendChildren
       (List.map (fun (pc, ids) ->
            let pcnode = xmlElement "pcn" in
@@ -302,7 +304,8 @@ let write_xml_loopinfo (node:xml_element_int) (linfo:loop_info_t) (mInfo:method_
 let write_xml_variable_table (node:xml_element_int) (mInfo:method_info_int) =
   if mInfo#has_local_variable_table then
     let vtable = mInfo#get_local_variable_table in
-    let vtable = List.sort (fun (_,_,_,_,l1) (_,_,_,_,l2) -> P.compare l1 l2) vtable in
+    let vtable =
+      List.sort (fun (_,_,_,_,l1) (_,_,_,_,l2) -> Stdlib.compare l1 l2) vtable in
     node#appendChildren (List.map (fun (startpc,length,name,ty,index) ->
       let sNode = xmlElement "slot" in
       let seti = sNode#setIntAttribute in
@@ -495,7 +498,8 @@ object (self)
     let ffNode = xmlElement "fields" in
     let bbNode = xmlElement "bootstrap-methods" in
     let cfss = List.map (fun fs -> make_cfs cn fs) cInfo#get_fields_defined in
-    let cfss = List.sort (fun cfs1 cfs2 -> P.compare cfs1#name cfs2#name) cfss in
+    let cfss =
+      List.sort (fun cfs1 cfs2 -> Stdlib.compare cfs1#name cfs2#name) cfss in
     let interfaces = app#get_all_interfaces cn in
     let cmss = List.map (fun ms -> make_cms cn ms) cInfo#get_methods_defined in
     let bootstrapmethods = cInfo#get_bootstrap_methods in
@@ -507,14 +511,16 @@ object (self)
                 common_dictionary#write_xml_bootstrap_method_data bNode bm#get_data;
                 bNode
               end) bootstrapmethods) ;
-      mmNode#appendChildren (List.map (fun cms ->
-	let cmsId = cms#index in
-	let mNode = xmlElement "method" in
-	let loops = if H.mem loops cmsId then H.find loops cmsId else [] in
-	begin
-	  write_xml_method_analysis_results mNode cms loops  ;
-	  mNode
-	end) (List.sort (fun cms1 cms2 -> P.compare cms1#name cms2#name) cmss)) ;
+      mmNode#appendChildren
+        (List.map (fun cms ->
+	     let cmsId = cms#index in
+	     let mNode = xmlElement "method" in
+	     let loops = if H.mem loops cmsId then H.find loops cmsId else [] in
+	     begin
+	       write_xml_method_analysis_results mNode cms loops  ;
+	       mNode
+	     end)
+           (List.sort (fun cms1 cms2 -> Stdlib.compare cms1#name cms2#name) cmss));
       ffNode#appendChildren (List.map (fun cfs ->
 	let fNode = xmlElement "field" in
 	begin write_xml_summary_field fNode cfs ; fNode end) cfss) ;
@@ -558,7 +564,10 @@ object (self)
       begin
 	llnode#appendChildren (List.map (fun linfo ->
 	  let lnode = xmlElement "loop" in
-	  begin write_xml_loopinfo lnode linfo mInfo ; lnode end) (H.find loops cms#index)) ;
+	  begin
+            write_xml_loopinfo lnode linfo mInfo;
+            lnode
+          end) (H.find loops cms#index)) ;
 	node#appendChildren [ llnode ] ;
       save_method_xml_file cms node "loops"
     end
@@ -585,12 +594,16 @@ object (self)
 	          save_xml_method_bc d mInfo ;     
 	        end
 	    with JCH_failure p ->
-              pr_debug [ STR "Failure when saving method " ; cms#toPretty ; STR ": " ; p ; NL ]
+              pr_debug [
+                  STR "Failure when saving method ";
+                  cms#toPretty;
+                  STR ": ";
+                  p;
+                  NL]
           ) cInfo#get_methods_defined ;
         d#write_xml dnode ;
         node#appendChildren [ dnode ] ;
-        save_class_xml_file appdir cInfo#get_class_name node "class" ;
-                
+        save_class_xml_file appdir cInfo#get_class_name node "class";
       end
 
 end

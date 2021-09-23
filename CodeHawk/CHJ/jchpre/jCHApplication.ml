@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +57,6 @@ let prd p = if (get_verbose ()) then pr_debug p else ()
 let jdk_package_prefixes =  [ "java" ; "javax" ; "org.w3c.dom" ; "org.xml.sax" ]
 let non_jdk_packages = [ "javax.mail" ; "javax.media" ]
 
-module P = Pervasives
 
 module ClassNameCollections = CHCollections.Make (
   struct
@@ -75,7 +75,7 @@ module ClassMethodSignatureCollections = CHCollections.Make (
 module MethodInfoCollections = CHCollections.Make (
   struct
     type t = method_info_int
-    let compare m1 m2 = Pervasives.compare m1#get_index m2#get_index
+    let compare m1 m2 = Stdlib.compare m1#get_index m2#get_index
     let toPretty m = m#toPretty
   end)
 
@@ -446,7 +446,8 @@ object (self)
   method is_abstract_class (cn:class_name_int) = (self#get_class cn)#is_abstract
 
   method is_application_class (cn:class_name_int) =
-    self#has_class cn && (List.mem (self#get_class cn)#get_source_origin application_jars)
+    self#has_class cn
+    && (List.mem (self#get_class cn)#get_source_origin application_jars)
 
   method is_application_method (cms:class_method_signature_int) =
     self#is_application_class cms#class_name
@@ -460,7 +461,7 @@ object (self)
           if cInfo#is_missing then
             missingclasses := cInfo#get_class_name :: !missingclasses) in
     let missingclasses =
-      List.sort (fun c1 c2 -> P.compare c1#name c2#name) !missingclasses in
+      List.sort (fun c1 c2 -> Stdlib.compare c1#name c2#name) !missingclasses in
     let _ =
       self#iter_methods (fun mInfo ->
           if mInfo#is_missing then
@@ -468,7 +469,7 @@ object (self)
               mInfo#get_class_method_signature :: !missingmethods) in
     let missingmethods =
       List.sort (fun m1 m2 ->
-          P.compare m1#class_method_signature_string
+          Stdlib.compare m1#class_method_signature_string
                     m2#class_method_signature_string) !missingmethods in
     let _ =
       self#iter_fields (fun fInfo ->
@@ -476,7 +477,8 @@ object (self)
             missingfields :=
               fInfo#get_class_signature :: !missingfields) in
     let missingfields =
-      List.sort (fun f1 f2 -> P.compare f1#to_string f2#to_string) !missingfields in
+      List.sort (fun f1 f2 ->
+          Stdlib.compare f1#to_string f2#to_string) !missingfields in
 
     let ccNode = xmlElement "missing-classes" in
     let mmNode = xmlElement "missing-methods" in

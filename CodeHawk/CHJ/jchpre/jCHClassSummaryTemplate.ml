@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -59,7 +60,6 @@ open JCHPreFileIO
 open JCHPreSumTypeSerializer
 open JCHSystemSettings
 
-module P = Pervasives
 
 module MethodSignatureCollections = CHCollections.Make (
   struct
@@ -539,7 +539,7 @@ let write_xml_summary_interface (node:xml_element_int) (cn:class_name_int) =
   let ssNode = xmlElement "superinterfaces" in
   let interfaces = app#get_all_interfaces cn in
   let cmss = List.map (fun ms -> make_cms cn ms) cInfo#get_methods_defined in
-  let cmss = List.sort (fun cms1 cms2 -> P.compare cms1#name cms2#name) 
+  let cmss = List.sort (fun cms1 cms2 -> Stdlib.compare cms1#name cms2#name)
     (List.filter (fun cms -> not (List.mem cms#name [ "<clinit>" ; "<init>" ])) cmss) in
   let _ = List.iter (fun cms -> 
     if app#has_method cms then () else
@@ -586,7 +586,8 @@ let write_xml_summary_class
   let _ = xxNode#setGroupString "CONSTRUCTORS" in
   let cmssInherited = get_inherited_methods cn in
   let cmssInherited = 
-    List.sort (fun (ms1,_) (ms2,_) -> P.compare ms1#name ms2#name) cmssInherited in
+    List.sort (fun (ms1,_) (ms2,_) ->
+        Stdlib.compare ms1#name ms2#name) cmssInherited in
   let cmss = List.map (fun ms -> make_cms cn ms) cInfo#get_methods_defined in
   let _ = List.iter (fun cms ->
     if app#has_method cms then () else 
@@ -607,7 +608,8 @@ let write_xml_summary_class
   let (constructors,cmss) = 
     List.fold_left (fun (c,m) cms -> 
       if cms#name = "<init>" then (cms::c,m) else (c,cms::m)) ([],[]) cmss in
-  let cmss = List.sort (fun cms1 cms2 -> P.compare cms1#name cms2#name) cmss in
+  let cmss =
+    List.sort (fun cms1 cms2 -> Stdlib.compare cms1#name cms2#name) cmss in
   let cfss = List.map (fun fs -> make_cfs cn fs) cInfo#get_fields_defined in
   let _ =
     List.iter (fun cfs ->

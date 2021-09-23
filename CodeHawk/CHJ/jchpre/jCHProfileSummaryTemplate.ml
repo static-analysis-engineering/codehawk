@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -48,11 +49,11 @@ open JCHPreAPI
 open JCHPreFileIO
 open JCHSystemSettings
 
-module P = Pervasives
 
 let ccNode =
   xml_string 
-    "copyright-notice" "Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304"
+    "copyright-notice"
+    "Copyright 2020-2021, Henny Sipma, Palo Alto, CA 94306"
 
 let summary_classpath = ref None
 
@@ -275,7 +276,7 @@ let write_xml_summary_class
       List.iter (fun cms ->
           if app#has_method cms then () else
             app#add_method (cInfo#get_method cms#method_signature)) cmss in
-    let cmss = List.sort (fun c1 c2 -> P.compare c1#name c2#name) cmss in
+    let cmss = List.sort (fun c1 c2 -> Stdlib.compare c1#name c2#name) cmss in
     let _ =
       mmNode#appendChildren
         (List.map (fun cms ->
@@ -340,7 +341,7 @@ let write_xml_summary_interface
     let cmss =
       List.filter (fun  c ->
           not (List.mem c#name [ "<clinit>" ; "<init>" ])) cmss in
-    let cmss = List.sort (fun c1 c2 -> P.compare c1#name c2#name) cmss in
+    let cmss = List.sort (fun c1 c2 -> Stdlib.compare c1#name c2#name) cmss in
     let _ =
       List.iter (fun cms ->
           if app#has_method cms then () else

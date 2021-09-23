@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +46,7 @@ open JCHPreAPI
 open JCHPreSumTypeSerializer
 
 module H = Hashtbl
-module P = Pervasives
+
 
 class cgdictionary_t:cgdictionary_int =
 object (self)

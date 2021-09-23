@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +47,7 @@ open JCHSystemSettings
 open JCHFunctionSummaryXmlDecoder
 
 module H = Hashtbl
-module P = Pervasives
+
 
 module ClassMethodSignatureCollections = CHCollections.Make (
   struct

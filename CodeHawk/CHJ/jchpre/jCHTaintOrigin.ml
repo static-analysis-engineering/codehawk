@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,7 +52,7 @@ open JCHPreSumTypeSerializer
 open JCHXmlUtil
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let use_one_top_target = ref true
 let set_use_one_top_target b = 
@@ -258,7 +259,7 @@ object (self)
 
   method index_taint_origin_list (l:taint_origin_type_t list) =
     taint_origin_list_table#add
-      ([],List.sort_uniq P.compare (List.map self#index_taint_origin l))
+      ([],List.sort_uniq Stdlib.compare (List.map self#index_taint_origin l))
 
   method get_taint_origin_list (index:int) =
     let (_,args) = taint_origin_list_table#retrieve index in
@@ -426,7 +427,7 @@ object (self: 'a)
     
   method get_index = index
     
-  method compare (other: 'a) = P.compare index other#get_index
+  method compare (other: 'a) = Stdlib.compare index other#get_index
 
   method is_var_origin = match origin with T_ORIG_VAR _ -> true | _ -> false
 
@@ -450,7 +451,7 @@ class taint_origin_set_t
  (origins: taint_origin_type_t list):taint_origin_set_int =
 object (self:'a)
 
-  method compare (other: 'a) = P.compare index other#get_index
+  method compare (other: 'a) = Stdlib.compare index other#get_index
 
   method get_index = index
 
@@ -489,7 +490,7 @@ object (self:'a)
 
   method index = index
 
-  method compare (other:'a) = P.compare index other#index
+  method compare (other:'a) = Stdlib.compare index other#index
 
   method may_be_tainted = (List.length data.untrusted) > 0
 
@@ -612,6 +613,6 @@ let get_taint_origins () = taint_origins
 
 let taint_origins_to_pretty () =
   let origins = H.fold (fun k v a -> (k,v) :: a) taint_origins [] in
-  let origins = List.sort (fun (k1,_) (k2,_) -> P.compare k1 k2) origins in
+  let origins = List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) origins in
   LBLOCK (List.map (fun (k,v) -> 
               LBLOCK [ fixed_length_pretty (INT k) 5 ; STR ": " ; v#toPretty ; NL ]) origins)
