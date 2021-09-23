@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -70,8 +71,14 @@ object
 
   method get_class_signature = cfs
 
-  method get_value = match field_value with Some v -> v | _ ->
-    raise (JCH_failure (LBLOCK [ STR "Field " ; cfs#toPretty ; STR " does not have a value" ]))
+  method get_value =
+    match field_value with
+    | Some v -> v
+    | _ ->
+       raise
+         (JCH_failure
+            (LBLOCK [
+                 STR "Field "; cfs#toPretty; STR " does not have a value"]))
 
   method get_visibility = visibility
 
@@ -114,7 +121,7 @@ object (self:'a)
   val mutable not_null = false
   val mutable array_length = None
 
-  method compare (other:'a) = Pervasives.compare self#get_index other#get_index
+  method compare (other:'a) = Stdlib.compare self#get_index other#get_index
 
   method add_writing_method cms = writing_methods#add cms
 
@@ -137,39 +144,62 @@ object (self:'a)
     
   method get_value = 
     match field_info_type with
-      ConcreteField f -> begin match f#get_value with Some ff -> ff | _ ->
-	raise (JCH_failure
-		 (LBLOCK [ STR "Field " ; self#toPretty ; STR " does not have a constant value"]))
-      end
+    | ConcreteField f ->
+       begin match f#get_value with
+       | Some ff -> ff
+       | _ ->
+	  raise
+            (JCH_failure
+	       (LBLOCK [
+                    STR "Field ";
+                    self#toPretty;
+                    STR " does not have a constant value"]))
+       end
     | MissingField cfs ->
-      raise (JCH_failure
-	       (LBLOCK [ STR "Field " ; cfs#toPretty ; STR " does not have a value " ;
-			 STR "(field was not located)" ]))
+       raise
+         (JCH_failure
+	    (LBLOCK [
+                 STR "Field ";
+                 cfs#toPretty;
+                 STR " does not have a value ";
+		 STR "(field was not located)"]))
     | StubbedField x -> x#get_value
       
   method get_array_length =
-    match array_length with Some n -> n | _ ->
-      raise (JCH_failure (LBLOCK [ STR "Field " ; 
-				   self#toPretty ; STR " does not have an array length"]))
+    match array_length with
+    | Some n -> n
+    | _ ->
+       raise
+         (JCH_failure
+            (LBLOCK [
+                 STR "Field ";
+		 self#toPretty;
+                 STR " does not have an array length"]))
 
   method get_visibility = match field_info_type with
       ConcreteField f -> f#get_visibility
     | StubbedField x -> x#get_visibility
     | MissingField _ -> Public
 
-  method has_value = match field_info_type with
-    ConcreteField f -> begin match f#get_value with Some _ -> true | _ -> false end
-	| MissingField _ -> false
-  | StubbedField x -> x#has_value
+  method has_value =
+    match field_info_type with
+    | ConcreteField f ->
+       begin match f#get_value with Some _ -> true | _ -> false end
+    | MissingField _ -> false
+    | StubbedField x -> x#has_value
 
-  method has_array_length = match array_length with Some _ -> true | _ -> false
+  method has_array_length =
+    match array_length with Some _ -> true | _ -> false
 
   method get_reading_methods = reading_methods#toList
 
   method get_writing_methods = writing_methods#toList
 
-  method is_missing = match field_info_type with MissingField _ -> true | _ -> false
-  method is_stubbed = match field_info_type with StubbedField _ -> true | _ -> false
+  method is_missing =
+    match field_info_type with MissingField _ -> true | _ -> false
+
+  method is_stubbed =
+    match field_info_type with StubbedField _ -> true | _ -> false
 
   method is_static = match field_info_type with
   | ConcreteField f -> f#is_static
@@ -190,18 +220,26 @@ object (self:'a)
 
   method is_not_null = not_null 
   || (match field_info_type with 
-    ConcreteField f -> f#is_final && f#is_static &&
-      (match self#get_class_signature#field_signature#descriptor with TObject _ -> true | _ -> false)
-    | StubbedField x -> x#is_not_null
-    | _ -> false)
+      | ConcreteField f ->
+         f#is_final
+         && f#is_static
+         && (match self#get_class_signature#field_signature#descriptor with
+             | TObject _ -> true
+             | _ -> false)
+      | StubbedField x -> x#is_not_null
+      | _ -> false)
     
-  method is_private   = match self#get_visibility with Private -> true | _ -> false
+  method is_private   =
+    match self#get_visibility with Private -> true | _ -> false
 
-  method is_protected = match self#get_visibility with Protected -> true | _ -> false
+  method is_protected =
+    match self#get_visibility with Protected -> true | _ -> false
 
-  method is_public    = match self#get_visibility with Public -> true | _ -> false
+  method is_public =
+    match self#get_visibility with Public -> true | _ -> false
 
-  method is_default_access = match self#get_visibility with Default -> true | _ -> false
+  method is_default_access =
+    match self#get_visibility with Default -> true | _ -> false
 
   method is_accessible_to_stubbed_methods = 
     (in_stubbed_class || self#is_stubbed) && not self#is_constant
@@ -214,16 +252,30 @@ object (self:'a)
 	       INT nr_readers ;  STR ")" ] in
     let is_final_p  = if self#is_final then STR "final " else STR "" in
     let is_static_p = if self#is_static then STR "static " else STR "" in
-    let is_constant_p = if self#is_constant then STR "constant " else STR "" in
-    let is_private_p  = if self#is_private then STR "private " else STR "" in
-    let is_default_p  = if self#is_default_access then STR "default " else STR "" in
-    let pValue = if self#has_value then 
-	LBLOCK [ STR "(value: " ; constant_value_to_pretty self#get_value ; STR ") " ]
+    let is_constant_p =
+      if self#is_constant then STR "constant " else STR "" in
+    let is_private_p  =
+      if self#is_private then STR "private " else STR "" in
+    let is_default_p  =
+      if self#is_default_access then STR "default " else STR "" in
+    let pValue =
+      if self#has_value then
+	LBLOCK [
+            STR "(value: ";
+            constant_value_to_pretty self#get_value;
+            STR ") "]
       else
 	STR "" in
-    LBLOCK [ self#get_class_signature#toPretty ; STR " " ; pValue ;
-	     is_final_p ; is_static_p ; is_constant_p  ; is_private_p ; is_default_p ;
-	     readers_writers_p ]
+    LBLOCK [
+        self#get_class_signature#toPretty;
+        STR " ";
+        pValue;
+	is_final_p;
+        is_static_p;
+        is_constant_p;
+        is_private_p;
+        is_default_p;
+	readers_writers_p]
 
   method get_alternate_text = 
     let cfs = self#get_class_signature#class_field_signature_data in
@@ -235,19 +287,29 @@ object (self:'a)
     let is_default_p  = if self#is_default_access then "default " else "" in
     let writing_ms = List.map (fun cms -> cms#name) writing_methods#toList in
     let reading_ms = List.map (fun cms -> cms#name) reading_methods#toList in
-    field_str ^ " " ^
-    is_final_p ^ is_static_p ^ is_constant_p  ^ is_private_p ^ is_default_p ^
-    "\nwriting methods: " ^ (String.concat ", " writing_ms) ^
-    "\nreading methods: " ^ (String.concat ", " reading_ms) 
+    field_str
+    ^ " "
+    ^ is_final_p
+    ^ is_static_p
+    ^ is_constant_p
+    ^ is_private_p
+    ^ is_default_p
+    ^ "\nwriting methods: "
+    ^ (String.concat ", " writing_ms)
+    ^ "\nreading methods: "
+    ^ (String.concat ", " reading_ms)
 
-      
 end
 
+
 let make_field_info (in_stubbed_class:bool) (field:field_int) = 
-  new field_info_t ~in_stubbed_class:in_stubbed_class ~field_info_type:(ConcreteField field)
+  new field_info_t
+    ~in_stubbed_class:in_stubbed_class ~field_info_type:(ConcreteField field)
+
 
 let make_missing_field_info (cfs:class_field_signature_int) =
   new field_info_t ~in_stubbed_class:false ~field_info_type:(MissingField cfs)
+
 
 let make_field_stub 
     ?(is_static=false) 
@@ -259,8 +321,18 @@ let make_field_stub
     ?(visibility=Public) 
     ?(field_value=None) 
     (cfs:class_field_signature_int) = 
-  new field_stub_t ~is_static ~is_final ~is_not_null ~is_interface_field
-    ~is_constant  ~inherited_from ~visibility ~field_value ~cfs
+  new field_stub_t
+    ~is_static
+    ~is_final
+    ~is_not_null
+    ~is_interface_field
+    ~is_constant
+    ~inherited_from
+    ~visibility
+    ~field_value
+    ~cfs
+
 
 let make_field_stub_info (field_stub:field_stub_int) = 
-  new field_info_t ~in_stubbed_class:true ~field_info_type:(StubbedField field_stub)
+  new field_info_t
+    ~in_stubbed_class:true ~field_info_type:(StubbedField field_stub)

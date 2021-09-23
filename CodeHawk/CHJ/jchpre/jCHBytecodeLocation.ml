@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,17 +42,19 @@ open JCHDictionary
 open JCHPreAPI
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let check_symbol (sym:symbol_t) (names:string list) =
   if List.mem sym#getBaseName names then
     ()
   else
     raise_jch_failure
-	     (LBLOCK [ STR "Mismatch in symbol use: " ; sym#toPretty ;
-		       STR " (expected one of: " ; 
-		       pretty_print_list names (fun s -> STR s) "[" "," "]" ;
-		       STR ")" ])
+      (LBLOCK [
+           STR "Mismatch in symbol use: ";
+           sym#toPretty;
+	   STR " (expected one of: ";
+	   pretty_print_list names (fun s -> STR s) "[" "," "]";
+	   STR ")"])
 
 
 class bytecode_location_t 
@@ -64,11 +67,11 @@ object (self:'a)
   method i = pc
 
   method compare (other:'a) =
-    let c1 = P.compare pc other#get_pc in
+    let c1 = Stdlib.compare pc other#get_pc in
     if c1 = 0 then 
-      let c2 = P.compare method_index other#get_method_index in
+      let c2 = Stdlib.compare method_index other#get_method_index in
       if c2 = 0 then
-	P.compare is_modified other#is_modified
+	Stdlib.compare is_modified other#is_modified
       else c2
     else c1
   method get_class_method_signature = retrieve_cms method_index
@@ -78,21 +81,30 @@ object (self:'a)
 
   method toString = 
     let cms = self#get_class_method_signature in
-    cms#class_name#simple_name ^ ":" ^ cms#method_signature#name ^ "@" ^ (string_of_int pc)
+    cms#class_name#simple_name
+    ^ ":"
+    ^ cms#method_signature#name
+    ^ "@"
+    ^ (string_of_int pc)
 
   method toPretty = 
-    let cms = self#get_class_method_signature in LBLOCK [ cms#toPretty ; STR "; pc=" ; INT pc ]
+    let cms =
+      self#get_class_method_signature in
+    LBLOCK [cms#toPretty; STR "; pc="; INT pc]
 end
+
 
 let get_bytecode_location (method_index:int) (pc:int) =
   new bytecode_location_t ~method_index ~pc ~is_modified:false
+
 
 let get_bytecode_location_in_proc (procname:symbol_t) (opname:symbol_t) =
   let _ = check_symbol procname [ "procname" ] in
   let _ = check_symbol opname [ "i" ; "ii" ; "v" ] in
   let pc  = opname#getSeqNumber in
   let is_modified = opname#getBaseName = "ii" in
-  new bytecode_location_t ~method_index:procname#getSeqNumber ~pc:pc ~is_modified:is_modified
+  new bytecode_location_t
+    ~method_index:procname#getSeqNumber ~pc:pc ~is_modified:is_modified
   
 
 class type operation_locations_int =
@@ -101,6 +113,7 @@ object
   method get_operation:bytecode_location_int -> operation_t
   method has_operation:bytecode_location_int -> bool
 end
+
 
 class operation_locations_t:operation_locations_int =
 object
@@ -115,12 +128,15 @@ object
       H.find store (loc#m,loc#i) 
     with Not_found ->
       begin
-	ch_error_log#add "invocation error" (LBLOCK [ STR "operation_locations#get_operation"]) ;
+	ch_error_log#add
+          "invocation error"
+          (LBLOCK [STR "operation_locations#get_operation"]);
 	raise (JCH_failure (STR "operation_locations#get_operation"))
       end
 
   method has_operation (loc:bytecode_location_int) = H.mem store (loc#m,loc#i)
 
 end
+
 
 let operation_locations = new operation_locations_t

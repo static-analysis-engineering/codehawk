@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,8 +52,6 @@ open JCHFunctionSummaryXmlDecoder
 open JCHPreAPI
 open JCHPreFileIO
 
-
-module P = Pervasives
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
@@ -115,8 +114,11 @@ let write_xml_class_spec_template (node:xml_element_int) ?(methods=[]) (cn:class
   let cmss = List.map (fun ms -> make_cms cn ms) mss in
   let cmss = match methods with
     | [] -> cmss
-    | l -> List.filter (fun cms -> List.exists (fun m -> cms#index = m#index) l) cmss in
-  let cmss = List.sort (fun cms1 cms2 -> P.compare cms1#name cms2#name) cmss in
+    | l ->
+       List.filter (fun cms ->
+           List.exists (fun m -> cms#index = m#index) l) cmss in
+  let cmss =
+    List.sort (fun cms1 cms2 -> Stdlib.compare cms1#name cms2#name) cmss in
   let mmNode = xmlElement "methods" in
   begin
     mmNode#appendChildren (List.map (fun cms ->

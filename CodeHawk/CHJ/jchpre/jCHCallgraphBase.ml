@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -54,7 +55,7 @@ open JCHUserData
 open JCHXmlUtil
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let ms_implementers_init = {
   mscn_classes =  [] ;
@@ -390,11 +391,15 @@ object (self)
 	            else
 	              acc) [] callees) cmss) in
        let (orderedList,stats,cycle) = create_ordering fnindices fnpairs in
-       let _ = chlog#add "callgraph order"
-	                 (LBLOCK [ pretty_print_list stats (fun s -> INT s) "[" "; " "]" ;
-	                           (if cycle then STR " (cycle)" else STR "") ]) in
+       let _ = chlog#add
+                 "callgraph order"
+	         (LBLOCK [
+                      pretty_print_list stats (fun s -> INT s) "[" "; " "]";
+	              (if cycle then STR " (cycle)" else STR "")]) in
        let _ = callgraph_order <- Some orderedList in
-       let _ = pr_debug [ STR "Call graph order: " ; INT (List.length orderedList) ; NL ] in
+       let _ =
+         pr_debug [
+             STR "Call graph order: "; INT (List.length orderedList); NL] in
        orderedList
 
   method bottomup_iter (f:method_info_int -> unit) =
@@ -424,7 +429,7 @@ object (self)
     let seti key i = if i > 0 then eeNode#setIntAttribute key i in
     let staticTgts = self#get_static_targets in
     let privateTgts = self#get_private_targets in
-    let backEdges = List.sort P.compare back_edges#toList in
+    let backEdges = List.sort Stdlib.compare back_edges#toList in
     begin
       eeNode#appendChildren (List.map (fun ((cms,pc,ms),tgt) ->
 	let eNode = xmlElement "edge" in

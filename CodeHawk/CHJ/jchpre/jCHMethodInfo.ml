@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +49,6 @@ open JCHPreAPI
 open JCHStackLayout
 open JCHSystemSettings
 
-module P = Pervasives
 
 module ClassMethodSignatureCollections = CHCollections.Make (
   struct
@@ -83,7 +83,8 @@ let analysis_type_of_string s =
   | "taint-analysis" -> TaintAnalysis
   | "numeric-analysis" -> NumericAnalysis
   | _ -> raise (JCH_failure (LBLOCK [ STR s ; STR " is not a valid analysis type" ]))
-        
+
+
 class handler_block_t 
   (h:exception_handler_int) 
   (block:(int * opcode_t) list)
@@ -92,13 +93,20 @@ object (self)
   
   method get_start_pc = h#handler
 
-  method get_end_pc   = List.hd (List.rev self#get_pcs)
+  method get_end_pc = List.hd (List.rev self#get_pcs)
 
-  method get_pcs      = List.map (fun (pc,_) -> pc) block
+  method get_pcs = List.map (fun (pc,_) -> pc) block
 
-  method get_handled_type = match h#catch_type with Some e -> e | _ ->
-    raise (JCH_failure (LBLOCK [ STR "Handler at " ; INT h#handler ; 
-				 STR " does not have a handled type"]))
+  method get_handled_type =
+    match h#catch_type with
+    | Some e -> e
+    | _ ->
+       raise
+         (JCH_failure
+            (LBLOCK [
+                 STR "Handler at ";
+                 INT h#handler;
+		 STR " does not have a handled type"]))
       
   method get_basic_blocks = 
     let start_block = 
@@ -172,7 +180,7 @@ object (self)
       h#h_start <= pc && pc <= h#h_end && 
 	match h#catch_type with Some _ -> true | _ -> false) table in
     List.map (fun h -> (h#handler, Option.get h#catch_type))
-      (List.sort (fun h1 h2 -> P.compare h1#handler h2#handler) handlers)
+      (List.sort (fun h1 h2 -> Stdlib.compare h1#handler h2#handler) handlers)
       
   method get_finally_handler (pc:int) =
     try
@@ -702,7 +710,7 @@ object (self:'a)
 	
   method equal (other:'a) = self#get_index = other#get_index 
 
-  method compare (other: 'a) = P.compare self#get_index other#get_index
+  method compare (other: 'a) = Stdlib.compare self#get_index other#get_index
     
   method is_missing = match method_info_type with MissingMethod _ -> true | _ -> false
 

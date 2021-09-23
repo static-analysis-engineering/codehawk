@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +45,7 @@ open JCHTranslateToCHIF
 open JCHPreAPI
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let get_stack_top_slot mInfo pc =
   (mInfo#get_method_stack_layout#get_stack_layout pc)#get_top_slot
@@ -239,11 +240,12 @@ let get_bc_function_basic_blocks (mInfo:method_info_int) =
   let handlers = List.fold_left (fun acc h ->
     if List.mem h#handler acc then acc else h#handler :: acc) [] mInfo#get_exception_table in
   let _ = List.iter add_block handlers in
-  let blocks = List.sort (fun b1 b2 -> P.compare b1#get_firstpc b2#get_firstpc) !blocks in
+  let blocks =
+    List.sort (fun b1 b2 ->
+        Stdlib.compare b1#get_firstpc b2#get_firstpc) !blocks in
   (blocks,!successors)
 
 
-  
 let get_cfg_loop_levels 
     (mInfo:method_info_int) (blocks:bc_block_int list)(succ:(int * int) list) =
   let table = H.create 3 in
@@ -282,4 +284,6 @@ let get_cfg_loop_levels
 let get_max_loop_levels (mInfo:method_info_int) =
   let (blocks,succ) = get_bc_function_basic_blocks mInfo in
   let cfglooplevels = get_cfg_loop_levels mInfo blocks succ in
-  H.fold (fun _ v m -> let len = List.length v in if len > m then len else m) cfglooplevels 0
+  H.fold
+    (fun _ v m -> let len = List.length v in if len > m then len else m)
+    cfglooplevels 0
