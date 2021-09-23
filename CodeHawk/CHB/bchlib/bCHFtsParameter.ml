@@ -47,8 +47,6 @@ open BCHVariableTypeUtil
 open BCHXmlUtil
 
 
-module P = Pervasives
-
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
     LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
@@ -88,10 +86,10 @@ let fts_parameter_to_pretty (p: fts_parameter_t) =
 
 let parameter_location_compare l1 l2 =
   match (l1,l2) with
-  | (StackParameter i1, StackParameter i2) -> P.compare i1 i2
+  | (StackParameter i1, StackParameter i2) -> Stdlib.compare i1 i2
   | (StackParameter _, _) -> -1
   | (_, StackParameter _) -> 1
-  | (RegisterParameter r1, RegisterParameter r2) -> P.compare r1 r2
+  | (RegisterParameter r1, RegisterParameter r2) -> Stdlib.compare r1 r2
   | (RegisterParameter _, _) -> -1
   | (_, RegisterParameter _) -> 1
   | (GlobalParameter dw1, GlobalParameter dw2) -> dw1#compare dw2

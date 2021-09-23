@@ -94,7 +94,7 @@ object (self:'a)
   (* --------------------------------------------------------~---- comparison -- *)
 
   method equal (other:'a) = other#index = self#index
-  method compare (other:'a) = Pervasives.compare self#index other#index
+  method compare (other:'a) = Stdlib.compare self#index other#index
   method lt (other:'a) = self#index < other#index
   method le (other:'a) = self#index <= other#index
 

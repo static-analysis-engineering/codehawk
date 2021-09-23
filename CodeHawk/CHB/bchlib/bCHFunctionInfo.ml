@@ -80,7 +80,7 @@ open BCHXprUtil
 
 module H = Hashtbl
 module LF = CHOnlineCodeSet.LanguageFactory
-module P = Pervasives
+
 
 module NumericalCollections = CHCollections.Make
   (struct
@@ -171,7 +171,7 @@ object (self:'a)
   val mutable save_address = None
   val restore_addresses = new StringCollections.set_t
     
-  method compare (other:'a) = P.compare reg other#get_register
+  method compare (other:'a) = Stdlib.compare reg other#get_register
     
   method set_save_address (a:ctxt_iaddress_t) = save_address <- Some a
   method add_restore_address (a:ctxt_iaddress_t) = restore_addresses#add a
@@ -1685,7 +1685,7 @@ object (self)
             | Some i -> (i,v) :: acc
             | _ -> acc) [] env#get_parent_stack_variables in
       let parameters =
-        List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2) parameters in
+        List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) parameters in
       let parameters =
         List.fold_left (fun acc (nr,v) ->
             match env#get_stack_parameter_index v with
@@ -2141,7 +2141,7 @@ object (self)
   method private write_xml_test_expressions (node:xml_element_int) =
     let l = ref [] in
     let _ = H.iter (fun k e -> l := (k,e) :: !l) test_expressions in
-    let l = List.sort (fun (k1,_) (k2,_) -> P.compare k1 k2) !l in
+    let l = List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) !l in
     begin
       node#appendChildren (List.map (fun (k, e) ->
 	let eNode = xmlElement "expr" in
@@ -2156,7 +2156,11 @@ object (self)
     let getcc = node#getTaggedChildren in
     List.iter (fun eNode ->
       let get = eNode#getAttribute in
-      H.add test_expressions (get "addr") (varmgr#vard#xd#read_xml_xpr eNode)) (getcc "expr")
+      H.add
+        test_expressions
+        (get "addr")
+        (varmgr#vard#xd#read_xml_xpr eNode))
+      (getcc "expr")
       
   method private write_xml_test_variables (node:xml_element_int) =
     let aux (v,f) =
@@ -2183,7 +2187,8 @@ object (self)
     end
 
   method private read_xml_test_variables (node:xml_element_int) =
-    let make_variable seqnr name = new variable_t (new symbol_t ~seqnr name) NUM_VAR_TYPE in
+    let make_variable seqnr name =
+      new variable_t (new symbol_t ~seqnr name) NUM_VAR_TYPE in
     List.iter (fun aNode ->
       let address = aNode#getAttribute "addr" in
       let vars =
@@ -2333,14 +2338,21 @@ let load_function_info ?(reload=false) (faddr:doubleword_int) =
       end
     with
     | CHFailure p | BCH_failure p ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Error in loading function info for: " ;
-                          faddr#toPretty ; STR ": " ; p ]))
-    
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in loading function info for: ";
+                 faddr#toPretty;
+                 STR ": ";
+                 p]))
+
+
 let get_function_info (faddr:doubleword_int) = load_function_info faddr
-      
+
+
 let get_function_infos () = Hashtbl.fold (fun _ v a -> v::a) function_infos []
-  
+
+
 let get_jni_calls () =
   let result =  ref [] in
   let table = H.create 3 in

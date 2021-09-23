@@ -55,7 +55,6 @@ open BCHVariableType
 open BCHXmlUtil
 
 module H = Hashtbl
-module P = Pervasives
 
 
 let maxlen = 20
@@ -85,7 +84,7 @@ let type_invariant_fact_compare f1 f2 =
     if l1 = 0 then 
       let l2 = btype_compare t1 t2 in 
       if l2 = 0 then
-	list_compare lst1 lst2 P.compare
+	list_compare lst1 lst2 Stdlib.compare
       else l2
     else l1
   | (VarTypeFact _, _) -> -1
@@ -130,7 +129,7 @@ object (self:'a)
 
   method index = index
 
-  method compare (other:'a) = P.compare self#index other#index
+  method compare (other:'a) = Stdlib.compare self#index other#index
 
   method get_fact = fact
 
@@ -275,7 +274,7 @@ object (self)
                    (node:xml_element_int) 
                    (locinv:location_type_invariant_int) =
     let findices = List.map (fun f -> f#index) locinv#get_facts in
-    let findices = List.sort P.compare findices in
+    let findices = List.sort Stdlib.compare findices in
     node#appendChildren
       (List.map (fun s ->
            let iNode = xmlElement "tinvs" in
@@ -289,7 +288,7 @@ object (self)
     match findices with
     | [] -> ()
     | _ ->
-      let findices = List.sort P.compare findices in
+      let findices = List.sort Stdlib.compare findices in
       node#appendChildren
         (List.map (fun s ->
 	     let iNode = xmlElement "tinvs" in

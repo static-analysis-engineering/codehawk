@@ -44,7 +44,6 @@ open BCHUtilities
 open BCHVariableType
 open BCHXmlUtil
 
-module P = Pervasives
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
@@ -69,7 +68,7 @@ let function_interface_to_prototype_string
     | StackParameter i -> (i,p.apar_name,p.apar_type)::a
     | _ -> a) [] fts.fts_parameters in
   let stackPars =
-    List.sort (fun (i1,_,_) (i2,_,_) -> P.compare i1 i2) stackPars in
+    List.sort (fun (i1,_,_) (i2,_,_) -> Stdlib.compare i1 i2) stackPars in
   let par_string (_,name,ty) = (btype_to_string ty) ^ " " ^ name in
   (btype_to_string fts.fts_returntype)
   ^ " "
@@ -100,7 +99,7 @@ let function_interface_compare
       (fintf1: function_interface_t) (fintf2: function_interface_t) =
   let fts1 = fintf1.fintf_type_signature in
   let fts2 = fintf2.fintf_type_signature in
-  let l1 = P.compare fintf1.fintf_name fintf2.fintf_name in
+  let l1 = Stdlib.compare fintf1.fintf_name fintf2.fintf_name in
   if l1 = 0 then
     let l2 =
       list_compare
@@ -200,7 +199,7 @@ let get_stack_parameter_name (fintf: function_interface_t) (index:int) =
 
 let get_stack_parameter_names (fintf: function_interface_t) =
   let fts = fintf.fintf_type_signature in
-  List.sort (fun (i1,_) (i2,_) -> P.compare i1 i2)
+  List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2)
     (List.fold_left (fun acc p ->
       match p.apar_location with
       | StackParameter i -> (i,p.apar_name) :: acc

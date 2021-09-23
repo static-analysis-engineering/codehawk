@@ -51,9 +51,6 @@ open BCHVariableType
 open BCHXmlUtil
 
 
-module P = Pervasives
-
-
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
     LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
@@ -142,7 +139,7 @@ let rec bterm_compare n1 n2 =
   | (ReturnValue, ReturnValue) -> 0
   | (ReturnValue, _) -> -1
   | (_, ReturnValue) -> 1
-  | (NamedConstant s1, NamedConstant s2) -> P.compare s1 s2
+  | (NamedConstant s1, NamedConstant s2) -> Stdlib.compare s1 s2
   | (NamedConstant _, _) -> -1
   | (_, NamedConstant _) -> 1
   | (NumConstant n1, NumConstant n2) -> n1#compare n2
@@ -159,7 +156,7 @@ let rec bterm_compare n1 n2 =
   | (_, ByteSize _) -> 1
   | (ArgAddressedValue (nn1,x1), ArgAddressedValue (nn2,x2)) ->
     let l1 = bterm_compare nn1 nn2 in
-    if l1 = 0 then P.compare x1 x2 else l1
+    if l1 = 0 then Stdlib.compare x1 x2 else l1
   | (ArgAddressedValue _, _) -> -1
   | (_, ArgAddressedValue _) -> 1
   | (ArgNullTerminatorPos nn1, ArgNullTerminatorPos nn2) -> bterm_compare nn1 nn2
@@ -169,7 +166,7 @@ let rec bterm_compare n1 n2 =
   | (ArgSizeOf _, _) -> -1
   | (_, ArgSizeOf _) -> 1
   | (ArithmeticExpr (op1,x1,y1), ArithmeticExpr (op2,x2,y2)) ->
-    let l1 = P.compare op1 op2 in
+    let l1 = Stdlib.compare op1 op2 in
     if l1 = 0 then
       let l2 = bterm_compare x1 x2 in
       if l2 = 0 then

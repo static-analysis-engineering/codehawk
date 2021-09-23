@@ -81,7 +81,7 @@ let eflag_from_string (name: string) =
   get_sumtype_from_table "eflags_from_string_table" eflags_from_string_table name
 
 let eflag_compare (f1:eflag_t) (f2:eflag_t) = 
-  Pervasives.compare (eflag_to_string f1) (eflag_to_string f2)
+  Stdlib.compare (eflag_to_string f1) (eflag_to_string f2)
 
 let arm_cc_flag_to_string (f: arm_cc_flag_t): string =
   get_string_from_table

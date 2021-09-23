@@ -51,7 +51,6 @@ open BCHUtilities
 open BCHXmlUtil
 
 module H = Hashtbl
-module P = Pervasives
 
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
@@ -123,7 +122,7 @@ let rec cstructconstant_compare sc1 sc2 =
   | (FieldConstant t1, FieldConstant t2) -> bterm_compare t1 t2
   | (FieldConstant _, _) -> -1
   | (_, FieldConstant _) -> 1
-  | (FieldString s1, FieldString s2) -> P.compare s1 s2
+  | (FieldString s1, FieldString s2) -> Stdlib.compare s1 s2
   | (FieldString _, _) -> -1
   | (_, FieldString _) -> 1
   | (FieldCallTarget tgt1, FieldCallTarget tgt2) ->
@@ -132,7 +131,7 @@ let rec cstructconstant_compare sc1 sc2 =
 and fieldvalue_compare fv1 fv2 =
   match (fv1,fv2) with
   | ((o1,sc1), (o2,sc2)) ->
-    let l1 = P.compare o1 o2 in
+    let l1 = Stdlib.compare o1 o2 in
     if l1 = 0 then cstructconstant_compare sc1 sc2 else l1
 
 

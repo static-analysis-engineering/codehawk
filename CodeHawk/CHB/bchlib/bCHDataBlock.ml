@@ -44,7 +44,6 @@ open BCHByteUtilities
 
 
 module H = Hashtbl
-module P = Pervasives
 
 
 let extract_offset_range s =
@@ -179,7 +178,8 @@ object (self:'a)
 
   method private data_table_to_string =
     let items =
-      List.sort P.compare (H.fold (fun a s acc -> (a, s)::acc) data_table []) in
+      List.sort
+        Stdlib.compare (H.fold (fun a s acc -> (a, s)::acc) data_table []) in
     String.concat "\n" (List.map (fun (a, s) -> a ^ "  " ^ s) items)
 
   method private rawdata_to_string =
@@ -211,8 +211,10 @@ object (self:'a)
 	let df = String.sub d 0 1024 in
 	let dr = String.sub d 1024 (dlen - 1024) in
 	collect dr (addr#add_int 1024) ((addr,df) :: acc) in
-    let rawdatastrings = (start_address,data1) :: (List.rev (collect datar addrr [])) in
-    String.concat "\n" (List.map (fun (a,s) -> rawdata_to_string s a) rawdatastrings)
+    let rawdatastrings =
+      (start_address,data1) :: (List.rev (collect datar addrr [])) in
+    String.concat
+      "\n" (List.map (fun (a,s) -> rawdata_to_string s a) rawdatastrings)
 
   method toString =
     let len = self#get_length in    
@@ -238,9 +240,19 @@ object (self:'a)
         else 
 	  start_address#to_hex_string ^ " - " ^ end_address#to_hex_string in
       let sLength = " (size: " ^ (string_of_int len) ^ " bytes)" in
-      "\n" ^ (string_repeat "~" 80) ^ "\n" ^ "Data block" ^ sName ^ sLength ^
-        "\n" ^ (string_repeat "~" 80) ^ "\n" ^ sData ^ "\n" ^
-          (string_repeat "=" 80) ^ "\n"
+      "\n"
+      ^ (string_repeat "~" 80)
+      ^ "\n"
+      ^ "Data block"
+      ^ sName
+      ^ sLength
+      ^ "\n"
+      ^ (string_repeat "~" 80)
+      ^ "\n"
+      ^ sData
+      ^ "\n"
+      ^ (string_repeat "=" 80)
+      ^ "\n"
       
 end
 
@@ -262,23 +274,35 @@ let read_xml_data_block (node:xml_element_int) =
   let startAddress = geta "start" in
   let endAddress = geta "end" in
   let name = if has "name" then get "name" else "data" in
-  let _ = if endAddress#le startAddress then
-      raise (BCH_failure (LBLOCK [ STR "Error in data block definition: " ; 
-				   startAddress#toPretty ; STR " -- " ; 
-				   endAddress#toPretty ])) in
+  let _ =
+    if endAddress#le startAddress then
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Error in data block definition: ";
+		startAddress#toPretty;
+                STR " -- ";
+		endAddress#toPretty])) in
   make_data_block startAddress endAddress name
 
 
 let create_jumptable_offset_block  
-    (base:doubleword_int) (section_base:doubleword_int) (section:string) (jtlen:int) =
+      (base:doubleword_int)
+      (section_base:doubleword_int)
+      (section:string)
+      (jtlen:int) =
   let pos = (base#subtract section_base)#to_int in
   let ch = make_pushback_stream section in
   let len = String.length section in
   let _ = ch#skip_bytes pos in
   let b = ref ch#read_byte in
-  let _ = while (!b < jtlen || !b = 204) && ch#pos < len do b := ch#read_byte done in
+  let _ =
+    while (!b < jtlen || !b = 204) && ch#pos < len do
+      b := ch#read_byte
+    done in
   let endw = section_base#add_int (ch#pos - 1) in
   make_data_block ~is_offset_table:true base endw "jumptable offsets"
+
 
 let find_seh4_struct ch len start_addr =
   let _ = ch#skip_bytes 8 in  (* EHCookieOffset ; EHCookeXOROffset *) 
@@ -295,6 +319,7 @@ let find_seh4_struct ch len start_addr =
     done ;
     make_data_block start_addr (start_addr#add_int !sehlen) "seh4_scopetable"
   end
+
 
 let find_seh4_structures_in_section (base:doubleword_int) (section:string) =
   let len = String.length section in
@@ -318,7 +343,8 @@ let find_seh4_structures_in_section (base:doubleword_int) (section:string) =
     done;
     !structs
   end
-  
+
+
 let find_seh4_structures 
     (read_only_section_strings:(doubleword_int * string) list) =
   List.concat

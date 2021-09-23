@@ -46,7 +46,7 @@ open BCHVariableType
 open BCHXmlUtil
 
 module H = Hashtbl
-module P = Pervasives
+
 
 class c_struct_t (name: string) (fields:struct_field_t list) =
 object
