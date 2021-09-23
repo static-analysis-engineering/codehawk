@@ -51,7 +51,7 @@ open JCHSystemUtils
 open JCHPrintUtils
 
 module H = Hashtbl
-module P = Pervasives
+
 
 let dbg = ref false
 
@@ -80,7 +80,7 @@ object (self:'a)
                        
   method get_index = index
                    
-  method compare (a:'a) = P.compare self#get_index a#get_index
+  method compare (a:'a) = Stdlib.compare self#get_index a#get_index
 
   method is_field =
     match node_type with TN_FIELD _ -> true | _ -> false
