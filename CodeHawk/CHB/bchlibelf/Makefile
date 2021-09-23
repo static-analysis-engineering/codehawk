@@ -2,8 +2,7 @@ CODEHAWK = ../..
 CHB = $(CODEHAWK)/CHB
 
 CHLIB  = $(CODEHAWK)/CH/chlib
-EXTLIB = $(CODEHAWK)/CH_extern/extlib
-ZIPLIB = $(CODEHAWK)/CH_extern/camlzip
+EXTLIB = $(shell ocamlfind query extlib)
 CHUTIL = $(CODEHAWK)/CH/chutil
 XPRLIB = $(CODEHAWK)/CH/xprlib
 BCHLIB = $(CHB)/bchlib
@@ -12,7 +11,6 @@ CAMLDOC := ocamldoc
 
 CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(EXTLIB) \
-	-I $(ZIPLIB) \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
@@ -25,7 +23,6 @@ CAMLBUILD := ocamlopt str.cmxa unix.cmxa \
 	-I $(ZIPLIB) \
 	$(CHLIB)/chlib.cmxa \
 	$(EXTLIB)/extLib.cmxa \
-	$(ZIPLIB)/zip.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(XPRLIB)/xpr.cmxa \
 	$(BCHLIB)/bchlib.cmxa \
@@ -76,10 +73,10 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-mtest: $(OBJECTS) cmx/test.cmx $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(X86LIB)/bchlibx86.cmxa
+mtest: $(OBJECTS) cmx/test.cmx $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(X86LIB)/bchlibx86.cmxa
 	$(CAMLBUILD) -o mtest $(OBJECTS) cmx/test.cmx
 
-bchlibelf: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa
+bchlibelf: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa
 	$(CAMLLINK) -a -o bchlibelf.cmxa $(OBJECTS)
 
 cmi/%.cmi: %.mli

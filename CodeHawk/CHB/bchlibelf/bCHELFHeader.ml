@@ -55,7 +55,6 @@ open BCHPreFileIO
 open BCHStreamWrapper
 open BCHSystemInfo
 
-
 (* bchlibelf *)
 open BCHELFTypes
 open BCHELFDictionary
@@ -74,7 +73,6 @@ open BCHELFSymbolTable
 open BCHELFPrettyStrings
 
 module H = Hashtbl
-module P = Pervasives
 
 
 type object_file_type = 
@@ -408,7 +406,7 @@ object(self)
   method get_sections =
     let result = ref [] in
     let _ = H.iter (fun k v -> result := (k,v) :: !result) section_header_table in
-    let compare = fun (i1,_) (i2,_) -> P.compare i1 i2 in
+    let compare = fun (i1,_) (i2,_) -> Stdlib.compare i1 i2 in
     let result = List.sort compare !result in
     List.map (fun (index,sh) -> 
         (index, sh, self#get_section index)) result
@@ -416,7 +414,7 @@ object(self)
   method get_program_segments =
     let result = ref [] in
     let _ = H.iter (fun k v -> result := (k,v) :: !result) program_header_table in
-    let compare = fun (i1,_) (i2,_) -> P.compare i1 i2 in
+    let compare = fun (i1,_) (i2,_) -> Stdlib.compare i1 i2 in
     let result = List.sort compare !result in
     List.map (fun (index,ph)  ->
         (index, ph, self#get_segment index)) result
@@ -796,7 +794,7 @@ object(self)
 
   method private write_xml_program_headers (node:xml_element_int) =
     let headers = ref [] in
-    let compare = fun (i1,_) (i2,_) -> P.compare i1 i2 in
+    let compare = fun (i1,_) (i2,_) -> Stdlib.compare i1 i2 in
     let _ = H.iter (fun k v -> headers := (k,v) :: !headers) program_header_table in
     let headers = List.sort compare !headers in
     node#appendChildren (List.map (fun (k,h) ->
@@ -820,7 +818,7 @@ object(self)
 
   method private write_xml_section_headers (node:xml_element_int) =
     let headers = ref [] in
-    let compare = (fun (i1,_) (i2,_) -> P.compare i1 i2) in
+    let compare = (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) in
     let _ = H.iter (fun k v -> headers := (k,v) :: !headers) section_header_table in
     let headers = List.sort compare !headers in
     node#appendChildren (List.map (fun (k,h) ->
@@ -917,7 +915,7 @@ object(self)
       programHeaders := (k,v) :: !programHeaders) program_header_table in
     let _ = H.iter (fun k v ->
       sectionHeaders := (k,v) :: !sectionHeaders) section_header_table in
-    let compare = fun (i1,_) (i2,_) -> P.compare i1 i2 in
+    let compare = fun (i1,_) (i2,_) -> Stdlib.compare i1 i2 in
     let programHeaders = List.sort compare !programHeaders in
     let sectionHeaders = List.sort compare !sectionHeaders in
     let prProgramHeader (i, h) = 
