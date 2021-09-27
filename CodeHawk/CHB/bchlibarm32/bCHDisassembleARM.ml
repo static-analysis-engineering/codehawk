@@ -363,6 +363,15 @@ let collect_data_references () =
   let table = H.create 11 in
   let add (a:doubleword_int) (instr: arm_assembly_instruction_int) =
     let hxa = a#to_hex_string in
+    let _ =
+      chlog#add
+        "load literals"
+        (LBLOCK [
+             instr#get_address#toPretty;
+             STR "  ";
+             instr#toPretty;
+             STR ": ";
+             a#toPretty]) in
     let entry =
       if H.mem table hxa then
         H.find table hxa
@@ -376,7 +385,7 @@ let collect_data_references () =
         | LoadRegister (_,_,_, mem, _) when mem#is_pc_relative_address ->
            let pcoffset = if instr#is_arm32 then 8 else 4 in
            let a = mem#get_pc_relative_address va pcoffset in
-           if !arm_assembly_instructions#is_code_address a then
+           if elf_header#is_program_address a then
              add a instr
            else
              ch_error_log#add
@@ -385,7 +394,7 @@ let collect_data_references () =
         | VLoadRegister (_, vd, _, mem) when mem#is_pc_relative_address ->
            let pcoffset = if instr#is_arm32 then 8 else 4 in
            let a = mem#get_pc_relative_address va pcoffset in
-           if !arm_assembly_instructions#is_code_address a then
+           if elf_header#is_program_address a then
              begin
                add a instr;
                if (vd#get_size = 8) then add (a#add_int 4) instr;
@@ -571,20 +580,7 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
             | CompareBranchNonzero (_, op) when op#is_absolute_address ->
              (next ()) @ [op#get_absolute_address]
           | _ -> (next ()))
-      | l ->
-         let _ = chlog#add
-                   "get-successors"
-                   (LBLOCK [STR "Get successors for ";
-                            iaddr#toPretty;
-                            STR ": ";
-                            INT (List.length l)]) in
-         l in
-    let _ =
-      chlog#add
-        "successors"
-        (LBLOCK [ iaddr#toPretty;
-                  STR ": ";
-                  pretty_print_list successors (fun s -> s#toPretty) " [" "," "]"]) in
+      | l -> l in
     List.map
       (fun va -> (make_location {loc_faddr = faddr; loc_iaddr = va})#ci)
       (List.filter
@@ -614,6 +610,21 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
        end in
   let get_next_instr_address =
     !arm_assembly_instructions#get_next_valid_instruction_address in
+
+  let is_tail_call floc va =
+    let instr = get_instr va in
+    match instr#get_opcode with
+    | Branch (ACCAlways, tgt, _) ->
+       if tgt#is_absolute_address
+          && functions_data#is_function_entry_point tgt#get_absolute_address then
+         let previnstr = get_instr (va#add_int (-4)) in
+         (match previnstr#get_opcode with
+          | Pop (_, _, _, _) -> true
+          | _ -> false)
+       else
+         false
+    | _ -> false in
+
   let rec find_last_instruction (va:doubleword_int) (prev:doubleword_int) =
     let instr = get_instr va in
     let floc = get_floc (make_location { loc_faddr = faddr; loc_iaddr = va }) in
@@ -626,28 +637,44 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       let _ =
         chlog#add
           "non-returning call" (LBLOCK [faddr#toPretty; STR " "; va#toPretty]) in
-      (Some [],va,[])
+      (Some [], va, [])
+    else if is_tail_call floc va then
+      let _ =
+        chlog#add
+          "tail call"
+          (LBLOCK [
+               faddr#toPretty; STR " "; va#toPretty; STR "  "; instr#toPretty]) in
+      (Some [], va, [])
+    else if
+      (match instr#get_opcode with PermanentlyUndefined _ -> true | _ -> false) then
+      let _ =
+        chlog#add
+          "permanently undefined instruction"
+          (LBLOCK [faddr#toPretty; STR "  "; va#toPretty]) in
+      (Some [], va, [])
     else if floc#has_call_target && floc#get_call_target#is_nonreturning then
       let _ = chlog#add "non-returning" floc#l#toPretty in
       (Some [],va,[])
     else if !arm_assembly_instructions#has_next_valid_instruction va then
       find_last_instruction (get_next_instr_address va) va
     else (None,va,[]) in
-  let (succ,lastaddr,inlinedblocks) =
+
+  let (succ, lastaddr, inlinedblocks) =
     if is_nr_call_instruction (get_instr baddr) then
-      (Some [],baddr,[])
+      (Some [] ,baddr, [])
+    else if
+      (match (get_instr baddr)#get_opcode with
+       | PermanentlyUndefined _ -> true | _ -> false) then
+      (Some [], baddr, [])
     else if !arm_assembly_instructions#has_next_valid_instruction baddr then
       let floc = get_floc (make_location {loc_faddr = faddr; loc_iaddr = baddr }) in
       let _ = floc#set_instruction_bytes (get_instr baddr)#get_instruction_bytes in
       find_last_instruction (get_next_instr_address baddr) baddr
     else (None,baddr,[]) in
-  let _ = chlog#add
-            "last address"
-            (LBLOCK [baddr#toPretty; STR " -> "; lastaddr#toPretty]) in
   let successors = match succ with
     | Some s -> s
     | _ -> get_successors faddr lastaddr in
-  (inlinedblocks,make_arm_assembly_block faddr baddr lastaddr successors)
+  (inlinedblocks, make_arm_assembly_block faddr baddr lastaddr successors)
 
 let trace_function (faddr:doubleword_int) =
   let workset = new DoublewordCollections.set_t in

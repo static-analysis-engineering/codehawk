@@ -231,6 +231,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "REV" c [rd; rm])
     }
+  | ByteReversePackedHalfword (c, rd, rm, tw) -> {
+      mnemonic = "REV16";
+      operands = [rd; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "REV16" c [rd; rm])
+    }
   | Compare (c, rn, rm, tw) -> {
       mnemonic = "CMP";
       operands = [rn; rm];
@@ -473,12 +480,26 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "RRX" c [rd; rm])
     }
+  | SelectBytes (c, rd, rn, rm) -> {
+      mnemonic = "SEL";
+      operands = [rd; rn; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SEL" c [rd; rn; rm])
+    }
   | SignedDivide (c, rd, rn, rm) -> {
       mnemonic = "SDIV";
       operands = [rd; rn; rm];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SDIV" c [rd; rn; rm])
+    }
+  | SignedBitFieldExtract (c, rd, rn) -> {
+      mnemonic = "SBFX";
+      operands = [rd; rn];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SBFX" c [rd; rn])
     }
   | SignedExtendByte (c, rd, rm) -> {
       mnemonic = "SXTB";
@@ -592,14 +613,21 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "SUB" c [rd;rn;rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "SUB" c [rd; rn; rm])
     }
-  | SubtractCarry (s, c, rd, rn, rm) -> {
+  | SubtractCarry (s, c, rd, rn, rm, tw) -> {
       mnemonic = "SBC";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "SBC" c [rd; rn; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "SBC" c [rd; rn; rm])
+    }
+  | SubtractWide (c, rd, sp, imm) -> {
+      mnemonic = "SUBW";
+      operands = [rd; sp; imm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SUBW" c [rd; sp; imm])
     }
   | SupervisorCall (cc, imm) -> {
       mnemonic = "SVC";
@@ -650,6 +678,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "TEQ" c [rn; rm])
     }
+  | UnsignedAdd8 (c, rd, rn, rm) -> {
+      mnemonic = "UADD8";
+      operands = [rd; rn; rm];
+      flags_set = [];  (* Note: Armv7 has GE bits for parallel add *)
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "UADD8" c [rd; rn; rm])
+    }
   | UnsignedBitFieldExtract (c, rd, rn) -> {
       mnemonic = "UBFX";
       operands = [rd; rn];
@@ -664,12 +699,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UXTAH" c [rd; rn; rm])
     }
-  | UnsignedExtendByte (c, rd, rm) -> {
+  | UnsignedExtendByte (c, rd, rm, tw) -> {
       mnemonic = "UXTB";
       operands = [rd; rm];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "UXTB" c [rd; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "UXTB" c [rd; rm])
     }
   | UnsignedExtendHalfword (c, rd, rm) -> {
       mnemonic = "UXTH";
@@ -684,6 +719,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = if s then [APSR_N; APSR_Z] else [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UMULL" c [rdlo; rdhi; rn; rm])
+    }
+  | UnsignedSaturatingSubtract8 (c, rd, rn, rm) -> {
+      mnemonic = "UQSUB8";
+      operands = [rd; rn; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "UQSUB8" c [rd; rn; rm])
     }
   | VCompare (nan, c, dt, op1, op2) ->
      let mnemonic =
@@ -729,6 +771,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        ccode = Some c;
        ida_asm = (fun f -> f#opscc "VMRS" c [dst; src])
      }
+  | VMoveToSystemRegister (c, dst, src) -> {
+      mnemonic = "VMSR";
+      operands = [dst; src];
+      flags_set = [];
+      ccode =Some c;
+      ida_asm = (fun f -> f#opscc "VMSR" c [dst; src])
+    }
   | VStoreRegister (c, src, base, mem) -> {
       mnemonic = "VSTR";
       operands = [src; base; mem];

@@ -455,7 +455,7 @@ let parse_data_proc_reg_type
      let imm5 = mk_imm5 bit11_8 bit7 in
      let rm = mk_imm_shift_reg bit3_0 bit6_5 imm5 RD in
      (* SBC{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
-     SubtractCarry (s,c,rd,rn,rm)
+     SubtractCarry (s, c, rd, rn, rm, false)
 
   (* <cc><0>< 6>s<hi><lo><rm>1001<rn> *)   (* SMULL *)
   | 6 when (bit4 = 1) ->
@@ -475,7 +475,7 @@ let parse_data_proc_reg_type
      let imm5 = mk_imm5 bit11_8 bit7 in
      let rm = mk_imm_shift_reg bit3_0 bit6_5 imm5 RD in
      (* RSC{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
-     ReverseSubtractCarry (s,c,rd,rn,rm)
+     ReverseSubtractCarry (s, c, rd, rn, rm)
 
   (* <cc><0>< 7>s<rn><rd><rs>0ty1<rm> *)   (* RSC-reg-shifted *)
   | 7 when (bit4 = 1) ->
@@ -484,7 +484,7 @@ let parse_data_proc_reg_type
      let rn = arm_register_op (get_arm_reg bit19_16) RD in
      let rm = mk_reg_shift_reg bit3_0 bit6_5 bit11_8 RD in
      (* ADC{S}<c> <Rd>, <Rn>, <Rm>, <type> <Rs> *)
-     ReverseSubtractCarry (s,c,rd,rn,rm)
+     ReverseSubtractCarry (s, c, rd, rn, rm)
 
   (* <cc><0>< 8>1<rn>0000<imm>ty0<rm> *)   (* TST-reg *)
   | 8 when (bit20 = 1) && (bit4 = 0) ->
@@ -817,7 +817,7 @@ let parse_data_proc_imm_type
      let rn = arm_register_op (get_arm_reg bit19_16) RD in
      let imm = mk_imm bit11_8 bit7_0 in
      (* SBC{S}<c> <Rd>, <Rn>, #<const> *)
-     SubtractCarry (s,c,rd,rn,imm)
+     SubtractCarry (s, c, rd, rn, imm, false)
 
   (* <cc><1>< 7>s<rn><rd><--imm12---> *)   (* RSC-imm *)
   | 7 ->
@@ -1180,7 +1180,7 @@ let parse_media_type
      let rotation = bit11_10 lsl 3 in
      let rm = mk_arm_rotated_register_op (get_arm_reg bit3_0) rotation RD in
      (* UXTB<c> <Rd>, <Rm>{, <rotation>} *)
-     UnsignedExtendByte (c,rd,rm)
+     UnsignedExtendByte (c, rd, rm, false)
 
   (* <cc><3>< 15><15><rd>ro000111<rm> *)   (* UXTH   *)
   | 15 when (bit19_16 = 15) && (bit9_8 = 0) && (bit7_5 = 3) ->

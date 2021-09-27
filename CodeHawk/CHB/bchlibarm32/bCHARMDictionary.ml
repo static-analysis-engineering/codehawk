@@ -188,7 +188,9 @@ object (self)
         | BranchLink (cond,addr)
         | BranchLinkExchange (cond,addr) ->
          (tags @ [ ci cond ], [ oi addr ])
-      | ByteReverseWord (c, rd, rm, tw) -> (ctags c,[oi rd; oi rm; setb tw])
+      | ByteReverseWord (c, rd, rm, tw) -> (ctags c,[ oi rd; oi rm; setb tw])
+      | ByteReversePackedHalfword (c, rd, rm, tw) ->
+         (ctags c, [oi rd; oi rm; setb tw])
       | Compare (c,op1,op2,tw) ->
          (ctags c, [oi op1; oi op2; setb tw])
       | CompareNegative (cond,op1,op2)
@@ -239,8 +241,9 @@ object (self)
          (ctags c, [setb s; oi dst; oi src; oi imm; setb tw])
       | RotateRight (s, c, rd, rn, rm) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm])
-      | RotateRightExtend (s,c,rd,rm) ->
-         (ctags c,[setb s; oi rd; oi rm])
+      | RotateRightExtend (s,c,rd,rm) -> (ctags c, [setb s; oi rd; oi rm])
+      | SelectBytes(c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
+      | SignedBitFieldExtract (c, rd, rn) -> (ctags c, [oi rd; oi rn])
       | SignedDivide (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | SignedExtendHalfword (c, rd, rm, tw) ->
          (ctags c, [oi rd; oi rm; setb tw])
@@ -269,8 +272,10 @@ object (self)
          (ctags c, [oi rd; oi rt; oi rn; oi mem])
       | Subtract (s, c, dst, src, imm, tw) ->
          (ctags c, [setb s; oi dst; oi src; oi imm; setb tw])
-      | SubtractCarry (setflags,cond,dst,src,imm)
-        | ReverseSubtractCarry (setflags,cond,dst,src,imm) ->
+      | SubtractCarry (s, c, rd, rn, rm, tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
+      | SubtractWide (c, rd, sp, imm) -> (ctags c, [oi rd; oi sp; oi imm])
+      | ReverseSubtractCarry (setflags,cond,dst,src,imm) ->
          (tags @ [ ci cond ], [ setb setflags; oi dst; oi src; oi imm ])
       | Swap (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
       | SwapByte (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
@@ -279,13 +284,16 @@ object (self)
       | Test (cond,src1,src2)
         | TestEquivalence (cond,src1,src2) ->
          (tags @ [ ci cond ], [oi src1; oi src2 ])
-      | UnsignedBitFieldExtract (c,rd,rn) -> (ctags c, [ oi rd; oi rn ])
+      | UnsignedAdd8 (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
+      | UnsignedBitFieldExtract (c,rd,rn) -> (ctags c, [oi rd; oi rn ])
       | UnsignedExtendAddHalfword (c,rd,rn,rm) ->
-         (ctags c,[ oi rd; oi rn; oi rm])
-      | UnsignedExtendByte (c, rd, rm)
-        | UnsignedExtendHalfword (c,rd,rm) -> (ctags c, [oi rd; oi rm])
+         (ctags c, [oi rd; oi rn; oi rm])
+      | UnsignedExtendByte (c, rd, rm, tw) -> (ctags c, [oi rd; oi rm; setb tw])
+      | UnsignedExtendHalfword (c,rd,rm) -> (ctags c, [oi rd; oi rm])
       | UnsignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) ->
          (ctags c,[setb s; oi rdlo; oi rdhi; oi rn; oi rm])
+      | UnsignedSaturatingSubtract8 (c, rd, rn, rm) ->
+         (ctags c, [oi rd; oi rn; oi rm])
       | VCompare (nan, c, dt, op1, op2) ->
          ((ctags c) @ [dt], [if nan then 1 else 0; oi op1; oi op2])
       | VConvert (round, c, dstdt, srcdt, dst, src) ->
@@ -294,6 +302,7 @@ object (self)
          (ctags c, [oi dst; oi base; oi mem])
       | VMove (c, dst, src) -> (ctags c, [oi dst; oi src])
       | VMoveRegisterStatus (c, dst, src) -> (ctags c, [oi dst; oi src])
+      | VMoveToSystemRegister (c, dst, src) -> (ctags c, [oi dst; oi src])
       | VStoreRegister (c, src, base, mem) ->
          (ctags c, [oi src; oi base; oi mem])
       | OpInvalid | NotCode _ -> (tags,[])
