@@ -622,6 +622,12 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
+  | ByteReversePackedHalfword (_, rd, rm, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
   | Compare (_, src1, _, _) ->
      let floc = get_floc loc in
      let _ =
@@ -802,7 +808,8 @@ let translate_arm_instruction
      let xrn = rn#to_expr floc in
      let p = rm#to_numerical#toInt in
      let m = mkNumerical_big (B.power_int_positive_int 2 p) in
-     let cmds = floc#get_assign_commands vrd (XOp (XMult, [num_constant_expr m; xrn])) in
+     let rhs = XOp (XMult, [num_constant_expr m; xrn]) in
+     let cmds = floc#get_assign_commands vrd rhs in
      default cmds
 
   | LogicalShiftLeft (_, ACCAlways, rd, rn, rm, _) ->
@@ -1015,6 +1022,18 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vdst () in
      default cmds
 
+  | SignedBitFieldExtract (ACCAlways, rd, rn) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = rd#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | SelectBytes (_, rd, rn, rm) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
   | SignedDivide (ACCAlways, rd, rn, rm) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = rd#to_lhs floc in
@@ -1146,13 +1165,34 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vdst () in
      default cmds
 
-  | SubtractCarry(_, _, dst, _, _) ->
+  | SubtractCarry(_, _, dst, _, _, _) ->
      let floc = get_floc loc in
      let vdst = dst#to_variable floc in
      let cmds = floc#get_abstract_commands vdst () in
      default cmds
 
-  | UnsignedExtendByte (ACCAlways, rd, rm) ->
+  | SubtractWide (_, rd, sp, imm) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let xsp = sp#to_expr floc in
+     let ximm = imm#to_expr floc in
+     let result = XOp (XMinus, [xsp; ximm]) in
+     let cmds = floc#get_assign_commands vrd result in
+     default cmds
+
+  | UnsignedAdd8 (_, rd, rn, rm) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
+  | UnsignedBitFieldExtract (ACCAlways, rd, rn) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
+  | UnsignedExtendByte (ACCAlways, rd, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrm = rm#to_expr floc in
@@ -1161,7 +1201,7 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands vrd result in
      default cmds
 
-  | UnsignedExtendByte (_, rd, _) ->
+  | UnsignedExtendByte (_, rd, _, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let cmds = floc#get_abstract_commands vrd () in
@@ -1189,6 +1229,12 @@ let translate_arm_instruction
      let cmdslo = floc#get_abstract_commands vlo () in
      let cmdshi = floc#get_abstract_commands vhi () in
      default (cmdslo @ cmdshi)
+
+  | UnsignedSaturatingSubtract8 (_, rd, _, _) ->
+     let floc = get_floc loc in
+     let vdst = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     default cmds
 
   | VMove (c, dst, src) ->
      let floc = get_floc loc in

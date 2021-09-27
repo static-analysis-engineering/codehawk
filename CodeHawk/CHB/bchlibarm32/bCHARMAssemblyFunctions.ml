@@ -31,6 +31,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHPrettyUtil
 open CHXmlDocument
 
 (* bchlib *)
@@ -87,9 +88,10 @@ let create_ordering
 	    (f::l,n)) ([],[]) fns in
       try
 	match leaves with
-	  [] ->  (* there is a cycle; find the node with the largest number of incoming 
-		    edges and remove one of the	outgoing edges from that node
-		    pass list of functions to avoid pivoting on a non-existing function *)
+	  [] ->
+           (* there is a cycle; find the node with the largest number of incoming
+	      edges and remove one of the	outgoing edges from that node
+	      pass list of functions to avoid pivoting on a non-existing function *)
 	    let fnIndices = List.map (fun dw -> dw#index) fns in
 	    let (pivotNode,incoming) = get_pivot_node cs fnIndices in  
 	    let edge = 
@@ -104,12 +106,20 @@ let create_ordering
 		  end in
 	    let newCalls = List.filter 
 	      (fun (e1,e2) -> 
-		(not (e1#equal (fst edge))) || (not (e2#equal (snd edge)))) cs in  	    
-	    let _ = chlog#add "break cycle" 
-	      (LBLOCK [ STR "remove " ; STR "(" ; 
-			(fst edge)#toPretty ; STR "," ; (snd edge)#toPretty ;
-			STR ") with " ; INT incoming ; STR " edges (size of cycle: " ;
-			INT (List.length fns) ; STR ")" ]) in
+		(not (e1#equal (fst edge))) || (not (e2#equal (snd edge)))) cs in
+	    let _ =
+              chlog#add "break cycle"
+	        (LBLOCK [
+                     STR "remove ";
+                     STR "(";
+		     (fst edge)#toPretty;
+                     STR ",";
+                     (snd edge)#toPretty;
+		     STR ") with ";
+                     INT incoming;
+                     STR " edges (size of cycle: ";
+		     INT (List.length fns);
+                     STR ")"]) in
 	    aux nonleaves newCalls result ((-1)::stats) true
 	| _ ->
 	  let newCalls = 
@@ -247,10 +257,26 @@ object (self)
         H.replace table a#index ((H.find table a#index) + 1)
       else
         H.add table a#index 1 in
-    let _ = List.iter (fun f ->
-                f#iteri
-                  (fun faddr a _ -> add faddr a))
-              self#get_functions in
+    let _ =
+      List.iter (fun f ->
+          f#iteri
+            (fun faddr a _ -> add faddr a))
+        self#get_functions in
+    table
+
+  method private get_duplicate_instructions =
+    let table = H.create 37 in
+    let add faddr ctxta =
+      let a = (ctxt_string_to_location faddr ctxta)#i in
+      let entry =
+        if H.mem table a#index then
+          H.find table a#index
+        else
+          [] in
+        H.add table a#index (faddr#to_hex_string :: entry) in
+    let _ =
+      List.iter (fun f ->
+          f#iteri (fun faddr a _ -> add faddr a)) self#get_functions in
     table
 
   method add_functions_by_preamble =
@@ -282,8 +308,30 @@ object (self)
 
   method dark_matter_to_string =
     let table = self#get_live_instructions in
-    let filter = (fun i -> not (H.mem table i#get_address#index)) in
+    let filter = (fun i -> H.mem table i#get_address#index) in
     !arm_assembly_instructions#toString ~filter ()
+
+  method duplicates_to_string =
+    let table = self#get_duplicate_instructions in
+    let lines = ref [] in
+    begin
+      !arm_assembly_instructions#itera
+        (fun va instr ->
+          if (H.mem table instr#get_address#index
+              && (List.length (H.find table instr#get_address#index)) > 1) then
+            let _ =
+              if functions_data#is_function_entry_point va then
+                lines := "" :: !lines in
+            let line =
+              va#to_hex_string
+                ^ " "
+                ^ (fixed_length_string instr#toString 32)
+                ^ "["
+                ^ (String.concat ", " (H.find table instr#get_address#index))
+                ^ "]" in
+            lines := line :: !lines);
+      String.concat "\n" (List.rev !lines)
+    end
     
   method get_num_functions = H.length functions
                            

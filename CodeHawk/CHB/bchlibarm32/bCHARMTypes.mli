@@ -337,6 +337,11 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
       * bool             (* T.W *)
+  | ByteReversePackedHalfword of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm: source *)
+      * bool             (* T.W. *)
   | Compare of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn: source 1 *)
@@ -521,6 +526,15 @@ type arm_opcode_t =
       * arm_opcode_cc_t  (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
+  | SelectBytes of
+      arm_opcode_cc_t    (*condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: first operand *)
+      * arm_operand_int  (* rm: second operand *)
+  | SignedBitFieldExtract of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source *)
   | SignedDivide of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
@@ -633,6 +647,12 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: source 2 *)
+      * bool             (* T.W *)
+  | SubtractWide of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* sp: stack pointer *)
+      * arm_operand_int  (* imm: immediate value to be subtracted *)
   | Swap of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt *)
@@ -661,6 +681,11 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: source 2 *)
+  | UnsignedAdd8 of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: first operand *)
+      * arm_operand_int  (* rm: second operand *)
   | UnsignedBitFieldExtract of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
@@ -674,6 +699,7 @@ type arm_opcode_t =
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
+      * bool            (* T.W. *)
   | UnsignedExtendHalfword of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* destination *)
@@ -685,6 +711,11 @@ type arm_opcode_t =
       * arm_operand_int (* rdhi: destination 2 *)
       * arm_operand_int (* rn: source 1 *)
       * arm_operand_int (* rm: source 2 *)
+  | UnsignedSaturatingSubtract8 of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* rd: destination *)
+      * arm_operand_int (* rn: first operand *)
+      * arm_operand_int (* rm: second operand *)
   | VCompare of
       bool   (* if true NaN operand causes invalie operation *)
       * arm_opcode_cc_t (* condition *)
@@ -708,6 +739,10 @@ type arm_opcode_t =
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
   | VMoveRegisterStatus of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
+  | VMoveToSystemRegister of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
@@ -790,7 +825,10 @@ class type arm_assembly_instructions_int =
     method at_index: int -> arm_assembly_instruction_int
     method at_address: doubleword_int -> arm_assembly_instruction_int
     method get_code_addresses_rev:
-             ?low:doubleword_int -> ?high:doubleword_int -> unit -> doubleword_int list
+             ?low:doubleword_int
+             -> ?high:doubleword_int
+             -> unit
+             -> doubleword_int list
     method get_next_valid_instruction_address: doubleword_int -> doubleword_int
     method get_num_instructions: int
     method get_num_unknown_instructions: int
@@ -805,7 +843,8 @@ class type arm_assembly_instructions_int =
 
     (* i/o *)
     method write_xml: xml_element_int -> unit
-    method toString: ?filter:(arm_assembly_instruction_int -> bool) -> unit -> string
+    method toString:
+             ?filter:(arm_assembly_instruction_int -> bool) -> unit -> string
 
   end
 
@@ -864,7 +903,10 @@ class type arm_assembly_function_int =
     method iter: (arm_assembly_block_int -> unit) -> unit
     method itera: (ctxt_iaddress_t -> arm_assembly_block_int -> unit) -> unit
     method iteri:
-             (doubleword_int -> ctxt_iaddress_t -> arm_assembly_instruction_int -> unit)
+             (doubleword_int
+              -> ctxt_iaddress_t
+              -> arm_assembly_instruction_int
+              -> unit)
              -> unit
     method populate_callgraph: callgraph_int -> unit
 
@@ -908,6 +950,7 @@ class type arm_assembly_functions_int =
 
     (* i/o *)
     method dark_matter_to_string: string
+    method duplicates_to_string: string
 
   end
 

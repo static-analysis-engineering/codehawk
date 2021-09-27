@@ -313,6 +313,13 @@ object (self)
          (["a:vxx"],
           [xd#index_variable vrd; xd#index_xpr xrm; xd#index_xpr xrmm])
 
+      | ByteReversePackedHalfword (_, rd, rm, _) ->
+         let vrd = rd#to_variable floc in
+         let xrm = rm#to_expr floc in
+         let xrmm = rewrite_expr xrm in
+         (["a:vxx"],
+          [xd#index_variable vrd; xd#index_xpr xrm; xd#index_xpr xrmm])
+
       | Compare (_, rn, rm, _) ->
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
@@ -575,6 +582,20 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
+      | SignedBitFieldExtract (_, rd, rn) ->
+         let lhs = rd#to_variable floc in
+         let rhs = rn#to_expr floc in
+         let rrhs = rewrite_expr rhs in
+         (["a:vxx"],
+          [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr rrhs])
+
+      | SelectBytes (_, rd, rn, rm) ->
+         let lhs = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         (["a:vxx"],
+          [xd#index_variable lhs; xd#index_xpr xrn; xd#index_xpr xrm])
+
       | SignedDivide (_, rd, rn, rm) ->
          let lhs = rd#to_variable floc in
          let rhs1 = rn#to_expr floc in
@@ -730,7 +751,7 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | SubtractCarry (_, _, rd, rn, rm) ->
+      | SubtractCarry (_, _, rd, rn, rm, _) ->
          let lhs = rd#to_variable floc in
          let rhs1 = rn#to_expr floc in
          let rhs2 = rm#to_expr floc in
@@ -743,6 +764,26 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
+      | SubtractWide (_, rd, sp, imm) ->
+         let lhs = rd#to_variable floc in
+         let xsp = sp#to_expr floc in
+         let ximm = imm#to_expr floc in
+         let result = XOp (XMinus, [xsp; ximm]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr xsp;
+           xd#index_xpr ximm;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
+      | UnsignedAdd8 (_, rd, rn, rm) ->
+         let lhs = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         (["a:vxx"],
+          [xd#index_variable lhs; xd#index_xpr xrn; xd#index_xpr xrm])
+
       | UnsignedBitFieldExtract (_, rd, rn) ->
          let lhs = rd#to_variable floc in
          let rhs = rn#to_expr floc in
@@ -750,7 +791,7 @@ object (self)
          (["a:vxx"],
           [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr rrhs])
 
-      | UnsignedExtendByte (_, rd, rm) ->
+      | UnsignedExtendByte (_, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
          let result = xrm in
@@ -784,6 +825,13 @@ object (self)
            xd#index_xpr rhs2;
            xd#index_xpr result;
            xd#index_xpr rresult])
+
+      | UnsignedSaturatingSubtract8 (_, rd, rn, rm) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         (["a:vxx"],
+          [xd#index_variable vrd; xd#index_xpr xrn; xd#index_xpr xrm])
 
       | VCompare (_, _, _, op1, op2) ->
          let src1 = op1#to_expr floc in
