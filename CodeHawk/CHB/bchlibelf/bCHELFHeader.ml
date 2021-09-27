@@ -1096,10 +1096,10 @@ let load_elf_files () =
      raise (BCH_failure
               (LBLOCK [ STR "Unable to load elf file " ; STR (get_filename ()) ]))
     
-let read_elf_file (filename:string) =
+let read_elf_file (filename: string) (xsize: int) =
   let ch = open_in_bin filename in
   let ch = IO.input_channel ch in
-  let exeString = IO.nread ch 10000000000 in
+  let exeString = IO.nread ch (2 * xsize) in
   let filesize = Bytes.length exeString in
   let default () =
     begin
@@ -1107,7 +1107,13 @@ let read_elf_file (filename:string) =
       elf_header#read ;
       elf_header#set_code_extent ;
       elf_header#initialize_jump_tables ;
-      (true, LBLOCK [ STR "File: " ; STR  filename ; NL ;
-                      STR "Size: " ; INT  filesize ; NL ])
+      (true,
+       LBLOCK [
+           STR "File: ";
+           STR  filename;
+           NL;
+           STR "Size: ";
+           INT filesize;
+           NL])
     end in
   default ()
