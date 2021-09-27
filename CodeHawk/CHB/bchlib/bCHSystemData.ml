@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,14 +37,19 @@ class system_data_t =
 object
 
   val mutable filename = ""
+  val mutable xfilesize = 0
   val mutable image_base = wordzero
   val mutable is_elf = false
 
   method set_filename s = filename <- s
+  method set_xfilesize s = xfilesize <- s
   method set_image_base w = image_base <- w
   method set_elf = is_elf <- true
-  method get_filename = filename 
+
+  method get_filename = filename
+  method get_xfilesize = xfilesize
   method get_image_base = image_base
+
   method is_elf = is_elf
 
 end
