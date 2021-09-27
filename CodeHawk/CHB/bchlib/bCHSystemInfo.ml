@@ -113,6 +113,7 @@ object (self)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
   val mutable has_file = false
   val mutable filename = ""
+  val mutable xfilesize = 0
   val mutable is_elf = false
   val mutable is_mips = false
   val mutable is_arm = false
@@ -447,8 +448,15 @@ object (self)
     H.replace class_membership index entry
 
 
-  method set_filename s = begin filename <- s; system_data#set_filename s end
+  method set_filename s =
+    begin filename <- s; system_data#set_filename s end
+
   method get_filename = filename
+
+  method set_xfilesize s =
+    begin xfilesize <- s; system_data#set_xfilesize s end
+
+  method get_xfilesize = xfilesize
 
   method set_elf = is_elf <- true
   method is_elf = is_elf

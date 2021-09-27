@@ -691,16 +691,18 @@ class type system_data_int =
 object
 
   (* setters *)
-  method set_filename         : string -> unit
-  method set_image_base       : doubleword_int -> unit
-  method set_elf              : unit
+  method set_filename: string -> unit
+  method set_xfilesize: int -> unit
+  method set_image_base: doubleword_int -> unit
+  method set_elf: unit
 
   (* accessors *)
-  method get_filename         : string
-  method get_image_base       : doubleword_int
+  method get_filename: string
+  method get_xfilesize: int
+  method get_image_base: doubleword_int
 
   (* predicates *)
-  method is_elf               : bool
+  method is_elf: bool
 
 end
 
@@ -2905,6 +2907,7 @@ object
     
   (* setters *)
   method set_filename: string -> unit
+  method set_xfilesize: int -> unit
   method set_file_string: string -> unit
   method set_elf: unit
   method set_mips: unit
@@ -2952,6 +2955,7 @@ object
 
   method get_preamble_cutoff: int
   method get_filename: string
+  method get_xfilesize: int
   method get_file_string: ?hexSize:doubleword_int -> doubleword_int -> string
   method get_file_input:
            ?hexSize:doubleword_int -> doubleword_int ->  stream_wrapper_int
