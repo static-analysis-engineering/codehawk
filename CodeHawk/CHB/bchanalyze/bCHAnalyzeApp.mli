@@ -36,6 +36,8 @@ open BCHLibx86Types
 (* bchlibmips32 *)
 open BCHMIPSTypes
 
+val add_no_lineq: string -> unit
+
 val analyze_all: bool ref
 val analyze: float -> unit
 

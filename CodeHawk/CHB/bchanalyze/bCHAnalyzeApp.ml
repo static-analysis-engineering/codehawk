@@ -82,6 +82,9 @@ let analyze_all = ref false
 let maxrelationalvarcomplexity = ref 150000.0
 let maxrelationalloopcomplexity = ref 2000
 
+let no_lineq = ref []
+let add_no_lineq s = no_lineq := s :: !no_lineq
+
 let analyze_x86_function faddr f =
   let fstarttime = Unix.gettimeofday () in
   let finfo =  load_function_info faddr in
@@ -317,7 +320,11 @@ let analyze_arm_function faddr f count =
     begin
       bb_invariants#reset;
       analyze_procedure_with_intervals proc arm_chif_system#get_arm_system;
-      analyze_procedure_with_linear_equalities proc arm_chif_system#get_arm_system;
+      (if List.mem faddr#to_hex_string !no_lineq then
+         chlog#add "skip linear equalities" (faddr#toPretty)
+       else
+         analyze_procedure_with_linear_equalities
+           proc arm_chif_system#get_arm_system);
       analyze_procedure_with_valuesets proc arm_chif_system#get_arm_system;
       extract_ranges finfo bb_invariants#get_invariants;
       extract_linear_equalities finfo bb_invariants#get_invariants;
