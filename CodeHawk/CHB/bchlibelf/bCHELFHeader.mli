@@ -62,4 +62,4 @@ val elf_header    : elf_header_int
 val save_elf_files: unit -> unit
 val load_elf_files: unit -> unit
 
-val read_elf_file: string -> bool *  pretty_t
+val read_elf_file: string -> int -> bool * pretty_t
