@@ -130,15 +130,19 @@ let speclist =
     ("-mips", Arg.Unit (fun () -> architecture := "mips"), "mips executable");
     ("-elf", Arg.Unit (fun () -> fileformat := "elf"), "ELF executable");
     ("-extract", Arg.Unit (fun () -> cmd := "extract"),
-     "extract executable content from executable and save in xml format") ;
+     "extract executable content from executable and save in xml format");
+    ("-xsize", Arg.Int system_info#set_xfilesize,
+     "size of the executable in bytes");
     ("-dump", Arg.Unit (fun () -> cmd := "dump"),
-     "dump entire executable to xml (max size 1MB)") ;
+     "dump entire executable to xml (max size 1MB)");
     ("-disassemble", Arg.Unit (fun () -> cmd := "disassemble"),
      "save an assembly listing of the executable in text format") ;
     ("-analyze", Arg.Unit (fun () -> cmd := "analyze"),
      "analyze the executable and save intermediate results in xml format (applicable to xml rep only)") ;
     ("-ignore_stable", Arg.Unit (fun () -> BCHAnalyzeApp.analyze_all := true),
-     "continue analyzing functions that have stabilized") ;
+     "continue analyzing functions that have stabilized");
+    ("-no_lineq", Arg.String (fun s -> add_no_lineq s),
+     "do not apply linear equality analysis to this function");
     ("-preamble_cutoff", Arg.Int system_info#set_preamble_cutoff,
      "minimum number of preamble instructions observed to add as function entry point");
     ("-save_cfgs", Arg.Unit (fun () -> savecfgs := true),
@@ -282,7 +286,8 @@ let main () =
       let _ = if !architecture = "mips" then system_info#set_mips in
       let _ = if !architecture = "arm" then system_info#set_arm in
       let _ = system_info#initialize in
-      let (success,msg) = read_elf_file system_info#get_filename in
+      let (success, msg) =
+        read_elf_file system_info#get_filename system_info#get_xfilesize in
       if success then
         begin
           pverbose [ msg ; NL ] ;
@@ -428,6 +433,9 @@ let main () =
 	    file_output#saveFile
               (get_orphan_code_listing_filename ())
 	      (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)));
+            file_output#saveFile
+              (get_duplicate_coverage_filename ())
+              (STR (BCHARMAssemblyFunctions.arm_assembly_functions#duplicates_to_string));
             save_arm_assembly_instructions ();
             save_system_info ();
             save_arm_dictionary ();
