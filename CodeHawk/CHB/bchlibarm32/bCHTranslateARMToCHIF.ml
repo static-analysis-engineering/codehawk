@@ -878,6 +878,9 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let (lhs, lhscmds) = dst#to_lhs floc in
      let rhs = dst#to_expr floc in
+     let rhs = rewrite_expr floc rhs in
+     let _ =
+       chlog#add "MoveTop" (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; x2p rhs]) in
      let imm16 = src#to_expr floc in
      let ximm16 = XOp (XMult, [imm16; int_constant_expr e16]) in
      let xrdm16 = XOp (XMod, [rhs; int_constant_expr e16]) in

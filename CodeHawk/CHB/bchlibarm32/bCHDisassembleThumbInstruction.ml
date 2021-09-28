@@ -1120,10 +1120,6 @@ let parse_t32_branch
      let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
      let tgt = (iaddr#add_int 2)#add_int imm32 in
      let tgtop = arm_absolute_op tgt RD in
-     let _ =
-       chlog#add
-         "branch T4"
-         (LBLOCK [iaddr#toPretty; STR ": "; tgt#toPretty]) in
      (* B<c>.W <label> *)
      Branch (cc, tgtop, true)
 

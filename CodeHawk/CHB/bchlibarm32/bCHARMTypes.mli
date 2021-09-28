@@ -819,6 +819,7 @@ class type arm_assembly_instructions_int =
     (* setters *)
     method set: int -> arm_assembly_instruction_int -> unit
     method set_not_code: data_block_int list -> unit
+    method set_jumptables: jumptable_int list -> unit
 
     (* accessors *)
     method length: int

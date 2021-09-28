@@ -110,6 +110,7 @@ let iteri_instructions (f:int -> arm_assembly_instruction_int -> unit) =
       let k = i * arrayLength in
       Array.iteri (fun j instr -> f (k+j) instr) arr) arm_instructions
 
+
 class arm_assembly_instructions_t
         (len:int) (code_base:doubleword_int):arm_assembly_instructions_int =
 object (self)
@@ -159,7 +160,54 @@ object (self)
         set_instruction startindex startinstr;
         for i = startindex + 1 to endindex - 1 do
           set_instruction
-            i (make_arm_assembly_instruction (codeBase#add_int i) true (NotCode None) "")
+            i
+            (make_arm_assembly_instruction
+               (codeBase#add_int i) true (NotCode None) "")
+        done
+      end
+
+  method set_jumptables (jumptables: jumptable_int list) =
+    List.iter self#set_jumptable jumptables
+
+  method private set_jumptable (jumptable: jumptable_int) =
+    let saddr = jumptable#get_start_address in
+    let eaddr = jumptable#get_end_address in
+    if saddr#lt codeBase then
+      chlog#add
+        "jumptable"
+        (LBLOCK [
+             STR "Ignoring jump table ";
+             STR "; start address is less than start of code"])
+    else if codeEnd#lt eaddr then
+      chlog#add
+        "jumptable"
+        (LBLOCK [
+             STR "Ignoring jump table ";
+             STR "; end address is beyond end of code section"])
+    else
+      let _ =
+        chlog#add
+          "jumptable"
+          (LBLOCK [
+               STR "start: ";
+               saddr#toPretty;
+               (jumptable#toPretty
+                  ~is_function_entry_point:(fun _ -> false)
+                  ~get_opt_function_name:(fun _ -> None));
+               STR "; end: ";
+               eaddr#toPretty]) in
+      let startindex = (saddr#subtract codeBase)#to_int in
+      let startinstr =
+        make_arm_assembly_instruction
+          saddr true (NotCode (Some (JumpTable jumptable))) "" in
+      let endindex = (eaddr#subtract codeBase)#to_int in
+      begin
+        set_instruction startindex startinstr;
+        for i = startindex + 1 to endindex - 1 do
+          set_instruction
+            i
+            (make_arm_assembly_instruction
+               (codeBase#add_int i) true (NotCode None) "")
         done
       end
 
@@ -283,7 +331,12 @@ object (self)
     let firstNew = ref true in
     let not_code_to_string nc =
       match nc with
-      | JumpTable jt -> "jumptable"
+      | JumpTable jt ->
+         let s =
+           jt#toString
+             ~is_function_entry_point:(fun _ -> false)
+             ~get_opt_function_name:(fun _ -> None) in
+         ("\n" ^ s ^ "\n")
       | DataBlock db ->
          let s = db#get_data_string in
          let ch = make_pushback_stream s in
@@ -391,10 +444,9 @@ object (self)
                   (LBLOCK [STR "Error in instruction: "; va#toPretty;
                            STR ": "; p]))
           | _ ->
-             raise
-               (BCH_failure
-                  (LBLOCK [STR "Unknown error in instruction: "; va#toPretty;
-                           STR ": "; STR instr#toString])));
+             ch_error_log#add "unknown error in toString"
+               (LBLOCK [STR "Unknown error in instruction: "; va#toPretty;
+                        STR ": "; STR instr#toString]));
       String.concat "\n" (List.rev !lines)
     end
 

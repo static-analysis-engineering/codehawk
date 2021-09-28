@@ -490,6 +490,19 @@ object (self)
          let _ = ignore (get_string_reference floc ximm) in
          (["a:vx"], [xd#index_variable vrd; xd#index_xpr ximm])
 
+      | Multiply(_, _, rd, rn, rm) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         let xprd = XOp (XMult, [xrn; xrm]) in
+         let xrprd = rewrite_expr xprd in
+         (["a:vxxxx"],
+          [xd#index_variable vrd;
+           xd#index_xpr xrn;
+           xd#index_xpr xrm;
+           xd#index_xpr xprd;
+           xd#index_xpr xrprd])
+
       | MultiplyAccumulate (_, _, rd, rn, rm, ra) ->
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
@@ -553,7 +566,10 @@ object (self)
           | _ -> (tags @ ["uc"], args))
 
       | Push (_, sp, rl, _) ->
-         let rhsexprs = List.map (fun op -> rewrite_expr (op#to_expr floc)) rl#get_register_op_list in
+         let rhsexprs =
+           List.map
+             (fun op -> rewrite_expr (op#to_expr floc))
+             rl#get_register_op_list in
          let regcount = List.length rhsexprs in
          let lhsops =
            List.map (fun offset ->
@@ -776,6 +792,19 @@ object (self)
            xd#index_xpr ximm;
            xd#index_xpr result;
            xd#index_xpr rresult])
+
+      | TableBranchByte (_, _, rm, _) ->
+         let xrm = rm#to_expr floc in
+         (["a:x"], [xd#index_xpr xrm])
+
+      | TableBranchHalfword (_, _, rm, _) ->
+         let xrm = rm#to_expr floc in
+         (["a:x"], [xd#index_xpr xrm])
+
+      | SupervisorCall (_, _) ->
+         let r7 = arm_register_op AR7 RD in
+         let xr7 = r7#to_expr floc in
+         (["a:x"], [xd#index_xpr xr7])
 
       | UnsignedAdd8 (_, rd, rn, rm) ->
          let lhs = rd#to_variable floc in
