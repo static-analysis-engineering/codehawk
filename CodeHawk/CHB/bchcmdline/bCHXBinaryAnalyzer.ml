@@ -141,8 +141,10 @@ let speclist =
      "analyze the executable and save intermediate results in xml format (applicable to xml rep only)") ;
     ("-ignore_stable", Arg.Unit (fun () -> BCHAnalyzeApp.analyze_all := true),
      "continue analyzing functions that have stabilized");
-    ("-no_lineq", Arg.String (fun s -> add_no_lineq s),
-     "do not apply linear equality analysis to this function");
+    ("-fn_exclude", Arg.String (fun s -> exclude_function s),
+     "exclude the function with the given address from the analysis");
+    ("-fn_no_lineq", Arg.String (fun s -> add_no_lineq s),
+     "do not apply linear equality analysis to the function with the given address");
     ("-preamble_cutoff", Arg.Int system_info#set_preamble_cutoff,
      "minimum number of preamble instructions observed to add as function entry point");
     ("-save_cfgs", Arg.Unit (fun () -> savecfgs := true),
