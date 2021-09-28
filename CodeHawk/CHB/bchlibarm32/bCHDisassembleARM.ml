@@ -89,28 +89,126 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   let size = String.length x in  
   (* let opcode_monitor = new opcode_monitor_t base size in *)
   let mode = ref "arm" in
+
   let add_instruction position opcode bytes =
     let index = position + displacement in 
     let addr = base#add_int position in
     let instr = make_arm_assembly_instruction addr (!mode="arm") opcode bytes in
     begin
-      !arm_assembly_instructions#set index instr ;
+      !arm_assembly_instructions#set index instr;
       (* opcode_monitor#check_instruction instr *)
     end in
   let ch = system_info#get_string_stream x in
+
   let not_code_length nc =
     match nc with
     | JumpTable jt -> jt#get_length
     | DataBlock db -> db#get_length in
+
   let not_code_set_string nc s =
     match nc with
     | DataBlock db -> db#set_data_string s
     | _ -> () in
+
   let is_data_block (pos:int) =
     (!arm_assembly_instructions#at_index (displacement+pos))#is_non_code_block in
   (* let is_not_code (pos:int) =
     let instr = !arm_assembly_instructions#at_index pos in
     match instr#get_opcode with | NotCode None -> true | _ -> false in *)
+
+  let find_cmp_instr addr =
+    let cmpaddr = addr#add_int (-6) in
+    let cmpinstr = !arm_assembly_instructions#at_address cmpaddr in
+    match cmpinstr#get_opcode with
+    | Compare _ -> Some cmpinstr
+    | _ ->
+       let cmpaddr = addr#add_int (-4) in
+       let cmpinstr = !arm_assembly_instructions#at_address cmpaddr in
+       match cmpinstr#get_opcode with
+       | Compare _ -> Some cmpinstr
+       | _ -> None in
+
+  let is_table_branch (pos: int) (opcode: arm_opcode_t) =
+    match opcode with
+    | TableBranchByte (_, basereg, indexop, _)
+      |TableBranchHalfword (_, basereg, indexop, _)
+         when basereg#get_register = ARPC ->
+       let addr = base#add_int pos in
+       let cmpinstr = find_cmp_instr addr in
+       let indexreg =
+         if indexop#is_register then
+           indexop#get_register
+         else
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Register not recognized in table branch: ";
+                     indexop#toPretty])) in
+       (match cmpinstr with
+        | Some instr ->
+           (match instr#get_opcode with
+            | Compare (_, rn, imm, _) when rn#is_register && imm#is_immediate ->
+               rn#get_register = indexreg
+            | _ -> false)
+        | _ -> false)
+    | _ -> false in
+
+  let create_table_branch ch (pos: int) (opcode: arm_opcode_t) =
+    match opcode with
+    | TableBranchByte (_, basereg, indexop, _)
+      | TableBranchHalfword (_, basereg, indexop, _)
+         when basereg#get_register = ARPC ->
+       let addr = base#add_int pos in
+       let cmpinstr = find_cmp_instr addr in
+       (match cmpinstr with
+        | Some instr ->
+           (match instr#get_opcode with
+            | Compare (_, _, imm, _) when imm#is_immediate ->
+               let size = imm#to_numerical#toInt in
+               let jtaddr = addr#add_int 4 in
+               (match opcode with
+                | TableBranchByte _ ->
+                   let size = if size mod 2 = 0 then size + 1 else size in
+                   let targets = ref [] in
+                   let _ =
+                     for i = 0 to size do
+                       let byte = ch#read_byte in
+                       let tgt = addr#add_int ((2 * byte) + 4) in
+                       targets := tgt :: !targets
+                     done in
+                   let end_address = jtaddr#add_int (size + 1) in
+                   let jt =
+                     make_jumptable
+                       ~end_address:(Some end_address)
+                       ~start_address:jtaddr
+                       ~targets:(List.rev !targets) in
+                   begin
+                     system_info#add_jumptable jt;
+                     !arm_assembly_instructions#set_jumptables [jt]
+                   end
+                | TableBranchHalfword _ ->
+                   let targets = ref [] in
+                   let _ =
+                     for i = 0 to size do
+                       let hw = ch#read_ui16 in
+                       let tgt = addr#add_int ((2 * hw) + 4) in
+                       targets := tgt :: !targets
+                     done in
+                   let end_address = jtaddr#add_int (2 * (size + 1)) in
+                   let jt =
+                     make_jumptable
+                       ~end_address:(Some end_address)
+                       ~start_address:jtaddr
+                       ~targets:(List.rev !targets) in
+                   begin
+                     system_info#add_jumptable jt;
+                     !arm_assembly_instructions#set_jumptables[jt]
+                   end
+                | _ -> ())
+            | _ -> ())
+        | _ -> ())
+    | _ -> () in
+
   let skip_data_block (pos:int) ch =
     let nonCodeBlock =
       (!arm_assembly_instructions#at_index (displacement+pos))#get_non_code_block in
@@ -182,9 +280,15 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
               let instrBytes = Bytes.make instrlen ' ' in
               let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrlen in
               let _ = add_instruction prevPos opcode (Bytes.to_string instrBytes) in
-              let _ = pverbose [(base#add_int prevPos)#toPretty;
-                                STR "  ";
-                                STR (arm_opcode_to_string opcode); NL] in
+              let _ =
+                pverbose [
+                    (base#add_int prevPos)#toPretty;
+                    STR "  ";
+                    STR (arm_opcode_to_string opcode);
+                    NL] in
+              let _ =
+                if is_table_branch prevPos opcode then
+                  create_table_branch ch prevPos opcode in
               ()
             else
               let instrbytes = ch#read_doubleword in
@@ -472,6 +576,22 @@ let set_block_boundaries () =
              (LBLOCK [ STR "data block end address incorrect: ";
                        db#get_end_address#toPretty ])) datablocks;
 
+    (* --------------------------------------- record jumptables -- *)
+    List.iter
+      (fun jt ->
+        try
+          List.iter set_block_entry jt#get_all_targets
+        with
+        | BCH_failure p ->
+           ch_error_log#add
+             "disassembly"
+             (LBLOCK [
+                  STR "jump table target address incorrect: ";
+                  jt#toPretty
+                    ~is_function_entry_point:(fun _ -> false)
+                    ~get_opt_function_name:(fun _ -> None)]))
+      system_info#get_jumptables;
+
     (* ------------------- record targets of unconditional jumps -- *)
     !arm_assembly_instructions#itera
       (fun va instr ->
@@ -579,6 +699,10 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
             | CompareBranchZero (_, op)
             | CompareBranchNonzero (_, op) when op#is_absolute_address ->
              (next ()) @ [op#get_absolute_address]
+          | TableBranchByte _
+            | TableBranchHalfword _
+               when system_info#has_jumptable (iaddr#add_int 4) ->
+             (system_info#get_jumptable (iaddr#add_int 4))#get_all_targets
           | _ -> (next ()))
       | l -> l in
     List.map
