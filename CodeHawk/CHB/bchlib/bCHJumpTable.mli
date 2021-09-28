@@ -32,7 +32,8 @@ open CHXmlDocument
 open BCHLibTypes
 
 val make_jumptable:
-  start_address:doubleword_int
+  ?end_address: doubleword_int option
+  -> start_address:doubleword_int
   -> targets:doubleword_int list
   -> jumptable_int
   

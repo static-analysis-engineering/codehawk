@@ -41,12 +41,16 @@ open BCHLibTypes
 open BCHStreamWrapper
 
 
-class jumptable_t 
-  ~(start_address: doubleword_int)
-  ~(targets      : doubleword_int list):jumptable_int =
+class jumptable_t
+        ?(end_address: doubleword_int option=None)
+        ~(start_address: doubleword_int)
+        ~(targets      : doubleword_int list):jumptable_int =
 object (self)
 
-  val end_address = start_address#add_int ((List.length targets) * 4)
+  val end_address =
+    match end_address with
+    | Some e -> e
+    | _ -> start_address#add_int ((List.length targets) * 4)
   val mutable startaddress_valid = true 
 
   method invalidate_startaddress = startaddress_valid <- false
@@ -55,7 +59,13 @@ object (self)
   method get_end_address   = end_address
 
   method get_all_targets = 
-    if startaddress_valid then targets else List.tl targets
+    let tgts = if startaddress_valid then targets else List.tl targets in
+    let tgts =
+      List.fold_left
+        (fun acc t ->
+          if List.mem t#to_hex_string acc then acc else t#to_hex_string :: acc)
+        [] tgts in
+    List.map string_to_doubleword tgts
 
   method get_targets (base:doubleword_int) (lb:int) (ub:int) =
     List.map snd (self#get_indexed_targets base lb ub)
@@ -126,8 +136,13 @@ object (self)
       
 end
 
-let make_jumptable ~(start_address:doubleword_int) ~(targets:doubleword_int list) =
-  new jumptable_t ~start_address ~targets
+
+let make_jumptable
+      ?(end_address: doubleword_int option=None)
+      ~(start_address:doubleword_int)
+      ~(targets:doubleword_int list) =
+  new jumptable_t ~end_address ~start_address ~targets
+
 
 let split_jumptable
       ~(jumptable:jumptable_int)
