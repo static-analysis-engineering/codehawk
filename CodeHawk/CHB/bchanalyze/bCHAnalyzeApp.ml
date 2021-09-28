@@ -85,6 +85,11 @@ let maxrelationalloopcomplexity = ref 2000
 let no_lineq = ref []
 let add_no_lineq s = no_lineq := s :: !no_lineq
 
+
+let fns_excluded = ref []
+let exclude_function s = fns_excluded := s :: !fns_excluded
+
+
 let analyze_x86_function faddr f =
   let fstarttime = Unix.gettimeofday () in
   let finfo =  load_function_info faddr in
@@ -348,7 +353,9 @@ let analyze_arm starttime =
   begin
     arm_assembly_functions#bottom_up_itera
       (fun faddr f ->
-        if file_metrics#is_stable faddr#to_hex_string []
+        if List.mem faddr#to_hex_string !fns_excluded then
+          ()
+        else if file_metrics#is_stable faddr#to_hex_string []
            && (not !analyze_all) then
           arm_analysis_results#record_results ~save:false f
         else
