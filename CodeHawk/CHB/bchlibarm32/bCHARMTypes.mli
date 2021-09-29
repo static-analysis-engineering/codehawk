@@ -717,7 +717,7 @@ type arm_opcode_t =
       * arm_operand_int (* rn: first operand *)
       * arm_operand_int (* rm: second operand *)
   | VCompare of
-      bool   (* if true NaN operand causes invalie operation *)
+      bool   (* if true NaN operand causes invalid operation *)
       * arm_opcode_cc_t (* condition *)
       * string          (* data type (F64 or F32) *)
       * arm_operand_int (* operand 1 *)
