@@ -264,11 +264,27 @@ object (self)
          let xrm = rm#to_expr floc in
          let result = XOp (XBOr, [xrn; xrm]) in
          let rresult = rewrite_expr result in
-         (["a:vxxxx"], [xd#index_variable vrd;
-                        xd#index_xpr xrn;
-                        xd#index_xpr xrm;
-                        xd#index_xpr result;
-                        xd#index_xpr rresult])
+         (["a:vxxxx"],
+          [xd#index_variable vrd;
+           xd#index_xpr xrn;
+           xd#index_xpr xrm;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
+      | BitwiseOrNot (_, _, rd, rn, rm) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         let xrmn = XOp (XBNot, [xrm]) in
+         let result = XOp (XBOr, [xrn; xrmn]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxxxx"],
+          [xd#index_variable vrd;
+           xd#index_xpr xrn;
+           xd#index_xpr xrm;
+           xd#index_xpr xrmn;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
 
       | Branch (c, tgt, _)
            when is_cond_conditional c
@@ -415,13 +431,23 @@ object (self)
                       xd#index_xpr xmem;
                       xd#index_xpr xrmem])
 
+      | LoadRegisterSignedByte (_, rt, rn, _, mem, _) ->
+         let vrt = rt#to_variable floc in
+         let xmem = mem#to_expr floc in
+         let xrmem = rewrite_expr xmem in
+         (["a:vxx"],
+          [xd#index_variable vrt;
+           xd#index_xpr xmem;
+           xd#index_xpr xrmem])
+
       | LoadRegisterSignedHalfword (_, rt, rn, _, mem, _) ->
          let vrt = rt#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
-         (["a:vxx"], [xd#index_variable vrt;
-                      xd#index_xpr xmem;
-                      xd#index_xpr xrmem])
+         (["a:vxx"],
+          [xd#index_variable vrt;
+           xd#index_xpr xmem;
+           xd#index_xpr xrmem])
 
       | LogicalShiftLeft (_, _, rd, rn, rm, _) ->
          let vrd = rd#to_variable floc in
@@ -890,6 +916,10 @@ object (self)
          let rsrc = rewrite_expr src in
          (["a:vxx"],
           [xd#index_variable vdst; xd#index_xpr src; xd#index_xpr rsrc])
+
+      | VMoveToSystemRegister (_, _, src) ->
+         let xsrc = src#to_expr floc in
+         (["a:x"], [xd#index_xpr xsrc])
 
       | VStoreRegister (c, vd, rn, mem) ->
          let vmem = mem#to_variable floc in
