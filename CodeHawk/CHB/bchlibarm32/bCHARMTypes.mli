@@ -172,7 +172,9 @@ type arm_operand_kind_t =
   | ARMShiftedReg of arm_reg_t * register_shift_rotate_t
   | ARMRegBitSequence of arm_reg_t * int * int (* lsb, widthm1 *)
   | ARMImmediate of immediate_int
+  | ARMFPConstant of float
   | ARMAbsolute of doubleword_int
+  | ARMLiteralAddress of doubleword_int
   | ARMMemMultiple of arm_reg_t * int  (* number of locations *)
   | ARMOffsetAddress of
       arm_reg_t                  (* base register *)
@@ -196,6 +198,7 @@ class type arm_operand_int =
     method get_register_list: arm_reg_t list
     method get_register_op_list: 'a list
     method get_absolute_address: doubleword_int
+    method get_literal_address: doubleword_int
     method get_pc_relative_address: doubleword_int -> int -> doubleword_int
 
     (* converters *)
@@ -367,6 +370,13 @@ type arm_opcode_t =
   | IfThen of
       arm_opcode_cc_t    (* firstcond *)
       * string           (* <x><y><z> *)
+  | LoadCoprocessor of
+      bool               (* long *)
+      * arm_opcode_cc_t  (* condition *)
+      * int              (* coprocessor *)
+      * int              (* CRd: coprocessor destination register *)
+      * arm_operand_int  (* source location *)
+      * int option       (* option *)
   | LoadMultipleDecrementAfter of
       bool    (* writeback *)
       * arm_opcode_cc_t (* condition *)
@@ -395,12 +405,14 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: destination *)
       * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rm/imm: index/immediate *)
       * arm_operand_int  (* mem: memory location*)
       * bool             (* T.W *)
   | LoadRegisterByte of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: destination *)
       * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rm/imm: index/immediate *)
       * arm_operand_int  (* mem: memory location*)
       * bool             (* T.W *)
   | LoadRegisterDual of
@@ -415,6 +427,7 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: destination *)
       * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rm/imm: index/immediate *)
       * arm_operand_int  (* mem: memory location *)
   | LoadRegisterHalfword of
       arm_opcode_cc_t    (* condition *)
@@ -497,6 +510,11 @@ type arm_opcode_t =
       * arm_operand_int  (* stack pointer *)
       * arm_operand_int  (* register list *)
       * bool             (* T.W. *)
+  | PreloadData of
+      bool               (* preload for write *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* base register *)
+      * arm_operand_int  (* address of memory referenced *)
   | Push of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* stack pointer *)

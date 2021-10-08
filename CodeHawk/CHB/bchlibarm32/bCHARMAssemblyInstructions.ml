@@ -61,7 +61,9 @@ let arm_instructions =
   ref (Array.make 1 (make_arm_assembly_instruction wordzero true OpInvalid ""))
 
 let arm_instructions =
-  Array.make numArrays (Array.make 1 (make_arm_assembly_instruction wordzero true OpInvalid ""))
+  Array.make
+    numArrays
+    (Array.make 1 (make_arm_assembly_instruction wordzero true OpInvalid ""))
 
 let initialize_arm_instructions (len:int) =
   let _ =
@@ -73,13 +75,17 @@ let initialize_arm_instructions (len:int) =
   begin
     while !remaining > 0 && !index < numArrays do
       arm_instructions.(!index) <-
-        Array.make arrayLength (make_arm_assembly_instruction wordzero true OpInvalid "");
+        Array.make
+          arrayLength
+          (make_arm_assembly_instruction wordzero true OpInvalid "");
       remaining := !remaining - arrayLength;
       index := !index + 1
     done;
     if !remaining > 0 then
-      raise (BCH_failure
-               (LBLOCK [ STR "Not sufficient array space to store all instruction bytes"]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Not sufficient array space to store all instruction bytes"]))
   end
 
 let get_indices (index:int) = (index/arrayLength, index mod arrayLength)
@@ -90,7 +96,8 @@ let set_instruction (index:int) (instr:arm_assembly_instruction_int) =
 
 let initialize_instruction_segment (endindex:int) =
   for index = 0 to (endindex - 1) do
-    set_instruction index (make_arm_assembly_instruction wordzero true OpInvalid "")
+    set_instruction
+      index (make_arm_assembly_instruction wordzero true OpInvalid "")
   done
 
 let get_instruction (index:int) =
@@ -124,10 +131,14 @@ object (self)
       set_instruction index instr
     with
     | Invalid_argument _ ->
-       raise (BCH_failure
-                (LBLOCK [ STR "set: Instruction index out of range: " ;
-                          INT index ;
-                          STR " (length is " ; INT length ; STR ")" ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "set: Instruction index out of range: ";
+                 INT index;
+                 STR " (length is ";
+                 INT length;
+                 STR ")"]))
 
   method set_not_code (data_blocks:data_block_int list) =
     List.iter self#set_not_code_block data_blocks
@@ -138,19 +149,26 @@ object (self)
     if startaddr#lt codeBase then
       chlog#add
         "not code"
-        (LBLOCK [ STR "Ignoring data block "; STR db#toString;
-                  STR "; start address is less than start of code" ])
+        (LBLOCK [
+             STR "Ignoring data block ";
+             STR db#toString;
+             STR "; start address is less than start of code"])
     else if codeEnd#lt endaddr then
       chlog#add
         "not code"
-        (LBLOCK [ STR "Ignoring data block "; STR db#toString;
-                  STR "; end address is beyond end of code section" ])
+        (LBLOCK [
+             STR "Ignoring data block ";
+             STR db#toString;
+             STR "; end address is beyond end of code section"])
     else
       let _ =
         chlog#add
           "not code"
-          (LBLOCK [ STR "start: " ; startaddr#toPretty; STR "; end: " ;
-                    endaddr#toPretty ]) in
+          (LBLOCK [
+               STR "start: ";
+               startaddr#toPretty;
+               STR "; end: ";
+               endaddr#toPretty]) in
       let startindex = (startaddr#subtract codeBase)#to_int in
       let startinstr =
         make_arm_assembly_instruction
@@ -218,7 +236,8 @@ object (self)
       let instr = get_instruction index in
       if instr#get_address#equal wordzero then
         let newInstr =
-          make_arm_assembly_instruction (codeBase#add_int index) true OpInvalid "" in
+          make_arm_assembly_instruction
+            (codeBase#add_int index) true OpInvalid "" in
         begin set_instruction index newInstr; newInstr end
       else
         instr
@@ -238,9 +257,11 @@ object (self)
       let index = (va#subtract codeBase)#to_int in self#at_index index
     with
     | Invalid_argument s ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Error in assembly-instructions:at-address: " ;
-                          va#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in assembly-instructions:at-address: ";
+                 va#toPretty]))
 
   method get_next_valid_instruction_address (va:doubleword_int) =
     let index = (va#subtract codeBase)#to_int in
@@ -248,8 +269,8 @@ object (self)
       if i >= len then
         raise
           (BCH_failure
-             (LBLOCK [ STR "There is no valid instruction after " ;
-                       va#toPretty ]))
+             (LBLOCK [
+                  STR "There is no valid instruction after "; va#toPretty]))
       else
         match (self#at_index i)#get_opcode with
         | OpInvalid -> loop (i+1)

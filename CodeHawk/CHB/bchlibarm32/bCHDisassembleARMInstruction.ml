@@ -971,6 +971,7 @@ let parse_load_store_stack
      let iswback = (not p) || w in
      let isindex = p in
      let rnreg = get_arm_reg 13 in
+     let imm = mk_arm_immediate_op false 4 (mkNumerical 4) in
      let rn = arm_register_op rnreg (if iswback then RW else RD) in
      let offset = ARMImmOffset 4 in
      let mk_mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
@@ -979,7 +980,7 @@ let parse_load_store_stack
      (* LDR<c> <Rt>, [<Rn>{, #+/-<imm12>}]           Offset: (index,wback) = (T,F)
       * LDR<c> <Rt>, [<Rn>, #+/-<imm12>]!            Pre-x : (index,wback) = (T,T)
       * LDR<c> <Rt>, [<Rn>], #+/-<imm12>             Post-x: (index,wback) = (F,T)  *)
-     LoadRegister (c,rt,rn,mem, false)
+     LoadRegister (c, rt, rn, imm, mem, false)
 
   | (k,l,m,n) ->
      NotRecognized
@@ -1012,6 +1013,7 @@ let parse_load_stores
   let isindex = p in
   let rnreg = get_arm_reg bit19_16 in
   let rn = arm_register_op rnreg (if iswback then RW else RD) in
+  let imm = mk_arm_immediate_op false 4 (mkNumerical bit11_0) in
   let offset = ARMImmOffset bit11_0 in
   let mk_mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
   match (bit22, bit20) with
@@ -1031,7 +1033,7 @@ let parse_load_stores
      (* LDR<c> <Rt>, [<Rn>{, #+/-<imm12>}]           Offset: (index,wback) = (T,F)
       * LDR<c> <Rt>, [<Rn>, #+/-<imm12>]!            Pre-x : (index,wback) = (T,T)
       * LDR<c> <Rt>, [<Rn>], #+/-<imm12>             Post-x: (index,wback) = (F,T)  *)
-     LoadRegister (c,rt,rn,mem,false)
+     LoadRegister (c, rt, rn, imm, mem, false)
 
   (* <cc><2>pu1w0<rn><rt><--imm12---> *)   (* STRB-imm *)
   | (1,0) ->
@@ -1049,7 +1051,7 @@ let parse_load_stores
      (* LDRB<c> <Rt>, [<Rn>{, #+/-<imm12>}]          Offset: (index,wback) = (T,F)
       * LDRB<c> <Rt>, [<Rn>, #+/-<imm12>]!           Pre-x : (index,wback) = (T,T)
       * LDRB<c> <Rt>, [<Rn>], #+/-<imm12>            Post-x: (index,wback) = (F,T)  *)
-     LoadRegisterByte (c,rt,rn,mem,false)
+     LoadRegisterByte (c, rt, rn, imm, mem, false)
 
   | (k,l) ->
      NotRecognized ("load_stores (" ^ (stri k) ^ ", " ^ (stri l) ^ ")", wordzero)
@@ -1096,6 +1098,7 @@ let parse_load_store_reg_type
   let iswback = (not p) || w in
   let isindex = p in
   let rnreg = get_arm_reg bit19_16 in
+  let rm = arm_register_op (get_arm_reg bit3_0) RD in
   let rn = arm_register_op rnreg (if iswback then RW else RD) in
   let (shift_t,shift_n) = decode_imm_shift bit6_5 bit11_7 in
   let reg_srt = ARMImmSRT (shift_t,shift_n) in
@@ -1116,7 +1119,7 @@ let parse_load_store_reg_type
      let mem = mk_mem RD in
      (* LDR<c> <Rt>, [<Rn>,+/-<Rm>{, <shift>}[{!} *)
      (* LDR<c> <Rt>, [<Rn>],+/-<Rm>{, <shift>} *)
-     LoadRegister (c,rt,rn,mem,false)
+     LoadRegister (c, rt, rn, rm, mem, false)
 
   (* <cc><3>pu1w0<rn><rt><imm>ty0<rm> *)   (* STRB-reg *)
   | (1,0) ->
@@ -1130,7 +1133,7 @@ let parse_load_store_reg_type
   | (1,1) ->
      let rt = arm_register_op (get_arm_reg bit15_12) WR in
      let mem = mk_mem RD in
-     LoadRegisterByte (c,rt,rn,mem,false)
+     LoadRegisterByte (c, rt, rn, rm, mem, false)
 
   | _ -> OpInvalid
 
@@ -1437,8 +1440,12 @@ let parse_opcode
       STR "" in
   begin
     (if system_settings#is_verbose then
-       pr_debug [ addr#toPretty ; STR "  " ; STR (arm_opcode_to_string opcode) ;
-                  pinstrclass ; NL ]);
+       pverbose [
+           addr#toPretty;
+           STR "  ";
+           STR (arm_opcode_to_string opcode);
+           pinstrclass;
+           NL]);
     opcode
   end
 

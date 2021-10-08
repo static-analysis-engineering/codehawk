@@ -190,11 +190,26 @@ object (self)
          let result = XOp (XPlus, [xrn; xrm]) in
          let rresult = rewrite_expr result in
          let _ = ignore (get_string_reference floc rresult) in
-         (["a:vxxxx"], [xd#index_variable vrd;
-                        xd#index_xpr xrn;
-                        xd#index_xpr xrm;
-                        xd#index_xpr result;
-                        xd#index_xpr rresult])
+         (["a:vxxxx"],
+          [xd#index_variable vrd;
+           xd#index_xpr xrn;
+           xd#index_xpr xrm;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
+      | AddCarry (_, _, rd, rn, rm, _) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         let result = XOp (XPlus, [xrn; xrm]) in
+         let rresult = rewrite_expr result in
+         let _ = ignore (get_string_reference floc rresult) in
+         (["a:vxxxx"],
+          [xd#index_variable vrd;
+           xd#index_xpr xrn;
+           xd#index_xpr xrm;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
 
       | Adr (_, rd, imm) ->
          let vrd = rd#to_variable floc in
@@ -247,6 +262,19 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
+      | BitwiseExclusiveOr (_, _, rd, rn, rm, _) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         let result = XOp (XBXor, [xrn; xrm]) in
+         let rresult = rewrite_expr result in
+         (["a:vxxxx"],
+          [xd#index_variable vrd;
+           xd#index_xpr xrn;
+           xd#index_xpr xrm;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
+
       | BitwiseNot (_, _, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
@@ -285,6 +313,14 @@ object (self)
            xd#index_xpr xrmn;
            xd#index_xpr result;
            xd#index_xpr rresult])
+
+      | Branch (_, tgt, _)
+           when tgt#is_absolute_address && floc#has_call_target ->
+         let args = List.map snd floc#get_arm_call_arguments in
+         let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
+         ([xtag; "call"],
+          (List.map xd#index_xpr args)
+          @ [ixd#index_call_target floc#get_call_target#get_target])
 
       | Branch (c, tgt, _)
            when is_cond_conditional c
@@ -368,7 +404,7 @@ object (self)
            "a:" ^ (string_repeat "v" rl#get_register_count) in
          ([xtag], List.map xd#index_variable lhss)
 
-      | LoadRegister (c, rt, rn, mem, _) ->
+      | LoadRegister (c, rt, rn, _, mem, _) ->
          let vrt = rt#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
@@ -391,7 +427,7 @@ object (self)
              (tags, args) in
          (tags, args)
 
-      | LoadRegisterByte (_, rt, rn, mem, _) ->
+      | LoadRegisterByte (_, rt, rn, _, mem, _) ->
          let vrt = rt#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
@@ -414,7 +450,7 @@ object (self)
            xd#index_xpr xmem2;
            xd#index_xpr xrmem2])
 
-      | LoadRegisterExclusive (_, rt, rn, mem) ->
+      | LoadRegisterExclusive (_, rt, rn, _, mem) ->
          let vrt = rt#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
@@ -591,6 +627,11 @@ object (self)
              add_instr_condition tags args tcond
           | _ -> (tags @ ["uc"], args))
 
+      | PreloadData (w, _, base, mem) ->
+         let xbase = base#to_expr floc in
+         let xmem = mem#to_expr floc in
+         (["a:xx"], [xd#index_xpr xbase; xd#index_xpr xmem])
+
       | Push (_, sp, rl, _) ->
          let rhsexprs =
            List.map
@@ -711,10 +752,29 @@ object (self)
            xd#index_xpr rresult])
 
       | StoreMultipleIncrementAfter (_, _, rn, rl, mem, _) ->
+         let regcount = rl#get_register_count in
          let rhss = rl#to_multiple_expr floc in
+         let rrhss = List.map rewrite_expr rhss in
+         let (_, lhss) =
+           List.fold_left
+             (fun (off, acc) reg ->
+               let offset = ARMImmOffset off in
+               let memloc =
+                 mk_arm_offset_address_op
+                   rn#get_register
+                   offset
+                   ~isadd:true
+                   ~isindex:false
+                   ~iswback:false
+                   WR in
+               let lhs = memloc#to_variable floc in
+               (off + 4, acc @ [lhs])) (0, []) rl#get_register_op_list in
          let xtag =
-           "a:" ^ (string_repeat "x" rl#get_register_count) in
-         ([xtag], List.map xd#index_xpr rhss)
+           "a:"
+           ^ (string_repeat "v" regcount)
+           ^ (string_repeat "x" regcount) in
+         ([xtag],
+          (List.map xd#index_variable lhss) @ (List.map xd#index_xpr rrhss))
 
       | StoreMultipleIncrementBefore (_, _, rn, rl, mem, _) ->
          let rhss = rl#to_multiple_expr floc in
@@ -819,6 +879,11 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
+      | SupervisorCall (_, _) ->
+         let r7 = arm_register_op AR7 RD in
+         let xr7 = r7#to_expr floc in
+         (["a:x"], [xd#index_xpr xr7])
+
       | TableBranchByte (_, _, rm, _) ->
          let xrm = rm#to_expr floc in
          (["a:x"], [xd#index_xpr xrm])
@@ -827,10 +892,10 @@ object (self)
          let xrm = rm#to_expr floc in
          (["a:x"], [xd#index_xpr xrm])
 
-      | SupervisorCall (_, _) ->
-         let r7 = arm_register_op AR7 RD in
-         let xr7 = r7#to_expr floc in
-         (["a:x"], [xd#index_xpr xr7])
+      | Test (_, rn, rm) ->
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         (["a:xx"], [xd#index_xpr xrn; xd#index_xpr xrm])
 
       | UnsignedAdd8 (_, rd, rn, rm) ->
          let lhs = rd#to_variable floc in

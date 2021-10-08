@@ -131,6 +131,9 @@ let get_reglist_from_int (width:int) (reglist:int) =
 (* Round down to the next lower multiple of size *)
 let align (a: int) (size: int): int = (a / size) * size
 
+let align_dw (dw: doubleword_int) (size: int): doubleword_int =
+  int_to_doubleword (align dw#to_int size)
+
 
 (* Application Program Status Register (APSR) (pg A2-49)
  * =====================================================

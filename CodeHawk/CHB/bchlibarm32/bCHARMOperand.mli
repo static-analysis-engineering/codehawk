@@ -65,7 +65,16 @@ val arm_register_list_op: arm_reg_t list -> arm_operand_mode_t -> arm_operand_in
 
 val arm_immediate_op: immediate_int -> arm_operand_int
 
+val arm_fp_constant_op: float -> arm_operand_int
+
 val arm_absolute_op: doubleword_int -> arm_operand_mode_t -> arm_operand_int
+
+val arm_literal_op:
+  ?align:int
+  -> ?is_add:bool
+  -> doubleword_int    (* pc addr *)
+  -> int               (* immediate offset *)
+  -> arm_operand_int
 
 val mk_arm_imm_shifted_register_op:
   arm_reg_t
