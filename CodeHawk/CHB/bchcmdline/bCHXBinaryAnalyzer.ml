@@ -143,6 +143,8 @@ let speclist =
      "continue analyzing functions that have stabilized");
     ("-fn_exclude", Arg.String (fun s -> exclude_function s),
      "exclude the function with the given address from the analysis");
+    ("-fn_include", Arg.String (fun s -> include_function s),
+     "include the function with the given address in the analysis");
     ("-fn_no_lineq", Arg.String (fun s -> add_no_lineq s),
      "do not apply linear equality analysis to the function with the given address");
     ("-preamble_cutoff", Arg.Int system_info#set_preamble_cutoff,
