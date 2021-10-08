@@ -205,6 +205,7 @@ class type elf_symbol_table_int =
     method set_symbol_names: elf_string_table_int -> unit
     method set_function_entry_points: unit
     method set_function_names: unit
+    method set_mapping_symbols: unit
     method get_xstring: string
     method get_size: int
     method get_xsubstring: doubleword_int -> int -> string
