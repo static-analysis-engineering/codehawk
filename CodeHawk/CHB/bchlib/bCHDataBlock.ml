@@ -94,16 +94,26 @@ object (self:'a)
       (end_address#subtract start_address)#to_int
     with
     | Invalid_argument s ->
-       raise (BCH_failure
-		(LBLOCK [ STR "Something wrong with the start and end address of " ;
-			  STR "data block (" ; start_address#toPretty ; STR "," ;
-			  end_address#toPretty ; STR ": " ; STR s ]))
+       raise
+         (BCH_failure
+	    (LBLOCK [
+                 STR "Something wrong with the start and end address of ";
+		 STR "data block (";
+                 start_address#toPretty;
+                 STR ",";
+		 end_address#toPretty;
+                 STR ": ";
+                 STR s]))
 
-  method get_data_string = match data_string with Some s -> s | _ ->
-    begin
-      ch_error_log#add "invocation error" (LBLOCK [ STR "data_block#get_data_string" ]) ;
-      raise (Invocation_error "data_block#get_data_string")
-    end
+  method get_data_string =
+    match data_string with
+    | Some s -> s
+    | _ ->
+       begin
+         ch_error_log#add
+           "invocation error" (LBLOCK [STR "data_block#get_data_string"]);
+         raise (Invocation_error "data_block#get_data_string")
+       end
 
   method get_offset_range =
     if is_offset_table then
@@ -168,12 +178,13 @@ object (self:'a)
     begin
       for i=0 to ((len / 4) - 1) do
 	begin
-	  records := (!address, ch#read_doubleword#to_hex_string) :: !records ;
+	  records := (!address, ch#read_doubleword#to_hex_string) :: !records;
 	  address := !address#add_int 4
 	end 
       done;
       String.concat "\n" 
-	(List.map (fun (a,v) -> "  " ^ a#to_hex_string ^ "  " ^ v) (List.rev !records))
+	(List.map
+           (fun (a,v) -> "  " ^ a#to_hex_string ^ "  " ^ v) (List.rev !records))
     end
 
   method private data_table_to_string =
