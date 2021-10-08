@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,12 +38,14 @@ open CHXmlDocument
 (* bchlib *)
 open BCHBasicTypes
 open BCHByteUtilities
+open BCHDataBlock
 open BCHDoubleword
 open BCHFunctionData
 open BCHFunctionSummaryLibrary
 open BCHLibTypes
 open BCHStreamWrapper
 open BCHSystemInfo
+open BCHSystemSettings
 
 (* bchlibelf *)
 open BCHELFDictionary
@@ -197,21 +201,91 @@ object (self)
         e#set_name (t#get_string e#get_st_name#to_int)) entries
 
   method set_function_entry_points =
+    let align (a: int) (size: int): int = (a / size) * size in
+    let align_dw dw = int_to_doubleword (align dw#to_int 2) in
     H.iter (fun _ e ->
         if e#is_function && e#has_address_value then
-          ignore (functions_data#add_function e#get_st_value)) entries
+          let addr =
+            let v = e#get_st_value in
+            if system_info#is_arm then
+              align_dw v
+            else
+              v in
+          ignore (functions_data#add_function addr)) entries
 
   method set_function_names =
+    let align (a: int) (size: int): int = (a / size) * size in
+    let align_dw dw = int_to_doubleword (align dw#to_int 2) in
     H.iter (fun _ e ->
         if e#is_function && e#has_address_value && e#has_name then
-          (functions_data#add_function e#get_value)#add_name e#get_name) entries
+          let addr =
+            let v = e#get_st_value in
+            if system_info#is_arm then
+              align_dw v
+            else
+              v in
+          (functions_data#add_function addr)#add_name e#get_name) entries
+
+  method set_mapping_symbols =
+    let symbols = H.create 13 in
+    let _ =
+      H.iter
+        (fun _ e ->
+          if e#get_st_binding = 0 && e#get_st_type = 0 && e#has_address_value then
+            match e#get_name with
+            | "$a" | "$a.0" | "$a.1" | "$a.2" | "$d" | "$d.1" | "$t" ->
+               H.add symbols e#get_st_value#index e#get_name
+            | _ -> ()) entries in
+    let symbols =
+      List.sort Stdlib.compare (H.fold (fun k v a -> (k, v) :: a) symbols []) in
+    let indata = ref None in
+    let inarm = ref true in
+    let make_db addr =
+      match !indata with
+      | Some addr_d ->
+         let db = make_data_block addr_d addr "symbol-table" in
+         begin
+           system_info#add_data_block db;
+           indata := None
+         end
+      | _ -> () in
+    List.iter
+      (fun (addrix, name) ->
+        match name with
+        | "$d" | "$d.1" ->
+           (match !indata with
+            | Some _ -> ()
+            | None -> indata := Some (index_to_doubleword addrix))
+        | "$t" ->
+           begin
+             let addr = index_to_doubleword addrix in
+             (if !inarm then
+                begin
+                  system_settings#set_thumb;
+                  system_info#set_arm_thumb_switch addr#to_hex_string "T";
+                  inarm := false
+                end);
+             make_db addr
+           end
+        | "$a" | "$a.0" | "$a.1" | "$a.2" ->    (* $a.0,1,2 llvm-generated code? *)
+           begin
+             let addr = index_to_doubleword addrix in
+             (if not (!inarm) then
+                begin
+                  system_info#set_arm_thumb_switch addr#to_hex_string "A";
+                  inarm := true
+                end);
+             make_db addr
+           end
+        | _ -> ()) symbols
 
   method get_symbol (index:int) =
     if H.mem entries index then
       H.find entries index
     else
-      raise (BCH_failure (LBLOCK [ STR "Symbol with index " ; INT index ;
-                                   STR " not found" ]))
+      raise
+        (BCH_failure
+           (LBLOCK [STR "Symbol with index "; INT index; STR " not found"]))
 
   method write_xml_symbols (node:xml_element_int) =
     let table = mk_num_record_table "symbol-table" in
