@@ -203,6 +203,13 @@ object (self)
     else
       []
 
+  method set_arm_thumb_switch (addr: string) (arch: string) =
+    begin
+      chlog#add
+        "arm-thumb switch" (LBLOCK [STR addr; STR ": "; STR arch]);
+      H.add arm_thumb_switches addr arch
+    end
+
   method get_arm_thumb_switch (a:string): string option =
     if H.mem arm_thumb_switches a then
       Some (H.find arm_thumb_switches a)
@@ -1435,9 +1442,14 @@ object (self)
   method add_data_block (db:data_block_int) = 
     begin
       data_blocks#add db ;
-      chlog#add "add data block" 
-	(LBLOCK [ db#get_start_address#toPretty ; STR " - " ; 
-		  db#get_end_address#toPretty ; STR ": " ; STR db#get_name ])
+      chlog#add
+        "add data block"
+	(LBLOCK [
+             db#get_start_address#toPretty;
+             STR " - ";
+	     db#get_end_address#toPretty;
+             STR ": ";
+             STR db#get_name])
     end
       
   method get_data_blocks = data_blocks#toList

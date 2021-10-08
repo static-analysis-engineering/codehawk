@@ -2900,7 +2900,8 @@ object
 
   (* initialization *)
   method initialize: unit
-  method initialize_jumptables: (doubleword_int -> bool) -> (doubleword_int * string) list -> unit
+  method initialize_jumptables:
+           (doubleword_int -> bool) -> (doubleword_int * string) list -> unit
   method initialize_datablocks: (doubleword_int * string) list -> unit
   method initialize_function_entry_points: (unit -> doubleword_int list) -> unit
   method initialize_type_definitions     : unit
@@ -2921,18 +2922,27 @@ object
   method set_address_of_entry_point: doubleword_int -> unit
   method set_thread_start_address  : 
     doubleword_int -> ctxt_iaddress_t -> doubleword_int -> bterm_t list -> unit
-    (* creation faddr, iaddr, function start addr, arguments *)
-  method add_exported_item_name    : doubleword_int -> string -> unit
-  method add_locked_instruction    : doubleword_int -> unit
+  (* creation faddr, iaddr, function start addr, arguments *)
+
+  method add_exported_item_name: doubleword_int -> string -> unit
+  method add_locked_instruction: doubleword_int -> unit
   method add_bound_library_function: doubleword_int -> (string * string) -> unit
-  method add_data_block            : data_block_int -> unit
-  method add_jumptable             : jumptable_int -> unit
-  method set_jump_target           : 
-    doubleword_int -> doubleword_int -> jumptable_int -> data_block_int  -> unit
-  method add_lib_function_loaded   : string -> string -> unit
-  method add_esp_adjustment        : doubleword_int -> doubleword_int -> int -> unit
-  method add_goto_return           : doubleword_int -> doubleword_int -> unit
+
+  method add_data_block: data_block_int -> unit
+  method add_jumptable: jumptable_int -> unit
+  method set_jump_target:
+           doubleword_int
+           -> doubleword_int
+           -> jumptable_int
+           -> data_block_int
+           -> unit
+
+  method add_lib_function_loaded: string -> string -> unit
+  method add_esp_adjustment: doubleword_int -> doubleword_int -> int -> unit
+  method add_goto_return: doubleword_int -> doubleword_int -> unit
   method set_virtual_function_table: doubleword_int -> unit
+
+  method set_arm_thumb_switch: string -> string -> unit
 
   method import_ida_function_entry_points: unit
 
