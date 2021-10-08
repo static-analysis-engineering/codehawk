@@ -79,7 +79,9 @@ object (self)
 		STR " bytes"; NL]
 	 | _ -> STR "");
 	STR (string_repeat "-" 80); NL;
-	STR "* Changes since version 0.3.0:"; NL;
+        STR "* Major changes since version 0.4.0:"; NL;
+        STR "* - remove external libraries extlib and camlzip"; NL;
+	STR "* Major changes since version 0.3.0:"; NL;
 	STR "* - support for arm32/thumb2"; NL;
 	STR (string_repeat "=" 80); NL]
 
@@ -87,7 +89,7 @@ end
 
 
 let version = new version_info_t 
-  ~version:"0.4.0_20210923"
-  ~date:"Sept 23, 2021"
+  ~version:"0.5.0_20211008"
+  ~date:"Oct 8, 2021"
   ~licensee: None
   ~maxfilesize: None
