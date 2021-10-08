@@ -288,6 +288,17 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        ccode = Some c;
        ida_asm = (fun f -> f#ops mnemonic [])
      }
+  | LoadCoprocessor (islong, c, coproc, crd, src, option) ->
+     let mnemonic = if islong then "LDCL" else "LDC" in
+     let preops =
+       "p" ^ (string_of_int coproc) ^ ", " ^ "c" ^ (string_of_int crd) in
+     {
+       mnemonic = mnemonic;
+       operands = [src];
+       flags_set = [];
+       ccode = Some c;
+       ida_asm = (fun f -> f#opscc ~preops mnemonic c [src]);
+     }
   | LoadMultipleDecrementAfter (wb, c, rn, rl, mem) -> {
       mnemonic = "LDMDA";
       operands = [rn; rl; mem];
@@ -316,16 +327,16 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDMIB" c [rn; rl])
     }
-  | LoadRegister (c, rt, rn, mem, tw) -> {
+  | LoadRegister (c, rt, rn, rm, mem, tw) -> {
       mnemonic = "LDR";
-      operands = [rt; rn; mem];
+      operands = [rt; rn; rm; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "LDR" c [rt; mem])
     }
-  | LoadRegisterByte (c, rt, rn, mem, tw) -> {
+  | LoadRegisterByte (c, rt, rn, rm, mem, tw) -> {
       mnemonic = "LDRB";
-      operands = [rt; rn; mem];
+      operands = [rt; rn; rm; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRB" c [rt; mem])
@@ -337,9 +348,9 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDRD" c [rt; rt2; mem])
     }
-  | LoadRegisterExclusive (c, rt, rn, mem) -> {
+  | LoadRegisterExclusive (c, rt, rn, rm, mem) -> {
       mnemonic = "LDREX";
-      operands = [rt; rn; mem];
+      operands = [rt; rn; rm; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDREX" c [rt; mem])
@@ -445,6 +456,15 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "POP" c [rl])
     }
+  | PreloadData (w, c, base, mem) ->
+     let mnemonic = if w then "PLDW" else "PLD" in
+     {
+       mnemonic = mnemonic;
+       operands = [base; mem];
+       flags_set = [];
+       ccode = Some c;
+       ida_asm = (fun f -> f#opscc mnemonic c [mem])
+     }
   | Push (c, sp, rl, tw) -> {
       mnemonic = "PUSH";
       operands = [sp; rl];

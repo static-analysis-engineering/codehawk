@@ -159,8 +159,8 @@ object (self:'a)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [STR "Operand is not a register list: ";
-                     self#toPretty]))
+            (LBLOCK [
+                 STR "Operand is not a register list: "; self#toPretty]))
 
   method get_absolute_address =
     match kind with
@@ -168,8 +168,17 @@ object (self:'a)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Operand is not an absolute address: " ;
-                      self#toPretty ]))
+            (LBLOCK [
+                 STR "Operand is not an absolute address: "; self#toPretty ]))
+
+  method get_literal_address =
+    match kind with
+    | ARMLiteralAddress dw -> dw
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand is not a literal address: "; self#toPretty]))
 
   method get_pc_relative_address (va: doubleword_int) (pcoffset: int) =
     match kind with
@@ -310,6 +319,7 @@ object (self:'a)
     match kind with
     | ARMImmediate imm ->
        big_int_constant_expr imm#to_big_int
+    | ARMFPConstant _ -> XConst XRandom
     | ARMReg _ -> XVar (self#to_variable floc)
     | ARMSpecialReg r ->
        raise
@@ -319,24 +329,19 @@ object (self:'a)
                  STR (arm_special_reg_to_string r);
                  STR " should be handled separately"]))
     | ARMFPReg _ -> XVar (self#to_variable floc)
-    | ARMOffsetAddress (ARPC, align, ARMImmOffset offset, true, false, false) ->
-       let pc = floc#env#mk_arm_register_variable ARPC in
-       let pcx =
-         if align > 1 then
-           let alignx = int_constant_expr align in
-           XOp (XMult, [XOp (XDiv, [XVar pc; alignx]); alignx])
-         else
-           XVar pc in
-       let addr = XOp (XPlus, [pcx; int_constant_expr offset]) in
-       let addr = floc#inv#rewrite_expr addr floc#env#get_variable_comparator in
-       let n2d = numerical_to_doubleword in
-       (match addr with
-        | XConst (IntConst n) when elf_header#is_program_address (n2d n) ->
-           num_constant_expr (elf_header#get_program_value (n2d n))#to_numerical
-        | _ -> XVar (self#to_variable floc))
     | ARMOffsetAddress _ -> XVar (self#to_variable floc)
     | ARMAbsolute a when elf_header#is_program_address a ->
        num_constant_expr a#to_numerical
+    | ARMLiteralAddress a ->
+       if elf_header#is_program_address a then
+         num_constant_expr (elf_header#get_program_value a)#to_numerical
+       else
+         begin
+           ch_error_log#add
+             "literal address not found"
+             (LBLOCK [floc#l#toPretty; STR ": "; a#toPretty]);
+           XConst (XRandom)
+         end
     | ARMAbsolute a ->
        begin
          ch_error_log#add
@@ -349,17 +354,22 @@ object (self:'a)
        XVar (env#mk_arm_register_variable r)
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSR, n)) ->
        let env = floc#f#env in
-       XOp (XShiftrt, [XVar (env#mk_arm_register_variable r); int_constant_expr n])
+       XOp
+         (XShiftrt,
+          [XVar (env#mk_arm_register_variable r); int_constant_expr n])
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, n)) ->
        let env = floc#f#env in
-       XOp (XShiftlt, [XVar (env#mk_arm_register_variable r); int_constant_expr n])
+       XOp
+         (XShiftlt,
+          [XVar (env#mk_arm_register_variable r); int_constant_expr n])
     | ARMShiftedReg _ -> XConst (XRandom)
     | ARMRegBitSequence (r,lsb,widthm1) -> XConst (XRandom)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Operand:to_expr not yet implemented for: ";
-                      self#toPretty]))
+            (LBLOCK [
+                 STR "Operand:to_expr not yet implemented for: ";
+                 self#toPretty]))
 
   method to_multiple_expr (floc:floc_int): xpr_t list =
     match kind with
@@ -455,7 +465,9 @@ object (self:'a)
        (armreg_to_string r) ^ ", #" ^ (string_of_int lsb)
        ^ ", #" ^ (string_of_int (widthm1+1))
     | ARMImmediate imm -> "#" ^ imm#to_hex_string
+    | ARMFPConstant x -> "#" ^ (Printf.sprintf "%.1f" x)
     | ARMAbsolute addr -> addr#to_hex_string
+    | ARMLiteralAddress addr -> addr#to_hex_string
     | ARMMemMultiple (r,n) ->
        (armreg_to_string r) ^ "<" ^ (string_of_int n) ^ ">"
     | ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex) ->
@@ -548,10 +560,24 @@ let mk_arm_immediate_op (signed:bool) (size:int) (imm:numerical_t) =
     let op = ARMImmediate (make_immediate signed size immval#getNum) in
     new arm_operand_t op RD
 
-let arm_immediate_op (imm:immediate_int) = new arm_operand_t (ARMImmediate imm) RD
+let arm_immediate_op (imm:immediate_int) =
+  new arm_operand_t (ARMImmediate imm) RD
+
+let arm_fp_constant_op (c: float) =
+  new arm_operand_t (ARMFPConstant c) RD
 
 let arm_absolute_op (addr:doubleword_int) (mode:arm_operand_mode_t) =
   new arm_operand_t (ARMAbsolute addr) mode
+
+let arm_literal_op
+      ?(align=4) ?(is_add=true) (pcaddr: doubleword_int) (imm: int) =
+  let pcaddr = align_dw pcaddr align in
+  let addr =
+    if is_add then
+      pcaddr#add_int imm
+    else
+      pcaddr#add_int (-imm) in
+  new arm_operand_t (ARMLiteralAddress addr) RD
 
 let mk_arm_absolute_target_op
       (ch:pushback_stream_int)
@@ -569,7 +595,8 @@ let mk_arm_offset_address_op
       ~(isadd:bool)
       ~(iswback:bool)
       ~(isindex:bool) =
-  new arm_operand_t (ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex))
+  new arm_operand_t
+    (ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex))
 
 let mk_arm_mem_multiple_op (reg:arm_reg_t) (n:int) =
   new arm_operand_t (ARMMemMultiple (reg,n))

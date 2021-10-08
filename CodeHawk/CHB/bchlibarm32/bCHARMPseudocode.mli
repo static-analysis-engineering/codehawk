@@ -39,6 +39,7 @@ open BCHLibTypes
 open BCHARMTypes
 
 val align: int -> int -> int
+val align_dw: doubleword_int -> int -> doubleword_int
 
 val get_dmb_option: int -> dmb_option_t
 

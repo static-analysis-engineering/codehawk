@@ -112,29 +112,104 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
 
   let is_data_block (pos:int) =
     (!arm_assembly_instructions#at_index (displacement+pos))#is_non_code_block in
-  (* let is_not_code (pos:int) =
-    let instr = !arm_assembly_instructions#at_index pos in
-    match instr#get_opcode with | NotCode None -> true | _ -> false in *)
 
-  let find_cmp_instr addr =
-    let cmpaddr = addr#add_int (-6) in
-    let cmpinstr = !arm_assembly_instructions#at_address cmpaddr in
-    match cmpinstr#get_opcode with
-    | Compare _ -> Some cmpinstr
-    | _ ->
-       let cmpaddr = addr#add_int (-4) in
-       let cmpinstr = !arm_assembly_instructions#at_address cmpaddr in
-       match cmpinstr#get_opcode with
-       | Compare _ -> Some cmpinstr
-       | _ -> None in
+  let find_instr (testf: arm_assembly_instruction_int -> bool) offsets addr =
+    List.fold_left
+      (fun acc offset ->
+        match acc with
+        | Some _ -> acc
+        | _ ->
+           let caddr = addr#add_int offset in
+           let cinstr = !arm_assembly_instructions#at_address caddr in
+           if testf cinstr then
+             Some cinstr
+           else
+             None) None offsets in
+
+  (* format of LDR-based jumptable (in Thumb2):
+
+     [2 bytes] CMP indexreg, maxcase
+     [4 bytes] BHI.W default_address
+     [2 bytes] ADR basereg, start_address
+     [4 bytes] LDR.W PC, [basereg, indexreg, LSL #2]
+   *)
+  let cmptest reg instr =
+    match instr#get_opcode with
+    | Compare (_, rn, imm, _) ->
+       rn#is_register && rn#get_register = reg && imm#is_immediate
+    | _ -> false in
+
+  let adrtest reg instr =
+    match instr#get_opcode with
+    | Adr (_, rd, _) -> rd#is_register && rd#get_register = reg
+    | _ -> false in
+
+  let is_ldr_jumptable (pos: int) (opcode: arm_opcode_t) =
+    match opcode with
+    | LoadRegister (_, dst, basereg, index, _, true)
+         when dst#get_register = ARPC && index#is_register ->
+       let addr = base#add_int pos in
+       let cmpinstr = find_instr (cmptest index#get_register) [(-8)] addr in
+       (match cmpinstr with
+        | Some _ ->
+           let adrinstr =
+             find_instr (adrtest basereg#get_register) [(-2)] addr in
+           (match adrinstr with
+            | Some _ -> true
+            | _ -> false)
+        | _ -> false)
+    | _ -> false in
+
+  let create_ldr_jumptable ch (pos: int) (opcode: arm_opcode_t) =
+    match opcode with
+    | LoadRegister(_, dst, basereg, index, _, true)
+         when dst#get_register = ARPC && index#is_register ->
+       let addr = base#add_int pos in
+       let cmpinstr = find_instr (cmptest index#get_register) [(-8)] addr in
+       (match cmpinstr with
+        | Some instr ->
+           (match instr#get_opcode with
+            | Compare (_, _, imm, _) when imm#is_immediate ->
+               let size = imm#to_numerical#toInt in
+               let adrinstr =
+                 find_instr (adrtest basereg#get_register) [(-2)] addr in
+               (match adrinstr with
+                | Some ainstr ->
+                   (match ainstr#get_opcode with
+                    | Adr (_, _, imm) when imm#is_absolute_address ->
+                       let jtaddr = imm#get_absolute_address in
+                       let skips = (jtaddr#subtract addr)#to_int - 4 in
+                       let _ = if skips > 0 then ch#skip_bytes skips in
+                       let targets = ref [] in
+                       let _ =
+                         for i = 0 to size do
+                           let tgt = ch#read_doubleword in
+                           targets := (align_dw tgt 2) :: !targets
+                         done in
+                       let jt:jumptable_int =
+                         make_jumptable
+                           ~end_address:None
+                           ~start_address:jtaddr
+                           ~targets:(List.rev !targets) in
+                       begin
+                         system_info#add_jumptable jt;
+                         !arm_assembly_instructions#set_jumptables [jt]
+                       end
+                    | _ -> ())
+                | _ -> ())
+            | _ -> ())
+        | _ -> ())
+    | _ -> () in
 
   let is_table_branch (pos: int) (opcode: arm_opcode_t) =
+    let cmptest instr =
+      match instr#get_opcode with Compare _ -> true | _ -> false in
     match opcode with
     | TableBranchByte (_, basereg, indexop, _)
       |TableBranchHalfword (_, basereg, indexop, _)
          when basereg#get_register = ARPC ->
        let addr = base#add_int pos in
-       let cmpinstr = find_cmp_instr addr in
+       let cmpinstr = find_instr cmptest [(-4); (-6)] addr in
        let indexreg =
          if indexop#is_register then
            indexop#get_register
@@ -154,12 +229,14 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
     | _ -> false in
 
   let create_table_branch ch (pos: int) (opcode: arm_opcode_t) =
+    let cmptest instr =
+      match instr#get_opcode with Compare _ -> true | _ -> false in
     match opcode with
     | TableBranchByte (_, basereg, indexop, _)
       | TableBranchHalfword (_, basereg, indexop, _)
          when basereg#get_register = ARPC ->
        let addr = base#add_int pos in
-       let cmpinstr = find_cmp_instr addr in
+       let cmpinstr = find_instr cmptest [(-4); (-6)] addr in
        (match cmpinstr with
         | Some instr ->
            (match instr#get_opcode with
@@ -289,6 +366,9 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
               let _ =
                 if is_table_branch prevPos opcode then
                   create_table_branch ch prevPos opcode in
+              let _ =
+                if is_ldr_jumptable prevPos opcode then
+                  create_ldr_jumptable ch prevPos opcode in
               ()
             else
               let instrbytes = ch#read_doubleword in
@@ -452,6 +532,8 @@ let get_so_target (tgtaddr:doubleword_int) (instr:arm_assembly_instruction_int) 
     let fndata = functions_data#get_function tgtaddr in
     if fndata#is_library_stub then
       Some fndata#get_function_name
+    else if function_summary_library#has_so_function fndata#get_function_name then
+      Some fndata#get_function_name
     else
       None
   else
@@ -464,6 +546,7 @@ let get_so_target (tgtaddr:doubleword_int) (instr:arm_assembly_instruction_int) 
    these locations as addresses, so they are not disassembled.
  *)
 let collect_data_references () =
+  let _ = pverbose [STR "Collect data references"; NL] in
   let table = H.create 11 in
   let add (a:doubleword_int) (instr: arm_assembly_instruction_int) =
     let hxa = a#to_hex_string in
@@ -486,7 +569,7 @@ let collect_data_references () =
     !arm_assembly_instructions#itera
       (fun va instr ->
         match instr#get_opcode with
-        | LoadRegister (_,_,_, mem, _) when mem#is_pc_relative_address ->
+        | LoadRegister (_, _, _, _, mem, _) when mem#is_pc_relative_address ->
            let pcoffset = if instr#is_arm32 then 8 else 4 in
            let a = mem#get_pc_relative_address va pcoffset in
            if elf_header#is_program_address a then
@@ -522,6 +605,7 @@ let is_nr_call_instruction (instr:arm_assembly_instruction_int) =
   | _ -> false
 
 let collect_function_entry_points () =
+  let _ = pverbose [STR "Collect function entry points"; NL] in
   let addresses = new DoublewordCollections.set_t in
   begin
     !arm_assembly_instructions#itera
@@ -538,6 +622,7 @@ let collect_function_entry_points () =
   end
 
 let set_block_boundaries () =
+  let _ = pverbose [STR "Set block boundaries"; NL] in
   let set_block_entry a =
     try
       (!arm_assembly_instructions#at_address a)#set_block_entry
@@ -639,7 +724,7 @@ let set_block_boundaries () =
           | Pop (_,_,rl,_) -> rl#includes_pc
           | Branch _ | BranchExchange _ -> true
           | CompareBranchZero _ | CompareBranchNonzero _ -> true
-          | LoadRegister (_,dst,_,_,_)
+          | LoadRegister (_, dst, _, _, _, _)
                when dst#is_register && dst#get_register = ARPC -> true
           | LoadMultipleDecrementBefore (_,_,_,rl,_) when rl#includes_pc -> true
           | _ -> false in
@@ -703,6 +788,9 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
             | TableBranchHalfword _
                when system_info#has_jumptable (iaddr#add_int 4) ->
              (system_info#get_jumptable (iaddr#add_int 4))#get_all_targets
+          | LoadRegister _
+               when system_info#has_jumptable (iaddr#add_int 4) ->
+             (system_info#get_jumptable (iaddr#add_int 4))#get_all_targets
           | _ -> (next ()))
       | l -> l in
     List.map
@@ -739,14 +827,8 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
     let instr = get_instr va in
     match instr#get_opcode with
     | Branch (ACCAlways, tgt, _) ->
-       if tgt#is_absolute_address
-          && functions_data#is_function_entry_point tgt#get_absolute_address then
-         let previnstr = get_instr (va#add_int (-4)) in
-         (match previnstr#get_opcode with
-          | Pop (_, _, _, _) -> true
-          | _ -> false)
-       else
-         false
+       tgt#is_absolute_address
+          && functions_data#is_function_entry_point tgt#get_absolute_address
     | _ -> false in
 
   let rec find_last_instruction (va:doubleword_int) (prev:doubleword_int) =
@@ -801,6 +883,7 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
   (inlinedblocks, make_arm_assembly_block faddr baddr lastaddr successors)
 
 let trace_function (faddr:doubleword_int) =
+  let _ = pverbose [STR "Trace function "; faddr#toPretty; NL] in
   let workset = new DoublewordCollections.set_t in
   let doneset = new DoublewordCollections.set_t in
   let set_block_entry a =
@@ -850,6 +933,7 @@ let construct_assembly_function (count:int) (faddr:doubleword_int) =
 
 
 let record_call_targets_arm () =
+  let _ = pverbose [STR "Record call targets"; NL] in
   arm_assembly_functions#itera
     (fun faddr f ->
       let finfo = get_function_info faddr in
@@ -875,6 +959,24 @@ let record_call_targets_arm () =
                  end
                else
                  ()
+            | Branch (_, tgt, _) when
+                   tgt#is_absolute_address
+                   && functions_data#is_function_entry_point
+                        tgt#get_absolute_address ->
+               if finfo#has_call_target ctxtiaddr
+                  && not (finfo#get_call_target ctxtiaddr)#is_unknown then
+                 let loc = ctxt_string_to_location faddr ctxtiaddr in
+                 let floc = get_floc loc in
+                 floc#update_call_target
+               else
+                 begin
+                   match get_so_target tgt#get_absolute_address instr with
+                   | Some tgt ->
+                      finfo#set_call_target ctxtiaddr (mk_so_target tgt)
+                   | _ ->
+                      finfo#set_call_target
+                        ctxtiaddr (mk_app_target tgt#get_absolute_address)
+                 end
             | _ -> ())
       end)
 
@@ -883,6 +985,7 @@ let record_call_targets_arm () =
    (within the same basic block) that sets the flags
    ---------------------------------------------------------------------- *)
 let associate_condition_code_users () =
+  let _ = pverbose [STR "Associate condition code users"; NL] in
   let set_condition
         (flags_used: arm_cc_flag_t list)
         (faddr: doubleword_int)
@@ -953,6 +1056,7 @@ let get_ite_predicate_dstop thenfloc theninstr elsefloc elseinstr =
 
 
 let aggregate_ite () =
+  let _ = pverbose [STR "Aggregate ITE conditions"; NL] in
   arm_assembly_functions#itera
     (fun faddr f ->
       f#iter
@@ -983,6 +1087,7 @@ let aggregate_ite () =
               | _ -> ())))
 
 let construct_functions_arm () =
+  let _ = pverbose [STR "Construction functions"; NL] in
   let _ =
     system_info#initialize_function_entry_points collect_function_entry_points in
   let dataAddrs = collect_data_references () in

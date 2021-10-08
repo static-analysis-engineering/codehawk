@@ -140,12 +140,14 @@ object (self)
          (tags @ [arm_reg_mfts#ts r], [self#index_register_shift_rotate rs])
       | ARMRegBitSequence (r, lsb, widthm1) ->
          (tags @ [ arm_reg_mfts#ts r ],[ lsb; widthm1 ])
-      | ARMAbsolute addr -> (tags, [ bd#index_address addr ])
+      | ARMAbsolute addr -> (tags, [bd#index_address addr])
+      | ARMLiteralAddress addr -> (tags, [bd#index_address addr])
       | ARMMemMultiple (r,n) -> (tags @ [ arm_reg_mfts#ts r ],[n])
       | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex) ->
          let ioffset = self#index_arm_memory_offset offset in
          (tags @ [arm_reg_mfts#ts r],
           [align; ioffset; setb isadd; setb iswback; setb isindex])
+      | ARMFPConstant x -> (tags @ [string_of_float x], [])
       | ARMImmediate imm -> (tags @ [imm#to_numerical#toString], []) in
     arm_opkind_table#add key
 
@@ -157,6 +159,7 @@ object (self)
 
   method index_arm_opcode (opc:arm_opcode_t) =
     let setb x = if x then 1 else 0 in
+    let setopt x = match x with Some k -> k | _ -> (-1) in
     let oi = self#index_arm_operand in
     let ci = arm_opcode_cc_mfts#ts in
     let tags = [ get_arm_opcode_name opc ] in
@@ -200,19 +203,21 @@ object (self)
         | CompareBranchZero (op1, op2) -> (tags, [oi op1; oi op2])
       | DataMemoryBarrier (c,op) -> (ctags c,[oi op])
       | IfThen (c, xyz) -> ((ctags c) @ [xyz], [])
+      | LoadCoprocessor (islong, c, coproc, crd, mem, opt) ->
+         (ctags c, [setb islong; coproc; crd; oi mem; setopt opt])
       | LoadMultipleDecrementBefore (wb,c,rn,rl,mem)
         | LoadMultipleDecrementAfter (wb,c,rn,rl,mem)
         | LoadMultipleIncrementAfter (wb,c,rn,rl,mem)
         | LoadMultipleIncrementBefore (wb,c,rn,rl,mem) ->
          (ctags c, [ setb wb; oi rn; oi rl; oi mem ])
-      | LoadRegister (c, rt, rn, mem, tw) ->
-         (ctags c, [oi rt; oi rn; oi mem; setb tw])
-      | LoadRegisterByte (c, rt, rn, mem, tw) ->
-         (ctags c, [oi rt; oi rn; oi mem; setb tw ])
+      | LoadRegister (c, rt, rn, rm, mem, tw) ->
+         (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw])
+      | LoadRegisterByte (c, rt, rn, rm, mem, tw) ->
+         (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw ])
       | LoadRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
          (ctags c, [oi rt; oi rt2; oi rn; oi rm; oi mem; oi mem2])
-      | LoadRegisterExclusive (c, rt, rn, mem) ->
-         (ctags c, [oi rt; oi rn; oi mem])
+      | LoadRegisterExclusive (c, rt, rn, rm, mem) ->
+         (ctags c, [oi rt; oi rn; oi rm; oi mem])
       | LoadRegisterHalfword (c, rt, rn, rm, mem, tw)->
          (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw])
       | LoadRegisterSignedByte (c,rt,rn,rm,mem,tw) ->
@@ -236,6 +241,7 @@ object (self)
       | MultiplySubtract (c, rd, rn, rm, ra) ->
          (ctags c, [oi rd; oi rn; oi rm; oi ra])
       | Pop (c, sp, rl, tw) -> (ctags c, [oi sp; oi rl; setb tw])
+      | PreloadData (w, c, base, mem) -> (ctags c, [setb w; oi base; oi mem])
       | Push (c,sp,rl,tw) ->  (ctags c, [ oi sp; oi rl; setb tw ])
       | ReverseSubtract (s,c,dst,src,imm,tw) ->
          (ctags c, [setb s; oi dst; oi src; oi imm; setb tw])

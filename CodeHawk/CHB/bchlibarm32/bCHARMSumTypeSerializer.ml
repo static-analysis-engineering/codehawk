@@ -137,11 +137,14 @@ object
     | ARMRegBitSequence _ -> "b"
     | ARMShiftedReg _ -> "s"
     | ARMImmediate _ -> "i"
+    | ARMFPConstant _ -> "x"
     | ARMAbsolute _ -> "a"
+    | ARMLiteralAddress _ -> "p"
     | ARMMemMultiple _ -> "m"
     | ARMOffsetAddress _ -> "o"
 
-  method tags = ["a"; "b"; "d"; "f"; "i"; "l"; "m"; "o"; "r"; "r"; "s"; "sr"]
+  method tags =
+    ["a"; "b"; "d"; "f"; "i"; "l"; "m"; "o"; "p"; "r"; "r"; "s"; "sr"; "x"]
 
 end
 
