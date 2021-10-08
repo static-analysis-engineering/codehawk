@@ -37,6 +37,7 @@ open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHDoubleword
 open BCHLibTypes
 open BCHFunctionInfo
 open BCHMetrics
@@ -88,6 +89,10 @@ let add_no_lineq s = no_lineq := s :: !no_lineq
 
 let fns_excluded = ref []
 let exclude_function s = fns_excluded := s :: !fns_excluded
+
+
+let fns_included = ref []
+let include_function s = fns_included := s :: !fns_included
 
 
 let analyze_x86_function faddr f =
@@ -347,23 +352,32 @@ let analyze_arm_function faddr f count =
     end
   else
     pr_debug [STR "Translation failed for "; faddr#toPretty; NL]
-           
+
+
 let analyze_arm starttime =
   let count = ref 0 in
   begin
-    arm_assembly_functions#bottom_up_itera
-      (fun faddr f ->
-        if List.mem faddr#to_hex_string !fns_excluded then
-          ()
-        else if file_metrics#is_stable faddr#to_hex_string []
-           && (not !analyze_all) then
-          arm_analysis_results#record_results ~save:false f
-        else
-          let _ = count := !count + 1 in
-          try
-            analyze_arm_function faddr f !count
-          with
-          | BCH_failure p ->
-             raise (BCH_failure p));
+    (if (List.length !fns_included) > 0 then
+       List.iter
+         (fun faddr ->
+           let faddr = string_to_doubleword faddr in
+           let f =  arm_assembly_functions#get_function_by_address faddr in
+           let _ = count := !count + 1 in
+           analyze_arm_function faddr f !count) !fns_included
+     else
+       arm_assembly_functions#bottom_up_itera
+         (fun faddr f ->
+           if List.mem faddr#to_hex_string !fns_excluded then
+             ()
+           else if file_metrics#is_stable faddr#to_hex_string []
+                   && (not !analyze_all) then
+             arm_analysis_results#record_results ~save:false f
+           else
+             let _ = count := !count + 1 in
+             try
+               analyze_arm_function faddr f !count
+             with
+             | BCH_failure p ->
+                raise (BCH_failure p)));
     file_metrics#record_runtime ((Unix.gettimeofday ()) -. starttime);
   end
