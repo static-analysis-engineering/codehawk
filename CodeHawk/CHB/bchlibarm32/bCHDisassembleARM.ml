@@ -319,7 +319,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   try
     let _ = pverbose [STR "disassemble thumb instructions"; NL] in
     begin
-      while ch#pos + 2 < size do
+      while ch#pos + 2 < size do   (* <= causes problems at section end *)
         let prevPos = ch#pos in
         let iaddr = base#add_int ch#pos in
         let _ =
@@ -355,7 +355,22 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
               let currentPos = ch#pos in
               let instrlen = currentPos - prevPos in
               let instrBytes = Bytes.make instrlen ' ' in
-              let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrlen in
+              let _ =
+                try
+                  Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrlen
+                with _ ->
+                  raise
+                    (BCH_failure
+                       (LBLOCK [
+                            STR "Error in Bytes.blit (Thumb): ";
+                            STR "prevPos: ";
+                            INT prevPos;
+                            STR "; instrlen: ";
+                            INT instrlen;
+                            STR "; ch#pos: ";
+                            INT ch#pos;
+                            STR "; size: ";
+                            INT size])) in
               let _ = add_instruction prevPos opcode (Bytes.to_string instrBytes) in
               let _ =
                 pverbose [
@@ -380,7 +395,18 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
               let currentPos = ch#pos in
               let instrLen = currentPos - prevPos in
               let instrBytes = Bytes.make instrLen ' ' in
-              let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrLen in
+              let _ =
+                try
+                  Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrLen
+                with _ ->
+                  raise
+                    (BCH_failure
+                       (LBLOCK [
+                            STR "Error in Bytes.blit (ARM): ";
+                            STR "prevPos: ";
+                            INT prevPos;
+                            STR "; instrlen: ";
+                            INT instrLen])) in
               let _ = add_instruction prevPos opcode (Bytes.to_string instrBytes) in
               ()
         with

@@ -685,6 +685,35 @@ let translate_arm_instruction
            "aggregate without ite predicate"
            (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
        default []
+
+  | LoadMultipleIncrementAfter (wback, _, base, reglist, _) ->
+     let floc = get_floc loc in
+     let regops = reglist#get_register_op_list in
+     let (off, memreads) =
+       List.fold_left
+         (fun (off, acc) reg ->
+           let offset = ARMImmOffset off in
+           let memloc =
+             mk_arm_offset_address_op
+               base#get_register
+               offset
+               ~isadd:true
+               ~isindex:false
+               ~iswback:false
+               RD in
+           let lhs = reg#to_variable floc in
+           let rhs = memloc#to_expr floc in
+           let assign = floc#get_assign_commands lhs rhs in
+           (off + 4, acc @ assign)) (0, []) regops in
+     let wbackassign =
+       if wback then
+         let (lhs, lhscmds) = base#to_lhs floc in
+         let rhs = base#to_expr floc in
+         let newrhs = XOp (XPlus, [rhs; int_constant_expr off]) in
+         floc#get_assign_commands lhs newrhs
+       else
+         [] in
+     default (memreads @ wbackassign)
      
   (* -------------------------------------------------------- LoadRegister -- *
    * offset = Shift(R[m], shift_t, shift_n, APSR.C);
@@ -875,14 +904,20 @@ let translate_arm_instruction
      let (lhs, lhscmds) = dst#to_lhs floc in
      let rhs = dst#to_expr floc in
      let rhs = rewrite_expr floc rhs in
-     let _ =
-       chlog#add "MoveTop" (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; x2p rhs]) in
      let imm16 = src#to_expr floc in
      let ximm16 = XOp (XMult, [imm16; int_constant_expr e16]) in
      let xrdm16 = XOp (XMod, [rhs; int_constant_expr e16]) in
      let rhsxpr = XOp (XPlus, [xrdm16; ximm16]) in
      let cmds = floc#get_assign_commands lhs rhsxpr in
      default (lhscmds @ cmds)
+
+  | MoveTwoRegisterCoprocessor (_, _, _, rt, rt2, _) ->
+     let floc = get_floc loc in
+     let (lhs1, lhs1cmds) = rt#to_lhs floc in
+     let (lhs2, lhs2cmds) = rt2#to_lhs floc in
+     let cmds1 = floc#get_abstract_commands lhs1 () in
+     let cmds2 = floc#get_abstract_commands lhs2 () in
+     default (lhs1cmds @ lhs2cmds @ cmds1 @ cmds2)
 
   | MoveWide (c, dst, src) ->
      let floc = get_floc loc in
@@ -1223,6 +1258,18 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vrd () in
      default cmds
 
+  | UnsignedExtendAddByte (_, rd, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
+  | UnsignedExtendAddHalfword (_, rd, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
   | UnsignedExtendByte (ACCAlways, rd, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
@@ -1253,6 +1300,14 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vrd () in
      default cmds
 
+  | UnsignedMultiplyAccumulateLong (_, _, rdlo, rdhi, _, _) ->
+     let floc = get_floc loc in
+     let vlo = rdlo#to_variable floc in
+     let vhi = rdhi#to_variable floc in
+     let cmdslo = floc#get_abstract_commands vlo () in
+     let cmdshi = floc#get_abstract_commands vhi () in
+     default (cmdslo @ cmdshi)
+
   | UnsignedMultiplyLong (_, _, rdlo, rdhi, _, _) ->
      let floc = get_floc loc in
      let vlo = rdlo#to_variable floc in
@@ -1267,7 +1322,11 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vdst () in
      default cmds
 
-  | VMove (c, dst, src) ->
+  | VDivide _ -> default []
+
+  | VectorDuplicate _ -> default []
+
+  | VMove (c, _, dst, src) ->
      let floc = get_floc loc in
      let rhs = src#to_expr floc in
      let (lhs, lhscmds) = dst#to_lhs floc in
@@ -1275,6 +1334,12 @@ let translate_arm_instruction
      (match c with
       | ACCAlways -> default (cmd @ lhscmds)
       | _ -> make_conditional_commands c (cmd @ lhscmds))
+
+  | VectorMultiply _ -> default []
+
+  | VectorNegate _ -> default []
+
+  | VectorSubtract _ -> default []
 
   | instr ->
      let _ =

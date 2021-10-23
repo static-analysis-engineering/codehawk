@@ -98,6 +98,8 @@ class type ['a] opcode_formatter_int =
              -> arm_operand_int list -> 'a
     method opscc:
              ?thumbw: bool
+             -> ?dt: vfp_datatype_t
+             -> ?dt2: vfp_datatype_t
              -> ?writeback: bool
              -> ?preops: string
              -> ?postops: string
@@ -421,6 +423,17 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "MOVT" c [rd; imm])
     }
+  | MoveTwoRegisterCoprocessor (c, coproc, opc, rt, rt2, crm) ->
+     let preops =
+       "p" ^ (string_of_int coproc) ^ ", " ^ (string_of_int opc) ^ ", " in
+     let postops = ", c" ^ (string_of_int crm) in
+     {
+       mnemonic = "MRRC";
+       operands = [rt; rt2];
+       flags_set = [];
+       ccode = Some c;
+       ida_asm = (fun f -> f#opscc ~preops ~postops "MRRC" c [rt; rt2])
+     }
   | MoveWide (c, rd, imm) -> {
       mnemonic = "MOVW";
       operands = [rd; imm];
@@ -712,6 +725,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UBFX" c [rd; rn])
     }
+  | UnsignedExtendAddByte (c, rd, rn, rm) -> {
+      mnemonic = "UXTAB";
+      operands = [rd; rn; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "UXTAB" c [rd; rn; rm])
+    }
   | UnsignedExtendAddHalfword (c, rd, rn, rm) -> {
       mnemonic = "UXTAH";
       operands = [rd; rn; rm];
@@ -733,12 +753,19 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UXTH" c [rd; rm])
     }
+  | UnsignedMultiplyAccumulateLong (s, c, rdlo, rdhi, rn, rm) -> {
+      mnemonic = "UMLAL";
+      operands = [rdlo; rdhi; rn; rm];
+      flags_set = if s then [APSR_N; APSR_Z] else [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~writeback:s "UMLAL" c [rdlo; rdhi; rn; rm])
+    }
   | UnsignedMultiplyLong (s, c, rdlo, rdhi, rn, rm) -> {
       mnemonic = "UMULL";
       operands = [rdlo; rdhi; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "UMULL" c [rdlo; rdhi; rn; rm])
+      ida_asm = (fun f -> f#opscc ~writeback:s "UMULL" c [rdlo; rdhi; rn; rm])
     }
   | UnsignedSaturatingSubtract8 (c, rd, rn, rm) -> {
       mnemonic = "UQSUB8";
@@ -749,22 +776,44 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
     }
   | VCompare (nan, c, dt, op1, op2) ->
      let mnemonic =
-       "VCMP" ^ (if nan then "E" else "") ^ "." ^ dt in
+       "VCMP" ^ (if nan then "E" else "") in
      { mnemonic = mnemonic;
        operands = [op1; op2];
        flags_set = [];   (* floating point status word not yet supported *)
        ccode = Some c;
-       ida_asm = (fun f -> f#opscc mnemonic c [op1; op2])
+       ida_asm = (fun f -> f#opscc ~dt mnemonic c [op1; op2])
      }
-  | VConvert (round, c, dstdt, srcdt, dst, src) ->
+  | VectorBitwiseExclusiveOr (c, dst, src1, src2) -> {
+      mnemonic = "VEOR";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "VEOR" c [dst; src1; src2])
+    }
+  | VectorConvert (round, c, dstdt, srcdt, dst, src) ->
      let mnemonic =
-       "VCVT" ^ (if round then "R" else "") ^ "." ^ dstdt ^ "." ^ srcdt in
+       "VCVT" ^ (if round then "R" else "") in
      { mnemonic = mnemonic;
        operands = [dst; src];
        flags_set = [];
        ccode = Some c;
-       ida_asm = (fun f -> f#opscc mnemonic c [dst; src])
+       ida_asm = (fun f -> f#opscc ~dt:dstdt ~dt2:srcdt mnemonic c [dst; src])
      }
+  | VDivide (c, dt, dst, src1, src2) -> {
+      mnemonic = "VDIV";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VDIV" c [dst; src1; src2])
+    }
+  | VectorDuplicate (c, dt, regs, elements, dst, src) -> {
+      mnemonic = "VDUP";
+      operands = [dst; src];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm =
+        (fun f -> f#opscc ~dt "VDUP" c [dst; src])
+    }
   | VLoadRegister (c, dst, base, mem) -> {
       mnemonic = "VLDR";
       operands = [dst; base; mem];
@@ -772,12 +821,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VLDR" c [dst; mem])
     }
-  | VMove (c, dst, src) -> {
+  | VMove (c, dt, dst, src) -> {
       mnemonic = "VMOV";
       operands = [dst; src];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "VMOV" c [dst; src])
+      ida_asm = (fun f -> f#opscc ~dt "VMOV" c [dst; src])
     }
   | VMoveRegisterStatus (c, dst, src) ->
      let flags_set =
@@ -798,12 +847,33 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode =Some c;
       ida_asm = (fun f -> f#opscc "VMSR" c [dst; src])
     }
+  | VectorMultiply (c, dt, dst, src1, src2) -> {
+      mnemonic = "VMUL";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VMUL" c [dst; src1; src2])
+    }
+  | VectorNegate (c, dt, dst, src) -> {
+      mnemonic = "VNEG";
+      operands = [dst; src];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VNEG" c [dst; src])
+    }
   | VStoreRegister (c, src, base, mem) -> {
       mnemonic = "VSTR";
       operands = [src; base; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VSTR" c [src; mem])
+    }
+  | VectorSubtract (c, dt, dst, src1, src2) -> {
+      mnemonic = "VSUB";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VSUB" c [dst; src1; src2])
     }
   | NoOperation c -> {
       mnemonic = "NOP";
@@ -853,6 +923,8 @@ object (self)
 
   method opscc
            ?(thumbw: bool=false)
+           ?(dt: vfp_datatype_t=VfpNone)
+           ?(dt2: vfp_datatype_t=VfpNone)
            ?(writeback: bool=false)
            ?(preops: string="")
            ?(postops: string="")
@@ -860,8 +932,11 @@ object (self)
            (cc:arm_opcode_cc_t)
            (operands:arm_operand_int list) =
     let wmod = if thumbw then ".W" else "" in
+    let wdt = vfp_datatype_to_string dt in
+    let wdt2 = vfp_datatype_to_string dt2 in
     let wbmod = if writeback then "S" else "" in
-    let mnemonic = s ^ wbmod ^ (get_cond_mnemonic_extension cc) ^ wmod in
+    let mnemonic =
+      s ^ wbmod ^ (get_cond_mnemonic_extension cc) ^ wmod ^ wdt ^ wdt2 in
     self#ops ~preops ~postops mnemonic operands
 
   method no_ops (s:string) = s

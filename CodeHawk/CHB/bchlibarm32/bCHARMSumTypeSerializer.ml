@@ -87,6 +87,30 @@ let shift_rotate_type_mfts: shift_rotate_type_t mfts_int =
       (SRType_ROR, "ROR");
       (SRType_RRX, "RRX") ]
 
+
+class vfp_datatype_mcts_t: [vfp_datatype_t] mfts_int =
+object
+
+  inherit [vfp_datatype_t] mcts_t "vfp_datatype_t"
+
+  method ts (t:vfp_datatype_t) =
+    match t with
+    | VfpNone -> "n"
+    | VfpSize _ -> "z"
+    | VfpFloat _ -> "f"
+    | VfpInt _ -> "i"
+    | VfpPolynomial _ -> "p"
+    | VfpSignedInt _ -> "s"
+    | VfpUnsignedInt _ -> "u"
+
+  method tags = ["f"; "i"; "n"; "p"; "s"; "u"; "z"]
+
+end
+
+let vfp_datatype_mcts: vfp_datatype_t mfts_int =
+  new vfp_datatype_mcts_t
+
+
 class register_shift_rotate_mcts_t: [ register_shift_rotate_t ] mfts_int =
 object
 
@@ -103,6 +127,7 @@ end
 
 let register_shift_rotate_mcts:register_shift_rotate_t mfts_int =
   new register_shift_rotate_mcts_t
+
 
 class arm_memory_offset_mcts_t: [ arm_memory_offset_t ] mfts_int =
 object
@@ -132,19 +157,19 @@ object
     | ARMDMBOption _ -> "d"
     | ARMReg _ -> "r"
     | ARMSpecialReg _ -> "sr"
-    | ARMFPReg _ -> "f"
+    | ARMExtensionReg _ -> "xr"
     | ARMRegList _ -> "l"
     | ARMRegBitSequence _ -> "b"
     | ARMShiftedReg _ -> "s"
     | ARMImmediate _ -> "i"
-    | ARMFPConstant _ -> "x"
+    | ARMFPConstant _ -> "c"
     | ARMAbsolute _ -> "a"
     | ARMLiteralAddress _ -> "p"
     | ARMMemMultiple _ -> "m"
     | ARMOffsetAddress _ -> "o"
 
   method tags =
-    ["a"; "b"; "d"; "f"; "i"; "l"; "m"; "o"; "p"; "r"; "r"; "s"; "sr"; "x"]
+    ["a"; "b"; "c"; "d"; "i"; "l"; "m"; "o"; "p"; "r"; "r"; "s"; "sr"; "xr"]
 
 end
 

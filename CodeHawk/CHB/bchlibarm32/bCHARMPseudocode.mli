@@ -32,6 +32,9 @@
  * ARMv7-A and ARMv7-R edition, March 29, 2018
  *)
 
+(* chlib *)
+open CHNumerical
+
 (* bchlib *)
 open BCHLibTypes
 
@@ -56,3 +59,5 @@ val arm_expand_imm: int -> int -> int   (* rotate [ 11:8], imm[7:1] *)
 
 val thumb_expand_imm_c: int -> int -> (int * int)
 val thumb_expand_imm: int -> int -> int
+
+val vfp_expand_imm: int -> int -> numerical_t
