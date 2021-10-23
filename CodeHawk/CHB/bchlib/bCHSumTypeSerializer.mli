@@ -45,6 +45,7 @@ val mips_special_reg_mfts: mips_special_reg_t mfts_int
 
 val arm_reg_mfts: arm_reg_t mfts_int
 val arm_special_reg_mfts: arm_special_reg_t mfts_int
+val arm_extension_reg_type_mfts: arm_extension_reg_type_t mfts_int
 
 val ikind_mfts: ikind mfts_int
 val fkind_mfts: fkind mfts_int

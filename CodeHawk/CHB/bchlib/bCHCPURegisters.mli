@@ -58,6 +58,10 @@ val mips_special_reg_from_string: string -> mips_special_reg_t
 
 val armreg_to_string: arm_reg_t -> string
 val armreg_from_string: string -> arm_reg_t
+
+val arm_extension_reg_type_to_string: arm_extension_reg_type_t -> string
+val arm_extension_reg_to_string: arm_extension_reg_type_t -> int -> string
+
 val arm_regular_registers: arm_reg_t list
 val get_armreg_argument: int -> arm_reg_t
 

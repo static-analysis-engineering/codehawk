@@ -45,18 +45,22 @@ let mk_default_target (name:string) (tgt:call_target_t) =
   let fintf = default_function_interface name [] in
   mk_call_target_info fintf default_function_semantics tgt
 
+
 let mk_function_summary_target (fs:function_summary_int) (tgt:call_target_t) =
   let fintf = fs#get_function_interface in
   let sem = fs#get_function_semantics in
   mk_call_target_info fintf sem tgt
 
+
 let mk_unknown_target () =
   mk_default_target "unknown" UnknownTarget
+
 
 let mk_app_target (a:doubleword_int) =
   let finfo = get_function_info a in
   let apsum = finfo#get_summary in
   mk_function_summary_target apsum (AppTarget a)
+
 
 let mk_dll_target (dll:string) (name:string) =
   let tgt = StubTarget (DllFunction (dll,name)) in
@@ -66,6 +70,7 @@ let mk_dll_target (dll:string) (name:string) =
   else
     mk_default_target name tgt
 
+
 let mk_so_target (name:string) =
   let tgt = StubTarget (SOFunction name) in
   if function_summary_library#has_so_function name then
@@ -73,6 +78,7 @@ let mk_so_target (name:string) =
     mk_function_summary_target fs tgt
   else
     mk_default_target name tgt
+
 
 let mk_syscall_target (index:int) =
   let tgt = StubTarget (LinuxSyscallFunction index) in
@@ -83,6 +89,7 @@ let mk_syscall_target (index:int) =
     let name = "linux-syscall-" ^ (string_of_int index) in
     mk_default_target name tgt
 
+
 let mk_jni_target (index:int) =
   let tgt = StubTarget (JniFunction index) in
   if function_summary_library#has_jni_function index then
@@ -91,11 +98,14 @@ let mk_jni_target (index:int) =
   else
     mk_default_target ("jni_" ^ (string_of_int index)) tgt
 
+
 let mk_virtual_target (fintf: function_interface_t) =
   mk_default_target fintf.fintf_name (VirtualTarget fintf)
 
+
 let mk_inlined_app_target (a:doubleword_int) (name:string) =
   mk_default_target name (InlinedAppTarget (a,name))
+
 
 let mk_static_dll_stub_target (a:doubleword_int) (dll:string) (name:string) =
   let tgt = StaticStubTarget (a, DllFunction (dll,name)) in
@@ -105,9 +115,11 @@ let mk_static_dll_stub_target (a:doubleword_int) (dll:string) (name:string) =
   else
     mk_default_target name tgt
 
+
 let mk_static_pck_stub_target
       (a:doubleword_int) (lib:string) (pkgs:string list) (name:string) =
   mk_default_target name (StaticStubTarget (a, PckFunction (lib,pkgs,name)))
+
 
 let mk_wrapped_target
       (a: doubleword_int)
@@ -116,11 +128,13 @@ let mk_wrapped_target
       (parameters:(fts_parameter_t * bterm_t) list) =
   mk_default_target fintf.fintf_name ( WrappedTarget (a, fintf, tgt, parameters))
 
+
 let update_target_interface
       (ctinfo: call_target_info_int) (fintf: function_interface_t) =
   let semantics = ctinfo#get_semantics in
   let tgt = ctinfo#get_target in
   mk_call_target_info fintf semantics tgt
+
 
 let mk_call_target_info (ctgt: call_target_t): call_target_info_int =
   match ctgt with
@@ -128,6 +142,7 @@ let mk_call_target_info (ctgt: call_target_t): call_target_info_int =
   | StubTarget (SOFunction name) -> mk_so_target name
   | StubTarget (JniFunction index) -> mk_jni_target index
   | AppTarget addr -> mk_app_target addr
+  | IndirectTarget (_, l) -> mk_default_target "$dispatch$" ctgt
   | _ ->
      raise
        (BCH_failure
