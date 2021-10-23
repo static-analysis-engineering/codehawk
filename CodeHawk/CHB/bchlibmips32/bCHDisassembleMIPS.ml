@@ -683,10 +683,15 @@ let record_call_targets () =
                             ctxtiaddr (mk_app_target op#get_absolute_address)
                    end
               | JumpLinkRegister (ra,op) ->
+                 let iaddr = (ctxt_string_to_location faddr ctxtiaddr)#i in
                  if finfo#has_call_target ctxtiaddr then
                    let loc = ctxt_string_to_location faddr ctxtiaddr in
                    let floc = get_floc loc in
                    floc#update_call_target
+                 else if system_info#has_call_target faddr iaddr then
+                   let calltgt = system_info#get_call_target faddr iaddr in
+                   let ctinfo = mk_call_target_info calltgt in
+                   finfo#set_call_target ctxtiaddr ctinfo
                  else
                    finfo#set_call_target ctxtiaddr (mk_unknown_target ())
               | _ -> ())
