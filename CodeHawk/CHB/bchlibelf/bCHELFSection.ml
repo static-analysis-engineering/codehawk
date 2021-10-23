@@ -60,14 +60,24 @@ object (self)
       try
         let start = (va#subtract vaddr)#to_int in
         String.sub s start size
-      with Invalid_argument s ->
-        raise
-          (BCH_failure
-             (LBLOCK [ STR "Invalid section substring request: ";
-                       STR "vaddr: "; vaddr#toPretty;
-                       STR "; start: "; va#toPretty;
-                       STR "; length: "; INT size ;
-                       STR ": "; STR s ]))
+      with
+      | Invalid_argument s ->
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Invalid section substring request: ";
+                   STR "vaddr: "; vaddr#toPretty;
+                   STR "; start: "; va#toPretty;
+                   STR "; length: "; INT size ;
+                   STR ": "; STR s ]))
+      | _ ->
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Invalid section substring request: ";
+                   STR "vaddr: "; vaddr#toPretty;
+                   STR "; start: "; va#toPretty;
+                   STR "; length: "; INT size]))
     else
       raise
         (BCH_failure
