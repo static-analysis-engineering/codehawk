@@ -37,6 +37,7 @@ open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHCPURegisters
 open BCHLibTypes
 open BCHSumTypeSerializer
 
@@ -61,6 +62,7 @@ let raise_tag_error (name:string) (tag:string) (accepted:string list) =
 class arm_dictionary_t:arm_dictionary_int =
 object (self)
 
+  val vfp_datatype_table = mk_index_table "vfp-datatype-table"
   val register_shift_rotate_table = mk_index_table "register-shift-table"
   val arm_memory_offset_table = mk_index_table "arm-memory-offset-table"
   val arm_opkind_table = mk_index_table "arm-opkind-table"
@@ -73,6 +75,7 @@ object (self)
 
   initializer
     tables <- [
+      vfp_datatype_table;
       register_shift_rotate_table;
       arm_memory_offset_table;
       arm_opkind_table;
@@ -108,6 +111,18 @@ object (self)
          (tags, [ op1; rn; data; op; datax ]) in
     arm_instr_class_table#add key
 
+  method index_vfp_datatype (t: vfp_datatype_t) =
+    let tags = [vfp_datatype_mcts#ts t] in
+    let key = match t with
+      | VfpNone -> (tags, [])
+      | VfpSize s
+        | VfpFloat s
+        | VfpInt s
+        | VfpPolynomial s
+        | VfpSignedInt s
+        | VfpUnsignedInt s -> (tags, [s]) in
+    vfp_datatype_table#add key
+
   method index_register_shift_rotate (rs:register_shift_rotate_t) =
     let tags = [ register_shift_rotate_mcts#ts rs ] in
     let key = match rs with
@@ -134,7 +149,8 @@ object (self)
       | ARMDMBOption o -> (tags @ [dmb_option_mfts#ts o], [])
       | ARMReg r -> (tags @ [arm_reg_mfts#ts r], [])
       | ARMSpecialReg r -> (tags @ [arm_special_reg_mfts#ts r], [])
-      | ARMFPReg (size, index) -> (tags, [size; index])
+      | ARMExtensionReg (t, index) ->
+         (tags @ [arm_extension_reg_type_to_string t], [index])
       | ARMRegList rl -> (tags @ (List.map arm_reg_mfts#ts rl),[])
       | ARMShiftedReg (r,rs) ->
          (tags @ [arm_reg_mfts#ts r], [self#index_register_shift_rotate rs])
@@ -161,6 +177,7 @@ object (self)
     let setb x = if x then 1 else 0 in
     let setopt x = match x with Some k -> k | _ -> (-1) in
     let oi = self#index_arm_operand in
+    let di = self#index_vfp_datatype in
     let ci = arm_opcode_cc_mfts#ts in
     let tags = [ get_arm_opcode_name opc ] in
     let ctags c = tags @ [ ci c ] in
@@ -233,6 +250,8 @@ object (self)
       | MoveRegisterCoprocessor (c, coproc, opc1, rt, crn, crm, opc2) ->
          (ctags c, [coproc; opc1; oi rt; crn; crm; opc2])
       | MoveTop (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
+      | MoveTwoRegisterCoprocessor (c, coproc, opc, rt, rt2, crm) ->
+         (ctags c, [coproc; opc; oi rt; oi rt2; crm])
       | MoveWide (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
       | Multiply (setflags,cond,rd,rn,rm) ->
          (tags @ [ ci cond ], [setb setflags; oi rd; oi rn; oi rm])
@@ -292,25 +311,41 @@ object (self)
          (tags @ [ ci cond ], [oi src1; oi src2 ])
       | UnsignedAdd8 (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | UnsignedBitFieldExtract (c,rd,rn) -> (ctags c, [oi rd; oi rn ])
-      | UnsignedExtendAddHalfword (c,rd,rn,rm) ->
+      | UnsignedExtendAddByte (c, rd, rn, rm) ->
+         (ctags c, [oi rd; oi rn; oi rm])
+      | UnsignedExtendAddHalfword (c, rd, rn, rm) ->
          (ctags c, [oi rd; oi rn; oi rm])
       | UnsignedExtendByte (c, rd, rm, tw) -> (ctags c, [oi rd; oi rm; setb tw])
       | UnsignedExtendHalfword (c,rd,rm) -> (ctags c, [oi rd; oi rm])
+      | UnsignedMultiplyAccumulateLong (s, c, rdlo, rdhi, rn, rm) ->
+         (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | UnsignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) ->
-         (ctags c,[setb s; oi rdlo; oi rdhi; oi rn; oi rm])
+         (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | UnsignedSaturatingSubtract8 (c, rd, rn, rm) ->
          (ctags c, [oi rd; oi rn; oi rm])
+      | VectorBitwiseExclusiveOr (c, dst, src1, src2) ->
+         (ctags c, [oi dst; oi src1; oi src2])
       | VCompare (nan, c, dt, op1, op2) ->
-         ((ctags c) @ [dt], [if nan then 1 else 0; oi op1; oi op2])
-      | VConvert (round, c, dstdt, srcdt, dst, src) ->
-         ((ctags c) @ [dstdt; srcdt], [if round then 1 else 0; oi dst; oi src])
+         (ctags c, [if nan then 1 else 0; di dt; oi op1; oi op2])
+      | VectorConvert (round, c, dstdt, srcdt, dst, src) ->
+         ((ctags c),
+          [if round then 1 else 0; di dstdt; di srcdt; oi dst; oi src])
+      | VDivide (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorDuplicate (c, dt, regs, elements, dst, src) ->
+         (ctags c, [di dt; regs; elements; oi dst; oi src])
       | VLoadRegister (c, dst, base, mem) ->
          (ctags c, [oi dst; oi base; oi mem])
-      | VMove (c, dst, src) -> (ctags c, [oi dst; oi src])
+      | VMove (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
       | VMoveRegisterStatus (c, dst, src) -> (ctags c, [oi dst; oi src])
       | VMoveToSystemRegister (c, dst, src) -> (ctags c, [oi dst; oi src])
+      | VectorMultiply (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorNegate (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
       | VStoreRegister (c, src, base, mem) ->
          (ctags c, [oi src; oi base; oi mem])
+      | VectorSubtract (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
       | OpInvalid | NotCode _ -> (tags,[])
       | NoOperation c -> (ctags c, [])
       | PermanentlyUndefined (c,op) -> (ctags c, [oi op])

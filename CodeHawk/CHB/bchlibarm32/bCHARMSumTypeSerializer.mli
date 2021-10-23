@@ -36,6 +36,8 @@ val dmb_option_mfts: dmb_option_t mfts_int
 
 val shift_rotate_type_mfts: shift_rotate_type_t mfts_int
 
+val vfp_datatype_mcts: vfp_datatype_t mfts_int
+
 val register_shift_rotate_mcts: register_shift_rotate_t mfts_int
 
 val arm_instr_class_mcts: arm_instr_class_t mfts_int

@@ -62,6 +62,9 @@ open BCHARMPseudocode
 open BCHARMSumTypeSerializer
 open BCHARMTypes
 
+
+let x2p = xpr_formatter#pr_expr
+
    (* commonly used constant values *)
 let e7   = 128
 let e8   = 256
@@ -75,6 +78,7 @@ let arm_operand_mode_to_string = function RD -> "RD" | WR -> "WR" | RW -> "RW"
 
 let dmb_option_to_string = dmb_option_mfts#ts
 
+
 let shift_rotate_type_to_string (srt:shift_rotate_type_t) =
   match srt with
   | SRType_LSL -> "LSL"
@@ -83,6 +87,7 @@ let shift_rotate_type_to_string (srt:shift_rotate_type_t) =
   | SRType_ROR -> "ROR"
   | SRType_RRX -> "RRX"
 
+
 let register_shift_to_string (rs:register_shift_rotate_t) =
   match rs with
   | ARMImmSRT (SRType_ROR,0) -> ""
@@ -90,6 +95,19 @@ let register_shift_to_string (rs:register_shift_rotate_t) =
      (shift_rotate_type_to_string srt) ^ " #" ^ (string_of_int imm)
   | ARMRegSRT (srt,reg) ->
      (shift_rotate_type_to_string srt) ^ " " ^ (armreg_to_string reg)
+
+
+let vfp_datatype_to_string (t: vfp_datatype_t) =
+  let stri = string_of_int in
+  match t with
+  | VfpNone -> ""
+  | VfpSize s -> "." ^ (stri s)
+  | VfpFloat s -> ".F" ^ (stri s)
+  | VfpInt s -> ".I" ^ (stri s)
+  | VfpPolynomial s -> ".P" ^ (stri s)
+  | VfpSignedInt s -> ".S" ^ (stri s)
+  | VfpUnsignedInt s -> ".U" ^ (stri s)
+
 
 let arm_memory_offset_to_string (offset:arm_memory_offset_t) =
   let p_off off =
@@ -106,6 +124,7 @@ let arm_memory_offset_to_string (offset:arm_memory_offset_t) =
         ^ (register_shift_to_string rs)
         ^ (p_off off)
 
+
 class arm_operand_t
         (kind:arm_operand_kind_t) (mode:arm_operand_mode_t):arm_operand_int =
 object (self:'a)
@@ -119,7 +138,11 @@ object (self:'a)
   method get_size =
     match kind with
     | ARMReg r -> 4
-    | ARMFPReg (size, _) -> size / 8
+    | ARMExtensionReg (t, _) ->
+       (match t with
+        | XSingle -> 4
+        | XDouble -> 8
+        | XQuad -> 16)
     | _ ->
        raise
          (BCH_failure
@@ -255,7 +278,7 @@ object (self:'a)
     let env = floc#f#env in
     match kind with
     | ARMReg r -> env#mk_arm_register_variable r
-    | ARMFPReg (size, r) -> env#mk_arm_fp_register_variable size r
+    | ARMExtensionReg (t, r) -> env#mk_arm_extension_register_variable t r
     | ARMSpecialReg r ->
        raise
          (BCH_failure
@@ -281,11 +304,40 @@ object (self:'a)
            let rvar = env#mk_arm_register_variable r in
            (match (offset, isadd) with
             | (ARMShiftedIndexOffset (ivar, srt, i), true) ->
-               let scale = match srt with
-                 | ARMImmSRT (SRType_LSL, 2) -> 4
-                 | _ -> 1 in
-               let ivar = env#mk_arm_register_variable ivar in
-               floc#get_memory_variable_3 rvar ivar scale (mkNumerical i)
+               let optscale =
+                 match srt with
+                 | ARMImmSRT (SRType_LSL, 2) -> Some 4
+                 | ARMImmSRT (SRType_LSL, 0) -> Some 1
+                 | _ -> None in
+               (match optscale with
+                | Some scale ->
+                   let ivar = env#mk_arm_register_variable ivar in
+                   if scale = 1 then
+                     let rx =
+                       floc#inv#rewrite_expr
+                         (XVar rvar) floc#env#get_variable_comparator in
+                     let ivax =
+                       floc#inv#rewrite_expr
+                         (XVar ivar) floc#env#get_variable_comparator in
+                     let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
+                     (match xoffset with
+                      | XConst (IntConst n) ->
+                         floc#env#mk_global_variable n
+                      | _ ->
+                         let _ =
+                           chlog#add
+                             "shifted index offset memory variable"
+                             (LBLOCK [
+                                  self#toPretty;
+                                  STR "; rx: ";
+                                  x2p rx;
+                                  STR ": ivax: ";
+                                  x2p ivax]) in
+                         env#mk_unknown_memory_variable "operand")
+                   else
+                     floc#get_memory_variable_3 rvar ivar scale (mkNumerical i)
+                | _ ->
+                   env#mk_unknown_memory_variable "operand")
             | _ -> env#mk_unknown_memory_variable "operand")
         | _ -> env#mk_unknown_memory_variable "operand")
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
@@ -328,7 +380,7 @@ object (self:'a)
                  STR "Semantics of special register ";
                  STR (arm_special_reg_to_string r);
                  STR " should be handled separately"]))
-    | ARMFPReg _ -> XVar (self#to_variable floc)
+    | ARMExtensionReg _ -> XVar (self#to_variable floc)
     | ARMOffsetAddress _ -> XVar (self#to_variable floc)
     | ARMAbsolute a when elf_header#is_program_address a ->
        num_constant_expr a#to_numerical
@@ -390,7 +442,7 @@ object (self:'a)
             (LBLOCK [STR "Immediate cannot be a lhs: ";
                      self#toPretty]))
     | ARMReg _ -> (self#to_variable floc, [])
-    | ARMFPReg _ -> (self#to_variable floc, [])
+    | ARMExtensionReg _ -> (self#to_variable floc, [])
     | ARMOffsetAddress _ -> (self#to_variable floc, [])
     | _ ->
        raise
@@ -443,18 +495,7 @@ object (self:'a)
     | ARMDMBOption o -> dmb_option_to_string o
     | ARMReg r -> armreg_to_string r
     | ARMSpecialReg r -> arm_special_reg_to_string r
-    | ARMFPReg (size, index) ->
-       let r = string_of_int index in
-       (match size with
-        | 32 -> "S" ^ r
-        | 64 -> "D" ^ r
-        | 128 -> "Q" ^ r
-        | _ ->
-           raise
-             (BCH_failure
-                (LBLOCK [
-                     STR "Size of floating point register not recognized: ";
-                     INT size])))
+    | ARMExtensionReg (t, index) -> arm_extension_reg_to_string t index
     | ARMRegList l ->
        "{" ^ String.concat "," (List.map armreg_to_string l) ^ "}"
     | ARMShiftedReg (r,rs) ->
@@ -499,8 +540,9 @@ let arm_dmb_option_from_int_op (option:int) =
 let arm_register_op (r:arm_reg_t) (mode:arm_operand_mode_t) =
   new arm_operand_t (ARMReg r) mode
 
-let arm_fp_register_op (size: int) (index: int) (mode: arm_operand_mode_t) =
-  new arm_operand_t (ARMFPReg (size, index)) mode
+let arm_extension_register_op
+      (t: arm_extension_reg_type_t) (index: int) (mode: arm_operand_mode_t) =
+  new arm_operand_t (ARMExtensionReg (t, index)) mode
 
 let arm_special_register_op (r: arm_special_reg_t) (mode: arm_operand_mode_t) =
   new arm_operand_t (ARMSpecialReg r) mode

@@ -43,6 +43,8 @@ open BCHLibTypes
 open BCHARMTypes
 
 
+val vfp_datatype_to_string: vfp_datatype_t -> string
+
 val arm_operand_mode_to_string: arm_operand_mode_t -> string
 
 val arm_index_offset: ?offset:int -> arm_reg_t -> arm_memory_offset_t
@@ -59,7 +61,8 @@ val arm_register_op: arm_reg_t -> arm_operand_mode_t -> arm_operand_int
 val arm_special_register_op:
   arm_special_reg_t -> arm_operand_mode_t -> arm_operand_int
 
-val arm_fp_register_op: int -> int -> arm_operand_mode_t -> arm_operand_int
+val arm_extension_register_op:
+  arm_extension_reg_type_t -> int -> arm_operand_mode_t -> arm_operand_int
 
 val arm_register_list_op: arm_reg_t list -> arm_operand_mode_t -> arm_operand_int
 

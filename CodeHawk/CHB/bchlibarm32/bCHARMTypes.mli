@@ -57,6 +57,15 @@ type dmb_option_t =  (* data memory barrier option *)
   | OuterShareableRW
   | OuterShareableW
 
+type vfp_datatype_t =    (* Advanced SIMD extension A2.6.3 *)
+  | VfpNone
+  | VfpSize of int
+  | VfpFloat of int
+  | VfpInt of int
+  | VfpPolynomial of int
+  | VfpSignedInt of int
+  | VfpUnsignedInt of int
+
 type register_shift_rotate_t =
   | ARMImmSRT of shift_rotate_type_t * int    (* immediate shift amount *)
   | ARMRegSRT of shift_rotate_type_t * arm_reg_t (* shift amount in reg *)
@@ -167,7 +176,7 @@ type arm_operand_kind_t =
   | ARMDMBOption of dmb_option_t
   | ARMReg of arm_reg_t
   | ARMSpecialReg of arm_special_reg_t
-  | ARMFPReg of int * int
+  | ARMExtensionReg of arm_extension_reg_type_t * int
   | ARMRegList of arm_reg_t list
   | ARMShiftedReg of arm_reg_t * register_shift_rotate_t
   | ARMRegBitSequence of arm_reg_t * int * int (* lsb, widthm1 *)
@@ -482,6 +491,13 @@ type arm_opcode_t =
       arm_opcode_cc_t (* condition *)
       * arm_operand_int (* rd: destination *)
       * arm_operand_int (* imm: source *)
+  | MoveTwoRegisterCoprocessor of
+      arm_opcode_cc_t   (* condition *)
+      * int             (* coprocessor *)
+      * int             (* opcode *)
+      * arm_operand_int (* rt: destination 1 *)
+      * arm_operand_int (* rt2: destination 2 *)
+      * int             (* CRm *)
   | MoveWide of
       arm_opcode_cc_t (* condition *)
       * arm_operand_int (* rd: destination *)
@@ -708,6 +724,11 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source *)
+  | UnsignedExtendAddByte of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
   | UnsignedExtendAddHalfword of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* rd: destination *)
@@ -722,6 +743,13 @@ type arm_opcode_t =
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
+  | UnsignedMultiplyAccumulateLong of
+      bool   (* flags are set *)
+      * arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* RdLo: destination *)
+      * arm_operand_int (* RdHi: destination *)
+      * arm_operand_int (* Rn: source 1 *)
+      * arm_operand_int (* Rm: source 2 *)
   | UnsignedMultiplyLong of
       bool   (* flags are set *)
       * arm_opcode_cc_t (* condition *)
@@ -734,19 +762,37 @@ type arm_opcode_t =
       * arm_operand_int (* rd: destination *)
       * arm_operand_int (* rn: first operand *)
       * arm_operand_int (* rm: second operand *)
+  | VectorBitwiseExclusiveOr of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
   | VCompare of
       bool   (* if true NaN operand causes invalid operation *)
       * arm_opcode_cc_t (* condition *)
-      * string          (* data type (F64 or F32) *)
+      * vfp_datatype_t  (* element data type *)
       * arm_operand_int (* operand 1 *)
       * arm_operand_int (* operand 2 *)
-  | VConvert of
+  | VectorConvert of
       bool   (* rounding specified *)
       * arm_opcode_cc_t (* condition *)
-      * string          (* destination data type (F64, S32, ... *)
-      * string          (* source data type (F64, S32, ... *)
+      * vfp_datatype_t  (* destination data type *)
+      * vfp_datatype_t  (* source data type *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
+  | VDivide of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+  | VectorDuplicate of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* size *)
+      * int             (* number of registers *)
+      * int             (* number of elements *)
+      * arm_operand_int (* floating-point destination register *)
+      * arm_operand_int (* source register *)
   | VLoadRegister of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* floating-point destination register *)
@@ -754,14 +800,26 @@ type arm_opcode_t =
       * arm_operand_int (* mem: memory location *)
   | VMove of
       arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* element data type *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
-  | VMoveRegisterStatus of
+  | VMoveRegisterStatus of   (* VMRS *)
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
-  | VMoveToSystemRegister of
+  | VMoveToSystemRegister of (* VMSR *)
       arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
+  | VectorMultiply of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+  | VectorNegate of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
   | VStoreRegister of
@@ -769,6 +827,12 @@ type arm_opcode_t =
       * arm_operand_int (* floating-point source register *)
       * arm_operand_int (* base register *)
       * arm_operand_int (* mem: memory location *)
+  | VectorSubtract of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
 
   (* SupervisorType *)
   | SupervisorCall of arm_opcode_cc_t * arm_operand_int
@@ -782,6 +846,7 @@ type arm_opcode_t =
 class type arm_dictionary_int =
   object
 
+    method index_vfp_datatype: vfp_datatype_t -> int
     method index_register_shift_rotate: register_shift_rotate_t -> int
     method index_arm_memory_offset: arm_memory_offset_t -> int
     method index_arm_opkind: arm_operand_kind_t -> int
@@ -790,8 +855,10 @@ class type arm_dictionary_int =
     method index_arm_bytestring: string -> int
     method index_arm_instr_class: arm_instr_class_t -> int
 
-    method write_xml_arm_bytestring: ?tag:string -> xml_element_int -> string -> unit
-    method write_xml_arm_opcode: ?tag:string -> xml_element_int -> arm_opcode_t -> unit
+    method write_xml_arm_bytestring:
+             ?tag:string -> xml_element_int -> string -> unit
+    method write_xml_arm_opcode:
+             ?tag:string -> xml_element_int -> arm_opcode_t -> unit
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit

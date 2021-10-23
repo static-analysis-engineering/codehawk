@@ -400,9 +400,26 @@ object (self)
 
       | LoadMultipleIncrementAfter (_, _, rn, rl, mem) ->
          let lhss = rl#to_multiple_variable floc in
+         let (_, rhss) =
+           List.fold_left
+             (fun (off, acc) reg ->
+               let offset = ARMImmOffset off in
+               let memloc =
+                 mk_arm_offset_address_op
+                   rn#get_register
+                   offset
+                   ~isadd:true
+                   ~isindex:false
+                   ~iswback:false
+                   RD in
+               let rhs = memloc#to_expr floc in
+               (off + 4, acc @ [rhs])) (0, []) rl#get_register_op_list in
          let xtag =
-           "a:" ^ (string_repeat "v" rl#get_register_count) in
-         ([xtag], List.map xd#index_variable lhss)
+           "a:"
+           ^ (string_repeat "v" rl#get_register_count)
+           ^ (string_repeat "x" rl#get_register_count) in
+         ([xtag],
+          (List.map xd#index_variable lhss) @ (List.map xd#index_xpr rhss))
 
       | LoadRegister (c, rt, rn, _, mem, _) ->
          let vrt = rt#to_variable floc in
@@ -545,6 +562,11 @@ object (self)
            xd#index_xpr xrdm16;
            xd#index_xpr result;
            xd#index_xpr rresult])
+
+      | MoveTwoRegisterCoprocessor (_, _, _, rt, rt2, _) ->
+         let v1 = rt#to_variable floc in
+         let v2 = rt2#to_variable floc in
+         (["a:vv"], [xd#index_variable v1; xd#index_variable v2])
 
       | MoveWide(_,rd, imm) ->
          let vrd = rd#to_variable floc in
@@ -911,6 +933,20 @@ object (self)
          (["a:vxx"],
           [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr rrhs])
 
+      | UnsignedExtendAddByte (_, rd, rn, rm) ->
+         let lhs = rd#to_variable floc in
+         let rhs1 = rn#to_expr floc in
+         let rhs2 = rm#to_expr floc in
+         (["a:vxx"],
+          [xd#index_variable lhs; xd#index_xpr rhs1; xd#index_xpr rhs2])
+
+      | UnsignedExtendAddHalfword (_, rd, rn, rm) ->
+         let lhs = rd#to_variable floc in
+         let rhs1 = rn#to_expr floc in
+         let rhs2 = rm#to_expr floc in
+         (["a:vxx"],
+          [xd#index_variable lhs; xd#index_xpr rhs1; xd#index_xpr rhs2])
+
       | UnsignedExtendByte (_, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
@@ -930,6 +966,21 @@ object (self)
                        xd#index_xpr xrm;
                        xd#index_xpr result;
                        xd#index_xpr rresult])
+
+      | UnsignedMultiplyAccumulateLong (_, _, rdlo, rdhi, rn, rm) ->
+         let lhslo = rdlo#to_variable floc in
+         let lhshi = rdhi#to_variable floc in
+         let rhs1 = rn#to_expr floc in
+         let rhs2 = rm#to_expr floc in
+         let result = XOp (XMult, [rhs1; rhs2]) in
+         let rresult = rewrite_expr result in
+         (["a:vvxxxx"],
+          [xd#index_variable lhslo;
+           xd#index_variable lhshi;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
 
       | UnsignedMultiplyLong (_, _, rdlo, rdhi, rn, rm) ->
          let lhslo = rdlo#to_variable floc in
@@ -963,19 +1014,25 @@ object (self)
            xd#index_xpr src2;
            xd#index_xpr rsrc1;
            xd#index_xpr rsrc2])
-      | VConvert (_, _, _, _, dst, src) ->
+
+      | VectorConvert (_, _, _, _, dst, src) ->
          let vdst = dst#to_variable floc in
          let src = src#to_expr floc in
          let rsrc = rewrite_expr src in
          (["a:vxx"],
           [xd#index_variable vdst; xd#index_xpr src; xd#index_xpr rsrc])
 
+      | VectorDuplicate (_, _, _, _, _, src) ->
+         let src = src#to_expr floc in
+         let rsrc = rewrite_expr src in
+         (["a:xx"], [xd#index_xpr src; xd#index_xpr rsrc])
+
       | VLoadRegister (_, vd, rn, mem) ->
          let vvd = vd#to_variable floc in
          let xmem = mem#to_expr floc in
          (["a:vx"], [xd#index_variable vvd; xd#index_xpr xmem])
 
-      | VMove (_, dst, src) ->
+      | VMove (_, _, dst, src) ->
          let vdst = dst#to_variable floc in
          let src = src#to_expr floc in
          let rsrc = rewrite_expr src in

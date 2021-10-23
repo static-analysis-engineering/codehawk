@@ -33,7 +33,12 @@
  *)
 
 (* chlib *)
+open CHNumerical
 open CHPretty
+
+(* chutil *)
+open CHLogger
+open CHPrettyUtil
 
 (* bchlib *)
 open BCHBasicTypes
@@ -571,3 +576,61 @@ let thumb_expand_imm_c (imm12: int) (carry: int): int * int =
 let thumb_expand_imm (imm12: int) (carry: int): int =
   let (imm32, _) = thumb_expand_imm_c imm12 carry in
   imm32
+
+
+(* VFPExpandImm (pg A7-271)
+ * ========================
+ * bits(N) VFPExpandImm(bits(8) imm8, integer N)
+ *   assert N in {32, 64};
+ *   if N == 32 then
+ *     E = 8;
+ *   else
+ *     E = 11;
+ *   F = N - E - 1;
+ *   sign = imm8<7>;
+ *   exp = NOT(imm8<6>):Replicate(imm<6>, E-3):imm8<5:4>;
+ *   frac = imm8<3:0>:Zeros(F-4);
+ *   return sign:exp:frac
+ *)
+let vfp_expand_imm (imm8: int) (n: int): numerical_t =
+  let e = if n == 32 then 8 else 11 in
+  let f = (n - e) - 1 in
+  let sign = imm8 lsr 7 in
+  let imm8_6 = (imm8 lsr 6) mod 2 in
+  let imm8_6_neg = if imm8_6 = 1 then 0 else 1 in
+  let imm8_5 = (imm8 lsr 5) mod 2 in
+  let imm8_4 = (imm8 lsr 4) mod 2 in
+  let s_imm8_6 = string_of_int imm8_6 in
+  let s_imm8_6_neg = string_of_int imm8_6_neg in
+  let exp =
+    s_imm8_6_neg
+    ^ (string_repeat s_imm8_6 (e-3))
+    ^ (string_of_int imm8_5)
+    ^ (string_of_int imm8_4) in
+  let s_imm_3 = string_of_int ((imm8 lsr 3) mod 2) in
+  let s_imm_2 = string_of_int ((imm8 lsr 2) mod 2) in
+  let s_imm_1 = string_of_int ((imm8 lsr 1) mod 2) in
+  let s_imm_0 = string_of_int (imm8 mod 2) in
+  let frac =
+    s_imm_3
+    ^ s_imm_2
+    ^ s_imm_1
+    ^ s_imm_0
+    ^ (string_repeat "0" (f - 4)) in
+  let sv = "0b" ^ (string_of_int sign) ^ exp ^ frac in
+  let v = mkNumericalFromInt64 (Int64.of_string sv) in
+  let _ =
+    chlog#add
+      "vfp-expand"
+      (LBLOCK [
+           STR "imm8: ";
+           INT imm8;
+           STR "; exp: ";
+           STR exp;
+           STR "; frac: ";
+           STR frac;
+           STR "; sv: ";
+           STR sv;
+           STR "; value: ";
+           v#toPretty]) in
+  v
