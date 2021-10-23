@@ -154,7 +154,8 @@ object (self)
       | MIPSFloatingPointRegister i -> (tags, [i])
       | ARMRegister r -> (tags @ [arm_reg_mfts#ts r], [])
       | ARMSpecialRegister r -> (tags @ [arm_special_reg_mfts#ts r], [])
-      | ARMFloatingPointRegister (s, i) -> (tags, [s; i]) in
+      | ARMExtensionRegister (s, i) ->
+         (tags @ [arm_extension_reg_type_mfts#ts s], [i]) in
     register_table#add key
 
   method get_register (index:int) =
@@ -176,7 +177,8 @@ object (self)
     | "pfp" -> MIPSFloatingPointRegister (a 0)
     | "a" -> ARMRegister (arm_reg_mfts#fs (t 1))
     | "as" -> ARMSpecialRegister (arm_special_reg_mfts#fs (t 1))
-    | "afp" -> ARMFloatingPointRegister (a 0, a 1)
+    | "armx" ->
+       ARMExtensionRegister (arm_extension_reg_type_mfts#fs (t 1), a 0)
     | s -> raise_tag_error name s register_mcts#tags
 
   method index_attributes (attrs:attributes) =

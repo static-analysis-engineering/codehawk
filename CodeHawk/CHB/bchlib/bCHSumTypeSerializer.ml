@@ -125,11 +125,18 @@ let arithmetic_op_mfts: arithmetic_op_t mfts_int =
 let ikind_mfts: ikind mfts_int =
   mk_fn_mfts
     "ikind"
-    [ (IChar, "ichar"); (ISChar, "ischar"); (IUChar, "iuchar");
+    [ (IChar, "ichar");
+      (ISChar, "ischar");
+      (IUChar, "iuchar");
       (IWChar, "iwchar");
-      (IBool, "ibool"); (IInt, "iint"); (IUInt, "iuint");
-      (IShort, "ishort"); (IUShort, "iushort"); (ILong, "ilong");
-      (IULong, "iulong"); (ILongLong, "ilonglong");
+      (IBool, "ibool");
+      (IInt, "iint");
+      (IUInt, "iuint");
+      (IShort, "ishort");
+      (IUShort, "iushort");
+      (ILong, "ilong");
+      (IULong, "iulong");
+      (ILongLong, "ilonglong");
       (IULongLong, "iulonglong") ]
     (fun k ->
       match k with
@@ -139,8 +146,8 @@ let ikind_mfts: ikind mfts_int =
     (fun s ->
        try
          match nsplit '_' s with
-         | [ "nt" ; n ] -> INonStandard (true,int_of_string n)
-         | [ "nf" ; n ] -> INonStandard (false,int_of_string n)
+         | ["nt"; n] -> INonStandard (true,int_of_string n)
+         | ["nf"; n] -> INonStandard (false,int_of_string n)
          | _ ->
             raise
               (BCH_failure (LBLOCK [STR "Invalid ikind specifier: "; STR s]))
@@ -150,7 +157,13 @@ let ikind_mfts: ikind mfts_int =
             (BCH_failure
                (LBLOCK [STR "Invalid ikind specifier size: "; STR s])))
   
-  
+
+let arm_extension_reg_type_mfts: arm_extension_reg_type_t mfts_int =
+  mk_mfts
+    "arm_extension_reg_type"
+    [(XSingle, "x"); (XDouble, "d"); (XQuad, "q")]
+
+
 class register_mcts_t:[register_t] mfts_int =
 object
 
@@ -171,10 +184,10 @@ object
     | MIPSFloatingPointRegister _ -> "pfp"
     | ARMRegister _ -> "a"
     | ARMSpecialRegister _ -> "as"
-    | ARMFloatingPointRegister _ -> "afp"
+    | ARMExtensionRegister _ -> "armx"
 
   method tags = [
-      "a"; "afp"; "as"; "c"; "ctr"; "d"; "dbg"; "f";
+      "a"; "armx"; "as"; "c"; "ctr"; "d"; "dbg"; "f";
       "m"; "s"; "x" ; "p" ; "ps" ; "pfp"]
 
 end

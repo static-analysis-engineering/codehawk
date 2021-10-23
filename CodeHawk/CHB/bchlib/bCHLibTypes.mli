@@ -339,6 +339,10 @@ type arm_special_reg_t =
   | FPSCR   (* Floating point processor status word *)
   | APSR_nzcv  (* Condition codes in core processor status word *)
 
+type arm_extension_reg_type_t =
+  | XSingle
+  | XDouble
+  | XQuad
 
 type register_t = 
 | SegmentRegister of segment_t
@@ -354,7 +358,7 @@ type register_t =
 | MIPSFloatingPointRegister of int
 | ARMRegister of arm_reg_t
 | ARMSpecialRegister of arm_special_reg_t
-| ARMFloatingPointRegister of int * int
+| ARMExtensionRegister of arm_extension_reg_type_t * int
 
 
 (* =============================================================== Doubleword === *)
@@ -2261,11 +2265,15 @@ class type function_environment_int =
     method mk_control_register_variable: int -> variable_t
     method mk_debug_register_variable: int -> variable_t
     method mk_double_register_variable: cpureg_t -> cpureg_t -> variable_t
+
     method mk_mips_register_variable: mips_reg_t -> variable_t
     method mk_mips_special_register_variable: mips_special_reg_t -> variable_t
     method mk_mips_fp_register_variable: int -> variable_t
+
     method mk_arm_register_variable: arm_reg_t -> variable_t
-    method mk_arm_fp_register_variable: int -> int -> variable_t
+    method mk_arm_extension_register_variable:
+             arm_extension_reg_type_t -> int -> variable_t
+
     method mk_global_variable: numerical_t -> variable_t
 
     method mk_initial_register_value: ?level:int -> register_t -> variable_t
