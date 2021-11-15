@@ -133,8 +133,17 @@ let get_reglist_from_int (width:int) (reglist:int) =
   collect (width-1) []
 
 
+(* bit:v *)
+let prefix_bit (bit: int) (v: int) = (16 * bit) + v
+
+
+(* v:bit *)
+let postfix_bit (bit: int) (v: int) = (2 * v) + bit
+
+
 (* Round down to the next lower multiple of size *)
 let align (a: int) (size: int): int = (a / size) * size
+
 
 let align_dw (dw: doubleword_int) (size: int): doubleword_int =
   int_to_doubleword (align dw#to_int size)

@@ -44,6 +44,9 @@ open BCHARMTypes
 val align: int -> int -> int
 val align_dw: doubleword_int -> int -> doubleword_int
 
+val prefix_bit: int -> int -> int
+val postfix_bit: int -> int -> int
+
 val get_dmb_option: int -> dmb_option_t
 
 val get_opcode_cc: int -> arm_opcode_cc_t
