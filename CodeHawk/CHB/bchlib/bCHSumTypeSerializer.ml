@@ -185,9 +185,11 @@ object
     | ARMRegister _ -> "a"
     | ARMSpecialRegister _ -> "as"
     | ARMExtensionRegister _ -> "armx"
+    | ARMExtensionRegisterElement _ -> "armxe"
+    | ARMExtensionRegisterReplicatedElement _ -> "armxr"
 
   method tags = [
-      "a"; "armx"; "as"; "c"; "ctr"; "d"; "dbg"; "f";
+      "a"; "armx"; "armxe"; "armxr"; "as"; "c"; "ctr"; "d"; "dbg"; "f";
       "m"; "s"; "x" ; "p" ; "ps" ; "pfp"]
 
 end
