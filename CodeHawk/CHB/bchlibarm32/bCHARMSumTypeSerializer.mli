@@ -40,8 +40,6 @@ val vfp_datatype_mcts: vfp_datatype_t mfts_int
 
 val register_shift_rotate_mcts: register_shift_rotate_t mfts_int
 
-(* val arm_instr_class_mcts: arm_instr_class_t mfts_int *)
-
 val arm_opkind_mcts: arm_operand_kind_t mfts_int
 
 val arm_opcode_cc_mfts: arm_opcode_cc_t mfts_int

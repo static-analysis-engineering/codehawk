@@ -40,34 +40,6 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
-   (*
-class arm_instr_class_mcts_t: [ arm_instr_class_t ] mfts_int =
-object
-
-  inherit [ arm_instr_class_t ] mcts_t "arm_instr_class_t"
-
-  method ts (c:arm_instr_class_t) =
-    match c with
-    | DataProcRegType _ -> "dpr"
-    | DataProcImmType _ -> "dpi"
-    | LoadStoreRegType _ -> "lsr"
-    | LoadStoreImmType _ -> "lsi"
-    | MediaType _ -> "m"
-    | BlockDataType _ -> "bd"
-    | BranchLinkType _ -> "bl"
-    | SupervisorType _ -> "s"
-    | LoadStoreCoprocType _ -> "lsc"
-    | CoprocessorType _ -> "c"
-    | UnconditionalType _ -> "u"
-
-  method tags = [
-      "bd"; "bl"; "c"; "dpi"; "dpr"; "lsc"; "lsi"; "lsr"; "m"; "s"; "u" ]
-
-end
-
-let arm_instr_class_mcts:arm_instr_class_t mfts_int = new arm_instr_class_mcts_t
-
-    *)
 
 let dmb_option_mfts: dmb_option_t mfts_int =
   mk_mfts
