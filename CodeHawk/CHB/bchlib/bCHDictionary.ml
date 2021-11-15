@@ -71,6 +71,11 @@ object (self)
 
   val string_table = mk_string_index_table "string-table"
   val address_table = mk_index_table "address-table"
+  val arm_extension_register_table = mk_index_table "arm-extension-register-table"
+  val arm_extension_register_element_table =
+    mk_index_table "arm-extension-register-element-table"
+  val arm_extension_register_replicated_element_table =
+    mk_index_table "arm-extension-register-replicated-element-table"
   val register_table = mk_index_table "register-table"
   val attributes_table = mk_index_table "attributes-table"
   val tname_table = mk_index_table "tname-table"
@@ -91,19 +96,22 @@ object (self)
   initializer
     begin
       tables <- [
-        address_table ;        
-        attributes_table ;
-        register_table ;
-        tname_table ;
-        tname_list_table ;
-        bfunarg_table ;
-        bfunargs_table ;
-        btype_table ;
-        compinfo_table ;
-        fieldinfo_table ;
-        enuminfo_table ;
-        enumitem_table ;
-        constant_table ;
+        address_table;
+        attributes_table;
+        arm_extension_register_table;
+        arm_extension_register_element_table;
+        arm_extension_register_replicated_element_table;
+        register_table;
+        tname_table;
+        tname_list_table;
+        bfunarg_table;
+        bfunargs_table;
+        btype_table;
+        compinfo_table;
+        fieldinfo_table;
+        enuminfo_table;
+        enumitem_table;
+        constant_table;
         exp_table 
       ];
       stringtables <- [
@@ -135,7 +143,51 @@ object (self)
   method get_address_string (index:int) =
     let (tags,_) = address_table#retrieve index in
     let t = t "address" tags in
-    (t 0)                                       
+    (t 0)
+
+  method index_arm_extension_register (r: arm_extension_register_t) =
+    arm_extension_register_table#add
+      ([arm_extension_reg_type_mfts#ts r.armxr_type], [r.armxr_index])
+
+  method get_arm_extension_register (index: int) =
+    let name = "arm_extension_register" in
+    let (tags, args) = arm_extension_register_table#retrieve index in
+    let t = t name tags in
+    let a = a name args in
+    {armxr_type = arm_extension_reg_type_mfts#fs (t 1); armxr_index = a 0}
+
+  method index_arm_extension_register_element
+           (e: arm_extension_register_element_t) =
+    arm_extension_register_element_table#add
+      ([],
+       [self#index_arm_extension_register e.armxr;
+        e.armxr_elem_index;
+        e.armxr_elem_size])
+
+  method get_arm_extension_register_element (index: int) =
+    let name = "arm_extension_register_element" in
+    let (_, args) = arm_extension_register_element_table#retrieve index in
+    let a = a name args in
+    {armxr = self#get_arm_extension_register (a 0);
+     armxr_elem_index = (a 1);
+     armxr_elem_size = (a 2)}
+
+  method index_arm_extension_register_replicated_element
+           (e: arm_extension_register_replicated_element_t) =
+    arm_extension_register_replicated_element_table#add
+      ([],
+       [self#index_arm_extension_register e.armxrr;
+        e.armxrr_elem_size;
+        e.armxrr_elem_count])
+
+  method get_arm_extension_register_replicated_element (index: int) =
+    let name = "arm_extension_register_replicated_element" in
+    let (_, args) =
+      arm_extension_register_replicated_element_table#retrieve index in
+    let a = a name args in
+    {armxrr = self#get_arm_extension_register (a 0);
+     armxrr_elem_size = (a 1);
+     armxrr_elem_count = (a 2)}
 
   method index_register (r:register_t) =
     let tags = [ register_mcts#ts r ] in
@@ -154,8 +206,12 @@ object (self)
       | MIPSFloatingPointRegister i -> (tags, [i])
       | ARMRegister r -> (tags @ [arm_reg_mfts#ts r], [])
       | ARMSpecialRegister r -> (tags @ [arm_special_reg_mfts#ts r], [])
-      | ARMExtensionRegister (s, i) ->
-         (tags @ [arm_extension_reg_type_mfts#ts s], [i]) in
+      | ARMExtensionRegister xr ->
+         (tags, [self#index_arm_extension_register xr])
+      | ARMExtensionRegisterElement xre ->
+         (tags, [self#index_arm_extension_register_element xre])
+      | ARMExtensionRegisterReplicatedElement xrre ->
+         (tags, [self#index_arm_extension_register_replicated_element xrre]) in
     register_table#add key
 
   method get_register (index:int) =
@@ -177,8 +233,12 @@ object (self)
     | "pfp" -> MIPSFloatingPointRegister (a 0)
     | "a" -> ARMRegister (arm_reg_mfts#fs (t 1))
     | "as" -> ARMSpecialRegister (arm_special_reg_mfts#fs (t 1))
-    | "armx" ->
-       ARMExtensionRegister (arm_extension_reg_type_mfts#fs (t 1), a 0)
+    | "armx" -> ARMExtensionRegister (self#get_arm_extension_register (a 0))
+    | "armxe" ->
+       ARMExtensionRegisterElement (self#get_arm_extension_register_element (a 0))
+    | "armxr" ->
+       ARMExtensionRegisterReplicatedElement
+         (self#get_arm_extension_register_replicated_element (a 0))
     | s -> raise_tag_error name s register_mcts#tags
 
   method index_attributes (attrs:attributes) =

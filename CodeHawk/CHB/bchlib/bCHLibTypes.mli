@@ -334,15 +334,38 @@ type arm_reg_t =
   | ARLR
   | ARPC
 
+
 type arm_special_reg_t =
   | APSR   (* Core processor status word *)
   | FPSCR   (* Floating point processor status word *)
   | APSR_nzcv  (* Condition codes in core processor status word *)
 
+
 type arm_extension_reg_type_t =
   | XSingle
   | XDouble
   | XQuad
+
+
+type arm_extension_register_t = {
+    armxr_type: arm_extension_reg_type_t;
+    armxr_index: int
+  }
+
+
+type arm_extension_register_element_t = {
+    armxr: arm_extension_register_t;
+    armxr_elem_index: int;
+    armxr_elem_size: int
+  }
+
+
+type arm_extension_register_replicated_element_t = {
+    armxrr: arm_extension_register_t;
+    armxrr_elem_size: int;
+    armxrr_elem_count: int
+  }
+
 
 type register_t = 
 | SegmentRegister of segment_t
@@ -358,7 +381,10 @@ type register_t =
 | MIPSFloatingPointRegister of int
 | ARMRegister of arm_reg_t
 | ARMSpecialRegister of arm_special_reg_t
-| ARMExtensionRegister of arm_extension_reg_type_t * int
+| ARMExtensionRegister of arm_extension_register_t
+| ARMExtensionRegisterElement of arm_extension_register_element_t
+| ARMExtensionRegisterReplicatedElement of
+    arm_extension_register_replicated_element_t
 
 
 (* =============================================================== Doubleword === *)
@@ -2087,6 +2113,11 @@ class type bdictionary_int =
     method index_string: string -> int
     method index_address: doubleword_int -> int
     method index_address_string: string -> int
+    method index_arm_extension_register: arm_extension_register_t -> int
+    method index_arm_extension_register_element:
+             arm_extension_register_element_t -> int
+    method index_arm_extension_register_replicated_element:
+             arm_extension_register_replicated_element_t -> int
     method index_register: register_t -> int
     method index_attributes: attributes -> int
     method index_tname: tname_t -> int
@@ -2104,6 +2135,11 @@ class type bdictionary_int =
     method get_string: int -> string
     method get_address: int -> doubleword_int
     method get_address_string: int -> string
+    method get_arm_extension_register: int -> arm_extension_register_t
+    method get_arm_extension_register_element:
+             int -> arm_extension_register_element_t
+    method get_arm_extension_register_replicated_element:
+             int -> arm_extension_register_replicated_element_t
     method get_register: int -> register_t
     method get_attributes: int -> attributes
     method get_tname: int -> tname_t
@@ -2272,7 +2308,9 @@ class type function_environment_int =
 
     method mk_arm_register_variable: arm_reg_t -> variable_t
     method mk_arm_extension_register_variable:
-             arm_extension_reg_type_t -> int -> variable_t
+             arm_extension_register_t -> variable_t
+    method mk_arm_extension_register_element_variable:
+             arm_extension_register_element_t -> variable_t
 
     method mk_global_variable: numerical_t -> variable_t
 

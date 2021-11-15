@@ -207,8 +207,19 @@ let arm_extension_reg_type_to_string (t: arm_extension_reg_type_t): string =
   | XQuad -> "Q"
 
 
-let arm_extension_reg_to_string (t: arm_extension_reg_type_t) (ix: int) =
-  (arm_extension_reg_type_to_string t) ^ (string_of_int ix)
+let arm_extension_reg_to_string (r: arm_extension_register_t) =
+  (arm_extension_reg_type_to_string r.armxr_type) ^ (string_of_int r.armxr_index)
+
+
+let arm_extension_reg_element_to_string (r: arm_extension_register_element_t) =
+  (arm_extension_reg_to_string r.armxr)
+  ^ "["
+  ^ (string_of_int r.armxr_elem_index)
+  ^ "]"
+
+let arm_extension_reg_rep_element_to_string
+      (r: arm_extension_register_replicated_element_t) =
+  (arm_extension_reg_to_string r.armxrr) ^ "[]"
 
 
 let armreg_from_string (name:string) =
@@ -257,14 +268,40 @@ let get_armreg_argument (index: int) =
        (BCH_failure
           (LBLOCK [STR "Index out of range for get_armreg_argument: ";
                    INT index]))
-  
+
+
 let is_register name = is_string_of_sumtype cpuregs_from_string_table name
-  
+
+
 let cpureg_to_asm_string reg = (cpureg_to_string reg)
+
 
 let cpureg_option_to_string reg =
   match reg with Some r -> cpureg_to_asm_string r | None -> ""
 
+
+let arm_extension_register_compare r1 r2 =
+  Stdlib.compare (r1.armxr_type, r1.armxr_index) (r2.armxr_type, r2.armxr_index)
+
+
+let arm_extension_register_element_compare e1 e2 =
+  let c1 = arm_extension_register_compare e1.armxr e2.armxr in
+  if c1 = 0 then
+    Stdlib.compare
+      (e1.armxr_elem_index, e1.armxr_elem_size)
+      (e2.armxr_elem_index, e2.armxr_elem_size)
+  else
+    c1
+
+
+let arm_extension_register_replicated_element_compare e1 e2 =
+  let c1 = arm_extension_register_compare e1.armxrr e2.armxrr in
+  if c1 = 0 then
+    Stdlib.compare
+      (e1.armxrr_elem_size, e1.armxrr_elem_count)
+      (e2.armxrr_elem_size, e2.armxrr_elem_count)
+  else
+    c1
 
 let register_compare r1 r2 =
   match (r1, r2) with
@@ -280,10 +317,19 @@ let register_compare r1 r2 =
      Stdlib.compare (arm_special_reg_to_string r1) (arm_special_reg_to_string r2)
   | (ARMSpecialRegister _, _) -> -1
   | (_, ARMSpecialRegister _) -> 1
-  | (ARMExtensionRegister (s1, i1), ARMExtensionRegister (s2, i2)) ->
-     Stdlib.compare (s1, i1) (s2, i2)
+  | (ARMExtensionRegister r1, ARMExtensionRegister r2) ->
+     arm_extension_register_compare r1 r2
   | (ARMExtensionRegister _, _) -> -1
   | (_, ARMExtensionRegister _) -> 1
+  | (ARMExtensionRegisterElement e1, ARMExtensionRegisterElement e2) ->
+     arm_extension_register_element_compare e1 e2
+  | (ARMExtensionRegisterElement _, _) -> -1
+  | (_, ARMExtensionRegisterElement _) -> 1
+  | (ARMExtensionRegisterReplicatedElement e1,
+     ARMExtensionRegisterReplicatedElement e2) ->
+     arm_extension_register_replicated_element_compare e1 e2
+  | (ARMExtensionRegisterReplicatedElement _, _) -> -1
+  | (_, ARMExtensionRegisterReplicatedElement _) -> 1
   | (MIPSRegister m1, MIPSRegister m2) ->
      Stdlib.compare (mipsreg_to_string m1) (mipsreg_to_string m2)
   | (MIPSRegister _, _) -> -1
@@ -321,6 +367,7 @@ let register_compare r1 r2 =
         (cpureg_to_string c21, cpureg_to_string c22)
 
 
+
 let register_to_string register =
   match register with
   | CPURegister r -> cpureg_to_string r
@@ -336,7 +383,10 @@ let register_to_string register =
   | MIPSFloatingPointRegister i -> "$f" ^ (string_of_int i)
   | ARMRegister r -> armreg_to_string r
   | ARMSpecialRegister r -> arm_special_reg_to_string r
-  | ARMExtensionRegister (s, i) -> arm_extension_reg_to_string s i
+  | ARMExtensionRegister r -> arm_extension_reg_to_string r
+  | ARMExtensionRegisterElement e -> arm_extension_reg_element_to_string e
+  | ARMExtensionRegisterReplicatedElement e ->
+     arm_extension_reg_rep_element_to_string e
 
 
 let extract_cpu_reg s =
