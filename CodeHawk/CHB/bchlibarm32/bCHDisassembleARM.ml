@@ -391,6 +391,14 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                   try
                     disassemble_arm_instruction ch base instrbytes
                   with
+                  | BCH_failure p ->
+                     begin
+                       ch_error_log#add
+                         "instruction disassembly error"
+                         (LBLOCK [
+                              (base#add_int ch#pos)#toPretty; STR ": "; p]);
+                       NotRecognized ("error", instrbytes)
+                     end
                   | _ -> OpInvalid in
               let currentPos = ch#pos in
               let instrLen = currentPos - prevPos in
@@ -1057,7 +1065,7 @@ let is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr =
     | XConst (IntConst n) -> n#equal numerical_one
     | _ -> false in
   match (theninstr#get_opcode, elseinstr#get_opcode) with
-  | (Move (_, _, tr, thenop, _), Move (_, _, er, elseop, _)) ->
+  | (Move (_, _, tr, thenop, _, _), Move (_, _, er, elseop, _, _)) ->
      if tr#is_register && er#is_register then
        if tr#get_register = er#get_register then
          isone thenop thenfloc && iszero elseop elsefloc
@@ -1070,7 +1078,7 @@ let is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr =
 let get_ite_predicate_dstop thenfloc theninstr elsefloc elseinstr =
   if is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr then
     match theninstr#get_opcode with
-    | Move(_, _, r, _, _) -> r
+    | Move(_, _, r, _, _, _) -> r
     | _ ->
        raise
          (BCH_failure
