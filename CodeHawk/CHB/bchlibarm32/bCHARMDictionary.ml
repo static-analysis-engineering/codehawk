@@ -65,11 +65,12 @@ object (self)
   val vfp_datatype_table = mk_index_table "vfp-datatype-table"
   val register_shift_rotate_table = mk_index_table "register-shift-table"
   val arm_memory_offset_table = mk_index_table "arm-memory-offset-table"
+  val arm_simd_writeback_table = mk_index_table "arm-simd-writeback-table"
+  val arm_simd_list_element_table = mk_index_table "arm-simd-list-element-table"
   val arm_opkind_table = mk_index_table "arm-opkind-table"
   val arm_operand_table = mk_index_table "arm-operand-table"
   val arm_opcode_table = mk_index_table "arm-opcode-table"
   val arm_bytestring_table = mk_string_index_table "arm-bytestring-table"
-  val arm_instr_class_table = mk_index_table "arm-instr-class-table"
 
   val mutable tables = []
 
@@ -78,38 +79,12 @@ object (self)
       vfp_datatype_table;
       register_shift_rotate_table;
       arm_memory_offset_table;
+      arm_simd_writeback_table;
+      arm_simd_list_element_table;
       arm_opkind_table;
       arm_operand_table;
       arm_opcode_table;
-      arm_instr_class_table
     ]
-
-  method index_arm_instr_class (c:arm_instr_class_t) =
-    let tags = [ arm_instr_class_mcts#ts c ] in
-    let key = match c with
-      | DataProcRegType (cond,op,opx,rn,rd,rs,opy,shift,reg,rm) ->
-         (tags, [ cond; op; opx; rn; rd; rs; opy; shift; reg; rm ])
-      | DataProcImmType (cond, op, opx, rn, rd, rot, imm) ->
-         (tags, [ cond; op; opx; rn; rd; rot; imm ])
-      | LoadStoreImmType (cond, p, u, opx, w, opy, rn, rd, imm) ->
-         (tags, [ cond; p; u; opx; w; opy; rn; rd; imm ])
-      | LoadStoreRegType (cond,p,u,opx,w,opy,rn,rd,shiftimm,shift,opz,rm) ->
-         (tags, [ cond; p; u; opx; w; opy; rn; rd; shiftimm; shift; opz; rm ])
-      | MediaType (cond,op1,data1,rd,data2,op2,rn) ->
-         (tags, [ cond; op1; data1; rd; data2; op2; rn ])
-      | BlockDataType (cond,p,u,opx,w,opy,rn,opz,reglist) ->
-         (tags, [ cond; p; u; opx; w; opy; rn; opz; reglist ])
-      | BranchLinkType (cond,opx,offset) ->
-         (tags, [ cond; opx; offset ])
-      | SupervisorType (cond,index) ->
-         (tags, [ cond; index ])
-      | LoadStoreCoprocType (cond,p,u,n,w,op,rn,crd,cpnum,imm) ->
-         (tags, [ cond; p; u; n; w; op; rn; crd; cpnum; imm ])
-      | CoprocessorType (cond,op,op1,opx,crn,crd,cpnum,op2,opy,crm) ->
-         (tags, [ cond; op; op1; opx; crn; crd; cpnum; op2; opy; crm ])
-      | UnconditionalType (op1,rn,data,op,datax) ->
-         (tags, [ op1; rn; data; op; datax ]) in
-    arm_instr_class_table#add key
 
   method index_vfp_datatype (t: vfp_datatype_t) =
     let tags = [vfp_datatype_mcts#ts t] in
@@ -142,27 +117,54 @@ object (self)
           [self#index_register_shift_rotate rs; off]) in
     arm_memory_offset_table#add key
 
+  method index_arm_simd_writeback (f: arm_simd_writeback_t) =
+    let tags = [arm_simd_writeback_mcts#ts f] in
+    let key = match f with
+      | SIMDNoWriteback -> (tags, [])
+      | SIMDBytesTransferred t -> (tags, [t])
+      | SIMDAddressOffsetRegister r -> (tags @ [arm_reg_mfts#ts r], []) in
+    arm_simd_writeback_table#add key
+
+  method index_arm_simd_list_element (f: arm_simd_list_element_t) =
+    let tags = [arm_simd_list_element_mcts#ts f] in
+    let key = match f with
+      | SIMDReg r -> (tags, [bd#index_arm_extension_register r])
+      | SIMDRegElement e -> (tags, [bd#index_arm_extension_register_element e])
+      | SIMDRegRepElement e ->
+         (tags, [bd#index_arm_extension_register_replicated_element e]) in
+    arm_simd_list_element_table#add key
+
   method index_arm_opkind (k:arm_operand_kind_t) =
     let setb x = if x then 1 else 0 in
+    let setoptint x = match x with Some i -> i | _ -> (-1) in
     let tags = [arm_opkind_mcts#ts k] in
     let key = match k with
       | ARMDMBOption o -> (tags @ [dmb_option_mfts#ts o], [])
       | ARMReg r -> (tags @ [arm_reg_mfts#ts r], [])
+      | ARMWritebackReg (issingle, r, offset) ->
+         (tags @ [arm_reg_mfts#ts r], [setb issingle; setoptint offset])
       | ARMSpecialReg r -> (tags @ [arm_special_reg_mfts#ts r], [])
-      | ARMExtensionReg (t, index) ->
-         (tags @ [arm_extension_reg_type_to_string t], [index])
+      | ARMExtensionReg r -> (tags, [bd#index_arm_extension_register r])
+      | ARMExtensionRegElement e ->
+         (tags, [bd#index_arm_extension_register_element e])
       | ARMRegList rl -> (tags @ (List.map arm_reg_mfts#ts rl),[])
+      | ARMExtensionRegList rl ->
+         (tags, List.map bd#index_arm_extension_register rl)
+      | ARMSIMDList el -> (tags, List.map self#index_arm_simd_list_element el)
       | ARMShiftedReg (r,rs) ->
          (tags @ [arm_reg_mfts#ts r], [self#index_register_shift_rotate rs])
       | ARMRegBitSequence (r, lsb, widthm1) ->
          (tags @ [ arm_reg_mfts#ts r ],[ lsb; widthm1 ])
       | ARMAbsolute addr -> (tags, [bd#index_address addr])
       | ARMLiteralAddress addr -> (tags, [bd#index_address addr])
-      | ARMMemMultiple (r,n) -> (tags @ [ arm_reg_mfts#ts r ],[n])
+      | ARMMemMultiple (r, align, n, size) ->
+         (tags @ [ arm_reg_mfts#ts r ],[align; n; size])
       | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex) ->
          let ioffset = self#index_arm_memory_offset offset in
          (tags @ [arm_reg_mfts#ts r],
           [align; ioffset; setb isadd; setb iswback; setb isindex])
+      | ARMSIMDAddress (r, align, wb) ->
+         (tags @ [arm_reg_mfts#ts r], [align; self#index_arm_simd_writeback wb])
       | ARMFPConstant x -> (tags @ [string_of_float x], [])
       | ARMImmediate imm -> (tags @ [imm#to_numerical#toString], []) in
     arm_opkind_table#add key
@@ -191,6 +193,8 @@ object (self)
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw ])
       | BitFieldClear (c, rd, lsb, width, msb) ->
          (ctags c, [oi rd; lsb; width; msb])
+      | BitFieldInsert (c, rd, rn, lsb, width, msb) ->
+         (ctags c, [oi rd; oi rn; lsb; width; msb])
       | BitwiseAnd (s, c, rd, rn, imm, tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
       | BitwiseNot (s ,c,rd, imm, tw) ->
@@ -220,6 +224,10 @@ object (self)
         | CompareBranchZero (op1, op2) -> (tags, [oi op1; oi op2])
       | DataMemoryBarrier (c,op) -> (ctags c,[oi op])
       | IfThen (c, xyz) -> ((ctags c) @ [xyz], [])
+      | FLoadMultipleIncrementAfter (wb, c, rn, rl, mem) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem])
+      | FStoreMultipleIncrementAfter (wb, c, rn, rl, mem) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem])
       | LoadCoprocessor (islong, c, coproc, crd, mem, opt) ->
          (ctags c, [setb islong; coproc; crd; oi mem; setopt opt])
       | LoadMultipleDecrementBefore (wb,c,rn,rl,mem)
@@ -245,14 +253,15 @@ object (self)
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
       | LogicalShiftRight (s,c,rd,rn,rm,tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
-      | Move (s, c, rd, rm, tw) ->
-         (ctags c, [setb s; oi rd; oi rm; setb tw])
+      | Move (s, c, rd, rm, tw, aw) ->
+         (ctags c, [setb s; oi rd; oi rm; setb tw; setb aw])
       | MoveRegisterCoprocessor (c, coproc, opc1, rt, crn, crm, opc2) ->
+         (ctags c, [coproc; opc1; oi rt; crn; crm; opc2])
+      | MoveToCoprocessor (c, coproc, opc1, rt, crn, crm, opc2) ->
          (ctags c, [coproc; opc1; oi rt; crn; crm; opc2])
       | MoveTop (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
       | MoveTwoRegisterCoprocessor (c, coproc, opc, rt, rt2, crm) ->
          (ctags c, [coproc; opc; oi rt; oi rt2; crm])
-      | MoveWide (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
       | Multiply (setflags,cond,rd,rn,rm) ->
          (tags @ [ ci cond ], [setb setflags; oi rd; oi rn; oi rm])
       | MultiplyAccumulate (setflags,cond,rd,rn,rm,ra) ->
@@ -261,8 +270,9 @@ object (self)
          (ctags c, [oi rd; oi rn; oi rm; oi ra])
       | Pop (c, sp, rl, tw) -> (ctags c, [oi sp; oi rl; setb tw])
       | PreloadData (w, c, base, mem) -> (ctags c, [setb w; oi base; oi mem])
-      | Push (c,sp,rl,tw) ->  (ctags c, [ oi sp; oi rl; setb tw ])
-      | ReverseSubtract (s,c,dst,src,imm,tw) ->
+      | Push (c, sp, rl, tw) ->  (ctags c, [oi sp; oi rl; setb tw])
+      | ReverseBits (c, dst, src) -> (ctags c, [oi dst; oi src])
+      | ReverseSubtract (s, c, dst, src, imm, tw) ->
          (ctags c, [setb s; oi dst; oi src; oi imm; setb tw])
       | RotateRight (s, c, rd, rn, rm) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm])
@@ -295,11 +305,10 @@ object (self)
          (ctags c, [oi rt; oi rt2; oi rn; oi rm; oi mem; oi mem2])
       | StoreRegisterExclusive (c, rd, rt, rn, mem) ->
          (ctags c, [oi rd; oi rt; oi rn; oi mem])
-      | Subtract (s, c, dst, src, imm, tw) ->
-         (ctags c, [setb s; oi dst; oi src; oi imm; setb tw])
+      | Subtract (s, c, dst, src, imm, tw, w) ->
+         (ctags c, [setb s; oi dst; oi src; oi imm; setb tw; setb w])
       | SubtractCarry (s, c, rd, rn, rm, tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
-      | SubtractWide (c, rd, sp, imm) -> (ctags c, [oi rd; oi sp; oi imm])
       | ReverseSubtractCarry (setflags,cond,dst,src,imm) ->
          (tags @ [ ci cond ], [ setb setflags; oi dst; oi src; oi imm ])
       | Swap (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
@@ -311,6 +320,7 @@ object (self)
          (tags @ [ ci cond ], [oi src1; oi src2 ])
       | UnsignedAdd8 (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | UnsignedBitFieldExtract (c,rd,rn) -> (ctags c, [oi rd; oi rn ])
+      | UnsignedDivide (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | UnsignedExtendAddByte (c, rd, rn, rm) ->
          (ctags c, [oi rd; oi rn; oi rm])
       | UnsignedExtendAddHalfword (c, rd, rn, rm) ->
@@ -323,7 +333,17 @@ object (self)
          (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | UnsignedSaturatingSubtract8 (c, rd, rn, rm) ->
          (ctags c, [oi rd; oi rn; oi rm])
+      | VectorAdd (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorAddLong (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorAddWide (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorBitwiseBitClear (c, dt, dst, imm) ->
+         (ctags c, [di dt; oi dst; oi imm])
       | VectorBitwiseExclusiveOr (c, dst, src1, src2) ->
+         (ctags c, [oi dst; oi src1; oi src2])
+      | VectorBitwiseOr (c, dst, src1, src2) ->
          (ctags c, [oi dst; oi src1; oi src2])
       | VCompare (nan, c, dt, op1, op2) ->
          (ctags c, [if nan then 1 else 0; di dt; oi op1; oi op2])
@@ -334,16 +354,32 @@ object (self)
          (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorDuplicate (c, dt, regs, elements, dst, src) ->
          (ctags c, [di dt; regs; elements; oi dst; oi src])
+      | VectorLoadMultipleIncrementAfter (wb, c, rn, rl, mem) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem])
+      | VectorLoadOne (wb, c, sz, rl, rn, mem, rm) ->
+         (ctags c, [setb wb; di sz; oi rl; oi rn; oi mem; oi rm])
       | VLoadRegister (c, dst, base, mem) ->
          (ctags c, [oi dst; oi base; oi mem])
-      | VMove (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
+      | VectorMove (c, dt, ops) -> (ctags c, (di dt)::(List.map oi ops))
+      | VectorMoveLong (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
       | VMoveRegisterStatus (c, dst, src) -> (ctags c, [oi dst; oi src])
       | VMoveToSystemRegister (c, dst, src) -> (ctags c, [oi dst; oi src])
       | VectorMultiply (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorNegate (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
+      | VectorPush (c, sp, rl, mem) -> (ctags c, [oi sp; oi rl; oi mem])
+      | VectorRoundingShiftRightAccumulate (c, dt, dst, src, imm) ->
+         (ctags c, [di dt; oi dst; oi src; oi imm])
+      | VectorShiftRightAccumulate (c, dt, dst, src, imm) ->
+         (ctags c, [di dt; oi dst; oi src; oi imm])
       | VStoreRegister (c, src, base, mem) ->
          (ctags c, [oi src; oi base; oi mem])
+      | VectorStoreMultipleIncrementAfter (wb, c, rn, rl, mem) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem])
+      | VectorStoreOne (wb, c, sz, rl, rn, mem, rm) ->
+         (ctags c, [setb wb; di sz; oi rl; oi rn; oi mem; oi rm])
+      | VectorStoreTwo (wb, c, sz, rl, rn, mem, rm) ->
+         (ctags c, [setb wb; di sz; oi rl; oi rn; oi mem; oi rm])
       | VectorSubtract (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
       | OpInvalid | NotCode _ -> (tags,[])
