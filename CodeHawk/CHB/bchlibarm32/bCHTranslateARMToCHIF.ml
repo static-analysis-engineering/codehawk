@@ -539,6 +539,12 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vrd () in
      default cmds
 
+  | BitFieldInsert (_, rd, _, _, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
   | BitwiseAnd (setflags, ACCAlways, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
@@ -884,7 +890,7 @@ let translate_arm_instruction
          (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; instr#toPretty]) in
      default []
 
-  | Move (setflags, c, dst, src, _) ->
+  | Move (setflags, c, dst, src, _, _) ->
      let floc = get_floc loc in
      let rhs = src#to_expr floc in
      let (lhs, lhscmds) = dst#to_lhs floc in
@@ -898,6 +904,8 @@ let translate_arm_instruction
      let (lhs, lhscmds) = dst#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
+
+  | MoveToCoprocessor _ -> default []
 
   | MoveTop (ACCAlways, dst, src) ->
      let floc = get_floc loc in
@@ -918,15 +926,6 @@ let translate_arm_instruction
      let cmds1 = floc#get_abstract_commands lhs1 () in
      let cmds2 = floc#get_abstract_commands lhs2 () in
      default (lhs1cmds @ lhs2cmds @ cmds1 @ cmds2)
-
-  | MoveWide (c, dst, src) ->
-     let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs, lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     (match c with
-      | ACCAlways -> default (cmds @ lhscmds)
-      | _ -> make_conditional_commands c (cmds @ lhscmds))
 
   | MultiplyAccumulate (_, _, rd, rn, rm, ra) ->
      let floc = get_floc loc in
@@ -1024,7 +1023,8 @@ let translate_arm_instruction
            let stackop = arm_sp_deref ~with_offset:off WR in
            let (stacklhs, stacklhscmds) = stackop#to_lhs floc in
            let cmds1 = floc#get_assign_commands stacklhs rhsexpr in
-           (acc @ cmds1 @ stacklhscmds @ splhscmds, off+4)) ([],(-(4*regcount))) rhsexprs in
+           (acc @ cmds1 @ stacklhscmds @ splhscmds, off+4)) ([],(-(4*regcount)))
+         rhsexprs in
      let (splhs,splhscmds) = (sp_r WR)#to_lhs floc in
      let decrem = XConst (IntConst (mkNumerical(4 * regcount))) in
      let cmds = floc#get_assign_commands splhs (XOp (XMinus, [sprhs; decrem])) in
@@ -1042,10 +1042,17 @@ let translate_arm_instruction
            let stackop = arm_sp_deref ~with_offset:off WR in
            let (stacklhs, stacklhscmds) = stackop#to_lhs floc in
            let cmds1 = floc#get_abstract_commands stacklhs () in
-           (acc @ cmds1 @ stacklhscmds @ splhscmds, off+4)) ([],(-(4*regcount))) rhsexprs in
+           (acc @ cmds1 @ stacklhscmds @ splhscmds, off+4)) ([],(-(4*regcount)))
+         rhsexprs in
      let (splhs,splhscmds) = (sp_r WR)#to_lhs floc in
      let cmds = floc#get_abstract_commands splhs () in
      default (stackops @ cmds)
+
+  | ReverseBits (_, dst, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     default cmds
 
   | ReverseSubtract(_, _, dst, _, _, _) ->
      let floc = get_floc loc in
@@ -1217,7 +1224,7 @@ let translate_arm_instruction
    *     APSR.C = carry;
    *     APSR.V = overflow
    * ------------------------------------------------------------------------- *)
-  | Subtract (_, ACCAlways, dst, src1, src2, _) ->
+  | Subtract (_, ACCAlways, dst, src1, src2, _, _) ->
      let floc = get_floc loc in
      let vdst = dst#to_variable floc in
      let xsrc1 = src1#to_expr floc in
@@ -1225,7 +1232,7 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands vdst (XOp (XMinus, [xsrc1; xsrc2])) in
      default cmds
 
-  | Subtract(_, _, dst, _, _, _) ->
+  | Subtract(_, _, dst, _, _, _, _) ->
      let floc = get_floc loc in
      let vdst = dst#to_variable floc in
      let cmds = floc#get_abstract_commands vdst () in
@@ -1237,15 +1244,6 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vdst () in
      default cmds
 
-  | SubtractWide (_, rd, sp, imm) ->
-     let floc = get_floc loc in
-     let vrd = rd#to_variable floc in
-     let xsp = sp#to_expr floc in
-     let ximm = imm#to_expr floc in
-     let result = XOp (XMinus, [xsp; ximm]) in
-     let cmds = floc#get_assign_commands vrd result in
-     default cmds
-
   | UnsignedAdd8 (_, rd, rn, rm) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
@@ -1253,6 +1251,12 @@ let translate_arm_instruction
      default cmds
 
   | UnsignedBitFieldExtract (ACCAlways, rd, rn) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
+  | UnsignedDivide (_, rd, _, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let cmds = floc#get_abstract_commands vrd () in
@@ -1325,15 +1329,6 @@ let translate_arm_instruction
   | VDivide _ -> default []
 
   | VectorDuplicate _ -> default []
-
-  | VMove (c, _, dst, src) ->
-     let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs, lhscmds) = dst#to_lhs floc in
-     let cmd = floc#get_assign_commands lhs rhs in
-     (match c with
-      | ACCAlways -> default (cmd @ lhscmds)
-      | _ -> make_conditional_commands c (cmd @ lhscmds))
 
   | VectorMultiply _ -> default []
 
