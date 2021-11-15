@@ -47,6 +47,7 @@ type shift_rotate_type_t =
   | SRType_ROR
   | SRType_RRX
 
+
 type dmb_option_t =  (* data memory barrier option *)
   | FullSystemRW
   | FullSystemW
@@ -57,6 +58,7 @@ type dmb_option_t =  (* data memory barrier option *)
   | OuterShareableRW
   | OuterShareableW
 
+
 type vfp_datatype_t =    (* Advanced SIMD extension A2.6.3 *)
   | VfpNone
   | VfpSize of int
@@ -66,125 +68,53 @@ type vfp_datatype_t =    (* Advanced SIMD extension A2.6.3 *)
   | VfpSignedInt of int
   | VfpUnsignedInt of int
 
+
 type register_shift_rotate_t =
   | ARMImmSRT of shift_rotate_type_t * int    (* immediate shift amount *)
   | ARMRegSRT of shift_rotate_type_t * arm_reg_t (* shift amount in reg *)
+
 
 type arm_memory_offset_t =
   | ARMImmOffset of int
   | ARMIndexOffset of arm_reg_t * int  (* additional offset *)
   | ARMShiftedIndexOffset of arm_reg_t * register_shift_rotate_t * int
 
-type arm_instr_class_t =
-  | DataProcRegType of    (* 27:25 000 *)
-      int   (* 31:28 - cond *)
-      * int (* 24:21 - op *)
-      * int (* 20    - opx *)
-      * int (* 19:16 - Rn/Rd/RdHi *)
-      * int (* 15:12 - Rd/RdLo *)
-      * int (* 11:8  - Rs/shift *)
-      * int (* 7       opy *)
-      * int (* 6:5   - shift *)
-      * int (* 4     - register/shifted register *)
-      * int (* 3:0   - Rm *)
-  | DataProcImmType of    (* 27:25 001 *)
-      int   (* 31:28 - cond *)
-      * int (* 24:21 - op *)
-      * int (* 20    - opx *)
-      * int (* 19:16 - Rn/field mask *)
-      * int (* 15:12 - Rd/SBZ *)
-      * int (* 11:8  - rotate *)
-      * int (* 7:0   - immediate *)
-  | LoadStoreImmType of   (* 27:25 010 *)
-      int   (* 31:28 - cond *)
-      * int (* 24    - P *)
-      * int (* 23    - U *)
-      * int (* 22    - opx *)
-      * int (* 21    - W *)
-      * int (* 20    - opy *)
-      * int (* 19:16 - Rn *)
-      * int (* 15:12 - Rd *)
-      * int (* 11:0  - immediate *)
-  | LoadStoreRegType of    (* 27:25 011, 4 0 *)
-      int   (* 31:28 - cond *)
-      * int (* 24    - P *)
-      * int (* 23    - U *)
-      * int (* 22    - opx *)
-      * int (* 21    - W *)
-      * int (* 20    - opy *)
-      * int (* 19:16 - Rn *)
-      * int (* 15:12 - Rd *)
-      * int (* 11:7  - shiftimm *)
-      * int (* 6:5   - shift *)
-      * int (* 4     - opz *)
-      * int (* 3:0   - Rm *)
-  | MediaType of         (* 27:25 011, 4 1 *)
-      int   (* 31:28 - cond *)
-      * int (* 24:20 - op1 *)
-      * int (* 19:16 - data1 *)
-      * int (* 15:12 - Rd *)
-      * int (* 11:8  - data2 *)
-      * int (* 7:5   - op2 *)
-      * int (* 3:0   - Rn *)
-  | BlockDataType of     (* 27:25 100 *)
-      int   (* 31:28 - cond *)
-      * int (* 24    - P *)
-      * int (* 23    - U *)
-      * int (* 22    - opx *)
-      * int (* 21    - W *)
-      * int (* 20    - opy *)
-      * int (* 19:16 - Rn *)
-      * int (* 15    - opz *)
-      * int (* 14:0  - register list *)
-  | BranchLinkType of    (* 27:25 101 *)
-      int   (* 31:28 - cond *)
-      * int (* 24    - opx *)
-      * int (* 23:0  - offset *)
-  | SupervisorType of    (* 27:24 1111 *)
-      int   (* 31:28 - cond *)
-      * int (* 23:0  - svc index *)
-  | LoadStoreCoprocType of (* 27:25 110 *)
-      int   (* 31:28 - cond *)
-      * int (* 24    - P *)
-      * int (* 23    - U *)
-      * int (* 22    - N *)
-      * int (* 21    - W *)
-      * int (* 20    - op *)
-      * int (* 19:16 - Rn *)
-      * int (* 15:12 - CRd *)
-      * int (* 11:8  - cp_num *)
-      * int (* 7:0   - immediate *)
-  | CoprocessorType of   (* 27:24 11xx *)
-      int   (* 31:28 - cond *)
-      * int (* 25:24 - op *)
-      * int (* 23:21 - op1 *)
-      * int (* 20    - opx *)
-      * int (* 19:16 - CRn *)
-      * int (* 15:12 - CRd *)
-      * int (* 11:8  - cp_num *)
-      * int (* 7:5   - op2 *)
-      * int (* 4     - opy *)
-      * int (* 3:0   - CRm *)
-  | UnconditionalType of  (* 31:28 1111 *)
-      int   (* 27:20 - op1 *)
-      * int (* 19:16 - Rn *)
-      * int (* 15:5  - data *)
-      * int (* 4     - op *)
-      * int (* 3:0   - datax *)
+
+type arm_simd_writeback_t =
+  | SIMDNoWriteback
+  | SIMDBytesTransferred of int
+  | SIMDAddressOffsetRegister of arm_reg_t
+
+
+type arm_simd_list_element_t =
+  | SIMDReg of arm_extension_register_t
+  | SIMDRegElement of arm_extension_register_element_t
+  | SIMDRegRepElement of arm_extension_register_replicated_element_t
+
 
 type arm_operand_kind_t =
   | ARMDMBOption of dmb_option_t
   | ARMReg of arm_reg_t
+  | ARMWritebackReg of
+      bool  (* true if part of single memory access *)
+      * arm_reg_t  (* base register *)
+      * int option (* increment/decrement in bytes of base register value *)
   | ARMSpecialReg of arm_special_reg_t
-  | ARMExtensionReg of arm_extension_reg_type_t * int
+  | ARMExtensionReg of arm_extension_register_t
+  | ARMExtensionRegElement of arm_extension_register_element_t
   | ARMRegList of arm_reg_t list
+  | ARMExtensionRegList of arm_extension_register_t list
   | ARMShiftedReg of arm_reg_t * register_shift_rotate_t
   | ARMRegBitSequence of arm_reg_t * int * int (* lsb, widthm1 *)
   | ARMImmediate of immediate_int
   | ARMFPConstant of float
   | ARMAbsolute of doubleword_int
   | ARMLiteralAddress of doubleword_int
-  | ARMMemMultiple of arm_reg_t * int  (* number of locations *)
+  | ARMMemMultiple of
+      arm_reg_t
+      * int   (* alignment, default is 0 *)
+      * int   (* number of memory locations *)
+      * int   (* size of memory location (4 or 8 bytes) *)
   | ARMOffsetAddress of
       arm_reg_t                  (* base register *)
       * int                      (* alignment of register value *)
@@ -192,8 +122,15 @@ type arm_operand_kind_t =
       * bool                     (* isadd *)
       * bool                     (* iswback *)
       * bool                     (* isindex *)
+  | ARMSIMDAddress of
+      arm_reg_t                  (* base register *)
+      * int                      (* alignment *)
+      * arm_simd_writeback_t     (* writeback mode *)
+  | ARMSIMDList of arm_simd_list_element_t list
+
 
 type arm_operand_mode_t = RD | WR | RW
+
 
 class type arm_operand_int =
   object ('a)
@@ -206,6 +143,7 @@ class type arm_operand_int =
     method get_register_count: int
     method get_register_list: arm_reg_t list
     method get_register_op_list: 'a list
+    method get_extension_register_op_list: 'a list
     method get_absolute_address: doubleword_int
     method get_literal_address: doubleword_int
     method get_pc_relative_address: doubleword_int -> int -> doubleword_int
@@ -226,6 +164,7 @@ class type arm_operand_int =
     method is_write: bool
     method is_immediate: bool
     method is_register: bool
+    method is_writeback_register: bool
     method is_special_register: bool
     method is_register_list: bool
     method is_absolute_address: bool
@@ -239,7 +178,9 @@ class type arm_operand_int =
     method toPretty: pretty_t
   end
 
+
 type not_code_t = JumpTable of jumptable_int | DataBlock of data_block_int  
+
 
 type arm_opcode_cc_t =
   | ACCEqual
@@ -258,7 +199,18 @@ type arm_opcode_cc_t =
   | ACCSignedLE
   | ACCAlways
   | ACCUnconditional
-  
+
+
+type arm_opc_encoding_type_t =
+  | A1 | A2 | A3 | A4 | T1 | T2 | T3 | T4
+
+
+type arm_opcode_encoding_t = {
+    opc_encoding: arm_opc_encoding_type_t;
+    opc_encoding_group: string option
+  }
+
+
 type arm_opcode_t =
   | Add of
       bool (* flags are set *)
@@ -288,6 +240,13 @@ type arm_opcode_t =
   | BitFieldClear of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
+      * int              (* lsbit *)
+      * int              (* width *)
+      * int              (* msbit *)
+  | BitFieldInsert of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source *)
       * int              (* lsbit *)
       * int              (* width *)
       * int              (* msbit *)
@@ -376,6 +335,18 @@ type arm_opcode_t =
   | DataMemoryBarrier of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* dmb option *)
+  | FLoadMultipleIncrementAfter of (* same VectorLoadMultipleIncrementAfter *)
+      bool    (* writeback *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rl: register list *)
+      * arm_operand_int  (* mem: multiple memory locations *)
+  | FStoreMultipleIncrementAfter of (* same as VectorStoreMultipleIncrementAfter *)
+      bool    (* writeback *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rn: base *)
+      * arm_operand_int (* rl: register list *)
+      * arm_operand_int (* mem: multiple memory locations *)
   | IfThen of
       arm_opcode_cc_t    (* firstcond *)
       * string           (* <x><y><z> *)
@@ -479,11 +450,20 @@ type arm_opcode_t =
       * arm_operand_int (* rd: destination *)
       * arm_operand_int (* rm/imm: source *)
       * bool            (* T.W *)
+      * bool            (* Arm wide *)
   | MoveRegisterCoprocessor of
       arm_opcode_cc_t   (* condition *)
       * int             (* coprocessor *)
       * int             (* opc1 *)
       * arm_operand_int (* rt: destination register *)
+      * int             (* CRn *)
+      * int             (* CRm *)
+      * int             (* opc2 *)
+  | MoveToCoprocessor of
+      arm_opcode_cc_t   (* condition *)
+      * int             (* coprocessor *)
+      * int             (* opc1 *)
+      * arm_operand_int (* Rt *)
       * int             (* CRn *)
       * int             (* CRm *)
       * int             (* opc2 *)
@@ -498,10 +478,6 @@ type arm_opcode_t =
       * arm_operand_int (* rt: destination 1 *)
       * arm_operand_int (* rt2: destination 2 *)
       * int             (* CRm *)
-  | MoveWide of
-      arm_opcode_cc_t (* condition *)
-      * arm_operand_int (* rd: destination *)
-      * arm_operand_int (* imm: source *)
   | Multiply of
       bool  (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -536,6 +512,10 @@ type arm_opcode_t =
       * arm_operand_int  (* stack pointer *)
       * arm_operand_int  (* register list *)
       * bool             (* T.W. *)
+  | ReverseBits of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm: source *)
   | ReverseSubtract of
       bool   (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -675,6 +655,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: source 2 *)
       * bool             (* T.W. *)
+      * bool             (* Wide *)
   | SubtractCarry of
       bool   (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -682,11 +663,6 @@ type arm_opcode_t =
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: source 2 *)
       * bool             (* T.W *)
-  | SubtractWide of
-      arm_opcode_cc_t    (* condition *)
-      * arm_operand_int  (* rd: destination *)
-      * arm_operand_int  (* sp: stack pointer *)
-      * arm_operand_int  (* imm: immediate value to be subtracted *)
   | Swap of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt *)
@@ -724,6 +700,11 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source *)
+  | UnsignedDivide of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
   | UnsignedExtendAddByte of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
@@ -762,7 +743,35 @@ type arm_opcode_t =
       * arm_operand_int (* rd: destination *)
       * arm_operand_int (* rn: first operand *)
       * arm_operand_int (* rm: second operand *)
+  | VectorAdd of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+  | VectorAddLong of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+  | VectorAddWide of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+  | VectorBitwiseBitClear of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* source / destination *)
+      * arm_operand_int (* immediate *)
   | VectorBitwiseExclusiveOr of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+  | VectorBitwiseOr of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source 1 *)
@@ -793,14 +802,32 @@ type arm_opcode_t =
       * int             (* number of elements *)
       * arm_operand_int (* floating-point destination register *)
       * arm_operand_int (* source register *)
+  | VectorLoadMultipleIncrementAfter of
+      bool    (* writeback *)
+      * arm_opcode_cc_t  (* condition *)
+      * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rl: register list *)
+      * arm_operand_int  (* mem: multiple memory locations *)
+  | VectorLoadOne of
+      bool    (* writeback *)
+      * arm_opcode_cc_t  (* condition *)
+      * vfp_datatype_t   (* size *)
+      * arm_operand_int  (* rl: register list *)
+      * arm_operand_int  (* rn: base register *)
+      * arm_operand_int  (* mem: multiple memory locations *)
+      * arm_operand_int  (* rm: address offset applied after the access *)
   | VLoadRegister of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* floating-point destination register *)
       * arm_operand_int (* base register *)
       * arm_operand_int (* mem: memory location *)
-  | VMove of
+  | VectorMove of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* element data type *)
+      * arm_operand_int list (* destination(s) / source(s) *)
+  | VectorMoveLong of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* size *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
   | VMoveRegisterStatus of   (* VMRS *)
@@ -822,11 +849,50 @@ type arm_opcode_t =
       * vfp_datatype_t  (* data type *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
+  | VectorPush of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* stack pointer *)
+      * arm_operand_int (* list of extension registers *)
+      * arm_operand_int (* memory *)
+  | VectorRoundingShiftRightAccumulate of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source register *)
+      * arm_operand_int (* source immediate *)
+  | VectorShiftRightAccumulate of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source register *)
+      * arm_operand_int (* source immediate *)
   | VStoreRegister of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* floating-point source register *)
       * arm_operand_int (* base register *)
       * arm_operand_int (* mem: memory location *)
+  | VectorStoreMultipleIncrementAfter of
+      bool    (* writeback *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rn: base *)
+      * arm_operand_int (* rl: register list *)
+      * arm_operand_int (* mem: multiple memory locations *)
+  | VectorStoreOne of
+      bool    (* writeback *)
+      * arm_opcode_cc_t  (* condition *)
+      * vfp_datatype_t   (* size *)
+      * arm_operand_int  (* rl: register list *)
+      * arm_operand_int  (* rn: base register *)
+      * arm_operand_int  (* mem: multiple memory locations *)
+      * arm_operand_int  (* rm: address offset applied after the access *)
+  | VectorStoreTwo of
+      bool    (* writeback *)
+      * arm_opcode_cc_t  (* condition *)
+      * vfp_datatype_t   (* size *)
+      * arm_operand_int  (* rl: register list *)
+      * arm_operand_int  (* rn: base register *)
+      * arm_operand_int  (* mem: multiple memory locations *)
+      * arm_operand_int  (* rm: address offset applied after the access *)
   | VectorSubtract of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* data type *)
@@ -843,17 +909,20 @@ type arm_opcode_t =
   | NotRecognized of string * doubleword_int
   | NotCode of not_code_t option
 
+
 class type arm_dictionary_int =
   object
 
     method index_vfp_datatype: vfp_datatype_t -> int
     method index_register_shift_rotate: register_shift_rotate_t -> int
     method index_arm_memory_offset: arm_memory_offset_t -> int
+    method index_arm_simd_writeback: arm_simd_writeback_t -> int
+    method index_arm_simd_list_element: arm_simd_list_element_t -> int
     method index_arm_opkind: arm_operand_kind_t -> int
     method index_arm_operand: arm_operand_int -> int
     method index_arm_opcode: arm_opcode_t -> int
     method index_arm_bytestring: string -> int
-    method index_arm_instr_class: arm_instr_class_t -> int
+    (* method index_arm_instr_class: arm_instr_class_t -> int *)
 
     method write_xml_arm_bytestring:
              ?tag:string -> xml_element_int -> string -> unit
@@ -864,6 +933,7 @@ class type arm_dictionary_int =
     method read_xml: xml_element_int -> unit
 
   end
+
 
 class type arm_assembly_instruction_int =
   object
@@ -897,6 +967,7 @@ class type arm_assembly_instruction_int =
     method toPretty: pretty_t
 
   end
+
 
 class type arm_assembly_instructions_int =
   object
@@ -933,6 +1004,7 @@ class type arm_assembly_instructions_int =
              ?filter:(arm_assembly_instruction_int -> bool) -> unit -> string
 
   end
+
 
 class type arm_assembly_block_int =
   object
@@ -972,6 +1044,7 @@ class type arm_assembly_block_int =
 
   end
 
+
 class type arm_assembly_function_int =
   object
 
@@ -1004,6 +1077,7 @@ class type arm_assembly_function_int =
 
   end
 
+
 class type arm_assembly_functions_int =
   object
 
@@ -1019,7 +1093,10 @@ class type arm_assembly_functions_int =
     method get_functions: arm_assembly_function_int list
     method get_function: dw_index_t -> arm_assembly_function_int
     method get_function_by_address: doubleword_int -> arm_assembly_function_int
-    method get_function_coverage: int * int * int (* coverage, overlap, multiplicity *)
+    method get_function_coverage:
+             int     (* coverage *)
+             * int   (* overlap *)
+             * int   (* multiplicity *)
     method get_num_functions: int
 
     (* iterators *)
@@ -1040,6 +1117,7 @@ class type arm_assembly_functions_int =
 
   end
 
+
 class type arm_code_pc_int =
   object
 
@@ -1050,12 +1128,17 @@ class type arm_code_pc_int =
     method get_false_branch_successor: ctxt_iaddress_t
     method get_true_branch_successor: ctxt_iaddress_t
     method get_conditional_successor_info:
-             (location_int * location_int * ctxt_iaddress_t * ctxt_iaddress_t * xpr_t)
+             (location_int
+              * location_int
+              * ctxt_iaddress_t
+              * ctxt_iaddress_t
+              * xpr_t)
 
     (* predicates *)
     method has_more_instructions: bool
     method has_conditional_successor: bool
   end
+
 
 class type arm_chif_system_int =
   object
@@ -1074,6 +1157,7 @@ class type arm_chif_system_int =
     (* predicates *)
     method has_arm_procedure: doubleword_int -> bool
   end
+
 
 class type arm_opcode_dictionary_int =
   object
@@ -1103,6 +1187,7 @@ class type arm_opcode_dictionary_int =
 
     method toPretty: pretty_t
   end
+
 
 class type arm_analysis_results_int =
   object
