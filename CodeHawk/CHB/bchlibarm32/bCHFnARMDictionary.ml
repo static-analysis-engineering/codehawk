@@ -528,7 +528,7 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | Move(_, c, rd, rm, _) ->
+      | Move(_, c, rd, rm, _, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
          let tags = ["a:vx"] in
@@ -545,6 +545,11 @@ object (self)
       | MoveRegisterCoprocessor (_, _, _, dst, _, _, _) ->
          let vdst = dst#to_variable floc in
          (["a:v"], [xd#index_variable vdst])
+
+      | MoveToCoprocessor (_, _, _, rt, _, _, _) ->
+         let src = rt#to_expr floc in
+         let rsrc = rewrite_expr src in
+         (["a:xx"], [xd#index_xpr src; xd#index_xpr rsrc])
 
       | MoveTop (_, rd, imm) ->
          let vrd = rd#to_variable floc in
@@ -567,12 +572,6 @@ object (self)
          let v1 = rt#to_variable floc in
          let v2 = rt2#to_variable floc in
          (["a:vv"], [xd#index_variable v1; xd#index_variable v2])
-
-      | MoveWide(_,rd, imm) ->
-         let vrd = rd#to_variable floc in
-         let ximm = imm#to_expr floc in
-         let _ = ignore (get_string_reference floc ximm) in
-         (["a:vx"], [xd#index_variable vrd; xd#index_xpr ximm])
 
       | Multiply(_, _, rd, rn, rm) ->
          let vrd = rd#to_variable floc in
@@ -862,7 +861,7 @@ object (self)
            xd#index_xpr xrt;
            xd#index_xpr xxrt])
 
-      | Subtract (_, _, dst, src1, src2, _) ->
+      | Subtract (_, _, dst, src1, src2, _, _) ->
          let lhs = dst#to_variable floc in
          let rhs1 = src1#to_expr floc in
          let rhs2 = src2#to_expr floc in
@@ -888,19 +887,6 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | SubtractWide (_, rd, sp, imm) ->
-         let lhs = rd#to_variable floc in
-         let xsp = sp#to_expr floc in
-         let ximm = imm#to_expr floc in
-         let result = XOp (XMinus, [xsp; ximm]) in
-         let rresult = rewrite_expr result in
-         (["a:vxxxx"],
-          [xd#index_variable lhs;
-           xd#index_xpr xsp;
-           xd#index_xpr ximm;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
-
       | SupervisorCall (_, _) ->
          let r7 = arm_register_op AR7 RD in
          let xr7 = r7#to_expr floc in
@@ -918,6 +904,13 @@ object (self)
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          (["a:xx"], [xd#index_xpr xrn; xd#index_xpr xrm])
+
+      | UnsignedDivide (_, rd, rn, rm) ->
+         let lhs = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         (["a:vxx"],
+          [xd#index_variable lhs; xd#index_xpr xrn; xd#index_xpr xrm])
 
       | UnsignedAdd8 (_, rd, rn, rm) ->
          let lhs = rd#to_variable floc in
@@ -1031,13 +1024,6 @@ object (self)
          let vvd = vd#to_variable floc in
          let xmem = mem#to_expr floc in
          (["a:vx"], [xd#index_variable vvd; xd#index_xpr xmem])
-
-      | VMove (_, _, dst, src) ->
-         let vdst = dst#to_variable floc in
-         let src = src#to_expr floc in
-         let rsrc = rewrite_expr src in
-         (["a:vxx"],
-          [xd#index_variable vdst; xd#index_xpr src; xd#index_xpr rsrc])
 
       | VMoveToSystemRegister (_, _, src) ->
          let xsrc = src#to_expr floc in
