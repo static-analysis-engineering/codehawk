@@ -58,13 +58,51 @@ val arm_dmb_option_from_int_op: int -> arm_operand_int
   
 val arm_register_op: arm_reg_t -> arm_operand_mode_t -> arm_operand_int
 
+val arm_writeback_register_op:
+  ?issingle:bool
+  -> arm_reg_t
+  -> int option
+  -> arm_operand_mode_t
+  -> arm_operand_int
+
 val arm_special_register_op:
   arm_special_reg_t -> arm_operand_mode_t -> arm_operand_int
 
 val arm_extension_register_op:
   arm_extension_reg_type_t -> int -> arm_operand_mode_t -> arm_operand_int
 
+val arm_extension_register_element_op:
+  arm_extension_reg_type_t
+  -> int  (* register index *)
+  -> int  (* element index *)
+  -> int  (* element size *)
+  -> arm_operand_mode_t
+  -> arm_operand_int
+
 val arm_register_list_op: arm_reg_t list -> arm_operand_mode_t -> arm_operand_int
+
+val arm_extension_register_list_op:
+  arm_extension_reg_type_t -> int -> int -> arm_operand_mode_t -> arm_operand_int
+
+val arm_simd_reg_list_op:
+  arm_extension_reg_type_t -> int list -> arm_operand_mode_t -> arm_operand_int
+
+val arm_simd_reg_elt_list_op:
+  arm_extension_reg_type_t
+  -> int list   (* extension register indices *)
+  -> int        (* element index *)
+  -> int        (* element size *)
+  -> arm_operand_mode_t
+  -> arm_operand_int
+
+
+val arm_simd_reg_rep_elt_list_op:
+  arm_extension_reg_type_t
+  -> int list   (* extension register indices *)
+  -> int        (* element data size (in bytes *)
+  -> int        (* element count *)
+  -> arm_operand_mode_t
+  -> arm_operand_int
 
 val arm_immediate_op: immediate_int -> arm_operand_int
 
@@ -78,6 +116,15 @@ val arm_literal_op:
   -> doubleword_int    (* pc addr *)
   -> int               (* immediate offset *)
   -> arm_operand_int
+
+
+val mk_arm_simd_address_op:
+  arm_reg_t   (* base register *)
+  -> int      (* alignment *)
+  -> arm_simd_writeback_t
+  -> arm_operand_mode_t
+  -> arm_operand_int
+
 
 val mk_arm_imm_shifted_register_op:
   arm_reg_t
@@ -130,7 +177,9 @@ val mk_arm_offset_address_op:
   -> arm_operand_int
 
 val mk_arm_mem_multiple_op:
-  arm_reg_t
+  ?align: int
+  -> ?size: int
+  -> arm_reg_t
   -> int
   -> arm_operand_mode_t
   -> arm_operand_int

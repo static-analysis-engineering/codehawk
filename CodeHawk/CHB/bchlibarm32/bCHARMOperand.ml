@@ -125,6 +125,13 @@ let arm_memory_offset_to_string (offset:arm_memory_offset_t) =
         ^ (p_off off)
 
 
+let arm_simd_list_element_to_string (e: arm_simd_list_element_t) =
+  match e with
+  | SIMDReg r -> arm_extension_reg_to_string r
+  | SIMDRegElement e -> arm_extension_reg_element_to_string e
+  | SIMDRegRepElement e -> arm_extension_reg_rep_element_to_string e
+
+
 class arm_operand_t
         (kind:arm_operand_kind_t) (mode:arm_operand_mode_t):arm_operand_int =
 object (self:'a)
@@ -137,9 +144,10 @@ object (self:'a)
 
   method get_size =
     match kind with
-    | ARMReg r -> 4
-    | ARMExtensionReg (t, _) ->
-       (match t with
+    | ARMReg _ -> 4
+    | ARMWritebackReg _ -> 4
+    | ARMExtensionReg r ->
+       (match r.armxr_type with
         | XSingle -> 4
         | XDouble -> 8
         | XQuad -> 16)
@@ -152,6 +160,7 @@ object (self:'a)
   method get_register =
     match kind with
     | ARMReg r -> r
+    | ARMWritebackReg (_, r, _) -> r
     | _ ->
        raise
          (BCH_failure
@@ -160,6 +169,7 @@ object (self:'a)
   method get_register_count =
     match kind with
     | ARMRegList rl -> List.length rl
+    | ARMExtensionRegList rl -> List.length rl
     | _ ->
        raise
          (BCH_failure
@@ -184,6 +194,16 @@ object (self:'a)
          (BCH_failure
             (LBLOCK [
                  STR "Operand is not a register list: "; self#toPretty]))
+
+  method get_extension_register_op_list: 'a list =
+    match kind with
+    | ARMExtensionRegList rl ->
+       List.map (fun r -> {< kind = ARMExtensionReg r; mode = mode >}) rl
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand is not an extension register list: "; self#toPretty]))
 
   method get_absolute_address =
     match kind with
@@ -277,8 +297,9 @@ object (self:'a)
   method to_variable (floc:floc_int): variable_t =
     let env = floc#f#env in
     match kind with
-    | ARMReg r -> env#mk_arm_register_variable r
-    | ARMExtensionReg (t, r) -> env#mk_arm_extension_register_variable t r
+    | ARMReg r | ARMWritebackReg (_, r, _) ->
+       env#mk_arm_register_variable r
+    | ARMExtensionReg r -> env#mk_arm_extension_register_variable r
     | ARMSpecialReg r ->
        raise
          (BCH_failure
@@ -352,13 +373,15 @@ object (self:'a)
     let env = floc#f#env in
     match kind with
     | ARMRegList rl -> List.map env#mk_arm_register_variable rl
-    | ARMMemMultiple (r, n) ->
+    | ARMExtensionRegList rl ->
+       List.map env#mk_arm_extension_register_variable rl
+    | ARMMemMultiple (r, _, n, size) ->
        let rvar = env#mk_arm_register_variable r in
        let rec loop i l =
          if i = 0 then
            l
          else
-           let offset = mkNumerical (i - 1) in
+           let offset = mkNumerical ((i - 1) * size) in
            loop (i - 1) ((floc#get_memory_variable_1 rvar offset) :: l) in
        loop n []
     | _ ->
@@ -372,7 +395,7 @@ object (self:'a)
     | ARMImmediate imm ->
        big_int_constant_expr imm#to_big_int
     | ARMFPConstant _ -> XConst XRandom
-    | ARMReg _ -> XVar (self#to_variable floc)
+    | ARMReg _ | ARMWritebackReg _ -> XVar (self#to_variable floc)
     | ARMSpecialReg r ->
        raise
          (BCH_failure
@@ -428,6 +451,9 @@ object (self:'a)
     | ARMRegList rl ->
        let rlops = self#get_register_op_list in
        List.map (fun op -> op#to_expr floc) rlops
+    | ARMExtensionRegList rl ->
+       let rlops = self#get_extension_register_op_list in
+       List.map (fun op -> op#to_expr floc) rlops
     | _ ->
        raise
          (BCH_failure
@@ -441,7 +467,7 @@ object (self:'a)
          (BCH_failure
             (LBLOCK [STR "Immediate cannot be a lhs: ";
                      self#toPretty]))
-    | ARMReg _ -> (self#to_variable floc, [])
+    | ARMReg _ | ARMWritebackReg _ -> (self#to_variable floc, [])
     | ARMExtensionReg _ -> (self#to_variable floc, [])
     | ARMOffsetAddress _ -> (self#to_variable floc, [])
     | _ ->
@@ -461,7 +487,11 @@ object (self:'a)
 
   method is_immediate = match kind with ARMImmediate _ -> true | _ -> false
 
-  method is_register = match kind with ARMReg _ -> true | _ -> false
+  method is_register =
+    match kind with ARMReg _ | ARMWritebackReg _ -> true | _ -> false
+
+  method is_writeback_register =
+    match kind with ARMWritebackReg _ -> true | _ -> false
 
   method is_special_register =
     match kind with ARMSpecialReg _ -> true | _ -> false
@@ -494,10 +524,15 @@ object (self:'a)
     match kind with
     | ARMDMBOption o -> dmb_option_to_string o
     | ARMReg r -> armreg_to_string r
+    | ARMWritebackReg (issingle, r, _) ->
+       (armreg_to_string r) ^ (if issingle then "" else "!")
     | ARMSpecialReg r -> arm_special_reg_to_string r
-    | ARMExtensionReg (t, index) -> arm_extension_reg_to_string t index
+    | ARMExtensionReg r -> arm_extension_reg_to_string r
+    | ARMExtensionRegElement e -> arm_extension_reg_element_to_string e
     | ARMRegList l ->
        "{" ^ String.concat "," (List.map armreg_to_string l) ^ "}"
+    | ARMExtensionRegList rl ->
+       "{" ^ String.concat "," (List.map arm_extension_reg_to_string rl) ^ "}"
     | ARMShiftedReg (r,rs) ->
        let pshift = register_shift_to_string rs in
        let pshift = if pshift = "" then "" else "," ^ pshift in
@@ -509,8 +544,9 @@ object (self:'a)
     | ARMFPConstant x -> "#" ^ (Printf.sprintf "%.1f" x)
     | ARMAbsolute addr -> addr#to_hex_string
     | ARMLiteralAddress addr -> addr#to_hex_string
-    | ARMMemMultiple (r,n) ->
-       (armreg_to_string r) ^ "<" ^ (string_of_int n) ^ ">"
+    | ARMMemMultiple (r, align, n, size) ->
+       let alignment = if align = 0 then "" else ":" ^ (string_of_int align) in
+       (armreg_to_string r) ^ "<" ^ (string_of_int n) ^ ">" ^ alignment
     | ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex) ->
        let poffset = arm_memory_offset_to_string offset in
        let poffset = if isadd then poffset else "-" ^ poffset in
@@ -519,6 +555,18 @@ object (self:'a)
         | (false, true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
         | (true, true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]!"
         | (true, false) -> "[" ^ (armreg_to_string reg) ^ "], " ^ poffset)
+    | ARMSIMDAddress (base, align, wback) ->
+       let palign = if align = 1 then "" else ":" ^ (string_of_int align) in
+       let pbase = armreg_to_string base in
+       (match wback with
+        | SIMDNoWriteback -> "[" ^ pbase ^ palign ^ "]"
+        | SIMDBytesTransferred _ -> "[" ^ pbase ^ palign ^ "]!"
+        | SIMDAddressOffsetRegister r ->
+           "[" ^ pbase ^ palign ^ "], " ^ (armreg_to_string r))
+    | ARMSIMDList rl ->
+       "{"
+       ^ (String.concat ", " (List.map arm_simd_list_element_to_string rl))
+       ^ "}"
 
   method toPretty = STR self#toString
 
@@ -540,15 +588,98 @@ let arm_dmb_option_from_int_op (option:int) =
 let arm_register_op (r:arm_reg_t) (mode:arm_operand_mode_t) =
   new arm_operand_t (ARMReg r) mode
 
+let arm_writeback_register_op
+      ?(issingle = false)
+      (r: arm_reg_t)
+      (offset: int option)
+      (mode: arm_operand_mode_t): arm_operand_int =
+  new arm_operand_t (ARMWritebackReg (issingle, r, offset)) mode
+
 let arm_extension_register_op
       (t: arm_extension_reg_type_t) (index: int) (mode: arm_operand_mode_t) =
-  new arm_operand_t (ARMExtensionReg (t, index)) mode
+  let reg = {armxr_type = t; armxr_index = index} in
+  new arm_operand_t (ARMExtensionReg reg) mode
+
+
+let arm_extension_register_element_op
+      (t: arm_extension_reg_type_t)
+      (rindex: int)
+      (eindex: int)
+      (esize: int)
+      (mode: arm_operand_mode_t) =
+  let reg = {armxr_type = t; armxr_index = rindex} in
+  let elt = {armxr = reg; armxr_elem_index = eindex; armxr_elem_size = esize} in
+  new arm_operand_t (ARMExtensionRegElement elt) mode
+
 
 let arm_special_register_op (r: arm_special_reg_t) (mode: arm_operand_mode_t) =
   new arm_operand_t (ARMSpecialReg r) mode
 
 let arm_register_list_op (l:arm_reg_t list) (mode:arm_operand_mode_t) =
   new arm_operand_t (ARMRegList l) mode
+
+
+let arm_extension_register_list_op
+      (xt: arm_extension_reg_type_t) (d: int) (n: int) (mode: arm_operand_mode_t) =
+  let rl =
+    let rec aux n l =
+      if n = 0 then
+        l
+      else
+        aux (n-1) (((n + d )- 1)::l) in
+    aux n [] in
+  let rl = List.map (fun i -> {armxr_type = xt; armxr_index = i}) rl in
+  new arm_operand_t (ARMExtensionRegList rl) mode
+
+
+let arm_simd_reg_list_op
+      (xt: arm_extension_reg_type_t)
+      (indices: int list)
+      (mode: arm_operand_mode_t) =
+  let rl =
+    List.map
+      (fun i -> SIMDReg {armxr_type = xt; armxr_index = i}) indices in
+  new arm_operand_t (ARMSIMDList rl) mode
+
+
+let arm_simd_reg_elt_list_op
+      (xt: arm_extension_reg_type_t)
+      (indices: int list)
+      (eindex: int)
+      (esize: int)
+      (mode: arm_operand_mode_t) =
+  let rl =
+    List.map
+      (fun i ->
+        let reg = {armxr_type = xt; armxr_index = i} in
+        let indexelem = {
+            armxr = reg; armxr_elem_index = eindex; armxr_elem_size = esize} in
+        SIMDRegElement indexelem) indices in
+  new arm_operand_t (ARMSIMDList rl) mode
+
+
+let arm_simd_reg_rep_elt_list_op
+      (xt: arm_extension_reg_type_t)
+      (indices: int list)
+      (esize: int)
+      (ecount: int)
+      (mode: arm_operand_mode_t) =
+  let rl =
+    List.map
+      (fun i ->
+        let reg = {armxr_type = xt; armxr_index = i} in
+        let repelem = {
+            armxrr = reg; armxrr_elem_size = esize; armxrr_elem_count = ecount} in
+        SIMDRegRepElement repelem) indices in
+  new arm_operand_t (ARMSIMDList rl) mode
+
+
+let mk_arm_simd_address_op
+      (base: arm_reg_t)
+      (alignment: int)
+      (wback: arm_simd_writeback_t)
+      (mode: arm_operand_mode_t) =
+  new arm_operand_t (ARMSIMDAddress (base, alignment, wback)) mode
 
 let mk_arm_imm_shifted_register_op
       (r:arm_reg_t)
@@ -640,8 +771,9 @@ let mk_arm_offset_address_op
   new arm_operand_t
     (ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex))
 
-let mk_arm_mem_multiple_op (reg:arm_reg_t) (n:int) =
-  new arm_operand_t (ARMMemMultiple (reg,n))
+let mk_arm_mem_multiple_op
+      ?(align=0) ?(size=4) (reg:arm_reg_t) (n:int) =
+  new arm_operand_t (ARMMemMultiple (reg, align, n, size))
 
 let sp_r mode = arm_register_op ARSP mode
 
