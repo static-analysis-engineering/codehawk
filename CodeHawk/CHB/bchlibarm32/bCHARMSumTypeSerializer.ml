@@ -40,6 +40,7 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
+   (*
 class arm_instr_class_mcts_t: [ arm_instr_class_t ] mfts_int =
 object
 
@@ -65,6 +66,8 @@ object
 end
 
 let arm_instr_class_mcts:arm_instr_class_t mfts_int = new arm_instr_class_mcts_t
+
+    *)
 
 let dmb_option_mfts: dmb_option_t mfts_int =
   mk_mfts
@@ -147,6 +150,45 @@ end
 let arm_memory_offset_mcts:arm_memory_offset_t mfts_int =
   new arm_memory_offset_mcts_t
 
+
+class arm_simd_writeback_mcts_t: [arm_simd_writeback_t] mfts_int =
+object
+
+  inherit [arm_simd_writeback_t] mcts_t "arm_simd_writeback_t"
+
+  method ts (f: arm_simd_writeback_t) =
+    match f with
+    | SIMDNoWriteback -> "n"
+    | SIMDBytesTransferred _ -> "b"
+    | SIMDAddressOffsetRegister _ -> "r"
+
+  method tags = ["b"; "n"; "r"]
+
+end
+
+let arm_simd_writeback_mcts: arm_simd_writeback_t mfts_int =
+  new arm_simd_writeback_mcts_t
+
+
+class arm_simd_list_element_mcts_t: [arm_simd_list_element_t] mfts_int =
+object
+
+  inherit [arm_simd_list_element_t] mcts_t "arm_simd_list_element_t"
+
+  method ts (f: arm_simd_list_element_t) =
+    match f with
+    | SIMDReg _ -> "r"
+    | SIMDRegElement _ -> "e"
+    | SIMDRegRepElement _ -> "re"
+
+  method tags = ["e"; "r"; "re"]
+
+end
+
+let arm_simd_list_element_mcts: arm_simd_list_element_t mfts_int =
+  new arm_simd_list_element_mcts_t
+
+
 class arm_opkind_mcts_t: [ arm_operand_kind_t ] mfts_int =
 object
 
@@ -156,9 +198,12 @@ object
     match k with
     | ARMDMBOption _ -> "d"
     | ARMReg _ -> "r"
+    | ARMWritebackReg _ -> "wr"
     | ARMSpecialReg _ -> "sr"
     | ARMExtensionReg _ -> "xr"
+    | ARMExtensionRegElement _ -> "xre"
     | ARMRegList _ -> "l"
+    | ARMExtensionRegList _ -> "xl"
     | ARMRegBitSequence _ -> "b"
     | ARMShiftedReg _ -> "s"
     | ARMImmediate _ -> "i"
@@ -167,9 +212,12 @@ object
     | ARMLiteralAddress _ -> "p"
     | ARMMemMultiple _ -> "m"
     | ARMOffsetAddress _ -> "o"
+    | ARMSIMDAddress _ -> "simda"
+    | ARMSIMDList _ -> "simdl"
 
   method tags =
-    ["a"; "b"; "c"; "d"; "i"; "l"; "m"; "o"; "p"; "r"; "r"; "s"; "sr"; "xr"]
+    ["a"; "b"; "c"; "d"; "i"; "l"; "m"; "o"; "p"; "r"; "r"; "s";
+     "simda"; "simdl"; "sr"; "wr"; "xr"]
 
 end
 
