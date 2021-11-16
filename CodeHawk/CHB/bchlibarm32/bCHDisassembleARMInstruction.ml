@@ -477,11 +477,19 @@ let parse_data_proc_reg_type (instr: doubleword_int) (cond: int) =
      ReverseSubtract(setflags, c, rd, rn, rm, false)
 
   (* <cc><0>< 4>s<rn><rd><imm>ty0<rm> *)   (* ADD (register) - A1 *)
-  | 4 when (b4 = 0) ->
+  | 4 when (not ((ry = 15) && setflags)) && (b4 = 0) ->
      let rn = r19 RD in
      let rd = r15 WR in
      let rm = mk_imm_shift_reg rt (b 6 5) (b 11 7) RD in
      (* ADD{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
+     Add (setflags, c, rd, rn, rm, false)
+
+  (* <cc><0>< 4>s<rn><rd><rs>0ty1<rm> *) (* ADD (register-shifted register) - A1 *)
+  | 4 when (b 7 7) = 0 && (b4 = 1) ->
+     let rd = r15 WR in
+     let rn = r19 RD in
+     let rm = mk_reg_shift_reg rt (b 6 5) rz RD in
+     (* ADD{S}<c> <Rd>, <Rn>, <Rm>, <type> <Rs> *)
      Add (setflags, c, rd, rn, rm, false)
 
   (* <cc><0>< 5>s<rn><rd><imm>ty0<rm> *)   (* ADC (register) - A1 *)
@@ -950,12 +958,12 @@ let parse_load_store_imm_type (instr: doubleword_int) (cond: int) =
      StoreRegister (c, rt RD ,rn, mem, false)
 
   (* <cc><2>01001<13><rt><-imm12:4--> *)   (* POP - A2 *)
-  | (0, 1, (13, true, false, true, 4)) ->
+  | (0, 1, (13, false, true, false, 4)) ->
      let rl = arm_register_list_op [(get_arm_reg (b 15 12))] WR in
      (* POP<c> <registers> *)
      Pop (c, rn, rl, false)
 
-  (* <cc><2>pu0w1<rn><rt><--imm12---> *)   (* LDR (immediate) *)
+  (* <cc><2>pu0w1<rn><rt><--imm12---> *)   (* LDR (immediate) - A1 *)
   | (0, 1, _) ->
      let mem = mk_mem RD in
      (* LDR<c> <Rt>, [<Rn>{, #+/-<imm12>}]       Offset: (index,wback) = (T,F)
@@ -1142,7 +1150,7 @@ let parse_media_type (instrbytes: doubleword_int) (cond: int) =
      let rn = arm_register_op (get_arm_reg rz) RD in
      let roundf = (b 5 5) in
      (* SMMUL{R}<c> <Rd>, <Rn>, <Rm> *)
-     SignedMostSignificantWordMultiply (c, rd, rm, rn, roundf)
+     SignedMostSignificantWordMultiply (c, rd, rn, rm, roundf)
 
   (* <cc><3>< 21><rd><ra><rm>00R1<rn> *)   (* SMMLA - A1 *)
   | 21 when (b 7 6) = 0 ->
@@ -1152,7 +1160,7 @@ let parse_media_type (instrbytes: doubleword_int) (cond: int) =
      let rn = arm_register_op (get_arm_reg rz) RD in
      let roundf = (b 5 5) in
      (* SMMLA{R}<c> <Rd>, <Rn>, <Rm>, <Ra> *)
-     SignedMostSignificantWordMultiplyAccumulate (c, rd, rm, rn, ra, roundf)
+     SignedMostSignificantWordMultiplyAccumulate (c, rd, rn, rm, ra, roundf)
 
   (* <cc><3><13><wm1><rd><lsb>101<rn> *)   (* SBFX - A1 *)
   | 26 | 27 when (b 6 5) = 2 ->
@@ -1295,19 +1303,13 @@ let parse_branch_link_type
   let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
   let tgt = iaddr#add_int (imm32 + 8) in
   let tgtop = arm_absolute_op tgt RD in
-  match cond with
-  | 15 ->
-     (* <15><5>H<--------imm24---------> *)    (* BLX - A2 *)
-     (* BLX <label> *)
-     BranchLinkExchange(ACCAlways, tgtop)
-  | _ ->
-     if opx = 0 then
-       (* <cc><5>0<--------imm24---------> *)    (* B - A1 *)
-       Branch (cc, tgtop, false)
-     else
-       (* <cc><5>1<--------imm24---------> *)    (* BL - A1 *)
-       (* BL<c> <label> *)
-       BranchLink (cc, tgtop)
+  if opx = 0 then
+    (* <cc><5>0<--------imm24---------> *)    (* B - A1 *)
+    Branch (cc, tgtop, false)
+  else
+    (* <cc><5>1<--------imm24---------> *)    (* BL - A1 *)
+    (* BL<c> <label> *)
+    BranchLink (cc, tgtop)
 
 
 let parse_misc_6_type (instr: doubleword_int) (cond: int) =
@@ -2362,6 +2364,18 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
          ~align:4 rnreg offset ~isadd ~isindex:true ~iswback:false in
      (* PLD{W} [<Rn>, #+/-<imm12>] *)
      PreloadData (is_pldw, cc, rn RD, mem WR)
+
+  | 10 | 11 ->
+     (* <15>101H<--------imm24---------> *)    (* BLX - A2 *)
+     let offset = b 23 0 in
+     let h = bv 24 in
+     let imm = (offset lsl 2) + (h lsl 1) in
+     let imm32 = sign_extend 32 26 imm in
+     let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
+     let tgt = iaddr#add_int (imm32 + 8) in
+     let tgtop = arm_absolute_op tgt RD in
+     (* BLX <label> *)
+     BranchLinkExchange(ACCAlways, tgtop)
 
   | tag ->
      NotRecognized ("arm:cond15:" ^ (string_of_int tag), instr)
