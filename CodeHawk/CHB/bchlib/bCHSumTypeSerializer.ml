@@ -161,7 +161,7 @@ let ikind_mfts: ikind mfts_int =
 let arm_extension_reg_type_mfts: arm_extension_reg_type_t mfts_int =
   mk_mfts
     "arm_extension_reg_type"
-    [(XSingle, "x"); (XDouble, "d"); (XQuad, "q")]
+    [(XSingle, "S"); (XDouble, "D"); (XQuad, "Q")]
 
 
 class register_mcts_t:[register_t] mfts_int =

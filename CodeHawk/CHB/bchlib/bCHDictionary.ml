@@ -154,7 +154,7 @@ object (self)
     let (tags, args) = arm_extension_register_table#retrieve index in
     let t = t name tags in
     let a = a name args in
-    {armxr_type = arm_extension_reg_type_mfts#fs (t 1); armxr_index = a 0}
+    {armxr_type = arm_extension_reg_type_mfts#fs (t 0); armxr_index = a 0}
 
   method index_arm_extension_register_element
            (e: arm_extension_register_element_t) =
