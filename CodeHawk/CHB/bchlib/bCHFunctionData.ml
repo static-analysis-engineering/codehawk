@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -170,12 +171,17 @@ object (self)
         fe
       end
 
-  method get_function (fa:doubleword_int) =
+  method get_function (fa: doubleword_int) =
     if self#is_function_entry_point fa then
       H.find table fa#index
     else
-      raise (BCH_failure (LBLOCK [ STR "Function data not found for address: " ;
-                                   fa#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Function data not found for address: "; fa#toPretty ]))
+
+  method has_function (fa: doubleword_int) =
+    self#is_function_entry_point fa
 
   method get_functions = H.fold (fun _ v a -> v::a) table []
 

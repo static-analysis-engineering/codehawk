@@ -2302,7 +2302,7 @@ let load_function_info ?(reload=false) (faddr:doubleword_int) =
     List.exists is_java_native_method_name names in 
   if H.mem function_infos faddr#index && (not reload) then
     H.find function_infos faddr#index
-  else
+  else if functions_data#has_function faddr then
     try
       let fname = faddr#to_hex_string in
       let varmgr = read_vars fname  in
@@ -2349,6 +2349,13 @@ let load_function_info ?(reload=false) (faddr:doubleword_int) =
                  faddr#toPretty;
                  STR ": ";
                  p]))
+  else
+    raise
+      (BCH_failure
+         (LBLOCK [
+              STR "Unable to load function info. ";
+              faddr#toPretty;
+              STR " is not a function entry point"]))
 
 
 let get_function_info (faddr:doubleword_int) = load_function_info faddr

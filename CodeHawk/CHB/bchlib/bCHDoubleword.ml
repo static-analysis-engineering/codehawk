@@ -131,9 +131,11 @@ object (self:'a)
 	[ b4 ; b3 ; b2 ; b1 ] -> (pc b1) ^ (pc b2) ^ (pc b3) ^ (pc b4)
       | _ ->
 	begin
-	  ch_error_log#add "internal error"
-	    (LBLOCK [ STR "doubleword_t#to_string_fragment: " ;
-		      pretty_print_list bytes (fun b -> INT b) "[" "; " "]" ]) ;
+	  ch_error_log#add
+            "internal error"
+	    (LBLOCK [
+                 STR "doubleword_t#to_string_fragment: ";
+		 pretty_print_list bytes (fun b -> INT b) "[" "; " "]"]);
 	  raise (Internal_error "doubleword_t#to_string_fragment")
 	end
 
@@ -144,9 +146,11 @@ object (self:'a)
 	[ b1 ; b2 ; b3 ; b4 ] -> (pc b1) ^ (pc b2) ^ (pc b3) ^ (pc b4)
       | _ ->
 	begin
-	  ch_error_log#add "internal error"
-	    (LBLOCK [ STR "doubleword_t#to_string_fragment: " ;
-		      pretty_print_list bytes (fun b -> INT b) "[" "; " "]" ]) ;
+	  ch_error_log#add
+            "internal error"
+	    (LBLOCK [
+                 STR "doubleword_t#to_string_fragment: ";
+		 pretty_print_list bytes (fun b -> INT b) "[" "; " "]"]);
 	  raise (Internal_error "doubleword_t#to_string_fragment")
 	end
 
@@ -157,9 +161,11 @@ object (self:'a)
 	  Printf.sprintf "%x%x%x%x%x%x%x%x" n8 n7 n6 n5 n4 n3 n2 n1
       | _ -> 
 	begin
-	  ch_error_log#add "internal error" 
-	    (LBLOCK [ STR "doubleword_t#fixed_length_hex_string inconsistent value: " ;
-		      pretty_print_list nibbles (fun n -> INT n) "[" "; " "]" ]) ;
+	  ch_error_log#add
+            "internal error"
+	    (LBLOCK [
+                 STR "doubleword_t#fixed_length_hex_string inconsistent value: ";
+		 pretty_print_list nibbles (fun n -> INT n) "[" "; " "]"]);
 	  raise (Internal_error "doubleword_t#to_fixed_length_hex_string")
 	end
 
@@ -185,8 +191,10 @@ object (self:'a)
 	      | _ -> Printf.sprintf "0x%x%x%x%x%x%x%x%x" n8 n7 n6 n5 n4 n3 n2 n1 end
       | _ -> 
 	begin
-	  ch_error_log#add "invalid argument"
-	    (LBLOCK [ pretty_print_list nibbles (fun i -> INT i) "[" "; " "]" ; NL ]) ;
+	  ch_error_log#add
+            "invalid argument"
+	    (LBLOCK [
+                 pretty_print_list nibbles (fun i -> INT i) "[" "; " "]"; NL]);
 	  raise (Internal_error "doubleword_t#to_hex_string")
 	end
 
@@ -217,10 +225,18 @@ object (self:'a)
       {< unsigned_value = self#index - other#index >}
     else
       begin
-	ch_error_log#add "invalid argument"
-	  (LBLOCK [ STR "Unable to subtract doubleword -- difference is negative: " ;
-		    INT self#index ; STR " - " ; INT other#index ;
-		    STR " (" ; self#toPretty ; STR " - " ; other#toPretty ; STR ")" ]) ;
+	ch_error_log#add
+          "invalid argument"
+	  (LBLOCK [
+               STR "Unable to subtract doubleword -- difference is negative: ";
+	       INT self#index;
+               STR " - ";
+               INT other#index;
+	       STR " (";
+               self#toPretty;
+               STR " - ";
+               other#toPretty;
+               STR ")"]);
 	raise (Invalid_argument "doubleword_t#subtract")
       end
 
@@ -229,10 +245,18 @@ object (self:'a)
       {< unsigned_value = unsigned_value - i >}
     else
       begin
-	ch_error_log#add "invalid argument"
-	  (LBLOCK [ STR "Unable to subtract int -- difference is negative: " ;
-		    INT unsigned_value ; STR " - " ; INT i ;  
-		    STR " (" ; self#toPretty ; STR " - " ; INT i ; STR ")" ]) ;
+	ch_error_log#add
+          "invalid argument"
+	  (LBLOCK [
+               STR "Unable to subtract int -- difference is negative: ";
+	       INT unsigned_value;
+               STR " - ";
+               INT i;
+	       STR " (";
+               self#toPretty;
+               STR " - ";
+               INT i;
+               STR ")"]);
 	raise (Invalid_argument "doubleword_t#subtract_int")
       end
 
@@ -251,9 +275,13 @@ object (self:'a)
       {< unsigned_value = product >}
     else
       begin
-	ch_error_log#add "invalid argument"
-	  (LBLOCK [ STR "Unable to multiply int -- product exceeds 32 bits: " ;
-		    INT unsigned_value ; STR " * " ; INT i ]) ;
+	ch_error_log#add
+          "invalid argument"
+	  (LBLOCK [
+               STR "Unable to multiply int -- product exceeds 32 bits: ";
+	       INT unsigned_value;
+               STR " * ";
+               INT i]);
 	raise (Invalid_argument "doubleword_t#multiply_int")
       end
 

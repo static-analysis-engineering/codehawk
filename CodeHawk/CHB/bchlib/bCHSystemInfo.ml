@@ -372,29 +372,59 @@ object (self)
 
   method get_jump_table_target (faddr:doubleword_int) (iaddr:doubleword_int) =
     if self#has_jump_table_target faddr iaddr then
-      let (jta,lb,ub) = H.find jumptabletargets (faddr#index,iaddr#index) in
+      let (jta, lb, ub) = H.find jumptabletargets (faddr#index,iaddr#index) in
       let jt =
         let lboffset = 4 * lb in
         (try
-           List.find (fun jt -> jt#includes_address (jta#add_int lboffset)) jumptables
+           List.find
+             (fun jt -> jt#includes_address (jta#add_int lboffset)) jumptables
          with
          | Not_found ->
-            raise (BCH_failure (LBLOCK [ STR "internal error in get_jump_table_target" ]))) in
+            raise
+              (BCH_failure
+                 (LBLOCK [STR "internal error in get_jump_table_target"]))) in
       let jtstart = jt#get_start_address in
-      let (lbnew,ubnew) =
-        if jtstart#lt jta then
-          let diff = (jta#subtract jtstart)#to_int / 4 in
-          (lb + diff, ub + diff)
-        else
-          let diff = (jtstart#subtract jta)#to_int / 4 in
-          (lb - diff, ub - diff) in
-      let _ = chlog#add "user-provided jump-table target"
-                        (LBLOCK [ iaddr#toPretty ; STR ": " ; jtstart#toPretty ;
-                                  STR " (" ; INT lbnew ; STR ", " ; INT ubnew ; STR ")" ]) in
-      (jt,jta,lbnew,ubnew)
+      let (lbnew, ubnew) =
+        try
+          if jtstart#lt jta then
+            let diff = (jta#subtract jtstart)#to_int / 4 in
+            (lb + diff, ub + diff)
+          else
+            let diff = (jtstart#subtract jta)#to_int / 4 in
+            (lb - diff, ub - diff)
+        with
+        | Invalid_argument s ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Error in system_info#get_jump_table_target. ";
+                     STR "jtstart: ";
+                     jtstart#toPretty;
+                     STR "; jta: ";
+                     jta#toPretty;
+                     STR ": ";
+                     STR s])) in
+      let _ =
+        chlog#add
+          "user-provided jump-table target"
+          (LBLOCK [
+               iaddr#toPretty;
+               STR ": ";
+               jtstart#toPretty;
+               STR " (";
+               INT lbnew;
+               STR ", ";
+               INT ubnew;
+               STR ")"]) in
+      (jt, jta, lbnew, ubnew)
     else
-      raise (BCH_failure (LBLOCK [ STR "No jump-table targets found for " ;
-                                   faddr#toPretty ; STR "@" ; iaddr#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "No jump-table targets found for ";
+                faddr#toPretty;
+                STR "@";
+                iaddr#toPretty]))
  
   method private add_jump_table_target
                    (faddr:doubleword_int)
@@ -402,10 +432,16 @@ object (self)
                    (jta:doubleword_int)
                    (lb:int)     (* lower bound index *)
                    (ub:int) =   (* upper bound index *)
-    let _ = chlog#add
-              "jump-table targets"
-              (LBLOCK [ STR "(" ; faddr#toPretty ; STR "," ; iaddr#toPretty ; STR "): " ;
-                        jta#toPretty ]) in
+    let _ =
+      chlog#add
+        "jump-table targets"
+        (LBLOCK [
+             STR "(";
+             faddr#toPretty;
+             STR ",";
+             iaddr#toPretty;
+             STR "): ";
+             jta#toPretty]) in
     H.add jumptabletargets (faddr#index,iaddr#index) (jta,lb,ub)
    
   method get_lib_functions_loaded =
@@ -774,13 +810,28 @@ object (self)
 		 (LBLOCK [ STR "Invalid range for cfnop start address " ; 
 			   startaddr#toPretty ]))
       else
-	let len = (endaddr#subtract startaddr)#to_int in
+	let len =
+          try
+            (endaddr#subtract startaddr)#to_int
+          with
+          | Invalid_argument s ->
+             raise
+               (BCH_failure
+                  (LBLOCK [STR "Error in read_xml_cfnops: "; STR s])) in
 	if has "jmp" then
 	  let jmpaddr = geta n "jmp" in
 	  H.add cfjmps startaddr#index (jmpaddr,len,desc)
 	else
-          let _ = chlog#add "cfnop" (LBLOCK [ startaddr#toPretty ; STR " (length: " ; INT len ;
-                                              STR "; " ; STR desc ; STR ")" ]) in
+          let _ =
+            chlog#add
+              "cfnop"
+              (LBLOCK [
+                   startaddr#toPretty;
+                   STR " (length: ";
+                   INT len;
+                   STR "; ";
+                   STR desc;
+                   STR ")"]) in
 	  H.add cfnops startaddr#index (len,desc) ) (node#getTaggedChildren "nop")
 
   method is_cfnop (a:doubleword_int) = H.mem cfnops a#index
@@ -1697,7 +1748,7 @@ object (self)
         raise
           (BCH_failure
              (LBLOCK [
-                  STR "get-file-string: String.suffix: Length: " ;
+                  STR "get-file-string: String.suffix: Length: ";
                   INT len;
                   STR "; offset: ";
                   INT offset]))

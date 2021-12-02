@@ -357,58 +357,91 @@ let littleendian_hexstring_towstring (s:string) =
 let decode_string_aux (s:string) (va:doubleword_int) 
     (enc:(string * doubleword_int * doubleword_int * doubleword_int * int)) = 
   let (_, start, size, key, width) = enc in
-    let offset = (start#subtract va)#to_int + width in 
-    let prefix = String.sub s 0 offset in
-    let encstring = String.sub s offset size#to_int in
-    let suffix =
-      String.sub s (offset + size#to_int) ((String.length s) - (offset + size#to_int)) in
+  let offset =
     try
-      let ch = IO.input_string encstring in
-      if width = 4 then
-	let read_doubleword ch =
-	  let l = IO.read_ui16 ch in
-	  let h = IO.read_ui16 ch in
-	  make_doubleword l h in
-	let result = ref prefix in
-	begin 
-	  for i = 0 to ((size#to_int / 4) - 2) do
-	    let dw = read_doubleword ch in
-	    let decoded = dw#xor key in
-	    result := !result ^ (write_doubleword_to_bytestring decoded) ;
-	  done;
-	  !result ^ suffix
-	end
-      else if width = 1 then
-	let result = ref prefix in
-	begin
-	  for i = 0 to size#to_int - 1 do
-	    let b = IO.read_byte ch in
-	    let decoded = b lxor key#to_int in
-	    let ch = IO.output_string () in
-	    let _ = IO.write_byte ch decoded in
-	    let bs = IO.close_out ch in
-	    result := !result ^ bs
-	  done;
-	  !result ^ suffix
-	end
-      else
-	s
+      (start#subtract va)#to_int + width
     with
-      _ -> 
-	let encoding_to_pretty (ty,va,size,key,width) =
-	  LBLOCK [ STR "(" ; STR ty ; STR "," ; va#toPretty ; STR "," ; size#toPretty ;
-		   STR "," ; key#toPretty ; STR "," ; INT width ] in
+    | Invalid_argument s ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in decode_string_aux at address with ";
+                 STR "start: ";
+                 start#toPretty;
+                 STR "; va: ";
+                 va#toPretty;
+                 STR ": ";
+                 STR s])) in
+  let prefix = String.sub s 0 offset in
+  let encstring = String.sub s offset size#to_int in
+  let suffix =
+    String.sub
+      s (offset + size#to_int) ((String.length s) - (offset + size#to_int)) in
+  try
+    let ch = IO.input_string encstring in
+    if width = 4 then
+      let read_doubleword ch =
+	let l = IO.read_ui16 ch in
+	let h = IO.read_ui16 ch in
+	make_doubleword l h in
+      let result = ref prefix in
+      begin
+	for i = 0 to ((size#to_int / 4) - 2) do
+	  let dw = read_doubleword ch in
+	  let decoded = dw#xor key in
+	  result := !result ^ (write_doubleword_to_bytestring decoded) ;
+	done;
+	!result ^ suffix
+      end
+    else if width = 1 then
+      let result = ref prefix in
+      begin
+	for i = 0 to size#to_int - 1 do
+	  let b = IO.read_byte ch in
+	  let decoded = b lxor key#to_int in
+	  let ch = IO.output_string () in
+	  let _ = IO.write_byte ch decoded in
+	  let bs = IO.close_out ch in
+	  result := !result ^ bs
+	done;
+	!result ^ suffix
+      end
+    else
+      s
+  with
+    _ ->
+    let encoding_to_pretty (ty,va,size,key,width) =
+      LBLOCK [
+          STR "(";
+          STR ty;
+          STR ",";
+          va#toPretty;
+          STR ",";
+          size#toPretty;
+	  STR ",";
+          key#toPretty;
+          STR ",";
+          INT width] in
 	begin
-	  pr_debug [ STR "Error in decode_string with " ;
-		     encoding_to_pretty enc ; NL ;
-		     STR " and string length " ; 
-		     INT (String.length encstring) ; STR " and base address " ; va#toPretty ; NL ;
-		     STR " and offset " ; INT offset ; NL] ;
+	  pr_debug [
+              STR "Error in decode_string with ";
+	      encoding_to_pretty enc;
+              NL;
+	      STR " and string length ";
+	      INT (String.length encstring);
+              STR " and base address ";
+              va#toPretty;
+              NL;
+	      STR " and offset ";
+              INT offset;
+              NL] ;
 	raise (BCH_failure (STR "Error in decoding"))
       end
 
+
 let decode_string (str:string) (va:doubleword_int) 
-    (encodings:(string * doubleword_int * doubleword_int * doubleword_int * int) list) =
+      (encodings:
+         (string * doubleword_int * doubleword_int * doubleword_int * int) list) =
   List.fold_left (fun s e -> decode_string_aux s va e) str encodings
 
 
@@ -425,7 +458,7 @@ let read_hex_stream_file (filename:string) =
           with
           | Failure _ ->
              begin
-               pr_debug [ STR "Failure in reading stream file: " ; STR s ; NL ] ;
+               pr_debug [ STR "Failure in reading stream file: "; STR s; NL] ;
                raise (Failure "read_stream:int_of_string")
              end
         done
