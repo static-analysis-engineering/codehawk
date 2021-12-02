@@ -740,7 +740,10 @@ let arm_fp_constant_op (c: float) =
   new arm_operand_t (ARMFPConstant c) RD
 
 let arm_absolute_op (addr:doubleword_int) (mode:arm_operand_mode_t) =
-  new arm_operand_t (ARMAbsolute addr) mode
+  if system_info#is_code_address addr then
+    new arm_operand_t (ARMAbsolute addr) mode
+  else
+    raise (Invalid_argument ("Invalid absolute address: " ^ addr#to_hex_string))
 
 let arm_literal_op
       ?(align=4) ?(is_add=true) (pcaddr: doubleword_int) (imm: int) =
@@ -759,7 +762,10 @@ let mk_arm_absolute_target_op
       (mode:arm_operand_mode_t) =
   let addr = base#add_int (ch#pos + 4) in
   let tgtaddr = addr#add_int imm in
-  arm_absolute_op tgtaddr mode
+  if system_info#is_code_address tgtaddr then
+    arm_absolute_op tgtaddr mode
+  else
+    raise (Invalid_argument ("Invalid target address: " ^ tgtaddr#to_hex_string))
 
 let mk_arm_offset_address_op
       ?(align=1)

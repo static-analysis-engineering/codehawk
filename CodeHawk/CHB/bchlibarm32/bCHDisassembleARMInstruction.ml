@@ -778,9 +778,13 @@ let parse_data_proc_imm_type
   | 2 when rx = 15 && (not setflags) ->
      let rd = r15 WR in
      let imm32 = arm_expand_imm (b 11 8) (b 7 0) in
-     let imm = mk_arm_absolute_target_op ch base (-imm32) RD in
-     (* ADR<c> <Rd>, <label> *)
-     Adr (c, rd, imm)
+     (try
+        let imm = mk_arm_absolute_target_op ch base (-imm32) RD in
+        (* ADR<c> <Rd>, <label> *)
+        Adr (c, rd, imm)
+      with
+      | Invalid_argument s ->
+         NotRecognized ("error in ADR (A2): " ^ s, instr))
 
   (* <cc><1>< 2>s<rn><rd><--imm12---> *)   (* SUB (immediate) - A1 *)
   | 2 ->
@@ -802,9 +806,13 @@ let parse_data_proc_imm_type
   | 4 when rx = 15 && (not setflags) ->
      let rd = r15 WR in
      let imm32 = arm_expand_imm (b 11 8) (b 7 0) in
-     let imm = mk_arm_absolute_target_op ch base imm32 RD in
-     (* ADR<c> <Rd>, <label> *)
-     Adr (c, rd, imm)
+     (try
+        let imm = mk_arm_absolute_target_op ch base imm32 RD in
+        (* ADR<c> <Rd>, <label> *)
+        Adr (c, rd, imm)
+      with
+      | Invalid_argument s ->
+         NotRecognized ("error in ADR (A1): " ^ s, instr))
 
   (* <cc><1>< 4>s<rn><rd><--imm12---> *)   (* ADD (immediate) - A1 *)
   | 4 ->

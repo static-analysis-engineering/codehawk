@@ -178,7 +178,21 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                    (match ainstr#get_opcode with
                     | Adr (_, _, imm) when imm#is_absolute_address ->
                        let jtaddr = imm#get_absolute_address in
-                       let skips = (jtaddr#subtract addr)#to_int - 4 in
+                       let skips =
+                         try
+                           (jtaddr#subtract addr)#to_int - 4
+                         with
+                         | Invalid_argument s ->
+                            raise
+                              (BCH_failure
+                                 (LBLOCK [
+                                      STR "Error in create_ldr_jumptable. ";
+                                      STR "jtaddr: ";
+                                      jtaddr#toPretty;
+                                      STR "; addr: ";
+                                      addr#toPretty;
+                                      STR ": ";
+                                      STR s])) in
                        let _ = if skips > 0 then ch#skip_bytes skips in
                        let targets = ref [] in
                        let _ =
@@ -456,16 +470,36 @@ let disassemble_arm_sections () =
       let _ =
         chlog#add
           "disassembly"
-          (LBLOCK [ pretty_print_list
-                      headers
-                      (fun (s,_) ->
-                        LBLOCK [ STR s#get_section_name ; STR ":" ; s#get_addr#toPretty ;
-                                 STR " (" ; s#get_size#toPretty ; STR ")" ])
-                      "[" " ; " "]" ]) in
+          (LBLOCK [
+               pretty_print_list
+                 headers
+                 (fun (s,_) ->
+                   LBLOCK [
+                       STR s#get_section_name;
+                       STR ":";
+                       s#get_addr#toPretty;
+                       STR " (";
+                       s#get_size#toPretty;
+                       STR ")"])
+                 "[" " ; " "]" ]) in
       let startOfCode = lowest#get_addr in
       let endOfCode = highest#get_addr#add highest#get_size in
-      (startOfCode,endOfCode) in
-  let sizeOfCode = endOfCode#subtract startOfCode in
+      (startOfCode, endOfCode) in
+  let sizeOfCode =
+    try
+      endOfCode#subtract startOfCode
+    with
+    | Invalid_argument s ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in disassemble_arm_sections: sizeOfCode ";
+                 STR "endOfCode: ";
+                 endOfCode#toPretty;
+                 STR "; startOfCode: ";
+                 startOfCode#toPretty;
+                 STR ": ";
+                 STR s])) in
   let datablocks = system_info#get_data_blocks in
   let _ = initialize_arm_instructions sizeOfCode#to_int in 
   let _ = pverbose 
@@ -476,8 +510,22 @@ let disassemble_arm_sections () =
       sizeOfCode#to_int startOfCode datablocks in
   let _ =
     List.iter
-      (fun (h,x) ->
-        let displacement = (h#get_addr#subtract startOfCode)#to_int in
+      (fun (h, x) ->
+        let displacement =
+          try
+            (h#get_addr#subtract startOfCode)#to_int
+          with
+          | Invalid_argument s ->
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Error in disassemble_arm_sections: displacement ";
+                       STR "header address: ";
+                       h#get_addr#toPretty;
+                       STR "; startOfCode: ";
+                       startOfCode#toPretty;
+                       STR ": ";
+                       STR s])) in
         disassemble h#get_addr displacement x) xSections in
   sizeOfCode
 
