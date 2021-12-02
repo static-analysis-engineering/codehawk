@@ -1352,10 +1352,14 @@ let parse_t32_branch
        (s lsl 20) + (j2 lsl 19) + (j1 lsl 18) + (imm6 lsl 12) + (imm11 lsl 1) in
      let imm32 = sign_extend 32 21 imm32 in
      let tgt = (iaddr#add_int 4)#add_int imm32 in
-     let tgtop = arm_absolute_op tgt RD in
-     let cond = get_opcode_cc (b 25 22) in
-     (* B<c>.W <label> *)
-     Branch (cond, tgtop, true)
+     (try
+        let tgtop = arm_absolute_op tgt RD in
+        let cond = get_opcode_cc (b 25 22) in
+        (* B<c>.W <label> *)
+        Branch (cond, tgtop, true)
+      with
+      | Invalid_argument s ->
+         NotRecognized ("error in B (T3): " ^ s, instr))
 
   (* < 30>S<--imm10->10J1J<--imm11-->   B (encoding T4) *)
   | (0,1) ->
@@ -1373,9 +1377,13 @@ let parse_t32_branch
      let imm32 = sign_extend 32 25 imm32 in
      let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
      let tgt = (iaddr#add_int 4)#add_int imm32 in
-     let tgtop = arm_absolute_op tgt RD in
-     (* B<c>.W <label> *)
-     Branch (cc, tgtop, true)
+     (try
+        let tgtop = arm_absolute_op tgt RD in
+        (* B<c>.W <label> *)
+        Branch (cc, tgtop, true)
+      with
+      | Invalid_argument s ->
+         NotRecognized ("error in B (T4): " ^ s, instr))
 
   (* < 30>S<-imm10H->11J0J<-imm10L->H   BLX (immediate) - T2 *)
   | (1, 0) ->
@@ -1394,9 +1402,13 @@ let parse_t32_branch
      let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
      let tgt = ((iaddr#to_int + 4) / 4) * 4 in
      let tgt = int_to_doubleword (tgt + imm32) in
-     let tgtop = arm_absolute_op tgt RD in
-     (* BLX<c> <label> *)
-     BranchLinkExchange (cc, tgtop)
+     (try
+        let tgtop = arm_absolute_op tgt RD in
+        (* BLX<c> <label> *)
+        BranchLinkExchange (cc, tgtop)
+      with
+      | Invalid_argument s ->
+         NotRecognized ("error in BLX (imm, T2): " ^ s, instr))
      
   (* < 30>S<--imm10->11J1J<--imm11-->   BL (immediate) - T1 *)
   | (1, 1) ->
@@ -1415,9 +1427,13 @@ let parse_t32_branch
      let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
      let tgt = iaddr#to_int + 4 in
      let tgt = int_to_doubleword (tgt + imm32) in
-     let tgtop = arm_absolute_op tgt RD in
-     (* BL<c> <label> *)
-     BranchLink (cc, tgtop)
+     (try
+        let tgtop = arm_absolute_op tgt RD in
+        (* BL<c> <label> *)
+        BranchLink (cc, tgtop)
+      with
+      | Invalid_argument s ->
+         NotRecognized ("error in BL (imm, T1): " ^ s, instr))
 
   | (k, l) ->
      NotRecognized
@@ -2377,9 +2393,13 @@ let parse_t16_load_store_imm_relative
   (* 10100<r><-imm8->  ADR - T1 *)
   | 4 ->
      let imm = align_dw (iaddr#add_int (4 + (4 * (b 7 0)))) 4 in
-     let imm = arm_absolute_op imm in
-     (* ADR<c> <Rd>, <label> *)
-     Adr (cc, rt WR, imm RD)
+     (try
+        let imm = arm_absolute_op imm in
+        (* ADR<c> <Rd>, <label> *)
+        Adr (cc, rt WR, imm RD)
+      with
+      | Invalid_argument s ->
+         NotRecognized ("error in ADR (T1): " ^ s, instr))
 
   (* 10101<r><-imm8->  ADD (SP plus immediate) - T1 *)
   | 5 ->
@@ -2439,13 +2459,21 @@ let parse_t16_compare_branch
 
   (* 101100i1<-i5><r>  CBZ - T1 *)
   | 0 ->
-     (* CBZ <Rn>, <label> *)
-     CompareBranchZero (rn, tgtop)
+     (try
+        (* CBZ <Rn>, <label> *)
+        CompareBranchZero (rn, tgtop)
+      with
+      | Invalid_argument s ->
+         NotRecognized ("error in CBZ (T1): " ^ s, instr))
 
   (* 101110i1<-i5><r>  CBNZ - T1 *)
   | 1 ->
-     (* CBNZ <Rn>, <label> *)
-     CompareBranchNonzero (rn, tgtop)
+     (try
+        (* CBNZ <Rn>, <label> *)
+        CompareBranchNonzero (rn, tgtop)
+      with
+      | Invalid_argument s ->
+         NotRecognized ("error in CBNZ (T1): " ^ s, instr))
 
   | _ -> NotRecognized ("t16_compare_branch", instr)
 
@@ -2599,9 +2627,13 @@ let parse_t16_conditional
      let imm32 = sign_extend 32 9 (2 * (b 7 0)) in
      let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
      let tgt = iaddr#add_int (imm32 + 4) in
-     let tgtop = arm_absolute_op tgt RD in
-     (* B<c> <label> *)
-     Branch (c, tgtop, false)
+     (try
+        let tgtop = arm_absolute_op tgt RD in
+        (* B<c> <label> *)
+        Branch (c, tgtop, false)
+      with
+      | Invalid_argument s ->
+         NotRecognized ("error in B (T1): " ^ s, instr))
 
 
 let parse_t16_unconditional
@@ -2613,10 +2645,14 @@ let parse_t16_unconditional
   let imm32 = sign_extend 32 12 (2 * (b 10 0)) in
   let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
   let tgt = iaddr#add_int (imm32 + 4) in
-  let tgtop = arm_absolute_op tgt RD in
-  (* 11100<--imm11-->    B - T2 *)
-  (* B<c> <label> *)
-  Branch (cc, tgtop, false)
+  (try
+     let tgtop = arm_absolute_op tgt RD in
+     (* 11100<--imm11-->    B - T2 *)
+     (* B<c> <label> *)
+     Branch (cc, tgtop, false)
+   with
+   | Invalid_argument s ->
+      NotRecognized ("error in B (T2): " ^ s, instr))
 
 
 let parse_thumb16_opcode

@@ -169,11 +169,39 @@ object (self)
                startaddr#toPretty;
                STR "; end: ";
                endaddr#toPretty]) in
-      let startindex = (startaddr#subtract codeBase)#to_int in
+      let startindex =
+        try
+          (startaddr#subtract codeBase)#to_int
+        with
+        | Invalid_argument s ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Error in set_not_code_block: ";
+                     STR "startaddr: ";
+                     startaddr#toPretty;
+                     STR "; codeBase: ";
+                     codeBase#toPretty;
+                     STR ": ";
+                     STR s])) in
       let startinstr =
         make_arm_assembly_instruction
           startaddr true (NotCode (Some (DataBlock db))) "" in
-      let endindex = (endaddr#subtract codeBase)#to_int in
+      let endindex =
+        try
+          (endaddr#subtract codeBase)#to_int
+        with
+        | Invalid_argument s ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Error in set_not_code_block: ";
+                     STR "endaddr: ";
+                     endaddr#toPretty;
+                     STR "; codeBase: ";
+                     codeBase#toPretty;
+                     STR ": ";
+                     STR s])) in
       begin
         set_instruction startindex startinstr;
         for i = startindex + 1 to endindex - 1 do
@@ -214,11 +242,39 @@ object (self)
                   ~get_opt_function_name:(fun _ -> None));
                STR "; end: ";
                eaddr#toPretty]) in
-      let startindex = (saddr#subtract codeBase)#to_int in
+      let startindex =
+        try
+          (saddr#subtract codeBase)#to_int
+        with
+        | Invalid_argument s ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Error in set_jumptable. ";
+                     STR "startaddr: ";
+                     saddr#toPretty;
+                     STR "; codeBase: ";
+                     codeBase#toPretty;
+                     STR ": ";
+                     STR s])) in
       let startinstr =
         make_arm_assembly_instruction
           saddr true (NotCode (Some (JumpTable jumptable))) "" in
-      let endindex = (eaddr#subtract codeBase)#to_int in
+          let endindex =
+            try
+              (eaddr#subtract codeBase)#to_int
+            with
+            | Invalid_argument s ->
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR "Error set_jumptable. ";
+                         STR "endaddr: ";
+                         eaddr#toPretty;
+                         STR "; codeBase: ";
+                         codeBase#toPretty;
+                         STR ": ";
+                         STR s])) in
       begin
         set_instruction startindex startinstr;
         for i = startindex + 1 to endindex - 1 do
@@ -264,7 +320,22 @@ object (self)
                  va#toPretty]))
 
   method get_next_valid_instruction_address (va:doubleword_int) =
-    let index = (va#subtract codeBase)#to_int in
+    let index =
+      try
+        (va#subtract codeBase)#to_int
+      with
+      | Invalid_argument s ->
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Error in assembly-instructions: ";
+                   STR "get_next_valid_instruction_address. ";
+                   STR "va: ";
+                   va#toPretty;
+                   STR "; codeBase: ";
+                   codeBase#toPretty;
+                   STR ": ";
+                   STR s])) in
     let rec loop i =
       if i >= len then
         raise
@@ -278,7 +349,22 @@ object (self)
     codeBase#add_int (loop (index+1))
 
   method has_next_valid_instruction (va:doubleword_int) =
-    let index = (va#subtract codeBase)#to_int in
+    let index =
+      try
+        (va#subtract codeBase)#to_int
+      with
+      | Invalid_argument s ->
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Error in assembly-instructions: ";
+                   STR "has_next_valid_instruction: ";
+                   STR "va: ";
+                   va#toPretty;
+                   STR "; codeBase: ";
+                   codeBase#toPretty;
+                   STR ": ";
+                   STR s])) in
     let rec loop i =
       if i >= len || (self#at_index i)#is_not_code then
         false
@@ -301,8 +387,36 @@ object (self)
       else
         high in
     let high = if high#lt low then low else high in
-    let low = (low#subtract codeBase)#to_int in
-    let high = (high#subtract codeBase)#to_int in
+    let low =
+      try
+        (low#subtract codeBase)#to_int
+      with
+      | Invalid_argument s ->
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Error in get_code_addresses_rev. ";
+                   STR "low: ";
+                   low#toPretty;
+                   STR "; codeBase: ";
+                   codeBase#toPretty;
+                   STR ": ";
+                   STR s])) in
+    let high =
+      try
+        (high#subtract codeBase)#to_int
+      with
+      | Invalid_argument s ->
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Error in get_code_address_rev. ";
+                   STR "high: ";
+                   high#toPretty;
+                   STR "; codeBase: ";
+                   codeBase#toPretty;
+                   STR ": ";
+                   STR s])) in
     let addresses = ref [] in
     begin
       for i = low to high do
