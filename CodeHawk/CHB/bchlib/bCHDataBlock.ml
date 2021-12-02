@@ -200,7 +200,14 @@ object (self:'a)
     if len <= 16 || alignedAddress#equal start_address then
       rawdata_to_string data start_address
     else
-      let offset = (alignedAddress#subtract start_address)#to_int in
+      let offset =
+        try
+          (alignedAddress#subtract start_address)#to_int
+        with
+        | Invalid_argument s ->
+           raise
+             (BCH_failure
+                (LBLOCK [STR "Error in rawdata_to_string: "; STR s])) in
       let suffix = String.sub data offset (len - offset) in
       let prefix = String.sub data 0 offset in
       (rawdata_to_string prefix start_address) ^ "\n" ^ 
@@ -210,7 +217,14 @@ object (self:'a)
     let len = self#get_length in
     let data = self#get_data_string in
     let alignedAddr = get_1kaligned_address start_address in
-    let offset = (alignedAddr#subtract start_address)#to_int in
+    let offset =
+      try
+        (alignedAddr#subtract start_address)#to_int
+      with
+      | Invalid_argument s ->
+         raise
+           (BCH_failure
+              (LBLOCK [STR "Error in largerawdata_to_string: "; STR s])) in
     let data1 = String.sub data 0 offset in
     let datar = String.sub data offset (len - offset) in
     let addrr = start_address#add_int offset in
@@ -273,10 +287,15 @@ let make_data_block
     (end_address:doubleword_int) 
     (name:string) =
   let name = if name = "" then "data" else name in
-  let _ = if start_address#equal end_address then
-      raise (BCH_failure (LBLOCK [ STR "Data block with zero length at " ; 
-				   start_address#toPretty ])) in
+  let _ =
+    if start_address#equal end_address then
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Data block with zero length at ";
+		start_address#toPretty])) in
     new data_block_t start_address end_address name
+
 
 let read_xml_data_block (node:xml_element_int) =
   let get = node#getAttribute in
@@ -302,7 +321,15 @@ let create_jumptable_offset_block
       (section_base:doubleword_int)
       (section:string)
       (jtlen:int) =
-  let pos = (base#subtract section_base)#to_int in
+  let pos =
+    try
+      (base#subtract section_base)#to_int
+    with
+    | Invalid_argument s ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in create_jumptable_offset_block: "; STR s])) in
   let ch = make_pushback_stream section in
   let len = String.length section in
   let _ = ch#skip_bytes pos in

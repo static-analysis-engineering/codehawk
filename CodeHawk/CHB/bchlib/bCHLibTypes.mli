@@ -794,6 +794,7 @@ class type functions_data_int =
     (* predicates *)
     method is_function_entry_point: doubleword_int -> bool
     method has_function_name: doubleword_int -> bool
+    method has_function: doubleword_int -> bool
 
     (* stats *)
     method get_user_provided_count: int
