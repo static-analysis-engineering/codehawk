@@ -46,7 +46,8 @@ open BCHELFSection
 open BCHELFTypes
 
 
-class elf_program_section_t (s:string) (vaddr:doubleword_int):elf_program_section_int =
+class elf_program_section_t
+        (s:string) (vaddr:doubleword_int):elf_program_section_int =
 object (self)
 
   inherit elf_raw_section_t s vaddr as super
@@ -54,31 +55,44 @@ object (self)
   method get_value (a:doubleword_int) =
     try
       if super#includes_VA a then
-        let offset = (a#subtract vaddr)#to_int in
-        let ch = make_pushback_stream ~little_endian:system_info#is_little_endian s in
+        let offset =
+          try
+            (a#subtract vaddr)#to_int
+          with
+          | Invalid_argument s ->
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Error in elf_program_section#get_value: ";
+                       STR s])) in
+        let ch =
+          make_pushback_stream ~little_endian:system_info#is_little_endian s in
         begin
-          ch#skip_bytes offset ;
+          ch#skip_bytes offset;
           ch#read_doubleword
         end
       else
         raise
           (BCH_failure
-             (LBLOCK [ STR "Address " ; a#toPretty ;
-                       STR " is not included in section" ]))
+             (LBLOCK [
+                  STR "Address ";
+                  a#toPretty ;
+                  STR " is not included in section"]))
     with
     | BCH_failure p ->
        let msg =
-         LBLOCK [ STR "Error in getting value from program section: " ; p  ] in
+         LBLOCK [STR "Error in getting value from program section: "; p] in
        raise (BCH_failure msg)
     | IO.No_more_input ->
        let msg =
-         LBLOCK [STR "No more input in getting value from program section: ";
-                 a#toPretty;
-                 STR " (section va: ";
-                 vaddr#toPretty;
-                 STR ", section length: ";
-                 INT (String.length s);
-                 STR ")"] in
+         LBLOCK [
+             STR "No more input in getting value from program section: ";
+             a#toPretty;
+             STR " (section va: ";
+             vaddr#toPretty;
+             STR ", section length: ";
+             INT (String.length s);
+             STR ")"] in
        raise (BCH_failure msg)
 
 end

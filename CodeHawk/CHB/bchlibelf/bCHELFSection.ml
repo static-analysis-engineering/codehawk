@@ -68,8 +68,8 @@ object (self)
                    STR "Invalid section substring request: ";
                    STR "vaddr: "; vaddr#toPretty;
                    STR "; start: "; va#toPretty;
-                   STR "; length: "; INT size ;
-                   STR ": "; STR s ]))
+                   STR "; length: "; INT size;
+                   STR ": "; STR s]))
       | _ ->
          raise
            (BCH_failure
@@ -89,11 +89,22 @@ object (self)
 
   method includes_VA (va:doubleword_int) =
     (* assume that at least 4 bytes must be available *)
-    wordzero#lt vaddr && vaddr#le va && va#le (vaddr#add_int ((String.length s) - 4))
+    wordzero#lt vaddr
+    && vaddr#le va
+    && va#le (vaddr#add_int ((String.length s) - 4))
 
   method get_string_reference  (va:doubleword_int) =   (* absolute address *)
     if self#includes_VA va then
-      let offset = (va#subtract vaddr)#to_int in
+      let offset =
+        try
+          (va#subtract vaddr)#to_int
+        with
+        | Invalid_argument s ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Error in elf_section#get_string_reference: ";
+                     STR s])) in
       if is_printable_char s.[offset] then
         let len =
           let i = ref 0 in
@@ -101,11 +112,11 @@ object (self)
             while is_printable_char s.[offset + !i] do i := !i+1 done;
             !i
           end in
-        if Char.code s.[offset+len] = 0 then
+        if Char.code s.[offset + len] = 0 then
           let str = String.sub s offset len in
           let new_s = string_replace '\n' "\\n" str in
           begin
-            string_table#add_string va new_s ;
+            string_table#add_string va new_s;
             Some new_s
           end
         else

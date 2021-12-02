@@ -493,14 +493,17 @@ object(self)
           match result with
           | Some _ -> result
           | _ ->
-             match self#get_section k with
-             | ElfOtherSection t when not (v#get_addr#equal wordzero) ->
-                t#get_string_reference a
-             | ElfStringTable t when not (v#get_addr#equal wordzero)->
-                t#get_string_reference a
-             | ElfProgramSection s when not (v#get_addr#equal wordzero) ->
-                s#get_string_reference a
-             | _ -> None) section_header_table None
+             if v#get_section_name = ".bss" then
+               None
+             else
+               match self#get_section k with
+               | ElfOtherSection t when not (v#get_addr#equal wordzero) ->
+                  t#get_string_reference a
+               | ElfStringTable t when not (v#get_addr#equal wordzero)->
+                  t#get_string_reference a
+               | ElfProgramSection s when not (v#get_addr#equal wordzero) ->
+                  s#get_string_reference a
+               | _ -> None) section_header_table None
     with
     | _ ->
        begin
@@ -512,7 +515,16 @@ object(self)
 
   method has_xsubstring (a:doubleword_int) (size:int) =
     match self#get_containing_section a with
-    | Some s -> (a#subtract s#get_vaddr)#to_int + size < s#get_size
+    | Some s ->
+       (try
+         (a#subtract s#get_vaddr)#to_int + size < s#get_size
+        with
+        | Invalid_argument s ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "ELFHeader:has_xsubstring: interal error: ";
+                     STR s])))
     | _ -> false
 
   (* return a substring of the section starting at virtual address a
@@ -525,19 +537,21 @@ object(self)
        else
          raise
            (BCH_failure
-              (LBLOCK [STR "Error in xsubstring request: ";
-                       STR "Size of section ";
-                       s#get_vaddr#toPretty;
-                       STR ": ";
-                       INT s#get_size;
-                       STR " does not cover request of ";
-                       INT size]))
+              (LBLOCK [
+                   STR "Error in xsubstring request: ";
+                   STR "Size of section ";
+                   s#get_vaddr#toPretty;
+                   STR ": ";
+                   INT s#get_size;
+                   STR " does not cover request of ";
+                   INT size]))
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Error in xsubstring request. ";
-                      STR "No section found that includes virtual address ";
-                      a#toPretty ]))
+            (LBLOCK [
+                 STR "Error in xsubstring request. ";
+                 STR "No section found that includes virtual address ";
+                 a#toPretty ]))
 
   method get_containing_section (a:doubleword_int) =
     H.fold (fun k v result ->
