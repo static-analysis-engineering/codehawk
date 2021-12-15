@@ -72,6 +72,7 @@ let e15  = e7 * e8
 let e16  = e8 * e8
 let e31 = e16 * e15
 let e32 = e16 * e16
+let e64 = e32 * e32
 
 
 let arm_operand_mode_to_string = function RD -> "RD" | WR -> "WR" | RW -> "RW"
@@ -307,6 +308,8 @@ object (self:'a)
                  STR "Semantics of special register ";
                  STR (arm_special_reg_to_string r);
                  STR " should be handled separaly"]))
+    | ARMLiteralAddress dw ->
+       floc#env#mk_global_variable dw#to_numerical
     | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex) ->
        (match offset with
         | ARMImmOffset _ ->
@@ -404,6 +407,7 @@ object (self:'a)
                  STR (arm_special_reg_to_string r);
                  STR " should be handled separately"]))
     | ARMExtensionReg _ -> XVar (self#to_variable floc)
+    | ARMExtensionRegElement _ -> XConst XRandom
     | ARMOffsetAddress _ -> XVar (self#to_variable floc)
     | ARMAbsolute a when elf_header#is_program_address a ->
        num_constant_expr a#to_numerical
@@ -725,11 +729,13 @@ let mk_arm_immediate_op (signed:bool) (size:int) (imm:numerical_t) =
         | 1 -> imm#add (mkNumerical e8)
         | 2 -> imm#add (mkNumerical e16)
         | 4 -> imm#add (mkNumerical e32)
+        | 8 -> imm#add (mkNumerical e64)
         | _ ->
            raise
              (BCH_failure
-                (LBLOCK [ STR "Unexpected size in arm-immediate-op: " ;
-                          INT size ])) in
+                (LBLOCK [
+                     STR "Unexpected size in arm-immediate-op: " ;
+                     INT size])) in
     let op = ARMImmediate (make_immediate signed size immval#getNum) in
     new arm_operand_t op RD
 
