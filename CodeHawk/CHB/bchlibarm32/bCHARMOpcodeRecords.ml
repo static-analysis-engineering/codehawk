@@ -575,12 +575,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SBFX" c [rd; rn])
     }
-  | SignedExtendByte (c, rd, rm) -> {
+  | SignedExtendByte (c, rd, rm, tw) -> {
       mnemonic = "SXTB";
       operands = [rd; rm];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "SXTB" c [rd; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "SXTB" c [rd; rm])
     }
   | SignedExtendHalfword (c, rd, rm, tw) -> {
       mnemonic = "SXTH";
@@ -838,15 +838,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VADDW" c [dst; src1; src2])
     }
-  | VCompare (nan, c, dt, op1, op2) ->
-     let mnemonic =
-       "VCMP" ^ (if nan then "E" else "") in
-     { mnemonic = mnemonic;
-       operands = [op1; op2];
-       flags_set = [];   (* floating point status word not yet supported *)
-       ccode = Some c;
-       ida_asm = (fun f -> f#opscc ~dt mnemonic c [op1; op2])
-     }
+  | VectorBitwiseAnd (c, dst, src1, src2) -> {
+      mnemonic = "VAND";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "VAND" c [dst; src1; src2])
+    }
   | VectorBitwiseBitClear (c, dt, dst, imm) -> {
       mnemonic = "VBIC";
       operands = [dst; imm];
@@ -861,6 +859,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VEOR" c [dst; src1; src2])
     }
+  | VectorBitwiseNot (c, dt, dst, src) -> {
+      mnemonic = "VMVN";
+      operands = [dst; src];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VMVN" c [dst; src])
+    }
   | VectorBitwiseOr (c, dst, src1, src2) -> {
       mnemonic = "VORR";
       operands = [dst; src1; src2];
@@ -868,6 +873,15 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VORR" c [dst; src1; src2])
     }
+  | VCompare (nan, c, dt, op1, op2) ->
+     let mnemonic =
+       "VCMP" ^ (if nan then "E" else "") in
+     { mnemonic = mnemonic;
+       operands = [op1; op2];
+       flags_set = [];   (* floating point status word not yet supported *)
+       ccode = Some c;
+       ida_asm = (fun f -> f#opscc ~dt mnemonic c [op1; op2])
+     }
   | VectorConvert (round, c, dstdt, srcdt, dst, src) ->
      let mnemonic =
        "VCVT" ^ (if round then "R" else "") in
@@ -891,6 +905,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm =
         (fun f -> f#opscc ~dt "VDUP" c [dst; src])
+    }
+  | VectorExtract (c, dt, dst, src1, src2, imm) -> {
+      mnemonic = "VEXT";
+      operands = [dst; src1; src2; imm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VEXT" c [dst; src1; src2; imm])
     }
   | VectorLoadMultipleIncrementAfter (wb, c, rn, rl, mem) -> {
       mnemonic = "VLDM";
@@ -927,6 +948,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMOVL" c [dst; src])
     }
+  | VectorMoveNarrow (c, dt, dst, src) -> {
+      mnemonic = "VMOVN";
+      operands = [dst; src];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VMOVN" c [dst; src])
+    }
   | VMoveRegisterStatus (c, dst, src) ->
      let flags_set =
        if dst#is_special_register then
@@ -953,12 +981,33 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMUL" c [dst; src1; src2])
     }
+  | VectorMultiplyAccumulateLong (c, dt, dst, src1, src2) -> {
+      mnemonic = "VMLAL";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VMLAL" c [dst; src1; src2])
+    }
+  | VectorMultiplyLong (c, dt, dst, src1, src2) -> {
+      mnemonic = "VMULL";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VMULL" c [dst; src1; src2])
+    }
   | VectorNegate (c, dt, dst, src) -> {
       mnemonic = "VNEG";
       operands = [dst; src];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VNEG" c [dst; src])
+    }
+  | VectorPop (c, sp, rl, mem) -> {
+      mnemonic = "VPOP";
+      operands = [sp; rl; mem];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "VPOP" c [rl])
     }
   | VectorPush (c, sp, rl, mem) -> {
       mnemonic = "VPUSH";
@@ -967,12 +1016,54 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VPUSH" c [rl])
     }
+  | VectorReverseDoublewords (c, dt, dst, src) -> {
+      mnemonic = "VREV64";
+      operands = [dst; src];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VREV64" c [dst; src])
+    }
+  | VectorReverseHalfwords (c, dt, dst, src) -> {
+      mnemonic = "VREV16";
+      operands = [dst; src];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VREV16" c [dst; src])
+    }
+  | VectorReverseWords (c, dt, dst, src) -> {
+      mnemonic = "VREV32";
+      operands = [dst; src];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VREV32" c [dst; src])
+    }
   | VectorRoundingShiftRightAccumulate (c, dt, dst, src, imm) -> {
       mnemonic = "VRSRA";
       operands = [dst; src; imm];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VRSRA" c [dst; src; imm])
+    }
+  | VectorShiftLeft (c, dt, dst, src, src2) -> {
+      mnemonic = "VSHL";
+      operands = [dst; src; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VSHL" c [dst; src; src2])
+    }
+  | VectorShiftRight (c, dt, dst, src, imm) -> {
+      mnemonic = "VSHR";
+      operands = [dst; src; imm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VSHR" c [dst; src; imm])
+    }
+  | VectorShiftRightInsert (c, dt, dst, src, imm) -> {
+      mnemonic = "VSRI";
+      operands = [dst; src; imm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VSRI" c [dst; src; imm])
     }
   | VectorShiftRightAccumulate (c, dt, dst, src, imm) -> {
       mnemonic = "VSRA";
@@ -1016,6 +1107,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VSUB" c [dst; src1; src2])
     }
+  | VectorTranspose (c, dt, dst, src) -> {
+      mnemonic = "VTRN";
+      operands = [dst; src];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VTRN" c [dst; src])
+    }
   | NoOperation c -> {
       mnemonic = "NOP";
       operands = [];
@@ -1036,6 +1134,20 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = [];
       ccode = None;
       ida_asm = (fun f -> f#no_ops "invalid")
+    }
+  | OpcodeUndefined s -> {
+      mnemonic = "UNDEFINED";
+      operands = [];
+      flags_set = [];
+      ccode = None;
+      ida_asm = (fun f -> f#no_ops ("UNDEFINED: " ^ s))
+    }
+  | OpcodeUnpredictable s -> {
+      mnemonic = "UNPREDICTABLE";
+      operands = [];
+      flags_set = [];
+      ccode = None;
+      ida_asm = (fun f -> f#no_ops ("UNPREDICTABLE: " ^ s))
     }
   | NotRecognized (name, dw) -> {
       mnemonic = "unknown";
