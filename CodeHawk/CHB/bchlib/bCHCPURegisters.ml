@@ -226,6 +226,7 @@ let armreg_from_string (name:string) =
   get_sumtype_from_table
     "armregs_from_string_table" armregs_from_string_table name
 
+
 let _ =
   List.iter (fun (r,s) ->
       add_to_sumtype_tables
@@ -257,6 +258,7 @@ let register_from_string (name: string) =
          (LBLOCK [
               STR "No x86, mips, or arm register found with name "; STR name]))
 
+
 let get_armreg_argument (index: int) =
   match index with
   | 0 -> AR0
@@ -268,6 +270,9 @@ let get_armreg_argument (index: int) =
        (BCH_failure
           (LBLOCK [STR "Index out of range for get_armreg_argument: ";
                    INT index]))
+
+
+let arm_temporaries = [AR0; AR1; AR2; AR3]
 
 
 let is_register name = is_string_of_sumtype cpuregs_from_string_table name

@@ -58,6 +58,7 @@ val mips_special_reg_from_string: string -> mips_special_reg_t
 
 val armreg_to_string: arm_reg_t -> string
 val armreg_from_string: string -> arm_reg_t
+val arm_temporaries: arm_reg_t list
 
 val arm_extension_reg_type_to_string: arm_extension_reg_type_t -> string
 val arm_extension_reg_to_string: arm_extension_register_t -> string
@@ -71,19 +72,19 @@ val get_armreg_argument: int -> arm_reg_t
 val arm_special_reg_to_string: arm_special_reg_t -> string
 val arm_special_reg_from_string: string -> arm_special_reg_t
 
-val cpureg_to_asm_string  : cpureg_t -> string
+val cpureg_to_asm_string: cpureg_t -> string
 
 val cpureg_option_to_string: cpureg_t option -> string
 
 val segment_to_string: segment_t -> string
 
-val byte_reg_of_reg : cpureg_t -> cpureg_t                (* raises Invalid_argument *)
-val word_reg_of_reg : cpureg_t -> cpureg_t                (* raises Invalid_argument *)
-val sized_reg_of_reg: cpureg_t -> int -> cpureg_t         (* raises Invalid_argument *)
+val byte_reg_of_reg : cpureg_t -> cpureg_t       (* raises Invalid_argument *)
+val word_reg_of_reg : cpureg_t -> cpureg_t       (* raises Invalid_argument *)
+val sized_reg_of_reg: cpureg_t -> int -> cpureg_t  (* raises Invalid_argument *)
 
-val index_to_register     : int -> cpureg_t
+val index_to_register: int -> cpureg_t
 val index_to_word_register: int -> cpureg_t
 val index_to_byte_register: int -> cpureg_t
 
 val registers_affected_by: cpureg_t -> cpureg_t list
-val registers_zeroed_by  : cpureg_t -> cpureg_t list
+val registers_zeroed_by: cpureg_t -> cpureg_t list
