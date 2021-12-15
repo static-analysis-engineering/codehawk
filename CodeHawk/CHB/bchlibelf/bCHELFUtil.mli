@@ -61,7 +61,7 @@ val doubleword_to_dynamic_tag: doubleword_int -> elf_dynamic_tag_t
 val doubleword_to_dynamic_tag_name: doubleword_int -> string
 val doubleword_to_dynamic_tag_value: doubleword_int -> elf_dynamic_tag_value_t
 
-val doubleword_to_arm_relocation_tag: doubleword_int -> arm_relocation_tag_t
+val doubleword_to_arm_relocation_tag: doubleword_int -> elf_arm_relocation_tag_t
 val doubleword_to_arm_relocation_tag_name: doubleword_int -> string
 
 val elf_program_header_type_to_string: elf_program_header_type_t -> string
