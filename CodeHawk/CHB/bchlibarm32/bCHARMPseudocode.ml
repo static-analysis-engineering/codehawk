@@ -48,6 +48,10 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
+exception ARM_undefined of string
+exception ARM_unpredictable of string
+
+
 let rec pow2 n =
   match n with
   | 0 -> 1
@@ -587,6 +591,43 @@ let thumb_expand_imm (imm12: int) (carry: int): int =
   imm32
 
 
+(* convert an integer to an n-bit bit string *)
+let to_bit_string (x: int) (n: int): string =
+  let f i = if ((x lsr i) mod 2) = 0 then '0' else '1' in
+  let rev s =
+    let len = String.length s in
+    String.init len (fun i -> s.[len - 1 - i]) in
+  rev (String.init n f)
+
+
+(* Bitstring concatenation and replication
+ * =======================================
+ *
+ * Replicate(x, n): bitstring of length n*Len(x) consisting of n copies of x
+ *  concatenated together
+ *
+ * Zeros(n) = Replicate('0', n)
+ * Ones(n) = Replicate('1', n)
+ *)
+let replicate (x: string) (n: int): string =
+  string_repeat x n
+
+
+let replicate_int (x: int) (xlen) (cnt: int): string =
+  replicate (to_bit_string x xlen) cnt
+
+
+let bit_string_to_numerical (s: string): numerical_t =
+  let i64 = Int64.of_string ("0b" ^ s) in
+  mkNumericalFromInt64 i64
+
+
+let zeros (n: int): string = string_repeat "0" n
+
+
+let ones (n: int): string = string_repeat "1" n
+
+
 (* VFPExpandImm (pg A7-271)
  * ========================
  * bits(N) VFPExpandImm(bits(8) imm8, integer N)
@@ -643,3 +684,148 @@ let vfp_expand_imm (imm8: int) (n: int): numerical_t =
            STR "; value: ";
            v#toPretty]) in
   v
+
+
+(* Advanced SIMD expand immediate (pg A7-269)
+ * ==========================================
+ * bits(64) AdvSIMDExpandImm(bit op, bits(4) cmode, bits(8) imm8)
+ *
+ * case cmode<3:1> of
+ *   when '000'
+ *     testimm8 = FALSE; imm64 = Replicate(Zeros(24):imm8, 2)
+ *   when '001'
+ *     testimm8 = TRUE;  imm64 = Replicate(Zeros(16):imm8:Zeros(8), 2)
+ *   when '010'
+ *     testimm8 = TRUE;  imm64 = Replicate(Zeros(8):imm8:Zeros(16), 2)
+ *   when '011'
+ *     testimm8 = TRUE;  imm64 = Replicate(imm8:Zeros(24), 2)
+ *   when '100'
+ *     testimm8 = FALSE; imm64 = Replicate(Zeros(8):imm8, 4)
+ *   when '101
+ *     testimm8 = TRUE;  imm64 = Replicate(imm8:Zeros(8), 4)
+ *   when '110'
+ *     testimm8 = TRUE;
+ *     if cmode<0> == '0' then
+ *       imm64 = Replicate(Zeros(16):imm8:Ones(8), 2)
+ *     else
+ *       imm64 = Replicate(Zeros(8):imm8:Ones(16), 2)
+ *   when '111'
+ *     testimm8 = FALSE;
+ *     if cmode<0> == '0' && op == '0' then
+ *       imm64 = Replicate(imm8, 8);
+ *     if cmode<0> == '0' && op == '1' then
+ *       imm8a = Replicate(imm8<7>, 8);
+ *       imm8b = Replicate(imm8<6>, 8);
+ *       imm8c = Replicate(imm8<5>, 8);
+ *       imm8d = Replicate(imm8<4>, 8);
+ *       imm8e = Replicate(imm8<3>, 8);
+ *       imm8f = Replicate(imm8<2>, 8);
+ *       imm8g = Replicate(imm8<1>, 8);
+ *       imm8h = Replicate(imm8<0>, 8);
+ *       imm64 = imm8a:imm8b:imm8c:imm8d:imm8e:imm8f:imm8g:imm8h;
+ *     if cmode<0> == '1' && op == '0' then
+ *       imm32 = imm8<7>:NOT(imm8<6>):Replicate(imm8<6>,5):imm8<5:0>:Zeros(19);
+ *       imm64 = Replicate(imm32, 2)
+ *     if cmode<0> == '1' && op == '1' then
+ *       UNDEFINED;
+ *
+ *   if testimm8 && imm8 == '00000000' then
+ *     UNPREDICTABLE;
+ *
+ *   return imm64;
+ *)
+let adv_simd_expand_imm (op: int) (cmode: int) (imm8: int) =
+  let mk_imm64 (s: string) (n: int) = bit_string_to_numerical (replicate s n) in
+  let xbit n = (imm8 lsr n) mod 2 in
+  let imm8s = to_bit_string imm8 8 in
+  let cmode0 = cmode mod 2 in
+  let (testimm8, imm64) =
+    match cmode / 2 with
+    | 0 -> (false, mk_imm64 ((zeros 24) ^ imm8s) 2)
+    | 1 -> (true, mk_imm64 ((zeros 16) ^ imm8s ^ (zeros 8)) 2)
+    | 2 -> (true, mk_imm64 ((zeros 8) ^ imm8s ^ (zeros 16)) 2)
+    | 3 -> (true, mk_imm64 (imm8s ^ (zeros 24)) 2)
+    | 4 -> (false, mk_imm64 ((zeros 8) ^ imm8s) 4)
+    | 5 -> (true, mk_imm64 (imm8s ^ (zeros 8)) 4)
+    | 6 when cmode0 = 0 -> (false, mk_imm64 ((zeros 16) ^ imm8s ^ (ones 8)) 2)
+    | 6 when cmode0 = 1 -> (false, mk_imm64 ((zeros 8) ^ imm8s ^ (ones 16)) 2)
+    | 7 when cmode0 = 0 && op = 0 -> (false, mk_imm64 imm8s 8)
+    | 7 when cmode0 = 0 && op = 1 ->
+       let mk_1rep b = if b = 0 then "00000000" else "11111111" in
+       let imm8a = mk_1rep (xbit 7) in
+       let imm8b = mk_1rep (xbit 6) in
+       let imm8c = mk_1rep (xbit 5) in
+       let imm8d = mk_1rep (xbit 4) in
+       let imm8e = mk_1rep (xbit 3) in
+       let imm8f = mk_1rep (xbit 2) in
+       let imm8g = mk_1rep (xbit 1) in
+       let imm8h = mk_1rep (xbit 0) in
+       let imm64s =
+         String.concat "" [imm8a; imm8b; imm8c; imm8d; imm8e; imm8f; imm8g; imm8h] in
+       (false, mk_imm64 imm64s 1)
+    | 7 when cmode0 = 1 && op = 0 ->
+       let imm32 =
+         let s7 = String.sub imm8s 0 1 in
+         let s6 = if imm8s.[1] = '1' then "0" else "1" in
+         let s6p = replicate (String.sub imm8s 1 1) 5 in
+         let s5 = String.sub imm8s 2 6 in
+         s7 ^ s6 ^ s6p ^ s5 ^ (zeros 19) in
+       (false, mk_imm64 imm32 2)
+    | 7 when cmode0 = 1 && op = 1 ->
+       raise (ARM_undefined ("AdvSIMDExpandImm with cmode<0> = 1 && op = 1"))
+    | _ ->
+       raise
+         (BCH_failure (LBLOCK [STR "Internal error in adv_simd_expand_imm"])) in
+
+  if testimm8 && imm8 = 0 then
+    raise (ARM_unpredictable ("AdvSIMExpandImm: testimm8 && imm8 = 0"))
+  else
+    imm64
+
+
+(* Modified immediate values for Advanced SIMD instructions (Table A7-15)
+ * ======================================================================
+ * op  cmode  <dt>  notes
+ * ----------------------------------------------------------------------
+ * -   000x   I32   VBIC, VMOV, VMVN, VORR
+ *     001x   I32   VBIC, VMOV, VMVN, VORR
+ *     010x   I32   VBIC, VMOV, VMVN, VORR
+ *     011x   I32   VBIC, VMOV, VMVN, VORR
+ *     100x   I16   VBIC, VMOV, VMVN, VORR
+ *     101x   I16   VBIC, VMOV, VMVN, VORR
+ *     1100   I32   VMOV, VMVN
+ *     1101   I32   VMOV, VMVN
+ * 0   1110   I8    VMOV
+ * 0   1111   F32   VMOV
+ * 1   1110   I64   VMOV
+ * 1   1111   UNDEFINED
+ * -------------------------------------------------------------------------
+ *)
+let adv_simd_mod_dt (op: int) (cmode: int) (opcs: string) =
+  match cmode with
+  | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 -> VfpInt 32
+  | 12 | 13 ->
+     (match opcs with
+      | "VMOV" | "VMVN" ->
+         VfpInt 32
+      | _ ->
+         raise
+           (ARM_undefined
+              ("AdvSIMD-modified datatype for "
+               ^ opcs
+               ^ ": cmode = " ^ (string_of_int cmode))))
+  | 8 | 9 | 10 | 11 -> VfpInt 16
+  | _ ->
+     (match (opcs, op, cmode) with
+      | (("VMOV" | "VMVN"), 0, 14) -> VfpInt 8
+      | (("VMOV" | "VMVN"), 0, 15) -> VfpFloat 32
+      | (("VMOV" | "VMVN"), 1, 14) -> VfpInt 64
+      | _ ->
+         raise
+           (ARM_undefined
+              ("AdvSIMD-modified datatype for "
+               ^ opcs
+               ^ ": cmode = "
+               ^ (string_of_int cmode)
+               ^ ", op = "
+               ^ (string_of_int op))))
