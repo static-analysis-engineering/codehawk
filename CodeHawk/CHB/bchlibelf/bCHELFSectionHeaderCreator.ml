@@ -58,11 +58,11 @@ let get_user_data (sectionname:string):section_header_info_int =
     section_header_infos#get_section_header_info sectionname
   else
     raise
-      (BCH_failure (LBLOCK [ STR "No user data found for " ;
-                             STR sectionname ]))
+      (BCH_failure
+         (LBLOCK [STR "No user data found for "; STR sectionname]))
 
 let assumption_violation (p:pretty_t) =
-  let msg = LBLOCK [ STR "Section header creation assumption violation: " ; p ] in
+  let msg = LBLOCK [STR "Section header creation assumption violation: "; p] in
   begin
     ch_error_log#add "section header creation" msg;
     raise (BCH_failure msg)
@@ -343,11 +343,13 @@ object (self)
       let entsize = s2d "0x4" in
       let addralign = s2d "0x4" in
       begin
-        sh#set_fields ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~sectionname () ;
+        sh#set_fields
+          ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~sectionname ();
         section_headers <- sh :: section_headers
       end
     else
-      assumption_violation (STR "DT_HASH or DT_SYMTAB not present, or DT_HASH is zero")
+      assumption_violation
+        (STR "DT_HASH or DT_SYMTAB not present, or DT_HASH is zero")
       
   (* inputs: from dynamic table, program header, type PT_Load (1)
    * - addr: DT_SYMTAB
@@ -376,11 +378,26 @@ object (self)
       let info = s2d "0x1" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~info ~sectionname () ;
+          ~stype
+          ~flags
+          ~addr
+          ~offset
+          ~size
+          ~entsize
+          ~addralign
+          ~info
+          ~sectionname ();
         section_headers <- sh :: section_headers
       end
     else
-      assumption_violation (STR "DT_SYMTAB, DT_SYMENT, or DT_SYMTABNO not present")
+      begin
+        chlog#add "dynamic table" (dynamicsegment#toPretty);
+        assumption_violation
+          (LBLOCK [
+               STR "One of DT_SYMTAB, DT_SYMENT, or DT_SYMTABNO not present";
+               NL;
+               dynamicsegment#toPretty])
+      end
 
   (* inputs: from dynamic table, program header, type PT_Load (1)
    * - addr: DT_STRTAB
@@ -433,7 +450,15 @@ object (self)
       let entsize = s2d "0x2" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~entsize ~info ~sectionname () ;
+          ~stype
+          ~flags
+          ~addr
+          ~offset
+          ~size
+          ~addralign
+          ~entsize
+          ~info
+          ~sectionname () ;
         section_headers <- sh :: section_headers
       end
 
@@ -552,9 +577,12 @@ object (self)
               phend#subtract vaddr
             with _ ->
               raise (BCH_failure
-                       (LBLOCK [ STR "Create_init_header: subtracting vaddr: " ;
-                                 vaddr#toPretty ; STR " from " ;
-                                 STR "address + file size: " ; phend#toPretty ])) in
+                       (LBLOCK [
+                            STR "Create_init_header: subtracting vaddr: ";
+                            vaddr#toPretty;
+                            STR " from " ;
+                            STR "address + file size: ";
+                            phend#toPretty])) in
       (*  assumption_violation
              (L BLOCK [ STR "program entry point < DT_INIT. " ;
              STR "program entry point: " ;
@@ -672,7 +700,10 @@ object (self)
           (vaddr,size)
         else
           begin
-            assumption_violation (STR "No addr/size information for .rodata; please supply in fixup data")
+            assumption_violation
+              (LBLOCK [
+                   STR "No addr/size information for .rodata; ";
+                   STR "please supply in fixup data"])
           end in
     let sh = mk_elf_section_header () in
     let stype = s2d "0x1" in
@@ -957,10 +988,13 @@ let create_section_headers
     let _ = creator#create_section_headers in
     let headers = creator#get_section_headers in
     begin
-      pr_debug [ STR "section headers" ; NL ; creator#toPretty ; NL ] ;
+      pr_debug [STR "section headers"; NL; creator#toPretty; NL] ;
       headers
     end
   with BCH_failure p ->
     raise (BCH_failure
-             (LBLOCK [ STR "Error in creating section headers: " ; p ;
-                       NL ; creator#get_dynamic_segment#toPretty ]))
+             (LBLOCK [
+                  STR "Error in creating section headers: ";
+                  p;
+                  NL;
+                  creator#get_dynamic_segment#toPretty]))

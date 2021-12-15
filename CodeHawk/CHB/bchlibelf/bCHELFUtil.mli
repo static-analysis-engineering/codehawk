@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,11 +39,12 @@ open BCHLibTypes
 (* bchlibelf *)
 open BCHELFTypes
 
+
 val makeOffsetString : ?hexSize:doubleword_int -> 
-  doubleword_int -> string -> unit -> string            (* raises Invalid_argument *)
+  doubleword_int -> string -> unit -> string   (* raises Invalid_argument *)
 
 val makeOffsetInput : ?hexSize:doubleword_int -> 
-  doubleword_int -> string -> unit -> IO.input          (* raises Invalid_argument *)
+  doubleword_int -> string -> unit -> IO.input (* raises Invalid_argument *)
 
 val memoize: ('a -> 'b) -> ('a -> 'b)
 
@@ -49,16 +52,22 @@ val decodeUnsignedLEB128 : IO.input -> int
 
 val decodeSignedLEB128 : IO.input -> int
 
-val doubleword_to_elf_section_header_type: doubleword_int -> elf_section_header_type_t
+val doubleword_to_elf_section_header_type:
+  doubleword_int -> elf_section_header_type_t
+
 val doubleword_to_elf_section_header_string: doubleword_int -> string
 
 val doubleword_to_dynamic_tag: doubleword_int -> elf_dynamic_tag_t
 val doubleword_to_dynamic_tag_name: doubleword_int -> string
 val doubleword_to_dynamic_tag_value: doubleword_int -> elf_dynamic_tag_value_t
 
+val doubleword_to_arm_relocation_tag: doubleword_int -> arm_relocation_tag_t
+val doubleword_to_arm_relocation_tag_name: doubleword_int -> string
+
 val elf_program_header_type_to_string: elf_program_header_type_t -> string
 
-val doubleword_to_elf_program_header_type: doubleword_int -> elf_program_header_type_t
+val doubleword_to_elf_program_header_type:
+  doubleword_int -> elf_program_header_type_t
 
 val elf_segment_to_raw_segment : elf_segment_t -> elf_raw_segment_int
 val elf_section_to_raw_section : elf_section_t -> elf_raw_section_int

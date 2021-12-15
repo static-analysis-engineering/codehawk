@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -73,9 +74,9 @@ object (self)
   method read (ch:pushback_stream_int) =
     try
       begin
-        (* 0,4, Tag ------------------------------------------------------------
+        (* 0,4, Tag ---------------------------------------------------------
            Dynamic Array Tag
-           --------------------------------------------------------------------- *)
+           ------------------------------------------------------------------ *)
         d_tag <- ch#read_doubleword ;
 
         (* 4, 4, Value/Address -------------------------------------------------
@@ -89,7 +90,7 @@ object (self)
                   original file value and the memory base address. For consistency, 
                   files do not contain relocation entries to ‘‘correct’’ addresses 
                   in the dynamic structure.
-            ----------------------------------------------------------------------- *)
+            ------------------------------------------------------------------- *)
         d_un <- ch#read_num_signed_doubleword 
       end
     with
@@ -326,7 +327,6 @@ object (self)
       | DTV_d_val -> d_un#toString in
     LBLOCK [ STR self#get_tag_name ; STR ": " ; STR tagval ]
 
-
 end
     
 class elf_dynamic_segment_t
@@ -549,7 +549,8 @@ object (self)
        raise
          (BCH_failure (LBLOCK [ STR "DT_SYMTABNO not found in Dynamic Segment" ]))
 
-  method has_string_table_size = List.exists (fun e -> e#is_string_table_size) entries
+  method has_string_table_size =
+    List.exists (fun e -> e#is_string_table_size) entries
 
   method get_string_table_size =
     try
@@ -575,7 +576,7 @@ end
 let mk_elf_dynamic_segment s h vaddr =
   let table = new elf_dynamic_segment_t s vaddr in
   begin
-    table#read ;
+    table#read;
     table
   end
 
