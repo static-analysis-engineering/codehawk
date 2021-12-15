@@ -41,6 +41,9 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
+exception ARM_unpredictable of string
+exception ARM_undefined of string
+
 val align: int -> int -> int
 val align_dw: doubleword_int -> int -> doubleword_int
 
@@ -64,3 +67,6 @@ val thumb_expand_imm_c: int -> int -> (int * int)
 val thumb_expand_imm: int -> int -> int
 
 val vfp_expand_imm: int -> int -> numerical_t
+
+val adv_simd_expand_imm: int -> int -> int -> numerical_t
+val adv_simd_mod_dt: int -> int -> string -> vfp_datatype_t
