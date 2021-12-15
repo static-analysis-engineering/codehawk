@@ -35,6 +35,7 @@ open CHNumerical
 open CHLogger
 
 (* bchlib *)
+open BCHBasicTypes
 open BCHDoubleword
 open BCHConstantDefinitions
 open BCHLibTypes
@@ -43,9 +44,11 @@ module B = Big_int_Z
 
 let exp2 p  = B.power_int_positive_int 2 p
 let e16 = exp2 16
+let e32 = exp2 32
 
 
-class immediate_t (signed:bool) (size_in_bytes:int) (big_val:B.big_int):immediate_int =
+class immediate_t
+        (signed:bool) (size_in_bytes:int) (big_val:B.big_int):immediate_int =
 object (self: 'a)
 
   val signed = signed
@@ -54,11 +57,13 @@ object (self: 'a)
 
   method equal (other:'a) = B.eq_big_int self#to_big_int other#to_big_int
 
-  (* =============================================================== Predicates *)
+  (* ============================================================= Predicates *)
 
   method is_doubleword = size_in_bytes = 4
 
-  (* =============================================================== Converters *)
+  method is_quadword = size_in_bytes = 8
+
+  (* ============================================================= Converters *)
 
   method to_big_int = big_val
 
@@ -68,7 +73,7 @@ object (self: 'a)
 
   method to_doubleword = big_int_to_doubleword big_val
     
-  (* ============================================================= Transformers *)
+  (* =========================================================== Transformers *)
 
   method sign_extend (size:int) = {< size_in_bytes = size >}
 
@@ -76,28 +81,48 @@ object (self: 'a)
     if B.ge_big_int big_val B.zero_big_int then
       {< signed = false >}
     else
-      {< signed = false ; big_val = B.add_big_int big_val (exp2 (8*size_in_bytes)) >}
+      {< signed = false ;
+         big_val = B.add_big_int big_val (exp2 (8*size_in_bytes)) >}
 
-  (* ========================================================== Pretty printing *)
+  (* ======================================================== Pretty printing *)
 
   method to_string = 
     let v = self#to_doubleword in
-    if has_symbolic_name v then get_symbolic_name v else B.string_of_big_int big_val
+    if has_symbolic_name v then
+      get_symbolic_name v
+    else
+      B.string_of_big_int big_val
 
   method to_hex_string = 
     let abs_val = B.abs_big_int big_val in
-    let dw = big_int_to_doubleword abs_val in
-    if B.lt_big_int big_val B.zero_big_int then
-      "-" ^ dw#to_hex_string
+    if self#is_doubleword || size_in_bytes < 4 then
+      let dw = big_int_to_doubleword abs_val in
+      if B.lt_big_int big_val B.zero_big_int then
+        "-" ^ dw#to_hex_string
+      else
+        dw#to_hex_string
+    else if self#is_quadword && not signed then
+      let (hi, lo) = B.quomod_big_int big_val e32 in
+      if B.eq_big_int hi B.zero_big_int then
+        let dwlo = big_int_to_doubleword lo in
+        dwlo#to_hex_string
+      else
+        let dwhi = big_int_to_doubleword hi in
+        let dwlo = big_int_to_doubleword lo in
+        dwhi#to_hex_string ^ dwlo#to_fixed_length_hex_string
     else
-      dw#to_hex_string
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Size for immediate not supported: ";
+                INT size_in_bytes]))
 
   method toPretty = STR self#to_hex_string
 end
 
 let make_immediate = new immediate_t
 
-let immediate_from_int i = new immediate_t true 0 (B.big_int_of_int i)
+let immediate_from_int i = new immediate_t true 4 (B.big_int_of_int i)
 let imm1 = immediate_from_int 1
 let imm0 = immediate_from_int 0
 

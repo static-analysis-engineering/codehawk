@@ -454,22 +454,23 @@ object ('a)
 
   (* predicates *)
   method is_doubleword: bool
+  method is_quadword: bool
 
   (* converters *)
-  method to_big_int   : big_int
-  method to_numerical : numerical_t
-  method to_int       : int option
+  method to_big_int: big_int
+  method to_numerical: numerical_t
+  method to_int: int option
   method to_doubleword: doubleword_int
 
   (* transformers *)
-  method to_unsigned  : 'a
-  method sign_extend  : int -> 'a
+  method to_unsigned: 'a
+  method sign_extend: int -> 'a
 
   (* printing *)
-  method to_string    : string
+  method to_string: string
   method to_hex_string: string
 
-  method toPretty     : pretty_t
+  method toPretty: pretty_t
 end
 
 (* ========================================================== Pushback stream === *)
