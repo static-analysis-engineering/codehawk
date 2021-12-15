@@ -297,12 +297,12 @@ let arm_relocation_tag_table = H.create 93
 let _ =
   List.iter
     (fun (dw, tag, tagstr, rtype, rclass) ->
-      H.add arm_relocation_tag_table dw (tag, tagvalue, tagstr))
+      H.add arm_relocation_tag_table dw (tag, tagstr, rtype, rclass))
     [("0x0", R_ARM_NONE, "R_ARM_NONE", "S", "M");
      ("0x1", R_ARM_PC24, "R_ARM_PC24", "Dep", "A");
      ("0x2", R_ARM_ABS32, "R_ARM_ABS32", "S", "D");
      ("0x3", R_ARM_REL32, "R_ARM_REL32", "S", "D");
-     ("0x4", R_ARM_LDR_PC_G0, "R_ARM_LDR_PC_G0", "S", "A");
+     ("0x4", R_ARM_LDR_PCG0, "R_ARM_LDR_PCG0", "S", "A");
      ("0x5", R_ARM_ABS16, "R_ARM_ABS16", "S", "D");
      ("0x6", R_ARM_ABS12, "R_ARM_ABS12", "S", "A");
      ("0x7", R_ARM_THM_ABS5, "R_ARM_THM_ABS5", "S", "T16");
@@ -323,7 +323,7 @@ let _ =
      ("0x16", R_ARM_JUMP_SLOT, "R_ARM_JUMP_SLOT", "D", "D");
      ("0x17", R_ARM_RELATIVE, "R_ARM_RELATIVE", "D", "D");
      ("0x18", R_ARM_GOTOFF32, "R_ARM_GOTOFF32", "S", "D");
-     ("0x19", R_ARM_ARM_BASE_PREL, "R_ARM_BASE_PREL", "S", "D");
+     ("0x19", R_ARM_BASE_PREL, "R_ARM_BASE_PREL", "S", "D");
      ("0x1a", R_ARM_GOT_BREL, "R_ARM_GOT_BREL", "S", "D");
      ("0x1b", R_ARM_PLT32, "R_ARM_PLT32", "Dep", "A");
      ("0x1c", R_ARM_CALL, "R_ARM_CALL", "S", "A");
@@ -352,7 +352,7 @@ let _ =
      ("0x33", R_ARM_THM_JUMP19, "R_ARM_THM_JUMP19", "S", "T32");
      ("0x34", R_ARM_THM_JUMP6, "R_ARM_THM_JUMP6", "S", "T16");
      ("0x35", R_ARM_THM_ALU_PREL_11_0, "R_ARM_THM_ALU_PREL_11_0", "S", "T32");
-     ("0x36", R_ARM_PC12, "R_ARM_PC12", "S", "T32")
+     ("0x36", R_ARM_THM_PC12, "R_ARM_THM_PC12", "S", "T32")
     ]
 
 let doubleword_to_arm_relocation_tag_record (tag: doubleword_int) =
@@ -367,7 +367,7 @@ let doubleword_to_arm_relocation_tag_record (tag: doubleword_int) =
     end
 
 let doubleword_to_arm_relocation_tag (tag: doubleword_int) =
-  let (dtag, _, _) = doubleword_to_arm_relocation_tag_record tag in dtag
+  let (dtag, _, _, _) = doubleword_to_arm_relocation_tag_record tag in dtag
 
 let doubleword_to_arm_relocation_tag_name (tag: doubleword_int) =
   let (_, s, _, _) = doubleword_to_arm_relocation_tag_record tag in s
