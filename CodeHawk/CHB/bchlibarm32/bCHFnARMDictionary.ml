@@ -423,11 +423,15 @@ object (self)
 
       | LoadRegister (c, rt, rn, _, mem, _) ->
          let vrt = rt#to_variable floc in
+         let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
-         let tags = ["a:vxx"] in
+         let tags = ["a:vvxx"] in
          let args = [
-             xd#index_variable vrt; xd#index_xpr xmem; xd#index_xpr xrmem] in
+             xd#index_variable vrt;
+             xd#index_variable vmem;
+             xd#index_xpr xmem;
+             xd#index_xpr xrmem] in
          let (tags, args) =
            match c with
            | ACCAlways -> (tags, args)
@@ -713,7 +717,7 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | SignedExtendByte (_, rd, rm) ->
+      | SignedExtendByte (_, rd, rm, _) ->
          let lhs = rd#to_variable floc in
          let rhs = rm#to_expr floc in
          let xrhs = rewrite_expr rhs in
@@ -1081,4 +1085,4 @@ object (self)
 end
 
 let mk_arm_opcode_dictionary = new arm_opcode_dictionary_t
-      
+

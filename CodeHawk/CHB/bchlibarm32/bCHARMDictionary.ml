@@ -280,9 +280,9 @@ object (self)
       | SelectBytes(c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | SignedBitFieldExtract (c, rd, rn) -> (ctags c, [oi rd; oi rn])
       | SignedDivide (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
+      | SignedExtendByte (c, rd, rm, tw) -> (ctags c, [oi rd; oi rm; setb tw ])
       | SignedExtendHalfword (c, rd, rm, tw) ->
          (ctags c, [oi rd; oi rm; setb tw])
-      | SignedExtendByte (c,rd,rm) -> (ctags c, [ oi rd; oi rm ])
       | SignedMostSignificantWordMultiply (c, rd, rm, rn, roundf) ->
          (ctags c, [oi rd; oi rm; oi rn; roundf])
       | SignedMostSignificantWordMultiplyAccumulate (c, rd, rm, rn, ra, roundf) ->
@@ -329,7 +329,7 @@ object (self)
       | UnsignedExtendHalfword (c,rd,rm) -> (ctags c, [oi rd; oi rm])
       | UnsignedMultiplyAccumulateLong (s, c, rdlo, rdhi, rn, rm) ->
          (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
-      | UnsignedMultiplyLong (s,c,rdlo,rdhi,rn,rm) ->
+      | UnsignedMultiplyLong (s, c, rdlo, rdhi, rn, rm) ->
          (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | UnsignedSaturatingSubtract8 (c, rd, rn, rm) ->
          (ctags c, [oi rd; oi rn; oi rm])
@@ -339,10 +339,14 @@ object (self)
          (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorAddWide (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorBitwiseAnd (c, dst, src1, src2) ->
+         (ctags c, [oi dst; oi src1; oi src2])
       | VectorBitwiseBitClear (c, dt, dst, imm) ->
          (ctags c, [di dt; oi dst; oi imm])
       | VectorBitwiseExclusiveOr (c, dst, src1, src2) ->
          (ctags c, [oi dst; oi src1; oi src2])
+      | VectorBitwiseNot (c, dt, dst, src) ->
+         (ctags c, [di dt; oi dst; oi src])
       | VectorBitwiseOr (c, dst, src1, src2) ->
          (ctags c, [oi dst; oi src1; oi src2])
       | VCompare (nan, c, dt, op1, op2) ->
@@ -354,6 +358,8 @@ object (self)
          (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorDuplicate (c, dt, regs, elements, dst, src) ->
          (ctags c, [di dt; regs; elements; oi dst; oi src])
+      | VectorExtract (c, dt, dst, src1, src2, imm) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2; oi imm])
       | VectorLoadMultipleIncrementAfter (wb, c, rn, rl, mem) ->
          (ctags c, [setb wb; oi rn; oi rl; oi mem])
       | VectorLoadOne (wb, c, sz, rl, rn, mem, rm) ->
@@ -362,13 +368,31 @@ object (self)
          (ctags c, [oi dst; oi base; oi mem])
       | VectorMove (c, dt, ops) -> (ctags c, (di dt)::(List.map oi ops))
       | VectorMoveLong (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
+      | VectorMoveNarrow (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
       | VMoveRegisterStatus (c, dst, src) -> (ctags c, [oi dst; oi src])
       | VMoveToSystemRegister (c, dst, src) -> (ctags c, [oi dst; oi src])
       | VectorMultiply (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorMultiplyAccumulateLong (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorMultiplyLong (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorNegate (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
+      | VectorPop (c, sp, rl, mem) -> (ctags c, [oi sp; oi rl; oi mem])
       | VectorPush (c, sp, rl, mem) -> (ctags c, [oi sp; oi rl; oi mem])
+      | VectorReverseDoublewords (c, dt, dst, src) ->
+         (ctags c, [di dt; oi dst; oi src])
+      | VectorReverseHalfwords (c, dt, dst, src) ->
+         (ctags c, [di dt; oi dst; oi src])
+      | VectorReverseWords (c, dt, dst, src) ->
+         (ctags c, [di dt; oi dst; oi src])
       | VectorRoundingShiftRightAccumulate (c, dt, dst, src, imm) ->
+         (ctags c, [di dt; oi dst; oi src; oi imm])
+      | VectorShiftLeft (c, dt, dst, src, src2) ->
+         (ctags c, [di dt; oi dst; oi src; oi src2])
+      | VectorShiftRight (c, dt, dst, src, imm) ->
+         (ctags c, [di dt; oi dst; oi src; oi imm])
+      | VectorShiftRightInsert (c, dt, dst, src, imm) ->
          (ctags c, [di dt; oi dst; oi src; oi imm])
       | VectorShiftRightAccumulate (c, dt, dst, src, imm) ->
          (ctags c, [di dt; oi dst; oi src; oi imm])
@@ -382,10 +406,14 @@ object (self)
          (ctags c, [setb wb; di sz; oi rl; oi rn; oi mem; oi rm])
       | VectorSubtract (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorTranspose (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
+
       | OpInvalid | NotCode _ -> (tags,[])
       | NoOperation c -> (ctags c, [])
       | PermanentlyUndefined (c,op) -> (ctags c, [oi op])
       | NotRecognized (name, dw) -> (tags @ [name; dw#to_hex_string], [])
+      | OpcodeUndefined s -> (tags, [bd#index_string s])
+      | OpcodeUnpredictable s -> (tags, [bd#index_string s])
       | SupervisorCall (cond,op) -> (tags @ [ ci cond ], [ oi  op ]) in
     arm_opcode_table#add key
 

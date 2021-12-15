@@ -558,6 +558,7 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
+      * bool             (* T.W. *)
   | SignedExtendHalfword of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
@@ -761,6 +762,11 @@ type arm_opcode_t =
       * arm_operand_int (* destination *)
       * arm_operand_int (* source 1 *)
       * arm_operand_int (* source 2 *)
+  | VectorBitwiseAnd of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
   | VectorBitwiseBitClear of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* data type *)
@@ -771,6 +777,11 @@ type arm_opcode_t =
       * arm_operand_int (* destination *)
       * arm_operand_int (* source 1 *)
       * arm_operand_int (* source 2 *)
+  | VectorBitwiseNot of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
   | VectorBitwiseOr of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* destination *)
@@ -802,6 +813,13 @@ type arm_opcode_t =
       * int             (* number of elements *)
       * arm_operand_int (* floating-point destination register *)
       * arm_operand_int (* source register *)
+  | VectorExtract of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+      * arm_operand_int (* imm *)
   | VectorLoadMultipleIncrementAfter of
       bool    (* writeback *)
       * arm_opcode_cc_t  (* condition *)
@@ -830,6 +848,11 @@ type arm_opcode_t =
       * vfp_datatype_t  (* size *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
+  | VectorMoveNarrow of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* size *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
   | VMoveRegisterStatus of   (* VMRS *)
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* destination *)
@@ -844,17 +867,67 @@ type arm_opcode_t =
       * arm_operand_int (* destination *)
       * arm_operand_int (* source 1 *)
       * arm_operand_int (* source 2 *)
+  | VectorMultiplyAccumulateLong of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+  | VectorMultiplyLong of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
   | VectorNegate of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* data type *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
+  | VectorPop of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* stack pointer *)
+      * arm_operand_int (* list of extension register *)
+      * arm_operand_int (* memory *)
   | VectorPush of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* stack pointer *)
       * arm_operand_int (* list of extension registers *)
       * arm_operand_int (* memory *)
+  | VectorReverseDoublewords of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
+  | VectorReverseHalfwords of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
+  | VectorReverseWords of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
   | VectorRoundingShiftRightAccumulate of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source register *)
+      * arm_operand_int (* source immediate *)
+  | VectorShiftLeft of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source register *)
+      * arm_operand_int (* source immediate / source register *)
+  | VectorShiftRight of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source register *)
+      * arm_operand_int (* source immediate *)
+  | VectorShiftRightInsert of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* data type *)
       * arm_operand_int (* destination *)
@@ -899,14 +972,22 @@ type arm_opcode_t =
       * arm_operand_int (* destination *)
       * arm_operand_int (* source 1 *)
       * arm_operand_int (* source 2 *)
+  | VectorTranspose of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* size *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
 
   (* SupervisorType *)
   | SupervisorCall of arm_opcode_cc_t * arm_operand_int
+
   (* Misc *)
   | OpInvalid
   | PermanentlyUndefined of arm_opcode_cc_t * arm_operand_int
   | NoOperation of arm_opcode_cc_t (* condition *)
   | NotRecognized of string * doubleword_int
+  | OpcodeUndefined of string
+  | OpcodeUnpredictable of string
   | NotCode of not_code_t option
 
 
