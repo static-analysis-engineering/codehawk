@@ -597,12 +597,15 @@ let main () =
         save_arm_dictionary ();
         save_interface_dictionary ();
         save_bdictionary ();
-        (file_output#saveFile
-           (get_asm_listing_filename ())
-           (STR ((!BCHARMAssemblyInstructions.arm_assembly_instructions)#toString ())));
-        file_output#saveFile
-          (get_orphan_code_listing_filename ())
-          (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)));
+        (if !save_asm then
+           begin
+             file_output#saveFile
+               (get_asm_listing_filename ())
+               (STR ((!BCHARMAssemblyInstructions.arm_assembly_instructions)#toString ()));
+             file_output#saveFile
+               (get_orphan_code_listing_filename ())
+               (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)))
+           end);
         save_log_files logcmd;
         exit 0
       end
