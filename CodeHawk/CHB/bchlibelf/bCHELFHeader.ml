@@ -377,18 +377,21 @@ object(self)
     let fileString = system_info#get_file_string wordzero in
     let input = IO.input_string fileString in
     begin
-      e_ident <- Bytes.to_string (IO.really_nread input 16) ;
+      e_ident <- Bytes.to_string (IO.really_nread input 16);
       self#check_elf ;
       self#set_endianness ;
-      elf_file_header#read ;
-      pr_debug [ STR "File header" ; NL ; elf_file_header#toPretty ; NL ] ;
+      elf_file_header#read;
+      pr_debug [STR "File header"; NL; elf_file_header#toPretty; NL];
+      (if elf_file_header#get_type = 1 then
+         pr_debug [STR "File is an object file, not an executable!"; NL]);
       self#read_program_headers ;
-      H.iter (fun k v -> pr_debug [ v#toPretty ; NL ]) program_header_table ;
+      H.iter (fun k v -> pr_debug [v#toPretty; NL]) program_header_table;
       (if elf_file_header#get_section_header_table_entry_num = 0 then
          self#create_section_headers
        else
          self#read_section_headers) ;
-      pr_debug [ STR "Number of sections: " ; INT (H.length section_header_table) ; NL ] ;
+      pr_debug [
+          STR "Number of sections: "; INT (H.length section_header_table); NL];
       self#set_section_header_names ;
       self#set_symbol_names ;
       self#set_dynamic_symbol_names ;
@@ -739,15 +742,18 @@ object(self)
       (if (String.sub e_ident 1 3) = "ELF" then () else 
 	  raise (BCH_failure (STR "ELF header is missing"))) ;
       (if (String.get e_ident 4) = '\001' then () else
-	  raise (BCH_failure (STR "ELF file is not a 32 bit executable")))
+	 raise (BCH_failure (STR "ELF file is not a 32 bit executable")));
+      (if elf_file_header#get_type = 1 then
+         chlog#add "disassembly" (STR "Object file"))
     end
 
   method private set_endianness =
     let endianness = String.get e_ident 5 in
     if endianness = '\001' then 
-      let _ = pr_debug [ STR "Little endian (default)" ; NL ] in ()   (* default case *)
+      let _ =
+        pr_debug [STR "Little endian (default)"; NL] in ()   (* default case *)
     else if endianness = '\002' then 
-      let _ = pr_debug [ STR "Set big endian" ; NL ] in
+      let _ = pr_debug [STR "Set big endian"; NL] in
       system_info#set_big_endian
     else raise (BCH_failure (STR ("Unknown endianness in ELF file")))
 
@@ -804,8 +810,9 @@ object(self)
         let segment = make_elf_segment ph xString in
         H.add segment_table index segment
       else
-        raise (BCH_failure
-              (LBLOCK [ STR "No segment header found for index " ; INT index ]))
+        raise
+          (BCH_failure
+             (LBLOCK [STR "No segment header found for index "; INT index]))
 
   method private write_xml_program_headers (node:xml_element_int) =
     let headers = ref [] in

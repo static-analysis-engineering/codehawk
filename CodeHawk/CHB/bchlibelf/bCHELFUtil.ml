@@ -269,9 +269,16 @@ let doubleword_to_dynamic_tag_record (tag:doubleword_int) =
   else if system_info#is_mips then
     if H.mem mips_dynamic_tag_table s_tag then
       H.find mips_dynamic_tag_table s_tag
-    else default
+    else
+      begin
+        chlog#add "dynamic tag unknown" (STR s_tag);
+        default
+      end
   else
-    default
+    begin
+      chlog#add "dynamic tag unknown" (STR s_tag);
+      default
+    end
 
 let doubleword_to_dynamic_tag (tag:doubleword_int) =
   let (dtag,_,_) = doubleword_to_dynamic_tag_record tag in dtag
@@ -281,6 +288,90 @@ let doubleword_to_dynamic_tag_name (tag:doubleword_int) =
 
 let doubleword_to_dynamic_tag_value (tag:doubleword_int) =
   let (_,dval,_) = doubleword_to_dynamic_tag_record tag in dval
+
+
+let arm_relocation_tag_table = H.create 93
+
+(* rtype: S: Static, D: Dynamic, Dep: Deprecated, Obs: Obsolete *)
+(* rclass: A: Arm, D: Data, T32: Thumb32, T16: Thumb16, M: Miscellaneous *)
+let _ =
+  List.iter
+    (fun (dw, tag, tagstr, rtype, rclass) ->
+      H.add arm_relocation_tag_table dw (tag, tagvalue, tagstr))
+    [("0x0", R_ARM_NONE, "R_ARM_NONE", "S", "M");
+     ("0x1", R_ARM_PC24, "R_ARM_PC24", "Dep", "A");
+     ("0x2", R_ARM_ABS32, "R_ARM_ABS32", "S", "D");
+     ("0x3", R_ARM_REL32, "R_ARM_REL32", "S", "D");
+     ("0x4", R_ARM_LDR_PC_G0, "R_ARM_LDR_PC_G0", "S", "A");
+     ("0x5", R_ARM_ABS16, "R_ARM_ABS16", "S", "D");
+     ("0x6", R_ARM_ABS12, "R_ARM_ABS12", "S", "A");
+     ("0x7", R_ARM_THM_ABS5, "R_ARM_THM_ABS5", "S", "T16");
+     ("0x8", R_ARM_ABS8, "R_ARM_ABS8", "S", "D");
+     ("0x9", R_ARM_SBREL32, "R_ARM_SBREL32", "S", "D");
+     ("0xa", R_ARM_THM_CALL, "R_ARM_THM_CALL", "S", "T32");
+     ("0xb", R_ARM_THM_PC8, "R_ARM_THM_PC8", "S", "T16");
+     ("0xc", R_ARM_BREL_ADJ, "R_ARM_BREL_ADJ", "D", "D");
+     ("0xd", R_ARM_TLS_DESC, "R_ARM_TLS_DESC", "D", "D");
+     ("0xe", R_ARM_THM_SW18, "R_ARM_THM_SW18", "Obs", "X");
+     ("0xf", R_ARM_XPC25, "R_ARM_XPC25", "Obs", "X");
+     ("0x10", R_ARM_THM_XPC22, "R_ARM_XPC22", "Obs", "X");
+     ("0x11", R_ARM_TLS_DTPMOD32, "R_ARM_TLS_DTPMOD32", "D", "D");
+     ("0x12", R_ARM_TLS_DTPOFF32, "R_ARM_TLS_DTPOFF32", "D", "D");
+     ("0x13", R_ARM_TLS_TPOFF32, "R_ARM_TLS_TPOFF32", "D", "D");
+     ("0x14", R_ARM_COPY, "R_ARM_COPY", "D", "D");
+     ("0x15", R_ARM_GLOB_DAT, "R_ARM_GLOB_DAT", "D", "D");
+     ("0x16", R_ARM_JUMP_SLOT, "R_ARM_JUMP_SLOT", "D", "D");
+     ("0x17", R_ARM_RELATIVE, "R_ARM_RELATIVE", "D", "D");
+     ("0x18", R_ARM_GOTOFF32, "R_ARM_GOTOFF32", "S", "D");
+     ("0x19", R_ARM_ARM_BASE_PREL, "R_ARM_BASE_PREL", "S", "D");
+     ("0x1a", R_ARM_GOT_BREL, "R_ARM_GOT_BREL", "S", "D");
+     ("0x1b", R_ARM_PLT32, "R_ARM_PLT32", "Dep", "A");
+     ("0x1c", R_ARM_CALL, "R_ARM_CALL", "S", "A");
+     ("0x1d", R_ARM_JUMP24, "R_ARM_JUMP24", "S", "A");
+     ("0x1e", R_ARM_THM_JUMP24, "R_ARM_THM_JUMP24", "S", "T32");
+     ("0x1f", R_ARM_BASE_ABS, "R_ARM_BASE_ABS", "S", "D");
+     ("0x20", R_ARM_ALU_PCREL_7_0, "R_ARM_ALU_PCREL_7_0", "Obs", "X");
+     ("0x21", R_ARM_ALU_PCREL_15_8, "R_ARM_ALU_PCREL_15_8", "Obs", "X");
+     ("0x22", R_ARM_ALU_PCREL_23_15, "R_ARM_ALU_PCREL_23_15", "Obs", "X");
+     ("0x23", R_ARM_LDR_SBREL_11_0_NC, "R_ARM_LDR_SBREL_11_0_NC", "Dep", "A");
+     ("0x24", R_ARM_ALU_SBREL_19_12_NC, "R_ARM_ALU_SBREL_19_12_NC", "Dep", "A");
+     ("0x25", R_ARM_ALU_SBREL_27_20_CK, "R_ARM_ALU_SBREL_27_20_CK", "Dep", "A");
+     ("0x26", R_ARM_TARGET1, "R_ARM_TARGET1", "S", "M");
+     ("0x27", R_ARM_SBREL31, "R_ARM_SBREL31", "Dep", "D");
+     ("0x28", R_ARM_V4BX, "R_ARM_V4BX", "S", "M");
+     ("0x29", R_ARM_TARGET2, "R_ARM_TARGET2", "S", "M");
+     ("0x2a", R_ARM_PREL31, "R_ARM_PREL31", "S", "D");
+     ("0x2b", R_ARM_MOVW_ABS_NC, "R_ARM_MOVW_ABS_NC", "S", "A");
+     ("0x2c", R_ARM_MOVT_ABS, "R_ARM_MOVT_ABS", "S", "A");
+     ("0x2d", R_ARM_MOVW_PREL_NC, "R_ARM_MOVW_PREL_NC", "S", "A");
+     ("0x2e", R_ARM_MOVT_PREL, "R_ARM_MOVT_PREL", "S", "A");
+     ("0x2f", R_ARM_THM_MOVW_ABS_NC, "R_ARM_THM_MOVW_ABS_NC", "S", "T32");
+     ("0x30", R_ARM_THM_MOVT_ABS, "R_ARM_THM_MOVT_ABS", "S", "T32");
+     ("0x31", R_ARM_THM_MOVW_PREL_NC, "R_ARM_THM_MOVW_PREL_NC", "S", "T32");
+     ("0x32", R_ARM_THM_MOVT_PREL, "R_ARM_THM_MOVT_PREL", "S", "T32");
+     ("0x33", R_ARM_THM_JUMP19, "R_ARM_THM_JUMP19", "S", "T32");
+     ("0x34", R_ARM_THM_JUMP6, "R_ARM_THM_JUMP6", "S", "T16");
+     ("0x35", R_ARM_THM_ALU_PREL_11_0, "R_ARM_THM_ALU_PREL_11_0", "S", "T32");
+     ("0x36", R_ARM_PC12, "R_ARM_PC12", "S", "T32")
+    ]
+
+let doubleword_to_arm_relocation_tag_record (tag: doubleword_int) =
+  let s_tag = tag#to_hex_string in
+  let default = (R_ARM_Unknown s_tag, "R_ARM_Unknown:" ^ s_tag, "?", "?") in
+  if H.mem arm_relocation_tag_table s_tag then
+    H.find arm_relocation_tag_table s_tag
+  else
+    begin
+      chlog#add "arm relocation tag unknown" (STR s_tag);
+      default
+    end
+
+let doubleword_to_arm_relocation_tag (tag: doubleword_int) =
+  let (dtag, _, _) = doubleword_to_arm_relocation_tag_record tag in dtag
+
+let doubleword_to_arm_relocation_tag_name (tag: doubleword_int) =
+  let (_, s, _, _) = doubleword_to_arm_relocation_tag_record tag in s
+
 
 let doubleword_to_elf_program_header_type v =
   match v#to_hex_string with
