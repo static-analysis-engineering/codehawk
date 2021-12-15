@@ -1326,6 +1326,10 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vdst () in
      default cmds
 
+  | VectorBitwiseOr _ -> default []
+
+  | VectorBitwiseNot _ -> default []
+
   | VDivide _ -> default []
 
   | VectorDuplicate _ -> default []
@@ -1334,7 +1338,15 @@ let translate_arm_instruction
 
   | VectorNegate _ -> default []
 
+  | VectorReverseDoublewords _ -> default []
+
+  | VectorReverseWords _ -> default []
+
+  | VectorReverseHalfwords _ -> default []
+
   | VectorSubtract _ -> default []
+
+  | VectorTranspose _ -> default []
 
   | instr ->
      let _ =
