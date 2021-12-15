@@ -1863,7 +1863,16 @@ object (self)
            let name = ctinfo#get_name ^ "_rtn_" ^ self#cia in
            self#env#set_variable_name rvar name in
        ASSIGN_NUM (r0, NUM_VAR rvar) in
-     [OPERATION {op_name = opname; op_args = []}; returnassign]
+     let bridgeVars = self#env#get_bridge_values_at self#cia in
+     let sideeffect_assigns =
+       self#get_sideeffect_assigns self#get_call_target#get_semantics in
+     let defClobbered = List.map (fun r -> (ARMRegister r)) arm_temporaries in
+     let abstrRegs = List.map self#env#mk_register_variable defClobbered in
+     [OPERATION {op_name = opname; op_args = []};
+      ABSTRACT_VARS abstrRegs;
+      returnassign]
+     @ sideeffect_assigns
+     @ [ABSTRACT_VARS bridgeVars]
 
    method is_constant (var:variable_t) = self#inv#is_constant var
 
