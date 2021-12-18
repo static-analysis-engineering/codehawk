@@ -350,13 +350,15 @@ object (self)
           (List.map xd#index_xpr args)
           @ [ixd#index_call_target floc#get_call_target#get_target])
 
-      | BranchLink (_, tgt) ->
-         let xtgt = tgt#to_expr floc in
-         (["a:x"], [xd#index_xpr xtgt])
-
+      | BranchLink (_, tgt)
       | BranchLinkExchange (_, tgt) ->
          let xtgt = tgt#to_expr floc in
-         (["a:x"], [xd#index_xpr xtgt])
+         let args =
+           List.map (fun r -> arm_register_op r RD) [AR0; AR1; AR2; AR3] in
+         let argxprs = List.map (fun a -> a#to_expr floc) args in
+         let rargxprs = List.map rewrite_expr argxprs in
+         (["a:xxxxx"],
+          (xd#index_xpr xtgt) :: (List.map xd#index_xpr rargxprs))
 
       | ByteReverseWord(_, rd, rm, _) ->
          let vrd = rd#to_variable floc in
