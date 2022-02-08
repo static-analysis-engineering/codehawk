@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -156,17 +156,20 @@ object (self: _)
 
   method write_xml (node:xml_element_int) =
     let indexed_keys = self#get_indexed_keys in
-    node#appendChildren (List.map (fun (k,(tags,args)) ->
-        let knode = xmlElement "n" in
-        begin
-          knode#setIntAttribute "ix" k ;
-          (match tags with
-           | [] -> () | _ -> knode#setAttribute "t" (String.concat "," tags)) ;
-          (match args with
-           | [] -> ()
-           | _ -> knode#setAttribute "a" (String.concat "," (List.map string_of_int args))) ;
-          knode
-        end) indexed_keys)
+    node#appendChildren
+      (List.map (fun (k, (tags, args)) ->
+           let knode = xmlElement "n" in
+           begin
+             knode#setIntAttribute "ix" k ;
+             (match tags with
+              | [] -> () | _ -> knode#setAttribute "t" (String.concat "," tags)) ;
+             (match args with
+              | [] -> ()
+              | _ ->
+                 knode#setAttribute
+                   "a" (String.concat "," (List.map string_of_int args))) ;
+             knode
+           end) indexed_keys)
 
   method read_xml (node:xml_element_int) =
     let maxcount = ref 0 in
@@ -185,8 +188,11 @@ object (self: _)
             with
             | Failure _ ->
                raise (CHFailure
-                        (LBLOCK [ STR "int_of_string on " ; STR (get "a") ;
-                                  STR " in table " ; STR self#get_name ])) in
+                        (LBLOCK [
+                             STR "int_of_string on ";
+                             STR (get "a");
+                             STR " in table ";
+                             STR self#get_name])) in
           begin
             H.add table (tags,args) ix ;
             H.add revtable ix (tags,args) ;
