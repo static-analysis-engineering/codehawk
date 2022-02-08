@@ -41,12 +41,6 @@ open BCHBCSumTypeSerializer
 
 let bcd = BCHBCDictionary.bcdictionary
 
-(*
-let write_xml_int_list ?(tag="r") (node: xml_element_int) (r: int list) =
-  match r with
-  | [] -> ()
-  | _ -> node#setAttribute tag (String.concat "," (List.map string_of_int r))
- *)
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
