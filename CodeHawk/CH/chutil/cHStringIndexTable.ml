@@ -32,6 +32,7 @@ open CHCommon
 open CHPretty
 
 (* chutil *)
+open CHUtil
 open CHXmlDocument
    
 module H = Hashtbl
@@ -50,72 +51,13 @@ class type string_index_table_int =
     method read_xml : xml_element_int -> unit
   end
 
+
 let reportstring_maxlength = 20
 
-let byte_to_string (b:int) =
-  let l = b mod 16 in
-  let h = b lsr 4 in
-  Printf.sprintf "%x%x" h l
 
-let value_from_byte (b:int) =
-  if b >= 48 && b < 58 then
-    b - 48
-  else if b >= 97 && b < 103 then
-    b - 87
-  else
-    raise (CHFailure
-             (LBLOCK [ STR "Unexpected value in value_from_byte: " ; INT b ]))
-    
-let hex_string s =
-  let ch = IO.input_string s in
-  let h = ref "" in
-  let len = String.length s in
-  begin
-    for i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done ;
-    !h
-  end
+let encode_string = CHUtil.encode_string
+let decode_string = CHUtil.decode_string
 
-let dehex_string (h:string) =
-  let ch = IO.input_string h in
-  let len = String.length h in
-  let s = ref "" in
-  begin
-    for i = 0 to (len/2) - 1 do
-      let b1 = value_from_byte (IO.read_byte ch) in
-      let b2 = value_from_byte (IO.read_byte ch) in
-      let ich = b1 * 16 + b2 in
-      if ich > 255 then
-        begin
-          pr_debug [ STR "Unexpected value in dehex_string: " ; INT ich ; NL ] ;
-          raise (CHFailure (LBLOCK [ STR "Unexpected value in dehex_string: " ; INT ich ]))
-        end
-      else
-        s := !s ^ (String.make 1 (Char.chr ich))
-    done ;
-    !s
-  end
-    
-let has_control_characters s =
-  let found = ref false in
-  let _ =
-    String.iter (fun c ->
-        let code = Char.code c in
-        if (code < 32)  || (code > 126) then
-          found := true) s in
-  !found
-
-let encode_string (s:string) =
-  if has_control_characters s then
-    (true, hex_string s)
-  else 
-    (false, s)
-
-let decode_string (e:(bool * string)) =
-  let (ishex,s) = e in
-  if ishex then
-    dehex_string s
-  else
-    s
   
 class string_index_table_t (name:string):string_index_table_int =
 object (self)

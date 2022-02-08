@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +32,16 @@
 val string_replace: char -> string -> string -> string
 val string_nsplit: char -> string -> string list
 
+val has_control_characters: string -> bool
+val byte_to_string: int -> string
+val value_from_byte: int -> int
+
+val hex_string: string -> string
+val dehex_string: string -> string
+
+val encode_string: string -> bool * string
+val decode_string: bool * string -> string
+
 (* list functions *)
 val list_split: int -> 'a list -> ('a list * 'a list)
 val list_split_p: ('a -> bool) -> 'a list -> ('a list * 'a list)
@@ -50,3 +62,7 @@ val remove_duplicates_f: 'a list -> ('a ->'a -> bool) -> 'a list
 val array_fold_lefti: ('b -> int -> 'a -> 'b) -> 'b ->  'a array -> 'b
 
 val xproduct: 'a list -> 'a list -> ('a * 'a) list
+
+
+(* other comparison functions *)
+val optvalue_compare: 'a option -> 'a option -> ('a -> 'a -> int) -> int

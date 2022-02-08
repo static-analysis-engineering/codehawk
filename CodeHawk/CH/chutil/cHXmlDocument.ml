@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -163,6 +163,7 @@ object ('a)
   method setGroupString: string -> unit
   method setAttribute: string -> string -> unit
   method setIntAttribute: string -> int -> unit
+  method setIntListAttribute: string -> int list -> unit
   method setPrettyAttribute: string -> pretty_t -> unit
   method setYesNoAttribute: string -> bool -> unit
   method setBoolAttribute: string -> bool -> unit
@@ -177,6 +178,7 @@ object ('a)
   method getTaggedChildren: string -> 'a list
   method getAttribute: string -> string
   method getIntAttribute: string -> int
+  method getIntListAttribute: string -> int list
   method getYesNoAttribute: string -> bool
   method getBoolAttribute: string -> bool
   method getDefaultAttribute: string -> string -> string
@@ -291,13 +293,22 @@ object (self: 'a)
     | [] ->
        raise_error
          self#getLineNumber self#getColumnNumber 
-	 (LBLOCK [ STR "Element " ; STR tag ;
-                   STR " does not have any children with tag " ; 
-		   STR childtag ;
-		   pretty_print_list children (fun c -> STR c#getTag) " [" "," "]" ])
+	 (LBLOCK [
+              STR "Element ";
+              STR tag;
+              STR " does not have any children with tag ";
+	      STR childtag;
+	      pretty_print_list children (fun c -> STR c#getTag) " [" "," "]"])
     | [c] -> c
-    | _ -> raise_error self#getLineNumber self#getColumnNumber
-      (LBLOCK [ STR "Element " ; STR tag ; STR " has multiple children with tag " ; STR childtag ])
+    | _ ->
+       raise_error
+         self#getLineNumber
+         self#getColumnNumber
+         (LBLOCK [
+              STR "Element ";
+              STR tag;
+              STR " has multiple children with tag ";
+              STR childtag])
 
   method getTaggedChildren (childtag:string):'a list =
     List.filter (fun n -> (n#getTag = childtag)) children
@@ -310,9 +321,12 @@ object (self: 'a)
     | _ ->
        raise_error
          self#getLineNumber self#getColumnNumber
-	 (LBLOCK [ STR "Element " ; STR tag ; STR " does not have an attribute " ; 
-		   STR attribute_tag ])
-      
+	 (LBLOCK [
+              STR "Element ";
+              STR tag;
+              STR " does not have an attribute ";
+	      STR attribute_tag])
+
   method getIntAttribute (attribute_tag:string):int =
     let attribute = self#getAttribute attribute_tag in
     try
@@ -322,8 +336,37 @@ object (self: 'a)
     | Invalid_argument _ ->
        raise_error
          self#getLineNumber self#getColumnNumber
-	 (LBLOCK [ STR "Element " ; STR tag ; STR " attribute " ; STR attribute_tag ; 
-		   STR " is not an integer (value: " ; STR attribute ; STR ")" ])
+	 (LBLOCK [
+              STR "Element ";
+              STR tag;
+              STR " attribute ";
+              STR attribute_tag;
+	      STR " is not an integer (value: ";
+              STR attribute ; STR ")"])
+
+  (* Return a list of integers or an empty list if the tag is not present. *)
+  method getIntListAttribute (attribute_tag: string): int list =
+    if self#hasNamedAttribute attribute_tag then
+      let attribute = self#getAttribute attribute_tag in
+      try
+        let slist = string_nsplit ',' attribute in
+        List.map int_of_string slist
+      with
+      | Failure _
+        | Invalid_argument _ ->
+         raise_error
+           self#getLineNumber
+           self#getColumnNumber
+           (LBLOCK [
+                STR "Element ";
+                STR tag;
+                STR " attribute ";
+                STR attribute_tag;
+                STR " is not a list of integers (value: ";
+                STR attribute;
+                STR ")"])
+    else
+      []
 
   method getYesNoAttribute (attribute_tag:string):bool =
     try
@@ -399,6 +442,14 @@ object (self: 'a)
     
   method setIntAttribute (attr:string) (attr_value:int) =
     self#setAttribute attr (string_of_int attr_value)
+
+  (* only set the attribute if the list is non-empty *)
+  method setIntListAttribute (attr: string) (attr_value: int list) =
+    match attr_value with
+    | [] -> ()
+    | l ->
+       let slist = String.concat "," (List.map string_of_int l) in
+       self#setAttribute attr slist
     
   method setPrettyAttribute (attr:string) (attr_value:pretty_t) =
     self#setAttribute attr (string_printer#print attr_value)

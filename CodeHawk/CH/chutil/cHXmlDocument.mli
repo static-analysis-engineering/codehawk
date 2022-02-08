@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -52,9 +54,10 @@ object ('a)
   method setGroupString: string -> unit
   method setAttribute: string -> string -> unit
   method setIntAttribute: string -> int -> unit
+  method setIntListAttribute: string -> int list -> unit
   method setPrettyAttribute: string -> pretty_t -> unit
   method setYesNoAttribute: string -> bool -> unit
-	method setBoolAttribute: string -> bool -> unit
+  method setBoolAttribute: string -> bool -> unit
   method setLineNumber: int -> unit
   method setColumnNumber: int -> unit
 
@@ -66,6 +69,7 @@ object ('a)
   method getTaggedChildren: string -> 'a list
   method getAttribute: string -> string
   method getIntAttribute: string -> int
+  method getIntListAttribute: string -> int list
   method getYesNoAttribute: string -> bool
   method getBoolAttribute: string -> bool
   method getDefaultAttribute: string -> string -> string
@@ -94,12 +98,14 @@ object ('a)
   method toPretty: pretty_t
 end
 
+
 class type xml_document_int =
 object
   method setNode: xml_element_int -> unit
   method getRoot: xml_element_int
   method toPretty: pretty_t
 end
+
 
 val replace: char -> string -> string -> string
 

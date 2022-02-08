@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,14 +27,21 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHCommon
+open CHPretty
+
 
 let rec string_replace (c:char) (r:string) (s:string):string =
   try
     let i = String.index s c in
     let prefix = String.sub s 0 i in
-    let suffix = string_replace c r (String.sub s (i+1) ((String.length s) - i -1)) in
+    let suffix =
+      string_replace c r (String.sub s (i+1) ((String.length s) - i -1)) in
     prefix ^ r ^ suffix
-  with Not_found -> s
+  with
+  | Not_found -> s
+
 
 let string_nsplit (separator:char) (s:string):string list =
   let result = ref [] in
@@ -42,16 +49,95 @@ let string_nsplit (separator:char) (s:string):string list =
   let start = ref 0 in
   begin
     while !start < len do
-      let s_index = try String.index_from s !start separator with Not_found -> len in
+      let s_index =
+        try
+          String.index_from s !start separator
+        with
+        | Not_found -> len in
       let substring = String.sub s !start (s_index - !start) in
       begin
 	result := substring :: !result ;
 	start := s_index + 1
       end 
     done;
-    !result
+    List.rev !result
   end
-  
+
+
+let byte_to_string (b: int): string =
+  let l = b mod 16 in
+  let h = b lsr 4 in
+  Printf.sprintf "%x%x" h l
+
+
+let value_from_byte (b: int): int =
+  if b >= 48 && b < 58 then
+    b - 48
+  else if b >= 97 && b < 103 then
+    b - 87
+  else
+    raise
+      (CHFailure
+         (LBLOCK [STR "Unexpected value in value_from_byte: "; INT b]))
+
+
+let has_control_characters (s: string): bool =
+  let found = ref false in
+  let _ =
+    String.iter (fun c ->
+        let code = Char.code c in
+        if (code < 32)  || (code > 126) then
+          found := true) s in
+  !found
+
+
+let hex_string (s: string): string =
+  let ch = IO.input_string s in
+  let h = ref "" in
+  let len = String.length s in
+  begin
+    for i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done ;
+    !h
+  end
+
+
+let dehex_string (h: string): string =
+  let ch = IO.input_string h in
+  let len = String.length h in
+  let s = ref "" in
+  begin
+    for i = 0 to (len/2) - 1 do
+      let b1 = value_from_byte (IO.read_byte ch) in
+      let b2 = value_from_byte (IO.read_byte ch) in
+      let ich = b1 * 16 + b2 in
+      if ich > 255 then
+        begin
+          pr_debug [STR "Unexpected value in dehex_string: "; INT ich; NL];
+          raise
+            (CHFailure
+               (LBLOCK [STR "Unexpected value in dehex_string: "; INT ich]))
+        end
+      else
+        s := !s ^ (String.make 1 (Char.chr ich))
+    done ;
+    !s
+  end
+
+
+let encode_string (s:string): (bool * string) =
+  if has_control_characters s then
+    (true, hex_string s)
+  else
+    (false, s)
+
+
+let decode_string (e:(bool * string)): string =
+  let (ishex,s) = e in
+  if ishex then
+    dehex_string s
+  else
+    s
+
 
 (* Split a list into two lists, the first one with n elements,
    the second list with the remaining (if any) elements
@@ -98,7 +184,8 @@ let remove_duplicates_f (l:'a list) (f:'a -> 'a -> bool):'a list =
   let rec aux l r =
     match l with
     | [] -> r
-    | h::tl -> if List.exists (fun e -> f e h) r then (aux tl r) else (aux tl (h::r)) in
+    | h::tl ->
+       if List.exists (fun e -> f e h) r then (aux tl r) else (aux tl (h::r)) in
   List.rev (aux l [])
 
 (* Return the union of two lists, using f as an equality check *)
@@ -110,7 +197,8 @@ let list_difference (l:'a list) (s:'a list) (f:'a -> 'a -> bool):'a list =
     let rec aux l r =
       match l with
       | [] -> r
-      | h::tl -> if List.exists (fun e -> f h e) s then (aux tl r) else (aux tl (h::r)) in
+      | h::tl ->
+         if List.exists (fun e -> f h e) s then (aux tl r) else (aux tl (h::r)) in
     aux l []
 
 (* Return the maximum element from a list, using f as comparison function *)
@@ -120,13 +208,31 @@ let list_maxf (l:'a list) (f:'a -> 'a -> int):'a =
     | _ ->
 	List.fold_right (fun e m -> if f e m = 1 then e else m) l (List.hd l)
 
-(* Compares two lists of equal length element by element, using f as comparison function *)
+
+(* Compares two lists; if they are of unequal length, the shorter is smaller,
+   if they have the same length, the element-wise comparison using the
+   provided function decides  *)
 let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
-    if (List.length l1) = (List.length l2) then
-      let c = List.fold_left2 (fun a e1 e2 -> if a = 0 then (f e1 e2) else a) 0 l1 l2 in
-      Stdlib.compare c 0
-    else
-      failwith "List.lcompare : not applicable to lists of unequal length"
+  let length = List.length in
+  if (length l1) < (length l2) then
+    -1
+  else if (length l1) > (length l2) then
+    1
+  else
+    List.fold_left2
+      (fun a e1 e2 -> if a = 0 then (f e1 e2) else a) 0 l1 l2
+
+
+  (* Compares to optional values, with the Some value smaller than None,
+     two None values are considered equal, and otherwise the provided
+     function decides *)
+let optvalue_compare (o1:'a option) (o2:'a option) (f:'a -> 'a -> int): int =
+  match (o1,o2) with
+  | (Some v1, Some v2) -> f v1 v2
+  | (Some _, _) -> -1
+  | (_, Some _) -> 1
+  | (None, None) -> 0
+
 
 (* create the cross product of two lists *)
 let xproduct (l1:'a list) (l2:'a list):('a * 'a) list =
