@@ -34,9 +34,7 @@
      <btype tname="WORD" ttag="tnamed"/>
     </par>
     <par loc="stack" desc="windows sockets implementation" io="w" name="lpWSAData" nr="2">
-     <btype ttag="tptr">
-      <typ tname="WSADATA" ttag="tnamed"/>
-     </btype>
+     <type><ptr>WSADATA</ptr></type>
      <roles>
         <role rt="ioc:network" rn="windows sockets implementation"/>
      </roles>

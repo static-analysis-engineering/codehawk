@@ -45,9 +45,7 @@
      </roles>
     </par>
     <par loc="stack" desc="event object handles" io="r" name="lphEvents" nr="2">
-     <btype ttag="tptr">
-      <typ tname="WSAEVENT" ttag="tnamed"/>
-     </btype>
+     <type><ptr>WSAEVENT</ptr></type>
      <roles>
         <role rt="ioc:network" rn="event objects"/>
         <role rt="ioc:synchronization" rn="event objects"/>

@@ -28,9 +28,9 @@
     </apidoc>
    </documentation>
    <api adj="8" cc="stdcall" name="GetProcAddress">
-    <returnbtype ttag="tfun">
-      <typ ttag="tvoid"/>
-    </returnbtype>
+     <returntype>
+       <ptr>void</ptr>
+    </returntype>
     <par loc="stack" desc="module handle" io="r" name="hModule" nr="1">
       <type>HMODULE</type>
       <pre><deref-read/></pre>

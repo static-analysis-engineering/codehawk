@@ -12,9 +12,7 @@
     </apidoc>
    </documentation>
    <api adj="0" cc="cdecl" name="_strtime">
-    <returnbtype ttag="tptr">
-     <typ tname="char" ttag="tnamed"/>
-    </returnbtype>
+    <returntype><ptr>char</ptr></returntype>
     <par loc="stack" io="w" name="timestr" rep="hex" nr="1">
      <roles>
       <role rt="ioc:memops" rn="dst-string:formatted data" />
