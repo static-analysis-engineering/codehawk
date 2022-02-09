@@ -79,6 +79,10 @@ object (self)
 		STR " bytes"; NL]
 	 | _ -> STR "");
 	STR (string_repeat "-" 80); NL;
+        STR "* Major changes since version 0.5.0;"; NL;
+        STR "* - add option to import summaries written as parseable C code ";
+        STR "(using CIL);"; NL;
+        STR "* - integration of CIL-based types."; NL;
         STR "* Major changes since version 0.4.0:"; NL;
         STR "* - remove external libraries extlib and camlzip"; NL;
 	STR "* Major changes since version 0.3.0:"; NL;
@@ -89,7 +93,7 @@ end
 
 
 let version = new version_info_t 
-  ~version:"0.5.1_20211201"
-  ~date:"Dec 1, 2021"
+  ~version:"0.6.0_20220208"
+  ~date:"Feb 8, 2022"
   ~licensee: None
   ~maxfilesize: None

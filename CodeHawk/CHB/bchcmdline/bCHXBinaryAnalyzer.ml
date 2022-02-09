@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,9 @@ open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
 open CHXmlReader
+
+(* bchcil *)
+open BCHParseCilFile
 
 (* bchlib *)
 open BCHBasicTypes
@@ -168,7 +171,9 @@ let speclist =
     ("-save_asm", Arg.Unit (fun () -> save_asm := true),
      "save assembly listing in the analysis directory");
     ("-specialization", Arg.String specializations#activate_specialization,
-     "apply named specialization")
+     "apply named specialization");
+    ("-ifile", Arg.String system_info#add_ifile,
+     "parse a preprocessed c file with cil")
   ]
 
 let usage_msg = "chx86_analyze <options> <name of executable file>"
@@ -418,6 +423,7 @@ let main () =
       let t = ref (Unix.gettimeofday ()) in
       let _ = pr_debug [ STR "Load ARM file ..." ; NL ] in
       let _ = load_elf_files () in
+      let _ = List.iter parse_cil_file system_info#ifiles in
       let _ = pr_debug [ STR "disassemble sections ..." ; NL ] in
       let _ = disassemble_arm_sections () in
       let _ = disassembly_summary#record_disassembly_time
@@ -444,6 +450,7 @@ let main () =
             save_system_info ();
             save_arm_dictionary ();
             save_interface_dictionary ();
+            save_bcdictionary ();
             save_bdictionary ()
           end;
         save_log_files "disassemble"
@@ -536,20 +543,25 @@ let main () =
       let starttime = Unix.gettimeofday () in
       let _ = system_info#set_elf in
       let _ = system_info#set_mips in
+      let _ = load_bcdictionary () in
       let _ = load_bdictionary () in
+      let _ = load_bc_files () in
       let _ = system_info#initialize in
       let _ = load_interface_dictionary () in
       let _ = load_mips_dictionary () in
       let _ = global_system_state#initialize in
       let _ = file_metrics#load_xml in
       let _ = load_elf_files () in
+      let _ = List.iter parse_cil_file system_info#ifiles in
       let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
       let _ = disassemble_mips_sections () in
       let _ = construct_functions_mips () in
       let _ = mips_assembly_functions#inline_blocks in
       let _ = analyze_mips starttime in
-      let _ = file_metrics#set_disassembly_results (get_mips_disassembly_metrics ()) in      
+      let _ =
+        file_metrics#set_disassembly_results
+          (get_mips_disassembly_metrics ()) in
       begin
 	save_functions_list ();
 	save_system_info ();
@@ -558,7 +570,9 @@ let main () =
         mips_analysis_results#save;
         save_mips_assembly_instructions ();
         save_mips_dictionary ();
+        save_bc_files ();
         save_interface_dictionary ();
+        save_bcdictionary ();
         save_bdictionary ();
         (file_output#saveFile
            (get_asm_listing_filename ())
@@ -574,19 +588,23 @@ let main () =
       let starttime = Unix.gettimeofday () in
       let _ = system_info#set_elf in
       let _ = system_info#set_arm in
+      let _ = load_bcdictionary () in
       let _ = load_bdictionary () in
+      let _ = load_bc_files () in
       let _ = system_info#initialize in
       let _ = load_interface_dictionary () in
       let _ = load_arm_dictionary () in
       let _ = global_system_state#initialize in
       let _ = file_metrics#load_xml in
       let _ = load_elf_files () in
+      let _ = List.iter parse_cil_file system_info#ifiles in
       let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
       let _ = disassemble_arm_sections () in
       let _ = construct_functions_arm () in
       let _ = analyze_arm starttime in
-      let _ = file_metrics#set_disassembly_results (get_arm_disassembly_metrics ()) in
+      let _ = file_metrics#set_disassembly_results
+                (get_arm_disassembly_metrics ()) in
       begin
         save_functions_list ();
         save_system_info ();
@@ -595,7 +613,9 @@ let main () =
         arm_analysis_results#save;
         save_arm_assembly_instructions ();
         save_arm_dictionary ();
+        save_bc_files ();
         save_interface_dictionary ();
+        save_bcdictionary ();
         save_bdictionary ();
         (if !save_asm then
            begin
@@ -653,7 +673,7 @@ let main () =
     end
 
   | CHCommon.CHFailure p
-  | BCH_failure p ->
+    | BCH_failure p ->
     begin
       save_log_files "failure" ;
       pr_debug [ STR "Failure: " ; p ; NL ] ;

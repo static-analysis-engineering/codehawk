@@ -2,6 +2,7 @@ CODEHAWK = ../..
 CHB = $(CODEHAWK)/CHB
 
 ZARITHLIB = $(shell ocamlfind query zarith)
+CIL = $(shell ocamlfind query cil)
 
 THISDIR=$(shell pwd)
 COBJ=$(THISDIR)/cobj
@@ -12,6 +13,7 @@ ZIPLIB = $(shell ocamlfind query zip)
 CHUTIL = $(CODEHAWK)/CH/chutil
 XPRLIB = $(CODEHAWK)/CH/xprlib
 BCHLIB = $(CHB)/bchlib
+BCHCIL = $(CHB)/bchcil
 PELIB  = $(CHB)/bchlibpe
 ELFLIB = $(CHB)/bchlibelf
 X86LIB = $(CHB)/bchlibx86
@@ -25,9 +27,11 @@ CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(EXTLIB) \
 	-I $(ZIPLIB) \
 	-I $(ZARITHLIB) \
+	-I $(CIL) \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
+	-I $(BCHCIL)/cmi \
 	-I $(BCHLIB)/cmi \
 	-I $(PELIB)/cmi \
 	-I $(ELFLIB)/cmi \
@@ -39,12 +43,15 @@ CAMLC := ocamlopt -I str -I cmi -I cmx \
 CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	-I $(ZIPLIB) \
 	-I $(ZARITHLIB) \
+	-I $(CIL) \
 	$(ZARITHLIB)/zarith.cmxa \
 	$(EXTLIB)/extLib.cmxa \
 	$(ZIPLIB)/zip.cmxa \
 	$(CHLIB)/chlib.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(XPRLIB)/xpr.cmxa \
+	$(CIL)/cil.cmxa \
+	$(BCHCIL)/bchcil.cmxa \
 	$(BCHLIB)/bchlib.cmxa \
 	$(PELIB)/bchlibpe.cmxa \
 	$(ELFLIB)/bchlibelf.cmxa \
@@ -69,7 +76,7 @@ make_dirs:
 
 defs: make_dirs libsum appsum constsum classsum structdef
 
-xanalyzer:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPSLIB)/bchlibmips32.cmxa $(ARMLIB)/bchlibarm32.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bCHVersion.cmi cmx/bCHVersion.cmx cmi/bCHXBinaryAnalyzer.cmi cmx/bCHXBinaryAnalyzer.cmx
+xanalyzer:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CIL)/cil.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHCIL)/bchcil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPSLIB)/bchlibmips32.cmxa $(ARMLIB)/bchlibarm32.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bCHVersion.cmi cmx/bCHVersion.cmx cmi/bCHXBinaryAnalyzer.cmi cmx/bCHXBinaryAnalyzer.cmx
 	$(CAMLLINK) -o chx86_analyze cmx/bCHVersion.cmx cmx/bCHXBinaryAnalyzer.cmx
 
 inspect: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa cmi/bCHXInspectSummaries.cmi cmx/bCHXInspectSummaries.cmx
