@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,9 @@ open CHFormatStringParser
 open CHLogger
 open CHXmlDocument
 open CHXmlReader
+
+(* bchcil *)
+open BCHCBasicTypes
 
 (* bchlib *)
 open BCHBasicTypes
@@ -100,49 +103,6 @@ let parameter_location_compare l1 l2 =
 let fts_parameter_compare (p1: fts_parameter_t) (p2: fts_parameter_t) =
   parameter_location_compare p1.apar_location p2.apar_location
 
-
-(* ---------------------------------------------------------------- write xml *)
-
-let write_xml_parameter_location
-      (node:xml_element_int) (loc:parameter_location_t) =
-  let set = node#setAttribute in
-  let seti = node#setIntAttribute in
-  match loc with
-  | StackParameter index -> 
-    begin set "loc" "stack" ; seti "nr" index end
-  | RegisterParameter reg ->
-    begin set "loc" "register" ; set "reg" (register_to_string reg) end
-  | GlobalParameter dw ->
-    begin set "loc" "global" ; set "dw" dw#to_hex_string end
-  | UnknownParameterLocation -> ()
-
-let write_xml_roles (node:xml_element_int) (l:(string * string) list) =
-  node#appendChildren (List.map (fun (rtype,rname) ->
-    let rNode = xmlElement "role" in
-    let set = rNode#setAttribute in
-    begin set "rt" rtype ; set "rn" rname ; rNode end) l)
-
-
-let write_xml_fts_parameter (node:xml_element_int) (p: fts_parameter_t) =
-  let append = node#appendChildren in
-  let set = node#setAttribute in
-  let seti = node#setIntAttribute in
-  let tNode = xmlElement "btype" in
-  begin
-    write_xml_btype tNode p.apar_type ;
-    write_xml_parameter_location node p.apar_location ;
-    append [tNode];
-    (match p.apar_roles with [] -> () | l ->
-      let rrNode = xmlElement "roles" in 
-      begin write_xml_roles rrNode l ; append [ rrNode ] end) ;
-    (match p.apar_desc with "" -> () | s -> set "desc" s);
-    set "io" (arg_io_to_string p.apar_io) ;
-    set "name" p.apar_name ;
-    seti "size" p.apar_size ;
-    set "fmt" (formatstring_type_to_string p.apar_fmt)
-  end
-
-(* ----------------------------------------------------------------- read xml *)
 
 let read_xml_arg_io (s:string) =
   match s with
@@ -263,19 +223,21 @@ let mk_global_parameter
 
 let mk_stack_parameter
       ?(btype=t_unknown)
+      ?(name="")
       ?(desc="")
       ?(roles=[])
       ?(io=ArgReadWrite)
       ?(size=4)
       ?(fmt=NoFormat)
       (arg_index:int) =
-  { apar_name = "arg_" ^ (string_of_int arg_index) ;
-    apar_type = btype ;
-    apar_desc = desc ;
-    apar_roles = roles ;
-    apar_io = io ;
-    apar_size = size ;
-    apar_fmt = fmt ;
+  { apar_name =
+      if name = "" then "arg_" ^ (string_of_int arg_index) else name;
+    apar_type = btype;
+    apar_desc = desc;
+    apar_roles = roles;
+    apar_io = io;
+    apar_size = size;
+    apar_fmt = fmt;
     apar_location = StackParameter arg_index
   }
 

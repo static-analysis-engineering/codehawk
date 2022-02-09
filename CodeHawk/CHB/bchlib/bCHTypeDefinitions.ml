@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,10 @@ open CHPrettyUtil
 open CHXmlDocument
 open CHXmlReader
 
+(* bchcil *)
+open BCHBCUtil
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHBasicTypes
 open BCHLibTypes
@@ -47,6 +51,7 @@ open BCHXmlUtil
 module H = Hashtbl
 
 
+let bcd = BCHBCDictionary.bcdictionary
 let bd = BCHDictionary.bdictionary
 
 
@@ -102,7 +107,7 @@ object (self)
                    
   method add_typeinfo (name:string) (ty:btype_t) =
     if H.mem typeinfos name then
-      if (btype_compare (H.find typeinfos name) ty) = 0 then
+      if btype_equal (H.find typeinfos name) ty then
         ()
       else
 	ch_error_log#add
@@ -191,7 +196,7 @@ object (self)
              let n = xmlElement "n" in
              begin
                n#setAttribute "n" name;
-               bd#write_xml_btype n tinfo;
+               bcd#write_xml_typ n tinfo;
                n
              end) tinfos);
       cnode#appendChildren
@@ -199,7 +204,7 @@ object (self)
              let n = xmlElement "n" in
              begin
                n#setAttribute "n" name;
-               bd#write_xml_compinfo n cinfo;
+               bcd#write_xml_compinfo n cinfo;
                n
              end) cinfos);
       enode#appendChildren
@@ -207,7 +212,7 @@ object (self)
              let n = xmlElement "n" in
              begin
                n#setAttribute "n" name;
-               bd#write_xml_enuminfo n einfo;
+               bcd#write_xml_enuminfo n einfo;
                n
              end) einfos);
         node#appendChildren [tnode; cnode; enode]
@@ -218,15 +223,15 @@ object (self)
     begin
       List.iter (fun n  ->
           let name = n#getAttribute "n" in
-          let tinfo = bd#read_xml_btype n in
+          let tinfo = bcd#read_xml_typ n in
           self#add_typeinfo name tinfo) (getcc "type-infos") ;
       List.iter (fun n ->
           let name = n#getAttribute "n" in
-          let cinfo = bd#read_xml_compinfo n in
+          let cinfo = bcd#read_xml_compinfo n in
           self#add_compinfo name cinfo) (getcc "comp-infos") ;
       List.iter (fun n ->
           let name = n#getAttribute "n" in
-          let einfo = bd#read_xml_enuminfo n in
+          let einfo = bcd#read_xml_enuminfo n in
           self#add_enuminfo name einfo) (getcc "enum-infos")
     end
 
@@ -251,7 +256,7 @@ let pe_types = [
 
     ("HANDLER_FUNCTION",
      (* callback function for the RegisterServiceCtrlHandler function *)
-     TFun (TVoid [], Some [("fdwControl", named "DWORD")], false, []));
+     TFun (TVoid [], Some [("fdwControl", named "DWORD", [])], false, []));
 
     ("HCRYPTHASH", (* handle to a cryptographic hash *)
      handle "CRYPTHASH");
@@ -264,57 +269,57 @@ let pe_types = [
 
     ("DLGPROC", (* dialog window callback procedure *)
      TFun (named "INT_PTR",
-	   Some [ ("hwndDlg", named "HWND");
-		  ("uMsg", named "UINT");
-		  ("wParam ", named "WPARAM");
-		  ("lParam", named "LPARAM")], false, []));
+	   Some [("hwndDlg", named "HWND", []);
+		 ("uMsg", named "UINT", []);
+		 ("wParam ", named "WPARAM", []);
+		 ("lParam", named "LPARAM", [])], false, []));
 
     ("DESKTOPENUMPROC",
      TFun (named "BOOL",
-	   Some [ ("lpszDesktop", named "LPSTR");
-		  ("lParam", named "LPARAM") ], false, []));
+	   Some [ ("lpszDesktop", named "LPSTR", []);
+		  ("lParam", named "LPARAM", []) ], false, []));
 
     ("DWORD", TInt (IUInt, []));
 
     ("EnumObjectsProc",
      TFun (named "int",
-	   Some [("lpLogObject", named "LPVOID");
-		 ("lpData", named "LPARAM") ], false, []));
+	   Some [("lpLogObject", named "LPVOID", []);
+		 ("lpData", named "LPARAM", [])], false, []));
 
     ("EnumCalendarInfoProc",
      TFun (named "BOOL",
-	   Some [("lpCalendarInfoString", named "LPTSTR")], false, []));
+	   Some [("lpCalendarInfoString", named "LPTSTR", [])], false, []));
 
     ("ENUMRESLANGPROC",
      TFun (named "BOOL",
-	   Some [("hModule", named "HMODULE");
-		 ("lpszType", named "LPCTSTR");
-		 ("lpszName", named "LPCTSTR");
-		 ("wIDLanguage", named "WORD");
-		 ("lParam", named "LONG_PTR")], false, []));
+	   Some [("hModule", named "HMODULE", []);
+		 ("lpszType", named "LPCTSTR", []);
+		 ("lpszName", named "LPCTSTR", []);
+		 ("wIDLanguage", named "WORD", []);
+		 ("lParam", named "LONG_PTR", [])], false, []));
 
     ("EnumResNameProc",
      TFun (named "BOOL",
-	   Some [("hModule", named "HMODULE");
-		 ("lpszType", named "LPCTSTR");
-		 ("lpszName", named "LPTSTR");
-		 ("lParam", named "LONG_PTR")], false, []));
+	   Some [("hModule", named "HMODULE", []);
+		 ("lpszType", named "LPCTSTR", []);
+		 ("lpszName", named "LPTSTR", []);
+		 ("lParam", named "LONG_PTR", [])], false, []));
 
     ("EnumResTypeProc",
      TFun (named "BOOL",
-	   Some [("hModule", named "HMODULE");
-		 ("lpszType", named "LPSTR");
-		 ("lParam", named "LONG_PTR")], false, []));
+	   Some [("hModule", named "HMODULE", []);
+		 ("lpszType", named "LPSTR", []);
+		 ("lParam", named "LONG_PTR", [])], false, []));
 
     ("FARPROC" , (* call back function *)
      TFun (TInt (IInt,[]), Some [], false,[]));
 
     ("FONTENUMPROC",  (* call back function to enumerating fonts *)
      TFun (named "int",
-	   Some [("lpelfe", t_ptrto (t_named "LOGFONT"));
-		 ("lpntme", t_ptrto (t_named "TEXTMETRIC"));
-		 ("FontType", t_named "DWORD");
-		 ("lParam", t_named "LPARAM") ], false, []));
+	   Some [("lpelfe", t_ptrto (t_named "LOGFONT"), []);
+		 ("lpntme", t_ptrto (t_named "TEXTMETRIC"), []);
+		 ("FontType", t_named "DWORD", []);
+		 ("lParam", t_named "LPARAM", []) ], false, []));
 
     ("HACCEL", handle "ACCEL");            (* handle to an accelerator table *)
     ("HANDLE", TPtr (TVoid [], []));
@@ -351,10 +356,10 @@ let pe_types = [
 
     ("HOOKPROC",
      TFun (named "IntPtr",
-	   Some [("hWnd", named "IntPtr");
-		 ("msg", named "int");
-		 ("wparam", named "IntPtr");
-		 ("lparam", named "IntPtr")], false, []));
+	   Some [("hWnd", named "IntPtr", []);
+		 ("msg", named "int", []);
+		 ("wparam", named "IntPtr", []);
+		 ("lparam", named "IntPtr", [])], false, []));
 
     ("HPALETTE", handle "PALETTE");
     ("HRGN", handle "RGN");                            (* handle to a region *)
@@ -367,14 +372,14 @@ let pe_types = [
 
     ("INTERNET_STATUS_CALLBACK",
      TFun (TVoid [],
-	   Some [("hInternet", named "HINTERNET");
-		 ("dwContext", named "DWORD_PTR");
-		 ("dwInternetStatus", named "DWORD");
-		 ("lpvStatusInformation", named "LPVOID");
-		 ("dwStatusInformationLength", named "DWORD")], false, []));
+	   Some [("hInternet", named "HINTERNET", []);
+		 ("dwContext", named "DWORD_PTR", []);
+		 ("dwInternetStatus", named "DWORD", []);
+		 ("lpvStatusInformation", named "LPVOID", []);
+		 ("dwStatusInformationLength", named "DWORD", [])], false, []));
 
     ("LOCALE_ENUMPROC",              (* callback function to process locales *)
-     TFun (named "BOOL", Some [("lpLocaleString", named "LPTSTR")], false,[]));
+     TFun (named "BOOL", Some [("lpLocaleString", named "LPTSTR", [])], false,[]));
 
     ("LPCH", TPtr (named "char",[]));
     ("LPCLSID", TPtr (named "CLSID",[]));             (* pointer to class ID *)
@@ -400,15 +405,15 @@ let pe_types = [
 
     ("PROGRESS_ROUTINE",     (* callback function to monitor copy operations *)
      TFun (named "DWORD",
-	   Some [("TotalFileSize", named "LARGE_INTEGER");
-	         ("TotalBytesTransferred", named "LARGE_INTEGER");
-	         ("StreamSize", named "LARGE_INTEGER");
-	         ("StreamBytesTransferred", named "LARGE_INTEGER");
-	         ("dwStreamNumber", named "DWORD");
-	         ("dwCallbackReason", named "DWORD");
-	         ("hSourceFile", named "HANDLE");
-	         ("hDestinationFile", named "HANDLE");
-	         ("lpData", named "LPVOID")], false, []));
+	   Some [("TotalFileSize", named "LARGE_INTEGER", []);
+	         ("TotalBytesTransferred", named "LARGE_INTEGER", []);
+	         ("StreamSize", named "LARGE_INTEGER", []);
+	         ("StreamBytesTransferred", named "LARGE_INTEGER", []);
+	         ("dwStreamNumber", named "DWORD", []);
+	         ("dwCallbackReason", named "DWORD", []);
+	         ("hSourceFile", named "HANDLE", []);
+	         ("hDestinationFile", named "HANDLE", []);
+	         ("lpData", named "LPVOID", [])], false, []));
 
     ("PTSTR", TPtr (named "THAR", []));
     ("PVOID", TPtr (TVoid [], []));
@@ -416,54 +421,54 @@ let pe_types = [
     ("SERVICE_STATUS_HANDLE", handle "SERVICE_STATUS");
 
     ("THREAD_START_ROUTINE",
-     TFun (named "DWORD", Some [("lpParameter", named "LPVOID")], false, []));
+     TFun (named "DWORD", Some [("lpParameter", named "LPVOID", [])], false, []));
 
     ("TIMERPROC",      (* callback function that processes WM_TIMER messages *)
      TFun (TVoid [],
-	   Some [("hwnd", named "HWND");
-	         ("uMsg", named "UINT");
-	         ("idEvent", named "UINT_PTR");
-	         ("dwTime", named "DWORD")], false, []));
+	   Some [("hwnd", named "HWND", []);
+	         ("uMsg", named "UINT", []);
+	         ("idEvent", named "UINT_PTR", []);
+	         ("dwTime", named "DWORD", [])], false, []));
 
     ("WAITORTIMERCALLBACK",
      TFun (TVoid [],
-           Some [("lpParameter", TPtr ((TVoid []),[]));
-                 ("TimerOrWaitFired", TInt (IBool, []))],false, []));
+           Some [("lpParameter", TPtr ((TVoid []),[]), []);
+                 ("TimerOrWaitFired", TInt (IBool, []), [])],false, []));
 
     ("WNDENUMPROC",             (* callback function for enumerating windows *)
      TFun (named "BOOL",
-	   Some [("hwnd",named "HWND");
-		 ("lParam", named "LPARAM")],false, []));
+	   Some [("hwnd", named "HWND", []);
+		 ("lParam", named "LPARAM", [])],false, []));
 
     ("WNDPROC",  (* callback unction that processes messages sent to a window *)
      TFun (named "LRESULT",
-	   Some [("hwnd", named "HWND");
-		 ("uMsg", named "UINT");
-		 ("wParam", named "WPARAM");
-		 ("lParam", named "LPARAM")], false, []));
+	   Some [("hwnd", named "HWND", []);
+		 ("uMsg", named "UINT", []);
+		 ("wParam", named "WPARAM", []);
+		 ("lParam", named "LPARAM", [])], false, []));
 
     ("WSOVERLAPPED_COMPLETION_ROUTINE",
      TFun (TVoid [],
-	   Some [("dwErrorCode", named "DWORD");
-		 ("dwNumberOfBytesTransfered", named "DWORD");
-		 ("lpOverlapped", TPtr (named "OVERLAPPED",[]))], false, []))
+	   Some [("dwErrorCode", named "DWORD", []);
+		 ("dwNumberOfBytesTransfered", named "DWORD", []);
+		 ("lpOverlapped", TPtr (named "OVERLAPPED", []), [])], false, []))
   ]
 
 
 let function_types = [
     ("comparisonfunction",
      TFun (TInt (IInt,[]),
-           Some [("p1", TPtr (TVoid [],[]));
-		 ("p2", TPtr (TVoid [],[]))], false, []));
+           Some [("p1", TPtr (TVoid [],[]), []);
+		 ("p2", TPtr (TVoid [],[]), [])], false, []));
 
     ("exitfunction", TFun (TVoid [], Some [], false, []));
 
     ("matherrfunction",
      TFun (TInt (IInt,[]),
-           Some [("except", TPtr (named "_exception",[]))], false, []));
+           Some [("except", TPtr (named "_exception",[]), [])], false, []));
 
     ("signalfunction",
-     TFun (TVoid [], Some [("sig", TInt (IInt,[])) ], false, []));
+     TFun (TVoid [], Some [("sig", TInt (IInt,[]), [])], false, []));
 
     ("unknownfunction", TFun (t_unknown, None, false, []))
 ]

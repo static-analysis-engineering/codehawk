@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,9 @@ open CHPretty
 (* chutil *)
 open CHXmlDocument
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHLibTypes
 
@@ -42,10 +45,9 @@ val function_interface_to_prototype_string:
 
 val function_interface_to_pretty: function_interface_t -> pretty_t
 
-val function_interface_compare:
-  function_interface_t -> function_interface_t -> int
-
 val read_xml_function_interface: xml_element_int -> function_interface_t
+
+val write_xml_function_interface: xml_element_int -> function_interface_t -> unit
 
 val modify_function_interface:
   type_transformer_t -> string -> function_interface_t -> function_interface_t

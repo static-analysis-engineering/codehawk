@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,11 @@ open Xprt
 open XprToPretty
 open XprXml
 
+(* bchcil *)
+open BCHBCDictionary
+open BCHBCUtil
+open BCHCBasicTypes
+
 (* bchlib*)
 open BCHBasicTypes
 open BCHCallTarget
@@ -48,6 +53,7 @@ open BCHConstantDefinitions
 open BCHDoubleword
 open BCHFunctionInfo
 open BCHFunctionSummary
+open BCHInterfaceDictionary
 open BCHLibTypes
 open BCHLocation
 open BCHMemoryReference
@@ -61,6 +67,9 @@ module H = Hashtbl
 
 let pr_expr x =	if is_random x then STR "??" else xpr_formatter#pr_expr x
 let four = int_constant_expr 4
+
+let bcd = BCHBCDictionary.bcdictionary
+let id = BCHInterfaceDictionary.interface_dictionary
 
 module DoublewordCollections = CHCollections.Make 
   (struct
@@ -90,14 +99,16 @@ let nsplit (separator:char) (s:string):string list =
     done;
     List.rev !result
   end
- 
+
+
 let g_arithmetic_op_to_string op =
   match op with
   | GPlus -> "plus" 
   | GMinus -> "minus"
   | GTimes -> "times"
   | GDivide -> "divide"
- 
+
+
 let string_to_g_arithmetic_op (s:string) =
   match s with
   | "plus" -> GPlus
@@ -107,6 +118,7 @@ let string_to_g_arithmetic_op (s:string) =
   | _ ->
      raise
        (BCH_failure (LBLOCK [STR "arithmetic g-op not recognized: "; STR s]))
+
 
 let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
   let length = List.length in
@@ -151,7 +163,8 @@ let rec gterm_compare t1 t2 =
   | (GArithmeticExpr _, _) -> -1
   | (_, GArithmeticExpr _) -> 1
   | _ -> 0
-       
+
+
 let rec gterm_to_pretty (t:gterm_t) =
   match t with
   | GConstant n -> n#toPretty 
@@ -181,13 +194,25 @@ class gv_reader_t
         (size:int option)
         (fp:bool)
         (offset:int list):gv_reader_int =
-object
+object (self)
+
   method get_type = ty
   method get_size = size
   method get_offset = offset
   method is_function_pointer = fp
 
-  method write_xml (node:xml_element_int) = ()
+  method write_xml (node:xml_element_int) =
+    begin
+      bcd#write_xml_typ node self#get_type;
+      (match self#get_size with
+       | Some s -> node#setIntAttribute "size" s | _ -> ());
+      (if (List.length offset) > 0 then
+         node#setAttribute
+           "offset"
+           (String.concat "," (List.map string_of_int self#get_offset)));
+      (if self#is_function_pointer then
+         node#setAttribute "fp" "yes")
+    end
 
   method toPretty =
     let pOffset = match offset with
@@ -201,19 +226,7 @@ object
 
 end
 
-let read_xml_gv_reader (node:xml_element_int):gv_reader_t =
-  let get = node#getAttribute in
-  let geti = node#getIntAttribute in
-  let getc = node#getTaggedChild in
-  let getl tag = List.map int_of_string (nsplit ',' (get tag)) in
-  let has = node#hasNamedAttribute in
-  let hasc = node#hasOneTaggedChild in
-  let ty = if hasc "typ" then read_xml_btype (getc "typ") else t_unknown in
-  let size = if has "size" then Some (geti "size") else None in
-  let offset = if has "offset" then getl "offset" else [] in
-  let fp = if has "fp" then (get "fp") = "yes" else false in
-  new gv_reader_t ty size fp offset
-  
+
 class gv_writer_t
         (ty:btype_t)
         (size:int option)
@@ -226,13 +239,25 @@ object (self)
   method get_offset = offset
   method get_value = v
 
-  method write_xml (node:xml_element_int) = ()
+  method write_xml (node:xml_element_int) =
+    begin
+      bcd#write_xml_typ node self#get_type;
+      (match self#get_size with
+       | Some s -> node#setIntAttribute "size" s | _ -> ());
+      (if (List.length offset) > 0 then
+         node#setAttribute
+           "offset"
+           (String.concat "," (List.map string_of_int self#get_offset)));
+      id#write_xml_gterm node v
+    end
 
   method to_report_pretty (pr:gterm_t -> pretty_t) =
     let pOffset = match offset with
       | [] -> STR ""
-      | _ -> STR (String.concat "" (List.map (fun i -> 
-	"[" ^ (string_of_int i) ^ "]") offset)) in
+      | _ ->
+         STR (String.concat
+                ""
+                (List.map (fun i -> "[" ^ (string_of_int i) ^ "]") offset)) in
     let pType =
       if is_unknown_type ty then STR "?" else STR (btype_to_string ty) in
     let pSize = match size with Some s -> INT s  | _ -> STR "?" in
@@ -241,11 +266,12 @@ object (self)
   method toPretty = self#to_report_pretty gterm_to_pretty
 end
 
+
 class global_variable_t (address:doubleword_int):global_variable_int =
 object (self)
   
-  val readers = H.create 5
-  val writers = H.create 5
+  val readers = H.create 5  (* (faddr, iaddr) -> List of readers *)
+  val writers = H.create 5  (* (faddr, iaddr) -> List of writers *)
     
   method add_reader
            ?(ty=t_unknown)
@@ -253,20 +279,20 @@ object (self)
            ?(offset=[])
            ?(fp=false)
            (loc:location_int) =
-    let key = (loc#f#to_hex_string,loc#i#to_hex_string) in
+    let key = (loc#f#to_hex_string, loc#i#to_hex_string) in
     let rec same_offset l1 l2 =
       match (l1,l2)  with
-      | ([],[]) -> true
-      | (h::_,[]) -> false
-      | ([],h::_) -> false
-      | (h1::tl1,h2::tl2) -> h1 = h2 && same_offset tl1 tl2 in
+      | ([], []) -> true
+      | (h::_, []) -> false
+      | ([], h::_) -> false
+      | (h1::tl1, h2::tl2) -> h1 = h2 && same_offset tl1 tl2 in
     let entry = if H.mem readers key then H.find readers key else [] in
     let entry =
       if List.exists (fun r -> same_offset r#get_offset offset) entry then
         entry
       else
         (new gv_reader_t ty size fp offset) :: entry in
-    H.replace readers key  entry
+    H.replace readers key entry
       
   method add_writer
            ?(ty=t_unknown)
@@ -274,7 +300,7 @@ object (self)
            ?(offset=[])
            (v:gterm_t)
            (loc:location_int) =
-    let key = (loc#f#to_hex_string,loc#i#to_hex_string) in
+    let key = (loc#f#to_hex_string, loc#i#to_hex_string) in
     H.replace writers key (new gv_writer_t ty size offset v)
       
   method get_address = address
@@ -287,14 +313,59 @@ object (self)
     H.fold (fun _ v acc ->
       match v#get_type with
       | TUnknown _ -> acc
-      | ty when List.exists (fun t -> (btype_compare ty t) = 0) acc -> acc
+      | ty when List.exists (fun t -> btype_equal ty t) acc -> acc
       | ty -> ty :: acc) writers []
 
   method is_function_pointer =
     H.fold (fun _ v acc -> acc || List.exists (fun r -> r#is_function_pointer) v) 
       readers false
 
-  method write_xml (node:xml_element_int) = ()
+  method private write_xml_readers (node: xml_element_int) =
+    let values = H.fold (fun loc rs a -> (loc, rs) :: a) readers [] in
+    node#appendChildren
+      (List.map (fun ((faddr, iaddr), rs) ->
+           let rsnode = xmlElement "rs" in
+           begin
+             rsnode#setAttribute "f" faddr;
+             rsnode#setAttribute "i" iaddr;
+             rsnode#appendChildren
+               (List.map (fun r ->
+                    let rnode = xmlElement "r" in
+                    begin
+                      r#write_xml rnode;
+                      rnode
+                    end) rs);
+             rsnode
+           end) values)
+
+  method private write_xml_writers (node: xml_element_int) =
+    let values = H.fold (fun loc writer a -> (loc, writer) :: a) writers [] in
+    node#appendChildren
+      (List.map (fun ((faddr, iaddr), writer) ->
+           let wnode = xmlElement "w" in
+           begin
+             wnode#setAttribute "f" faddr;
+             wnode#setAttribute "i" iaddr;
+             writer#write_xml wnode;
+             wnode
+           end) values)
+
+  method write_xml (node:xml_element_int) =
+    begin
+      (if H.length readers > 0 then
+         let rnode = xmlElement "readers" in
+         begin
+           self#write_xml_readers rnode;
+           node#appendChildren [rnode]
+         end);
+      (if H.length writers > 0 then
+         let wnode = xmlElement "writers" in
+         begin
+           self#write_xml_writers wnode;
+           node#appendChildren [wnode]
+         end)
+    end
+
   method read_xml (node:xml_element_int) = ()
 
   method to_report_pretty (pr:gterm_t -> pretty_t) =
@@ -331,7 +402,7 @@ object (self)
       begin
 	self#read_xml node ;
 	chlog#add "global state" 
-	  (LBLOCK [ STR "Loaded " ; INT global_variables#size ; STR " from file" ])
+	  (LBLOCK [STR "Loaded "; INT global_variables#size; STR " from file"])
       end
     | _ -> 
       chlog#add "global state" (STR "No file found")
@@ -373,8 +444,8 @@ object (self)
 	acc) [] 
 
   method write_xml (node:xml_element_int) =
-    node#appendChildren (List.map (fun (dw,v) ->
-      let vNode = xmlElement "global-variable" in
+    node#appendChildren (List.map (fun (dw, v) ->
+      let vNode = xmlElement "gvar" in
       begin 
 	vNode#setAttribute "a" dw#to_hex_string ; 
 	(if has_symbolic_address_name dw then 
@@ -391,7 +462,7 @@ object (self)
       begin
 	gv#read_xml n ;
 	global_variables#set a gv
-      end) (node#getTaggedChildren "global-variable")
+      end) (node#getTaggedChildren "gvar")
      
   method to_report_pretty (pr:gterm_t -> pretty_t) =
     LBLOCK (List.map (fun v -> v#to_report_pretty pr) 
@@ -400,6 +471,7 @@ object (self)
   method toPretty = self#to_report_pretty gterm_to_pretty
       
 end
-  
+
+
 let global_system_state = new global_system_state_t
   

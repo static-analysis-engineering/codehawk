@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +37,9 @@ open CHFormatStringParser
 open CHXmlDocument
 open CHXmlReader
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHBasicTypes
 open BCHConstantDefinitions
@@ -54,7 +59,7 @@ let raise_error (node:xml_element_int) (msg:pretty_t) =
   end
 
 
-let rec is_pointer_type (t:btype_t) =
+let rec is_pointer_type (t: btype_t) =
   match t with
   | TPtr _ -> true
   | TNamed (name,_) when type_definitions#has_type name ->

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,10 +30,15 @@
 (* chutil *)
 open CHFormatStringParser
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHLibTypes
 
+
 val is_pointer_type: btype_t -> bool
+
 val get_pointer_target_type: btype_t -> btype_t
 
 val get_fmt_spec_type: argspec_int -> btype_t

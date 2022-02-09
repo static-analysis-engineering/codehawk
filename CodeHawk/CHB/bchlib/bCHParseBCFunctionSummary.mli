@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer C Parser using CIL
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,15 +25,8 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
 (* bchlib *)
 open BCHLibTypes
 
-val memaccess_to_pretty: memaccess_t -> pretty_t
-val memaccess_compare  : memaccess_t -> memaccess_t -> int
 
-val get_mem_type: memaccess_t list -> btype_t list
-
-val make_memory_access_record: unit -> memory_accesses_int
+val parse_bc_function_summary: string -> function_summary_int

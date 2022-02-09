@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,9 @@ open CHXmlReader
 
 (* xprlib *)
 open Xprt
+
+(* bchcil *)
+open BCHCBasicTypes
 
 (* bchlib *)
 open BCHFtsParameter
@@ -93,49 +96,6 @@ let sideeffect_to_pretty (sideEffect:sideeffect_t) =
            STR " then ";
 	   toPretty consequent] in
   toPretty sideEffect
-
-
-(* --------------------------------------------------------------- comparison *)
-
-let rec sideeffect_compare s1 s2 =
-  match (s1,s2)  with
-    (BlockWrite (t1,d1,s1), BlockWrite (t2,d2,s2)) ->
-      let l1 = btype_compare t1 t2 in
-      if l1 = 0 then
-	let l2 = bterm_compare d1 d2 in
-	if l2 = 0 then
-	  bterm_compare s1 s2
-	else
-	  l2
-      else l1
-  | (BlockWrite _, _) -> -1
-  | (_, BlockWrite _) -> 1
-  | (Modifies n1, Modifies n2) -> bterm_compare n1 n2
-  | (Modifies _, _) -> -1
-  | (_, Modifies _) -> 1
-  | (AllocatesStackMemory n1, AllocatesStackMemory n2) -> bterm_compare n1 n2
-  | (AllocatesStackMemory _, _) -> -1
-  | (_, AllocatesStackMemory _) -> 1
-  | (StartsThread (sa1,pars1), StartsThread (sa2,pars2)) ->
-    let l1 = bterm_compare sa1 sa2 in
-    if l1 = 0 then list_compare pars1 pars2 bterm_compare else l1
-  | (StartsThread _,_) -> -1
-  | (_, StartsThread _) -> 1
-  | (Invalidates n1, Invalidates n2) -> bterm_compare n1 n2
-  | (Invalidates _, _) -> -1
-  | (_, Invalidates _) -> 1
-  | (ConditionalSideeffect (p1,s1), ConditionalSideeffect (p2,s2)) ->
-    let l1 = precondition_compare p1 p2 in
-    if l1 = 0 then
-      sideeffect_compare s1 s2
-    else l1
-  | (ConditionalSideeffect _, _) -> -1
-  | (_, ConditionalSideeffect _) -> 1
-  | (SetsErrno, SetsErrno) -> 0
-  | (SetsErrno, _) -> -1
-  | (_, SetsErrno) -> 1
-  | (UnknownSideeffect, UnknownSideeffect) -> 0
-
 
 (* ----------------------------------------------------------------- read xml *)
 

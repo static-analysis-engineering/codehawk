@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,7 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
+(* A variable manager and variable dictionary are created per function. *)
 
 (* chlib *)
 open CHCommon
@@ -74,6 +75,7 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
   end
 
+
 let raise_var_type_error (v:assembly_variable_int) (msg:pretty_t) =
   let errormsg =
     LBLOCK [ STR "Expected: " ; msg ; STR "; Found: " ;  v#toPretty ] in
@@ -81,6 +83,7 @@ let raise_var_type_error (v:assembly_variable_int) (msg:pretty_t) =
     ch_error_log#add "var type error" errormsg ;
     raise (BCH_failure errormsg)
   end
+
 
 let raise_memref_type_error (r:memory_reference_int) (msg:pretty_t) =
   let errormsg =
@@ -90,12 +93,14 @@ let raise_memref_type_error (r:memory_reference_int) (msg:pretty_t) =
     raise (BCH_failure errormsg)
   end
 
+
 let rec denotation_to_pretty (v:assembly_variable_denotation_t) =
   match v with
   | MemoryVariable (memref,offset) -> LBLOCK [ STR "Mem " ; INT memref ]
   | RegisterVariable r -> LBLOCK [ STR "Reg " ; STR (register_to_string r) ]
   | CPUFlagVariable f -> LBLOCK [ STR "Flag " ; STR (eflag_to_string f) ]
   | AuxiliaryVariable v -> LBLOCK [ STR "Aux " ; aux_var_to_pretty v ]
+
 
 and aux_var_to_pretty (v:constant_value_variable_t) =
   match v with
@@ -138,7 +143,8 @@ and aux_var_to_pretty (v:constant_value_variable_t) =
   | RuntimeConstant s -> LBLOCK [ STR "Runtime " ; STR s ]
   | MemoryAddress (i,offset) -> LBLOCK [ STR "memaddr-" ; INT i ]
   | ChifTemp -> STR "ChifTemp"
-	
+
+
 class assembly_variable_t
         ~(vard:vardictionary_int)
         ~(memrefmgr:memory_reference_manager_int)
@@ -223,7 +229,9 @@ object (self:'a)
     match denotation with
     | AuxiliaryVariable (CallTargetValue tgt) -> tgt
     | _ ->
-      raise (BCH_failure (LBLOCK [ STR self#get_name ; STR " is not a calltarget value " ]))
+       raise
+         (BCH_failure
+            (LBLOCK [STR self#get_name; STR " is not a calltarget value "]))
 
   method is_global_sideeffect =
     match denotation with 
@@ -446,18 +454,13 @@ object (self:'a)
 
   method toPretty = STR self#get_name
 
-  method write_xml (node:xml_element_int) = 
-    begin 
-      node#setIntAttribute "vx" self#index ;
-      node#setAttribute "vn" self#get_name ;
-      vard#write_xml_assembly_variable_denotation node denotation ; 
-    end
 end
 
+
 class variable_manager_t
-        (optnode:xml_element_int option)
-        (vard:vardictionary_int)
-        (memrefmgr:memory_reference_manager_int):variable_manager_int =
+        (optnode: xml_element_int option)
+        (vard: vardictionary_int)
+        (memrefmgr: memory_reference_manager_int): variable_manager_int =
 object (self)
 
   val vartable = H.create 3     (* index -> assembly_variable_int *)
@@ -469,10 +472,13 @@ object (self)
     | Some xvard ->
        begin
          vard#read_xml xvard;
-         memrefmgr#read_xml xvard ;
+         memrefmgr#read_xml xvard;
          List.iter
-           (fun (index,denotation) ->
-             H.add vartable index (new assembly_variable_t ~vard ~memrefmgr ~index ~denotation))
+           (fun (index, denotation) ->
+             H.add
+               vartable
+               index
+               (new assembly_variable_t ~vard ~memrefmgr ~index ~denotation))
            vard#get_indexed_variables
        end
     | _ -> ()
@@ -501,8 +507,9 @@ object (self)
     if H.mem vartable index then
       H.find vartable index
     else
-      raise (BCH_failure
-               (LBLOCK [ STR "No variable found with index " ; INT index ]))
+      raise
+        (BCH_failure
+           (LBLOCK [STR "No variable found with index "; INT index ]))
 
   method get_memvar_reference (v:variable_t) =
     let av = self#get_variable v in
@@ -518,7 +525,7 @@ object (self)
       | MemoryVariable (_,o) -> o
       | _ -> raise_var_type_error av (STR "Memory Variable")
     else
-      raise (BCH_failure (LBLOCK [ STR "Temporary variable: " ; v#toPretty ]))
+      raise (BCH_failure (LBLOCK [STR "Temporary variable: "; v#toPretty ]))
 
   method get_memval_offset (v:variable_t) =
     if self#has_var v then
@@ -526,14 +533,18 @@ object (self)
         let iv = self#get_initial_memory_value_variable v in
         self#get_memvar_offset iv
       else
-        raise (BCH_failure (LBLOCK [ STR "Not an initial memory variable: " ; v#toPretty ]))
+        raise
+          (BCH_failure
+             (LBLOCK [
+                  STR "Not an initial memory variable: "; v#toPretty]))
     else
-      raise (BCH_failure (LBLOCK [ STR "Temporary variable: " ; v#toPretty ]))
+      raise (BCH_failure (LBLOCK [ STR "Temporary variable: "; v#toPretty]))
 
   method private get_memaddress_reference (v:variable_t) =
     let av = self#get_variable v in
     match av#get_denotation with
-    | AuxiliaryVariable (MemoryAddress (i,_)) -> memrefmgr#get_memory_reference i
+    | AuxiliaryVariable (MemoryAddress (i,_)) ->
+       memrefmgr#get_memory_reference i
     | _ ->
        raise_var_type_error av (STR "Memory Address")
     
@@ -549,7 +560,8 @@ object (self)
 
   method private has_index (index:int) = H.mem vartable index
 
-  method make_memory_variable (memref:memory_reference_int) (offset:memory_offset_t) =
+  method make_memory_variable
+           (memref:memory_reference_int) (offset:memory_offset_t) =
     self#mk_variable (MemoryVariable (memref#index,offset))
 
   method make_memref_from_basevar (v:variable_t) =
@@ -558,23 +570,34 @@ object (self)
       match av#get_denotation with
       | AuxiliaryVariable a ->
          (match a with
-          | InitialRegisterValue (CPURegister Esp,0) -> memrefmgr#mk_local_stack_reference
-          | InitialRegisterValue (CPURegister Esp,1) -> memrefmgr#mk_realigned_stack_reference
-          | InitialRegisterValue (MIPSRegister MRsp,0) -> memrefmgr#mk_local_stack_reference
-          | InitialRegisterValue (MIPSRegister MRsp,1) -> memrefmgr#mk_realigned_stack_reference
-          | InitialRegisterValue (ARMRegister ARSP,0) -> memrefmgr#mk_local_stack_reference
-          | InitialRegisterValue (ARMRegister ARSP,1) -> memrefmgr#mk_realigned_stack_reference
-          | InitialRegisterValue (CPURegister _,_)
-            | InitialRegisterValue (MIPSRegister _,_)
+          | InitialRegisterValue (CPURegister Esp,0) ->
+             memrefmgr#mk_local_stack_reference
+          | InitialRegisterValue (CPURegister Esp,1) ->
+             memrefmgr#mk_realigned_stack_reference
+          | InitialRegisterValue (MIPSRegister MRsp,0) ->
+             memrefmgr#mk_local_stack_reference
+          | InitialRegisterValue (MIPSRegister MRsp,1) ->
+             memrefmgr#mk_realigned_stack_reference
+          | InitialRegisterValue (ARMRegister ARSP,0) ->
+             memrefmgr#mk_local_stack_reference
+          | InitialRegisterValue (ARMRegister ARSP,1) ->
+             memrefmgr#mk_realigned_stack_reference
+          | InitialRegisterValue (CPURegister _, _)
+            | InitialRegisterValue (MIPSRegister _, _)
             | InitialRegisterValue (ARMRegister _, _)
             | InitialMemoryValue _
             | FunctionReturnValue _ -> memrefmgr#mk_basevar_reference v
-          | _ -> memrefmgr#mk_unknown_reference ("base:" ^ v#getName#getBaseName))
+          | _ ->
+             memrefmgr#mk_unknown_reference ("base:" ^ v#getName#getBaseName))
       | _ ->
-         raise (BCH_failure (LBLOCK [ STR "unable to use variable as memory base: " ;
-                                      v#toPretty ]))
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "unable to use variable as memory base: ";
+                   v#toPretty]))
     else
-      raise (BCH_failure (LBLOCK [ STR "base variable not found: " ; v#toPretty ]))
+      raise
+        (BCH_failure (LBLOCK [STR "base variable not found: "; v#toPretty ]))
            
   method make_register_variable (reg:register_t) =
     self#mk_variable (RegisterVariable reg)
@@ -603,13 +626,15 @@ object (self)
   method make_return_value (iaddr:ctxt_iaddress_t) =
     self#mk_variable (AuxiliaryVariable (FunctionReturnValue iaddr))
 
-  method make_function_pointer_value (fname:string) (cname:string) (address:ctxt_iaddress_t) =
+  method make_function_pointer_value
+           (fname:string) (cname:string) (address:ctxt_iaddress_t) =
     self#mk_variable (AuxiliaryVariable (FunctionPointer (fname,cname,address)))
 
   method make_calltarget_value (tgt:call_target_t) =
     self#mk_variable (AuxiliaryVariable (CallTargetValue tgt))
       
-  method make_side_effect_value (iaddr:ctxt_iaddress_t) ?(global=false) (arg:string) =
+  method make_side_effect_value
+           (iaddr:ctxt_iaddress_t) ?(global=false) (arg:string) =
     self#mk_variable (AuxiliaryVariable (SideEffectValue (iaddr,arg,global)))
 
   method make_field_value (sname:string) (offset:int) (fname:string) =
@@ -641,7 +666,7 @@ object (self)
         with
         | BCH_failure p ->
            raise_memref_type_error
-             memref (LBLOCK [ STR "Global reference: " ; p ])
+             memref (LBLOCK [STR "Global reference: "; p])
       else
         raise_memref_type_error memref (STR "Global reference")
     else
@@ -716,10 +741,12 @@ object (self)
 	    | (_, AuxiliaryVariable (FieldValue _)) -> 1
 	    | (MemoryVariable _,_) 
 		 when (let memref = self#get_memvar_reference v1 in
-                       match memref#get_base with BGlobal -> true | _ -> false) -> -1
+                       match memref#get_base with
+                       | BGlobal -> true | _ -> false) -> -1
 	    | (_,MemoryVariable (i1,_)) 
 		 when (let memref = self#get_memvar_reference v2 in
-                       match memref#get_base with BGlobal -> true | _ -> false) -> 1
+                       match memref#get_base with
+                       |BGlobal -> true | _ -> false) -> 1
 	    | (AuxiliaryVariable (SideEffectValue _), _) -> -1
 	    | (_, AuxiliaryVariable (SideEffectValue _)) -> 1
 	    | (AuxiliaryVariable (RuntimeConstant _), _) -> -1
@@ -826,8 +853,10 @@ object (self)
       self#get_memvar_basevar (self#get_initial_memory_value_variable v)
     else
       raise (BCH_failure
-               (LBLOCK [ STR "variable is nat an initial value of a basevar memory variable" ;
-                         v#toPretty ]))
+               (LBLOCK [
+                    STR "variable is not an initial value of a basevar" ;
+                    STR "memory variable";
+                    v#toPretty]))
 
   method has_constant_offset (v:variable_t) =
     (self#has_var v) && (self#has_memvar v)
@@ -901,16 +930,10 @@ object (self)
 
   method is_global_sideeffect (v:variable_t) =
     (self#has_var v) && (self#get_variable v)#is_global_sideeffect
-      
-  method write_xml (node:xml_element_int) =
-    let dnode = xmlElement "var-dictionary" in
-    begin
-      vard#write_xml dnode ;
-      node#appendChildren [ dnode ]
-    end
 
 end
-  
+
+
 let make_variable_manager (optnode:xml_element_int option) =
   let xd = mk_xprdictionary () in
   let vard = mk_vardictionary xd in

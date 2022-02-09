@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,8 +38,12 @@ open CHXmlDocument
 (* xprlib *)
 open XprTypes
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHLibTypes
+
 
 val has_symbolic_name: ?ty:btype_t option -> doubleword_int -> bool
 val get_symbolic_name: ?ty:btype_t option -> doubleword_int -> string
@@ -52,10 +58,11 @@ val get_constant_value: ?ty:btype_t option -> string -> doubleword_int
 val has_symbolic_flags: btype_t -> bool
 val get_symbolic_flags: btype_t -> doubleword_int -> string list
 
-val get_xpr_symbolic_name: ?typespec:(btype_t * bool) option -> xpr_t -> string option
+val get_xpr_symbolic_name:
+  ?typespec:(btype_t * bool) option -> xpr_t -> string option
 
 val read_xml_symbolic_constants: xml_element_int -> unit
 val read_xml_symbolic_addresses: xml_element_int -> unit
-val read_xml_symbolic_flags    : xml_element_int -> unit
+val read_xml_symbolic_flags: xml_element_int -> unit
 
 val constant_statistics_to_pretty: unit -> pretty_t 

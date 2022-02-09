@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,10 @@ open XprXml
 open XprToPretty
 open Xsimplify
 
+(* bchcil *)
+open BCHBCFiles
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHFtsParameter
 open BCHBasicTypes
@@ -66,8 +70,9 @@ open BCHFunctionSummaryLibrary
 open BCHJavaSignatures
 open BCHLibTypes
 open BCHLocation
-open BCHMemoryAccesses
+(* open BCHMemoryAccesses *)
 open BCHMemoryReference
+open BCHParseBCFunctionSummary
 open BCHPreFileIO
 open BCHSideeffect
 open BCHSystemInfo
@@ -96,15 +101,10 @@ module DoublewordCollections = CHCollections.Make
     let toPretty dw = STR dw#to_fixed_length_hex_string
    end)
 
-module SideEffectCollections = CHCollections.Make
-  (struct
-    type t = sideeffect_t
-    let compare = sideeffect_compare
-    let toPretty = sideeffect_to_pretty
-  end)
 
 let bd = BCHDictionary.bdictionary
 let id = BCHInterfaceDictionary.interface_dictionary
+
 
 let raise_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
@@ -165,7 +165,8 @@ object ('a)
   method write_xml: xml_element_int -> unit
   method toPretty: pretty_t
 end
-	
+
+
 class saved_register_t (reg:register_t) =
 object (self:'a)
   val mutable save_address = None
@@ -228,14 +229,16 @@ object (self:'a)
         pRestored]
       
 end
-  
+
+
 module SavedRegistersCollections = CHCollections.Make 
   (struct
     type t = saved_register_int
     let compare r1 r2 = r1#compare r2
     let toPretty r = r#toPretty
    end)
-  
+
+
 let pr_expr = xpr_formatter#pr_expr
     
 		
@@ -587,7 +590,7 @@ object (self)
 	end) stackPars ;
       List.iter (fun (reg,name,ty) ->
 	let v = self#mk_initial_register_value ~level:0 reg in
-	let vname = name ^ "$R" in
+	let vname = name in
 	begin
 	  self#set_variable_name v vname ;
 	  if is_ptrto_known_struct ty then 
@@ -1324,11 +1327,11 @@ object (self)
   (* Function info transient state: ------------------------------------------ *
    * These data items are lost/recreated from one analysis run to the next     *
    * ------------------------------------------------------------------------- *)
-  val memory_access_record = make_memory_access_record ()
+
   val instrbytes = H.create 5
   val jump_targets = H.create 5                           (* to be saved *)
   val return_values = H.create 3
-  val sideeffects = new SideEffectCollections.set_t
+  val sideeffects = H.create 3  (* iaddr -> sideeffect-ix *)
   val mutable nonreturning = false
   val mutable user_summary = None
   val fts_parameters = H.create 3   (* function-type-signature parameters *)
@@ -1404,14 +1407,6 @@ object (self)
       (functions_data#get_function self#get_address)#get_function_name
     else
       self#get_address#to_hex_string
-
-  method get_memory_access_record = memory_access_record
-
-  method get_local_stack_accesses = []
-
-  method get_stack_accesses = []
-
-  method get_global_accesses =  []
 
   method set_incomplete = complete <- false
   method set_complete = complete <- true
@@ -1499,19 +1494,26 @@ object (self)
    * record side effects                                                     *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
     
-  method record_sideeffect (s:sideeffect_t) = 
-    if sideeffects#has s then () else
-      begin 
-	sideeffects#add s ; 
-	(match s with
-	| UnknownSideeffect -> ()
-	| _ -> 
-	  begin
-	    sideeffects_changed <- true ;
-	    chlog#add "sideeffects changed" 
-	      (LBLOCK [ self#a#toPretty ; STR ": " ; sideeffect_to_pretty s ])
-	  end)
+  method record_sideeffect (iaddr: ctxt_iaddress_t) (s:sideeffect_t) =
+    let index = id#index_sideeffect s in
+    if H.mem sideeffects iaddr then
+      let prev_ix = H.find sideeffects iaddr in
+      if index = prev_ix then
+        ()
+      else
+        begin
+          H.replace sideeffects iaddr index;
+          sideeffects_changed <- true
+        end
+    else
+      begin
+        H.add sideeffects iaddr index;
+        sideeffects_changed <- true;
+        chlog#add
+          "sideeffects changed"
+          (LBLOCK [self#a#toPretty; STR ": "; sideeffect_to_pretty s])
       end
+
 
   method private make_postconditions (xlist:xpr_t list) = ([],[])
 
@@ -1718,15 +1720,23 @@ object (self)
             (LBLOCK [STR "Finfo:get-local-function-api: "; p]))
 
   method private get_local_function_semantics:function_semantics_t =
-    let post = if nonreturning then [ PostFalse ] else [] in
-    { fsem_pre = [] ;
-      fsem_post = post ;
-      fsem_errorpost = [] ;
-      fsem_sideeffects = sideeffects#toList ;
-      fsem_io_actions = [] ;
-      fsem_throws = [] ;
+    let post = if nonreturning then [PostFalse] else [] in
+    let sixs = H.fold (fun _ v a -> v::a) sideeffects [] in
+    let sideeffects =
+      let ixs =
+        List.fold_left (fun a i -> if List.mem i a then a else i::a) sixs [] in
+      List.map id#get_sideeffect ixs in
+    { fsem_pre = [];
+      fsem_post = post;
+      fsem_errorpost = [];
+      fsem_sideeffects = sideeffects;
+      fsem_io_actions = [];
+      fsem_throws = [];
       fsem_desc = ""
     }
+
+  method set_bc_summary (fs: function_summary_int) =
+    user_summary <- Some fs
 
   method read_xml_user_summary (node:xml_element_int) = 
     try
@@ -1922,9 +1932,9 @@ object (self)
       calltargets 0
 
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * base pointers                                                                        *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   * base pointers                                                             *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
       
   method add_base_pointer (var:variable_t) =
     let _ = track_function
@@ -1937,12 +1947,23 @@ object (self)
     
   method base_pointers_to_pretty =
     if base_pointers#isEmpty then
-      LBLOCK [ STR (string_repeat "." 80) ; NL ; STR "No base pointers" ; NL ; 
-	       STR (string_repeat "." 80) ; NL ]
+      LBLOCK [
+          STR (string_repeat "." 80);
+          NL ;
+          STR "No base pointers";
+          NL;
+	  STR (string_repeat "." 80);
+          NL]
     else
-      LBLOCK [ STR (string_repeat "~" 80) ; NL ; STR "Base pointers: " ; 
-	       pretty_print_list base_pointers#toList env#variable_name_to_pretty "" ", " "" ;
-	       NL ; STR (string_repeat "~" 80) ; NL ]
+      LBLOCK [
+          STR (string_repeat "~" 80);
+          NL;
+          STR "Base pointers: "; 
+	  pretty_print_list
+            base_pointers#toList env#variable_name_to_pretty "" ", " "";
+	  NL;
+          STR (string_repeat "~" 80);
+          NL]
 
   method private write_xml_base_pointers (node:xml_element_int) =
     node#appendChildren (List.map (fun v ->
@@ -1957,52 +1978,78 @@ object (self)
     List.iter (fun n ->
       let get = n#getAttribute in
       let geti = n#getIntAttribute in
-      let var = new variable_t (new symbol_t ~seqnr:(geti "vx") (get "vn")) NUM_VAR_TYPE in
+      let var =
+        new variable_t
+          (new symbol_t ~seqnr:(geti "vx") (get "vn")) NUM_VAR_TYPE in
       self#add_base_pointer var) (node#getTaggedChildren "base")
 	
 	
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * jump table targets                                                                   *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   * jump table targets                                                        *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 	
-  method set_jumptable_target (jumpAddr:ctxt_iaddress_t) (base:doubleword_int) 
-                              (jt:jumptable_int) (reg:register_t)  =
+  method set_jumptable_target
+           (jumpAddr:ctxt_iaddress_t)
+           (base:doubleword_int)
+           (jt:jumptable_int)
+           (reg:register_t) =
     begin
       H.replace jump_targets jumpAddr (JumptableTarget (base,jt,reg)) ;
-      chlog#add "set jumptable target"
-                (LBLOCK [ STR jumpAddr ; STR "; base: " ; base#toPretty ;
-                          STR "; on register: " ; STR (register_to_string reg) ])
+      chlog#add
+        "set jumptable target"
+        (LBLOCK [
+             STR jumpAddr;
+             STR "; base: ";
+             base#toPretty;
+             STR "; on register: ";
+             STR (register_to_string reg)])
     end
 
-  method set_offsettable_target (jumpAddr:ctxt_iaddress_t) (base:doubleword_int)
-    (jt:jumptable_int) (db:data_block_int) =
-    H.replace jump_targets jumpAddr (OffsettableTarget (base,jt,db))
+  method set_offsettable_target
+           (jumpAddr:ctxt_iaddress_t)
+           (base:doubleword_int)
+           (jt:jumptable_int)
+           (db:data_block_int) =
+    H.replace jump_targets jumpAddr (OffsettableTarget (base, jt, db))
 
   method set_global_jumptarget (jumpAddr:ctxt_iaddress_t) (v:variable_t) =
     if env#is_global_variable v then
       let gaddr = env#get_global_variable_address v in
-      H.replace jump_targets jumpAddr (JumpOnTerm (mk_global_parameter_term gaddr))
+      H.replace
+        jump_targets jumpAddr (JumpOnTerm (mk_global_parameter_term gaddr))
     else
-      raise (BCH_failure (LBLOCK [ STR "set_global_jumptarget: variable is not a global variable: " ;
-                                   v#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "set_global_jumptarget: ";
+                STR "variable is not a global variable: ";
+                v#toPretty]))
 
   method set_argument_jumptarget (jumpAddr:ctxt_iaddress_t) (v:variable_t) =
     try
       if env#is_stackarg_deref_var v then
         match env#get_stack_parameter_index v with
         | Some index ->
-           H.replace jump_targets jumpAddr (JumpOnTerm (mk_stack_parameter_term index))
+           H.replace
+             jump_targets jumpAddr (JumpOnTerm (mk_stack_parameter_term index))
         | _ ->
-           raise (BCH_failure (
-                      LBLOCK [ STR "set_argument_jumptarget: variable is not a stack parameter: " ;
-                               v#toPretty ]))
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "set_argument_jumptarget: ";
+                     STR "variable is not a stack parameter: ";
+                     v#toPretty]))
       else
-        raise (BCH_failure
-                 (LBLOCK [ STR "Finfo:set-argument-jumptarget: " ;
-                           STR "variable is not a stack parameter: " ;  v#toPretty ]))
+        raise
+          (BCH_failure
+             (LBLOCK [
+                  STR "Finfo:set-argument-jumptarget: ";
+                  STR "variable is not a stack parameter: ";
+                  v#toPretty]))
     with
     | BCH_failure p ->
-       raise (BCH_failure (LBLOCK [ STR "Finfo:set-argument-jumptarget: " ; p ]))
+       raise
+         (BCH_failure (LBLOCK [STR "Finfo:set-argument-jumptarget: "; p]))
 
   method set_so_jumptarget
            (jumpAddr:ctxt_iaddress_t) (fname:string) (ctinfo:call_target_info_int) =
@@ -2037,12 +2084,16 @@ object (self)
       match H.find jump_targets iaddr with
       | DllJumpTarget (lib,fname) -> (lib,fname)
       | _ ->
-	 raise (BCH_failure
-                  (LBLOCK [ STR iaddr ; STR ": " ; 
-			    STR "Jump target is not a dll target" ]))
+	 raise
+           (BCH_failure
+              (LBLOCK [
+                   STR iaddr;
+                   STR ": "; 
+		   STR "Jump target is not a dll target"]))
     else
-      raise (BCH_failure (LBLOCK [ STR iaddr ; STR ": " ;
-				   STR "No jump target found" ]))
+      raise
+        (BCH_failure
+           (LBLOCK [STR iaddr; STR ": "; STR "No jump target found"]))
 
   method set_unknown_jumptarget (jumpAddr:ctxt_iaddress_t) =
     if H.mem jump_targets jumpAddr then () else 
@@ -2296,6 +2347,28 @@ end
 let function_infos = H.create 13
 
 
+let load_finfo_userdata (finfo: function_info_int) (faddr: doubleword_int) =
+  match load_userdata_function_file faddr#to_hex_string with
+  | Some node ->
+     finfo#read_xml_user_summary node
+  | _ ->
+     let fname =
+       if functions_data#has_function_name faddr then
+         (functions_data#get_function faddr)#get_function_name
+       else
+         let hexfaddr = faddr#to_hex_string in
+         let lenfaddr = String.length hexfaddr in
+         "sub_" ^ (String.sub (faddr#to_hex_string) 2 (lenfaddr - 2)) in
+     if bcfiles#has_gfun fname then
+       let bcsum = parse_bc_function_summary fname in
+       begin
+         finfo#set_bc_summary bcsum;
+         chlog#add "bc-function-summary" (STR fname)
+       end
+     else
+       ()
+
+
 let load_function_info ?(reload=false) (faddr:doubleword_int) =
   let is_java_native_method () =
     let names = (functions_data#get_function faddr)#get_names in
@@ -2313,12 +2386,7 @@ let load_function_info ?(reload=false) (faddr:doubleword_int) =
         match extract_function_info_file fname with
         | Some node -> finfo#read_xml node
         | _ -> () in
-      let _ =
-        match load_userdata_function_file faddr#to_hex_string with
-        | Some node -> finfo#read_xml_user_summary node
-        | _ ->
-           match extract_inferred_function_summary_file faddr#to_hex_string with
-	   | _ -> () in
+      let _ = load_finfo_userdata finfo faddr in
       let _ =
         match extract_inferred_function_arguments_from_summary_file
                 faddr#to_hex_string with
@@ -2378,7 +2446,8 @@ let get_jni_calls () =
             if ctinfo#is_jni_call then
               add finfo#get_address iaddr ctinfo#get_jni_index)
                   finfo#get_callees_located) (get_function_infos ()) in
-  let _ = H.iter (fun k v -> result := (index_to_doubleword k,v) :: !result) table in
+  let _ =
+    H.iter (fun k v -> result := (index_to_doubleword k,v) :: !result) table in
   !result
 
 

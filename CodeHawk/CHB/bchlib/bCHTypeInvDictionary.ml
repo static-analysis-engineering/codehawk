@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,8 @@ open BCHBasicTypes
 open BCHLibTypes
 open BCHSumTypeSerializer
 
+
+let bcd = BCHBCDictionary.bcdictionary
 let bd = BCHDictionary.bdictionary
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
@@ -75,15 +77,15 @@ object (self)
 
   method xd = vard#xd
 
-  method index_type_invariant_fact (f:type_invariant_fact_t) =
+  method index_type_invariant_fact (f: type_invariant_fact_t) =
     let tags = [ type_invariant_fact_mcts#ts f ] in
     let key = match f with
       | VarTypeFact (v, t, sl) ->
          (tags,
-          [self#xd#index_variable v; bd#index_btype t]
+          [self#xd#index_variable v; bcd#index_typ t]
           @ (List.map bd#index_string sl))
-      | ConstTypeFact (n, t) -> (tags @ [n#toString ], [bd#index_btype t])
-      | XprTypeFact (x, t) -> (tags,[self#xd#index_xpr x; bd#index_btype t]) in
+      | ConstTypeFact (n, t) -> (tags @ [n#toString], [bcd#index_typ t])
+      | XprTypeFact (x, t) -> (tags,[self#xd#index_xpr x; bcd#index_typ t]) in
     type_invariant_fact_table#add key
 
   method get_type_invariant_fact (index:int) =
@@ -95,12 +97,12 @@ object (self)
     | "v" ->
        VarTypeFact
          (self#xd#get_variable (a 0),
-          bd#get_btype (a 1),
+          bcd#get_typ (a 1),
           List.map bd#get_string (get_list_suffix args 2))
     | "c" ->
-       ConstTypeFact (mkNumericalFromString (t 1), bd#get_btype (a 0))
+       ConstTypeFact (mkNumericalFromString (t 1), bcd#get_typ (a 0))
     | "x" ->
-       XprTypeFact (self#xd#get_xpr (a 0), bd#get_btype (a 1))
+       XprTypeFact (self#xd#get_xpr (a 0), bcd#get_typ (a 1))
     | s -> raise_tag_error name s type_invariant_fact_mcts#tags
 
   method write_xml_type_invariant_fact
@@ -125,8 +127,8 @@ object (self)
     LBLOCK (List.map (fun t ->
                 LBLOCK [STR t#get_name; STR ": "; INT t#size; NL]) tables)
 
-
 end
+
 
 let mk_tinvdictionary = new tinvdictionary_t
 

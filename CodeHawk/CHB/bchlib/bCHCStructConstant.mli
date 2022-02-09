@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,8 +42,6 @@ val has_structconstant: string -> bool
 val get_structconstant: string -> c_struct_constant_t
 
 val cstructconstant_to_pretty: c_struct_constant_t -> pretty_t
-
-val cstructconstant_compare: c_struct_constant_t -> c_struct_constant_t -> int
 
 val read_xml_cstructconstant: xml_element_int -> c_struct_constant_t
 

@@ -7,6 +7,7 @@ EXTLIB = $(shell ocamlfind query extlib)
 ZIPLIB = $(shell ocamlfind query zip)
 CHUTIL = $(CODEHAWK)/CH/chutil
 XPRLIB = $(CODEHAWK)/CH/xprlib
+BCHCIL = $(CODEHAWK)/CHB/bchcil
 
 CAMLDOC := ocamldoc
 
@@ -17,6 +18,7 @@ CAMLC := ocamlopt  -I str -I cmi -I cmx \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
+	-I $(BCHCIL)/cmi \
 
 CAMLLINK := ocamlopt \
 
@@ -54,7 +56,6 @@ MLIS := \
 	bCHByteUtilities \
 	bCHCPURegisters \
 	bCHMemoryReference \
-	bCHMemoryAccesses \
 	bCHFtsParameter \
 	bCHFunctionInterface \
 	bCHFunctionStub \
@@ -73,6 +74,7 @@ MLIS := \
 	bCHJumpTable \
 	bCHPreFileIO \
 	bCHSpecializations \
+	bCHParseBCFunctionSummary \
 	bCHUserProvidedDirections \
 	bCHJni \
 	bCHCStruct \
@@ -124,7 +126,6 @@ SOURCES := \
 	bCHStrings \
 	bCHByteUtilities \
 	bCHCPURegisters \
-	bCHMemoryAccesses \
 	bCHFtsParameter \
 	bCHFunctionInterface \
 	bCHBTerm \
@@ -143,6 +144,7 @@ SOURCES := \
 	bCHJumpTable \
 	bCHPreFileIO \
 	bCHSpecializations \
+	bCHParseBCFunctionSummary \
 	bCHUserProvidedDirections \
 	bCHJni \
 	bCHCStruct \
@@ -169,7 +171,7 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-bchlib: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa
+bchlib: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHCIL)/bchcil.cmxa
 	$(CAMLLINK) -a -o bchlib.cmxa $(OBJECTS)
 
 cmi/%.cmi: %.mli

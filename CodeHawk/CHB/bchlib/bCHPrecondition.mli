@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,35 +36,36 @@ open CHXmlDocument
 (* xprlib *)
 open XprTypes
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHLibTypes
 
-val relational_op_to_string    : relational_op_t -> string
+val relational_op_to_string: relational_op_t -> string
   
 val relational_op_to_xml_string: relational_op_t -> string
 
-val precondition_to_pretty : precondition_t -> pretty_t
+val precondition_to_pretty: precondition_t -> pretty_t
 
-val precondition_compare   : precondition_t -> precondition_t -> int
-
-val read_xml_par_preconditions     : xml_element_int -> precondition_t list
+val read_xml_par_preconditions: xml_element_int -> precondition_t list
   
 val read_xml_precondition_predicate:
   xml_element_int -> fts_parameter_t list -> precondition_t
   
-val read_xml_precondition  :
+val read_xml_precondition:
   xml_element_int -> fts_parameter_t list -> precondition_t
   
-val read_xml_preconditions :
+val read_xml_preconditions:
   xml_element_int -> fts_parameter_t list -> precondition_t list
 
-val relational_op_to_xop : relational_op_t -> xop_t
+val relational_op_to_xop: relational_op_t -> xop_t
   
-val xop_to_relational_op : xop_t -> relational_op_t
+val xop_to_relational_op: xop_t -> relational_op_t
 
-val is_relational_xop     : xop_t -> bool
+val is_relational_xop: xop_t -> bool
 
-val is_relational_operator : string -> bool
+val is_relational_operator: string -> bool
   
 val get_relational_operator: string -> relational_op_t
 

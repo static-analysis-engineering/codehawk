@@ -33,6 +33,10 @@ open CHSumTypeSerializer
 open BCHLibTypes
    
 val calling_convention_mfts: calling_convention_t mfts_int
+val arithmetic_op_mfts: arithmetic_op_t mfts_int
+val g_arithmetic_op_mfts: g_arithmetic_op mfts_int
+val relational_op_mfts: relational_op_t mfts_int
+
 val arg_io_mfts: arg_io_t mfts_int
 val formatstring_type_mfts: formatstring_type_t mfts_int
 
@@ -47,22 +51,18 @@ val arm_reg_mfts: arm_reg_t mfts_int
 val arm_special_reg_mfts: arm_special_reg_t mfts_int
 val arm_extension_reg_type_mfts: arm_extension_reg_type_t mfts_int
 
-val ikind_mfts: ikind mfts_int
-val fkind_mfts: fkind mfts_int
-val frepresentation_mfts: frepresentation mfts_int
-val arithmetic_op_mfts: arithmetic_op_t mfts_int
-  
 val register_mcts: register_t mfts_int
-
-val tname_mcts: tname_t mfts_int
-val btype_mcts: btype_t mfts_int
-val constant_mcts: constant mfts_int
 
 val parameter_location_mcts: parameter_location_t mfts_int
 val bterm_mcts: bterm_t mfts_int
+val gterm_mcts: gterm_t mfts_int
+
 val function_stub_mcts: function_stub_t mfts_int
 val call_target_mcts: call_target_t mfts_int
 val c_struct_constant_mcts: c_struct_constant_t mfts_int
+val precondition_mcts: precondition_t mfts_int
+val postcondition_mcts: postcondition_t mfts_int
+val sideeffect_mcts: sideeffect_t mfts_int
 
 val memory_base_mcts: memory_base_t mfts_int
 val memory_offset_mcts: memory_offset_t mfts_int

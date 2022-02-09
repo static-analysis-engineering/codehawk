@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,9 @@ open CHXmlReader
 open XprTypes
 open XprToPretty
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHFtsParameter
 open BCHBasicTypes
@@ -60,7 +63,6 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
     ch_error_log#add "xml parse error" error_msg ;
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
   end
-
 
 (* ----------------------------------------------------------------- printing *)
 
@@ -154,88 +156,6 @@ let rec precondition_to_pretty (predicate:precondition_t) =
          precondition_to_pretty guard;
 	 STR " then ";
          precondition_to_pretty consequent]
-
-
-(* --------------------------------------------------------------- comparison *)
-
-let rec precondition_compare p1 p2 =
-  match (p1,p2) with
-  | (PreNullTerminated n1, PreNullTerminated n2) -> bterm_compare n1 n2
-  | (PreNullTerminated _, _) -> -1
-  | (_, PreNullTerminated _) -> 1
-  | (PreNotNull n1, PreNotNull n2) -> bterm_compare n1 n2
-  | (PreNotNull _, _) -> -1
-  | (_, PreNotNull _) -> 1
-  | (PreNull n1, PreNull n2) -> bterm_compare n1 n2
-  | (PreNull _, _) -> -1
-  | (_, PreNull _) -> 1
-  | (PreDerefRead (t1,d1,s1,b1), PreDerefRead (t2,d2,s2,b2)) ->
-    let l1 = btype_compare t1 t2 in
-    if l1 = 0 then 
-      let l2 = bterm_compare d1 d2 in
-      if l2 = 0 then 
-	let l3 = bterm_compare s1 s2 in
-	if l3 = 0 then Stdlib.compare b1 b2
-	else l3
-      else l2
-    else l1
-  | (PreDerefRead _, _) -> -1
-  | (_, PreDerefRead _) -> 1
-  | (PreDerefWrite (t1,d1,s1,b1), PreDerefWrite (t2,d2,s2,b2)) ->
-    let l1 = btype_compare t1 t2 in
-    if l1 = 0 then 
-      let l2 = bterm_compare d1 d2 in
-      if l2 = 0 then 
-	let l3 = bterm_compare s1 s2 in
-	if l3 = 0 then Stdlib.compare b1 b2
-	else l3
-      else l2
-    else l1
-  | (PreDerefWrite _, _) -> -1
-  | (_, PreDerefWrite _) -> 1
-  | (PreAllocationBase n1, PreAllocationBase n2) -> bterm_compare n1 n2
-  | (PreAllocationBase _,_) -> -1
-  | (_, PreAllocationBase _) -> 1
-  | (PreFunctionPointer (_,t1), PreFunctionPointer (_,t2)) -> bterm_compare t1 t2
-  | (PreFunctionPointer _,_) -> -1
-  | (_, PreFunctionPointer _) -> 1
-  | (PreNoOverlap (x1,y1), PreNoOverlap (x2,y2)) -> 
-    let l1 = bterm_compare x1 x2 in if l1 = 0 then bterm_compare y1 y2 else l1
-  | (PreNoOverlap _,_) -> -1
-  | (_, PreNoOverlap _) -> 1
-  | (PreFormatString n1, PreFormatString n2) -> bterm_compare n1 n2
-  | (PreFormatString _, _) -> -1
-  | (_, PreFormatString _) -> 1
-  | (PreEnum (t1,s1,_), PreEnum (t2,s2,_)) -> 
-    let l1 = bterm_compare t1 t2 in if l1 = 0 then Stdlib.compare s1 s2 else l1
-  | (PreEnum _, _) -> -1
-  | (_, PreEnum _) -> 1
-  | (PreRelationalExpr (op1,x1,y1), PreRelationalExpr (op2,x2,y2)) ->
-    let l1 = Stdlib.compare op1 op2 in
-    if l1 = 0 then 
-      let l2 = bterm_compare x1 x2 in
-      if l2 = 0 then
-	bterm_compare y1 y2
-      else l2
-    else l1
-  | (PreRelationalExpr _, _) -> -1
-  | (_, PreRelationalExpr _) -> 1
-  | (PreDisjunction l1, PreDisjunction l2) ->
-    list_compare l1 l2 precondition_compare
-  | (PreDisjunction _, _) -> -1
-  | (_, PreDisjunction _) -> 1
-  | (PreConditional (p1,c1), PreConditional (p2,c2)) ->
-    let l1 = precondition_compare p1 p2 in
-    if l1 = 0 then
-      precondition_compare c1 c2
-    else l1
-  | (PreConditional _, _) -> -1
-  | (_, PreConditional _) -> 1
-  | (PreIncludes(t1,sc1), PreIncludes(t2,sc2)) ->
-    let l1 = bterm_compare t1 t2 in
-    if l1 = 0 then cstructconstant_compare sc1 sc2 else l1
-      
-
 
 (* ----------------------------------------------------------------- read xml *)
 

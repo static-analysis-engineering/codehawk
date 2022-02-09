@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,9 @@ open CHXmlDocument
 (* xprlib *)
 open Xprt
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHLibTypes
 
@@ -63,6 +66,7 @@ val t_voidptr: btype_t
 
 val t_named: string -> btype_t
 
+
 val t_comp: ?name_space:string list -> string -> btype_t
 val t_enum: ?name_space:string list -> string -> btype_t
 val t_class: ?name_space:string list -> string -> btype_t
@@ -84,7 +88,6 @@ val make_name_from_type: btype_t -> int -> string
 
 (* -------------------------------------------------------------------------- *)
 
-val btype_compare: btype_t -> btype_t -> int
 val btype_to_string: btype_t -> string
 val tname_to_string: tname_t -> string
 val btype_to_pretty: btype_t -> pretty_t
@@ -99,18 +102,12 @@ val is_pointer_to_struct: btype_t -> bool
 
 val modify_type : type_transformer_t -> btype_t -> btype_t
 
-val get_ikind_from_size: ?signed:bool -> int -> ikind
+val get_ikind_from_size: ?signed:bool -> int -> ikind_t
 
 val get_size_of_btype: btype_t -> int option
 
-val get_struct_field_enums: bcompinfo_t -> string list
-
-val write_xml_btype: xml_element_int -> btype_t -> unit
-
-val read_xml_btype   : xml_element_int -> btype_t
-val read_xml_type    : xml_element_int -> btype_t
+val read_xml_type: xml_element_int -> btype_t
 val read_xml_returntype: xml_element_int -> btype_t
-
-val read_xml_compinfo: xml_element_int -> bcompinfo_t
+val read_xml_summary_struct: xml_element_int -> bcompinfo_t
 
 val read_xml_type_transformer: xml_element_int -> type_transformer_t

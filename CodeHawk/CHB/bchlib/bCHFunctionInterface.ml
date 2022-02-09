@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,14 +35,21 @@ open CHLogger
 open CHXmlDocument
 open CHXmlReader
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHBasicTypes
-open BCHFtsParameter
 open BCHCPURegisters
+open BCHFtsParameter
+open BCHInterfaceDictionary
 open BCHLibTypes
 open BCHUtilities
 open BCHVariableType
 open BCHXmlUtil
+
+
+let id = BCHInterfaceDictionary.interface_dictionary
 
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
@@ -91,24 +98,6 @@ let function_interface_to_pretty (fintf: function_interface_t) =
                       LBLOCK [
                           fts_parameter_to_pretty p; NL])
                     "" "" "" ])]
-
-
-(* --------------------------------------------------------------- comparison *)
-
-let function_interface_compare
-      (fintf1: function_interface_t) (fintf2: function_interface_t) =
-  let fts1 = fintf1.fintf_type_signature in
-  let fts2 = fintf2.fintf_type_signature in
-  let l1 = Stdlib.compare fintf1.fintf_name fintf2.fintf_name in
-  if l1 = 0 then
-    let l2 =
-      list_compare
-        fts1.fts_parameters fts2.fts_parameters fts_parameter_compare in
-    if l2 = 0 then
-      btype_compare fts1.fts_returntype fts2.fts_returntype
-    else l2
-  else l1
-
 
 (* ----------------------------------------------------------------- read xml *)
 
@@ -163,6 +152,10 @@ let read_xml_function_interface (node:xml_element_int):function_interface_t =
     fintf_type_signature = fts
   }
 
+
+let write_xml_function_interface
+      (node: xml_element_int) (fintf: function_interface_t) =
+  id#write_xml_function_interface node fintf
   
 (* ---------------------------------------------------------------- operators *)
 
@@ -284,7 +277,7 @@ let default_function_interface
       fts_parameters = pars;
       fts_varargs = false;
       fts_va_list = None;
-      fts_returntype = t_unknown;
+      fts_returntype = returntype;
       fts_rv_roles = [];
       fts_stack_adjustment = Some adj;
       fts_calling_convention = cc;
