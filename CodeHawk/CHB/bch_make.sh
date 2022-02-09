@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+make -C bchcil
 make -C bchlib
 make -C bchlibpe
 make -C bchlibelf
