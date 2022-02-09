@@ -7,6 +7,7 @@ ZIPLIB = $(shell ocamlfind query zip)
 CHUTIL = $(CODEHAWK)/CH/chutil
 CHGUI  = $(CODEHAWK)/CH_gui
 XPRLIB = $(CODEHAWK)/CH/xprlib
+BCHCIL = $(CHB)/bchcil
 BCHLIB = $(CHB)/bchlib
 PELIB  = $(CHB)/bchlibpe
 ELFLIB = $(CHB)/bchlibelf
@@ -27,6 +28,7 @@ DEP_INCLUDES := -I cmi -I cmx \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
 	-I $(CHGUI) \
+	-I $(BCHCIL)/cmi \
 	-I $(BCHLIB)/cmi \
 	-I $(PELIB)/cmi \
 	-I $(ELFLIB)/cmi \
@@ -54,6 +56,7 @@ CAMLBUILD := ocamlopt str.cmxa unix.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(XPRLIB)/xpr.cmxa \
 	$(CHGUI)/canvaslib.cmxa \
+	$(BCHCIL)/bchcil.cmxa \
 	$(BCHLIB)/bchlib.cmxa \
 	$(PELIB)/bchlibpe.cmxa \
 	$(ELFLIB)/bchlibelf.cmxa \
@@ -99,7 +102,7 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-gui: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPS32LIB)/bchlibmips32.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bch_maingui.cmi cmx/bch_maingui.cmx
+gui: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHCIL)/bchcil.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPS32LIB)/bchlibmips32.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bch_maingui.cmi cmx/bch_maingui.cmx
 	$(CAMLBUILD) -o chx86_gui $(OBJECTS) cmx/bch_maingui.cmx
 
 cmi/%.cmi: %.mli

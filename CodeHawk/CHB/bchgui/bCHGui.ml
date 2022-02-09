@@ -42,6 +42,9 @@ open CHCHIFXml
 open CHXmlDocument
 open CHXmlReader
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHBasicTypes
 open BCHDoubleword
@@ -67,7 +70,6 @@ open BCHConditionalJumpExpr
 open BCHDisassemble
 open BCHDisassemblyMetrics
 open BCHIFSystem
-open BCHGlobalVariables
 open BCHLibx86Types
 open BCHLoopStructure
 open BCHPreFileIO
@@ -92,13 +94,13 @@ open BCHStateDialogs
 
 module H = Hashtbl
 
-
+(*
 module BTypeCollections = CHCollections.Make
   (struct
     type t = btype_t
     let compare = btype_compare 
     let toPretty = btype_to_pretty
-   end)
+   end) *)
 
 let flush_x () = while Glib.Main.iteration false do () done
 let delete_event ev = false
@@ -782,7 +784,8 @@ let view_globals () = ()
   end
 *) 
 
-let view_global_types () =
+let view_global_types () = write_message "--- Temporarily unavailable ---"
+                         (*
   let table = H.create 3 in
   let add (v:variable_t) t =
     let name = v#getName#getBaseName in
@@ -810,7 +813,7 @@ let view_global_types () =
 	     INDENT (3, LBLOCK (List.map (fun t -> 
 	       LBLOCK [ btype_to_pretty t ; NL ]) v#toList)) ; NL ]) result in
   write_to_system_display_pp "Global_types" 
-    (LBLOCK [ STR "Global variable types" ; NL ; NL ; (LBLOCK pp) ])
+    (LBLOCK [ STR "Global variable types" ; NL ; NL ; (LBLOCK pp) ]) *)
 
 let view_stats () = write_message "--- Temporarily unavailable ---"
 (*

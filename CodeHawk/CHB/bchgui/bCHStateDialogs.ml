@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,9 @@ open CHLogger
 open Xprt
 open XprToPretty
 
+(* bchcil*)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHFtsParameter
 open BCHBasicTypes
@@ -58,7 +61,6 @@ open BCHLibTypes
 open BCHLocationInvariant
 open BCHLocation
 open BCHCPURegisters
-open BCHMemoryAccesses
 open BCHMemoryReference
 open BCHPreFileIO
 open BCHSystemInfo
@@ -76,10 +78,8 @@ open BCHAssemblyBlock
 open BCHAssemblyFunction
 open BCHAssemblyFunctions
 open BCHAssemblyInstructionAnnotations
-open BCHGlobalVariables
 open BCHIFSystem
 open BCHLibx86Types
-open BCHRecordMemoryAccesses
 open BCHX86Opcodes
 open BCHX86OpcodeRecords
 
@@ -95,7 +95,7 @@ open BCHGuiUtil
 
 module H = Hashtbl
 
-
+(*
 module BTypeCollections = CHCollections.Make
   (struct
     type t = btype_t * string list
@@ -108,7 +108,8 @@ module BTypeCollections = CHCollections.Make
 	       | h::tl -> LBLOCK [ STR "(" ; STR h ; STR ":" ; 
 				   pretty_print_list tl (fun s -> STR s) "" "." "" ] ]
    end)
-
+ *)
+         
 let pp_str p = string_printer#print p
 
 let get_floca faddr iaddr =
@@ -1377,7 +1378,8 @@ let show_callees_dialog
     BCH_failure p ->
       pr_debug [ STR "Failure in show_callees_dialog: " ; p ; NL ]
 
-let get_type_invs_pretty fname finfo =
+let get_type_invs_pretty fname finfo = (STR "not supported")
+                                     (*
   let tinvs = finfo#ftinv in
   let fInvs = tinvs#get_function_facts in
   let lInvs = tinvs#get_location_facts in
@@ -1423,7 +1425,7 @@ let get_type_invs_pretty fname finfo =
   LBLOCK [ STR "Type invariants for " ; STR fname ; STR " valid for all locations: " ; NL ;
 	   LBLOCK !ppf ; NL ; NL ;
 	   STR "Variable summary " ; NL ; LBLOCK !ppv ; NL ; NL ;
-	   STR "Type invariants per location: " ; NL ; LBLOCK (List.rev !ppl) ; NL ]
+	   STR "Type invariants per location: " ; NL ; LBLOCK (List.rev !ppl) ; NL ]  *)
 
 let show_types_dialog (findex:dw_index_t) (parent:GWindow.window) =
   let faddr = index_to_doubleword findex in
@@ -1556,16 +1558,16 @@ let show_accesses title accessList faddr parent () =
   let _ = GMisc.label ~text:"writers" ~packing:(table#attach ~top:0 ~left:2) () in
   let _ = GMisc.label ~text:"readers" ~packing:(table#attach ~top:0 ~left:3) () in
   let row = ref 1 in
-  let is_memory_read acc =
-    match acc with 
-    | MARead _ | MAIndexedRead _ | MABlockRead _ -> true | _ -> false in
+  let is_memory_read acc = false in
+(*    match acc with 
+    | MARead _ | MAIndexedRead _ | MABlockRead _ -> true | _ -> false in *)
   let _ = List.iter (fun (iaddr,acc) ->
     let floc = get_floca faddr iaddr in
     let ann = create_annotation floc in
     let _ = GMisc.label ~text:iaddr 
       ~packing:(table#attach ~top:!row ~left:0) () in
-    let _ = GMisc.label ~text:(pp_str (memaccess_to_pretty acc)) ~xalign:0.0
-      ~packing:(table#attach ~top:!row ~left:1) () in
+    (* let _ = GMisc.label ~text:(pp_str (memaccess_to_pretty acc)) ~xalign:0.0
+      ~packing:(table#attach ~top:!row ~left:1) () in *)
     let col = if is_memory_read acc then 3 else 2 in       (* FIX *)
     let text = (pp_str ann#toPretty) in
     let _ = GMisc.label ~text ~packing:(table#attach ~left:col ~top:!row) () in
