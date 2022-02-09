@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+make -C bchcil clean
 make -C bchlib clean
 make -C bchlibpe clean
 make -C bchlibelf clean

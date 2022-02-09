@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1160,7 +1162,7 @@ let load_pe_files () =
                             STR "has been created." ]))
 
 let read_pe_file (filename:string) (optmaxsize:int option) =
-  let maxStringSize = 1000000000 in
+  let maxStringSize = 100000000 in
   let ch = open_in_bin filename in
   let ch = IO.input_channel ch in
   let exeString = IO.nread ch maxStringSize in
