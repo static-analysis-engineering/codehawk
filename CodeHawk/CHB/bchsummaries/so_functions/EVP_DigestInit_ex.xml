@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2021-12-22 17:07:25"/>
+  <libfun lib="so_functions" name="EVP_DigestInit_ex">
+    <documentation>
+      <desc>
+	Sets up digest context ctx to use a digest type. type is
+	typically supplied by a function such as EVP_sha1(), or a
+	value explicitly fetched with EVP_MD_fetch().
+	
+	If impl is non-NULL, its implementation of the digest type is
+	used if there is one, and if not, the default implementation
+	is used.
+	
+	The type parameter can be NULL if ctx has been already
+	initialized with another EVP_DigestInit_ex() call and has not
+	been reset with EVP_MD_CTX_reset().
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>EVP_DigestInit_ex(</ll>
+          <ld>EVP_MD_CTX *ctx</ld>
+          <ld>const EVP_MD *type</ld>
+          <ld>ENGINE *impl</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="ctx">digest context</par>
+        <par name="type">digest type</par>
+        <par name="impl">implementation of digest type</par>
+        <return>
+          <rc cond="success">1</rc>
+          <rc cond="failure">0</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="cdecl" name="EVP_DigestInit_ex">
+      <par loc="stack" name="ctx" nr="1">
+        <type><ptr>EVP_MD_CTX</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="type" nr="2">
+        <type><ptr>EVP_MD</ptr></type>
+      </par>
+      <par loc="stack" name="impl" nr="3">
+        <type><ptr>ENGINE</ptr></type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

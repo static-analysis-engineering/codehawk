@@ -11,7 +11,7 @@
     </apidoc>
    </documentation>
    <api adj="0" cc="cdecl" name="exit">
-    <type>void</type>
+    <returntype>void</returntype>
     <par loc="stack" name="status" nr="1">
      <type>int</type>
      <roles>

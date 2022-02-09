@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2021-12-22 17:14:45"/>
+  <libfun lib="so_functions" name="EVP_DigestUpdate">
+    <documentation>
+      <desc>
+	Hashes cnt bytes of data at d into the digest context
+	ctx. This function can be called several times on the same ctx
+	to hash additional data.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>EVP_DigestUpdate(</ll>
+          <ld>EVP_MD_CTX *ctx</ld>
+          <ld>const void *d</ld>
+          <ld>size_t cnt</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="ctx">digest context</par>
+        <par name="d">data to be hashed</par>
+        <par name="cnt">size of d in bytes</par>
+        <return>
+          <rc cond="success">1</rc>
+          <rc cond="failure">0</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="cdecl" name="EVP_DigestUpdate">
+      <par loc="stack" name="ctx" nr="1">
+        <type><ptr>EVP_MX_CTX</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="d" nr="2">
+        <type><ptr>void</ptr></type>
+	<pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="cnt" nr="3">
+        <type>size_t</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

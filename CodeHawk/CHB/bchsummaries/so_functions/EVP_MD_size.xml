@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2021-12-26 17:49:23"/>
+  <libfun lib="so_functions" name="EVP_MD_size">
+    <documentation>
+      <desc>
+	Return the size of the message digest when passed an EVP_MD or
+	an EVP_MD_CTX structure, i.e. the size of the hash.
+      </desc>
+      <apidoc>
+        <pt>int EVP_MD_size (const EVP_MD *md)</pt>
+        <par name="md">message digest</par>
+        <return>
+          <rc cond="success">size of the hash</rc>
+          <rc cond="failure">?</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="EVP_MD_size">
+      <par loc="stack" name="md" nr="1">
+        <type><ptr>EVP_MD</ptr></type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

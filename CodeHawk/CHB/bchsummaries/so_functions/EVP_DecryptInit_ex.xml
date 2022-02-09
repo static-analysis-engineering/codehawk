@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2022-01-08 21:47:39"/>
+  <libfun lib="so_functions" name="EVP_DecryptInit_ex">
+    <documentation>
+      <desc>Sets up a cipher context for decryption</desc>
+      <apidoc>
+        <pt>
+          <ll>int EVP_DecryptInit_ex(</ll>
+          <ld>EVP_CIPHER_CTX *ctx</ld>
+          <ld>EVP_CIPHER *type</ld>
+          <ld>ENGINE *impl</ld>
+          <ld>const unsigned char *key</ld>
+          <ld>const unsigned char *iv</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="ctx">cipher context</par>
+        <par name="type">cipher type</par>
+        <par name="impl">implementation engine</par>
+        <par name="key">symmetric encryption key</par>
+        <par name="iv">initialization vector</par>
+        <return>
+          <rc cond="success">1</rc>
+          <rc cond="failure">0</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="EVP_DecryptInit_ex">
+      <par loc="stack" name="ctx" nr="1">
+        <type><ptr>EVP_CIPHER_CTX</ptr></type>
+      </par>
+      <par loc="stack" name="type" nr="2">
+        <type><ptr>EVP_CIPHER</ptr></type>
+      </par>
+      <par loc="stack" name="impl" nr="3">
+        <type><ptr>ENGINE</ptr></type>
+      </par>
+      <par loc="stack" name="key" nr="4">
+        <type><ptr>char</ptr></type>
+      </par>
+      <par loc="stack" name="iv" nr="5">
+        <type><ptr>char</ptr></type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>
