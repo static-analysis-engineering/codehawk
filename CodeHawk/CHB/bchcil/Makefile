@@ -1,5 +1,5 @@
 CODEHAWK = ../..
-CIL = $(shell ocamlfind query cil)
+CIL = $(shell ocamlfind query goblint-cil)
 ZARITHLIB = $(shell ocamlfind query zarith)
 
 CHLIB = $(CODEHAWK)/CH/chlib

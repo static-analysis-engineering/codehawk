@@ -2,7 +2,7 @@ CODEHAWK = ../..
 CHB = $(CODEHAWK)/CHB
 
 ZARITHLIB = $(shell ocamlfind query zarith)
-CIL = $(shell ocamlfind query cil)
+CIL = $(shell ocamlfind query goblint-cil)
 
 THISDIR=$(shell pwd)
 COBJ=$(THISDIR)/cobj
