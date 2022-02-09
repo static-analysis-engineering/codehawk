@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,9 @@ open Xprt
 open XprToPretty
 open CHPrettyUtil
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHFtsParameter
 open BCHBasicTypes
@@ -60,6 +63,8 @@ open BCHTypeDefinitions
 open BCHUtilities
 open BCHVariableType
 open BCHXmlUtil
+
+let btype_compare = BCHBCUtil.typ_compare
 
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
@@ -268,6 +273,16 @@ object (self:'a)
 
   method is_jni_function =
     match finterface.fintf_jni_index with Some _ -> true | _ -> false
+
+
+  method write_xml (node: xml_element_int) =
+    let fintf = xmlElement "fintf" in
+    let fsem = xmlElement "sem" in
+    begin
+      write_xml_function_interface fintf self#get_function_interface;
+      write_xml_function_semantics fsem self#get_function_semantics;
+      node#appendChildren [fintf; fsem];
+    end
 
   method toPretty = 
     let name = self#get_name in

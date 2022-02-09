@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -85,43 +85,6 @@ let rec call_target_to_pretty (tgt:call_target_t) =
 	 pretty_print_list tgts call_target_to_pretty "{" ", " "}"]
   | VirtualTarget a  ->
      LBLOCK [STR "vrt:"; STR (function_interface_to_prototype_string a)]
+  | CallbackTableTarget (dw, offset) ->
+     LBLOCK [STR "cbt:"; dw#toPretty; STR "@"; INT offset]
   | UnknownTarget -> LBLOCK [STR "unknown"]
-
-
-(* --------------------------------------------------------------- comparison *)
-
-let rec call_target_compare (t1:call_target_t) (t2:call_target_t) =
-  match (t1,t2) with
-  | (StubTarget t1, StubTarget t2) -> function_stub_compare t1 t2
-  | (StubTarget _, _) -> -1
-  | (_, StubTarget _) -> 1
-  | (StaticStubTarget (a1,t1), StaticStubTarget (a2,t2)) ->
-     let l0 = a1#compare a2 in if l0 = 0 then function_stub_compare t1 t2 else l0
-  | (StaticStubTarget _, _) -> -1
-  | (_, StaticStubTarget _) -> 1
-  | (AppTarget a1,AppTarget a2) -> a1#compare a2
-  | (AppTarget _, _) -> -1
-  | (_, AppTarget _) -> 1
-  | (InlinedAppTarget (a1,_),InlinedAppTarget (a2,_)) -> a1#compare a2
-  | (InlinedAppTarget _,_) -> -1
-  | (_, InlinedAppTarget _) -> 1
-  | (WrappedTarget (a1, fintf1, tgt1, _), WrappedTarget (a2, fintf2, tgt2, _)) ->
-    let l1 = a1#compare a2 in
-    if l1 = 0 then 
-      let l2 = function_interface_compare fintf1 fintf2 in
-      if l2 = 0 then call_target_compare tgt1 tgt2
-      else l2
-    else l1
-  | (WrappedTarget _, _) -> -1
-  | (_, WrappedTarget _) -> 1
-  | (VirtualTarget a1, VirtualTarget a2) -> function_interface_compare a1 a2
-  | (VirtualTarget _, _) -> -1
-  | (_, VirtualTarget _) -> 1
-  | (IndirectTarget (t1,tl1), IndirectTarget (t2,tl2)) ->
-    let l1 = bterm_opt_compare t1 t2 in
-    if l1 = 0 then list_compare tl1 tl2 call_target_compare else l1
-  | (IndirectTarget _, _) -> -1
-  | (_, IndirectTarget _) -> 1
-  | (UnknownTarget, UnknownTarget) -> 0
-
-

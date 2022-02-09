@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,12 +38,16 @@ open CHUtil
 open CHXmlReader
 open CHXmlDocument
 
+(* bchcil *)
+open BCHBCFiles
+
 (* bchlib *)
 open BCHBasicTypes
 open BCHConstantDefinitions
 open BCHDemangler
 open BCHFunctionSummary
 open BCHLibTypes
+open BCHParseBCFunctionSummary
 open BCHSystemInfo
 open BCHSystemSettings
 open BCHTypeDefinitions
@@ -214,7 +218,7 @@ object (self)
 	  H.add nosummaries (dll,fname) true
 	end
 
-  method load_so_function (fname:string) =
+  method load_so_function (fname: string) =
     let _ = requested_so_summaries#add fname in
     if H.mem sosummaries fname || missing_so_summaries#has fname then
       ()
@@ -233,11 +237,19 @@ object (self)
                 self#read_so_function_summary_string fname xstring) so_paths in
       if H.mem sosummaries fname then
         ()
-      else
-        begin
-          chlog#add "no so summary" (LBLOCK [STR fname]) ;
-          missing_so_summaries#add fname
-        end
+      else if bcfiles#has_gfun fname then
+        let _ = self#parse_bc_so_function_summary fname in
+        if H.mem sosummaries fname then
+          ()
+        else
+          begin
+            chlog#add "no so summary" (LBLOCK [STR fname]) ;
+            missing_so_summaries#add fname
+          end
+
+  method private parse_bc_so_function_summary (fname: string) =
+    let fsum = parse_bc_function_summary fname in
+    H.add sosummaries fname fsum
 
   method private load_template_jni_summary (templatename:string) =
     if H.mem jnitemplates templatename then () else
@@ -252,12 +264,14 @@ object (self)
 	  let summary = read_xml_function_summary node in
 	  begin
 	    H.add jnitemplates templatename summary ;
-	    chlog#add "jni template" (LBLOCK [ STR templatename ])
+	    chlog#add "jni template" (LBLOCK [STR templatename])
 	  end
 	else
-	  raise_xml_error root (LBLOCK [ STR "Error in " ; STR templatename ])
+	  raise_xml_error root (LBLOCK [STR "Error in "; STR templatename])
       else
-	raise (BCH_failure (LBLOCK [ STR "No jni template found for " ; STR templatename ]))
+	raise
+          (BCH_failure
+             (LBLOCK [STR "No jni template found for "; STR templatename]))
 
   method private load_jni_function (index:int) =
     if H.mem jnisummaries index || missingjnisummaries#has index then
@@ -650,9 +664,9 @@ object (self)
       H.mem dllsummaries (dll,fname)
     end
 
-  method has_so_function (fname:string) =
+  method has_so_function (fname: string) =
     begin
-      self#load_so_function fname ;
+      self#load_so_function fname;
       H.mem sosummaries fname
     end
 
@@ -788,5 +802,6 @@ object (self)
     result
 
 end
+
 
 let function_summary_library = new function_summary_library_t

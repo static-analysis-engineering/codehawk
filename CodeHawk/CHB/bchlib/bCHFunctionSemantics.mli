@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,9 @@ open CHPretty
 (* chutil *)
 open CHXmlDocument
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHLibTypes
 
@@ -45,6 +48,8 @@ val read_xml_function_interface_and_semantics:
   xml_element_int
   -> xml_element_int
   -> (function_interface_t * function_semantics_t)
+
+val write_xml_function_semantics: xml_element_int -> function_semantics_t -> unit
 
 val join_semantics:
   function_semantics_t -> function_semantics_t option -> function_semantics_t

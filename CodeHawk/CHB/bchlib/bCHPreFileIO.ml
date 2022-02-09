@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,10 @@ open CHFileIO
 open CHLogger
 open CHXmlDocument
 open CHXmlReader
+
+(* bchcil *)
+open BCHBCDictionary
+open BCHBCFiles
 
 (* bchlib *)
 open BCHBasicTypes
@@ -83,6 +87,10 @@ open BCHVariable
  *                  r/name_ext_arm_asm.xml   (arm)
  *                  r/functions/name_ext_<address>.xml
  *
+ * - artifacts parsed from c files:
+ *      name.ext.ch/c/name_ext_bcfile.xml
+ *                  c/functions/name_ext_<address>.xml
+ *
  * - exports:
  *      name.ext.ch/exports/functions/name_ext_address>.xml  (currently not used)
  *
@@ -106,12 +114,15 @@ let get_chdir () = system_data#get_filename ^ ".ch"
                         
 let get_analysis_dir () = Filename.concat (get_chdir ()) "a"
 let get_results_dir () = Filename.concat (get_chdir ()) "r"
+let get_bc_dir () = Filename.concat (get_chdir ()) "c"
 let get_executable_dir () = Filename.concat (get_chdir ()) "x"
 let get_export_dir () = Filename.concat (get_chdir ())  "exports"
 let get_userdata_dir () = Filename.concat (get_chdir ()) "u"
 let get_status_dir () = Filename.concat (get_chdir ()) "s"
 
+
 let functions_file_path = ref []
+
 
 (* Returns a list of strings that form the components separated by the separator;
 	 without the separator itself included *)
@@ -121,7 +132,8 @@ let string_nsplit (separator:char) (s:string):string list =
   let start = ref 0 in
   begin
     while !start < len do
-      let s_index = try String.index_from s !start separator with Not_found -> len in
+      let s_index =
+        try String.index_from s !start separator with Not_found -> len in
       let substring = String.sub s !start (s_index - !start) in
       begin
 	result := substring :: !result ;
@@ -161,6 +173,7 @@ let create_directory dir =
   List.iter (fun d -> if Sys.file_exists d then () else sys_command ("mkdir " ^ d)) 
     (List.rev directories)
 
+
 (* ------------------------------------ add name_ext_functions.jar to classpath *)
 let set_functions_file_path () =
   let name = get_filename () in
@@ -170,10 +183,57 @@ let set_functions_file_path () =
   match open_path jarfile with
   | Some p -> functions_file_path := p :: !functions_file_path
   | _ -> ()
-       
+
+
 let get_functions_file_path () = !functions_file_path
 
-(* ------------------------------------------------------------- userdata files *)
+(* ----------------------------------------------------------- c-parsed files *)
+let get_bc_filename (name: string) =
+  let exename = get_filename () in
+  let fdir = get_bc_dir () in
+  let _ = create_directory fdir in
+  Filename.concat fdir (exename ^ "_" ^ name)
+
+
+let get_bcfiles_filename () = get_bc_filename "bcfiles.xml"
+
+
+let get_bc_function_filename (name: string) =
+  let exename = get_filename () in
+  let fdir = get_bc_dir () in
+  let _ = create_directory fdir in
+  let fdir = Filename.concat fdir "functions" in
+  let _ = create_directory fdir in
+  Filename.concat fdir (exename ^ "_" ^ name ^ "_bc.xml")
+
+
+let save_bc_function (name: string) =
+  let filename = get_bc_function_filename name in
+  let doc = xmlDocument () in
+  let root = get_bch_root "bcfunction" in
+  let bcnode = xmlElement "bcfunction" in
+  begin
+    bcfiles#write_xml_function bcnode name;
+    doc#setNode root;
+    root#appendChildren [bcnode];
+    file_output#saveFile filename doc#toPretty
+  end
+
+
+let save_bc_files () =
+  let filename = get_bcfiles_filename () in
+  let doc = xmlDocument () in
+  let root = get_bch_root "bcfiles" in
+  let bcnode = xmlElement "bcfiles" in
+  begin
+    List.iter save_bc_function bcfiles#get_gfun_names;
+    bcfiles#write_xml bcnode;
+    doc#setNode root;
+    root#appendChildren [bcnode];
+    file_output#saveFile filename doc#toPretty
+  end
+
+(* ----------------------------------------------------------- userdata files *)
 let get_userdata_filename (name:string) =
   let exename = get_filename () in
   let fdir = get_userdata_dir () in
@@ -331,6 +391,12 @@ let get_bdictionary_filename () =
   let fdir = get_analysis_dir  () in
   let  _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_bdict.xml")
+
+let get_bcdictionary_filename () =
+  let exename = get_filename () in
+  let fdir = get_analysis_dir  () in
+  let  _ = create_directory fdir in
+  Filename.concat fdir (exename ^ "_bcdict.xml")
 
 let get_interface_dictionary_filename () =
   let exename = get_filename () in
@@ -502,13 +568,38 @@ let create_userdata_system_file (appname:string) =
       file_output#saveFile filename doc#toPretty
     end
 
+
 let load_userdata_cpp_class_file (cname:string) =
   let filename = get_userdata_cpp_class_filename cname in
   load_xml_file filename "cpp-class"
 
+
 let load_userdata_struct_file (name:string) =
   let filename = get_userdata_struct_filename name in
   load_xml_file filename "struct"
+
+
+let load_bc_function (name: string) =
+  let filename = get_bc_function_filename name in
+  load_xml_file filename "bcfunction"
+
+
+let load_bc_files () =
+  let filename = get_bcfiles_filename () in
+  let optnode = load_xml_file filename "bcfiles" in
+  match optnode with
+  | Some bcnode ->
+     begin
+       bcfiles#read_xml bcnode;
+       List.iter (fun name ->
+           let optbcnode = load_bc_function name in
+           match optbcnode with
+           | Some bcnode -> bcfiles#read_xml_function bcnode name
+           | _ -> ())
+         bcfiles#get_gfun_names
+     end
+  | _ -> ()
+
 
 let save_export_function_summary_file (fname:string) (node:xml_element_int) =
   let filename = get_export_function_filename fname in
@@ -519,6 +610,28 @@ let save_export_function_summary_file (fname:string) (node:xml_element_int) =
     root#appendChildren [ node ] ;
     file_output#saveFile filename doc#toPretty 
   end
+
+let save_userdata_function_summary_file (fname: string) (node: xml_element_int) =
+  let filename = get_userdata_function_filename fname in
+  let doc = xmlDocument () in
+  let root = get_bch_root "function-summary" in
+  begin
+    doc#setNode root;
+    root#appendChildren [node];
+    file_output#saveFile filename doc#toPretty
+  end
+
+
+let save_userdata_function_summaries_file (node: xml_element_int) =
+  let filename = get_userdata_filename "cil_summaries_u.xml" in
+  let doc = xmlDocument () in
+  let root = get_bch_root "cil-summaries" in
+  begin
+    doc#setNode root;
+    root#appendChildren [node];
+    file_output#saveFile filename doc#toPretty
+  end
+
 
 let save_export_data_value_file  (dname:string) (node:xml_element_int) =
   let filename = get_export_data_filename dname in
@@ -627,9 +740,9 @@ let save_bdictionary () =
   let root = get_bch_root "bdictionary" in
   let fnode = xmlElement  "bdictionary" in
   begin
-    bdictionary#write_xml fnode ;
-    doc#setNode root ;
-    root#appendChildren [ fnode ] ;
+    bdictionary#write_xml fnode;
+    doc#setNode root;
+    root#appendChildren [fnode];
     file_output#saveFile filename doc#toPretty
   end
 
@@ -640,17 +753,40 @@ let load_bdictionary () =
   | Some bnode -> bdictionary#read_xml bnode
   | _ -> ()
 
+
+let save_bcdictionary () =
+  let filename = get_bcdictionary_filename () in
+  let doc = xmlDocument () in
+  let root = get_bch_root "bcdictionary" in
+  let fnode = xmlElement "bcdictionary" in
+  begin
+    bcdictionary#write_xml fnode;
+    doc#setNode root;
+    root#appendChildren [fnode];
+    file_output#saveFile filename doc#toPretty
+  end
+
+
+let load_bcdictionary () =
+  let filename = get_bcdictionary_filename () in
+  let optnode = load_xml_file filename "bcdictionary" in
+  match optnode with
+  | Some bnode -> bcdictionary#read_xml bnode
+  | _ -> ()
+
+
 let save_interface_dictionary () =
   let filename =  get_interface_dictionary_filename () in
   let doc = xmlDocument () in
   let root = get_bch_root  "interface-dictionary" in
   let fnode = xmlElement "interface-dictionary" in
   begin
-    interface_dictionary#write_xml fnode ;
-    doc#setNode root ;
-    root#appendChildren [ fnode ] ;
+    interface_dictionary#write_xml fnode;
+    doc#setNode root;
+    root#appendChildren [fnode];
     file_output#saveFile filename doc#toPretty
   end
+
 
 let load_interface_dictionary () =
   let filename =  get_interface_dictionary_filename () in

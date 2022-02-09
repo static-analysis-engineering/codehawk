@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -215,7 +215,7 @@ object (self)
     else
       let memref = new memory_reference_t ~vard ~index ~base in
       begin
-        H.add table index memref ;
+        H.add table index memref;
         memref
       end
 
@@ -241,10 +241,10 @@ object (self)
   method is_unknown_reference (index:int) = 
     (self#get_memory_reference index)#is_unknown_reference
       
-  method read_xml (node:xml_element_int) =
+  method read_xml (node: xml_element_int) =
     List.iter (fun (index,base) ->
         H.add table index (new memory_reference_t ~vard ~index ~base))
-              vard#get_indexed_bases
+      vard#get_indexed_bases
       
 end
   

@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -217,18 +217,22 @@ end
 
 let make_location = new location_t
 
+
 let make_i_location (loc:location_int) (iaddr:doubleword_int) =
   let ctxt = loc#ctxt in
   let loc = { loc_faddr = loc#base_f ; loc_iaddr = iaddr } in
   make_location ~ctxt loc
 
+
 let make_c_location (loc:location_int) (ctxt:context_t) =
   let newctxt = ctxt :: loc#ctxt in
   make_location ~ctxt:newctxt loc#base_loc
 
+
 let ctxt_string_to_location (faddr:doubleword_int) (s:ctxt_iaddress_t) =
   let (ctxt,basef,iaddr) = decompose_ctxt_string faddr s in
   make_location ~ctxt { loc_faddr = basef ; loc_iaddr = iaddr }
+
 
 let add_ctxt_to_ctxt_string
       (faddr:doubleword_int)    (* outer function of existing context *)
@@ -237,13 +241,17 @@ let add_ctxt_to_ctxt_string
   let loc = ctxt_string_to_location faddr ctxtstr in
   (make_c_location loc newctxt)#ci
 
+
 let symbol_to_ctxt_string (s:symbol_t) =
   match s#getAttributes with
   | c :: _ -> c
   | _ ->
-     raise (BCH_failure
-              (LBLOCK [ STR "Symbol cannot be converted to context string: " ;
-                        s#toPretty ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "Symbol cannot be converted to context string: ";
+               s#toPretty]))
+
 
 let ctxt_string_to_symbol (name:string) ?(atts=[]) (s:ctxt_iaddress_t) =
   new symbol_t ~atts:(s::atts) name

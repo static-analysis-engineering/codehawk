@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,12 +33,13 @@ open CHPretty
 (* chutil *)
 open CHXmlDocument
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHLibTypes
 
 val sideeffect_to_pretty: sideeffect_t -> pretty_t
-
-val sideeffect_compare: sideeffect_t -> sideeffect_t -> int
 
 val read_xml_par_sideeffects: xml_element_int -> sideeffect_t list
 

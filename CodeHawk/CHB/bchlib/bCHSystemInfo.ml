@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -55,6 +55,9 @@ open CHUtil
 (* xprlib *)
 open XprTypes
 open XprXml
+
+(* bchcil *)
+open BCHCBasicTypes
 
 (* bchlib *)
 open BCHBasicTypes
@@ -122,6 +125,8 @@ object (self)
                                         entry point *)
 
   val mutable jumptables = []
+  val mutable ifiles = []
+
   val data_blocks = new DataBlockCollections.set_t
   val jumptargets = H.create 13
 
@@ -282,6 +287,11 @@ object (self)
     else
       raise (BCH_failure (LBLOCK [ STR "Address " ; addr#toPretty ;
 				   STR " is not a known thread start address" ]))
+
+  method add_ifile (name: string) =
+    ifiles <- name :: ifiles
+
+  method ifiles = ifiles
 
   method add_lib_function_loaded (dll:string) (name:string) =
     let entry = if H.mem lib_functions_loaded dll then
@@ -750,7 +760,11 @@ object (self)
           H.add initialized_memory a memstring ;
           chlog#add
             "initialized memory"
-            (LBLOCK [ STR a ; STR ": " ;  INT (String.length memstring) ; STR " bytes" ])
+            (LBLOCK [
+                 STR a;
+                 STR ": ";
+                 INT (String.length memstring);
+                 STR " bytes"])
         end) (getc "mem")
 
   method private read_xml_settings (node:xml_element_int) =
@@ -774,7 +788,8 @@ object (self)
 	match name with
 	| "sideeffects-on-globals" ->
            let gvAffected =
-	     List.map (fun gn -> gn#getAttribute "a") (n#getTaggedChildren "gv") in	    
+	     List.map
+               (fun gn -> gn#getAttribute "a") (n#getTaggedChildren "gv") in
 	   system_settings#enable_sideeffects_on_globals gvAffected
 	| _ ->
            raise (BCH_failure
@@ -1187,7 +1202,7 @@ object (self)
 	  begin
 	    type_definitions#add_typeinfo name ty;
 	    match ty with
-	    | TComp (SimpleName cname, [], _) ->
+	    | TCppComp (SimpleName cname, [], _) ->
                self#read_xml_struct_file cname
 	    | _ -> ()
 	  end) (node#getTaggedChildren "type-info")
@@ -1219,11 +1234,12 @@ object (self)
 	    let node = root#getTaggedChild "symbolic-flags" in
 	    read_xml_symbolic_flags node
 	  else
-	    raise (BCH_failure 
-		     (LBLOCK [
-                          STR "Symbolic constant file ";
-                          STR filename ;
-			  STR " has neither constants nor flags specified" ]))
+	    raise
+              (BCH_failure 
+		 (LBLOCK [
+                      STR "Symbolic constant file ";
+                      STR filename;
+		      STR " has neither constants nor flags specified"]))
 	else
 	  chlog#add "symbolic constants" (LBLOCK [STR name; STR " not found"])
     with
@@ -1245,10 +1261,11 @@ object (self)
 	let doc = readXmlDocumentString cstring in
 	let root = doc#getRoot in
 	let node = root#getTaggedChild "struct" in
-	let cinfo = read_xml_compinfo node in
-	let enums = get_struct_field_enums cinfo in
+	let cinfo = read_xml_summary_struct node in
+	(* let enums = get_struct_field_enums cinfo in *)
+        let enums = [] in
 	begin
-	  List.iter self#read_xml_constant_file enums ;
+	  List.iter self#read_xml_constant_file enums;
 	  type_definitions#add_compinfo name cinfo
 	end
       else
@@ -1375,15 +1392,15 @@ object (self)
       self#read_xml_data_blocks (getc "data-blocks") ;
       (if hasc "classes" then self#read_xml_classes (getc "classes")) ;
       (if hasc "structs" then self#read_xml_structs (getc "structs")) ;
-      (if hasc "struct-constants" then self#read_xml_structconstants (getc "struct-constants"));
-      (* self#read_xml_function_entry_points (getc "function-entry-points") ; *)
-      (* self#read_xml_function_names (getc "function-names") ; *)
-      (* self#read_xml_nonreturning_functions (getc "non-returning-functions") ; *)
+      (if hasc "struct-constants" then
+         self#read_xml_structconstants (getc "struct-constants"));
       (if hasc "loaded-dlls" then self#read_xml_loaded_dlls (getc "loaded-dlls")) ;
-      (if hasc "string-xreferences" then string_table#read_xml (getc "string-xreferences")) ;
+      (if hasc "string-xreferences" then
+         string_table#read_xml (getc "string-xreferences")) ;
       (if hasc "thread-start-functions" then
 	  self#read_xml_thread_start_functions (getc "thread-start-functions")) ;
-      (if hasc "goto-returns" then self#read_xml_goto_returns (getc "goto-returns"))
+      (if hasc "goto-returns" then
+         self#read_xml_goto_returns (getc "goto-returns"))
     end
       
   method get_userdeclared_codesections = userdeclared_codesections#listOfKeys

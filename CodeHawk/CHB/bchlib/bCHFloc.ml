@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,10 @@ open XprToPretty
 open XprUtil
 open Xsimplify
 open XprXml
+
+(* bchcil *)
+open BCHBCUtil
+open BCHCBasicTypes
 
 (* bchlib *)
 open BCHFtsParameter
@@ -159,6 +163,7 @@ end)
 
 let check_chain_for_address (cfaddr:doubleword_int) (v:variable_t) = false
 
+
 class floc_t (finfo:function_info_int) (loc:location_int):floc_int =
 object (self)
 
@@ -197,7 +202,8 @@ object (self)
 	self#f#ftinv#add_var_fact self#cia v ~structinfo t 
 
 
-  method add_const_type_fact (c: numerical_t) (t: btype_t) =
+  method add_const_type_fact (c: numerical_t) (t: btype_t) = ()
+                                                               (*
     begin
       self#f#ftinv#add_const_fact self#cia c t ;
       match t with
@@ -213,7 +219,7 @@ object (self)
 	           let tinfo = type_definitions#get_type name in
 	           begin
 		     match tinfo with
-		     | TComp (SimpleName cname, [], _)
+		     | TCppComp (SimpleName cname, [], _)
                           when type_definitions#has_compinfo cname ->
 		        let cinfo = type_definitions#get_compinfo cname in
 		        List.iter (fun fldinfo ->
@@ -244,9 +250,10 @@ object (self)
              end)
       | _ -> ()
     end
+                                                                *)
 
-
-  method add_xpr_type_fact (x: xpr_t) (t: btype_t) =
+  method add_xpr_type_fact (x: xpr_t) (t: btype_t) = ()
+                                                       (*
     if is_random x then
       ()
     else
@@ -279,7 +286,7 @@ object (self)
 		  let tinfo = type_definitions#get_type name in
 		  begin
 		    match tinfo with
-		    | TComp (SimpleName cname, [], _)
+		    | TCppComp (SimpleName cname, [], _)
                          when type_definitions#has_compinfo cname ->
 		      let cinfo = type_definitions#get_compinfo cname in
 		      List.iter (fun fldinfo ->
@@ -298,7 +305,7 @@ object (self)
 	  end
 	with
 	| Invalid_argument msg -> ()
-
+                                                        *)
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    *                                                            call targets *
@@ -455,16 +462,17 @@ object (self)
     let get_stackargs pars =
       List.map
         (fun p ->
+          (* The first stack argument is at offset 0 (different from mips) *)
           match p.apar_location with
           | StackParameter i ->
              let memref = self#f#env#mk_local_stack_reference in
              let argvar =
-               match self#get_stackpointer_offset "mips" with
-               | (0,sprange) ->
+               match self#get_stackpointer_offset "arm" with
+               | (0, sprange) ->
                   (match sprange#singleton with
                    | Some num ->
                       self#f#env#mk_memory_variable
-                        memref (num#add (mkNumerical 16))
+                        memref (num#add (mkNumerical 0))
                    | _ ->
                       self#f#env#mk_unknown_memory_variable p.apar_name)
                | _ ->
@@ -635,10 +643,14 @@ object (self)
            (var1:variable_t) (var2:variable_t) (offset:numerical_t) =
     let _ = track_function
               ~iaddr:self#cia self#fa
-              (LBLOCK [ STR "get_memory_variable_2: " ;
-                        STR "var1: " ;  var1#toPretty ;
-                        STR "; var2: " ; var2#toPretty ;
-                        STR "; offset: " ; offset#toPretty ]) in
+              (LBLOCK [
+                   STR "get_memory_variable_2: ";
+                   STR "var1: ";
+                   var1#toPretty;
+                   STR "; var2: ";
+                   var2#toPretty;
+                   STR "; offset: ";
+                   offset#toPretty]) in
     let addr = XOp (XPlus, [ XVar var1 ; XVar var2 ]) in
     let addr = XOp (XPlus, [ addr ; num_constant_expr offset ]) in
     let address = self#inv#rewrite_expr addr (self#env#get_variable_comparator) in
@@ -646,8 +658,9 @@ object (self)
     if is_constant_offset memoffset then
       self#env#mk_memory_variable memref (get_total_constant_offset memoffset)
     else
-      self#env#mk_memory_variable (self#env#mk_unknown_memory_reference "memref-2") numerical_zero
-      											    
+      self#env#mk_memory_variable
+        (self#env#mk_unknown_memory_reference "memref-2") numerical_zero
+
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save ScaledReg (cpureg1, cpureg2, s, offset)  (memrefs3)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
@@ -697,10 +710,11 @@ object (self)
            default ()
          end
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   * resolve and save ScaledReg (None,indexreg, scale, offset)  (scale <> 1)  (memrefs4)
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-	
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   * resolve and save ScaledReg (None,indexreg, scale, offset)
+   *      (scale <> 1)  (memrefs4)
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+
   method get_memory_variable_4 (index:variable_t) (scale:int) (offset:numerical_t) =
     let indexExpr = self#rewrite_variable_to_external index in
     let offsetXpr =
@@ -746,7 +760,7 @@ object (self)
                      STR "offset: " ; offset#toPretty ]) ;
          self#env#mk_unknown_memory_variable (x2s offsetXpr)
        end
-      											
+
   (* Creates expressions in the environment of the call target with variables
      wrapped in external variables                                            *)
   method externalize_expr (tgt_faddr:doubleword_int) (x:xpr_t) = [] 
@@ -767,7 +781,8 @@ object (self)
   method has_initial_value = self#inv#var_has_initial_value 
 
   method private is_initial_value_variable (v:variable_t) =
-    (self#f#env#is_initial_memory_value v) || (self#env#is_initial_register_value v)
+    (self#f#env#is_initial_memory_value v)
+    || (self#env#is_initial_register_value v)
       
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * esp offset                                                                   *
@@ -1080,7 +1095,8 @@ object (self)
           let memref = self#env#mk_base_variable_reference v in
           let offset = match xoffset with
             | XConst (IntConst n) -> ConstantOffset (n, NoOffset)
-            | XOp (XMult, [XConst (IntConst n); XVar v]) -> IndexOffset (v, n#toInt, NoOffset)
+            | XOp (XMult, [XConst (IntConst n); XVar v]) ->
+               IndexOffset (v, n#toInt, NoOffset)
             | _ -> UnknownOffset in
           (memref,offset)
        | _ -> default ()
@@ -1116,10 +1132,16 @@ object (self)
              default ()
          with
          | BCH_failure p ->
-            raise (BCH_failure
-                     (LBLOCK [  STR "get_lhs_from_address: " ; n#toPretty ;
-                                STR "; " ; self#l#toPretty ;
-                                STR " (" ;  p ; STR ")"  ])))
+            raise
+              (BCH_failure
+                 (LBLOCK [
+                      STR "get_lhs_from_address: ";
+                      n#toPretty;
+                      STR "; ";
+                      self#l#toPretty;
+                      STR " (";
+                      p;
+                      STR ")"])))
      | _ ->
         default ()
 	 
@@ -1154,11 +1176,16 @@ object (self)
    method get_test_variables = self#f#get_test_variables self#cia
      
    method get_test_expr = 
-     self#inv#rewrite_expr (self#f#get_test_expr self#cia) (self#env#get_variable_comparator)
+     self#inv#rewrite_expr
+       (self#f#get_test_expr self#cia) (self#env#get_variable_comparator)
+
+   method get_raw_test_expr =
+     self#f#get_test_expr self#cia
      
    (* return the address of the memory reference *)
    method private get_address_bterm
-                    (memref:memory_reference_int) (targetty:btype_t):bterm_t option = None
+                    (memref:memory_reference_int)
+                    (targetty:btype_t):bterm_t option = None
                                                                                     
    method private get_variable_bterm (v:variable_t) =
      try
@@ -1205,7 +1232,8 @@ object (self)
        | Some dest ->
           begin
 	    match dest with
-	    (* null dereference is taken care of elsewhere, so it can be ignored here *)
+	    (* null dereference is taken care of elsewhere,
+               so it can be ignored here *)
 	    | NumConstant x when x#equal numerical_zero ->
 	       ()    
 	      
@@ -1214,10 +1242,10 @@ object (self)
                  when system_settings#is_sideeffects_on_global_enabled
                     (numerical_to_hex_string n) ->
 	       let sizeTerm = self#get_xpr_bterm size in
-	       self#f#record_sideeffect (BlockWrite (ty, dest, sizeTerm))
+	       self#f#record_sideeffect self#cia (BlockWrite (ty, dest, sizeTerm))
             | _ -> ()
           end
-       | _ -> self#f#record_sideeffect UnknownSideeffect
+       | _ -> self#f#record_sideeffect self#cia UnknownSideeffect
      with BCH_failure p ->
        let msg = LBLOCK [ STR "record-block-write: " ; self#l#toPretty ;
                           memref#toPretty ; STR ": " ; p ] in
@@ -1248,7 +1276,8 @@ object (self)
             (rhs_expr:xpr_t) =
      let reqN () = self#env#mk_num_temp in
      let reqC = self#env#request_num_constant in
-     let testxpr = self#inv#rewrite_expr test_expr self#env#get_variable_comparator in
+     let testxpr =
+       self#inv#rewrite_expr test_expr self#env#get_variable_comparator in
      let ftestxpr = simplify_xpr (XOp (XLNot, [ testxpr ])) in
      let assigncmds = self#get_assign_commands lhs rhs_expr in
      let (tcmds,txpr) = xpr_to_boolexpr reqN reqC testxpr in
@@ -1278,7 +1307,8 @@ object (self)
        | _ -> false in
 
      let rhs_expr = simplify_xpr rhs_expr in
-     let rhs_expr = self#inv#rewrite_expr rhs_expr self#env#get_variable_comparator in
+     let rhs_expr =
+       self#inv#rewrite_expr rhs_expr self#env#get_variable_comparator in
 
      (* if the rhs_expr is a composite symbolic expression, create a
         new variable for it *)
@@ -1288,7 +1318,7 @@ object (self)
        else
          rhs_expr in
      
-     let vtype = if btype_compare vtype t_unknown = 0 then
+     let vtype = if btype_equal vtype t_unknown then
 	 self#get_assignment_type lhs rhs_expr
        else
 	 vtype in
@@ -1387,15 +1417,16 @@ object (self)
                None
            with
            | BCH_failure p ->
-              raise (BCH_failure
-                       (LBLOCK [
-                            STR "evaluate_summary_address_term: ";
-                            num#toPretty;
-                            STR "; ";
-                            self#l#toPretty;
-                            STR " (";
-                            p;
-                            STR ")"])))
+              raise
+                (BCH_failure
+                   (LBLOCK [
+                        STR "evaluate_summary_address_term: ";
+                        num#toPretty;
+                        STR "; ";
+                        self#l#toPretty;
+                        STR " (";
+                        p;
+                        STR ")"])))
        | ArgAddressedValue (subT,NumConstant offset) ->
 	 let optBase = self#evaluate_summary_address_term subT in
 	 begin
@@ -1555,7 +1586,7 @@ object (self)
        ([],[]) -> []
      | (_, []) -> postCommands 
      | ([], _) -> errorPostCommands
-     | _ -> [ BRANCH [ LF.mkCode postCommands ; LF.mkCode errorPostCommands ] ]
+     | _ -> [BRANCH [LF.mkCode postCommands; LF.mkCode errorPostCommands]]
   
    method private record_precondition_effect (pre:precondition_t) =
      match pre with
@@ -1907,12 +1938,13 @@ object (self)
 	end in
     match address with
       XVar v -> address
-    | XOp (XPlus, [ XVar v1 ; XVar v2 ]) when not (is_external v1) && is_external v2 ->
-      XOp (XPlus, [ XVar v2 ; XVar v1 ])
-    | XOp (XPlus, [ XVar v ; offset ]) 
-    | XOp (XPlus, [ offset ; XVar v ]) -> XOp (XPlus, [ XVar v ; normalize_offset offset ]) 
-    | XOp (XMinus, [ XVar v ; XConst (IntConst n) ]) -> 
-      XOp (XPlus, [ XVar v ; XConst (IntConst n#neg) ])
+    | XOp (XPlus, [XVar v1; XVar v2]) when not (is_external v1) && is_external v2 ->
+       XOp (XPlus, [XVar v2; XVar v1])
+    | XOp (XPlus, [XVar v; offset])
+      | XOp (XPlus, [offset; XVar v]) ->
+       XOp (XPlus, [XVar v; normalize_offset offset])
+    | XOp (XMinus, [XVar v; XConst (IntConst n)]) ->
+      XOp (XPlus, [XVar v; XConst (IntConst n#neg)])
     | _ -> address
 
   method is_address (x:xpr_t) = 
@@ -1922,8 +1954,10 @@ object (self)
     | _ -> false
 end
 
+
 let get_floc (loc:location_int) =
   new floc_t (get_function_info loc#f) loc
+
 
 let get_i_floc (floc:floc_int) (iaddr:doubleword_int) =
   let loc = make_i_location floc#l iaddr in

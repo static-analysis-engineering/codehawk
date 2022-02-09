@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -48,8 +49,10 @@ open BCHLibTypes
 open BCHSumTypeSerializer
 open BCHUtilities
 
+
 let bd = BCHDictionary.bdictionary
 let id = BCHInterfaceDictionary.interface_dictionary
+
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
@@ -61,21 +64,26 @@ let raise_tag_error (name:string) (tag:string) (accepted:string list) =
     raise (BCH_failure msg)
   end
 
-class vardictionary_t (xd:xprdictionary_int):vardictionary_int =
+
+class vardictionary_t (xd: xprdictionary_int):vardictionary_int =
 object (self)
 
   val xd = xd
   val memory_base_table = mk_index_table "memory-base-table"
   val memory_offset_table = mk_index_table "memory-offset-table"
-  val assembly_variable_denotation_table = mk_index_table "assembly-variable-denotation-table"
-  val constant_value_variable_table = mk_index_table "constant-value-variable-table"
+  val assembly_variable_denotation_table =
+    mk_index_table "assembly-variable-denotation-table"
+  val constant_value_variable_table =
+    mk_index_table "constant-value-variable-table"
+  val memory_access_table = mk_index_table "memory-access-table"
+
   val mutable tables = []
 
   initializer
     tables <- [
-      memory_base_table ;
-      memory_offset_table ;
-      assembly_variable_denotation_table ;
+      memory_base_table;
+      memory_offset_table;
+      assembly_variable_denotation_table;
       constant_value_variable_table
     ]
 
@@ -119,7 +127,7 @@ object (self)
     | "u" -> BaseUnknown (bd#get_string (a 0))
     | s -> raise_tag_error name s memory_base_mcts#tags
 
-  method index_memory_offset (o:memory_offset_t) =
+  method index_memory_offset (o: memory_offset_t) =
     let tags = [ memory_offset_mcts#ts o ] in
     let key = match o with
       | NoOffset -> (tags,[])
@@ -137,8 +145,10 @@ object (self)
     let a = a name args in
     match (t 0) with
     | "n" -> NoOffset
-    | "c" -> ConstantOffset (mkNumericalFromString (t 1), self#get_memory_offset (a 0))
-    | "i" -> IndexOffset (xd#get_variable (a 0), a 1, self#get_memory_offset (a 2))
+    | "c" ->
+       ConstantOffset (mkNumericalFromString (t 1), self#get_memory_offset (a 0))
+    | "i" ->
+       IndexOffset (xd#get_variable (a 0), a 1, self#get_memory_offset (a 2))
     | "u" -> UnknownOffset
     | s -> raise_tag_error name s memory_offset_mcts#tags
                        
@@ -151,7 +161,7 @@ object (self)
       | AuxiliaryVariable a -> (tags, [ self#index_constant_value_variable a ]) in
     assembly_variable_denotation_table#add key
 
-  method  get_assembly_variable_denotation (index:int) =
+  method get_assembly_variable_denotation (index:int) =
     let name =  "assembly_variable_denotation" in
     let (tags,args) = assembly_variable_denotation_table#retrieve index in
     let t = t name tags in
@@ -212,24 +222,31 @@ object (self)
     | "chiftemp" -> ChifTemp
     | s -> raise_tag_error name s constant_value_variable_mcts#tags
 
-  method write_xml_memory_offset ?(tag="imo") (node:xml_element_int) (o:memory_offset_t) =
+  method write_xml_memory_offset
+           ?(tag="imo") (node:xml_element_int) (o:memory_offset_t) =
     node#setIntAttribute tag (self#index_memory_offset o)
 
-  method read_xml_memory_offset ?(tag="imo") (node:xml_element_int):memory_offset_t =
+  method read_xml_memory_offset
+           ?(tag="imo") (node:xml_element_int):memory_offset_t =
     self#get_memory_offset (node#getIntAttribute tag)
 
-  method write_xml_memory_base ?(tag="imb") (node:xml_element_int) (m:memory_base_t) =
+  method write_xml_memory_base
+           ?(tag="imb") (node:xml_element_int) (m:memory_base_t) =
     node#setIntAttribute tag (self#index_memory_base m)
 
-  method read_xml_memory_base ?(tag="imb") (node:xml_element_int):memory_base_t =
+  method read_xml_memory_base
+           ?(tag="imb") (node:xml_element_int):memory_base_t =
     self#get_memory_base (node#getIntAttribute tag)
 
   method write_xml_assembly_variable_denotation
-           ?(tag="ivd") (node:xml_element_int) (v:assembly_variable_denotation_t) =
+           ?(tag="ivd")
+           (node:xml_element_int)
+           (v:assembly_variable_denotation_t) =
     node#setIntAttribute tag (self#index_assembly_variable_denotation v)
 
   method read_xml_assembly_variable_denotation
-           ?(tag="ivd") (node:xml_element_int):assembly_variable_denotation_t =
+           ?(tag="ivd")
+           (node:xml_element_int):assembly_variable_denotation_t =
     self#get_assembly_variable_denotation (node#getIntAttribute tag)
 
   method write_xml (node:xml_element_int) =
@@ -238,21 +255,26 @@ object (self)
     begin
       vnode#appendChildren
         (List.map
-           (fun t -> let tnode = xmlElement t#get_name in
-                     begin t#write_xml tnode ; tnode end) tables) ;
-      xd#write_xml xnode ;
-      vnode#appendChildren [ xnode ] ;
-      node#appendChildren [ vnode ]
+           (fun t ->
+             let tnode = xmlElement t#get_name in
+             begin
+               t#write_xml tnode;
+               tnode
+             end) tables);
+      xd#write_xml xnode;
+      vnode#appendChildren [xnode];
+      node#appendChildren [vnode]
     end
 
   method read_xml (node:xml_element_int) =
     let vnode = node#getTaggedChild "var-dictionary" in
     let getc = vnode#getTaggedChild in
     begin
-      xd#read_xml (getc "xpr-dictionary") ;
+      xd#read_xml (getc "xpr-dictionary");
       List.iter (fun t -> t#read_xml (getc t#get_name)) tables
     end
 
 end
+
 
 let mk_vardictionary = new vardictionary_t

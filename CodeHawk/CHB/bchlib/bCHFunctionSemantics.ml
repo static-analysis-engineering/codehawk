@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,13 +34,20 @@ open CHPretty
 open CHLogger
 open CHXmlDocument
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHFunctionInterface
+open BCHInterfaceDictionary
 open BCHLibTypes
 open BCHPostcondition
 open BCHPrecondition
 open BCHSideeffect
 open BCHXmlUtil
+
+
+let id = BCHInterfaceDictionary.interface_dictionary
 
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
@@ -198,6 +205,22 @@ let read_xml_function_interface_and_semantics
   (fintf, sem)
 
 
+let write_xml_function_semantics
+      (node: xml_element_int) (sem: function_semantics_t) =
+  let pre = List.map id#index_precondition sem.fsem_pre in
+  let post = List.map id#index_postcondition sem.fsem_post in
+  let epost = List.map id#index_postcondition sem.fsem_errorpost in
+  let sidee = List.map id#index_sideeffect sem.fsem_sideeffects in
+  let setlist t l =
+    node#setAttribute t (String.concat "," (List.map string_of_int l)) in
+  begin
+    (if (List.length pre) > 0 then setlist "pre" pre);
+    (if (List.length post) > 0 then setlist "post" post);
+    (if (List.length epost) > 0 then setlist "epost" epost);
+    (if (List.length sidee) > 0 then setlist "sidee" sidee)
+  end
+
+
 let modify_types_semantics (f:type_transformer_t) (sem:function_semantics_t) =
   { sem with
     fsem_pre = List.map (modify_types_pre f) sem.fsem_pre ;
@@ -206,7 +229,8 @@ let modify_types_semantics (f:type_transformer_t) (sem:function_semantics_t) =
     fsem_sideeffects = List.map (modify_types_se f) sem.fsem_sideeffects
   }
 
-let join_semantics (sem:function_semantics_t) (optsem:function_semantics_t option) =
+let join_semantics
+      (sem:function_semantics_t) (optsem:function_semantics_t option) =
   match optsem with
   | Some s -> {
     fsem_pre = sem.fsem_pre @ s.fsem_pre ;

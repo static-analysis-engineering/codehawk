@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -157,6 +157,7 @@ class functions_data_t:functions_data_int =
 object (self)
 
   val table = H.create 5
+  val nametable = H.create 5
 
   method reset = H.clear table
 
@@ -198,6 +199,19 @@ object (self)
   method has_function_name (fa:doubleword_int) =
     (H.mem table fa#index)
     && (H.find table fa#index)#has_name
+
+  method private initialize_nametable =
+    H.iter (fun k v ->
+        if v#has_name then H.add nametable (List.hd v#get_names) k) table
+
+  method has_function_by_name (name: string): doubleword_int option =
+    let _ =
+      if (H.length nametable) = 0 then
+        self#initialize_nametable in
+    if H.mem nametable name then
+      Some (index_to_doubleword (H.find nametable name))
+    else
+      None
 
   method private retrieve (f:function_data_int -> bool) =
     H.fold (fun _ v a -> if f v then v::a else a) table []

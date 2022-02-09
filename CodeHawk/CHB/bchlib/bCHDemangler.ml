@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +32,9 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+
+(* bchcil *)
+open BCHCBasicTypes
 
 (* bchlib *)
 open BCHBasicTypes
@@ -336,7 +341,7 @@ let t_ulong = t_named "unsigned long"
 let t_ushort = t_named "unsigned short"
 let t_wchar_t = t_named "wchar_t"
 
-let t_pconstchar = t_ptrto (TInt (IChar,[Attr "const"]))
+let t_pconstchar = t_ptrto (TInt (IChar, [Attr ("const", [])]))
 
 let c_atsign       = 0x0040   (* @ *)
 let c_dollarsign   = 0x0024   (* $ *)

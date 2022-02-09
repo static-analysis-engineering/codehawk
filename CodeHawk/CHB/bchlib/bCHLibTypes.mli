@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,9 @@ open CHXmlDocument
 
 (* xprlib *)
 open XprTypes
+
+(* bchcil *)
+open BCHCBasicTypes
 
 (* =========================================================== generic types === *)
 
@@ -412,33 +415,33 @@ object ('a)
   method to_numerical              : numerical_t
   method to_signed_numerical       : numerical_t
 
-  method to_time_date_string       : string               (* raises Invalid_argument *)
+  method to_time_date_string       : string     (* raises Invalid_argument *)
   method to_char_string            : string option
-  method to_string                 : string       (* convert bytes to characters in a string *)
-  method to_string_fragment        : string       (* idem, but in reverse *)
+  method to_string                 : string     (* convert bytes to characters in a string *)
+  method to_string_fragment        : string     (* idem, but in reverse *)
   method to_fixed_length_hex_string: string
   method to_hex_string             : string
   method to_signed_hex_string      : string
 
   (* operations *)
   method unset_highest_bit: 'a
-  method subtract         : 'a  -> 'a                      (* raises Invalid_argument *)
-  method subtract_int     : int -> 'a                      (* raises Invalid_argument *)
-  method add              : 'a  -> 'a                      (* raises Invalid_argument *)
-  method add_int          : int -> 'a                      (* raises Invalid_argument *)
-  method multiply_int     : int -> 'a                      (* raises Invalid_argument *)
-  method xor              : 'a -> 'a          (* exclusive or *)
+  method subtract         : 'a  -> 'a      (* raises Invalid_argument *)
+  method subtract_int     : int -> 'a      (* raises Invalid_argument *)
+  method add              : 'a  -> 'a      (* raises Invalid_argument *)
+  method add_int          : int -> 'a      (* raises Invalid_argument *)
+  method multiply_int     : int -> 'a      (* raises Invalid_argument *)
+  method xor              : 'a -> 'a       (* exclusive or *)
 
   (* accessors *)
-  method get_low: int                         (* integer value of low-order 16 bits *)
-  method get_high: int                       (* integer value of high-order 16 bits *)
+  method get_low: int          (* integer value of low-order 16 bits *)
+  method get_high: int         (* integer value of high-order 16 bits *)
   method get_bits_set: int list
-  method get_bitval: int -> int            (* value of bit at position (zero-based) *)
-  method get_segval: int -> int -> int      (* value of subrange of bits, high, low *)
+  method get_bitval: int -> int    (* value of bit at position (zero-based) *)
+  method get_segval: int -> int -> int  (* value of subrange of bits, high, low *)
 
   (* predicates *)
   method is_highest_bit_set: bool
-  method is_nth_bit_set    : int -> bool                    (* raises Invalid_argument *)
+  method is_nth_bit_set    : int -> bool   (* raises Invalid_argument *)
 
   (* printing *)
   method toPretty: pretty_t
@@ -795,6 +798,7 @@ class type functions_data_int =
     (* predicates *)
     method is_function_entry_point: doubleword_int -> bool
     method has_function_name: doubleword_int -> bool
+    method has_function_by_name: string -> doubleword_int option
     method has_function: doubleword_int -> bool
 
     (* stats *)
@@ -844,96 +848,6 @@ object
   method read_xml: xml_element_int -> unit
 end
 
-(* ========================================================== BVariable types === *)
-
-type ikind = 
-| IChar       (** [char] *)
-| ISChar      (** [signed char] *)
-| IUChar      (** [unsigned char] *)
-| IWChar      (** [wchar_t] *)
-| IBool       (** [_Bool (C99)] *)
-| IInt        (** [int] *)
-| IUInt       (** [unsigned int] *)
-| IShort      (** [short] *)
-| IUShort     (** [unsigned short] *)
-| ILong       (** [long] *)
-| IULong      (** [unsigned long] *)
-| ILongLong   (** [long long] (or [_int64] on Microsoft Visual C) *)
-| IULongLong  (** [unsigned long long] (or [unsigned _int64] on Microsoft 
-                  Visual C) *)
-| INonStandard of bool * int   (* signed, size in bytes *)
-		
-(** Various kinds of floating-point numbers*)
-type fkind = 
-| FFloat      (** [float] *)
-| FDouble     (** [double] *)
-| FLongDouble (** [long double] *)
-
-type frepresentation = FScalar | FPacked
-
-type attribute = Attr of string
-type attributes = attribute list
-
-type tname_t =
-| SimpleName of string
-| TemplatedName of tname_t * btype_t list
-    
-and btype_t =
-| TVoid of attributes
-| TInt of ikind * attributes
-| TFloat of fkind * frepresentation * attributes
-| TPtr of btype_t * attributes
-| TRef of btype_t * attributes
-| THandle of string * attributes
-| TArray of btype_t * exp option * attributes
-| TFun of btype_t * bfunarg_t list option * bool * attributes
-| TNamed of string * attributes
-| TComp of tname_t * tname_t list * attributes  (* C++ name spaces *)
-| TEnum of tname_t * tname_t list * attributes  (* C++ name spaces *)
-| TVarArg of attributes
-| TClass of tname_t * tname_t list * attributes (* C++ name spaces *)
-| TUnknown of attributes
-
-and bfunarg_t = string * btype_t
-
-and bcompinfo_t = {
-  bcstruct: bool;
-  bcname: string;
-  bcfields: bfieldinfo_t list
-}
-
-and bfieldinfo_t = {
-  bfname: string;
-  bftype: btype_t;
-  bfenum: (string * bool) option;
-  bfoffset: int ;
-  bfsize: int;
-}
-
-and beitem_t = string * exp
-
-and benuminfo_t = {
-  bename: string;
-  beitems: beitem_t list;
-  bekind: ikind
-}
-
-and btypeinfo_t = {
-  btname: string;
-  bttype: btype_t
-}
-
-and exp = Const of constant
-
-and constant =
-| CInt64 of int64 * ikind * string option
-| CStr of string
-| CWStr of int64 list
-| CChr of char
-| CReal of float * fkind * string option
-| CEnum of exp * string * string
-
-type type_transformer_t = string -> string
 
 (* ============================================================== C struct === *)
 
@@ -1170,37 +1084,41 @@ class type invariant_io_int =
 object
 
   (* setters *)
-  method set_unreachable       : string -> string -> unit
-  method reset                 : unit
+  method set_unreachable: string -> string -> unit
+  method reset: unit
 
   (* add non-relational facts *)
   method add_symbolic_expr_fact: string -> variable_t -> xpr_t -> unit
-  method add_interval_fact     : string -> variable_t -> interval_t -> unit
-  method add_constant_fact     : string -> variable_t -> numerical_t -> unit
-  method add_valueset_fact     : string -> variable_t -> symbol_t -> interval_t -> bool -> unit
+  method add_interval_fact: string -> variable_t -> interval_t -> unit
+  method add_constant_fact: string -> variable_t -> numerical_t -> unit
+  method add_valueset_fact:
+           string -> variable_t -> symbol_t -> interval_t -> bool -> unit
 
   (* add special-purpose facts *)
   method add_initial_value_fact: string -> variable_t -> variable_t -> unit
   method add_initial_disequality_fact: string -> variable_t -> variable_t -> unit
   method add_test_value_fact   :
-           string -> variable_t -> variable_t -> ctxt_iaddress_t ->
-           ctxt_iaddress_t -> unit
+           string
+           -> variable_t
+           -> variable_t
+           -> ctxt_iaddress_t
+           -> ctxt_iaddress_t
+           -> unit
 
   (* add relational fact *)
-  method add_lineq             : string -> numerical_constraint_t -> unit
+  method add_lineq: string -> numerical_constraint_t -> unit
 
   (* accessors *)
   method get_location_invariant: string -> location_invariant_int
-  method get_constants         : string -> variable_t list
-  (* method get_table_size        : int *)
-  method get_invariant_count   : int
+  method get_constants: string -> variable_t list
+  method get_invariant_count: int
 
   (* save and restore *)
-  method write_xml             : xml_element_int -> unit
-  method read_xml              : xml_element_int -> unit
+  method write_xml: xml_element_int -> unit
+  method read_xml: xml_element_int -> unit
 
   (* printing *)
-  method toPretty              : pretty_t
+  method toPretty: pretty_t
 end
 
 (* ----------------------------------------------- Invariant Dictionary ----- *)
@@ -1230,6 +1148,7 @@ class type invdictionary_int =
 
     method toPretty: pretty_t
   end
+
 
 class type tinvdictionary_int =
   object
@@ -1367,13 +1286,14 @@ type function_stub_t =
   | SOFunction of string (* ELF *)
   | DllFunction of string * string (* PE *)
   | JniFunction of int  (* Java Native Methods, call on ( *env) where env is the
-        first argument on the calling function, with the jni identification number *)
+    first argument on the calling function, with the jni identification number *)
   | LinuxSyscallFunction of int (* numbers ranging from 4000 to 4999 *)
   | PckFunction of string * string list * string   (* PE, with package names *)
                  
 (* Call target types:
    StubTarget: dynamically linked function external to the executable
-   StaticStubTarget: library function with summary statically linked in the executable
+   StaticStubTarget: library function with summary statically linked 
+                     in the executable
    AppTarget: application function with address
    InlinedAppTarget: application function with address that is inlined
    WrappedTarget: application function that wraps a call to another function
@@ -1383,8 +1303,10 @@ type function_stub_t =
       mapping: maps wrapped function arguments to wrapper function arguments
                  and constants provided by the wrapper function internally
    VirtualTarget: virtual function specified in class vtable
-   IndirectTarget: indirect call on external variable (global variable, function argument,
-      or return value)
+   IndirectTarget: indirect call on external variable (global variable, 
+                   function argument, or return value)
+   CallbackTableTarget: indirect call on a field of a struct from a list of
+                        those structs
    UnknownTarget: target of indirect call that has not been resolved yet
 *)
 type call_target_t =
@@ -1399,6 +1321,7 @@ type call_target_t =
       * (fts_parameter_t * bterm_t) list
   | VirtualTarget of function_interface_t
   | IndirectTarget of bterm_t option * call_target_t list
+  | CallbackTableTarget of doubleword_int * int (* table address, offset *)
   | UnknownTarget
 
 type c_struct_constant_t =
@@ -1429,13 +1352,14 @@ type precondition_t =
 type postcondition_t =
 | PostNewMemoryRegion of bterm_t * bterm_t    (* pointer returned, size in bytes *)
 | PostFunctionPointer of bterm_t * bterm_t     (* return value, name of function *)
-| PostAllocationBase of bterm_t                (* the return value is a pointer to the base
-                                                  of a dynamically allocated memory region *)
+| PostAllocationBase of bterm_t
+  (* the return value is a pointer to the base
+     of a dynamically allocated memory region *)
 | PostNull of bterm_t
 | PostNotNull of bterm_t
 | PostNullTerminated of bterm_t
 | PostEnum of bterm_t * string
-| PostFalse                                              (* function does not return *)
+| PostFalse      (* function does not return *)
 | PostRelationalExpr of relational_op_t * bterm_t * bterm_t
 | PostDisjunction of postcondition_t list
 | PostConditional of precondition_t * postcondition_t
@@ -1476,6 +1400,7 @@ type function_documentation_t = {
   fdoc_xapidoc: xml_element_int
 }
 
+
 class type function_summary_int =
 object ('a)
   (* accessors *)
@@ -1512,6 +1437,7 @@ object ('a)
   method is_jni_function: bool
 
   (* i/o *)
+  method write_xml: xml_element_int -> unit
   method toPretty: pretty_t
 end
 
@@ -1582,7 +1508,7 @@ object
   method read_summary_files: unit
     
   (* accessors *)
-  method get_function_dll: string -> string   (* dll from which function was loaded *)
+  method get_function_dll: string -> string (* dll from which function was loaded *)
   method get_dll_function: string -> string -> function_summary_int
   method get_so_function: string -> function_summary_int
   method get_lib_function: string list -> string -> function_summary_int
@@ -1594,8 +1520,8 @@ object
   (* predicates *)
   method has_function_dll: string -> bool (* true if fname came from a dll *)
   method has_dllname: string -> bool (* true if a function was loaded from this dll *)
-  method has_dll_function: string -> string -> bool (* tries to locate the summary, true if
-                                                    successful *)
+  method has_dll_function: string -> string -> bool
+  (* tries to locate the summary, true if successful *)
   method has_so_function: string -> bool
   method has_lib_function: string list -> string -> bool
   method has_syscall_function: int -> bool
@@ -1799,9 +1725,12 @@ class type vardictionary_int =
     method get_assembly_variable_denotation: int -> assembly_variable_denotation_t
     method get_constant_value_variable: int -> constant_value_variable_t
 
-    method write_xml_memory_offset: ?tag:string -> xml_element_int -> memory_offset_t -> unit
-    method read_xml_memory_offset: ?tag:string -> xml_element_int -> memory_offset_t
-    method write_xml_memory_base: ?tag:string -> xml_element_int -> memory_base_t -> unit
+    method write_xml_memory_offset:
+             ?tag:string -> xml_element_int -> memory_offset_t -> unit
+    method read_xml_memory_offset:
+             ?tag:string -> xml_element_int -> memory_offset_t
+    method write_xml_memory_base:
+             ?tag:string -> xml_element_int -> memory_base_t -> unit
     method read_xml_memory_base: ?tag:string -> xml_element_int -> memory_base_t
     method write_xml_assembly_variable_denotation:
              ?tag:string -> xml_element_int -> assembly_variable_denotation_t -> unit
@@ -1868,7 +1797,7 @@ object ('a)
 
   (* printing *)
   method toPretty: pretty_t
-  method write_xml  : xml_element_int -> unit
+                     (* method write_xml  : xml_element_int -> unit *)
 end
 
 class type variable_manager_int =
@@ -1969,7 +1898,7 @@ object
   method has_global_address: variable_t -> bool
     
   (* save and restore *)
-  method write_xml  : xml_element_int -> unit
+                                             (* method write_xml  : xml_element_int -> unit *)
 
 end
 
@@ -2014,9 +1943,19 @@ end
 class type global_variable_int =
 object
   method add_reader: 
-    ?ty:btype_t -> ?size:int option -> ?offset:int list -> ?fp:bool -> location_int -> unit
+           ?ty:btype_t
+           -> ?size:int option
+           -> ?offset:int list
+           -> ?fp:bool
+           -> location_int
+           -> unit
   method add_writer: 
-    ?ty:btype_t -> ?size:int option -> ?offset:int list -> gterm_t -> location_int -> unit
+           ?ty:btype_t
+           -> ?size:int option
+           -> ?offset:int list
+           -> gterm_t
+           -> location_int
+           -> unit
   
   (* accessors *)    
   method get_address: doubleword_int
@@ -2040,68 +1979,37 @@ object
   method initialize: unit
 
   method add_reader: 
-    ?ty:btype_t -> ?size:int option -> 
-      ?offset:int list -> ?fp:bool -> doubleword_int -> location_int -> unit
-  method add_writer: ?ty:btype_t -> ?size:int option ->
-    ?offset:int list -> gterm_t -> doubleword_int -> location_int -> unit
+           ?ty:btype_t
+           -> ?size:int option
+           -> ?offset:int list
+           -> ?fp:bool
+           -> doubleword_int
+           -> location_int
+           -> unit
+  method add_writer:
+           ?ty:btype_t
+           -> ?size:int option
+           -> ?offset:int list
+           -> gterm_t
+           -> doubleword_int
+           -> location_int
+           -> unit
 
   (* accessors *)
-  method get_values      : doubleword_int -> gterm_t list
-  method get_types       : doubleword_int -> btype_t list
+  method get_values: doubleword_int -> gterm_t list
+  method get_types: doubleword_int -> btype_t list
   method get_destinations: gterm_t -> doubleword_int list
 
   (* xml *)
   method write_xml: xml_element_int -> unit
-  method read_xml : xml_element_int -> unit
+  method read_xml: xml_element_int -> unit
 
   (* printing *)
-  method toPretty        : pretty_t
+  method toPretty: pretty_t
   method to_report_pretty: (gterm_t -> pretty_t) -> pretty_t
 end
 
 
-
-(* ========================================================= Memory accesses === *)
-
-(* Memory accesses are kept track of per memory location *)
-
-type memaccess_t =
-  | MARead  of btype_t * int                                 (* size in bytes *)
-  | MAWrite of btype_t * int                                 (* size in bytes *)          
-  | MAWriteNull of int                                       (* size in bytes *)
-  | MAIndexedWrite of register_t * int * int                 (* reg, index, size *)
-  | MAIndexedRead of register_t * int * int                  (* reg, index, size *)
-  | MABlockWrite of btype_t * string * xpr_t                 (* name of function, size *)
-  | MABlockRead  of btype_t * string * xpr_t                 (* name of function, size *)
-  | MARegisterSave of variable_t                             (* register variable *)
-
-class type memory_accesses_int =
-object
-
-  (* setters *)
-  method add_block_write  :
-    doubleword_int -> memory_reference_int -> ?ty:btype_t -> string -> xpr_t -> unit
-  method add_block_read   : 
-    doubleword_int -> memory_reference_int -> ?ty:btype_t -> string -> xpr_t -> unit
-  method add_indexed_read : doubleword_int -> memory_reference_int -> register_t -> 
-    int -> int -> unit
-  method add_indexed_write: doubleword_int -> memory_reference_int -> register_t ->
-    int -> int -> unit
-  method add_read         : 
-    doubleword_int -> memory_reference_int -> ?ty:btype_t -> int -> unit
-  method add_write        : 
-    doubleword_int -> memory_reference_int -> ?ty:btype_t -> ?is_zero:bool -> int -> unit
-  method add_register_save: doubleword_int -> memory_reference_int -> variable_t -> unit
-
-  (* accessors *)
-  method get_accesses : (memory_reference_int * (doubleword_int * memaccess_t) list) list
-
-  (* saving *)
-  method write_xml : xml_element_int -> unit
-
-  (* printing *)
-  method toPretty: pretty_t
-end
 
 (* ============================================================== dictionary ==== *)
 
@@ -2121,18 +2029,6 @@ class type bdictionary_int =
     method index_arm_extension_register_replicated_element:
              arm_extension_register_replicated_element_t -> int
     method index_register: register_t -> int
-    method index_attributes: attributes -> int
-    method index_tname: tname_t -> int
-    method index_tname_list: tname_t list -> int
-    method index_bfunarg: bfunarg_t -> int
-    method index_bfunargs: bfunarg_t list -> int
-    method index_btype: btype_t -> int
-    method index_compinfo: bcompinfo_t -> int
-    method index_fieldinfo: bfieldinfo_t -> int
-    method index_enuminfo: benuminfo_t -> int
-    method index_enumitem: beitem_t -> int
-    method index_constant: constant -> int
-    method index_exp: exp -> int
          
     method get_string: int -> string
     method get_address: int -> doubleword_int
@@ -2143,30 +2039,11 @@ class type bdictionary_int =
     method get_arm_extension_register_replicated_element:
              int -> arm_extension_register_replicated_element_t
     method get_register: int -> register_t
-    method get_attributes: int -> attributes
-    method get_tname: int -> tname_t
-    method get_tname_list: int -> tname_t list
-    method get_bfunarg: int -> bfunarg_t
-    method get_bfunargs: int -> bfunarg_t list
-    method get_btype: int -> btype_t
-    method get_compinfo: int -> bcompinfo_t
-    method get_fieldinfo: int -> bfieldinfo_t
-    method get_enuminfo: int -> benuminfo_t
-    method get_enumitem: int -> beitem_t
-    method get_constant: int -> constant
-    method get_exp: int -> exp
 
     method write_xml_register: ?tag:string -> xml_element_int -> register_t -> unit
     method write_xml_string: ?tag:string -> xml_element_int -> string -> unit
-    method write_xml_btype: ?tag:string -> xml_element_int -> btype_t -> unit
-    method write_xml_compinfo: ?tag:string -> xml_element_int -> bcompinfo_t -> unit
-    method write_xml_enuminfo: ?tag:string -> xml_element_int -> benuminfo_t -> unit
-
     method read_xml_register: ?tag:string -> xml_element_int -> register_t
     method read_xml_string: ?tag:string -> xml_element_int -> string
-    method read_xml_btype: ?tag:string -> xml_element_int -> btype_t
-    method read_xml_compinfo: ?tag:string -> xml_element_int -> bcompinfo_t
-    method read_xml_enuminfo: ?tag:string -> xml_element_int -> benuminfo_t
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
@@ -2182,10 +2059,14 @@ class type interface_dictionary_int =
     method index_roles: (string * string) list -> int
     method index_fts_parameter: fts_parameter_t -> int
     method index_bterm: bterm_t -> int
+    method index_gterm: gterm_t -> int
     method index_fts_parameter_list: fts_parameter_t list -> int
     method index_fts_parameter_value:  (fts_parameter_t * bterm_t) -> int
     method index_function_signature: function_signature_t -> int
     method index_function_interface: function_interface_t -> int
+    method index_precondition: precondition_t -> int
+    method index_postcondition: postcondition_t -> int
+    method index_sideeffect: sideeffect_t -> int
     method index_function_stub: function_stub_t -> int
     method index_call_target: call_target_t -> int
     method index_c_struct_constant: c_struct_constant_t -> int
@@ -2200,6 +2081,9 @@ class type interface_dictionary_int =
     method get_fts_parameter_value:  int -> (fts_parameter_t * bterm_t)
     method get_function_signature: int -> function_signature_t
     method get_function_interface: int -> function_interface_t
+    method get_precondition: int -> precondition_t
+    method get_postcondition: int -> postcondition_t
+    method get_sideeffect: int -> sideeffect_t
     method get_function_stub: int -> function_stub_t
     method get_call_target: int -> call_target_t
     method get_c_struct_constant: int -> c_struct_constant_t
@@ -2210,6 +2094,8 @@ class type interface_dictionary_int =
     method write_xml_fts_parameter:
              ?tag:string -> xml_element_int -> fts_parameter_t -> unit
     method write_xml_bterm: ?tag:string -> xml_element_int -> bterm_t -> unit
+
+    method write_xml_gterm: ?tag:string -> xml_element_int -> gterm_t -> unit
     method write_xml_function_stub:
              ?tag:string -> xml_element_int -> function_stub_t -> unit
     method write_xml_call_target:
@@ -2218,6 +2104,13 @@ class type interface_dictionary_int =
              ?tag:string -> xml_element_int -> function_signature_t -> unit
     method write_xml_function_interface:
              ?tag:string -> xml_element_int -> function_interface_t -> unit
+
+    method write_xml_precondition:
+             ?tag:string -> xml_element_int -> precondition_t -> unit
+    method write_xml_postcondition:
+             ?tag:string -> xml_element_int -> postcondition_t -> unit
+    method write_xml_sideeffect:
+             ?tag:string -> xml_element_int -> sideeffect_t -> unit
         
     method read_xml_parameter_location:
              ?tag:string -> xml_element_int -> parameter_location_t
@@ -2231,6 +2124,12 @@ class type interface_dictionary_int =
              ?tag:string -> xml_element_int -> function_signature_t
     method read_xml_function_interface:
              ?tag:string -> xml_element_int -> function_interface_t
+    method read_xml_precondition:
+             ?tag:string -> xml_element_int -> precondition_t
+    method read_xml_postcondition:
+             ?tag:string -> xml_element_int -> postcondition_t
+    method read_xml_sideeffect:
+             ?tag:string -> xml_element_int -> sideeffect_t
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
@@ -2565,7 +2464,8 @@ object
 
   method set_instruction_bytes: ctxt_iaddress_t -> string -> unit
 
-  (* auxiliary variable that has a constant value within the function; typically a bridge
+  (* auxiliary variable that has a constant value within the function; 
+     typically a bridge
      variable that represents an argument to a function call  *)
   method add_constant: variable_t -> numerical_t -> unit
 
@@ -2611,11 +2511,11 @@ object
 
   method set_nonreturning: unit
 
-  method save_register            : ctxt_iaddress_t -> register_t -> unit
-  method restore_register         : ctxt_iaddress_t -> register_t -> unit
+  method save_register: ctxt_iaddress_t -> register_t -> unit
+  method restore_register: ctxt_iaddress_t -> register_t -> unit
     
-  method record_sideeffect        : sideeffect_t -> unit
-  method record_return_value      : ctxt_iaddress_t -> xpr_t -> unit
+  method record_sideeffect: ctxt_iaddress_t -> sideeffect_t -> unit
+  method record_return_value: ctxt_iaddress_t -> xpr_t -> unit
 
   (* accessors *)
   method get_associated_cc_setter : ctxt_iaddress_t -> ctxt_iaddress_t
@@ -2626,11 +2526,6 @@ object
   method get_instruction_bytes: ctxt_iaddress_t -> string
 
   method get_dynlib_stub: call_target_t
-
-  method get_memory_access_record: memory_accesses_int
-  method get_local_stack_accesses: (int * (doubleword_int * memaccess_t) list) list
-  method get_stack_accesses: (int * (doubleword_int * memaccess_t) list) list
-  method get_global_accesses: (doubleword_int * (doubleword_int * memaccess_t) list) list
 
   method get_call_target: ctxt_iaddress_t -> call_target_info_int
 
@@ -2645,8 +2540,11 @@ object
   method get_stack_adjustment: int option
 
   method get_test_exprs    : (ctxt_iaddress_t * xpr_t) list (* all test expressions in the function *)
-  method get_test_expr     : ctxt_iaddress_t -> xpr_t  (* expression for conditional jump *)
-  method get_test_variables: ctxt_iaddress_t-> (variable_t * variable_t) list  (* variable mapping for conditional jump expression *)
+  method get_test_expr: ctxt_iaddress_t -> xpr_t  (* branch expr (simplified) *)
+
+  (* variable mapping for conditional jump expression *)
+  method get_test_variables:
+           ctxt_iaddress_t -> (variable_t * variable_t) list
 
   (* indirect jump targets *)
   method get_dll_jumptarget        : ctxt_iaddress_t -> (string * string)
@@ -2672,20 +2570,21 @@ object
   method sideeffects_changed  : bool
   method call_targets_were_set: bool
 
-  method has_associated_cc_user  : ctxt_iaddress_t -> bool
+  method has_associated_cc_user: ctxt_iaddress_t -> bool
   method has_associated_cc_setter: ctxt_iaddress_t -> bool
   method has_call_target: ctxt_iaddress_t -> bool
-  method is_dll_jumptarget       : ctxt_iaddress_t -> bool
-  method has_jump_target         : ctxt_iaddress_t -> bool
+  method is_dll_jumptarget: ctxt_iaddress_t -> bool
+  method has_jump_target: ctxt_iaddress_t -> bool
   method has_unknown_jump_target : bool
-  method has_constant   : variable_t -> bool
-  method has_test_expr  : ctxt_iaddress_t -> bool
+  method has_constant: variable_t -> bool
+  method has_test_expr: ctxt_iaddress_t -> bool
   method is_base_pointer: variable_t -> bool
 
   (* save and restore *)
   method read_xml_user_summary: xml_element_int -> unit
-  method write_xml          : xml_element_int -> unit
-  method read_xml           : xml_element_int -> unit
+  method set_bc_summary: function_summary_int -> unit
+  method write_xml: xml_element_int -> unit
+  method read_xml: xml_element_int -> unit
 
   (* printing *)
   method state_to_pretty: pretty_t 
@@ -2715,16 +2614,19 @@ object
   (* sets the test expression for this instruction *)
   method set_test_expr: xpr_t -> unit
 
-  (* sets the mapping between auxiliary variables and regular variables for a test expression *)
+  (* sets the mapping between auxiliary variables and regular variables for a 
+     test expression *)
   method set_test_variables: (variable_t * variable_t) list -> unit
  
-  (* evaluates the value of eax at this location and reports it to the function info *)
+  (* evaluates the value of eax at this location and reports it to the function 
+     info *)
   method record_return_value: unit
 
   (* add type facts *)
-  method add_var_type_fact    : variable_t -> ?structinfo:string list -> btype_t -> unit
-  method add_const_type_fact  : numerical_t -> btype_t -> unit
-  method add_xpr_type_fact    : xpr_t -> btype_t -> unit
+  method add_var_type_fact:
+           variable_t -> ?structinfo:string list -> btype_t -> unit
+  method add_const_type_fact: numerical_t -> btype_t -> unit
+  method add_xpr_type_fact: xpr_t -> btype_t -> unit
 
 
   (* accessors *)
@@ -2801,6 +2703,7 @@ object
 
   (* returns the test expression for a conditional jump in this instruction *)
   method get_test_expr: xpr_t
+  method get_raw_test_expr: xpr_t (* branch expr *)
 
   (* returns the auxiliary variables used in a test expression *)
   method get_test_variables: (variable_t * variable_t) list
@@ -2975,6 +2878,7 @@ object
   method add_exported_item_name: doubleword_int -> string -> unit
   method add_locked_instruction: doubleword_int -> unit
   method add_bound_library_function: doubleword_int -> (string * string) -> unit
+  method add_ifile: string -> unit (* file to be parsed by cil *)
 
   method add_data_block: data_block_int -> unit
   method add_jumptable: jumptable_int -> unit
@@ -3001,6 +2905,7 @@ object
   method get_code_size: doubleword_int
   method get_data_blocks: data_block_int list
   method get_jumptables: jumptable_int list
+  method ifiles: string list
   method get_call_target:
            doubleword_int -> doubleword_int -> call_target_t
   method get_jump_table_target:
@@ -3026,7 +2931,8 @@ object
   method get_exported_data_spec: string -> data_export_spec_t
   method get_data_block: doubleword_int -> data_block_int
   method get_jumptable: doubleword_int -> jumptable_int
-  method get_class_infos: doubleword_int -> (string * function_interface_t * bool) list
+  method get_class_infos:
+           doubleword_int -> (string * function_interface_t * bool) list
   method get_jump_target: 
     doubleword_int -> (doubleword_int * jumptable_int * data_block_int)
   method get_lib_functions_loaded : (string * string list) list

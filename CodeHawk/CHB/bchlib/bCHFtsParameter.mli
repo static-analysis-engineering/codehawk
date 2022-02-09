@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,8 +34,12 @@ open CHPretty
 open CHFormatStringParser
 open CHXmlDocument
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHLibTypes
+
 
 val default_fts_parameter: fts_parameter_t
 
@@ -53,6 +57,7 @@ val mk_global_parameter:
    (located at 4 bytes above the return address) *)
 val mk_stack_parameter:
   ?btype:btype_t
+  -> ?name:string
   -> ?desc:string
   -> ?roles:(string * string) list
   -> ?io:arg_io_t
@@ -82,17 +87,10 @@ val parameter_location_compare:
 
 val fts_parameter_compare: fts_parameter_t -> fts_parameter_t -> int
 
-val write_xml_roles: xml_element_int -> (string * string) list -> unit
-
 val read_xml_roles: xml_element_int -> (string * string) list
-
-val write_xml_parameter_location:
-  xml_element_int -> parameter_location_t -> unit
 
 val read_xml_parameter_location :
   xml_element_int -> parameter_location_t
-
-val write_xml_fts_parameter: xml_element_int -> fts_parameter_t -> unit
 
 val read_xml_fts_parameter: xml_element_int -> fts_parameter_t
 
