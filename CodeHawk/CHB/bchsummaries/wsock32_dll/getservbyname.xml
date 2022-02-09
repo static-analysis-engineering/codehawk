@@ -4,54 +4,6 @@
   <reference href="http://msdn.microsoft.com/"/>
   <libfun lib="wsock32" name="getservbyname">
     <refer-to lib="ws2_32" name="getservbyname"/>
-<!--
-   <documentation>
-    <desc>
-      retrieves service information corresponding to a service name and protocol
-    </desc>
-    <apidoc>
-     <pt>
-      <ll>struct servent * FAR getservbyname</ll>
-      <ld>__in const char *name,</ld>
-      <ld>__in const char *proto</ld>
-      <ll>)</ll>
-     </pt>
-     <par name="name">pointer to a null-terminated service name</par>
-     <par name="proto">pointer to a null-terminated protocol name; can be NULL</par>
-     <return>
-      <rc cond="success">pointer to the servent structure</rc>
-      <rc cond="failure">NULL</rc>
-     </return>
-    </apidoc>
-   </documentation>
-   <api adj="8" cc="stdcall" name="getservbyname">
-    <returnbtype ttag="tptr">
-     <typ tname="servent" ttag="tnamed"/>
-    </returnbtype>
-    <par loc="stack" name="name" nr="1">
-     <btype ttag="tptr">
-      <typ tname="char" ttag="tnamed"/>
-     </btype>
-     <pre><deref-read-nt/></pre>
-     <roles><role rtype="nwi" rname="server name"/></roles>
-    </par>
-    <par loc="stack" name="proto" nr="2">
-     <btype ttag="tptr">
-      <typ tname="char" ttag="tnamed"/>
-     </btype>
-     <pre><deref-read-null-nt/></pre>
-     <roles><role rtype="nwi" rname="protocol"/></roles>
-    </par>
-   </api>
-   <semantics>
-    <external-effects/>
-    <preconditions/>
-    <postconditions>
-       <notnull-null/>
-    </postconditions>
-    <sideeffects/>
-   </semantics>
--->
   </libfun>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

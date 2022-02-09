@@ -44,9 +44,7 @@
      </roles>
     </par>
     <par loc="stack" io="w" name="pbBuffer" nr="3">
-     <btype ttag="tptr">
-      <typ tname="BYTE" ttag="tnamed"/>
-     </btype>
+     <type><ptr>BYTE</ptr></type>
      <roles>
        <role rt="ioc:memops" rn="dst-bytes:random"/>
      </roles>

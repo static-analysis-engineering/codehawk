@@ -38,9 +38,7 @@
       </roles>
     </par>
     <par loc="stack" desc="socket command parameter" io="rw" name="argp" nr="3">
-     <btype ttag="tptr">
-      <typ tname="u_long" ttag="tnamed"/>
-     </btype>
+     <type><ptr>u_long</ptr></type>
      <roles>
         <role rt="ioc:network" rn="socket command parameter"/>
      </roles>

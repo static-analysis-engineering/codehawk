@@ -14,9 +14,7 @@
     </apidoc>
    </documentation>
    <api adj="0" cc="stdcall" name="GetProcessHeap">
-    <returnbtype ttag="tptr">
-     <typ ttag="tvoid"/>
-    </returnbtype>
+    <returntype><ptr>VOID</ptr></returntype>
    </api>
    <semantics>
      <io-actions>

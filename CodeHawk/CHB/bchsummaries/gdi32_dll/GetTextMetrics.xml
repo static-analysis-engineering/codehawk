@@ -33,9 +33,7 @@
      <roles>
       <role rt="ioc:memops" rn="dst-struct:TEXTMETRIC" />
      </roles>
-     <btype ttag="tptr">
-      <typ tname="TEXTMETRIC" ttag="tnamed"/>
-     </btype>
+     <type><ptr>TEXTMETRIC</ptr></type>
      <pre><deref-write/></pre>
      <sideeffects><block-write/></sideeffects>
     </par>

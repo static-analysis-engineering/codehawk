@@ -6,7 +6,7 @@
     <apidoc/>
    </documentation>
    <api adj="0" cc="cdecl" name="_EH_prolog">
-    <returnbtype ttag="tunknown"/>
+    <returntype>unknown</returntype>
    </api>
    <semantics>
     <preconditions/>

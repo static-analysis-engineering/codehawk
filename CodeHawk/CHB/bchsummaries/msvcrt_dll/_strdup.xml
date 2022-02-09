@@ -15,9 +15,7 @@
     </apidoc>
    </documentation>
    <api adj="0" cc="cdecl" name="_strdup">
-    <returnbtype ttag="tptr">
-     <typ tname="char" ttag="tnamed"/>
-    </returnbtype>
+    <returntype><ptr>char</ptr></returntype>
     <par loc="stack" io="r" name="src" nr="1">
      <roles>
       <role rt="ioc:memops" rn="src-string:copy" />

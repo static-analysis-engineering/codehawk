@@ -4,41 +4,6 @@
   <reference href="http://msdn.microsoft.com/"/>
   <libfun lib="wsock32" name="inet_addr">
     <refer-to lib="ws2_32" name="inet_addr"/>
-<!--   <documentation>
-    <desc>
-      converts a string containing an IPv4 dotted-decimal address into a proper
-      address for the IN_ADDR structure
-    </desc>
-    <apidoc>
-     <pt>unsigned long inet_addr ( __in const char *cp )</pt>
-     <par name="cp">
-       null-terminated string representing a number expressed in the internet
-       standard dotted notation
-     </par>
-     <return>
-      <rc cond="success">long representing a binary representation of the address</rc>
-      <rc cond="failure">INADDR_NONE</rc>
-     </return>
-    </apidoc>
-   </documentation>
-   <api adj="4" cc="stdcall" name="inet_addr">
-    <returnbtype tname="int" ttag="tnamed"/>
-    <par loc="stack" name="cp" nr="1">
-     <btype ttag="tptr">
-      <typ tname="char" ttag="tnamed"/>
-     </btype>
-     <pre><deref-read-nt/></pre>
-     <roles><role rtype="nwi" rname="ip address"/></roles>
-    </par>
-   </api>
-   <semantics>
-    <external-effects/>
-    <preconditions/>
-    <postconditions>
-      <zero-negone/>
-    </postconditions>
-    <sideeffects/>
-   </semantics> -->
   </libfun>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>

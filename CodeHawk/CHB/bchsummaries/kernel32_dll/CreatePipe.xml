@@ -56,9 +56,7 @@
       </sideeffects>
     </par>
     <par loc="stack" io="r" name="lpPipeAttributes" roles="none" nr="3">
-     <btype ttag="tptr">
-      <typ tname="SECURITY_ATTRIBUTES" ttag="tnamed"/>
-     </btype>
+     <type><ptr>SECURITY_ATTRIBUTES</ptr></type>
      <pre><deref-read-null/></pre>
     </par>
     <par loc="stack" io="r" name="nSize" nr="4">
@@ -80,3 +78,4 @@
   </libfun>
   <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>
  </codehawk-binary-analyzer>
+
