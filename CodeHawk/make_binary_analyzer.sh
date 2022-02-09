@@ -3,6 +3,7 @@ set -e
 make -C CH/chlib
 make -C CH/chutil
 make -C CH/xprlib
+make -C CHB/bchcil
 make -C CHB/bchlib
 make -C CHB/bchlibpe
 make -C CHB/bchlibelf

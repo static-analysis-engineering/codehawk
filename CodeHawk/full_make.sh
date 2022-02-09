@@ -11,6 +11,7 @@ make -C CHC/cchpre
 make -C CHC/cchanalyze
 make -C CHC/cchcmdline
 make -C CHC/cchgui
+make -C CHB/bchcil
 make -C CHB/bchlib
 make -C CHB/bchlibpe
 make -C CHB/bchlibelf
