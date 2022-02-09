@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2021-12-26 17:46:03"/>
+  <libfun lib="so_functions" name="EVP_MD_CTX_free">
+    <documentation>
+      <desc>
+	Cleans up digest context ctx and frees up the space allocated to it.
+      </desc>
+      <apidoc>
+        <pt>void EVP_MD_CTX_free (EVP_MD_CTX *ctx)</pt>
+        <par name="ctx">the context to be unallocated</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="EVP_MD_CTX_free">
+      <par loc="stack" name="ctx" nr="1">
+        <type><ptr>EVP_MD_CTX</ptr></type>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

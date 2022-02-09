@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2021-12-31 14:11:58"/>
+  <libfun lib="so_functions" name="strlcpy">
+    <documentation>
+      <desc>size-bounded string copying and concatenation</desc>
+      <apidoc>
+        <pt>
+          <ll>size_t strlcpy(</ll>
+          <ld>char *dst</ld>
+          <ld>const char *src</ld>
+          <ld>size_t size</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="dst">pointer to destination buffer</par>
+        <par name="src">pointer to source string</par>
+        <par name="size">size of the destination buffer</par>
+        <return>
+          <rc cond="success">length of src</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="strlcpy">
+      <par loc="stack" name="dst" nr="1">
+        <type><ptr>char</ptr></type>
+      </par>
+      <par loc="stack" name="src" nr="2">
+        <type><ptr>char</ptr></type>
+      </par>
+      <par loc="stack" name="size" nr="3">
+        <type>size_t</type>
+      </par>
+      <returntype>size_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

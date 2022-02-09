@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2021-12-26 18:05:03"/>
+  <libfun lib="so_functions" name="EVP_des_ede3_cbc">
+    <documentation>
+      <desc>
+	Three-key triple DES in ECB, CBC, CFB with 64-bit shift, CFB
+	with 1-bit shift, CFB with 8-bit shift and OFB modes.
+      </desc>
+      <apidoc>
+        <pt>const EVP_CIPHER *EVP_des_ede3_cbc (void)</pt>
+        <return>
+          <rc cond="success">not null</rc>
+          <rc cond="failure">null</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="EVP_des_ede3_cbc">
+      <returntype><ptr>EVP_CIPHER</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

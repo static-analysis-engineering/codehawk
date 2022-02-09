@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2021-12-26 18:13:30"/>
+  <libfun lib="so_functions" name="CRYPTO_malloc">
+    <documentation>
+      <desc>
+	OPENSSL_malloc(), OPENSSL_realloc(), and OPENSSL_free() are
+	like the C malloc(), realloc(), and free()
+	functions. OPENSSL_zalloc() calls memset() to zero the memory
+	before returning.
+
+	OpenSSL memory allocation is handled by the OPENSSL_xxx
+	API. These are generally macro's that add the standard C
+	__FILE__ and __LINE__ parameters and call a lower-level
+	CRYPTO_xxx API. Some functions do not add those parameters,
+	but exist for consistency.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>void *CRYPTO_malloc(</ll>
+          <ld>size_t num</ld>
+          <ld>char *file</ld>
+          <ld>int line</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="num">number of bytes to allocate</par>
+        <par name="file">name of the source file</par>
+        <par name="line">source line number</par>
+        <return>
+          <rc cond="success">not null</rc>
+          <rc cond="failure">null</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="CRYPTO_malloc">
+      <par loc="stack" name="num" nr="1">
+        <type>size_t</type>
+      </par>
+      <par loc="stack" name="file" nr="2">
+        <type><ptr>char</ptr></type>
+      </par>
+      <par loc="stack" name="line" nr="3">
+        <type>int</type>
+      </par>
+      <returntype><ptr>void</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2022-01-27 08:43:26"/>
+  <libfun lib="so_functions" name="config_match">
+    <documentation>
+      <desc>Checks for matching</desc>
+      <apidoc>
+        <pt>
+          <ll>int config_match(</ll>
+          <ld>char *name1</ld>
+          <ld>char *name2</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="name1">name 1</par>
+        <par name="name2">name 2 </par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="config_match">
+      <par loc="stack" name="name1" nr="1">
+        <type><ptr>char</ptr></type>
+      </par>
+      <par loc="stack" name="name2" nr="2">
+        <type><ptr>char</ptr></type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

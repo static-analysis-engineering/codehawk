@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2021-12-26 18:08:15"/>
+  <libfun lib="so_functions" name="EVP_aes_256_cbc">
+    <documentation>
+      <desc>
+	AES for 128, 192 and 256 bit keys in the following modes: CBC,
+	CFB with 128-bit shift, CFB with 1-bit shift, CFB with 8-bit
+	shift, CTR, ECB, and OFB.
+      </desc>
+      <apidoc>
+        <pt>const EVP_CIPHER *EVP_aes_256_cbc (void)</pt>
+        <return>
+          <rc cond="success">not null</rc>
+          <rc cond="failure">null </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="EVP_aes_256_cbc">
+      <returntype><ptr>EVP_CIPHER</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>

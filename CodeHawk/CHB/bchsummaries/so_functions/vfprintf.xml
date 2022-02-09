@@ -39,9 +39,7 @@
       <pre><deref-read-nt/><format-string/></pre>
     </par>
     <par loc="stack" name="args" roles="none" nr="3">
-     <btype ttag="tptr">
-      <typ tname="void" ttag="tnamed"/>
-     </btype>
+     <type><ptr>VOID</ptr></type>
     </par>
    </api>
    <semantics>
