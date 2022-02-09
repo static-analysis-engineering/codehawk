@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,7 +53,6 @@ open BCHLibTypes
 open BCHLocation
 open BCHLocationInvariant
 open BCHCPURegisters
-open BCHMemoryAccesses
 open BCHMemoryReference
 open BCHPreFileIO
 open BCHSystemInfo
@@ -64,7 +65,6 @@ open BCHAssemblyFunctions
 open BCHAssemblyInstructionAnnotations
 open BCHIFSystem
 open BCHLibx86Types
-open BCHRecordMemoryAccesses
 open BCHVariableNames
 
 (* bchgui *)
@@ -357,8 +357,8 @@ object (self)
     let _ = GMisc.label ~text:"writers" ~packing:(table#attach ~top:0 ~left:2) () in
     let _ = GMisc.label ~text:"readers" ~packing:(table#attach ~top:0 ~left:3) () in
     let row = ref 1 in
-    let is_memory_read acc = match acc with 
-	MARead _ | MAIndexedRead _ | MABlockRead _ -> true | _ -> false in
+    let is_memory_read acc = false in
+    (*	MARead _ | MAIndexedRead _ | MABlockRead _ -> true | _ -> false in *)
     let _ = List.iter (fun (iaddr,acc) ->
       let floc = get_floca faddr iaddr in
       let ann = create_annotation floc in
@@ -366,7 +366,8 @@ object (self)
         GMisc.label ~text:iaddr ~packing:(table#attach ~top:!row ~left:0) () in
       let _ =
         GMisc.label
-          ~text:(pp_str (memaccess_to_pretty acc))
+          (* ~text:(pp_str (memaccess_to_pretty acc)) *)
+          ~text:(pp_str (STR "unsupported"))
           ~xalign:0.0
 	  ~packing:(table#attach ~top:!row ~left:1)
           () in
@@ -382,7 +383,7 @@ object (self)
   method display (parent:GWindow.window) =
     let _ = self#probe_vals in
     let _ = self#probe_types in
-    let memAccesses = finfo#get_stack_accesses in
+    let memAccesses = [] in (* finfo#get_stack_accesses in *)
     let memAccesses =
       List.map (fun (i,l) ->
           (i, List.map (fun (dw,a)  -> (dw#to_hex_string,a)) l)) memAccesses in
@@ -394,15 +395,16 @@ object (self)
     let height = bounded ((40 * variableCount) + 40) 200 600 in
     let dialog = GWindow.dialog ~title ~parent ~modal:false ~show:true ~width:400 ~height () in
     let get_type v =
-      let offset = env#get_memvar_offset v in
+      (* let offset = env#get_memvar_offset v in
       let offset = match offset with
         | ConstantOffset (n,_) -> n#toInt
         | _ -> 1 in
-      (* let offset = if memref#get_offset#is_constant_offset then
-	  memref#get_offset#get_constant_offset#toInt else 1 in *)
+      let offset = if memref#get_offset#is_constant_offset then
+	  memref#get_offset#get_constant_offset#toInt else 1 in
       let ( _,accesses) = try (List.find (fun (i,_) -> i = offset) memAccesses) with
-	  Not_found -> (0,[]) in
-      let types = get_mem_type (List.map snd accesses) in
+	  Not_found -> (0,[]) in *)
+      let types = [] in
+      (* get_mem_type (List.map snd accesses) in *)
       String.concat "-" (List.map btype_to_string types) in
     let memacc_button title tooltip v packing =
       let offset = env#get_memvar_offset v in
@@ -413,10 +415,12 @@ object (self)
 	  memref#get_offset#get_constant_offset#toInt else 1 in *)
       let (_,accesses) = try (List.find (fun (i,_) -> i = offset) memAccesses) with
 	  Not_found -> (0,[]) in
-      let numReaders = List.length (List.filter (fun (_,a) -> match a with
-	| MARead _ | MAIndexedRead _ | MABlockRead _ -> true | _ -> false) accesses) in
-      let numWriters = List.length (List.filter (fun (_,a) -> match a with 
-	  MAWrite _ | MAIndexedWrite _ | MABlockWrite _ -> true | _ -> false) accesses) in
+      let numReaders = 0 in
+                          (* List.length (List.filter (fun (_,a) -> match a with
+	| MARead _ | MAIndexedRead _ | MABlockRead _ -> true | _ -> false) accesses) in *)
+      let numWriters = 0 in
+      (* List.length (List.filter (fun (_,a) -> match a with 
+	  MAWrite _ | MAIndexedWrite _ | MABlockWrite _ -> true | _ -> false) accesses) in *)
       let numAcc = List.length accesses in
       if numAcc > 0 then
 	let label = (string_of_int numWriters) ^ " / " ^ (string_of_int numReaders) in
