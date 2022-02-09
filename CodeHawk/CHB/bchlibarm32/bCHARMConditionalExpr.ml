@@ -219,6 +219,62 @@ let cc_expr
   if is_random expr then (!found, None) else (true, Some expr)
 
 
+let cc_expr_bare
+      (v: arm_operand_int -> xpr_t)   (* signed *)
+      (vu: arm_operand_int -> xpr_t)  (* unsigned *)
+      (testfloc: floc_int)
+      (testopc: arm_opcode_t)
+      (cc: arm_opcode_cc_t): (bool * xpr_t option) =
+  let found = ref true in
+  let iszero op =
+    match testfloc#inv#rewrite_expr
+            (op#to_expr testfloc) testfloc#env#get_variable_comparator with
+    | XConst (IntConst n) -> n#equal numerical_zero
+    | _ -> false in
+  let gezero op =
+    match testfloc#inv#rewrite_expr
+            (op#to_expr testfloc) testfloc#env#get_variable_comparator with
+    | XConst (IntConst n) -> n#gt numerical_zero
+    | _ -> false in
+  let expr = 
+    match (testopc, cc) with
+    | (Compare (ACCAlways, x, y, _), ACCEqual) -> XOp (XEq, [v x; v y])
+    | (Compare (ACCAlways, x, y, _), ACCNotEqual) -> XOp (XNe, [v x; v y])
+    | (Compare (ACCAlways, x, y, _), ACCSignedLE) when iszero x && iszero y ->
+       true_constant_expr
+    | (Compare (ACCAlways, x, y, _), ACCSignedLE) when gezero x && iszero y ->
+           XOp (XGe, [v x;  int_constant_expr e31])
+    | (Compare (ACCAlways, x, y, _), ACCSignedLE) when iszero y ->
+       (match v x with
+        | XVar var when testfloc#env#is_signed_symbolic_value var ->
+           XOp (XLOr, [XOp (XEq, [v x; zero_constant_expr]);
+                       XOp (XGe, [v x; int_constant_expr e15])])
+        | _ ->
+           XOp (XLOr, [XOp (XEq, [v x; zero_constant_expr]);
+                       XOp (XGe, [v x; int_constant_expr e31])]))
+
+    | (Compare (ACCAlways, x, y, _), ACCSignedGE) when iszero y ->
+       XOp (XLAnd, [XOp (XGe, [v x; v y]);
+                    XOp (XLt, [v x; int_constant_expr e31])])
+
+    | (Compare (ACCAlways, x, y, _), ACCSignedGE) ->
+       let ic31 = int_constant_expr e31 in
+       let c1 = XOp (XLAnd, [XOp (XGe, [v x; v y]); XOp (XLt, [v x; ic31])]) in
+       let d1 = XOp (XLAnd, [c1; XOp (XLt, [v y; ic31])]) in
+       let c2 = XOp (XLAnd, [XOp (XLt, [v x; v y]); XOp (XLt, [v x; ic31])]) in
+       let d2 = XOp (XLAnd, [c2; XOp (XGe, [v y; ic31])]) in
+       XOp (XLOr, [d1; d2])
+
+    | (Compare (ACCAlways, x, y, _), ACCUnsignedHigher) ->
+       XOp (XGt, [v x; v y])
+
+    | (Compare (ACCAlways, x, y, _), ACCNotUnsignedHigher) ->
+       XOp (XLe, [v x; v y])
+
+    | _ -> begin found := false; random_constant_expr end in
+  if is_random expr then (!found, None) else (true, Some expr)
+
+
 let arm_conditional_expr
     ~(condopc:arm_opcode_t)
     ~(testopc:arm_opcode_t)
@@ -233,7 +289,7 @@ let arm_conditional_expr
   let (found, optxpr) =
     match get_arm_opcode_condition condopc with
     | Some c when is_cond_conditional c ->
-       cc_expr v vu testfloc testopc c
+       cc_expr_bare v vu testfloc testopc c
     | _ -> (false, None) in
              (*
     match condopc with
@@ -248,12 +304,13 @@ let arm_conditional_expr
   if found then
     match optxpr with
     | Some expr ->
-	if is_false expr then (frozenVars#listOfValues, None) else
-	begin
-	  condfloc#set_test_expr expr ;
-	  testfloc#set_test_variables frozenVars#listOfPairs ;
-	  (frozenVars#listOfValues, optxpr)
-	end
+       if is_false expr then (frozenVars#listOfValues, None) else
+	 begin
+           chlog#add "condition" (x2p expr);
+	   condfloc#set_test_expr expr ;
+	   testfloc#set_test_variables frozenVars#listOfPairs ;
+	   (frozenVars#listOfValues, optxpr)
+	 end
     | _ -> (frozenVars#listOfValues, None)
   else
     begin
