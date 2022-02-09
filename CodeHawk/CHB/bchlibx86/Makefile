@@ -7,6 +7,7 @@ CHLIB  = $(CODEHAWK)/CH/chlib
 EXTLIB = $(shell ocamlfind query extlib)
 CHUTIL = $(CODEHAWK)/CH/chutil
 XPRLIB = $(CODEHAWK)/CH/xprlib
+BCHCIL = $(CHB)/bchcil
 BCHLIB = $(CHB)/bchlib
 PELIB  = $(CHB)/bchlibpe
 ELFLIB = $(CHB)/bchlibelf
@@ -19,6 +20,7 @@ CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
+	-I $(BCHCIL)/cmi \
 	-I $(BCHLIB)/cmi \
 	-I $(PELIB)/cmi \
 	-I $(ELFLIB)/cmi \
@@ -82,8 +84,6 @@ MLIS := \
 	bCHLoopStructure \
 	bCHTranslateToCHIF \
 	bCHTranslateToTypeCHIF \
-	bCHRecordMemoryAccesses \
-	bCHGlobalVariables \
 	bCHDisassemblyMetrics \
 	bCHX86Metrics \
 	bCHFnX86Dictionary \
@@ -147,8 +147,6 @@ SOURCES := \
 	bCHLoopStructure \
 	bCHTranslateToCHIF \
 	bCHTranslateToTypeCHIF \
-	bCHRecordMemoryAccesses \
-	bCHGlobalVariables \
 	bCHDisassemblyMetrics \
 	bCHX86Metrics \
 	bCHFnX86Dictionary \
@@ -162,7 +160,7 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-bchlibx86: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(ELFLIB)/bchlibelf.cmxa
+bchlibx86: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHCIL)/bchcil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(ELFLIB)/bchlibelf.cmxa
 	$(CAMLLINK) -a -o bchlibx86.cmxa $(OBJECTS)
 
 cmi/%.cmi: %.mli

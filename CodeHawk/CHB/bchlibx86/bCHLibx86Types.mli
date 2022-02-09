@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -98,13 +98,13 @@ object ('a)
 
   (* accessors *)
   method size: int
-  method get_kind             : asm_operand_kind_t
-  method get_mode             : operand_mode_t
-  method get_cpureg           : cpureg_t                     (* raises Invocation_error *)
-  method get_absolute_address : doubleword_int               (* raises Invocation_error *)
-  method get_immediate_value  : immediate_int                (* raises Invocation_error *)
-  method get_function_argument: ctxt_iaddress_t * int        (* raises Invocation_error *)
-  method get_esp_offset       : numerical_t                  (* raises Invocation_error *)
+  method get_kind: asm_operand_kind_t
+  method get_mode: operand_mode_t
+  method get_cpureg: cpureg_t          (* raises Invocation_error *)
+  method get_absolute_address : doubleword_int    (* raises Invocation_error *)
+  method get_immediate_value  : immediate_int    (* raises Invocation_error *)
+  method get_function_argument: ctxt_iaddress_t * int  (* raises Invocation_error *)
+  method get_esp_offset: numerical_t       (* raises Invocation_error *)
 
   method get_jump_table_target: (numerical_t * register_t)     (* raises Invocation_error *)
   method get_address_registers: cpureg_t list
@@ -112,11 +112,12 @@ object ('a)
   method get_indirect_register_offset: numerical_t
 
   (* converters *)
-  method to_address          : floc_int -> xpr_t
-  method to_value            : floc_int -> xpr_t
-  method to_variable         : floc_int -> variable_t        (* raises Invocation_error *)
-  method to_expr             : ?unsigned:bool -> floc_int -> xpr_t
-  method to_lhs              : ?size:int -> floc_int -> variable_t * cmd_t list  (* raises Invocation_error *)
+  method to_address: floc_int -> xpr_t
+  method to_value: floc_int -> xpr_t
+  method to_variable: floc_int -> variable_t  (* raises Invocation_error *)
+  method to_expr: ?unsigned:bool -> floc_int -> xpr_t
+  method to_lhs:                              (* raises Invocation_error *)
+           ?size:int -> floc_int -> variable_t * cmd_t list
 
   (* predicates *)
   method is_register         : bool
@@ -170,8 +171,8 @@ type condition_code_t =
 type opcode_t =
     
 (* Misc *)
-  | Arpl of operand_int * operand_int           (* adjust RPL Field of segment selector *)
-  | BreakPoint                                  (*          call to interrupt procedure *)
+  | Arpl of operand_int * operand_int (* adjust RPL Field of segment selector *)
+  | BreakPoint                        (*          call to interrupt procedure *)
   | UndefinedInstruction
   | Pause     
   | Halt     
@@ -185,11 +186,11 @@ type opcode_t =
   | StoreFlags
   | PopFlags
   | PushFlags
-  | SetALC                                     (*       set al on carry, undocumented *)
+  | SetALC            (*       set al on carry, undocumented *)
   | Wait
-  | SysCall                                    (*                    fast system call *)
-  | LinuxSystemCall of operand_int             (*    linux system call with id in eax *)
-  | SysEnter                                   (* fast call to system level function  *)
+  | SysCall           (*                    fast system call *)
+  | LinuxSystemCall of operand_int     (*    linux system call with id in eax *)
+  | SysEnter                           (* fast call to system level function  *)
   | SysExit                                    (*   fast return from fast system call *)
   | SysReturn                                  (*        return from fast system call *)
   | TableLookupTranslation
@@ -355,7 +356,7 @@ type opcode_t =
   | PackedMultiply of string * operand_int * operand_int
   | PackedCompare of string * int * operand_int * operand_int
   | PackedCompareString of bool * bool * operand_int * operand_int * operand_int
-                                                          (* explicit/implicit, index/mask *)
+  (* explicit/implicit, index/mask *)
   | PackedRoundScalarDouble of operand_int * operand_int * operand_int
   | PackedShift of string * int * operand_int * operand_int
   | PackedShuffle of string * operand_int * operand_int * operand_int option
@@ -405,13 +406,13 @@ type opcode_t =
   | AESKeyGenAssist of operand_int * operand_int * operand_int
 
 (* Meta *)
-  | CfNop of int * string                      (* cfg obfuscation without effect *)
-  | CfJmp of operand_int * int * string        (* cfg obfuscation with resulting jump *)
+  | CfNop of int * string                  (* cfg obfuscation without effect *)
+  | CfJmp of operand_int * int * string    (* cfg obfuscation with resulting jump *)
   | JumpTableEntry of operand_int
   | OpInvalid                                  (* inside an instruction *)
   | Unknown                                    (* instruction not recognized *)
-  | InconsistentInstr of string                (* inconsistent instruction at failure on input *)
-  | NotCode of not_code_t option               (* start (Some b) or inside (None) a data block *)
+  | InconsistentInstr of string   (* inconsistent instruction at failure on input *)
+  | NotCode of not_code_t option  (* start (Some b) or inside (None) a data block *)
 
 (* ===================================================== X86 Opcode Dictionary == *)
 
@@ -739,29 +740,6 @@ object
   method has_procedure_by_address: doubleword_int -> bool
 end
 
-(* ================================================== Global variable accesses == *)
-
-class type global_var_accesses_int =
-object
-
-  method initialize : unit
-
-  (* accessors *)
-
-  (* returns a list of all global memory accesses organized by global variable *)
-  method get_accesses : 
-    (doubleword_int * (doubleword_int * (doubleword_int * memaccess_t) list) list) list
-
-  (* returns a list of all global memory accesses performed by a given function *)
-  method get_function_accesses:
-    doubleword_int -> (doubleword_int * (doubleword_int * memaccess_t) list) list
-
-  (* returns a list of functions that access a particular global variable *)
-  method get_gvar_accesses:
-    doubleword_int -> (doubleword_int * (doubleword_int * memaccess_t) list) list
-
-end
-
 (* ======================================================= Disassembly metrics === *)
 
 class type disassembly_metrics_int =
@@ -788,9 +766,14 @@ class type x86_opcode_dictionary_int =
 
     method get_esp_offset: int -> (int * interval_t)
 
-    method write_xml_esp_offset: ?tag:string -> xml_element_int -> int * interval_t -> unit
+    method write_xml_esp_offset:
+             ?tag:string -> xml_element_int -> int * interval_t -> unit
     method write_xml_instr:
-             ?tag:string -> xml_element_int -> assembly_instruction_int -> floc_int -> unit
+             ?tag:string
+             -> xml_element_int
+             -> assembly_instruction_int
+             -> floc_int
+             -> unit
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit

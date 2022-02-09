@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -309,6 +309,7 @@ object (self)
                  callgraph#add_virtual_edge faddr s ctxtiaddr argExprs
 	      | UnknownTarget ->
                  callgraph#add_unresolved_edge faddr (-1) ctxtiaddr argExprs
+              | CallbackTableTarget _ -> (* not implemented yet *) ()
 	      | IndirectTarget (_,tgts) -> List.iter add_call_target tgts in
 	    add_call_target (finfo#get_call_target ctxtiaddr)#get_target
 	  else 
