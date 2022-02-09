@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs, LLC
+   Copyright (c) 2021-2022 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -503,6 +503,14 @@ let parse_thumb32_29
      (* STM<c>.W <Rn>{!}, <registers> *)
      StoreMultipleIncrementAfter (wback, cc, rn, rl RD , mem WR, true)
 
+  (* < 29>0001011<13>pm0<---rlist--->   POP.W - T2 *)
+  | 5 when (bv 20) = 1 && (b 19 16) = 13 && (bv 13) = 0 ->
+     let reglist = get_reglist_from_int 16 (b 15 0) in
+     let rl = arm_register_list_op reglist in
+     let sp = arm_register_op (get_arm_reg 13) in
+     (* POP<c>.W <registers> *)
+     Pop (cc, sp RW, rl WR, true)
+
   (* < 29>00010W1<rn>0m0<---rlist--->   LDM/LDMIA/LDMFD - T2 *)
   | 4 | 5 when (bv 20) = 1 && (bv 15) = 0 && (bv 13) = 0 ->
      let regs = ((b 14 14) lsl 14) + (b 12 0) in
@@ -515,14 +523,6 @@ let parse_thumb32_29
      let rn = if wback then rn RW else rn RD in
      (* LDM<c>.W <Rn>{!}, <registers> *)
      LoadMultipleIncrementAfter (wback, cc, rn, rl RD , mem WR)
-
-  (* < 29>0001011<13>pm0<---rlist--->   POP.W - T2 *)
-  | 5 when (bv 20) = 1 && (b 19 16) = 13 ->
-     let reglist = get_reglist_from_int 16 (b 15 0) in
-     let rl = arm_register_list_op reglist in
-     let sp = arm_register_op (get_arm_reg 13) in
-     (* POP<c>.W <registers> *)
-     Pop (cc, sp RW, rl WR, true)
 
   (* < 29>0001101<rn><15>00000000<rm>   TBB *)
   | 6 when (b 20 20) = 1 && (b 15 12) = 15 && (b 11 5) = 0 && (b 4 4) = 0 ->

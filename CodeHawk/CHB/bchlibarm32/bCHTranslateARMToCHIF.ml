@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -360,7 +360,8 @@ let make_condition
 	[(blocklabel, thentestlabel); (thentestlabel, thenlabel)] in
       let elseedges =
 	[(blocklabel, elsetestlabel); (elsetestlabel, elselabel) ] in
-      ([(thentestlabel, thennode); (elsetestlabel, elsenode)], thenedges @ elseedges)
+      ([(thentestlabel, thennode); (elsetestlabel, elsenode)],
+       thenedges @ elseedges)
   | _ ->
     let abstractlabel =
       make_code_label ~modifier:"abstract" testloc#ci in
@@ -480,7 +481,8 @@ let translate_arm_instruction
      default []
 
   | Branch (_, op, _)
-    | BranchExchange (ACCAlways, op) when op#is_register && op#get_register = ARLR ->
+    | BranchExchange (ACCAlways, op)
+       when op#is_register && op#get_register = ARLR ->
      default []
 
   (* -------------------------------------------------------------- Add -- *
@@ -506,6 +508,12 @@ let translate_arm_instruction
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
+
+  | AddCarry (_, c, rd, rn, rm, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
 
   | Adr (ACCAlways, dst, src) ->
      let floc = get_floc loc in
@@ -560,6 +568,18 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vrd () in
      default cmds
 
+  | BitwiseBitClear (_, _, rd, _, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
+  | BitwiseExclusiveOr (_, _, rd, _, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
   (* ---------------------------------------------------------- BitwiseNot -- *
    * if immediate
    *   result = NOT(imm32);
@@ -595,6 +615,12 @@ let translate_arm_instruction
      default (lhscmds @ cmds)
 
   | BitwiseOr (_, _, rd, _, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
+  | BitwiseOrNot (_, _, rd, _, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let cmds = floc#get_abstract_commands vrd () in
@@ -645,6 +671,9 @@ let translate_arm_instruction
      let (lhs, lhscmds) = rd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
+
+  | DataMemoryBarrier _ ->
+     default []
 
   | IfThen (c, xyz) when instr#is_aggregate ->
      let floc = get_floc loc in
@@ -827,21 +856,17 @@ let translate_arm_instruction
            let cmds = floc#get_abstract_commands lhs () in
            default (lhscmds @ cmds))
 
-  | LoadRegisterSignedHalfword (_, rt, _, _, _, _) ->
+  | LoadRegisterSignedByte (_, rt, _, _, _, _) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = rt#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | LogicalShiftLeft (_, ACCAlways, rd, rn, rm, _) when rm#is_immediate ->
+  | LoadRegisterSignedHalfword (_, rt, _, _, _, _) ->
      let floc = get_floc loc in
-     let vrd = rd#to_variable floc in
-     let xrn = rn#to_expr floc in
-     let p = rm#to_numerical#toInt in
-     let m = mkNumerical_big (B.power_int_positive_int 2 p) in
-     let rhs = XOp (XMult, [num_constant_expr m; xrn]) in
-     let cmds = floc#get_assign_commands vrd rhs in
-     default cmds
+     let (lhs, lhscmds) = rt#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
 
   | LogicalShiftLeft (_, ACCAlways, rd, rn, rm, _) ->
      let floc = get_floc loc in
@@ -927,6 +952,15 @@ let translate_arm_instruction
      let cmds2 = floc#get_abstract_commands lhs2 () in
      default (lhs1cmds @ lhs2cmds @ cmds1 @ cmds2)
 
+  | Multiply (_, _, rd, rn, rm) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = rd#to_lhs floc in
+     let rhs1 = rn#to_expr floc in
+     let rhs2 = rm#to_expr floc in
+     let result = XOp (XMult, [rhs1; rhs2]) in
+     let cmds = floc#get_assign_commands lhs result in
+     default (lhscmds @ cmds)
+
   | MultiplyAccumulate (_, _, rd, rn, rm, ra) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = rd#to_lhs floc in
@@ -946,6 +980,9 @@ let translate_arm_instruction
      let result = XOp (XMinus, [rhsa; XOp (XMult, [rhs1; rhs2])]) in
      let cmds = floc#get_assign_commands lhs result in
      default (lhscmds @ cmds)
+
+  | NoOperation _ ->
+     default []
 
   (* ----------------------------------------------------------------- Pop -- *
    * address = SP;
@@ -1062,8 +1099,26 @@ let translate_arm_instruction
 
   | ReverseSubtractCarry(_, _, dst, _, _) ->
      let floc = get_floc loc in
-     let vdst = dst#to_variable floc in
+     let vrd = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
+  | RotateRight (_, _, rd, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
+  | RotateRightExtend (_, _, rd, _) ->
+     let floc = get_floc loc in
+     let vdst = rd#to_variable floc in
      let cmds = floc#get_abstract_commands vdst () in
+     default cmds
+
+  | SelectBytes (_, rd, rn, rm) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
      default cmds
 
   | SignedBitFieldExtract (ACCAlways, rd, rn) ->
@@ -1071,12 +1126,6 @@ let translate_arm_instruction
      let (lhs, lhscmds) = rd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
-
-  | SelectBytes (_, rd, rn, rm) ->
-     let floc = get_floc loc in
-     let vrd = rd#to_variable floc in
-     let cmds = floc#get_abstract_commands vrd () in
-     default cmds
 
   | SignedDivide (ACCAlways, rd, rn, rm) ->
      let floc = get_floc loc in
@@ -1086,6 +1135,12 @@ let translate_arm_instruction
      let rhs = XOp (XDiv, [dividend; divisor]) in
      let cmds = floc#get_assign_commands lhs rhs in
      default (lhscmds @ cmds)
+
+  | SignedExtendByte (_, rd, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
 
   | SignedExtendHalfword (_, rd, _, _) ->
      let floc = get_floc loc in
@@ -1244,6 +1299,24 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vdst () in
      default cmds
 
+  | Swap (_, rd, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
+  | SwapByte (_, rd, _, _) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     default cmds
+
+  | TableBranchByte _ ->
+     default cmds
+
+  | TableBranchHalfword _ ->
+     default cmds
+
   | UnsignedAdd8 (_, rd, rn, rm) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
@@ -1325,6 +1398,10 @@ let translate_arm_instruction
      let vdst = rd#to_variable floc in
      let cmds = floc#get_abstract_commands vdst () in
      default cmds
+
+  | VectorAdd _ -> default []
+
+  | VectorBitwiseBitClear _ -> default []
 
   | VectorBitwiseOr _ -> default []
 

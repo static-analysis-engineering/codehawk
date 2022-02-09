@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -63,6 +63,7 @@ open BCHELFHeader
 
 (* bchlibarm32 *)
 open BCHARMAssemblyInstructions
+open BCHARMConditionalExpr
 open BCHARMDictionary
 open BCHARMDisassemblyUtils
 open BCHARMLoopStructure
@@ -327,10 +328,19 @@ object (self)
                 && tgt#is_absolute_address
                 && floc#has_test_expr ->
          let xtgt = tgt#to_expr floc in
-         let tcond = rewrite_expr floc#get_test_expr in
+         let txpr = floc#get_raw_test_expr in
+         let fxpr = XOp (XLNot, [txpr]) in
+         let tcond = floc#get_test_expr in
          let fcond = rewrite_expr (XOp (XLNot, [tcond])) in
-         (["a:xxx"; "TF"],
-          [xd#index_xpr tcond; xd#index_xpr fcond; xd#index_xpr xtgt])
+         let csetter = floc#f#get_associated_cc_setter floc#cia in
+         let instr = (!arm_assembly_instructions)#at_address (string_to_doubleword csetter) in
+         let bytestr = instr#get_bytes_ashexstring in
+         (["a:xxxxx"; "TF"; csetter; bytestr],
+          [xd#index_xpr txpr;
+           xd#index_xpr fxpr;
+           xd#index_xpr tcond;
+           xd#index_xpr fcond;
+           xd#index_xpr xtgt])
 
       | Branch (_, tgt, _) ->
          let xtgt = tgt#to_expr floc in
@@ -400,6 +410,33 @@ object (self)
          let xxrm = rewrite_expr xrm in
          (["a:vxx"], [xd#index_variable vrd; xd#index_xpr xrm; xd#index_xpr xxrm])
 
+      | IfThen (c, xyz) when instr#is_aggregate ->
+         let finfo = floc#f in
+         let ctxtiaddr = floc#l#ci in
+         if finfo#has_associated_cc_setter ctxtiaddr then
+           let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+           let testloc = ctxt_string_to_location faddr testiaddr in
+           let testaddr = testloc#i in
+           let testinstr = !arm_assembly_instructions#at_address testaddr in
+           let dstop = instr#get_aggregate_dst in
+           let (_, optpredicate) =
+             arm_conditional_expr
+               ~condopc:instr#get_opcode
+               ~testopc:testinstr#get_opcode
+               ~condloc:floc#l
+               ~testloc:testloc in
+           (match optpredicate with
+            | Some p ->
+               let lhs = dstop#to_variable floc in
+               (["a:vx"], [xd#index_variable lhs; xd#index_xpr p])
+            | _ ->
+               ([], []))
+         else
+           ([], [])
+
+      | IfThen (c, xyz)  ->
+         ([], [])
+
       | LoadMultipleIncrementAfter (_, _, rn, rl, mem) ->
          let lhss = rl#to_multiple_variable floc in
          let (_, rhss) =
@@ -452,22 +489,29 @@ object (self)
 
       | LoadRegisterByte (_, rt, rn, _, mem, _) ->
          let vrt = rt#to_variable floc in
+         let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
-         (["a:vxx"], [xd#index_variable vrt;
-                      xd#index_xpr xmem;
-                      xd#index_xpr xrmem])
+         (["a:vvxx"],
+          [xd#index_variable vrt;
+           xd#index_variable vmem;
+           xd#index_xpr xmem;
+           xd#index_xpr xrmem])
 
       | LoadRegisterDual (_, rt, rt2, _, _, mem, mem2) ->
          let vrt = rt#to_variable floc in
          let vrt2 = rt2#to_variable floc in
+         let vmem = mem#to_variable floc in
+         let vmem2 = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
          let xmem2 = mem2#to_expr floc in
          let xrmem2 = rewrite_expr xmem2 in
-         (["a:vvxxxx"],
+         (["a:vvvvxxxx"],
           [xd#index_variable vrt;
            xd#index_variable vrt2;
+           xd#index_variable vmem;
+           xd#index_variable vmem2;
            xd#index_xpr xmem;
            xd#index_xpr xrmem;
            xd#index_xpr xmem2;
@@ -475,36 +519,45 @@ object (self)
 
       | LoadRegisterExclusive (_, rt, rn, _, mem) ->
          let vrt = rt#to_variable floc in
+         let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
-         (["a:vxx"],
+         (["a:vvxx"],
           [xd#index_variable vrt;
+           xd#index_variable vmem;
            xd#index_xpr xmem;
            xd#index_xpr xrmem])
 
       | LoadRegisterHalfword (_, rt, rn, _, mem, _) ->
          let vrt = rt#to_variable floc in
+         let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
-         (["a:vxx"], [xd#index_variable vrt;
-                      xd#index_xpr xmem;
-                      xd#index_xpr xrmem])
+         (["a:vvxx"],
+          [xd#index_variable vrt;
+           xd#index_variable vmem;
+           xd#index_xpr xmem;
+           xd#index_xpr xrmem])
 
       | LoadRegisterSignedByte (_, rt, rn, _, mem, _) ->
          let vrt = rt#to_variable floc in
+         let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
-         (["a:vxx"],
+         (["a:vvxx"],
           [xd#index_variable vrt;
+           xd#index_variable vmem;
            xd#index_xpr xmem;
            xd#index_xpr xrmem])
 
       | LoadRegisterSignedHalfword (_, rt, rn, _, mem, _) ->
          let vrt = rt#to_variable floc in
+         let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
-         (["a:vxx"],
+         (["a:vvxx"],
           [xd#index_variable vrt;
+           xd#index_variable vmem;
            xd#index_xpr xmem;
            xd#index_xpr xrmem])
 
@@ -533,6 +586,9 @@ object (self)
            xd#index_xpr xrm;
            xd#index_xpr result;
            xd#index_xpr rresult])
+
+      | Move _ when instr#is_subsumed ->
+         (["subsumed"], [])
 
       | Move(_, c, rd, rm, _, _) ->
          let vrd = rd#to_variable floc in
@@ -1085,6 +1141,7 @@ object (self)
            LBLOCK [STR t#get_name; STR ": "; INT t#size; NL]) tables)
 
 end
+
 
 let mk_arm_opcode_dictionary = new arm_opcode_dictionary_t
 
