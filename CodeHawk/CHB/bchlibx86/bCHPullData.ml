@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +39,9 @@ open CHLogger
 open XprTypes
 open XprToPretty
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHBasicTypes
 open BCHCallTarget
@@ -67,13 +72,15 @@ module FFU = BCHFileFormatUtil
 let maxIterationCount = 10
 let iterationCount = ref 0
 
+
+                   (*
 module CallTargetCollections = CHCollections.Make
   (struct
     type t = call_target_t
     let compare = call_target_compare
     let toPretty = call_target_to_pretty
    end)
-
+                    *)
 let pr_expr = xpr_formatter#pr_expr 
 
 let stopit () = 
@@ -129,7 +136,7 @@ let check_jni_returnvalue name offsets =
   | Some rt -> 
     begin 
       match rt with
-      | TPtr (TComp (SimpleName "JNIEnv_",_,_),_) ->
+      | TPtr (TCppComp (SimpleName "JNIEnv_",_,_),_) ->
 	begin
 	  match offsets with
 	  | [ fstoffset ; offset ] when fstoffset#equal numerical_zero ->

@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labss LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +42,9 @@ open XprTypes
 open XprToPretty
 open XprUtil
 open Xsimplify
+
+(* bchcil *)
+open BCHCBasicTypes
 
 (* bchlib *)
 open BCHBasicTypes

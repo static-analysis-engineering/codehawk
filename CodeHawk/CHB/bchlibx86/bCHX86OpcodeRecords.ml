@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +41,9 @@ open CHPretty
 (* chutil *)
 open CHXmlDocument
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHBasicTypes
 open BCHCPURegisters
@@ -59,22 +63,44 @@ object
   method no_ops: string -> 'a
 end 
 
-let pop_suffix  (pop:bool) = if pop then "p" else ""
-let npop_suffix (pop:int)  = if pop = 0 then "" else if pop = 1 then "p" else "pp"
-let fp_infix   (fp:bool)   = if fp then "" else "i"
-let cpe_infix  (cpe:bool)  = if cpe then "" else "n"
-let unordered_infix (unordered:bool) = if unordered then "u" else ""
-let scalar_infix (scalar:bool) = if scalar then "s" else "p"             (* scalar or packed *)
-let single_infix (single:bool) = if single then "s" else "d"   (* single or double precision *)
-let is_dup (modifier:string) = match modifier with "dup" | "hdup" | "ldup" -> true | _ -> false
-let truncate_infix (truncate:bool) = if truncate then "t" else ""
-let signed_saturation_infix (ss:bool) = if ss then "s" else ""
-let unsigned_saturation_infix (us:bool) = if us then "us" else ""
+let pop_suffix  (pop:bool) =
+  if pop then "p" else ""
+
+let npop_suffix (pop:int) =
+  if pop = 0 then "" else if pop = 1 then "p" else "pp"
+
+let fp_infix (fp:bool) =
+  if fp then "" else "i"
+
+let cpe_infix  (cpe:bool) =
+  if cpe then "" else "n"
+
+let unordered_infix (unordered:bool) =
+  if unordered then "u" else ""
+
+let scalar_infix (scalar:bool) =
+  if scalar then "s" else "p"             (* scalar or packed *)
+
+let single_infix (single:bool) =
+  if single then "s" else "d"   (* single or double precision *)
+
+let is_dup (modifier:string) =
+  match modifier with "dup" | "hdup" | "ldup" -> true | _ -> false
+
+let truncate_infix (truncate:bool) =
+  if truncate then "t" else ""
+
+let signed_saturation_infix (ss:bool) =
+  if ss then "s" else ""
+ 
+let unsigned_saturation_infix (us:bool) =
+  if us then "us" else ""
 
 let get_float_type (scalar:bool) (single:bool) = 
   let frep = if scalar then FScalar else FPacked in
   let fkind = if single then FFloat else FDouble in
-  TFloat (fkind,frep,[])
+  TFloat (fkind, frep, [])
+
 
 type 'a opcode_record_t = {
   docref: string ;
@@ -87,7 +113,8 @@ type 'a opcode_record_t = {
   intel_asm: 'a ;
   att_asm: 'a 
 }
-  
+
+
 let get_record (opc:opcode_t) = 
   match opc with
   (* AAA             ---- ASCII Adjust after addition                ---- 37 *)
