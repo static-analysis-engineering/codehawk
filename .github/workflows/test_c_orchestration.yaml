@@ -25,7 +25,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get install -y libgtksourceview2.0-dev libgnomecanvas2-dev
-        opam install extlib camlzip zarith ocamlbuild conf-gtksourceview conf-gnomecanvas lablgtk
+        opam install extlib camlzip zarith ocamlbuild conf-gtksourceview conf-gnomecanvas lablgtk goblint-cil
     - name: Compile CodeHawk
       run: eval $(opam env) && cd codehawk/CodeHawk && ./full_make.sh
     - name: Replace prebuilt codehawk ocaml binaries
