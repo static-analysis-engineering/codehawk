@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -292,29 +292,40 @@ let analyze_mips starttime =
       failedfunctions := faddr :: !failedfunctions
     end in
   begin
-    mips_assembly_functions#bottom_up_itera
-      (fun faddr f ->
-        if file_metrics#is_stable faddr#to_hex_string [] &&
-	     (not !analyze_all) then
-          mips_analysis_results#record_results ~save:false f
-        else
-        let _ = count := !count + 1 in
-        try
-          analyze_mips_function faddr f !count
-        with
-        | Failure s -> functionfailure "Failure" faddr (STR s)
-        | IO.No_more_input ->
-           begin
-             pr_debug [ STR "Function failure for " ; faddr#toPretty ;
-                        STR ": No more input" ; NL ];
-             raise IO.No_more_input
-           end
-        | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
-        | Internal_error s -> functionfailure "Internal error" faddr (STR s)
-        | Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
-        | CHFailure p -> functionfailure "CHFailure" faddr p
-        | BCH_failure p -> functionfailure "BCHFailure" faddr p ) ;
-                         
+    (if (List.length !fns_included) > 0 then
+       List.iter
+         (fun faddr ->
+           let faddr = string_to_doubleword faddr in
+           let f = mips_assembly_functions#get_function_by_address faddr in
+           let _ = count := !count + 1 in
+           analyze_mips_function faddr f !count) !fns_included
+     else
+       mips_assembly_functions#bottom_up_itera
+         (fun faddr f ->
+           if file_metrics#is_stable faddr#to_hex_string [] &&
+	        (not !analyze_all) then
+             mips_analysis_results#record_results ~save:false f
+           else
+             let _ = count := !count + 1 in
+             try
+               analyze_mips_function faddr f !count
+             with
+             | Failure s -> functionfailure "Failure" faddr (STR s)
+             | IO.No_more_input ->
+                begin
+                  pr_debug [ STR "Function failure for " ; faddr#toPretty ;
+                             STR ": No more input" ; NL ];
+                  raise IO.No_more_input
+                end
+             | Invalid_argument s ->
+                functionfailure "Invalid argument" faddr (STR s)
+             | Internal_error s ->
+                functionfailure "Internal error" faddr (STR s)
+             | Invocation_error s ->
+                functionfailure "Invocation error" faddr (STR s)
+             | CHFailure p -> functionfailure "CHFailure" faddr p
+             | BCH_failure p -> functionfailure "BCHFailure" faddr p ));
+
     file_metrics#record_runtime ((Unix.gettimeofday ()) -. starttime);
   end
 
