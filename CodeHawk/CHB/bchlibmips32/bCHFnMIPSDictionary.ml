@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -144,7 +144,8 @@ object (self)
              expand (floc#env#get_symbolic_value_expr v)
           | XOp (op,l) -> XOp (op, List.map expand l)
           | _ -> x in
-        let xpr = floc#inv#rewrite_expr (expand x) floc#env#get_variable_comparator in
+        let xpr =
+          floc#inv#rewrite_expr (expand x) floc#env#get_variable_comparator in
         simplify_xpr (expand xpr)
       with IO.No_more_input ->
         begin
@@ -165,8 +166,12 @@ object (self)
          let lhs = dst#to_variable floc in
          let result = XOp (XPlus, [ rhs1 ; rhs2 ]) in
          let rresult = rewrite_expr result in
-         ([ "a:vxxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
-                          xd#index_xpr result ; xd#index_xpr rresult ])
+         (["a:vxxxx"],
+          [ xd#index_variable lhs;
+            xd#index_xpr rhs1;
+            xd#index_xpr rhs2;
+            xd#index_xpr result;
+            xd#index_xpr rresult])
 
       | AddImmediate (dst,src,imm) ->
          let rhs1 = src#to_expr floc in
@@ -175,17 +180,26 @@ object (self)
          let result = XOp (XPlus, [ rhs1 ; rhs2 ]) in
          let rresult = rewrite_expr result in
          let _ = ignore (get_string_reference floc rresult) in
-         ([ "a:vxxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
-                          xd#index_xpr result ; xd#index_xpr rresult ])
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
 
       | AddUpperImmediate (dst,src,imm) ->
          let rhs1 = src#to_expr floc in
-         let rhs2 = num_constant_expr (imm#to_numerical#mult (mkNumerical (256 * 256))) in
+         let rhs2 =
+           num_constant_expr (imm#to_numerical#mult (mkNumerical (256 * 256))) in
          let lhs = dst#to_variable floc in
          let result = XOp (XPlus, [ rhs2; rhs2 ]) in
          let rresult = rewrite_expr result in
-         ([ "a:vxxxx" ],[ xd#index_variable lhs; xd#index_xpr rhs1; xd#index_xpr rhs2;
-                          xd#index_xpr result; xd#index_xpr rresult ])
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
 
       | AddImmediateUnsigned (dst,src,imm) ->
          let rhs1 = src#to_expr floc in
@@ -455,16 +469,28 @@ object (self)
          let rhs = rewrite_expr (tgt#to_expr floc) in
          let iaddr = floc#ia in
          let faddr = floc#fa in
-         if  system_info#has_jump_table_target faddr iaddr then
-           let (jt,jta,lb,ub) =
+         if system_info#has_jump_table_target faddr iaddr then
+           let (jt, jta, lb, ub) =
              system_info#get_jump_table_target faddr iaddr in
            let tgts = jt#get_indexed_targets jta lb ub in
-           ([ "a:x" ; "table" ],
+           (["a:x"; "table"],
             (xd#index_xpr rhs) ::
               (List.concat
-                 (List.map (fun (i,dw) -> [ i ; bd#index_address dw  ]) tgts)))
+                 (List.map (fun (i, dw) -> [i; bd#index_address dw]) tgts)))
+         else if
+           (match rhs with
+            | XVar v
+                 when
+                   floc#env#is_initial_register_value v
+                   && (match floc#env#get_initial_register_value_register v with
+                       | MIPSRegister MRra -> true
+                       | _ -> false) -> true
+            | _ -> false) then
+           let v0_op = mips_register_op MRv0 RD in
+           let v0 = rewrite_expr (v0_op#to_expr floc) in
+           (["a:x"; "rv"], [xd#index_xpr v0])
          else
-           ([ "a:x" ],[ xd#index_xpr rhs ])
+           (["a:x"], [xd#index_xpr rhs])
 
       | LoadByte (dst,src) ->
          let addr = rewrite_expr (src#to_address floc) in         
@@ -534,34 +560,42 @@ object (self)
          let addr = rewrite_expr (src#to_address floc) in         
          let rhs = rewrite_expr (src#to_expr floc) in
          let lhs = dst#to_variable floc in
-         ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ; xd#index_xpr addr ])
+         (["a:vxa"], [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr addr])
 
       | LoadWordRight (dst,src) ->
          let addr = rewrite_expr (src#to_address floc) in         
          let rhs = rewrite_expr (src#to_expr floc) in
          let lhs = dst#to_variable floc in
-         ([ "a:vxa" ],[ xd#index_variable lhs ; xd#index_xpr rhs ; xd#index_xpr addr ])
+         (["a:vxa"],
+          [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr addr])
 
       | MoveConditionalNotZero (rd, rs, rt) ->
          let lhs = rd#to_variable floc in
+         let rlhs = rewrite_expr (rd#to_expr floc) in
          let rhs = rewrite_expr (rs#to_expr floc) in
          let testxpr = rewrite_expr (rt#to_expr floc) in
-         let cond = XOp (XNe, [ testxpr; zero_constant_expr ]) in
+         let cond = XOp (XNe, [testxpr; zero_constant_expr]) in
          let ccond = rewrite_expr cond in
-         (["a:vxxx"],
+         (["a:vxxxx"],
           [xd#index_variable lhs;
            xd#index_xpr rhs;
            xd#index_xpr cond;
-           xd#index_xpr ccond ])
+           xd#index_xpr ccond;
+           xd#index_xpr rlhs])
 
-      | MoveConditionalZero (dst,src,testxpr) ->
+      | MoveConditionalZero (dst, src, testxpr) ->
          let lhs = dst#to_variable floc in
+         let rlhs = rewrite_expr (dst#to_expr floc) in
          let rhs = rewrite_expr (src#to_expr floc) in
          let testxpr = rewrite_expr (testxpr#to_expr floc) in
-         let cond = XOp (XEq, [ testxpr; zero_constant_expr ]) in
+         let cond = XOp (XEq, [testxpr; zero_constant_expr]) in
          let ccond = rewrite_expr cond in
-         ([ "a:vxxx" ],[ xd#index_variable lhs; xd#index_xpr rhs;
-                         xd#index_xpr cond; xd#index_xpr ccond ])
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs;
+           xd#index_xpr cond;
+           xd#index_xpr ccond;
+           xd#index_xpr rlhs])
 
       | MoveFromLo (rd,lo) ->
          let lhs = rd#to_variable floc in

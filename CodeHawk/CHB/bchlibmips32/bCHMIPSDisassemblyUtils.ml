@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -336,7 +337,7 @@ let is_return_instruction opcode =
      (match op#get_register with MRra -> true |  _ -> false)
   | _ -> false
 
-let get_direct_jump_target_address opcode =
+let get_direct_jump_target_address (opcode: mips_opcode_t) =
   match opcode with
   | BranchLTZero (_,op)
     | BranchLTZeroLikely (_,op)
@@ -360,23 +361,28 @@ let get_direct_jump_target_address opcode =
      raise (BCH_failure (LBLOCK [ STR (mips_opcode_to_string opcode) ;
                                   STR " is not a direct jump" ]))
 
-let is_direct_call_instruction opcode =
+let is_direct_call_instruction (opcode: mips_opcode_t) =
   match opcode with
   | BranchLTZeroLink _ | BranchGEZeroLink _ | BranchLink _ | JumpLink _ -> true
   | _ -> false
 
-let is_indirect_call_instruction opcode =
+
+let is_indirect_call_instruction (opcode: mips_opcode_t) =
   match opcode with JumpLinkRegister _ -> true | _ -> false
 
-let get_direct_call_target_address opcode =
+
+let get_direct_call_target_address (opcode: mips_opcode_t) =
   match opcode with
   | BranchLTZeroLink (_,op)
     | BranchGEZeroLink (_,op)
     | BranchLink op
     | JumpLink op when op#is_absolute_address -> op#get_absolute_address
   | _ ->
-     raise (BCH_failure (LBLOCK [ STR  (mips_opcode_to_string opcode) ;
-                                  STR " is not a direct call instruction" ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR (mips_opcode_to_string opcode);
+               STR " is not a direct call instruction"]))
 
 
 let get_string_reference (floc:floc_int) (xpr:xpr_t) =
