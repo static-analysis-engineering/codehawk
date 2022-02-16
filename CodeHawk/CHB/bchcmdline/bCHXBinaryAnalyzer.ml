@@ -310,7 +310,9 @@ let main () =
     else if !cmd = "dump" then
       dump_pe_file system_info#get_filename
 
-    else if !cmd = "disassemble" && !architecture = "x86" && !fileformat = "pe" then
+    else if !cmd = "disassemble"
+            && !architecture = "x86"
+            && !fileformat = "pe" then
       let _ = register_hashed_functions () in
       let t = ref (Unix.gettimeofday ()) in
       let _ = system_info#initialize in
@@ -353,7 +355,9 @@ let main () =
       else
 	exit_with_error !cmd msg
 
-    else if !cmd = "disassemble" && !architecture = "x86" && !fileformat = "elf" then
+    else if !cmd = "disassemble"
+            && !architecture = "x86"
+            && !fileformat = "elf" then
       let _ = system_info#set_elf in
       let _ = load_bdictionary () in      
       let _ = system_info#initialize in
@@ -383,14 +387,23 @@ let main () =
           save_log_files "disassemble" 
       end
 
-    else if !cmd = "disassemble" && !architecture = "mips" && !fileformat = "elf" then
+    else if !cmd = "disassemble"
+            && !architecture = "mips"
+            && !fileformat = "elf" then
       let _ = system_info#set_elf in
       let _ = system_info#set_mips in
       let _ = system_info#initialize in
       let t = ref (Unix.gettimeofday ()) in
-      let _ = pr_debug [ STR "Load MIPS file ..." ; NL ] in
+      let _ = pr_debug [STR "Load MIPS file ..."; NL] in
+      let ifiles = system_info#ifiles in
+      let _ =
+        if (List.length ifiles) > 0 then
+          begin
+            pr_debug [STR "Parse pre-processed c files"; NL];
+            List.iter parse_cil_file ifiles
+          end in
       let _ = load_elf_files () in
-      let _ = pr_debug [ STR "disassemble sections ... " ; NL ] in
+      let _ = pr_debug [STR "disassemble sections ... "; NL] in
       let _ = disassemble_mips_sections ()  in
       let _ = disassembly_summary#record_disassembly_time
                 ((Unix.gettimeofday ()) -. !t) in
@@ -411,8 +424,18 @@ let main () =
         save_mips_assembly_instructions ();
 	save_system_info ();
         save_mips_dictionary ();
-        save_interface_dictionary ();
-        save_bdictionary ();
+        (if (List.length ifiles) > 0 then
+           begin
+             save_bc_files ();
+             save_interface_dictionary ();
+             save_bdictionary ();
+             save_bcdictionary ();
+           end
+         else
+           begin
+             save_interface_dictionary ();
+             save_bdictionary ()
+           end);
         save_log_files "disassemble";
       end
 
