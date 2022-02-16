@@ -47,3 +47,5 @@ val btype_to_pretty: btype_t -> pretty_t
 val typ_compare: btype_t -> btype_t -> int
 
 val btype_equal: btype_t -> btype_t -> bool
+
+val add_attributes: btype_t -> b_attributes_t -> btype_t

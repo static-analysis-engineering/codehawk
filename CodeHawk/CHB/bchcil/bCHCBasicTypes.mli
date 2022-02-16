@@ -57,6 +57,8 @@ type ikind_t =
 | ILongLong   (** [long long] (or [_int64] on Microsoft Visual C) *)
 | IULongLong  (** [unsigned long long] (or [unsigned _int64] on Microsoft 
                   Visual C) *)
+| IInt128     (** added in goblint-cil *)
+| IUInt128    (** added in goblint-cil *)
 (** [local to binary analyzer, not in cil: signed, size in bytes] *)
 | INonStandard of bool * int
 
@@ -66,8 +68,12 @@ type fkind_t =
 | FFloat      (** [float] *)
 | FDouble     (** [double] *)
 | FLongDouble (** [long double] *)
+| FComplexFloat (** added in goblint-cil *)
+| FComplexDouble (** added in goblint-cil *)
+| FComplexLongDouble (** added in goblint-cil *)
 
 type frepresentation_t = FScalar | FPacked
+
 
 type bstorage_t =
 | NoStorage
@@ -76,10 +82,12 @@ type bstorage_t =
 | Extern
 | Opaque of int
 
+
 type unop_t =
 | Neg
 | BNot
 | LNot
+
 
 type binop_t =
 | PlusA
@@ -161,11 +169,11 @@ and b_attrparam_t =
 | AQuestion of b_attrparam_t * b_attrparam_t * b_attrparam_t
 
 and bcompinfo_t = {
-  bcstruct: bool ;
-  bcname: string ;
-  bckey: int ;
-  bcfields: bfieldinfo_t list ;
-  bcattr: b_attributes_t ;
+  bcstruct: bool;
+  bcname: string;
+  bckey: int;
+  bcfields: bfieldinfo_t list;
+  bcattr: b_attributes_t;
 }
 
 and bfieldinfo_t = {
@@ -210,6 +218,8 @@ and bexp_t =
 | Const of bconstant_t
 | Lval of blval_t
 | SizeOf of btype_t
+| Real of bexp_t
+| Imag of bexp_t
 | SizeOfE of bexp_t
 | SizeOfStr of string
 | AlignOf of btype_t
@@ -297,6 +307,7 @@ and b_asm_input_t = string option * string * bexp_t (* name, constraint, bexp_t 
 and binstr_t =
 | Set of blval_t * bexp_t * b_location_t
 | Call of blval_t option * bexp_t * bexp_t list * b_location_t
+| VarDecl of varuse_t * b_location_t  (* added by goblint-cil *)
 | Asm of
     b_attributes_t
     * string list

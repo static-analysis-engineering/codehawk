@@ -43,6 +43,8 @@ let cil_ikind_to_ikind (ik: Cil.ikind): ikind_t =
   | Cil.IULong -> IULong
   | Cil.ILongLong -> ILongLong
   | Cil.IULongLong -> IULongLong
+  | Cil.IInt128 -> IInt128
+  | Cil.IUInt128 -> IUInt128
        
 
 let cil_fkind_to_fkind (fk: Cil.fkind): fkind_t =
@@ -50,6 +52,9 @@ let cil_fkind_to_fkind (fk: Cil.fkind): fkind_t =
   | Cil.FFloat -> FFloat
   | Cil.FDouble -> FDouble
   | Cil.FLongDouble -> FLongDouble
+  | Cil.FComplexFloat -> FComplexFloat
+  | Cil.FComplexDouble -> FComplexDouble
+  | Cil.FComplexLongDouble -> FComplexLongDouble
 
 
 let cil_storage_to_bstorage (s: Cil.storage): bstorage_t =
@@ -234,6 +239,8 @@ and cil_exp_to_bexp (e: Cil.exp): bexp_t =
   | Cil.Const c -> Const (cil_constant_to_bconstant c)
   | Cil.Lval l -> Lval (cl l)
   | Cil.SizeOf t -> SizeOf (ct t)
+  | Cil.Real e -> Real (ce e)
+  | Cil.Imag e -> Imag (ce e)
   | Cil.SizeOfE e -> SizeOfE (ce e)
   | Cil.SizeOfStr s -> SizeOfStr s
   | Cil.AlignOf t -> AlignOf (ct t)
@@ -354,6 +361,7 @@ and cil_instr_to_binstr (i: Cil.instr): binstr_t =
   | Cil.Call (Some lv, e, el, l) ->
      Call (Some (cv lv), ce e, List.map ce el, cl l)
   | Cil.Call (None, e, el, l) -> Call (None, ce e, List.map ce el, cl l)
+  | Cil.VarDecl (v, l) -> VarDecl ((v.vname, v.vid), cl l)
   | Cil.Asm (a, il1, bo, bi, il2, l) ->
      Asm (cil_attributes_to_b_attributes a,
           il1,

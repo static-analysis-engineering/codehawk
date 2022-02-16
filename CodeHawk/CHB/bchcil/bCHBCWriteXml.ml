@@ -159,16 +159,17 @@ and write_xml_label_list (node: xml_element_int) (l: blabel_t list) =
 
 and write_xml_instruction (node: xml_element_int) (instr: binstr_t) =
   let set = node#setAttribute in
+  let seti = node#setIntAttribute in
   let append = node#appendChildren in
   let _ = set "itag" (instr_mcts#ts instr) in
   match instr with
-  | Set (lval,x,loc) ->
+  | Set (lval, x, loc) ->
     begin
       bcd#write_xml_lval node lval;
       bcd#write_xml_exp node x;
       bcd#write_xml_location node loc
     end
-  | Call (optLval,fx,args,loc) ->
+  | Call (optLval, fx, args, loc) ->
     let argsNode = xmlElement "args" in
     begin
       bcd#write_xml_exp node fx;
@@ -177,6 +178,13 @@ and write_xml_instruction (node: xml_element_int) (instr: binstr_t) =
       append [argsNode] ;
       (match optLval with None -> () | Some lval -> bcd#write_xml_lval node lval)
     end
+  | VarDecl (varuse, loc) ->
+     let (vname, vid) = varuse in
+     begin
+       set "vname" vname;
+       seti "vid" vid;
+       bcd#write_xml_location node loc
+     end
   | Asm (attr, templates, asmoutputs, asminputs, registerclobbers, loc) ->
     let add_list name l f =
       match l with
