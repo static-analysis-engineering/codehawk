@@ -48,6 +48,7 @@ MLIS := \
 	bCHFunctionData \
 	bCHSystemData \
 	bCHConstantDefinitions \
+	bCHCallbackTables \
 	bCHImmediate \
 	bCHStreamWrapper \
 	bCHDataExportSpec \
@@ -119,6 +120,7 @@ SOURCES := \
 	bCHCodegraph \
 	bCHSystemData \
 	bCHConstantDefinitions \
+	bCHCallbackTables \
 	bCHImmediate \
 	bCHStreamWrapper \
 	bCHDataExportSpec \

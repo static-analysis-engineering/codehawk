@@ -27,18 +27,25 @@
    ============================================================================= *)
 
 (* chutil *)
+open CHLogger
 open CHXmlDocument
+
+(* bchcil *)
+open BCHCBasicTypes
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHCallbackTables
 open BCHCallTarget
 open BCHCallTargetInfo
 open BCHDoubleword
+open BCHFtsParameter
 open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHFunctionSemantics
 open BCHFunctionSummaryLibrary
 open BCHLibTypes
+open BCHVariableType
 
 
 let mk_default_target (name:string) (tgt:call_target_t) =
@@ -103,6 +110,50 @@ let mk_virtual_target (fintf: function_interface_t) =
   mk_default_target fintf.fintf_name (VirtualTarget fintf)
 
 
+let mk_call_back_table_target
+      (ctgt: call_target_t) (cba: doubleword_int) (offset: int) =
+  let addr = cba#to_hex_string in
+
+  let bfargs_to_parameters (fargs: bfunarg_t list option) =
+    match fargs with
+    | Some funargs ->
+       List.mapi
+         (fun i (name, btype, _) ->
+           mk_stack_parameter ~btype ~name i) funargs
+    | _ -> [] in
+
+  if callbacktables#has_table addr then
+    let cbt = callbacktables#get_table addr in
+    let fname = cbt#fieldname_at_offset offset in
+    let fty = cbt#type_at_offset offset in
+    let fintf =
+      match fty with
+      | TFun (rty, fargs, _, _) | TPtr (TFun (rty, fargs, _, _), _) ->
+         let params = bfargs_to_parameters fargs in
+         default_function_interface ~returntype:rty fname params
+      | _ ->
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Unexpected type for call-back-table at ";
+                   STR addr;
+                   STR " with offset ";
+                   INT offset])) in
+    begin
+      chlog#add
+        "callback-table target created"
+        (LBLOCK [STR addr; STR ": "; btype_to_pretty fty]);
+      mk_call_target_info fintf default_function_semantics ctgt;
+    end
+  else
+    begin
+      chlog#add
+        "no callback table found"
+        (STR addr);
+      mk_default_target ("cbt_" ^ addr) ctgt
+    end
+
+
 let mk_inlined_app_target (a:doubleword_int) (name:string) =
   mk_default_target name (InlinedAppTarget (a,name))
 
@@ -143,6 +194,8 @@ let mk_call_target_info (ctgt: call_target_t): call_target_info_int =
   | StubTarget (JniFunction index) -> mk_jni_target index
   | AppTarget addr -> mk_app_target addr
   | IndirectTarget (_, l) -> mk_default_target "$dispatch$" ctgt
+  | CallbackTableTarget (cba, offset) ->
+     mk_call_back_table_target ctgt cba offset
   | _ ->
      raise
        (BCH_failure

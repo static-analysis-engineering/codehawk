@@ -333,7 +333,8 @@ object (self)
                       STR ": ";
                       STR fintf.fintf_name;
                       STR ": ";
-                      INT (List.length fintf.fintf_type_signature.fts_parameters)]) in
+                      INT (List.length
+                             fintf.fintf_type_signature.fts_parameters)]) in
              self#set_call_target (update_target_interface ctinfo fintf)
           | _ -> ()
         with _ ->

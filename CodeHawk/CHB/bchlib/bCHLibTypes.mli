@@ -544,7 +544,7 @@ object
 end
 
 
-(* =============================================================== Data block === *)
+(* =========================================================== Data block === *)
 
 class type data_block_int =
 object ('a)
@@ -576,7 +576,7 @@ object ('a)
   method toString: string
 end
 
-(* =============================================================== Jump table === *)
+(* =========================================================== Jump table === *)
 
 class type jumptable_int =
 object
@@ -585,15 +585,16 @@ object
   method invalidate_startaddress: unit
 
   (* accessors *)
-  method get_start_address  : doubleword_int
-  method get_end_address    : doubleword_int
-  method get_length         : int
-  method get_all_targets    : doubleword_int list
-  method get_targets        : doubleword_int -> int -> int -> doubleword_int list
-  method get_indexed_targets: doubleword_int -> int -> int -> (int * doubleword_int) list
+  method get_start_address: doubleword_int
+  method get_end_address: doubleword_int
+  method get_length: int
+  method get_all_targets: doubleword_int list
+  method get_targets: doubleword_int -> int -> int -> doubleword_int list
+  method get_indexed_targets:
+           doubleword_int -> int -> int -> (int * doubleword_int) list
 
   (* predicates *)
-  method includes_address   : doubleword_int -> bool
+  method includes_address: doubleword_int -> bool
 
   (* saving *)
   method write_xml: xml_element_int -> unit
@@ -608,8 +609,80 @@ object
 
 end
 
+(* ======================================================Call-back tables === *)
 
-(* ================================================================= Location === *)
+
+type call_back_table_value_t =
+  | CBAddress of string
+  | CBTag of string
+  | CBValue of numerical_t
+
+
+class type call_back_table_record_int =
+  object
+
+    (* getters *)
+    method address: string
+    method values: (int * call_back_table_value_t) list
+    method stringvalue: int -> string  (* string at offset *)
+    method intvalue: int -> numerical_t   (* integer value at offset *)
+    method addrvalue: int -> string   (* address at offset *)
+
+    (* saving *)
+    method write_xml: xml_element_int -> unit
+
+    (* printing *)
+    method toPretty: pretty_t
+
+  end
+
+
+class type call_back_table_int =
+  object
+
+    (* setters *)
+    method add_record:
+             string
+             -> (int * call_back_table_value_t) list
+             -> unit
+
+    (* getters *)
+    method address: string
+    method length: int   (* number of records *)
+    method record_type: btype_t
+    method type_at_offset: int -> btype_t
+    method fieldname_at_offset: int -> string
+    method field_offset_types: (int * btype_t) list
+    method record_length: int   (* number of items in record *)
+    method function_pointer_values: (string * btype_t) list
+
+    (* saving *)
+    method write_xml: xml_element_int -> unit
+
+  end
+
+
+class type call_back_tables_int =
+  object
+
+    (* setters *)
+    method new_table: string -> btype_t -> call_back_table_int
+    method add_table_address: string -> string -> unit
+    method set_function_pointers: unit
+
+    (* getters *)
+    method table_variables: (string * string) list   (* address, name *)
+    method get_table: string -> call_back_table_int
+
+    (* predicates *)
+    method has_table: string -> bool
+
+    (* saving *)
+    method write_xml: xml_element_int -> unit
+
+  end
+
+(* ============================================================= Location === *)
 
 type base_location_t = {
     loc_faddr: doubleword_int ;
@@ -664,7 +737,7 @@ class type location_int =
   end
 
 
-(* ============================================================= String table === *)
+(* ========================================================= String table === *)
 
 class type string_table_int =
 object
@@ -686,7 +759,7 @@ object
 
 end
 
-(* ========================================================== System settings === *)
+(* ====================================================== System settings === *)
 
 class type system_settings_int =
 object
@@ -746,6 +819,7 @@ class type function_data_int =
   object
 
     (* setters *)
+    method set_function_type: btype_t -> unit
     method set_non_returning: unit
     method add_name: string -> unit
     method set_ida_provided: unit
@@ -762,8 +836,10 @@ class type function_data_int =
     method get_names: string list  (* raw names *)
     method get_function_name: string  (* demangled or combination of all names *)
     method get_inlined_blocks: doubleword_int list
+    method get_function_type: btype_t
 
     (* predicates *)
+    method has_function_type: bool
     method has_name: bool
     method has_class_info: bool
     method is_non_returning: bool

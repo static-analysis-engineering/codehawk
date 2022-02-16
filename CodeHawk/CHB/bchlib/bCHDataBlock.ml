@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -281,6 +281,7 @@ object (self:'a)
       
 end
 
+
 let make_data_block 
     ?(is_offset_table=false)
     (start_address:doubleword_int) 
@@ -295,6 +296,7 @@ let make_data_block
                 STR "Data block with zero length at ";
 		start_address#toPretty])) in
     new data_block_t start_address end_address name
+
 
 
 let read_xml_data_block (node:xml_element_int) =

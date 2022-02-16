@@ -42,6 +42,7 @@ open CHXmlDocument
 open Xprt
 
 (* bchcil *)
+open BCHBCFiles
 open BCHBCSumTypeSerializer
 open BCHBCUtil
 open BCHCBasicTypes
@@ -78,6 +79,7 @@ let ikind_type_size (k: ikind_t) =
   | IShort | IUShort -> 2
   | ILong | IULong -> 4
   | ILongLong | IULongLong -> 8
+  | IInt128 | IUInt128 -> 16
   | INonStandard (_, s) -> s
 
 
@@ -95,6 +97,68 @@ let fkind_type_size (k: fkind_t) =
   | FFloat -> 4
   | FDouble -> 8
   | FLongDouble -> 16
+  | FComplexFloat -> 8
+  | FComplexDouble -> 16
+  | FComplexLongDouble -> 32
+
+
+let resolve_type (ty: btype_t) =
+  let has_typedef = bcfiles#has_typedef in
+  let get_typedef = bcfiles#get_typedef in
+  let rec aux (t: btype_t) =
+  match t with
+  | TVoid _
+    | TInt _
+    | TFloat _
+    | THandle _
+    | TComp _
+    | TEnum _
+    | TCppComp _
+    | TCppEnum _
+    | TClass _
+    | TBuiltin_va_list _
+    | TVarArg _
+    | TUnknown _ -> t
+  | TPtr (tt, a) -> TPtr (aux tt, a)
+  | TRef (tt, a) -> TRef (aux tt, a)
+  | TArray (tt, e, a) -> TArray (aux tt, e, a)
+  | TFun (tt, fs, b, a) -> TFun (aux tt, auxfs fs, b, a)
+  | TNamed (name, a) when has_typedef name ->
+     aux (add_attributes (get_typedef name) a)
+  | TNamed (name, _) ->
+     begin
+       chlog#add
+         "unknown typedef"
+         (LBLOCK [STR "Named type "; STR name; STR " not defined"]);
+       t
+     end
+
+  and auxfs (fs: bfunarg_t list option): bfunarg_t list option =
+    match fs with
+    | None -> None
+    | Some l -> Some (List.map (fun (s, t, a) -> (s, aux t, a)) l)
+
+  in
+  aux ty
+
+
+let get_compinfo_by_key (key: int): bcompinfo_t =
+  bcfiles#get_compinfo key
+
+
+let get_struct_extractor (ty: btype_t): string list =
+  match resolve_type ty with
+  | TPtr (TPtr (TComp (ckey, _), _), _)
+  | TPtr (TComp (ckey, _), _) ->
+     let compinfo = get_compinfo_by_key ckey in
+     List.map (fun f ->
+         match f.bftype with
+         | TInt _ -> "value"
+         | TPtr (TInt _, _) -> "string"
+         | TPtr (TFun _, _) -> "address"
+         | _ -> "unknown") compinfo.bcfields
+
+  | rty -> [btype_to_string ty; btype_to_string rty]
 
 
 (* Common types and type constructors *)
@@ -235,23 +299,10 @@ let btype_to_pretty = BCHBCUtil.btype_to_pretty
 let btype_compare = BCHBCUtil.typ_compare
 
 
-let get_size_of_ikind (i: ikind_t) =
-  match i with
-  | IChar | ISChar | IUChar -> 1
-  | IWChar -> 2
-  | IBool -> 4
-  | IInt | IUInt -> 4
-  | IShort | IUShort -> 4
-  | ILong | IULong -> 4
-  | ILongLong | IULongLong -> 8
-  | INonStandard (_,s) -> s
+let get_size_of_ikind (i: ikind_t) = ikind_type_size i
 
 
-let get_size_of_fkind (f: fkind_t) =
-  match f with
-  | FFloat -> 4
-  | FDouble -> 8
-  | FLongDouble -> 16
+let get_size_of_fkind (f: fkind_t) = fkind_type_size f
 
 
 let get_size_of_btype (t: btype_t) =

@@ -384,7 +384,7 @@ object (self)
       else
 	raise_xml_error
           node
-	  (LBLOCK [ STR "Invalid jni summary for index " ; INT index ])
+	  (LBLOCK [STR "Invalid jni summary for index "; INT index])
 
   method private read_syscall_function_summary_string
                    (index:int) (xstring:string) =
@@ -401,7 +401,7 @@ object (self)
             begin
               chlog#add
                 "syscall summary"
-                (LBLOCK [ INT index ; STR ": " ; STR summary#get_name ]);
+                (LBLOCK [INT index; STR ": "; STR summary#get_name]);
               H.add syscallsummaries index summary
             end
           else if node#hasNamedAttribute "name" then
@@ -410,13 +410,16 @@ object (self)
               H.add syscallsummaries summary#get_syscall_index summary;
               chlog#add
                 "syscall summary"
-                (LBLOCK [ STR "Syscall index " ; INT index ; STR ": "  ;
-                          STR summary#get_name  ])
+                (LBLOCK [
+                     STR "Syscall index ";
+                     INT index;
+                     STR ": ";
+                     STR summary#get_name])
             end
           else
             raise_xml_error
               node
-              (LBLOCK [ STR "Invalid syscall summary for index " ; INT index ])
+              (LBLOCK [STR "Invalid syscall summary for index "; INT index])
       with
       | CHXmlReader.XmlParseError(line,col,p)
         | XmlReaderError (line,col,p)
