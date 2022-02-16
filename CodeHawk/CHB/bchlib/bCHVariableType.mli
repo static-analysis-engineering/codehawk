@@ -44,6 +44,14 @@ open BCHCBasicTypes
 open BCHLibTypes
 
 
+(* Reduce to basic type by removing all typedefs *)
+val resolve_type: btype_t -> btype_t
+
+val get_compinfo_by_key: int -> bcompinfo_t
+
+val get_struct_extractor: btype_t -> string list
+
+
 (* Common types -------------------------------------------------------------- *)
 
 val t_unknown: btype_t

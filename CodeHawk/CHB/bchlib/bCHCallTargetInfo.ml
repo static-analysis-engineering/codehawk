@@ -51,7 +51,7 @@ open BCHVariableType
 let raise_error tgt msg =
   begin
     ch_error_log#add "call target" msg ;
-    raise (BCH_failure  (LBLOCK [ msg ; STR ": " ; call_target_to_pretty tgt ]))
+    raise (BCH_failure (LBLOCK [msg; STR ": "; call_target_to_pretty tgt]))
   end
 
 
@@ -327,7 +327,9 @@ object (self)
   method toPretty = call_target_to_pretty tgt
 end
 
+
 let mk_call_target_info = new call_target_info_t
+
 
 let read_xml_call_target_info (node:xml_element_int) =
   new call_target_info_t

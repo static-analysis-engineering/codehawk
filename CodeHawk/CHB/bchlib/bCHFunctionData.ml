@@ -35,11 +35,15 @@ open CHIndexTable
 open CHNumRecordTable
 open CHXmlDocument
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHBasicTypes
 open BCHDemangler
 open BCHDoubleword
 open BCHLibTypes
+open BCHVariableType
 
 module H = Hashtbl
 
@@ -59,6 +63,9 @@ object (self)
   val mutable inlined = false
   val mutable library_stub = false
   val mutable inlined_blocks = []
+  val mutable functiontype = t_unknown
+
+  method set_function_type (ty: btype_t) = functiontype <- ty
 
   method set_non_returning = non_returning <- true
 
@@ -95,6 +102,13 @@ object (self)
 
   method get_names = names
 
+  method get_function_type = functiontype
+
+  method has_function_type =
+    match functiontype with
+    | TUnknown _ -> false
+    | _ -> true
+
   method get_function_name =
     if self#has_name then
       let make_name name = demangle name in
@@ -110,8 +124,11 @@ object (self)
         | _ -> raise (BCH_failure (STR "Internal error in get_function_name")) in
       aux names
     else
-      raise (BCH_failure (LBLOCK [ STR "Function at address: " ; fa#toPretty ;
-                                   STR " does not have a name" ]))
+      raise (BCH_failure
+               (LBLOCK [
+                    STR "Function at address: ";
+                    fa#toPretty;
+                    STR " does not have a name"]))
 
   method has_name = (List.length names) > 0
 
@@ -153,6 +170,7 @@ object (self)
 
 end
 
+
 class functions_data_t:functions_data_int =
 object (self)
 
@@ -179,7 +197,7 @@ object (self)
       raise
         (BCH_failure
            (LBLOCK [
-                STR "Function data not found for address: "; fa#toPretty ]))
+                STR "Function data not found for address: "; fa#toPretty]))
 
   method has_function (fa: doubleword_int) =
     self#is_function_entry_point fa
@@ -272,6 +290,7 @@ object (self)
     end
 
 end
+
 
 let functions_data = new functions_data_t
     
