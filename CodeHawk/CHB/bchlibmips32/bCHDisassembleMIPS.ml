@@ -76,11 +76,12 @@ open BCHMIPSTypes
 open BCHMIPSDisassemblyUtils
 
 
-(* ------------------------------------------------------------------------------
+(* --------------------------------------------------------------------------
  * Constants used:
- * datablock_threshold: the minimum number of bad instructions to trigger creation 
- *                      of a data block (5)
- * ------------------------------------------------------------------------------ *)
+ * datablock_threshold:
+ *       the minimum number of bad instructions to trigger creation
+ *       of a data block (5)
+ * -------------------------------------------------------------------------- *)
 
 let datablock_threshold = 5
 
@@ -91,7 +92,9 @@ module DoublewordCollections = CHCollections.Make (
     let toPretty d = d#toPretty
   end)
 
+
 let x2p = xpr_formatter#pr_expr
+
 
 class opcode_monitor_t (base:doubleword_int) (size:int) =
 object (self)
@@ -132,6 +135,7 @@ object (self)
     datablocks
 
 end
+
 
 let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   let size = String.length x in  
@@ -190,26 +194,39 @@ let disassemble_mips_sections () =
       raise (BCH_failure (STR "Executable does not have section headers"))
     else
       let headers =
-        List.sort (fun (h1,_) (h2,_) -> h1#get_addr#compare h2#get_addr) xSections in
+        List.sort (fun (h1,_) (h2,_) ->
+            h1#get_addr#compare h2#get_addr) xSections in
       let (lowest,_) = List.hd headers in
       let (highest,_) = List.hd (List.rev headers) in
       let _ =
         chlog#add
           "disassembly"
-          (LBLOCK [ pretty_print_list
-                      headers
-                      (fun (s,_) ->
-                        LBLOCK [ STR s#get_section_name ; STR ":" ; s#get_addr#toPretty ;
-                                 STR " (" ; s#get_size#toPretty ; STR ")" ])
-                      "[" " ; " "]" ]) in
+          (LBLOCK [
+               pretty_print_list
+                 headers
+                 (fun (s,_) ->
+                   LBLOCK [
+                       STR s#get_section_name;
+                       STR ":";
+                       s#get_addr#toPretty;
+                       STR " (";
+                       s#get_size#toPretty;
+                       STR ")"])
+                 "[" " ; " "]" ]) in
       let startOfCode = lowest#get_addr in
       let endOfCode = highest#get_addr#add highest#get_size in
       (startOfCode,endOfCode) in
   let sizeOfCode = endOfCode#subtract startOfCode in
-  let _ = initialize_mips_instructions (sizeOfCode#to_int / 4) in   (* only 4-byte aligned *)
-  let _ = pverbose 
-            [ STR "Create space for " ; sizeOfCode#toPretty ; STR " (" ;
-	      INT sizeOfCode#to_int ; STR ")" ; STR "instructions" ] in
+  (* only 4-byte aligned *)
+  let _ = initialize_mips_instructions (sizeOfCode#to_int / 4) in
+  let _ =
+    pverbose [
+        STR "Create space for ";
+        sizeOfCode#toPretty;
+        STR " (";
+	INT sizeOfCode#to_int;
+        STR ")";
+        STR "instructions"] in
   let _ = initialize_mips_assembly_instructions sizeOfCode#to_int startOfCode in
   let _ =
     List.iter
@@ -217,6 +234,7 @@ let disassemble_mips_sections () =
         let displacement = (h#get_addr#subtract startOfCode)#to_int in
         disassemble h#get_addr displacement x) xSections in
   sizeOfCode
+
 
 (* recognizes patterns of library function calls
    strings:
@@ -262,8 +280,10 @@ let disassemble_mips_sections () =
    *)
 
 let is_library_stub faddr =
-  if elf_header#is_program_address faddr && elf_header#has_xsubstring faddr 16 then
-    let bytestring = byte_string_to_printed_string (elf_header#get_xsubstring faddr 16) in
+  if elf_header#is_program_address faddr
+     && elf_header#has_xsubstring faddr 16 then
+    let bytestring =
+      byte_string_to_printed_string (elf_header#get_xsubstring faddr 16) in
     let instrseqs = [
         "1080998f2578e00309f82003\\(..\\)001824";
         "1080998f2178e00309f82003\\(..\\)001824";
@@ -278,6 +298,7 @@ let is_library_stub faddr =
   else
     false
 
+
 (* used in case of JMPREL relocation *)
 let set_library_stub_name faddr =
   if elf_header#is_program_address faddr then
@@ -286,14 +307,16 @@ let set_library_stub_name faddr =
     let regex =  Str.regexp "3c0f00438df9f\\(...\\)0320000825f8f\\(...\\)" in
     if Str.string_match regex bytestring 0 then
       let offset = "0x" ^ Str.matched_group 1 bytestring in
-      let addr = (string_to_doubleword "0x42f000")#add (string_to_doubleword offset) in
+      let addr =
+        (string_to_doubleword "0x42f000")#add (string_to_doubleword offset) in
       if functions_data#has_function_name addr then
         let fndata = functions_data#add_function faddr in
         begin
           fndata#add_name (functions_data#get_function addr)#get_function_name;
           fndata#set_library_stub;
-          chlog#add "ELF library stub"
-            (LBLOCK [ faddr#toPretty ; STR ": " ; STR fndata#get_function_name ])
+          chlog#add
+            "ELF library stub"
+            (LBLOCK [faddr#toPretty; STR ": "; STR fndata#get_function_name])
         end
       else
         chlog#add "no stub name found" addr#toPretty
@@ -301,14 +324,16 @@ let set_library_stub_name faddr =
       let regex =  Str.regexp "3c0f00438df9\\(....\\)0320000825f8\\(....\\)" in
       if Str.string_match regex bytestring 0 then
         let offset = "0x" ^ Str.matched_group 1 bytestring in
-        let addr = (string_to_doubleword "0x430000")#add (string_to_doubleword offset) in
+        let addr =
+          (string_to_doubleword "0x430000")#add (string_to_doubleword offset) in
         if functions_data#has_function_name addr then
           let fndata = functions_data#add_function faddr in
           begin
             fndata#add_name (functions_data#get_function addr)#get_function_name;
             fndata#set_library_stub;
-            chlog#add "ELF library stub"
-              (LBLOCK [ faddr#toPretty ; STR ": " ; STR fndata#get_function_name ])
+            chlog#add
+              "ELF library stub"
+              (LBLOCK [faddr#toPretty; STR ": "; STR fndata#get_function_name])
           end
         else
           chlog#add "no stub name found" addr#toPretty
@@ -320,15 +345,17 @@ let set_library_stub_name faddr =
 
 let extract_so_symbol (opcodes:mips_opcode_t list) = None    (* TBD *)
 
+
 let get_so_target (tgtaddr:doubleword_int) (instr:mips_assembly_instruction_int) =
   if functions_data#has_function_name tgtaddr then
     let fndata = functions_data#get_function tgtaddr in
-    if fndata#is_library_stub  then
+    if fndata#is_library_stub then
       Some fndata#get_function_name
     else
       None
   else
     None
+
 
 (* can be used before functions have been constructed *)
 let is_nr_call_instruction (instr:mips_assembly_instruction_int) =
@@ -341,6 +368,7 @@ let is_nr_call_instruction (instr:mips_assembly_instruction_int) =
      ((functions_data#is_function_entry_point tgtaddr)
       && (functions_data#get_function tgtaddr)#is_non_returning)
   | _ -> false
+
 
 let collect_function_entry_points () =
   let addresses = new DoublewordCollections.set_t in
@@ -362,6 +390,7 @@ let collect_function_entry_points () =
     addresses#toList
   end
 
+
 let set_block_boundaries () =
   let set_block_entry a =
     (!mips_assembly_instructions#at_address a)#set_block_entry in
@@ -369,7 +398,7 @@ let set_block_boundaries () =
     (!mips_assembly_instructions#at_address a)#set_delay_slot in
   let feps = functions_data#get_function_entry_points in
   begin
-    (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ record function entry points *)
+    (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ record function entry points *)
     List.iter
       (fun fe ->
         try
@@ -383,7 +412,7 @@ let set_block_boundaries () =
 	    (LBLOCK [ STR "function entry point problem: " ; fe#toPretty ; 
 		      STR ": " ; STR s ])
       ) feps ;
-    (* ~~~~~~~~~~~~~~~~~~~~ record targets of unconditional and conditional jumps *)
+    (* ~~~~~~~~~~~~~~~~ record targets of unconditional and conditional jumps *)
     !mips_assembly_instructions#itera
      (fun _ instr ->
        try
@@ -397,10 +426,14 @@ let set_block_boundaries () =
        | BCH_failure p ->
           ch_error_log#add
             "disassembly"
-            (LBLOCK [ STR "assembly instruction creates incorrect block entry: (" ;
-                      instr#get_address#toPretty ; STR "): " ;
-                      instr#toPretty ; STR ": " ; p ])) ;
-    (* ~~~~~~~~~~~~~~~~~~ add block entries due to previous block-ending instruction *)
+            (LBLOCK [
+                 STR "assembly instruction creates incorrect block entry: (";
+                 instr#get_address#toPretty;
+                 STR "): ";
+                 instr#toPretty;
+                 STR ": ";
+                 p])) ;
+    (* ~~~~~~~~~~~ add block entries due to previous block-ending instruction *)
     !mips_assembly_instructions#itera
      (fun va instr ->
        try
@@ -419,14 +452,17 @@ let set_block_boundaries () =
            ()
        with
        | BCH_failure p ->
-          raise (BCH_failure
-                   (LBLOCK [ STR "Error in set_block_boundaries: "  ; p ])))
+          raise
+            (BCH_failure
+               (LBLOCK [STR "Error in set_block_boundaries: "; p])))
   end
+
 
 let is_so_jump_target (target_address:doubleword_int) =
   match elf_header#get_relocation target_address with
   | Some _ -> true
   | _ -> false
+
 
 let get_successors (faddr:doubleword_int) (iaddr:doubleword_int)  =
   if system_info#is_nonreturning_call faddr iaddr then
@@ -435,50 +471,65 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int)  =
     try
       let instr = !mips_assembly_instructions#at_address iaddr in
       let opcode = instr#get_opcode in
-      let next () = [ iaddr#add_int 4 ] in
-      let delaynext () = [ iaddr#add_int 8 ] in
+      let next () = [iaddr#add_int 4] in
+      let delaynext () = [iaddr#add_int 8] in
       let successors =
         if is_conditional_jump_instruction opcode then
-          (delaynext ()) @ [ get_direct_jump_target_address opcode ]
+          (delaynext ()) @ [get_direct_jump_target_address opcode]
         else if is_direct_jump_instruction opcode then
-          [ get_direct_jump_target_address opcode ]
+          [get_direct_jump_target_address opcode]
         else
           next () in
       List.map
-        (fun va -> (make_location { loc_faddr = faddr ; loc_iaddr = va })#ci)
+        (fun va -> (make_location {loc_faddr = faddr; loc_iaddr = va})#ci)
         successors
     with
     | BCH_failure p ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Error in get_successors: " ;  p ]))
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Error in get_successors: ";  p]))
     
 
 let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
+
   let set_block_entry a =
     try
       (!mips_assembly_instructions#at_address a)#set_block_entry
     with
     | BCH_failure p ->
-       let msg = LBLOCK [ STR "Error in trace_block: set_block_entry: " ;
-                          STR "(" ; faddr#toPretty ; STR "," ;
-                          baddr#toPretty ; STR "): " ; p ] in
+       let msg =
+         LBLOCK [
+             STR "Error in trace_block: set_block_entry: ";
+             STR "(";
+             faddr#toPretty;
+             STR ",";
+             baddr#toPretty;
+             STR "): ";
+             p] in
        raise (BCH_failure msg) in
+
   let get_instr iaddr =
     try
       !mips_assembly_instructions#at_address iaddr
     with
     | BCH_failure p ->
        let msg =
-         LBLOCK [ STR "Error: trace block: get_instr: " ; iaddr#toPretty ;
-                  STR  ": " ; p ] in
+         LBLOCK [
+             STR "Error: trace block: get_instr: ";
+             iaddr#toPretty;
+             STR  ": ";
+             p] in
        raise (BCH_failure msg) in
   let get_next_instr_addr a = a#add_int 4 in
+
   let mk_ci_succ l =
     List.map
-      (fun va -> (make_location { loc_faddr = faddr ; loc_iaddr = va })#ci) l in
+      (fun va -> (make_location {loc_faddr = faddr ; loc_iaddr = va})#ci) l in
+
   let rec find_last_instr (va:doubleword_int) (prev:doubleword_int) =
     let instr = get_instr va in
-    if va#equal wordzero || not (!mips_assembly_instructions#is_code_address va) then
+    if va#equal wordzero
+       || not (!mips_assembly_instructions#is_code_address va) then
       (Some [],prev,[])
     else if is_return_instruction instr#get_opcode then
       (Some [],va#add_int 4,[])
@@ -504,7 +555,8 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
         let finfo = get_function_info faddr in
         let (jt,_,lb,ub) = system_info#get_jump_table_target faddr va in
         let targets = jt#get_targets jt#get_start_address lb ub in
-        let reg = MIPSRegister (get_indirect_jump_instruction_register instr#get_opcode) in
+        let reg =
+          MIPSRegister (get_indirect_jump_instruction_register instr#get_opcode) in
         let _ = finfo#set_jumptable_target ctxtiaddr jt#get_start_address jt reg in
         (Some (mk_ci_succ targets),va#add_int 4,[])
       else if system_info#has_indirect_jump_targets faddr va then
@@ -541,11 +593,13 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
           (fun b ->
             let succ =
               match b#get_successors with
-              | [] -> [ (make_location { loc_faddr = faddr ; loc_iaddr = returnsite })#ci  ]
+              | [] ->
+                 [(make_location {loc_faddr = faddr; loc_iaddr = returnsite})#ci]
               | l -> List.map (fun s -> add_ctxt_to_ctxt_string faddr s ctxt) l in
             make_ctxt_mips_assembly_block ctxt b succ) fn#get_blocks in
       (Some [ callsucc ],va,inlinedblocks)
     else find_last_instr (get_next_instr_addr va) va in
+
   let (succ,lastaddr,inlinedblocks) =
     let opcode = (get_instr baddr)#get_opcode in
     if is_return_instruction opcode then
@@ -568,14 +622,17 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       (Some (mk_ci_succ [ tgtblock ]),baddr#add_int 4,[])
     else
       find_last_instr (get_next_instr_addr baddr) baddr in
+
   let successors =
     match succ with Some s ->  s | _ -> get_successors faddr lastaddr in
   (inlinedblocks,make_mips_assembly_block faddr baddr lastaddr successors)
 
+
 let trace_function (faddr:doubleword_int) =
   let workSet = new DoublewordCollections.set_t in
   let doneSet = new DoublewordCollections.set_t in
-  let set_block_entry a = (!mips_assembly_instructions#at_address a)#set_block_entry in
+  let set_block_entry a =
+    (!mips_assembly_instructions#at_address a)#set_block_entry in
   let get_iaddr s = (ctxt_string_to_location faddr s)#i in  
   let add_to_workset l =
     List.iter (fun a -> if doneSet#has a then () else workSet#add a) l in
@@ -598,20 +655,27 @@ let trace_function (faddr:doubleword_int) =
   let successors =
     List.fold_left (fun acc b ->
         let src = b#get_context_string in
-        (List.map (fun tgt -> (src,tgt)) b#get_successors) @ acc) []  blocklist in
+        (List.map (fun tgt -> (src,tgt)) b#get_successors) @ acc) [] blocklist in
   make_mips_assembly_function faddr blocklist successors
+
 
 let construct_mips_assembly_function (count:int) (faddr:doubleword_int) =
   try
-    let _ = pverbose [ STR "  trace function " ; faddr#toPretty ; NL ] in
+    let _ = pverbose [STR "  trace function "; faddr#toPretty; NL] in
     let fn = trace_function faddr in
-    let _ = pverbose [ STR "  add function " ; faddr#toPretty ; NL ] in
+    let _ = pverbose [STR "  add function "; faddr#toPretty; NL] in
     mips_assembly_functions#add_function fn
   with
   | BCH_failure p ->
-     raise (BCH_failure (LBLOCK [ STR "Error in constructing function " ;
-                                  faddr#toPretty ; STR ": " ;  p ]))
-                                                                   
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "Error in constructing function ";
+               faddr#toPretty;
+               STR ": ";
+               p]))
+
+
 let construct_functions f =
   let _ = system_info#initialize_function_entry_points f in
   let _ = set_block_boundaries () in
@@ -629,7 +693,7 @@ let construct_functions f =
           | BCH_failure p ->
              ch_error_log#add
                "construct functions"
-               (LBLOCK [ STR "function " ; faddr#toPretty ; STR ": " ; p ]) in
+               (LBLOCK [STR "function "; faddr#toPretty; STR ": "; p]) in
         let fndata = functions_data#get_function faddr in
         if fndata#is_library_stub then
           ()
@@ -639,7 +703,8 @@ let construct_functions f =
               fndata#set_library_stub;
               chlog#add
                 "ELF library stub"
-                (LBLOCK [ faddr#toPretty ; STR ": " ; STR fndata#get_function_name ])
+                (LBLOCK [
+                     faddr#toPretty; STR ": "; STR fndata#get_function_name])
             end
           else
             default ()
@@ -682,7 +747,7 @@ let record_call_targets () =
                           finfo#set_call_target
                             ctxtiaddr (mk_app_target op#get_absolute_address)
                    end
-              | JumpLinkRegister (ra,op) ->
+              | JumpLinkRegister (ra, op) ->
                  let iaddr = (ctxt_string_to_location faddr ctxtiaddr)#i in
                  if finfo#has_call_target ctxtiaddr then
                    let loc = ctxt_string_to_location faddr ctxtiaddr in
@@ -700,7 +765,7 @@ let record_call_targets () =
       | BCH_failure p ->
          ch_error_log#add
            "record call targets"
-           (LBLOCK [ STR "function " ; faddr#toPretty ; STR ": " ; p ]))
+           (LBLOCK [STR "function "; faddr#toPretty; STR ": "; p]))
 
 
 
@@ -766,13 +831,16 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
            ()
        else
          ()
+
   | XVar v when env#is_global_variable v ->
      let gaddr = env#get_global_variable_address v in
      if elf_header#is_program_address gaddr then
        let dw = elf_header#get_program_value gaddr in
        if functions_data#has_function_name dw then
-         let name = (functions_data#get_function dw)#get_function_name in
-         if function_summary_library#has_so_function name then
+         let fndata = functions_data#get_function dw in
+         let name = fndata#get_function_name in
+         if fndata#is_library_stub
+            && function_summary_library#has_so_function name then
              floc#set_call_target (mk_so_target name)
          else
            if mips_assembly_functions#has_function_by_address dw then
@@ -787,12 +855,14 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
            floc#set_call_target (mk_app_target dw)
          else
            logerror
-             (LBLOCK [ STR "reference does not resolve to function address: " ;
-                       dw#toPretty ])
+             (LBLOCK [
+                  STR "reference does not resolve to function address: ";
+                  dw#toPretty])
      else
        logerror
-         (LBLOCK [ STR "reference is not in program space: " ; gaddr#toPretty ])
-  | XOp (XPlus, [ XVar v ; XConst (IntConst n) ]) when env#is_global_variable v ->
+         (LBLOCK [STR "reference is not in program space: "; gaddr#toPretty])
+
+  | XOp (XPlus, [XVar v; XConst (IntConst n)]) when env#is_global_variable v ->
      let gaddr = env#get_global_variable_address v in
      if elf_header#is_program_address gaddr then
        let dw = elf_header#get_program_value gaddr in
@@ -807,25 +877,30 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
              floc#set_call_target (mk_app_target dwfun)
            else
              logerror
-               (LBLOCK [ STR "Function name not associated with address: "  ;
-                         STR name ])
+               (LBLOCK [
+                    STR "Function name not associated with address: ";
+                    STR name])
        else
          if mips_assembly_functions#has_function_by_address dwfun then
            floc#set_call_target (mk_app_target dwfun)
          else
            begin
-             ignore (functions_data#add_function dwfun) ;
-             floc#set_call_target (mk_app_target dwfun) ;
+             ignore (functions_data#add_function dwfun);
+             floc#set_call_target (mk_app_target dwfun);
              chlog#add
                "add gv-based function"
-               (LBLOCK [ STR "Addr expr: " ; x2p opExpr ; STR " resolves to " ;
-                         dwfun#toPretty ])
+               (LBLOCK [
+                    STR "Addr expr: ";
+                    x2p opExpr;
+                    STR " resolves to ";
+                    dwfun#toPretty])
            end
      else
        logerror
-         (LBLOCK [ STR "reference is not in program space: " ; gaddr#toPretty ])
+         (LBLOCK [STR "reference is not in program space: "; gaddr#toPretty])
   | _ ->
      ()
+
 
 let set_syscall_target (floc:floc_int) (op:mips_operand_int) =
   let opval = op#to_expr floc in
@@ -834,6 +909,7 @@ let set_syscall_target (floc:floc_int) (op:mips_operand_int) =
   | XConst (IntConst n) ->
      floc#set_call_target (mk_syscall_target n#toInt)
   | _ -> ()
+
 
 let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
   let _ =
@@ -861,7 +937,7 @@ let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
                      || not floc#has_call_target then
                     set_call_address floc tgt
              | _ ->
-                pr_debug [ floc#l#toPretty ; STR ": ra = " ; x2p ra ; NL ]
+                pr_debug [floc#l#toPretty; STR ": ra = "; x2p ra; NL]
            end
         | Syscall _ ->
            let floc = get_floc loc in
