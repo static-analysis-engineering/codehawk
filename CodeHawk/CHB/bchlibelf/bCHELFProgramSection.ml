@@ -5,7 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -97,9 +98,11 @@ object (self)
 
 end
 
+
 let mk_elf_program_section
       (s:string) (h:elf_section_header_int) (vaddr:doubleword_int) =
   new elf_program_section_t s vaddr
+
 
 let read_xml_elf_program_section (node:xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in

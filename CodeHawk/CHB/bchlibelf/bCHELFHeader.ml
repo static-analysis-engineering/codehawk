@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@
 *) 
 
 (* chlib *)
+open CHNumerical
 open CHPretty
 open CHUtils
 
@@ -46,14 +47,20 @@ open CHFileIO
 open CHLogger   
 open CHXmlDocument
 
+(* bchcil *)
+open BCHBCFiles
+open BCHBCUtil
+
 (* bchlib *)
 open BCHBasicTypes
 open BCHByteUtilities
+open BCHCallbackTables
 open BCHDoubleword
 open BCHLibTypes
 open BCHPreFileIO
 open BCHStreamWrapper
 open BCHSystemInfo
+open BCHVariableType
 
 (* bchlibelf *)
 open BCHELFTypes
@@ -436,8 +443,10 @@ object(self)
               else
                 None
            | _ ->
-              raise (BCH_failure
-                       (STR "Internal error in get_relocation"))) None relocationsections
+              raise
+                (BCH_failure
+                   (STR "Internal error in get_relocation")))
+      None relocationsections
 
 
   method set_code_extent =
@@ -465,30 +474,93 @@ object(self)
           else
             result) [] self#get_sections in
     system_info#initialize_jumptables system_info#is_code_address xstrings
+
+  method private extract_call_back_table
+                   (callbacktable: call_back_table_int)
+                   (va: doubleword_int)
+                   (extractor: string list) =
+    let nullrecord = ref false in
+    let currva = ref va in
+    while not !nullrecord do
+      let cbvalues = ref [] in
+      begin
+        List.iteri (fun i s ->
+            let pv = self#get_program_value (!currva#add_int (4 * i)) in
+            let cbv =
+              if pv#equal wordzero then
+                CBValue numerical_zero
+              else
+                match s with
+                | "address" -> CBAddress pv#to_hex_string
+                | "string" ->
+                   (match self#get_string_at_address pv with
+                    | Some s -> CBTag s
+                    | _ -> CBTag "**unknown**")
+                | "value" -> CBValue (mkNumerical pv#to_int)
+                | _ -> CBValue numerical_zero in
+            cbvalues := ((i * 4), cbv) :: !cbvalues) extractor;
+        (if List.for_all (fun (_, v) ->
+                match v with
+                | CBValue n -> n#equal numerical_zero
+                | _ -> false) !cbvalues then
+           nullrecord := true
+         else
+           begin
+             callbacktable#add_record !currva#to_hex_string !cbvalues;
+             currva := !currva#add_int ((List.length extractor) * 4)
+           end)
+      end
+      done
+
+  method initialize_call_back_tables =
+    let tvars = callbacktables#table_variables in
+    begin
+      List.iter (fun (addr, vname) ->
+          if bcfiles#has_varinfo vname then
+            let varinfo = bcfiles#get_varinfo vname in
+            let extractor = get_struct_extractor varinfo.bvtype in
+            let callbacktable = callbacktables#new_table addr varinfo.bvtype in
+            let va = string_to_doubleword addr in
+            self#extract_call_back_table callbacktable va extractor
+          else
+            chlog#add
+              "call-back-table-variable"
+              (LBLOCK [
+                   STR "Variable "; STR vname; STR " not found"])) tvars;
+      callbacktables#set_function_pointers
+    end
           
   method get_executable_sections =
     let result = ref [] in
     let _ = H.iter (fun k v -> if v#is_executable then result := (k,v) :: !result)
       section_header_table in
     List.map (fun (index,sh) -> 
-        (sh, (elf_section_to_raw_section (self#get_section index))#get_xstring)) !result
+        (sh, (elf_section_to_raw_section (self#get_section index))#get_xstring))
+      !result
 
   method get_executable_segments =
     let result = ref []  in
     let _ =
-      H.iter (fun k v -> if v#is_executable && v#is_loaded then result := (k,v) :: !result)
-             program_header_table in
+      H.iter
+        (fun k v ->
+          if v#is_executable && v#is_loaded then
+            result := (k,v) :: !result)
+        program_header_table in
     List.map (fun (index,ph) ->
-        (ph, (elf_segment_to_raw_segment (self#get_segment index))#get_xstring)) !result
+        (ph, (elf_segment_to_raw_segment (self#get_segment index))#get_xstring))
+      !result
 
   method private has_string_table =
-    H.fold (fun _ v r -> r || v#get_section_name = ".strtab") section_header_table false
+    H.fold (fun _ v r ->
+        r || v#get_section_name = ".strtab") section_header_table false
 
   method private has_symbol_table =
-    H.fold (fun _ v r -> r || v#get_section_name = ".symtab") section_header_table false
+    H.fold (fun _ v r ->
+        r || v#get_section_name = ".symtab") section_header_table false
 
   method private has_dynamic_symbol_table =
-    H.fold (fun _ v r -> r || v#get_section_name = ".dynsym") section_header_table false
+    H.fold (fun _ v r ->
+        r || v#get_section_name = ".dynsym") section_header_table false
 
   method get_string_at_address (a:doubleword_int) =
     try
@@ -562,7 +634,8 @@ object(self)
         | Some _ -> result
         | _ ->
            match self#get_section k with
-           | ElfProgramSection t when t#includes_VA a -> Some ( t :> elf_raw_section_t )
+           | ElfProgramSection t when t#includes_VA a ->
+              Some ( t :> elf_raw_section_t )
            | ElfOtherSection t when t#includes_VA a -> Some t
            | _ -> None) section_header_table None
 
@@ -602,12 +675,16 @@ object(self)
          match self#get_section index with
          | ElfStringTable t -> t
          | _ ->
-            raise (BCH_failure (STR "Unexpected section type: string table expected"))
+            raise
+              (BCH_failure
+                 (STR "Unexpected section type: string table expected"))
        end
     | l ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Found multiple string tables: " ;
-                          pretty_print_list l (fun i -> INT i) "" "," "" ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Found multiple string tables: ";
+                 pretty_print_list l (fun i -> INT i) "" "," "" ]))
 
   method private get_symbol_table =
     let result = ref [] in
@@ -621,12 +698,15 @@ object(self)
          match self#get_section index with
          | ElfSymbolTable t -> (h,t)
          | _ ->
-            raise (BCH_failure (STR "Unexpected section type: symbol table expected"))
+            raise
+              (BCH_failure
+                 (STR "Unexpected section type: symbol table expected"))
        end
     | l ->
        raise (BCH_failure
-                (LBLOCK [ STR "found multiple symbol  tables: " ;
-                          pretty_print_list l (fun (i,_) -> INT i) "" "," "" ]))
+                (LBLOCK [
+                     STR "found multiple symbol  tables: ";
+                     pretty_print_list l (fun (i,_) -> INT i) "" "," ""]))
       
   method private get_dynamic_symbol_table =
     let result = ref [] in
@@ -640,10 +720,15 @@ object(self)
          match self#get_section index with
          | ElfDynamicSymbolTable t -> (h,t)
          | _ ->
-            raise (BCH_failure (STR "Unexpected section type: symbol table expected"))
+            raise
+              (BCH_failure
+                 (STR "Unexpected section type: symbol table expected"))
        end
-    | l -> raise (BCH_failure (LBLOCK [ STR "found multiple symbol  tables: " ;
-                                        pretty_print_list l (fun (i,_) -> INT i) "" "," "" ]))
+    | l -> raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "found multiple symbol  tables: ";
+                     pretty_print_list l (fun (i,_) -> INT i) "" "," ""]))
     
 
   (* Each symbol table has an associated string table, referred to by the sh_link
@@ -653,9 +738,12 @@ object(self)
     match self#get_section link with
     | ElfStringTable t -> t
     | _ ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Link item of symbol table does not refer to a string table: " ;
-                          INT link ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Link item of symbol table does not refer ";
+                 STR "to a string table: ";
+                 INT link]))
 
   method private get_associated_symbol_table (h:elf_section_header_int) =
     let link = h#get_link#to_int in
@@ -663,9 +751,11 @@ object(self)
     | ElfSymbolTable t -> t
     | ElfDynamicSymbolTable t -> t
     | _ ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Link item does not refer to a symbol table: " ;
-                          INT link ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Link item does not refer to a symbol table: ";
+                 INT link]))
 
   method private set_symbol_names =
     if self#has_symbol_table then
@@ -727,14 +817,17 @@ object(self)
         let get_name = match s with
           | ElfStringTable t -> t#get_string 
           | _ ->
-	     raise (BCH_failure 
-		      (LBLOCK [ STR "Unexpected section type; string table expected" ])) in
+	     raise
+               (BCH_failure 
+		  (LBLOCK [
+                       STR "Unexpected section type; ";
+                       STR "string table expected"])) in
         H.iter (fun _ sh ->
             sh#set_name (get_name sh#get_name#to_int)) section_header_table
       else
-        pr_debug [ STR "String table index is zero" ; NL ]
+        pr_debug [STR "String table index is zero"; NL]
     else
-      pr_debug [ STR "No section headers present." ; NL ]
+      pr_debug [STR "No section headers present."; NL]
       
 
   method private check_elf =
@@ -841,7 +934,9 @@ object(self)
   method private write_xml_section_headers (node:xml_element_int) =
     let headers = ref [] in
     let compare = (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) in
-    let _ = H.iter (fun k v -> headers := (k,v) :: !headers) section_header_table in
+    let _ =
+      H.iter (fun k v ->
+          headers := (k,v) :: !headers) section_header_table in
     let headers = List.sort compare !headers in
     node#appendChildren (List.map (fun (k,h) ->
       let hNode = xmlElement "section-header" in
@@ -870,7 +965,11 @@ object(self)
            let section = read_xml_elf_section h node in
 	   H.add section_table index section
 	| _ -> 
-	  pr_debug [ STR "Section " ; STR h#get_section_name ; STR " not found" ; NL ]) 
+	   pr_debug [
+               STR "Section ";
+               STR h#get_section_name;
+               STR " not found";
+               NL])
            section_header_table
 
   method private read_xml_segments =
@@ -883,7 +982,7 @@ object(self)
              let segment = read_xml_elf_segment h node in
              H.add segment_table index segment
           | _ ->
-             pr_debug [ STR "Segment " ; INT index ; STR " not found" ; NL ])
+             pr_debug [STR "Segment "; INT index; STR " not found"; NL])
            program_header_table
 
   method write_xml (node:xml_element_int) =
@@ -908,7 +1007,8 @@ object(self)
     let pNode = getc "elf-program-headers" in
     let sNode = getc "elf-section-headers" in
     begin
-      (if (has "endian") && ((get "endian") = "big") then system_info#set_big_endian) ;
+      (if (has "endian") && ((get "endian") = "big") then
+         system_info#set_big_endian) ;
       elf_file_header#read_xml hNode ;
       self#read_xml_program_headers pNode ;
       self#read_xml_section_headers sNode ;
@@ -941,19 +1041,28 @@ object(self)
     let programHeaders = List.sort compare !programHeaders in
     let sectionHeaders = List.sort compare !sectionHeaders in
     let prProgramHeader (i, h) = 
-      LBLOCK [ STR "Program header " ; INT i ; NL ; INDENT (3, h#toPretty) ; NL ] in
+      LBLOCK [STR "Program header "; INT i; NL; INDENT (3, h#toPretty); NL] in
     let prSectionHeader (i, h) = 
-      LBLOCK [ STR "Section header " ; INT i ; NL ; INDENT (3, h#toPretty) ; NL ] in
+      LBLOCK [STR "Section header "; INT i; NL; INDENT (3, h#toPretty); NL] in
     LBLOCK [
-      STR "File header:" ; NL ; INDENT (3, elf_file_header#toPretty) ; NL ;
-      STR "Program headers: " ; NL ;
-      pretty_print_list programHeaders prProgramHeader "" "" "" ; NL ;
-      STR "Section headers: " ; NL ;
-      pretty_print_list sectionHeaders prSectionHeader "" "" "" ; NL ]
+        STR "File header:";
+        NL;
+        INDENT (3, elf_file_header#toPretty);
+        NL;
+        STR "Program headers: ";
+        NL;
+        pretty_print_list programHeaders prProgramHeader "" "" "";
+        NL;
+        STR "Section headers: ";
+        NL;
+        pretty_print_list sectionHeaders prSectionHeader "" "" "";
+        NL]
 
 end
 
+
 let elf_header = new elf_header_t
+
 
 let save_elf_header () =
   let filename = get_elf_header_filename () in
@@ -967,6 +1076,7 @@ let save_elf_header () =
     file_output#saveFile filename doc#toPretty
   end
 
+
 let save_elf_dictionary () =
   let filename = get_elf_dictionary_filename () in
   let doc = xmlDocument () in
@@ -979,7 +1089,9 @@ let save_elf_dictionary () =
     file_output#saveFile filename doc#toPretty
   end
 
-let save_elf_section (index:int) (header:elf_section_header_int) (s:elf_section_t) =
+
+let save_elf_section
+      (index:int) (header:elf_section_header_int) (s:elf_section_t) =
   let filename = get_section_filename (string_of_int index) in
   let doc = xmlDocument () in
   let rawsection = elf_section_to_raw_section s in
@@ -1052,6 +1164,7 @@ let save_elf_section (index:int) (header:elf_section_header_int) (s:elf_section_
     file_output#saveFile filename doc#toPretty
   end
 
+
 let save_elf_program_segment
       (header:elf_program_header_int) (index:int) (s:elf_segment_t) =
   let filename = get_segment_filename index in
@@ -1085,7 +1198,8 @@ let save_elf_program_segment
 
 let save_elf_program_segments () =
   List.iter (fun (index,header,segment) ->
-      save_elf_program_segment header index segment) elf_header#get_program_segments
+      save_elf_program_segment
+        header index segment) elf_header#get_program_segments
   
 
 let save_elf_files () =
@@ -1099,25 +1213,33 @@ let save_elf_files () =
     save_elf_dictionary ()
   end
 
+
 let load_elf_files () =
   match load_elf_header_file () with
   | Some node ->
      (try
         begin
-          elf_header#read_xml node ;
-          elf_header#set_code_extent ;
-          elf_header#initialize_jump_tables          
+          elf_header#read_xml node;
+          elf_header#set_code_extent;
+          elf_header#initialize_jump_tables;
+          elf_header#initialize_call_back_tables
         end
       with
       | CHXmlReader.XmlParseError(line,col,p) ->
-         raise (BCH_failure
-                  (LBLOCK [ STR "Xml Parse Error in elf header file (line: " ;
-                            INT line ; STR ", col: " ; INT col ; STR "): " ; p ])))
-    
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Xml Parse Error in elf header file (line: ";
+                   INT line;
+                   STR ", col: ";
+                   INT col; STR "): ";
+                   p])))
   | _ ->
-     raise (BCH_failure
-              (LBLOCK [ STR "Unable to load elf file " ; STR (get_filename ()) ]))
-    
+     raise
+       (BCH_failure
+          (LBLOCK [STR "Unable to load elf file "; STR (get_filename ())]))
+
+
 let read_elf_file (filename: string) (xsize: int) =
   let ch = open_in_bin filename in
   let ch = IO.input_channel ch in
@@ -1125,10 +1247,11 @@ let read_elf_file (filename: string) (xsize: int) =
   let filesize = Bytes.length exeString in
   let default () =
     begin
-      system_info#set_file_string  (Bytes.to_string exeString) ;
-      elf_header#read ;
-      elf_header#set_code_extent ;
-      elf_header#initialize_jump_tables ;
+      system_info#set_file_string  (Bytes.to_string exeString);
+      elf_header#read;
+      elf_header#set_code_extent;
+      elf_header#initialize_jump_tables;
+      elf_header#initialize_call_back_tables;
       (true,
        LBLOCK [
            STR "File: ";
