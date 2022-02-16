@@ -172,11 +172,24 @@ class type bcfundeclarations_int =
 class type bcfiles_int =
   object
 
+    (* setters *)
     method add_bcfile: bcfile_t -> unit
-    method has_gfun: string -> bool
-    method get_gfun: string -> bcfundec_t
-    method get_gfun_names: string list
+    method add_fundef: string -> btype_t -> unit
 
+    (* getters *)
+    method get_gfun_names: string list
+    method get_gfun: string -> bcfundec_t
+    method get_typedef: string -> btype_t    (* retrieve by name *)
+    method get_compinfo: int -> bcompinfo_t  (* retrieve by key *)
+    method get_varinfo: string -> bvarinfo_t (* retrieve by name *)
+
+    (* predicates *)
+    method has_gfun: string -> bool
+    method has_typedef: string -> bool
+    method has_compinfo: int -> bool
+    method has_varinfo: string -> bool
+
+    (* saving *)
     method write_xml_function: xml_element_int -> string -> unit
     method read_xml_function: xml_element_int -> string -> unit
     method write_xml: xml_element_int -> unit

@@ -90,6 +90,8 @@ let int_type_to_string (k: ikind_t) =
   | IULong -> "unsigned long"
   | ILongLong -> "long long"
   | IULongLong -> "unsigned long long"
+  | IInt128 -> "int128_t"
+  | IUInt128 -> "uint128_t"
   | INonStandard (issigned, size) ->
      let prefix = if issigned then "int" else "uint" in
      prefix ^ (string_of_int (size / 4)) ^ "_t"
@@ -139,6 +141,9 @@ let float_type_to_string (k: fkind_t) =
   | FFloat -> "float"
   | FDouble -> "double"
   | FLongDouble -> "long double"
+  | FComplexFloat -> "complex"
+  | FComplexDouble -> "double complex"
+  | FComplexLongDouble -> "long double complex"
        
 
 let cil_constant_to_string (c: bconstant_t) =
@@ -233,6 +238,8 @@ and cil_exp_to_pretty (x: bexp_t) =
   | Const c -> STR (cil_constant_to_string c)
   | Lval l -> LBLOCK [STR "lval ("; pl l ; STR ")"]
   | SizeOf t -> LBLOCK [STR "sizeof ("; typ_to_pretty t; STR ")"]
+  | Real e -> LBLOCK [STR "real ("; pe e; STR ")"]
+  | Imag e -> LBLOCK [STR "imag ("; pe e; STR ")"]
   | SizeOfE e -> LBLOCK [STR "sizeofe ("; pe e; STR ")"]
   | SizeOfStr s ->
      let (_,_,len) = mk_constantstring s in
@@ -386,6 +393,7 @@ let instr_to_pretty (instr: binstr_t) =
 	 exp_to_pretty x;
          STR ")"]
   | Call (optLval,x,args,loc) -> LBLOCK [STR "call"]
+  | VarDecl _ -> LBLOCK[STR "vardecl"]
   | Asm _ -> STR "asm"
 
 
@@ -557,6 +565,12 @@ and exp_compare e1 e2 =
   | (SizeOf t1, SizeOf t2) -> typ_compare t1 t2
   | (SizeOf _, _) -> -1
   | (_, SizeOf _) -> 1
+  | (Real e1, Real e2) -> exp_compare e1 e2
+  | (Real _, _) -> -1
+  | (_, Real _) -> 1
+  | (Imag e1, Imag e2) -> exp_compare e1 e2
+  | (Imag _, _) -> -1
+  | (_, Imag _) -> 1
   | (SizeOfE e1, SizeOfE e2) -> exp_compare e1 e2
   | (SizeOfE _, _) -> -1
   | (_, SizeOfE _) -> 1
@@ -723,3 +737,23 @@ and constant_compare c1 c2 =
 
 let btype_compare = typ_compare
                                  
+
+let add_attributes (t: btype_t) (a: b_attributes_t) =
+  match t with
+  | TVoid aa -> TVoid (aa @ a)
+  | TInt (ik, aa) -> TInt (ik, aa @ a)
+  | TFloat (fk, fr, aa) -> TFloat (fk, fr, aa @ a)
+  | TPtr (tt, aa) -> TPtr (tt, aa @ a)
+  | TRef (tt, aa) -> TRef (tt, aa @ a)
+  | THandle (s, aa) -> THandle (s, aa @ a)
+  | TArray (tt, e, aa) -> TArray (tt, e, aa @ a)
+  | TFun (tt, l, b, aa) -> TFun (tt, l, b, aa @ a)
+  | TNamed (s, aa) -> TNamed (s, aa @ a)
+  | TComp (k, aa) -> TComp (k, aa @ a)
+  | TEnum (s, aa) -> TEnum (s, aa @ a)
+  | TCppComp (s, sl, aa) -> TCppComp (s, sl, aa @ a)
+  | TCppEnum (s, sl, aa) -> TCppEnum (s, sl, aa @ a)
+  | TClass (s, sl, aa) -> TClass (s, sl, aa @ a)
+  | TBuiltin_va_list aa -> TBuiltin_va_list (aa @ a)
+  | TVarArg aa -> TVarArg (aa @ a)
+  | TUnknown aa -> TUnknown (aa @ a)

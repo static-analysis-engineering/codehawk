@@ -57,7 +57,9 @@ let ikind_mfts: ikind_t mfts_int =
      (ILong, "ilong");
      (IULong, "iulong");
      (ILongLong, "ilonglong");
-     (IULongLong, "iulonglong")]
+     (IULongLong, "iulonglong");
+     (IInt128, "int128_t");
+     (IUInt128, "uint128_t")]
     (fun k ->
       match k with
       | INonStandard (true,i) -> "nt_" ^ (string_of_int i)
@@ -81,7 +83,12 @@ let ikind_mfts: ikind_t mfts_int =
 let fkind_mfts: fkind_t mfts_int =
   mk_mfts
     "fkind_t"
-    [(FFloat, "float"); (FDouble, "fdouble"); (FLongDouble, "flongdouble")]
+    [(FFloat, "float");
+     (FDouble, "fdouble");
+     (FLongDouble, "flongdouble");
+     (FComplexFloat, "fcomplexfloat");
+     (FComplexDouble, "fcomplexdouble");
+     (FComplexLongDouble, "fcomplexlongdouble")]
 
 
 let frepresentation_mfts: frepresentation_t mfts_int =
@@ -199,6 +206,8 @@ object
     | Const _ -> "const"
     | Lval _ -> "lval"
     | SizeOf _ -> "sizeof"
+    | Real _ -> "real"
+    | Imag _ -> "imag"
     | SizeOfE _ -> "sizeofe"
     | SizeOfStr _ -> "sizeofstr"
     | AlignOf _ -> "alignof"
@@ -409,9 +418,10 @@ object
     match i with
     | Set _ -> "set"
     | Call _ -> "call"
+    | VarDecl _ -> "vardecl"
     | Asm _ -> "asm"
 
-  method tags = ["asm"; "call"; "set"]
+  method tags = ["asm"; "call"; "set"; "vardecl"]
              
 end
 

@@ -30,10 +30,12 @@ open CHCommon
 open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHXmlDocument
 
 (* bchcil *)
 open BCHBCDictionary
+open BCHBCUtil
 open BCHBCWriteXml
 open BCHCBasicTypes
 open BCHCilTypes
@@ -51,7 +53,7 @@ object (self)
   val files = H.create 3
 
   val gtypes = H.create 3   (* btname -> (typeinfo.ix, loc.ix) *)
-  val gcomptags = H.create 3   (* bcname -> (compinfo.ix, loc.ix) *)
+  val gcomptags = H.create 3   (* (bcname, bckey) -> (compinfo.ix, loc.ix) *)
   val gcomptagdecls = H.create 3  (* idem *)
   val genumtags = H.create 3   (* bename -> (enuminfo.ix, loc.ix) *)
   val genumtagdecls = H.create 3  (* idem *)
@@ -59,6 +61,13 @@ object (self)
   val gvars = H.create 3   (* idem *)
   val gfuns = H.create 3   (* bsvar.bvname -> fundec *)
   val mutable ifuns = []
+  val mutable varinfo_vid_counter = 10000
+
+  method private get_varinfo_id =
+    begin
+      varinfo_vid_counter <- varinfo_vid_counter + 1;
+      varinfo_vid_counter
+    end
 
   method add_bcfile (f: bcfile_t) =
     let i = bcd#index_location in
@@ -67,9 +76,15 @@ object (self)
         | GType (tinfo, loc) ->
            H.add gtypes tinfo.btname (bcd#index_typeinfo tinfo, i loc)
         | GCompTag (cinfo, loc) ->
-           H.add gcomptags cinfo.bcname (bcd#index_compinfo cinfo, i loc)
+           H.add
+             gcomptags
+             (cinfo.bcname, cinfo.bckey)
+             (bcd#index_compinfo cinfo, i loc)
         | GCompTagDecl (cinfo, loc) ->
-           H. add gcomptagdecls cinfo.bcname (bcd#index_compinfo cinfo, i loc)
+           H.add
+             gcomptagdecls
+             (cinfo.bcname, cinfo.bckey)
+             (bcd#index_compinfo cinfo, i loc)
         | GEnumTag (einfo, loc) ->
            H.add genumtags einfo.bename (bcd#index_enuminfo einfo, i loc)
         | GEnumTagDecl (einfo, loc) ->
@@ -90,6 +105,125 @@ object (self)
              ifuns <- (bcd#index_varinfo fundec.bsvar) :: ifuns
            end
         | _ -> ()) f.bglobals
+
+  method add_fundef (name: string) (ty: btype_t) =
+    if H.mem gfuns name then
+      (* function already exists *)
+      ()
+    else
+      (* check if the variable name already exists *)
+      let bvarloc =
+        if H.mem gvars name then
+          let (vix, _, lix) = H.find gvars name in
+          Some (bcd#get_varinfo vix, bcd#get_location lix)
+        else if H.mem gvardecls name then
+          let (vix, lix) = H.find gvardecls name in
+          Some (bcd#get_varinfo vix, bcd#get_location lix)
+        else
+          None in
+      (* else create a new variable *)
+      let (bvar, loc) =
+        match bvarloc with
+        | Some (vinfo, loc) -> (vinfo, loc)
+        | _ ->
+           let loc = {line = (-1); file = ""; byte = (-1)} in
+           let vinfo = {
+               bvname = name;
+               bvtype = ty;
+               bvstorage = NoStorage;
+               bvglob = true;
+               bvinit = None;
+               bvdecl = loc;
+               bvinline = false;
+               bvid = self#get_varinfo_id;
+               bvattr = [];
+               bvaddrof = false;
+               bvparam = 0
+             } in
+           begin
+             H.add
+               gvars
+               vinfo.bvname
+               (bcd#index_varinfo vinfo, (-1), bcd#index_location loc);
+             (vinfo, loc)
+           end in
+      let fundec = {
+          bsvar = bvar;
+          bsformals = self#mk_formals ty loc;
+          bslocals = [];
+          bsbody = {battrs = []; bstmts = []}
+        } in
+      begin
+        H.add gfuns name (fundec, fundec.bsvar.bvdecl);
+        ifuns <- (bcd#index_varinfo fundec.bsvar) :: ifuns;
+        chlog#add
+          "add function definition"
+          (LBLOCK [STR name; STR ": "; btype_to_pretty ty])
+      end
+
+  method private mk_formals (ty: btype_t) (loc: b_location_t) =
+    match ty with
+    | TFun (_, Some funargs, _, _)
+      | TPtr (TFun (_, Some funargs, _, _), _) ->
+       List.mapi (fun i (name, argty, attrs) ->
+           { bvname = name;
+             bvtype = argty;
+             bvstorage = NoStorage;
+             bvglob = false;
+             bvinit = None;
+             bvdecl = loc;
+             bvinline = false;
+             bvid = self#get_varinfo_id;
+             bvattr = attrs;
+             bvaddrof = false;
+             bvparam = i + 1
+         }) funargs
+    | _ -> []
+
+
+  method has_typedef (name: string) = H.mem gtypes name
+
+  method get_typedef (name: string): btype_t =
+    if self#has_typedef name then
+      let (tix, _) = H.find gtypes name in
+      bcd#get_typ tix
+    else
+      raise
+        (CHFailure
+           (LBLOCK [STR "No typedef found with name "; STR name]))
+
+  method has_compinfo (key: int) =
+    let e1 = H.fold (fun (_, ckey) _ a -> a || key = ckey) gcomptags false in
+    e1 || (H.fold (fun (_, ckey) _ a -> a || key = ckey) gcomptagdecls false)
+
+  method get_compinfo (key: int): bcompinfo_t =
+    if self#has_compinfo key then
+      let values =
+        (H.fold (fun (_, ckey) (ix, _) a -> (ckey, ix) :: a) gcomptags [])
+        @ (H.fold (fun (_, ckey) (ix, _) a -> (ckey, ix) :: a) gcomptagdecls []) in
+      let (_, ix) = List.find (fun (ckey, _) -> key = ckey) values in
+      bcd#get_compinfo ix
+    else
+      raise
+        (CHFailure
+           (LBLOCK [STR "No comptag found with key "; INT key]))
+
+  method has_varinfo (name: string) =
+    (H.mem gvars name) || (H.mem gvardecls name)
+
+  method get_varinfo (name: string) =
+    if self#has_varinfo name then
+      let ix =
+        if H.mem gvars name then
+          let (ix, _, _) = H.find gvars name in ix
+        else
+          let (ix, _) = H.find gvardecls name in ix
+      in
+      bcd#get_varinfo ix
+    else
+      raise
+        (CHFailure
+           (LBLOCK [STR "No varinfo found with name "; STR name]))
     
   method has_gfun (name: string) = H.mem gfuns name
 
@@ -135,10 +269,11 @@ object (self)
   method private write_xml_gcomps (node: xml_element_int) =
     let gcomps = H.fold (fun k v a -> (k, v)::a) gcomptags [] in
     node#appendChildren
-      (List.map (fun (name, (cix, locix)) ->
+      (List.map (fun ((name, ckey), (cix, locix)) ->
            let cnode = xmlElement "ci" in
            begin
              cnode#setAttribute "name" name;
+             cnode#setIntAttribute "key" ckey;
              cnode#setIntListAttribute "ixs" [cix; locix];
              cnode
            end) gcomps)
@@ -147,17 +282,19 @@ object (self)
     let getcc = node#getTaggedChildren in
     List.iter (fun cn ->
         let name = cn#getAttribute "name" in
+        let ckey = cn#getIntAttribute "key" in
         match cn#getIntListAttribute "ixs" with
-        | [cix; locix] -> H.add gcomptags name (cix, locix)
+        | [cix; locix] -> H.add gcomptags (name, ckey) (cix, locix)
         | _ -> ()) (getcc "ci")
 
   method private write_xml_gcompdecls (node: xml_element_int) =
     let gcomps = H.fold (fun k v a -> (k, v)::a) gcomptagdecls [] in
     node#appendChildren
-      (List.map (fun (name, (cix, locix)) ->
+      (List.map (fun ((name, ckey), (cix, locix)) ->
            let cnode = xmlElement "cid" in
            begin
              cnode#setAttribute "name" name;
+             cnode#setIntAttribute "key" ckey;
              cnode#setIntListAttribute "ixs" [cix; locix];
              cnode
            end) gcomps)
@@ -166,8 +303,9 @@ object (self)
     let getcc = node#getTaggedChildren in
     List.iter (fun cn ->
         let name = cn#getAttribute "name" in
+        let ckey = cn#getIntAttribute "key" in
         match cn#getIntListAttribute "ixs" with
-        | [cix; locix] -> H.add gcomptags name (cix, locix)
+        | [cix; locix] -> H.add gcomptags (name, ckey) (cix, locix)
         | _ -> ()) (getcc "cid")
     
   method private write_xml_genums (node: xml_element_int) =

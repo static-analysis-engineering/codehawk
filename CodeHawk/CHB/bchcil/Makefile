@@ -39,9 +39,10 @@ MLIS := \
 	bCHBCDictionary \
 	bCHBCFunDeclarations \
 	bCHBCWriteXml \
+	bCHBCUtil \
 	bCHBCFiles \
 	bCHParseCilFile \
-	bCHBCUtil \
+
 
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
@@ -51,9 +52,10 @@ SOURCES := \
 	bCHBCDictionary \
 	bCHBCFunDeclarations \
 	bCHBCWriteXml \
+	bCHBCUtil \
 	bCHBCFiles \
 	bCHParseCilFile \
-	bCHBCUtil \
+
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 

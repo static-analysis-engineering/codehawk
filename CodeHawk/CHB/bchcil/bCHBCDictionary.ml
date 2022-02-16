@@ -300,9 +300,11 @@ object (self)
   method index_exp (exp: bexp_t) =
     let tags = [exp_mcts#ts exp] in
     let key = match exp with
-      | Const c -> (tags,[self#index_constant c])
-      | SizeOf typ -> (tags,[self#index_typ typ])
-      | SizeOfE exp -> (tags,[self#index_exp exp])
+      | Const c -> (tags, [self#index_constant c])
+      | SizeOf typ -> (tags, [self#index_typ typ])
+      | Real exp -> (tags, [self#index_exp exp])
+      | Imag exp -> (tags, [self#index_exp exp])
+      | SizeOfE exp -> (tags, [self#index_exp exp])
       | SizeOfStr str -> (tags, [self#index_string str])
       | AlignOf typ -> (tags, [self#index_typ typ])
       | AlignOfE exp -> (tags, [self#index_exp exp])
@@ -349,6 +351,8 @@ object (self)
     | "const" -> Const (self#get_constant (a 0))
     | "lval" -> Lval (self#get_lval (a 0))
     | "sizeof" -> SizeOf (self#get_typ (a 0))
+    | "real" -> Real (self#get_exp (a 0))
+    | "imag" -> Imag (self#get_exp (a 0))
     | "sizeofe" -> SizeOfE (self#get_exp (a 0))
     | "sizeofstr" -> SizeOfStr (self#get_string (a 0))
     | "alignof" -> AlignOf (self#get_typ (a 0))
@@ -472,7 +476,7 @@ object (self)
            self#index_opt_funargs optfunargs;
            (if varargs then 1 else 0)] @ ia attrs)
       | TNamed (tname, attrs) -> (tags @ [tname], ia attrs)
-      | TComp (ckey, attrs) -> (tags,  (ckey) :: ia attrs)
+      | TComp (ckey, attrs) -> (tags,  ckey :: ia attrs)
       | TEnum (ename, attrs) -> (tags @ [ename], ia attrs)
       | TCppComp (t, tl, attrs) ->
          (tags,
