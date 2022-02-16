@@ -6,6 +6,7 @@ EXTLIB = $(shell ocamlfind query extlib)
 CHUTIL = $(CODEHAWK)/CH/chutil
 XPRLIB = $(CODEHAWK)/CH/xprlib
 BCHLIB = $(CHB)/bchlib
+BCHCIL = $(CHB)/bchcil
 PELIB  = $(CHB)/bchlibpe
 CAMLDOC := ocamldoc
 
@@ -15,6 +16,7 @@ CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
 	-I $(BCHLIB)/cmi \
+	-I $(BCHCIL)/cmi \
 	-I $(PELIB)/cmi \
 
 CAMLLINK := ocamlopt -I str.cmxa -I unix.cmxa \
@@ -26,6 +28,7 @@ CAMLBUILD := ocamlopt str.cmxa unix.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(XPRLIB)/xpr.cmxa \
 	$(BCHLIB)/bchlib.cmxa \
+	$(BCHCIL)/bchcil.cmxa \
 	$(PELIB)/bchlibpe.cmxa
 
 MLIS := \
@@ -76,7 +79,7 @@ make_dirs:
 mtest: $(OBJECTS) cmx/test.cmx $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(X86LIB)/bchlibx86.cmxa
 	$(CAMLBUILD) -o mtest $(OBJECTS) cmx/test.cmx
 
-bchlibelf: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa
+bchlibelf: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(BCHCIL)/bchcil.cmxa $(PELIB)/bchlibpe.cmxa
 	$(CAMLLINK) -a -o bchlibelf.cmxa $(OBJECTS)
 
 cmi/%.cmi: %.mli
