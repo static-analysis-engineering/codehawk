@@ -545,9 +545,9 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
     else if is_direct_jump_instruction instr#get_opcode then
       let tgtblock = get_direct_jump_target_address instr#get_opcode in
       if functions_data#is_function_entry_point tgtblock then
-        (Some [],va#add_int 4,[])                (* function chaining *)
+        (Some [], va#add_int 4, [])                (* function chaining *)
       else
-        (Some (mk_ci_succ [ tgtblock ]),va#add_int 4,[])
+        (Some (mk_ci_succ [tgtblock]), va#add_int 4, [])
     else if is_indirect_jump_instruction instr#get_opcode then
       if system_info#has_jump_table_target faddr va then
         let loc = make_location { loc_faddr = faddr ; loc_iaddr = va } in
@@ -759,6 +759,19 @@ let record_call_targets () =
                    finfo#set_call_target ctxtiaddr ctinfo
                  else
                    finfo#set_call_target ctxtiaddr (mk_unknown_target ())
+              | Jump op
+                   when functions_data#is_function_entry_point
+                          op#get_absolute_address ->
+                 let _ =
+                   chlog#add
+                     "function chaining"
+                     (LBLOCK [
+                          faddr#toPretty;
+                          STR " @ "; STR ctxtiaddr;
+                          STR ": ";
+                          op#get_absolute_address#toPretty]) in
+                 finfo#set_call_target
+                   ctxtiaddr (mk_app_target op#get_absolute_address)
               | _ -> ())
         end
       with
