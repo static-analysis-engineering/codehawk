@@ -162,7 +162,6 @@ object (self)
 end
     
 
-
 class call_back_table_t (cba: string) (ty: btype_t): call_back_table_int =
 object (self)
 
@@ -348,7 +347,7 @@ object (self)
     else
       raise
         (BCH_failure
-           (LBLOCK [STR "Call-back table not found at address"; STR va]))
+           (LBLOCK [STR "Call-back table not found at address "; STR va]))
 
   method has_table (va: string) =
     H.mem tables va

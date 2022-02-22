@@ -609,6 +609,74 @@ object
 
 end
 
+(* ======================================================== struct tables === *)
+
+(* Note: call-back-tables can be considered a subset of struct_tables; we
+ * keep them separate for now, as they serve different purposes. *)
+
+type struct_table_value_t =
+  | STVStringAddress of string  (* char * *)
+  | STVString of string         (* char[n] *)
+  | STVNum of numerical_t
+
+
+class type struct_table_record_int =
+  object
+    (* getters *)
+    method address: string
+    method values: (int * struct_table_value_t) list
+    method stringvalue: int -> string
+    method intvalue: int -> numerical_t
+
+    (* saving *)
+    method write_xml: xml_element_int -> unit
+
+    (* printing *)
+    method toPretty: pretty_t
+  end
+
+
+class type struct_table_int =
+  object
+
+    (* setters *)
+    method add_record:
+             string
+             -> (int * struct_table_value_t) list
+             -> unit
+
+    (* getters *)
+    method address: string
+    method length: int (* number of records *)
+    method record_type: btype_t
+    method type_at_offset: int -> btype_t
+    method fieldname_at_offset: int -> string
+    method field_offset_types: (int * btype_t) list
+    method record_length: int  (* number of fields in struct *)
+
+    (* saving *)
+    method write_xml: xml_element_int -> unit
+
+  end
+
+class type struct_tables_int =
+  object
+
+    (* setters *)
+    method new_table: string -> btype_t -> struct_table_int
+    method add_table_address: string -> string -> int -> unit
+    (* getters *)
+    method table_variables: (string * (string * int)) list   (* address, name *)
+    method get_table: string -> struct_table_int
+
+    (* predicates *)
+    method has_table: string -> bool
+
+    (* saving *)
+    method write_xml: xml_element_int -> unit
+
+  end
+
 (* ======================================================Call-back tables === *)
 
 

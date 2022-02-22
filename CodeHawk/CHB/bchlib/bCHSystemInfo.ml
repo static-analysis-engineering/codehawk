@@ -82,6 +82,7 @@ open BCHSectionHeadersInfo
 open BCHSpecializations
 open BCHStreamWrapper
 open BCHStrings
+open BCHStructTables
 open BCHSystemData
 open BCHSystemSettings
 open BCHTypeDefinitions
@@ -673,6 +674,12 @@ object (self)
 	    user_call_targets <- user_call_targets + List.length cnode#getChildren
 	  end);
 
+      (if hasc "struct-tables" then
+         let stnode = getc "struct-tables" in
+         begin
+           self#read_xml_struct_tables stnode;
+         end);
+
       (if hasc "call-back-tables" then
          let cbtnode = getc "call-back-tables" in
          begin
@@ -940,6 +947,18 @@ object (self)
     List.iter
       self#read_xml_call_target_callsite (node#getTaggedChildren "callsite")
 
+  method private read_xml_struct_tables (node: xml_element_int) =
+    (* <struct-tables>
+          <st name={name} va=0x... size={size}>
+     *)
+    List.iter
+      (fun stnode ->
+        let vname = stnode#getAttribute "name" in
+        let va = stnode#getAttribute "va" in
+        let size = stnode#getIntAttribute "size" in
+        structtables#add_table_address va vname size)
+    (node#getTaggedChildren "st")
+
   method private read_xml_call_back_tables (node: xml_element_int) =
     (* <call-back-tables>
          <cbt name={name} va=0x...>
@@ -989,8 +1008,18 @@ object (self)
       let geti = n#getIntAttribute in
       let getx tag = string_to_doubleword (get tag) in
       let encoding_to_pretty (ty,va,size,key,width) =
-	LBLOCK [ STR "(" ; STR ty ; STR "," ; va#toPretty ; STR "," ; size#toPretty ;
-		 STR "," ; key#toPretty ; STR "," ; INT width ; STR ")" ] in
+	LBLOCK [
+            STR "(";
+            STR ty;
+            STR ",";
+            va#toPretty;
+            STR ",";
+            size#toPretty;
+	    STR ",";
+            key#toPretty;
+            STR ",";
+            INT width;
+            STR ")"] in
       let c = (get "type", getx "va", getx "size", getx "key", geti "width") in
       begin
 	chlog#add "add encoding"  (encoding_to_pretty c) ;
@@ -1891,10 +1920,13 @@ object (self)
         iNode
       end) goto_returns#listOfPairs)
 
-  method private write_xml_call_back_tables (node:xml_element_int) =
+  method private write_xml_call_back_tables (node: xml_element_int) =
     callbacktables#write_xml node
+
+  method private write_xml_struct_tables (node: xml_element_int) =
+    structtables#write_xml node
     
-  method write_xml (node:xml_element_int) =
+  method write_xml (node: xml_element_int) =
     let append = node#appendChildren in
     let fNode = xmlElement "functions-data" in
     let dNode = xmlElement "data-blocks" in
@@ -1904,6 +1936,7 @@ object (self)
     let tNode = xmlElement "thread-start-functions" in
     let gNode = xmlElement "goto-returns" in
     let cbNode = xmlElement "call-back-tables" in
+    let stNode = xmlElement "struct-tables" in
     begin
       functions_data#write_xml fNode;
       self#write_xml_data_blocks dNode;
@@ -1912,9 +1945,10 @@ object (self)
       self#write_xml_thread_start_functions tNode;
       self#write_xml_goto_returns gNode;
       self#write_xml_call_back_tables cbNode;
+      self#write_xml_struct_tables stNode;
       string_table#write_xml sNode ;
       append [
-          fNode; lNode; dNode; jNode; sNode; tNode; gNode; cbNode ]
+          fNode; lNode; dNode; jNode; sNode; tNode; gNode; cbNode; stNode]
     end
       
 end
