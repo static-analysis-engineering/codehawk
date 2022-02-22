@@ -46,6 +46,7 @@ open BCHBCFiles
 open BCHBCSumTypeSerializer
 open BCHBCUtil
 open BCHCBasicTypes
+open BCHCTypeUtil
 
 (* bchlib *)
 open BCHBasicTypes
@@ -70,17 +71,7 @@ let raise_error (node:xml_element_int) (msg:pretty_t) =
   end
 
 
-let ikind_type_size (k: ikind_t) =
-  match k with
-  | IChar | ISChar | IUChar -> 1
-  | IWChar -> 2
-  | IBool -> 4
-  | IInt | IUInt -> 4
-  | IShort | IUShort -> 2
-  | ILong | IULong -> 4
-  | ILongLong | IULongLong -> 8
-  | IInt128 | IUInt128 -> 16
-  | INonStandard (_, s) -> s
+let ikind_type_size = BCHCTypeUtil.ikind_type_size
 
 
 let get_ikind_from_size ?(signed=true) (size:int) =
@@ -92,54 +83,10 @@ let get_ikind_from_size ?(signed=true) (size:int) =
   | _ -> INonStandard (signed,size)
 
 
-let fkind_type_size (k: fkind_t) =
-  match k with
-  | FFloat -> 4
-  | FDouble -> 8
-  | FLongDouble -> 16
-  | FComplexFloat -> 8
-  | FComplexDouble -> 16
-  | FComplexLongDouble -> 32
+let fkind_type_size = BCHCTypeUtil.fkind_type_size
 
 
-let resolve_type (ty: btype_t) =
-  let has_typedef = bcfiles#has_typedef in
-  let get_typedef = bcfiles#get_typedef in
-  let rec aux (t: btype_t) =
-  match t with
-  | TVoid _
-    | TInt _
-    | TFloat _
-    | THandle _
-    | TComp _
-    | TEnum _
-    | TCppComp _
-    | TCppEnum _
-    | TClass _
-    | TBuiltin_va_list _
-    | TVarArg _
-    | TUnknown _ -> t
-  | TPtr (tt, a) -> TPtr (aux tt, a)
-  | TRef (tt, a) -> TRef (aux tt, a)
-  | TArray (tt, e, a) -> TArray (aux tt, e, a)
-  | TFun (tt, fs, b, a) -> TFun (aux tt, auxfs fs, b, a)
-  | TNamed (name, a) when has_typedef name ->
-     aux (add_attributes (get_typedef name) a)
-  | TNamed (name, _) ->
-     begin
-       chlog#add
-         "unknown typedef"
-         (LBLOCK [STR "Named type "; STR name; STR " not defined"]);
-       t
-     end
-
-  and auxfs (fs: bfunarg_t list option): bfunarg_t list option =
-    match fs with
-    | None -> None
-    | Some l -> Some (List.map (fun (s, t, a) -> (s, aux t, a)) l)
-
-  in
-  aux ty
+let resolve_type = BCHCTypeUtil.resolve_type
 
 
 let get_compinfo_by_key (key: int): bcompinfo_t =
@@ -159,6 +106,28 @@ let get_struct_extractor (ty: btype_t): string list =
          | _ -> "unknown") compinfo.bcfields
 
   | rty -> [btype_to_string ty; btype_to_string rty]
+
+
+let get_struct_offset_extractor (ty: btype_t): (int * string) list =
+  match resolve_type ty with
+  | TPtr (TPtr (TComp (ckey, _), _), _)
+    | TPtr (TComp (ckey, _), _) ->
+     let compinfo = get_compinfo_by_key ckey in
+     List.map (fun f ->
+         match f.bfieldlayout with
+         | Some (offset, _) ->
+            (match f.bftype with
+             | TInt _ -> (offset, "value")
+             | TPtr (TInt _, _) -> (offset, "string-address")
+             | TArray (TInt _, _, _) -> (offset, "string")
+             | _ -> (offset, "unknown"))
+         | _ ->
+            raise
+              (BCH_failure
+                 (LBLOCK [
+                      STR "Struct definition has no field layout: ";
+                      STR (btype_to_string ty)]))) compinfo.bcfields
+  | rty -> [(0, btype_to_string ty)]
 
 
 (* Common types and type constructors *)
@@ -312,7 +281,6 @@ let get_size_of_btype (t: btype_t) =
   | TFloat (f,_,_) -> Some (get_size_of_fkind f)
   | TPtr _ | TRef _ | THandle _ | TFun _ -> baseSize
   | _ -> None
-
 
 
 let rec modify_type (f: type_transformer_t) (t: btype_t) =
