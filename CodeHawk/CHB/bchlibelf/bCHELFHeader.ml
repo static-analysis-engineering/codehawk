@@ -59,6 +59,7 @@ open BCHDoubleword
 open BCHLibTypes
 open BCHPreFileIO
 open BCHStreamWrapper
+open BCHStructTables
 open BCHSystemInfo
 open BCHVariableType
 
@@ -510,7 +511,51 @@ object(self)
              currva := !currva#add_int ((List.length extractor) * 4)
            end)
       end
-      done
+    done
+
+  method private extract_struct_table
+                   (structtable: struct_table_int)
+                   (va: doubleword_int)
+                   (recordsize: int)
+                   (extractor: (int * string) list) =
+    let nullrecord = ref false in
+    let currva = ref va in
+    while not !nullrecord do
+      let stvalues = ref [] in
+      begin
+        List.iter (fun (offset, s) ->
+            let pv = self#get_program_value (!currva#add_int offset) in
+            let stv =
+              if pv#equal wordzero then
+                STVNum numerical_zero
+              else
+                match s with
+                | "string-address" ->
+                   (match self#get_string_at_address pv with
+                    | Some s ->
+                       STVStringAddress s
+                    | _ -> STVStringAddress "**unknown**")
+                | "string" ->
+                   let stringaddr = !currva#add_int offset in
+                   (match self#get_string_at_address stringaddr with
+                    | Some s ->
+                       STVString s
+                    | _ -> STVString "**unknown**")
+                | "value" -> STVNum (mkNumerical pv#to_int)
+                | _ -> STVNum numerical_zero in
+            stvalues := (offset, stv) :: !stvalues) extractor;
+        (if List.for_all (fun (_, v) ->
+                match v with
+                | STVNum n -> n#equal numerical_zero
+                | _ -> false) !stvalues then
+           nullrecord := true
+         else
+           begin
+             structtable#add_record !currva#to_hex_string !stvalues;
+             currva := !currva#add_int recordsize
+           end)
+      end
+    done
 
   method initialize_call_back_tables =
     let tvars = callbacktables#table_variables in
@@ -528,6 +573,23 @@ object(self)
               (LBLOCK [
                    STR "Variable "; STR vname; STR " not found"])) tvars;
       callbacktables#set_function_pointers
+    end
+
+  method initialize_struct_tables =
+    let svars = structtables#table_variables in
+    begin
+      List.iter (fun (addr, (vname, size)) ->
+          if bcfiles#has_varinfo vname then
+            let varinfo = bcfiles#get_varinfo vname in
+            let extractor = get_struct_offset_extractor varinfo.bvtype in
+            let structtable = structtables#new_table addr varinfo.bvtype in
+            let va = string_to_doubleword addr in
+            self#extract_struct_table structtable va size extractor
+          else
+            chlog#add
+              "struct-table-variable"
+              (LBLOCK [
+                   STR "Variable "; STR vname; STR " not found"])) svars
     end
           
   method get_executable_sections =
@@ -1222,7 +1284,8 @@ let load_elf_files () =
           elf_header#read_xml node;
           elf_header#set_code_extent;
           elf_header#initialize_jump_tables;
-          elf_header#initialize_call_back_tables
+          elf_header#initialize_call_back_tables;
+          elf_header#initialize_struct_tables
         end
       with
       | CHXmlReader.XmlParseError(line,col,p) ->
@@ -1252,6 +1315,7 @@ let read_elf_file (filename: string) (xsize: int) =
       elf_header#set_code_extent;
       elf_header#initialize_jump_tables;
       elf_header#initialize_call_back_tables;
+      elf_header#initialize_struct_tables;
       (true,
        LBLOCK [
            STR "File: ";
