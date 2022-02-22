@@ -35,7 +35,10 @@ open CHPretty
 
 (* bchcil *)
 open BCHBCFiles
+open BCHBCUtil
+open BCHCBasicTypes
 open BCHCilToCBasic
+open BCHCTypeUtil
 
 
 let parse_cil_file ?(computeCFG=true) ?(removeUnused=true) (filename: string) =
@@ -44,7 +47,16 @@ let parse_cil_file ?(computeCFG=true) ?(removeUnused=true) (filename: string) =
     let _ = if computeCFG then Cfg.computeFileCFG cilfile in
     let _ = if removeUnused then Rmtmps.removeUnusedTemps cilfile in
     let bcfile = cil_file_to_bcfile cilfile in
-    bcfiles#add_bcfile bcfile
+    begin
+      bcfiles#add_bcfile bcfile;
+      List.iter (fun g ->
+          match g with
+          | GCompTagDecl (compinfo, loc) ->
+             bcfiles#update_global (GCompTagDecl (layout_fields compinfo, loc))
+          | GCompTag (compinfo, loc) ->
+             bcfiles#update_global (GCompTag (layout_fields compinfo, loc))
+          | _ -> ()) bcfile.bglobals
+    end
   with
   | ParseError s ->
      begin

@@ -175,18 +175,22 @@ class type bcfiles_int =
     (* setters *)
     method add_bcfile: bcfile_t -> unit
     method add_fundef: string -> btype_t -> unit
+    method update_global: bglobal_t -> unit
 
     (* getters *)
     method get_gfun_names: string list
     method get_gfun: string -> bcfundec_t
     method get_typedef: string -> btype_t    (* retrieve by name *)
+    method typedefs: (string * btype_t) list
     method get_compinfo: int -> bcompinfo_t  (* retrieve by key *)
+    method get_enuminfo: string -> benuminfo_t  (* retrieve by name *)
     method get_varinfo: string -> bvarinfo_t (* retrieve by name *)
 
     (* predicates *)
     method has_gfun: string -> bool
     method has_typedef: string -> bool
     method has_compinfo: int -> bool
+    method has_enuminfo: string -> bool
     method has_varinfo: string -> bool
 
     (* saving *)

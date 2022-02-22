@@ -337,7 +337,8 @@ type bcfundec_t = {
     bslocals: bvarinfo_t list;
     bsbody: bblock_t
   }
-    
+
+
 type bglobal_t =
 | GType of btypeinfo_t * b_location_t
 | GCompTag of bcompinfo_t * b_location_t
