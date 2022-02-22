@@ -601,6 +601,7 @@ object
   method set_code_extent: unit
   method initialize_jump_tables: unit
   method initialize_call_back_tables: unit
+  method initialize_struct_tables: unit
 
   (* accessors *)
   method get_program_entry_point: doubleword_int
