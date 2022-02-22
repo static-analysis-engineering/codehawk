@@ -74,7 +74,7 @@ object (self)
     List.iter (fun g ->
         match g with
         | GType (tinfo, loc) ->
-           H.add gtypes tinfo.btname (bcd#index_typeinfo tinfo, i loc)
+           H.add gtypes tinfo.btname (bcd#index_typ tinfo.bttype, i loc)
         | GCompTag (cinfo, loc) ->
            H.add
              gcomptags
@@ -105,6 +105,21 @@ object (self)
              ifuns <- (bcd#index_varinfo fundec.bsvar) :: ifuns
            end
         | _ -> ()) f.bglobals
+
+  method update_global (g: bglobal_t) =
+    let i = bcd#index_location in
+    match g with
+    | GCompTag (cinfo, loc) ->
+       H.replace
+         gcomptags
+         (cinfo.bcname, cinfo.bckey)
+         (bcd#index_compinfo cinfo, i loc)
+    | GCompTagDecl (cinfo, loc) ->
+       H.replace
+         gcomptagdecls
+         (cinfo.bcname, cinfo.bckey)
+         (bcd#index_compinfo cinfo, i loc)
+    | _ -> ()
 
   method add_fundef (name: string) (ty: btype_t) =
     if H.mem gfuns name then
@@ -192,6 +207,9 @@ object (self)
         (CHFailure
            (LBLOCK [STR "No typedef found with name "; STR name]))
 
+  method typedefs: (string * btype_t) list =
+    H.fold (fun k (ix, loc) a -> (k, bcd#get_typ ix) :: a) gtypes []
+
   method has_compinfo (key: int) =
     let e1 = H.fold (fun (_, ckey) _ a -> a || key = ckey) gcomptags false in
     e1 || (H.fold (fun (_, ckey) _ a -> a || key = ckey) gcomptagdecls false)
@@ -207,6 +225,23 @@ object (self)
       raise
         (CHFailure
            (LBLOCK [STR "No comptag found with key "; INT key]))
+
+  method has_enuminfo (name: string) =
+    (H.mem genumtags name) || (H.mem genumtagdecls name)
+
+  method get_enuminfo (name: string) =
+    if self#has_enuminfo name then
+      let ix =
+        if H.mem genumtags name then
+          let (ix, _) = H.find genumtags name in ix
+        else
+          let (ix, _) = H.find genumtagdecls name in ix
+      in
+      bcd#get_enuminfo ix
+    else
+      raise
+        (CHFailure
+           (LBLOCK [STR "No enuminfo found with name "; STR name]))
 
   method has_varinfo (name: string) =
     (H.mem gvars name) || (H.mem gvardecls name)

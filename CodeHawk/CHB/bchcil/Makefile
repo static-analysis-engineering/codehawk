@@ -41,6 +41,7 @@ MLIS := \
 	bCHBCWriteXml \
 	bCHBCUtil \
 	bCHBCFiles \
+	bCHCTypeUtil \
 	bCHParseCilFile \
 
 
@@ -54,6 +55,7 @@ SOURCES := \
 	bCHBCWriteXml \
 	bCHBCUtil \
 	bCHBCFiles \
+	bCHCTypeUtil \
 	bCHParseCilFile \
 
 
