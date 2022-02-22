@@ -50,6 +50,7 @@ val resolve_type: btype_t -> btype_t
 val get_compinfo_by_key: int -> bcompinfo_t
 
 val get_struct_extractor: btype_t -> string list
+val get_struct_offset_extractor: btype_t -> (int * string) list
 
 
 (* Common types -------------------------------------------------------------- *)
