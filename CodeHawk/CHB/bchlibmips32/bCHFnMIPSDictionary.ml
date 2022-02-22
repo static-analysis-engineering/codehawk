@@ -437,9 +437,17 @@ object (self)
           @ [ixd#index_call_target floc#get_call_target#get_target])
                           
       | JumpLink _ | BranchLink _ when floc#has_call_target ->
-         (["a:"],[ixd#index_call_target floc#get_call_target#get_target])
+         (["a:"], [ixd#index_call_target floc#get_call_target#get_target])
 
       | JumpLink _ | BranchLink _ -> (["a:"; "u"],[])
+
+      | Jump _ when floc#has_call_target ->
+         let args = List.map snd floc#get_mips_call_arguments in
+         let args = List.map rewrite_expr args in
+         let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
+         ([xtag; "call"],
+          (List.map xd#index_xpr args)
+          @ [ixd#index_call_target floc#get_call_target#get_target])
 
       | JumpLinkRegister _
            when floc#has_call_target
@@ -454,7 +462,7 @@ object (self)
       | JumpLinkRegister (dst, tgt) ->
          let op = tgt#to_expr floc in
          let ropx = rewrite_expr (tgt#to_expr floc) in
-         (["a:x"; "u"],[xd#index_xpr op; xd#index_xpr ropx])
+         (["a:x"; "u"], [xd#index_xpr op; xd#index_xpr ropx])
 
       | JumpRegister _
            when floc#has_call_target
