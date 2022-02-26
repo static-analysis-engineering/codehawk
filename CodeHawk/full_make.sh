@@ -4,7 +4,6 @@ make -C CH/chlib
 make -C CH/chutil
 make -C CH/xprlib
 make -C CH_gui
-make -C CHC/cil-1.7.3-develop
 make -C CHC/cchcil
 make -C CHC/cchlib
 make -C CHC/cchpre

@@ -4,7 +4,6 @@ make -C CH/chlib clean
 make -C CH/chutil clean
 make -C CH/xprlib clean
 make -C CH_gui clean
-make -C CHC/cil-1.7.3-develop clean
 make -C CHC/cchcil clean
 make -C CHC/cchlib clean
 make -C CHC/cchpre clean

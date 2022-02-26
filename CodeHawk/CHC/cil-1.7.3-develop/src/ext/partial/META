@@ -1,2 +1,0 @@
-requires = "cil.pta"
-description = "interprocedural partial evaluation and constant folding"
