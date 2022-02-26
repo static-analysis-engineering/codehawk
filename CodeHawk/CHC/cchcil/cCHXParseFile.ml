@@ -48,7 +48,7 @@ let filename = ref ""
 let filterfiles = ref true
 let keepUnused = ref false
 
-let version = "CP1.00"
+let version = "CP1.1"
 
 let set_targetdirectory s =  targetdirectory := s
 
