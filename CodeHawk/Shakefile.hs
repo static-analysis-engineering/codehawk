@@ -43,27 +43,6 @@ copyFileChangedWithAnnotation oldPath newPath = do
     let newContents = "# 1 \"" ++ oldPath ++ "\"\n" ++ contents
     writeFileChanged newPath newContents
 
--- https://stackoverflow.com/a/7569301
-splitBy delimiter = foldr f [[]] 
-            where f c l@(x:xs) | c == delimiter = []:l
-                               | otherwise = (c:x):xs
-
-parseSExp :: String -> [(String, String)]
-parseSExp sExp = do
-    line <- lines sExp
-    guard $ isInfixOf "\"" line
-    -- should be in the format ... "VAR" ... "VALUE" ...
-    let [_, varName, _, varValue, _] = splitBy '"' line
-    return (varName, varValue)
-
-defaultOcaml = "4.07.1"
-defaultSwitch = "codehawk-" ++ defaultOcaml
-
-data Flags = Opam String | Ocaml String
-    deriving Eq
-flagDefs = [Option "" ["opam"] (OptArg (\x -> Right $ Opam (fromMaybe defaultSwitch x)) defaultSwitch) "opam switch name",
-            Option "" ["ocaml"] (OptArg (\x -> Right $ Ocaml (fromMaybe defaultOcaml x)) defaultOcaml) "ocaml version"]
-
 main :: IO ()
 main = do
     ver <- getHashedShakeVersion ["Shakefile.hs"]
@@ -74,46 +53,21 @@ main = do
         shakeVersion = ver,
         shakeThreads = 0 -- Use the number of cpus
     }
-    shakeArgsWith defaultShakeOptions flagDefs $ \flagValues targets -> return $ Just $ do
-        let rules = runBuild flagValues
-        if null targets then rules else want targets >> withoutActions rules
+    shakeArgs defaultShakeOptions runBuild
 
 newtype ModuleDependencies = ModuleDependencies String deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
 type instance RuleResult ModuleDependencies = [String]
 
-newtype OcamlEnv = OcamlEnv () deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
-type instance RuleResult OcamlEnv = [(String, String)]
-
 newtype NonFileModules = NonFileModules () deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
 type instance RuleResult NonFileModules = [String]
 
-opam_libraries = ["zarith", "extlib", "camlzip", "lablgtk", "lablgtk-extras", "conf-gnomecanvas"]
 ocamlfind_libraries = ["zarith", "extlib", "camlzip", "goblint-cil"]
 
-runBuild :: [Flags] -> Rules ()
-runBuild flags = do
-    
-    addOracle $ \(OcamlEnv _) -> do
-        let switchFlag = listToMaybe [x | Opam x <- flags]
-        let ocamlFlag = listToMaybe [x | Ocaml x <- flags]
-        let (switch, ocaml) = case (switchFlag, ocamlFlag) of
-                                (Nothing, Nothing) -> ("", "")
-                                (Nothing, Just ocaml) -> ("codehawk-" ++ ocaml, ocaml)
-                                (Just switch, Nothing) -> (switch, defaultOcaml)
-                                (Just switch, Just ocaml) -> (switch, ocaml)
-        if switch == "" then return [] else do
-        cmd_ "opam init --no-setup --disable-sandboxing --bare"
-        Stdout existingSwitches <- cmd "opam switch list -s"
-        if not (switch `isInfixOf` existingSwitches) then do
-            cmd_ "opam switch create" switch ocaml "--no-switch"
-        else return ()
-        cmd_ "opam install ocamlfind " (intercalate " " opam_libraries) " -y" ("--switch=" ++ switch)
-        Stdout sExp <- cmd "opam config env" ("--switch=" ++ switch) "--set-switch --sexp"
-        return $ parseSExp sExp
-
+runBuild :: Rules ()
+runBuild = do
     originalToMap <- liftIO $ unsafeInterleaveIO $ do
-        mlis <- getDirectoryFilesIO "" ["CH_extern//*.mli", "CH//*.mli", "CHC//*.mli", "CHB//*.mli", "CHJ//*.mli", "CH_gui//*.mli"]
-        mls <- getDirectoryFilesIO "" ["CH_extern//*.ml", "CH//*.ml", "CHC//*.ml", "CHB//*.ml", "CHJ//*.ml", "CH_gui//*.ml"]
+        mlis <- getDirectoryFilesIO "" ["CH//*.mli", "CHC//*.mli", "CHB//*.mli", "CHJ//*.mli", "CH_gui//*.mli"]
+        mls <- getDirectoryFilesIO "" ["CH//*.ml", "CHC//*.ml", "CHB//*.ml", "CHJ//*.ml", "CH_gui//*.ml"]
         let inputs = ignoredOriginalFiles $ mlis ++ mls
         let pairs = [(takeFileName file, file) | file <- inputs]
         return $ Map.fromList pairs
@@ -124,12 +78,6 @@ runBuild flags = do
         removeFilesAfter "_build" ["//*"]
         removeFilesAfter "_docs_private" ["//*"]
         removeFilesAfter "_docs_public" ["//*"]
-
-    phony "update" $ do
-        envMembers <- askOracle $ OcamlEnv ()
-        let env = [AddEnv x y | (x, y) <- envMembers]
-        cmd_ env "opam update -y"
-        cmd_ env "opam upgrade -y"
 
     "_build/*.mli" %> \out ->
         case Map.lookup (dropDirectory1 out) originalToMap of
@@ -142,9 +90,7 @@ runBuild flags = do
 
     getModuleDeps <- addOracleCache $ \(ModuleDependencies file) -> do
         need [file]
-        envMembers <- askOracle $ OcamlEnv ()
-        let env = [AddEnv x y | (x, y) <- envMembers]
-        Stdout dependencies_str <- cmd env "ocamldep -modules" file
+        Stdout dependencies_str <- cmd "ocamldep -modules" file
         let [(_, modules)] = parseMakefile dependencies_str
         libraryModules <- getLibraryModules $ NonFileModules ()
         return $ dropLibraryModules libraryModules modules
@@ -153,9 +99,7 @@ runBuild flags = do
         let mli = out -<.> "mli"
         mli_dependencies <- getModuleDeps $ ModuleDependencies mli
         need $ [mli] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
-        envMembers <- askOracle $ OcamlEnv ()
-        let env = [AddEnv x y | (x, y) <- envMembers]
-        cmd_ (Cwd "_build") env "ocamlfind ocamlopt -opaque -package " (intercalate "," ocamlfind_libraries) (takeFileName mli) "-o" (takeFileName out)
+        cmd_ (Cwd "_build") "ocamlfind ocamlopt -opaque -package " (intercalate "," ocamlfind_libraries) (takeFileName mli) "-o" (takeFileName out)
 
     "_build/*.ml" %> \out ->
         case Map.lookup (dropDirectory1 out) originalToMap of
@@ -166,34 +110,25 @@ runBuild flags = do
         let ml = out -<.> "ml"
         mli_dependencies <- getModuleDeps $ ModuleDependencies ml
         need $ [ml, out -<.> "cmi"] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
-        envMembers <- askOracle $ OcamlEnv ()
-        let env = [AddEnv x y | (x, y) <- envMembers]
-        cmd_ (Cwd "_build") env "ocamlfind ocamlopt -c -package" (intercalate "," ocamlfind_libraries) (takeFileName ml) "-o" (takeFileName out)
+        cmd_ (Cwd "_build") "ocamlfind ocamlopt -c -package" (intercalate "," ocamlfind_libraries) (takeFileName ml) "-o" (takeFileName out)
 
     "_build/*.cmo" %> \out -> do
         let ml = out -<.> "ml"
         mli_dependencies <- getModuleDeps $ ModuleDependencies ml
         need $ [ml, out -<.> "cmi"] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
-        envMembers <- askOracle $ OcamlEnv ()
-        let env = [AddEnv x y | (x, y) <- envMembers]
-        cmd_ (Cwd "_build") env "ocamlfind ocamlc -c -package" (intercalate "," ocamlfind_libraries) (takeFileName ml) "-o" (takeFileName out)
+        cmd_ (Cwd "_build") "ocamlfind ocamlc -c -package" (intercalate "," ocamlfind_libraries) (takeFileName ml) "-o" (takeFileName out)
 
     let implDeps file alreadySeen stack ext = do
         let fileAsCmx = "_build" </> takeFileName file -<.> ext
-        --putError $ "file: " ++ fileAsCmx
-        --putError $ "already seen: " ++ (intercalate " " alreadySeen)
         if elem file stack then do
             error $ "Cycle detected: " ++ (intercalate " " stack) ++ " " ++ file
         else if elem fileAsCmx alreadySeen then do
-            --putError "skipping"
             return alreadySeen
         else do
-            --putError "continuing"
             modules <- getModuleDeps $ ModuleDependencies ("_build" </> takeFileName file -<.> "ml")
             let modules2 = ["_build" </> moduleToFile modul -<.> ext | modul <- modules]
             let unseen = filter (\dep -> not $ elem (dep -<.> ext) alreadySeen) modules2
             let depsMl = ["_build" </> dep -<.> "ml" | dep <- unseen]
-            --putError $ "Unseen: " ++ intercalate " " depsMl
             let mystack = stack ++ [file]
             recursiveDeps <- foldM (\seen newfile -> do
                 recDeps <- implDeps newfile seen mystack ext
@@ -209,9 +144,7 @@ runBuild flags = do
             let objs = [dep -<.> "o" | dep <- deps]
             let reldeps = [takeFileName dep | dep <- deps]
             need $ [main_cmx] ++ deps ++ objs
-            envMembers <- askOracle $ OcamlEnv ()
-            let env = [AddEnv x y | (x, y) <- envMembers]
-            cmd_ (Cwd "_build") env "ocamlfind ocamlopt -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out
+            cmd_ (Cwd "_build") "ocamlfind ocamlopt -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out
         return ()
         "_bin" </> name -<.> "byte" %> \out -> do
             let main_ml = "_build" </> main_file -<.> "ml"
@@ -220,9 +153,7 @@ runBuild flags = do
             deps <- implDeps main_ml [] [] "cmo"
             let reldeps = [takeFileName dep | dep <- deps]
             need $ [main_cmx] ++ deps
-            envMembers <- askOracle $ OcamlEnv ()
-            let env = [AddEnv x y | (x, y) <- envMembers]
-            cmd_ (Cwd "_build") env "ocamlfind ocamlc -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out
+            cmd_ (Cwd "_build") "ocamlfind ocamlc -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out
         return ()
 
     let exes = [("chx86_make_lib_summary", "bCHXMakeLibSummary.ml"),
@@ -286,13 +217,11 @@ runBuild flags = do
         need (full_mls ++ full_mlis ++ full_cmis ++ full_cmxs)
         let rel_mls = [file -<.> "ml" | file <- relFiles]
         let rel_mlis = [file -<.> "mli" | file <- relFiles]
-        envMembers <- askOracle $ OcamlEnv ()
-        let env = [AddEnv x y | (x, y) <- envMembers]
         liftIO $ removeFiles dir ["//*"]
         writeFile' (dir </> ".file") "q"
         let filesToDoc = if private then rel_mls else (rel_mls ++ rel_mlis)
         let workaround = [file | file <- filesToDoc, file /= "cCHReturnsite.ml", file /= "cCHCallsite.ml"]
-        cmd_ (Cwd "_build") env "ocamlfind ocamldoc -keep-code -html -d " ("../" ++ dir) "-package" (intercalate "," $ ocamlfind_libraries ++ ["str","unix"]) workaround
+        cmd_ (Cwd "_build") "ocamlfind ocamldoc -keep-code -html -d " ("../" ++ dir) "-package" (intercalate "," $ ocamlfind_libraries ++ ["str","unix"]) workaround
     
     phony "docs_public" $ makeDocs "_docs_public" False
     phony "docs_private" $ makeDocs "_docs_private" True
