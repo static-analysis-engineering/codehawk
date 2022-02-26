@@ -24,11 +24,8 @@ ignoredOriginalFiles :: [String] -> [String]
 ignoredOriginalFiles inList =
     let nonBuild = filter (\file -> not $ elem "_build" $ splitDirectories file) inList in
     let nonChCil = filter (\file -> not $ elem "cchcil" $ splitDirectories file) nonBuild in
-    let nonCil = filter (\file -> not $ elem "cil-1.7.3-develop" $ splitDirectories file) nonChCil in
-    let nonparser = filter (\file -> not $ elem "chifparser" $ splitDirectories file) nonCil in
-    let nonextlib = filter (\file -> not $ elem "extlib" $ splitDirectories file) nonparser in
-    let noncamlzip = filter (\file -> not $ elem "camlzip" $ splitDirectories file) nonextlib in
-    noncamlzip
+    let nonparser = filter (\file -> not $ elem "chifparser" $ splitDirectories file) nonChCil in
+    nonparser
 
 moduleToFile :: String -> String
 moduleToFile modul =
@@ -91,7 +88,7 @@ newtype NonFileModules = NonFileModules () deriving (Show,Typeable,Eq,Hashable,B
 type instance RuleResult NonFileModules = [String]
 
 opam_libraries = ["zarith", "extlib", "camlzip", "lablgtk", "lablgtk-extras", "conf-gnomecanvas"]
-ocamlfind_libraries = ["zarith", "extlib", "camlzip", "lablgtk2", "lablgtk2-extras", "lablgtk2.gnomecanvas"]
+ocamlfind_libraries = ["zarith", "extlib", "camlzip", "goblint-cil"]
 
 runBuild :: [Flags] -> Rules ()
 runBuild flags = do
@@ -236,8 +233,6 @@ runBuild flags = do
                 ("chx86_inspect_summaries", "bCHXInspectSummaries.ml"),
                 ("xanalyzer", "bCHXBinaryAnalyzer.ml"),
                 ("canalyzer", "cCHXCAnalyzer.ml"),
-                ("chc_gui", "chc_maingui.ml"),
-                ("chx86_gui", "bch_maingui.ml"),
                 ("classinvariants", "jCHXClassInvariants.ml"),
                 ("translateclass", "jCHXTranslateClass.ml"),
                 ("usertemplate", "jCHXTemplate.ml"),
@@ -250,8 +245,7 @@ runBuild flags = do
                 ("features", "jCHXExtractFeatures.ml"),
                 ("exprfeatures", "jCHXExtractExprFeatures.ml"),
                 ("poly", "jCHXClassPoly.ml"),
-                ("pattern", "jCHXCollectPatterns.ml"),
-                ("jch_gui", "jCHXStacGui.ml")]
+                ("pattern", "jCHXCollectPatterns.ml")]
 
     forM_ exes (\pair -> do
         let (name, main_file) = pair
