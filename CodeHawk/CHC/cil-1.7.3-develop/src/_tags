@@ -1,4 +1,0 @@
-<ext> or <ext/*> or <frontc> or <ocamlutil> or </opt/local/lib/ocaml/site-lib/zarith>: include
-
-<feature.ml>: package(findlib)
-<main.{byte,native}>: use_unix, use_str, use_dynlink, use_cil, linkall, package(findlib)
