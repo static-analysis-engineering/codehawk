@@ -69,8 +69,8 @@ cd codehawk/CodeHawk
 4. Build CodeHawk
 
 The top-level dependencies needed to build CodeHawk are zlib for compression, the shake build
-system, and the ocaml package manager (opam). The relevant opam packages are `extlib` and
-`camlzip`.
+system, and the ocaml package manager (opam). In addition to the commands below, use the `opam`
+setup above to get the dependencies.
 
 ### Generic Unix
 
@@ -84,7 +84,7 @@ sh <(curl -sL https://raw.githubusercontent.com/ocaml/opam/master/shell/install.
 stack install shake
 git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
-stack runghc Shakefile.hs -- --opam
+stack runghc Shakefile.hs
 ```
 
 ### Arch Linux
@@ -93,7 +93,7 @@ stack runghc Shakefile.hs -- --opam
 sudo pacman -Syu opam haskell-shake lablgtk2
 git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
-shake --opam
+shake
 ```
 
 ### Fedora
@@ -102,7 +102,7 @@ shake --opam
 sudo yum install opam shake ghc-compiler ghc-shake-devel diffutils zlib-devel ocaml-lablgtk-devel -y
 git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
-shake --opam
+shake
 ```
 
 ### Homebrew
@@ -116,7 +116,7 @@ cabal install --lib shake
 cabal install --lib unordered-containers
 git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
-~/.cabal/bin/shake --opam
+~/.cabal/bin/shake
 ```
 
 ### MacPorts
@@ -130,7 +130,7 @@ cabal install --lib shake
 cabal install --lib unordered-containers
 git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
-~/.cabal/bin/shake --opam
+~/.cabal/bin/shake
 ```
 
 ### Ubuntu 19.04 or later, Debian Buster or later
@@ -142,7 +142,7 @@ cabal update
 cabal install shake
 git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
-~/.cabal/bin/shake --opam
+~/.cabal/bin/shake
 ```
 
 ### Ubuntu 16.04 or later
@@ -157,7 +157,7 @@ cabal update
 cabal install shake
 git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
-~/.cabal/bin/shake --opam
+~/.cabal/bin/shake
 ```
 
 ### Manually configured opam
