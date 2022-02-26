@@ -137,7 +137,7 @@ object (self)
     if loc.byte = -1 && loc.line = -1 then
       (-1)
     else
-      let filename = get_location_filename !CHFileUtil.project_path_prefix loc.fpath loc.file in
+      let filename = get_location_filename !CHFileUtil.project_path_prefix "" loc.file in
       let args = [ self#index_filename filename ; loc.byte ; loc.line ] in
       location_table#add ([],args)
 

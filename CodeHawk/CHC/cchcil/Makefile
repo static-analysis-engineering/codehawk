@@ -1,22 +1,15 @@
 CODEHAWK = ../..
-CIL = ../cil-1.7.3-develop
+CIL = $(shell ocamlfind query goblint-cil)
 ZARITHLIB = $(shell ocamlfind query zarith)
 
 
 CHLIB  = $(CODEHAWK)/CH/chlib
 EXTLIB = $(shell ocamlfind query extlib)
-CILSRC = $(CIL)/src
-CILFRONTC = $(CIL)/_build/src/frontc
-CILUTIL = $(CIL)/_build/src/ocamlutil
-CILLIB = $(CIL)/_build/src
 
 CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(ZARITHLIB) \
-	-I $(CILUTIL) \
-	-I $(CILSRC) \
-	-I $(CILFRONTC) \
-	-I $(EXTLIB) \
-	-I $(CILLIB)
+	-I $(CIL) \
+	-I $(EXTLIB)
 
 CAMLLINK := ocamlopt  \
 	$(EXTLIB)/extLib.cmxa \
@@ -63,10 +56,10 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-parse: 	$(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CILLIB)/cil.cmxa $(EXTLIB)
-	$(CAMLLINK) -I $(ZARITHLIB) -o parseFile str.cmxa unix.cmxa $(ZARITHLIB)/zarith.cmxa $(CILLIB)/cil.cmxa $(CHLIB)/chlib.cmxa $(OBJECTS)
+parse: 	$(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/cil.cmxa $(EXTLIB)
+	$(CAMLLINK) -I $(ZARITHLIB) -o parseFile str.cmxa unix.cmxa $(ZARITHLIB)/zarith.cmxa $(CIL)/cil.cmxa $(CHLIB)/chlib.cmxa $(OBJECTS)
 
-cchcil: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CILLIB)/cil.cmxa $(EXTLIB)
+cchcil: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/cil.cmxa $(EXTLIB)
 	$(CAMLLINKLIB) -a -o cchcil.cmxa $(OBJECTS)
 
 

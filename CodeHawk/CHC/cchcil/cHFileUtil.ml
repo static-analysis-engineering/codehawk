@@ -182,4 +182,4 @@ let get_location_filename project_path_prefix locpath locfile =
 	normalize_path (substitute_prefix absoluteName)
       else
 	normalize_path absoluteName in
-  get_filename locpath locfile
+  get_filename (normalize_path locpath) (normalize_path locfile)
