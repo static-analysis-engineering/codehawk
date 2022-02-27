@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,27 +30,23 @@
 (* cil *)
 open Cil
    
-class type ['a] sumtype_string_converter_int =
-  object
-    method to_string: 'a -> string
-    method from_string: string -> 'a
-  end
+(* chutil *)
+open CHSumTypeSerializer
 
+val ikind_mfts: ikind mfts_int
+val fkind_mfts: fkind mfts_int
+val storage_mfts: storage mfts_int
+val unop_mfts: unop mfts_int
+val binop_mfts: binop mfts_int
 
-val ikind_serializer: ikind sumtype_string_converter_int
-val fkind_serializer: fkind sumtype_string_converter_int
-val unop_serializer: unop sumtype_string_converter_int
-val binop_serializer: binop sumtype_string_converter_int
+val typ_mcts: typ mfts_int
+val exp_mcts: exp mfts_int
+val constant_mcts: constant mfts_int
+val offset_mcts: offset mfts_int
 
-val storage_serializer: storage sumtype_string_converter_int
+val attrparam_mcts: attrparam mfts_int
+val typsig_mcts: typsig mfts_int
 
-val exp_serializer: exp sumtype_string_converter_int
-val typ_serializer: typ sumtype_string_converter_int
-val attrparam_serializer: attrparam sumtype_string_converter_int
-val constant_serializer: constant sumtype_string_converter_int
-val offset_serializer: offset sumtype_string_converter_int
-val typsig_serializer: typsig sumtype_string_converter_int
-
-val label_serializer: label sumtype_string_converter_int
-val stmtkind_serializer: stmtkind sumtype_string_converter_int
-val instr_serializer: instr sumtype_string_converter_int
+val label_mcts: label mfts_int
+val stmtkind_mcts: stmtkind mfts_int
+val instr_mcts: instr mfts_int
