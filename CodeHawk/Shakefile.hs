@@ -43,6 +43,9 @@ copyFileChangedWithAnnotation oldPath newPath = do
     let newContents = "# 1 \"" ++ oldPath ++ "\"\n" ++ contents
     writeFileChanged newPath newContents
 
+data Flags = Warnings deriving Eq
+flagDefs = [Option "" ["warnings"] (NoArg $ Right Warnings) "Fail on warnings"]
+
 main :: IO ()
 main = do
     ver <- getHashedShakeVersion ["Shakefile.hs"]
@@ -53,7 +56,9 @@ main = do
         shakeVersion = ver,
         shakeThreads = 0 -- Use the number of cpus
     }
-    shakeArgs defaultShakeOptions runBuild
+    shakeArgsWith defaultShakeOptions flagDefs $ \flagValues targets -> return $ Just $ do
+        let rules = runBuild flagValues
+        if null targets then rules else want targets >> withoutActions rules
 
 newtype ModuleDependencies = ModuleDependencies String deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
 type instance RuleResult ModuleDependencies = [String]
@@ -61,10 +66,17 @@ type instance RuleResult ModuleDependencies = [String]
 newtype NonFileModules = NonFileModules () deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
 type instance RuleResult NonFileModules = [String]
 
+newtype ExtraFlags = ExtraFlags () deriving (Show,Typeable,Eq,Hashable,Binary,NFData)
+type instance RuleResult ExtraFlags = [String]
+
 ocamlfind_libraries = ["zarith", "extlib", "camlzip", "goblint-cil"]
 
-runBuild :: Rules ()
-runBuild = do
+runBuild :: [Flags] -> Rules ()
+runBuild flags = do
+
+    addOracle $ \(ExtraFlags _) -> do
+        return $ if Warnings `elem` flags then ["-warn-error", "A"] else []
+
     originalToMap <- liftIO $ unsafeInterleaveIO $ do
         mlis <- getDirectoryFilesIO "" ["CH//*.mli", "CHC//*.mli", "CHB//*.mli", "CHJ//*.mli", "CH_gui//*.mli"]
         mls <- getDirectoryFilesIO "" ["CH//*.ml", "CHC//*.ml", "CHB//*.ml", "CHJ//*.ml", "CH_gui//*.ml"]
@@ -99,7 +111,7 @@ runBuild = do
         let mli = out -<.> "mli"
         mli_dependencies <- getModuleDeps $ ModuleDependencies mli
         need $ [mli] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
-        cmd_ (Cwd "_build") "ocamlfind ocamlopt -opaque -package " (intercalate "," ocamlfind_libraries) (takeFileName mli) "-o" (takeFileName out)
+        cmd_ (Cwd "_build") "ocamlfind ocamlopt -color=always -opaque -package " (intercalate "," ocamlfind_libraries) (takeFileName mli) "-o" (takeFileName out)
 
     "_build/*.ml" %> \out ->
         case Map.lookup (dropDirectory1 out) originalToMap of
@@ -110,13 +122,15 @@ runBuild = do
         let ml = out -<.> "ml"
         mli_dependencies <- getModuleDeps $ ModuleDependencies ml
         need $ [ml, out -<.> "cmi"] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
-        cmd_ (Cwd "_build") "ocamlfind ocamlopt -c -package" (intercalate "," ocamlfind_libraries) (takeFileName ml) "-o" (takeFileName out)
+        extra_flags <- askOracle $ ExtraFlags ()
+        cmd_ (Cwd "_build") "ocamlfind ocamlopt -color=always -c -package" (intercalate "," ocamlfind_libraries) (takeFileName ml) "-o" (takeFileName out) extra_flags
 
     "_build/*.cmo" %> \out -> do
         let ml = out -<.> "ml"
         mli_dependencies <- getModuleDeps $ ModuleDependencies ml
         need $ [ml, out -<.> "cmi"] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
-        cmd_ (Cwd "_build") "ocamlfind ocamlc -c -package" (intercalate "," ocamlfind_libraries) (takeFileName ml) "-o" (takeFileName out)
+        extra_flags <- askOracle $ ExtraFlags ()
+        cmd_ (Cwd "_build") "ocamlfind ocamlc -color=always -c -package" (intercalate "," ocamlfind_libraries) (takeFileName ml) "-o" (takeFileName out) extra_flags
 
     let implDeps file alreadySeen stack ext = do
         let fileAsCmx = "_build" </> takeFileName file -<.> ext
@@ -144,7 +158,8 @@ runBuild = do
             let objs = [dep -<.> "o" | dep <- deps]
             let reldeps = [takeFileName dep | dep <- deps]
             need $ [main_cmx] ++ deps ++ objs
-            cmd_ (Cwd "_build") "ocamlfind ocamlopt -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out
+            extra_flags <- askOracle $ ExtraFlags ()
+            cmd_ (Cwd "_build") "ocamlfind ocamlopt -color=always -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out extra_flags
         return ()
         "_bin" </> name -<.> "byte" %> \out -> do
             let main_ml = "_build" </> main_file -<.> "ml"
@@ -153,7 +168,8 @@ runBuild = do
             deps <- implDeps main_ml [] [] "cmo"
             let reldeps = [takeFileName dep | dep <- deps]
             need $ [main_cmx] ++ deps
-            cmd_ (Cwd "_build") "ocamlfind ocamlc -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out
+            extra_flags <- askOracle $ ExtraFlags ()
+            cmd_ (Cwd "_build") "ocamlfind ocamlc -color=always -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out extra_flags
         return ()
 
     let exes = [("chx86_make_lib_summary", "bCHXMakeLibSummary.ml"),
