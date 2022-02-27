@@ -1,51 +1,46 @@
 CODEHAWK = ../..
 CIL = $(shell ocamlfind query goblint-cil)
 ZARITHLIB = $(shell ocamlfind query zarith)
-
+EXTLIB = $(shell ocamlfind query extlib)
 
 CHLIB  = $(CODEHAWK)/CH/chlib
-EXTLIB = $(shell ocamlfind query extlib)
+CHUTIL = $(CODEHAWK)/CH/chutil
 
 CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(ZARITHLIB) \
 	-I $(CIL) \
-	-I $(EXTLIB)
+	-I $(EXTLIB) \
+	-I $(CHLIB)/cmi \
+	-I $(CHUTIL)/cmi \
 
 CAMLLINK := ocamlopt  \
+	-I $(ZARITHLIB) \
 	$(EXTLIB)/extLib.cmxa \
+	$(ZARITHLIB)/zarith.cmxa \
+	$(CHLIB)/chlib.cmxa \
+	$(CHUTIL)/chutil.cmxa \
 
 CAMLLINKLIB := ocamlopt  \
 
 MLIS := \
-	cHPrettyPrint \
-	cHUtilities \
-	cHFileUtil \
-	cHCMaps \
-	cHXml \
-	cHCIndexTable \
-	cHCStringIndexTable \
-	cHSumTypeSerializer \
+	cHCilFileUtil \
 	cHCilTypes \
-	cHDictionary \
-	cHDeclarations \
-	cHFunDeclarations \
-	cHWriteXml
+	cHCilSumTypeSerializer \
+	cHCilDictionary \
+	cHCilDeclarations \
+	cHCilFunDeclarations \
+	cHCilWriteXml \
+	cCHXParseFile \
 
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
 SOURCES := \
-	cHPrettyPrint \
-	cHUtilities \
-	cHFileUtil \
-	cHCMaps \
-	cHXml \
-	cHCIndexTable \
-	cHCStringIndexTable \
-	cHSumTypeSerializer \
-	cHDictionary \
-	cHDeclarations \
-	cHFunDeclarations \
-	cHWriteXml \
+	cHCilFileUtil \
+	cHCilSumTypeSerializer \
+	cHCilDictionary \
+	cHCilDeclarations \
+	cHCilFunDeclarations \
+	cHCilWriteXml \
 	cCHXParseFile \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
@@ -56,10 +51,10 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-parse: 	$(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/cil.cmxa $(EXTLIB)
-	$(CAMLLINK) -I $(ZARITHLIB) -o parseFile str.cmxa unix.cmxa $(ZARITHLIB)/zarith.cmxa $(CIL)/cil.cmxa $(CHLIB)/chlib.cmxa $(OBJECTS)
+parse: 	$(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/cil.cmxa $(EXTLIB) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa
+	$(CAMLLINK) -I $(ZARITHLIB) -o parseFile str.cmxa unix.cmxa $(ZARITHLIB)/zarith.cmxa $(CIL)/cil.cmxa $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(OBJECTS)
 
-cchcil: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/cil.cmxa $(EXTLIB)
+cchcil: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/cil.cmxa $(EXTLIB) $(CHUTIL)/chutil.cmxa
 	$(CAMLLINKLIB) -a -o cchcil.cmxa $(OBJECTS)
 
 
