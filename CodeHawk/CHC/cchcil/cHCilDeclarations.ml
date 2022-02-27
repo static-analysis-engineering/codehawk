@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,23 +30,25 @@
 (* cil *)
 open Cil
 
+(* chlib *)
+open CHPretty
+
+(* chutil *)
+open CHIndexTable
+open CHStringIndexTable
+open CHXmlDocument
+
 (* chcil *)
 open CHCilTypes
-open CHCIndexTable   
-open CHDictionary
-open CHFileUtil
-open CHPrettyPrint   
-open CHCStringIndexTable
-open CHSumTypeSerializer
-open CHUtilities
-open CHXml
-      
+open CHCilDictionary
+open CHCilFileUtil
+open CHCilSumTypeSerializer
 
-let cd = CHDictionary.cdictionary
+let cd = CHCilDictionary.cildictionary
 
 let ibool b = if b then 1 else 0
 
-class cdeclarations_t:cdeclarations_int =
+class cildeclarations_t: cildeclarations_int =
 object (self)
 
   val varinfo_table = mk_index_table "varinfo-table"
@@ -72,112 +76,136 @@ object (self)
       enuminfo_table
     ]
 
-  method index_init_opt (iinfo:init option) =
+  method index_init_opt (iinfo: init option) =
     match  iinfo with
     | None -> (-1)
     | Some init -> self#index_init init
 
   method index_init (init:init) =
     let (tags,args) = match init with
-      | SingleInit exp -> ([ "single" ], [ cd#index_exp exp ])
-      | CompoundInit (typ,olist) when (List.length olist) > 5000 ->
-         ([ "compound" ],[ (cd#index_typ typ) ; self#index_offset_init (List.hd olist) ])
+      | SingleInit exp -> (["single"], [cd#index_exp exp])
+      | CompoundInit (typ, olist) when (List.length olist) > 5000 ->
+         (["compound"],
+          [(cd#index_typ typ); self#index_offset_init (List.hd olist)])
       | CompoundInit (typ, olist) ->
-         ([ "compound" ],
+         (["compound"],
           (cd#index_typ typ) :: (List.map self#index_offset_init olist)) in
     initinfo_table#add (tags,args)
                                         
-  method index_offset_init (oi:(offset * init)) =
-    let (offset,init) = oi in
-    let args = [ cd#index_offset offset ; self#index_init init ] in
-    offset_init_table#add ([],args)
+  method index_offset_init (oi: (offset * init)) =
+    let (offset, init) = oi in
+    let args = [cd#index_offset offset; self#index_init init] in
+    offset_init_table#add ([], args)
     
-  method index_varinfo (vinfo:varinfo) =
+  method index_varinfo (vinfo: varinfo) =
     let vinit_ix = match vinfo.vinit.init with
-      | Some i -> [ self#index_init i ]
+      | Some i -> [self#index_init i]
       | _ -> [] in
-    let tags = [ vinfo.vname; storage_serializer#to_string vinfo.vstorage ] in
-    let args = [ vinfo.vid; cd#index_typ vinfo.vtype; cd#index_attributes vinfo.vattr;
-                 ibool vinfo.vglob ; ibool vinfo.vinline; self#index_location vinfo.vdecl;
-                 ibool vinfo.vaddrof ; 0 ] @ vinit_ix in
+    let tags = [vinfo.vname; storage_mfts#ts vinfo.vstorage] in
+    let args =
+      [vinfo.vid;
+       cd#index_typ vinfo.vtype;
+       cd#index_attributes vinfo.vattr;
+       ibool vinfo.vglob;
+       ibool vinfo.vinline;
+       self#index_location vinfo.vdecl;
+       ibool vinfo.vaddrof;
+       0] @ vinit_ix in
     varinfo_table#add (tags,args)
 
-  method index_fieldinfo (finfo:fieldinfo) =
-    let tags = [ finfo.fname ] in
-    let args = [ finfo.fcomp.ckey; cd#index_typ finfo.ftype;
-                 (match finfo.fbitfield with Some b -> b | _ -> -1);
-                 cd#index_attributes finfo.fattr ;
-                 self#index_location finfo.floc ] in
-    fieldinfo_table#add (tags,args)
+  method index_fieldinfo (finfo: fieldinfo) =
+    let tags = [finfo.fname] in
+    let args =
+      [finfo.fcomp.ckey;
+       cd#index_typ finfo.ftype;
+       (match finfo.fbitfield with Some b -> b | _ -> -1);
+       cd#index_attributes finfo.fattr;
+       self#index_location finfo.floc] in
+    fieldinfo_table#add (tags, args)
 
-  method index_compinfo (cinfo:compinfo) =
-    let tags = [ cinfo.cname ] in
-    let args = [ cinfo.ckey; ibool cinfo.cstruct; cd#index_attributes cinfo.cattr ] @
-                 (List.map self#index_fieldinfo cinfo.cfields) in
-    compinfo_table#add (tags,args)
+  method index_compinfo (cinfo: compinfo) =
+    let tags = [cinfo.cname] in
+    let args =
+      [cinfo.ckey;
+       ibool cinfo.cstruct;
+       cd#index_attributes cinfo.cattr]
+      @ (List.map self#index_fieldinfo cinfo.cfields) in
+    compinfo_table#add (tags, args)
 
-  method index_enumitem (eitem:enumitem) =
+  method index_enumitem (eitem: enumitem) =
     let (name,exp,loc) = eitem in
-    let tags = [ name ] in
-    let args = [ cd#index_exp exp; self#index_location loc ] in
-    enumitem_table#add (tags,args)
+    let tags = [name] in
+    let args = [cd#index_exp exp; self#index_location loc] in
+    enumitem_table#add (tags, args)
 
-  method index_enuminfo (einfo:enuminfo) =
-    let tags = [ einfo.ename; ikind_serializer#to_string einfo.ekind ] in
-    let args = [ cd#index_attributes einfo.eattr ] @
-                 (List.map self#index_enumitem einfo.eitems) in
+  method index_enuminfo (einfo: enuminfo) =
+    let tags = [einfo.ename; ikind_mfts#ts einfo.ekind] in
+    let args =
+      [cd#index_attributes einfo.eattr]
+      @ (List.map self#index_enumitem einfo.eitems) in
     enuminfo_table#add (tags,args)
 
-  method index_typeinfo (tinfo:typeinfo) =
-    let tags = [ tinfo.tname ] in
-    let args = [ cd#index_typ tinfo.ttype ] in
+  method index_typeinfo (tinfo: typeinfo) =
+    let tags = [tinfo.tname] in
+    let args = [cd#index_typ tinfo.ttype] in
     typeinfo_table#add (tags,args)
 
-  method index_location (loc:location) =
+  method index_location (loc: location) =
     if loc.byte = -1 && loc.line = -1 then
       (-1)
     else
-      let filename = get_location_filename !CHFileUtil.project_path_prefix "" loc.file in
-      let args = [ self#index_filename filename ; loc.byte ; loc.line ] in
+      let filename =
+        get_location_filename !CHCilFileUtil.project_path_prefix "" loc.file in
+      let args = [self#index_filename filename; loc.byte; loc.line] in
       location_table#add ([],args)
 
   method index_filename (f:string) = string_table#add f
 
-  method write_xml_varinfo ?(tag="ivinfo") (node:xml_element_int) (vinfo:varinfo) =
+  method write_xml_varinfo
+           ?(tag="ivinfo") (node: xml_element_int) (vinfo: varinfo) =
     node#setIntAttribute tag (self#index_varinfo vinfo)
 
-  method write_xml_init ?(tag="iinit") (node:xml_element_int) (init:init) =
+  method write_xml_init ?(tag="iinit") (node: xml_element_int) (init: init) =
     node#setIntAttribute tag (self#index_init init)
 
-  method write_xml_fieldinfo ?(tag="ifinfo") (node:xml_element_int) (finfo:fieldinfo) =
+  method write_xml_fieldinfo
+           ?(tag="ifinfo") (node: xml_element_int) (finfo: fieldinfo) =
     node#setIntAttribute tag (self#index_fieldinfo finfo)
 
-  method write_xml_compinfo ?(tag="icinfo") (node:xml_element_int) (cinfo:compinfo) =
+  method write_xml_compinfo
+           ?(tag="icinfo") (node: xml_element_int) (cinfo: compinfo) =
     node#setIntAttribute tag (self#index_compinfo cinfo)
 
-  method write_xml_enumitem ?(tag="ieitem") (node:xml_element_int) (eitem:enumitem) =
+  method write_xml_enumitem
+           ?(tag="ieitem") (node: xml_element_int) (eitem: enumitem) =
     node#setIntAttribute tag (self#index_enumitem eitem)
 
-  method write_xml_enuminfo ?(tag="ieinfo") (node:xml_element_int) (einfo:enuminfo) =
+  method write_xml_enuminfo
+           ?(tag="ieinfo") (node: xml_element_int) (einfo: enuminfo) =
     node#setIntAttribute tag (self#index_enuminfo einfo)
 
-  method write_xml_typeinfo ?(tag="itinfo") (node:xml_element_int) (tinfo:typeinfo) =
+  method write_xml_typeinfo
+           ?(tag="itinfo") (node: xml_element_int) (tinfo: typeinfo) =
     node#setIntAttribute tag (self#index_typeinfo tinfo)
 
-  method write_xml_location ?(tag="iloc") (node:xml_element_int) (loc:location) =
+  method write_xml_location
+           ?(tag="iloc") (node: xml_element_int) (loc: location) =
     node#setIntAttribute tag (self#index_location loc)
 
-  method write_xml (node:xml_element_int) =
+  method write_xml (node: xml_element_int) =
     let snode = xmlElement string_table#get_name in
     begin
       string_table#write_xml snode ;
       node#appendChildren
         (List.map (fun t ->
              let tnode = xmlElement t#get_name in
-             begin t#write_xml tnode ; tnode end) tables) ;
-      node#appendChildren [ snode ]
+             begin
+               t#write_xml tnode;
+               tnode
+             end) tables);
+      node#appendChildren [snode]
     end
 
 end
 
-let cdeclarations = new cdeclarations_t
+let cildeclarations = new cildeclarations_t
