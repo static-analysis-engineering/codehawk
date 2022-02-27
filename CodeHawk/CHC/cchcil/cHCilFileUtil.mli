@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,17 +27,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* cchcil *)
-open CHPrettyPrint
 
-class type file_output_int =
-object
-  method saveFile: string -> pretty_t -> unit
-  method saveStringToFile: string -> string -> unit
-  method appendToFile: string -> pretty_t -> unit
-end
-
-val file_output: file_output_int
 val project_path_prefix: string ref
-val normalize_path: string -> string
 val get_location_filename: string -> string -> string -> string
