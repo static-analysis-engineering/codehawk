@@ -23,8 +23,7 @@ import System.Directory
 ignoredOriginalFiles :: [String] -> [String]
 ignoredOriginalFiles inList =
     let nonBuild = filter (\file -> not $ elem "_build" $ splitDirectories file) inList in
-    let nonChCil = filter (\file -> not $ elem "cchcil" $ splitDirectories file) nonBuild in
-    let nonparser = filter (\file -> not $ elem "chifparser" $ splitDirectories file) nonChCil in
+    let nonparser = filter (\file -> not $ elem "chifparser" $ splitDirectories file) nonBuild in
     nonparser
 
 moduleToFile :: String -> String
@@ -180,6 +179,7 @@ runBuild flags = do
                 ("chx86_inspect_summaries", "bCHXInspectSummaries.ml"),
                 ("xanalyzer", "bCHXBinaryAnalyzer.ml"),
                 ("canalyzer", "cCHXCAnalyzer.ml"),
+		("parseFile", "cCHXParseFile.ml"),
                 ("classinvariants", "jCHXClassInvariants.ml"),
                 ("translateclass", "jCHXTranslateClass.ml"),
                 ("usertemplate", "jCHXTemplate.ml"),
