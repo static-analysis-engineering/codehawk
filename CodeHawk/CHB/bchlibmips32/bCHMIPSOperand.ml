@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -68,7 +70,8 @@ let mips_operand_mode_to_string = function RD -> "RD" | WR -> "WR" | RW -> "RW"
 
 
 
-class mips_operand_t (kind:mips_operand_kind_t) (mode:mips_operand_mode_t):mips_operand_int =
+class mips_operand_t
+        (kind:mips_operand_kind_t) (mode:mips_operand_mode_t):mips_operand_int =
 object (self:'a)
 
   method get_kind = kind
@@ -78,7 +81,7 @@ object (self:'a)
     match kind with
     | MIPSAbsolute dw -> dw
     | _ ->
-       raise (BCH_failure (LBLOCK [ self#toPretty ; STR " is not an absolute address" ]))
+       raise (BCH_failure (LBLOCK [self#toPretty; STR " is not an absolute address"]))
 
   method to_numerical =
     match kind with
@@ -143,8 +146,10 @@ object (self:'a)
     match kind with
     | MIPSReg r -> r
     | _ ->
-       raise (BCH_failure (LBLOCK [ STR "Operand is not a mips register: " ;
-                                    self#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand is not a mips register: "; self#toPretty]))
 
   method is_read  = match mode with RW | RD -> true | _ -> false
   method is_write = match mode with RW | WR -> true | _ -> false

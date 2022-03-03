@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs, LLC
+   Copyright (c) 2021-2022 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +65,7 @@ open BCHARMTypes
 
 let x2p = xpr_formatter#pr_expr
 
-   (* commonly used constant values *)
+(* commonly used constant values *)
 let e7   = 128
 let e8   = 256
 let e15  = e7 * e8
@@ -244,8 +244,7 @@ object (self:'a)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Operand is not an immediate value: " ;
-                      self#toPretty ]))
+            (LBLOCK [STR "Operand is not an immediate value: " ; self#toPretty]))
 
   method to_address (floc: floc_int): xpr_t =
     match kind with

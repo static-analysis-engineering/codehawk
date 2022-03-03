@@ -83,6 +83,9 @@ open BCHARMAnalysisResults
 open BCHARMAssemblyFunctions
 open BCHDisassembleARM
 
+(* bchlibpower32 *)
+open BCHDisassemblePower
+
 (* bchanalyze *)
 open BCHAnalysisTypes
 open BCHAnalyzeApp
@@ -131,6 +134,7 @@ let speclist =
     ("-thumb", Arg.Unit (fun () -> system_settings#set_thumb),
      "arm executable includes thumb instructions");
     ("-mips", Arg.Unit (fun () -> architecture := "mips"), "mips executable");
+    ("-power", Arg.Unit (fun () -> architecture := "power"), "power executable");
     ("-elf", Arg.Unit (fun () -> fileformat := "elf"), "ELF executable");
     ("-extract", Arg.Unit (fun () -> cmd := "extract"),
      "extract executable content from executable and save in xml format");
@@ -438,6 +442,16 @@ let main () =
            end);
         save_log_files "disassemble";
       end
+
+    else if !cmd = "disassemble" && !architecture = "power" && !fileformat = "elf" then
+      let _ = system_info#set_elf in
+      let _ = system_info#set_power in
+      let _ = system_info#initialize in
+      let _ = pr_debug [STR "Load Power file ..."; NL] in
+      let _ = load_elf_files () in
+      let _ = pr_debug [STR "Disassemble sections ..."; NL] in
+      let _ = disassemble_power_sections () in
+      save_log_files "disassemble"
 
     else if !cmd = "disassemble" && !architecture = "arm" && !fileformat = "elf" then
       let _ = system_info#set_elf in

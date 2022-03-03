@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,8 +51,10 @@ open BCHMIPSDictionary
 open BCHMIPSOpcodeRecords
 open BCHMIPSTypes
 
-class mips_assembly_instruction_t (virtual_address:doubleword_int) (opcode:mips_opcode_t) 
-  (instruction_bytes:string):mips_assembly_instruction_int =
+class mips_assembly_instruction_t
+        (virtual_address:doubleword_int)
+        (opcode:mips_opcode_t) 
+        (instruction_bytes:string):mips_assembly_instruction_int =
 object (self)
   
   val mutable block_entry = false

@@ -7,5 +7,6 @@ make -C bchlibelf
 make -C bchlibx86
 make -C bchlibmips32
 make -C bchlibarm32
+make -C bchlibpower32
 make -C bchanalyze
 make -C bchcmdline
