@@ -369,6 +369,8 @@ type arm_extension_register_replicated_element_t = {
     armxrr_elem_count: int
   }
 
+(* ====================================================== power types === *)
+
 
 type register_t = 
 | SegmentRegister of segment_t
@@ -388,6 +390,7 @@ type register_t =
 | ARMExtensionRegisterElement of arm_extension_register_element_t
 | ARMExtensionRegisterReplicatedElement of
     arm_extension_register_replicated_element_t
+| PowerGPRegister of int
 
 
 (* =============================================================== Doubleword === *)
@@ -401,47 +404,50 @@ type dw_index_t = int
 class type doubleword_int =
 object ('a)
   (* identification *)
-  method index  : dw_index_t
+  method index: dw_index_t
 
   (* comparison *)
-  method equal  : 'a -> bool
+  method equal: 'a -> bool
   method compare: 'a -> int
-  method lt     : 'a -> bool
-  method le     : 'a -> bool
+  method lt: 'a -> bool
+  method le: 'a -> bool
 
   (* conversion *)
-  method to_int                    : int
-  method to_big_int                : big_int
-  method to_numerical              : numerical_t
-  method to_signed_numerical       : numerical_t
+  method to_int: int
+  method to_big_int: big_int
+  method to_numerical: numerical_t
+  method to_signed_numerical: numerical_t
 
-  method to_time_date_string       : string     (* raises Invalid_argument *)
-  method to_char_string            : string option
-  method to_string                 : string     (* convert bytes to characters in a string *)
-  method to_string_fragment        : string     (* idem, but in reverse *)
+  method to_time_date_string: string     (* raises Invalid_argument *)
+  method to_char_string: string option
+  method to_string: string     (* convert bytes to characters in a string *)
+  method to_string_fragment: string     (* idem, but in reverse *)
   method to_fixed_length_hex_string: string
-  method to_hex_string             : string
-  method to_signed_hex_string      : string
+  method to_hex_string: string
+  method to_signed_hex_string: string
 
   (* operations *)
   method unset_highest_bit: 'a
-  method subtract         : 'a  -> 'a      (* raises Invalid_argument *)
-  method subtract_int     : int -> 'a      (* raises Invalid_argument *)
-  method add              : 'a  -> 'a      (* raises Invalid_argument *)
-  method add_int          : int -> 'a      (* raises Invalid_argument *)
-  method multiply_int     : int -> 'a      (* raises Invalid_argument *)
-  method xor              : 'a -> 'a       (* exclusive or *)
+  method subtract: 'a  -> 'a          (* raises Invalid_argument *)
+  method subtract_int: int -> 'a      (* raises Invalid_argument *)
+  method add: 'a  -> 'a               (* raises Invalid_argument *)
+  method add_int: int -> 'a           (* raises Invalid_argument *)
+  method multiply_int: int -> 'a      (* raises Invalid_argument *)
+  method xor: 'a -> 'a                (* exclusive or *)
 
   (* accessors *)
   method get_low: int          (* integer value of low-order 16 bits *)
   method get_high: int         (* integer value of high-order 16 bits *)
   method get_bits_set: int list
   method get_bitval: int -> int    (* value of bit at position (zero-based) *)
+  method get_reverse_bitval: int -> int -> int  (* reverse numbering *)
   method get_segval: int -> int -> int  (* value of subrange of bits, high, low *)
+  method get_reverse_segval:   (* value of subrange with reverse numbering *)
+           int -> int -> int -> int
 
   (* predicates *)
   method is_highest_bit_set: bool
-  method is_nth_bit_set    : int -> bool   (* raises Invalid_argument *)
+  method is_nth_bit_set: int -> bool   (* raises Invalid_argument *)
 
   (* printing *)
   method toPretty: pretty_t
@@ -3008,6 +3014,7 @@ object
   method set_elf: unit
   method set_mips: unit
   method set_arm: unit
+  method set_power: unit
   method set_big_endian: unit
   method set_preamble_cutoff: int -> unit
   method set_image_base: doubleword_int -> unit
@@ -3105,6 +3112,7 @@ object
   method is_elf: bool
   method is_mips: bool
   method is_arm: bool
+  method is_power: bool
   method is_little_endian: bool
   method is_nonreturning_call: doubleword_int -> doubleword_int -> bool
   method is_fixed_true_branch: doubleword_int -> bool

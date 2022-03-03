@@ -174,10 +174,11 @@ object
     | ARMExtensionRegister _ -> "armx"
     | ARMExtensionRegisterElement _ -> "armxe"
     | ARMExtensionRegisterReplicatedElement _ -> "armxr"
+    | PowerGPRegister _ -> "pwrgpr"
 
   method tags = [
       "a"; "armx"; "armxe"; "armxr"; "as"; "c"; "ctr"; "d"; "dbg"; "f";
-      "m"; "s"; "x" ; "p" ; "ps" ; "pfp"]
+      "m"; "s"; "x"; "p"; "pfp"; "ps"; "pwrgpr"]
 
 end
 

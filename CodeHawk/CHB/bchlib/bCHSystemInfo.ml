@@ -123,6 +123,7 @@ object (self)
   val mutable is_elf = false
   val mutable is_mips = false
   val mutable is_arm = false
+  val mutable is_power = false
   val mutable preamble_cutoff = 12   (* minimum number of observed preambles, to
                                         use instruction as reason to add function
                                         entry point *)
@@ -522,6 +523,9 @@ object (self)
 
   method set_arm = is_arm <- true
   method is_arm = is_arm
+
+  method set_power = is_power <- true
+  method is_power = is_power
 
   (* system initialization :
      - load system_file (application specific, created by previous round)
