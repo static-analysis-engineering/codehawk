@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -254,6 +256,8 @@ object (self)
                                     algorithms. 
                                     Compressed sections begin with a compression header
                                     structure that identifies the compression algorithm.
+          SHF_PPC_VLE   0x10000000  marks ELF sections containing powerpc VLE
+                                    instructions.
 	 --------------------------------------------------------------------- *)
       sh_flags <- input#read_doubleword ;
 
@@ -378,6 +382,9 @@ object (self)
   method is_program_section =
     match self#get_section_type with SHT_ProgBits -> true | _ -> false
 
+  method is_power_vle =
+    List.mem 28 sh_flags#get_bits_set
+
   method write_xml (node:xml_element_int) =
     let set = node#setAttribute in
     let setx t x = if x#equal wordzero then () else set t x#to_hex_string in
@@ -426,12 +433,14 @@ object (self)
     | 9 -> "GROUP"
     | 10 -> "TLS"
     | 11 -> "COMPRESSED"
+    | 28 -> "VLE(PowerPC)"    (* 0x10000000 *)
     | _ -> "(not used: " ^ (string_of_int n) ^ ")"
 
   method private characteristics_to_pretty =
     let descr = self#characteristic_to_string in
     let bitsSet = sh_flags#get_bits_set in
-    List.fold_left (fun a i -> LBLOCK [ a ; NL ; INDENT (3, STR (descr i)) ]) 
+    List.fold_left
+      (fun a i -> LBLOCK [a; NL; INDENT (3, STR (descr i))])
       (STR "Characteristics") bitsSet
 
   method toPretty = LBLOCK [
