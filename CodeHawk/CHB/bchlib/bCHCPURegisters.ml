@@ -5,7 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -335,6 +336,9 @@ let register_compare r1 r2 =
      arm_extension_register_replicated_element_compare e1 e2
   | (ARMExtensionRegisterReplicatedElement _, _) -> -1
   | (_, ARMExtensionRegisterReplicatedElement _) -> 1
+  | (PowerGPRegister r1, PowerGPRegister r2) -> Stdlib.compare r1 r2
+  | (PowerGPRegister _, _) -> -1
+  | (_, PowerGPRegister _) -> 1
   | (MIPSRegister m1, MIPSRegister m2) ->
      Stdlib.compare (mipsreg_to_string m1) (mipsreg_to_string m2)
   | (MIPSRegister _, _) -> -1
@@ -392,6 +396,7 @@ let register_to_string register =
   | ARMExtensionRegisterElement e -> arm_extension_reg_element_to_string e
   | ARMExtensionRegisterReplicatedElement e ->
      arm_extension_reg_rep_element_to_string e
+  | PowerGPRegister r -> "GPR" ^ (string_of_int r)
 
 
 let extract_cpu_reg s =

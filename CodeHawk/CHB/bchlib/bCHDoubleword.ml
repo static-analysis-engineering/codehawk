@@ -5,7 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -74,12 +75,9 @@ let get_bytes v n =
     else aux (v lsr 8) (pos+1) ((v mod 256) :: bytes) in
   aux v 0 []
 
-(*
-type dw_index_t = int
-*)
 
 let dw_index_to_pretty (index:dw_index_t) = INT index
-  (* LBLOCK [ STR "(" ; INT (fst index) ; STR "," ; INT (snd index) ; STR ")" ] *)
+
 
 (** doubleword_t ---------------------------------------------------------------
     32-bit word constructed from an unsigned 64-bit integer (immutable)
@@ -310,18 +308,54 @@ object (self:'a)
     else
       if self#is_nth_bit_set pos then 1 else 0
 
+  method get_reverse_bitval (refsize: int) (pos: int) =
+    if pos < 0 || pos >= refsize || refsize > 32 then
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Error in get_reverse_bitval at ";
+                INT pos;
+                STR " with refsize ";
+                INT refsize]))
+    else
+      let maxindex = refsize - 1 in
+      self#get_bitval (maxindex - pos)
+
   (* return the value of bits highpos through lowpos (inclusive, zero-based) *)
   method get_segval (highpos:int) (lowpos:int) =
     if highpos > 31 || lowpos < 0 || highpos < lowpos then
-      raise (BCH_failure
-               (LBLOCK [ STR "Error in get_segval: " ;
-                         STR "highpos: " ; INT highpos ;
-                         STR "; lowpos: " ; INT lowpos ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Error in get_segval: ";
+                STR "highpos: ";
+                INT highpos;
+                STR "; lowpos: ";
+                INT lowpos]))
     else if highpos = lowpos then
       if self#is_nth_bit_set highpos then 1 else 0
     else
       let r = unsigned_value lsr lowpos in
       r mod (pow2 ((highpos-lowpos) + 1))
+
+  (* return the value of bits lowpos through highpos (inclusive, zero-based)
+   * where the numbering is reversed with respect to the reference size *)
+  method get_reverse_segval (refsize: int) (lowpos: int) (highpos: int) =
+    if lowpos < 0 || highpos >= refsize || refsize > 32 then
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Error in get_reverse_segval: ";
+                STR "lowpos: ";
+                INT lowpos;
+                STR "; highpos: ";
+                INT highpos;
+                STR "; refsize: ";
+                INT refsize]))
+    else
+      let maxindex = refsize - 1 in
+      self#get_segval (maxindex - lowpos) (maxindex - highpos)
+
 
   (* --------------------------------------------------------~---- predicates -- *)
 

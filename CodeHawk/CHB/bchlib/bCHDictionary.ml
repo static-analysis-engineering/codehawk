@@ -187,7 +187,8 @@ object (self)
       | ARMExtensionRegisterElement xre ->
          (tags, [self#index_arm_extension_register_element xre])
       | ARMExtensionRegisterReplicatedElement xrre ->
-         (tags, [self#index_arm_extension_register_replicated_element xrre]) in
+         (tags, [self#index_arm_extension_register_replicated_element xrre])
+      | PowerGPRegister r -> (tags, [r]) in
     register_table#add key
 
   method get_register (index:int) =
@@ -215,6 +216,7 @@ object (self)
     | "armxr" ->
        ARMExtensionRegisterReplicatedElement
          (self#get_arm_extension_register_replicated_element (a 0))
+    | "pwrgpr" -> PowerGPRegister (a 0)
     | s -> raise_tag_error name s register_mcts#tags
 
 
