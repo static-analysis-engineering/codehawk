@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +65,9 @@ let mips_instructions =
   ref (Array.make 1 (make_mips_assembly_instruction wordzero OpInvalid ""))
 
 let mips_instructions = 
-  Array.make numArrays (Array.make 1 (make_mips_assembly_instruction wordzero OpInvalid ""))
+  Array.make
+    numArrays
+    (Array.make 1 (make_mips_assembly_instruction wordzero OpInvalid ""))
 
 let initialize_mips_instructions len =
   let _ =
