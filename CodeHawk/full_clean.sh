@@ -17,6 +17,7 @@ make -C CHB/bchlibelf clean
 make -C CHB/bchlibx86 clean
 make -C CHB/bchlibmips32 clean
 make -C CHB/bchlibarm32 clean
+make -C CHB/bchlibpower32 clean
 make -C CHB/bchanalyze clean
 make -C CHB/bchcmdline clean
 make -C CHB/bchgui clean
