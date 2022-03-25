@@ -74,7 +74,10 @@ object (self)
     List.iter (fun g ->
         match g with
         | GType (tinfo, loc) ->
-           H.add gtypes tinfo.btname (bcd#index_typ tinfo.bttype, i loc)
+           begin
+             ignore (bcd#index_typeinfo tinfo);
+             H.add gtypes tinfo.btname (bcd#index_typ tinfo.bttype, i loc)
+           end
         | GCompTag (cinfo, loc) ->
            H.add
              gcomptags
