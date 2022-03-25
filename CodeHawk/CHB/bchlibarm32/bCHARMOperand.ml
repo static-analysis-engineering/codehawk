@@ -786,9 +786,12 @@ let mk_arm_mem_multiple_op
       ?(align=0) ?(size=4) (reg:arm_reg_t) (n:int) =
   new arm_operand_t (ARMMemMultiple (reg, align, n, size))
 
+
 let sp_r mode = arm_register_op ARSP mode
 
+
 let pc_r mode = arm_register_op ARPC mode
+
 
 let arm_sp_deref ?(with_offset=0) (mode:arm_operand_mode_t) =
   if with_offset >= 0 then
@@ -799,3 +802,14 @@ let arm_sp_deref ?(with_offset=0) (mode:arm_operand_mode_t) =
     let offset = ARMImmOffset (-with_offset) in
     mk_arm_offset_address_op
       ARSP offset ~isadd:false ~iswback:false ~isindex:false mode
+
+
+let arm_reg_deref ?(with_offset=0) (reg: arm_reg_t) (mode:arm_operand_mode_t) =
+  if with_offset >= 0 then
+    let offset = ARMImmOffset with_offset in
+    mk_arm_offset_address_op
+      reg offset ~isadd:true ~iswback:false ~isindex:false mode
+  else
+    let offset = ARMImmOffset (-with_offset) in
+    mk_arm_offset_address_op
+      reg offset ~isadd:false ~iswback:false ~isindex:false mode
