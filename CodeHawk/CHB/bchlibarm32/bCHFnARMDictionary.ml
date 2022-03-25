@@ -437,28 +437,85 @@ object (self)
       | IfThen (c, xyz)  ->
          ([], [])
 
-      | LoadMultipleIncrementAfter (_, _, rn, rl, mem) ->
-         let lhss = rl#to_multiple_variable floc in
-         let (_, rhss) =
+      | LoadMultipleDecrementAfter (_, _, base, rl, _) ->
+         let reglhss = rl#to_multiple_variable floc in
+         let basereg = base#get_register in
+         let regcount = rl#get_register_count in
+         let (memreads, _) =
            List.fold_left
-             (fun (off, acc) reg ->
-               let offset = ARMImmOffset off in
-               let memloc =
-                 mk_arm_offset_address_op
-                   rn#get_register
-                   offset
-                   ~isadd:true
-                   ~isindex:false
-                   ~iswback:false
-                   RD in
-               let rhs = memloc#to_expr floc in
-               (off + 4, acc @ [rhs])) (0, []) rl#get_register_op_list in
+             (fun (acc, off) reglhs ->
+               let memop = arm_reg_deref ~with_offset:off basereg RD in
+               let memrhs = memop#to_expr floc in
+               (acc @ [memrhs], off + 4)) ([], 4 -(4 * regcount)) reglhss in
          let xtag =
            "a:"
-           ^ (string_repeat "v" rl#get_register_count)
-           ^ (string_repeat "x" rl#get_register_count) in
+           ^ (string_repeat "v" regcount)
+           ^ (string_repeat "x" regcount)
+           ^ "x" in    (* base expression *)
          ([xtag],
-          (List.map xd#index_variable lhss) @ (List.map xd#index_xpr rhss))
+          (List.map xd#index_variable reglhss)
+          @ (List.map xd#index_xpr memreads)
+          @ [xd#index_xpr (base#to_expr floc)])
+
+      | LoadMultipleDecrementBefore (_, _, base, rl, _) ->
+         let reglhss = rl#to_multiple_variable floc in
+         let basereg = base#get_register in
+         let regcount = rl#get_register_count in
+         let (memreads, _) =
+           List.fold_left
+             (fun (acc, off) reglhs ->
+               let memop = arm_reg_deref ~with_offset:off basereg RD in
+               let memrhs = memop#to_expr floc in
+               (acc @ [memrhs], off + 4)) ([], -(4 * regcount)) reglhss in
+         let xtag =
+           "a:"
+           ^ (string_repeat "v" regcount)
+           ^ (string_repeat "x" regcount)
+           ^ "x" in    (* base expression *)
+         ([xtag],
+          (List.map xd#index_variable reglhss)
+          @ (List.map xd#index_xpr memreads)
+          @ [xd#index_xpr (base#to_expr floc)])
+
+      | LoadMultipleIncrementAfter (_, _, base, rl, _) ->
+         let reglhss = rl#to_multiple_variable floc in
+         let basereg = base#get_register in
+         let regcount = rl#get_register_count in
+         let (memreads, _) =
+           List.fold_left
+             (fun (acc, off) reglhs ->
+               let memop = arm_reg_deref ~with_offset:off basereg RD in
+               let memrhs = memop#to_expr floc in
+               (acc @ [memrhs], off + 4)) ([], 0) reglhss in
+         let xtag =
+           "a:"
+           ^ (string_repeat "v" regcount)
+           ^ (string_repeat "x" regcount)
+           ^ "x" in    (* base expression *)
+         ([xtag],
+          (List.map xd#index_variable reglhss)
+          @ (List.map xd#index_xpr memreads)
+          @ [xd#index_xpr (base#to_expr floc)])
+
+      | LoadMultipleIncrementBefore (_, _, base, rl, _) ->
+         let reglhss = rl#to_multiple_variable floc in
+         let basereg = base#get_register in
+         let regcount = rl#get_register_count in
+         let (memreads, _) =
+           List.fold_left
+             (fun (acc, off) reglhs ->
+               let memop = arm_reg_deref ~with_offset:off basereg RD in
+               let memrhs = memop#to_expr floc in
+               (acc @ [memrhs], off + 4)) ([], 4) reglhss in
+         let xtag =
+           "a:"
+           ^ (string_repeat "v" regcount)
+           ^ (string_repeat "x" regcount)
+           ^ "x" in    (* base expression *)
+         ([xtag],
+          (List.map xd#index_variable reglhss)
+          @ (List.map xd#index_xpr memreads)
+          @ [xd#index_xpr (base#to_expr floc)])
 
       | LoadRegister (c, rt, rn, _, mem, _) ->
          let vrt = rt#to_variable floc in
@@ -834,36 +891,69 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | StoreMultipleIncrementAfter (_, _, rn, rl, mem, _) ->
+      | StoreMultipleDecrementBefore (_, _, base, rl, _, _) ->
+         let basereg = base#get_register in
          let regcount = rl#get_register_count in
          let rhss = rl#to_multiple_expr floc in
          let rrhss = List.map rewrite_expr rhss in
-         let (_, lhss) =
+         let (memlhss, _) =
            List.fold_left
-             (fun (off, acc) reg ->
-               let offset = ARMImmOffset off in
-               let memloc =
-                 mk_arm_offset_address_op
-                   rn#get_register
-                   offset
-                   ~isadd:true
-                   ~isindex:false
-                   ~iswback:false
-                   WR in
-               let lhs = memloc#to_variable floc in
-               (off + 4, acc @ [lhs])) (0, []) rl#get_register_op_list in
+             (fun (acc, off) reg ->
+               let memop = arm_reg_deref ~with_offset:off basereg WR in
+               let memlhs = memop#to_variable floc in
+               (acc @ [memlhs], off + 4))
+             ([], -(4 * regcount)) rl#get_register_op_list in
          let xtag =
            "a:"
            ^ (string_repeat "v" regcount)
-           ^ (string_repeat "x" regcount) in
+           ^ (string_repeat "x" regcount)
+           ^ "x" in
          ([xtag],
-          (List.map xd#index_variable lhss) @ (List.map xd#index_xpr rrhss))
+          (List.map xd#index_variable memlhss)
+          @ (List.map xd#index_xpr rrhss)
+          @ [xd#index_xpr (base#to_expr floc)])
 
-      | StoreMultipleIncrementBefore (_, _, rn, rl, mem, _) ->
+      | StoreMultipleIncrementAfter (_, _, base, rl, _, _) ->
+         let basereg = base#get_register in
+         let regcount = rl#get_register_count in
          let rhss = rl#to_multiple_expr floc in
+         let rrhss = List.map rewrite_expr rhss in
+         let (memlhss, _) =
+           List.fold_left
+             (fun (acc, off) reg ->
+               let memop = arm_reg_deref ~with_offset:off basereg WR in
+               let memlhs = memop#to_variable floc in
+               (acc @ [memlhs], off + 4)) ([], 0) rl#get_register_op_list in
          let xtag =
-           "a:" ^ (string_repeat "x" rl#get_register_count) in
-         ([xtag], List.map xd#index_xpr rhss)
+           "a:"
+           ^ (string_repeat "v" regcount)
+           ^ (string_repeat "x" regcount)
+           ^ "x" in
+         ([xtag],
+          (List.map xd#index_variable memlhss)
+          @ (List.map xd#index_xpr rrhss)
+          @ [xd#index_xpr (base#to_expr floc)])
+
+      | StoreMultipleIncrementBefore (_, _, base, rl, _, _) ->
+         let basereg = base#get_register in
+         let regcount = rl#get_register_count in
+         let rhss = rl#to_multiple_expr floc in
+         let rrhss = List.map rewrite_expr rhss in
+         let (memlhss, _) =
+           List.fold_left
+             (fun (acc, off) reg ->
+               let memop = arm_reg_deref ~with_offset:off basereg WR in
+               let memlhs = memop#to_variable floc in
+               (acc @ [memlhs], off + 4)) ([], 4) rl#get_register_op_list in
+         let xtag =
+           "a:"
+           ^ (string_repeat "v" regcount)
+           ^ (string_repeat "x" regcount)
+           ^ "x" in
+         ([xtag],
+          (List.map xd#index_variable memlhss)
+          @ (List.map xd#index_xpr rrhss)
+          @ [xd#index_xpr (base#to_expr floc)])
 
       | StoreRegister (c, rt, rn, mem, _) ->
          let vmem = mem#to_variable floc in

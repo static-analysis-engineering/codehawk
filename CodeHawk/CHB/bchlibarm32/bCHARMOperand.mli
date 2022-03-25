@@ -192,3 +192,9 @@ val arm_sp_deref:
   ?with_offset:int
   -> arm_operand_mode_t
   -> arm_operand_int
+
+val arm_reg_deref:
+  ?with_offset:int
+  -> arm_reg_t
+  -> arm_operand_mode_t
+  -> arm_operand_int

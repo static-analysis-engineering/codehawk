@@ -403,15 +403,22 @@ let translate_arm_instruction
      - when executing an ARM instruction, PC reads as the address of the
        current instruction plus 8;
      - when executing a Thumb instruction, PC reads as the address of the
-       current instruction plus      4
+       current instruction plus 4
+
+     Here we are setting the PC value for the following instruction, so
+     we need to add another 4 for ARM and 2 for Thumb in case the current
+     instruction is 2-byte instruction and 4 in case this is a 4-byte
+     instruction.
    *)
   let floc = get_floc loc in
   let pcv = (pc_r RD)#to_variable floc in
   let iaddr8 =
     if instr#is_arm32 then
       (loc#i#add_int 12)#to_numerical
+    else if (String.length instr#get_instruction_bytes) = 2 then
+      (loc#i#add_int 6)#to_numerical
     else
-      (loc#i#add_int 6)#to_numerical in
+      (loc#i#add_int 8)#to_numerical in
   let pcassign = floc#get_assign_commands pcv (XConst (IntConst iaddr8)) in
   let default newcmds =
     ([], [], cmds @ frozenAsserts @ (invop :: newcmds) @ pcassign) in
@@ -721,35 +728,162 @@ let translate_arm_instruction
            (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
        default []
 
-  | LoadMultipleIncrementAfter (wback, _, base, reglist, _) ->
+  (* ---------------------------------------- LoadMultipleDecrementAfter --
+   * Loads multiple registers from consecutive memory locations using an
+   * address from a base register. The consecutive memory locations end at
+   * this address, and address just below the lowest of those locations may
+   * be written back to the base register.
+   *
+   * address = R[n] - 4 * BitCount(registers) + 4;
+   * for i = 0 to 14
+   *   if registers<i> == '1' then
+   *     R[i] = MemA[address, 4]
+   *     address = address + 4;
+   *   if registers<15> == '1' then
+   *     LoadWritePC(MemA[address, 4]);
+   *   if wback && registers<n> == '0' then
+   *     R[n] = R[n] - 4 * BitCount(registers);
+   * ---------------------------------------------------------------------- *)
+  | LoadMultipleDecrementAfter (wback, _, base, rl, _) ->
      let floc = get_floc loc in
-     let regops = reglist#get_register_op_list in
-     let (off, memreads) =
+     let basereg = base#get_register in
+     let regcount = rl#get_register_count in
+     let reglhss = rl#to_multiple_variable floc in
+     let (memreads, _) =
        List.fold_left
-         (fun (off, acc) reg ->
-           let offset = ARMImmOffset off in
-           let memloc =
-             mk_arm_offset_address_op
-               base#get_register
-               offset
-               ~isadd:true
-               ~isindex:false
-               ~iswback:false
-               RD in
-           let lhs = reg#to_variable floc in
-           let rhs = memloc#to_expr floc in
-           let assign = floc#get_assign_commands lhs rhs in
-           (off + 4, acc @ assign)) (0, []) regops in
+         (fun (acc, off) reglhs ->
+           let memop = arm_reg_deref basereg ~with_offset:off RD in
+           let memrhs = memop#to_expr floc in
+           let cmds1 = floc#get_assign_commands reglhs memrhs in
+           (acc @ cmds1, off + 4)) ([], 4 - (4 * regcount)) reglhss in
      let wbackassign =
        if wback then
          let (lhs, lhscmds) = base#to_lhs floc in
          let rhs = base#to_expr floc in
-         let newrhs = XOp (XPlus, [rhs; int_constant_expr off]) in
+         let decrem = int_constant_expr (4 * regcount) in
+         let newrhs = XOp (XMinus, [rhs; decrem]) in
          floc#get_assign_commands lhs newrhs
        else
          [] in
      default (memreads @ wbackassign)
-     
+
+  (* --------------------------------------- LoadMultipleDecrementBefore --
+   * Loads multiple registers from consecutive memory locations using an
+   * address from a base register. The consecutive memory locations end
+   * just below this address, and the lowest of those locations may be
+   * written back to the base register.
+   *
+   * address = R[n] - 4 * BitCount(registers);
+   * for i = 0 to 14
+   *   if registers<i> == '1' then
+   *     R[i] = MemA[address, 4];
+   *     address = address + 4;
+   * if registers<15> == '1' then
+   *   LoadWritePC(MemA[address, 4]);
+   * if wback && reigsters<n> == '0' then
+   *   R[n] = R[n] - 4 * BitCount(registers);
+   * ---------------------------------------------------------------------- *)
+  | LoadMultipleDecrementBefore (wback, _, base, rl, _) ->
+     let floc = get_floc loc in
+     let basereg = base#get_register in
+     let regcount = rl#get_register_count in
+     let reglhss = rl#to_multiple_variable floc in
+     let (memreads, _) =
+       List.fold_left
+         (fun (acc, off) reglhs ->
+           let memop = arm_reg_deref basereg ~with_offset:off RD in
+           let memrhs = memop#to_expr floc in
+           let cmds1 = floc#get_assign_commands reglhs memrhs in
+           (acc @ cmds1, off + 4)) ([], -(4 * regcount)) reglhss in
+     let wbackassign =
+       if wback then
+         let (lhs, lhscmds) = base#to_lhs floc in
+         let rhs = base#to_expr floc in
+         let decrem = int_constant_expr (4 * regcount) in
+         let newrhs = XOp (XMinus, [rhs; decrem]) in
+         floc#get_assign_commands lhs newrhs
+       else
+         [] in
+     default (memreads @ wbackassign)
+
+  (* ---------------------------------------- LoadMultipleIncrementAfter --
+   * Loads multiple registers from consecutive memory locations using an
+   * address from a base register. The consecutive memory locations start at
+   * this address, and the address just above the highest of those locations
+   * may be written back to the the base register.
+   *
+   * address = R[n];
+   * for i = 0 to 14
+   *   if registers<i> == '1' then
+   *     R[i] = MemA[address, 4];
+   *     address = address + 4;
+   *   if registers<15> == '1' then
+   *     LoadWritePC(MemA[address, 4]);
+   *   if wback && registers<n> == '0' then
+   *     R[n] = R[n] + + 4 * BitCount(registers);
+   * ---------------------------------------------------------------------- *)
+  | LoadMultipleIncrementAfter (wback, _, base, rl, _) ->
+     let floc = get_floc loc in
+     let basereg = base#get_register in
+     let regcount = rl#get_register_count in
+     let reglhss = rl#to_multiple_variable floc in
+     let (memreads, _) =
+       List.fold_left
+         (fun (acc, off) reglhs ->
+           let memop = arm_reg_deref ~with_offset:off basereg RD in
+           let memrhs = memop#to_expr floc in
+           let cmds1 = floc#get_assign_commands reglhs memrhs in
+           (acc @ cmds1, off + 4)) ([], 0) reglhss in
+     let wbackassign =
+       if wback then
+         let (lhs, lhscmds) = base#to_lhs floc in
+         let rhs = base#to_expr floc in
+         let increm = int_constant_expr (4 * regcount) in
+         let newrhs = XOp (XPlus, [rhs; increm]) in
+         floc#get_assign_commands lhs newrhs
+       else
+         [] in
+     default (memreads @ wbackassign)
+
+  (* --------------------------------------- LoadMultipleIncrementBefore --
+   * Loads multiple registers from consecutive memory locations using an
+   * address from a base register. The consecutive memory locations start
+   * just above the address, and the address of the of those locations may
+   * be written back to the base register.
+   *
+   * address = R[n] + 4;
+   * for i = 0 to 14
+   *   if registers<i> == '1' then
+   *     R[i] = MemA[address, 4];
+   *     address = address + 4;
+   * if registers<15> == '1' then
+   *   LoadWritePC(MemA[address, 4])
+   * if wback && reigsters<n> == '0' then
+   *   R[n] = R[n] + 4 * BitCount(registers)
+   * ---------------------------------------------------------------------- *)
+  | LoadMultipleIncrementBefore (wback, _, base, rl, _) ->
+     let floc = get_floc loc in
+     let basereg = base#get_register in
+     let regcount = rl#get_register_count in
+     let reglhss = rl#to_multiple_variable floc in
+     let (memreads, _) =
+       List.fold_left
+         (fun (acc, off) reglhs ->
+           let memop = arm_reg_deref ~with_offset:off basereg RD in
+           let memrhs = memop#to_expr floc in
+           let cmds1 = floc#get_assign_commands reglhs memrhs in
+           (acc @ cmds1, off + 4)) ([], 4) reglhss in
+     let wbackassign =
+       if wback then
+         let (lhs, lhscmds) = base#to_lhs floc in
+         let rhs = base#to_expr floc in
+         let increm = int_constant_expr (4 * regcount) in
+         let newrhs = XOp (XPlus, [rhs; increm]) in
+         floc#get_assign_commands lhs newrhs
+       else
+         [] in
+     default (memreads @ wbackassign)
+
   (* -------------------------------------------------------- LoadRegister -- *
    * offset = Shift(R[m], shift_t, shift_n, APSR.C);
    * offset_addr = if add then (R[n] + offset) else (R[n] - offset);
@@ -932,6 +1066,10 @@ let translate_arm_instruction
 
   | MoveToCoprocessor _ -> default []
 
+  (* ------------------------------------------------------------ MoveTop ---
+   * R[d]<31:16> = imm16;
+   * // R[d]<15:0> unchanged
+   * ------------------------------------------------------------------------ *)
   | MoveTop (ACCAlways, dst, src) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = dst#to_lhs floc in
@@ -1091,6 +1229,14 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vdst () in
      default cmds
 
+  | ReverseSubtract (_, ACCAlways, dst, src1, src2, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let xsrc1 = src1#to_expr floc in
+     let xsrc2 = src2#to_expr floc in
+     let cmds = floc#get_assign_commands vdst (XOp (XMinus, [xsrc2; xsrc1])) in
+     default cmds
+
   | ReverseSubtract(_, _, dst, _, _, _) ->
      let floc = get_floc loc in
      let vdst = dst#to_variable floc in
@@ -1170,30 +1316,125 @@ let translate_arm_instruction
      let cmdshi = floc#get_abstract_commands vhi () in
      default (cmdslo @ cmdshi)
 
-  | StoreMultipleIncrementAfter (wback, _, base, reglist, _, _) ->
+  (* ---------------------------------------- StoreMultipleIncrementAfter --
+   * Stores multiple registers to consecutive memoy locations using an address
+   * from a base register. The consecutive memory locations start at this
+   * address, and the address just above the last of those locations may be
+   * written back to be base register.
+   *
+   * address = R[n];
+   * for i = 0 to 14
+   *   if registers<i> == '1' then
+   *     MemA[address, 4] = R[i];
+   *     address = address + 4;
+   * if registers<15> == '1' then
+   *   MemA[address, 4] = PCStoreValue();
+   * if wback then R[n] = R[n] + 4 * BitCount(registers);
+   * ------------------------------------------------------------------------ *)
+  | StoreMultipleIncrementAfter (wback, _, base, rl, _, _) ->
      let floc = get_floc loc in
-     let regops = reglist#get_register_op_list in
-     let (off, memassigns) =
+     let basereg = base#get_register in
+     let regcount = rl#get_register_count in
+     let rhsexprs = rl#to_multiple_expr floc in
+     let rhsexprs = List.map (rewrite_expr floc) rhsexprs in
+     let (memassigns, _) =
        List.fold_left
-         (fun (off, acc) reg ->
-           let offset = ARMImmOffset off in
-           let memloc =
-             mk_arm_offset_address_op
-               base#get_register
-               offset
-               ~isadd:true
-               ~isindex:false
-               ~iswback:false
-               WR in
-           let (lhs, lhscmds) = memloc#to_lhs floc in
-           let rhs = reg#to_expr floc in
-           let assign = floc#get_assign_commands lhs rhs in
-           (off + 4, acc @ lhscmds @ assign)) (0, []) regops in
+         (fun (acc, off) rhsexpr ->
+           let memop = arm_reg_deref ~with_offset:off basereg WR in
+           let (memlhs, memlhscmds) = memop#to_lhs floc in
+           let cmds1 = floc#get_assign_commands memlhs rhsexpr in
+           (acc @ cmds1 @ memlhscmds, off + 4))
+         ([], 0)
+         rhsexprs in
+    let wbackassign =
+       if wback then
+         let (lhs, lhscmds) = base#to_lhs floc in
+         let rhs = base#to_expr floc in
+         let increm = int_constant_expr (4 * regcount) in
+         let newrhs = XOp (XPlus, [rhs; increm]) in
+         floc#get_assign_commands lhs newrhs
+       else
+         [] in
+     default (memassigns @ wbackassign)
+
+  (* ---------------------------------------- StoreMultipleIncrementBefore --
+   * Stores multiple registers to consecutive memory locations using an
+   * address from a base register. The consecutive memory locations start just
+   * above this address, and the address of the last of those locations may be
+   * written back to the base register.
+   *
+   * address = R[n] + 4;
+   * for i = 0 to 14
+   *   if registers<i> == '1' then
+   *      MemA[address, 4] = R[i];
+   *      address = address + 4;
+   * if registers<15> == '1' then
+   *   MemA[address, 4] = PCStoreValue();
+   * if wback then
+   *   R[n] = R[n] + 4 * BitCount(registers);
+   * ------------------------------------------------------------------------ *)
+  | StoreMultipleIncrementBefore (wback, _, base, rl, _, _) ->
+     let floc = get_floc loc in
+     let basereg = base#get_register in
+     let regcount = rl#get_register_count in
+     let rhsexprs = rl#to_multiple_expr floc in
+     let rhsexprs = List.map (rewrite_expr floc) rhsexprs in
+     let (memassigns, _) =
+       List.fold_left
+         (fun (acc, off) rhsexpr ->
+           let memop = arm_reg_deref ~with_offset:off basereg WR in
+           let (memlhs, memlhscmds) = memop#to_lhs floc in
+           let cmds1 = floc#get_assign_commands memlhs rhsexpr in
+           (acc @ cmds1 @ memlhscmds, off + 4))
+         ([], 4)
+         rhsexprs in
      let wbackassign =
        if wback then
          let (lhs, lhscmds) = base#to_lhs floc in
          let rhs = base#to_expr floc in
-         let newrhs = XOp (XPlus, [rhs; int_constant_expr off]) in
+         let increm = int_constant_expr (4 + (4 * regcount)) in
+         let newrhs = XOp (XPlus, [rhs; increm]) in
+         floc#get_assign_commands lhs newrhs
+       else
+         [] in
+     default (memassigns @ wbackassign)
+
+  (* ---------------------------------------- StoreMultipleDecrementBefore --
+   * Stores multiple registers to consecutive memory locations using an address
+   * from a base register. The consecutive memory locations end just below this
+   * address, and the address of the first of those locations may be written
+   * back to the base register.
+   *
+   * address = R[n] - 4 * BitCount(registers);
+   * for i = 0 to 14
+   *   if registers<i> == '1' then
+   *     MemA[address, 4] = R[i];
+   *     address = address + 4;
+   * if registers<15> == '1' then
+   *   MemA[address, 4] = PCStoreValue();
+   * if wback then R[n] = R[n] - 4 * BitCount(registers);
+   * ------------------------------------------------------------------------ *)
+  | StoreMultipleDecrementBefore (wback, _, base, rl, _, _) ->
+     let floc = get_floc loc in
+     let basereg = base#get_register in
+     let regcount = rl#get_register_count in
+     let rhsexprs = rl#to_multiple_expr floc in
+     let rhsexprs = List.map (rewrite_expr floc) rhsexprs in
+     let (memassigns, _) =
+       List.fold_left
+         (fun (acc, off) rhsexpr ->
+           let memop = arm_reg_deref ~with_offset:off basereg WR in
+           let (memlhs, memlhscmds) = memop#to_lhs floc in
+           let cmds1 = floc#get_assign_commands memlhs rhsexpr in
+           (acc @ cmds1 @ memlhscmds, off + 4))
+         ([], -(4 * regcount))
+         rhsexprs in
+     let wbackassign =
+       if wback then
+         let (lhs, lhscmds) = base#to_lhs floc in
+         let rhs = base#to_expr floc in
+         let decrem = int_constant_expr (4 * regcount) in
+         let newrhs = XOp (XMinus, [rhs; decrem]) in
          floc#get_assign_commands lhs newrhs
        else
          [] in
