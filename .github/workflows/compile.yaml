@@ -17,4 +17,4 @@ jobs:
         sudo apt-get install -y libgtksourceview2.0-dev libgnomecanvas2-dev
         opam install extlib camlzip zarith ocamlbuild conf-gtksourceview conf-gnomecanvas lablgtk goblint-cil
     - name: Compile CodeHawk
-      run: eval $(opam env) && cd CodeHawk && ./full_make.sh
+      run: eval $(opam env) && cd CodeHawk && ./full_make_no_gui.sh
