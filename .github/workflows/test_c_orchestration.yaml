@@ -24,10 +24,9 @@ jobs:
         ocaml-version: 4.09.0
     - name: Install dependencies
       run: |
-        sudo apt-get install -y libgtksourceview2.0-dev libgnomecanvas2-dev
-        opam install extlib camlzip zarith ocamlbuild conf-gtksourceview conf-gnomecanvas lablgtk goblint-cil
+        opam install extlib camlzip zarith ocamlbuild goblint-cil
     - name: Compile CodeHawk
-      run: eval $(opam env) && cd codehawk/CodeHawk && ./full_make.sh
+      run: eval $(opam env) && cd codehawk/CodeHawk && ./full_make_no_gui.sh
     - name: Replace prebuilt codehawk ocaml binaries
       run: |
         cp codehawk/CodeHawk/CHC/cchcil/parseFile CodeHawk-C/chc/bin/linux/parseFile
