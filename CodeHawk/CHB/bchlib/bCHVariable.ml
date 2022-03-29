@@ -796,7 +796,7 @@ object (self)
     (self#has_var v) && (self#has_memvar v)
     && (self#get_memvar_reference v)#is_stack_reference
     && is_constant_offset (self#get_memvar_offset v)
-    && (get_total_constant_offset (self#get_memvar_offset v))#gt numerical_zero
+    && (get_total_constant_offset (self#get_memvar_offset v))#geq numerical_zero
 
   method is_realigned_stack_variable (v:variable_t) =
     (self#has_var v) && (self#has_memvar v)
