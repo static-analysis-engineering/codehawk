@@ -548,6 +548,7 @@ object (self)
          let vrt = rt#to_variable floc in
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
+         let xmem = XOp (XBAnd, [xmem; int_constant_expr 255]) in
          let xrmem = rewrite_expr xmem in
          (["a:vvxx"],
           [xd#index_variable vrt;
@@ -1095,7 +1096,7 @@ object (self)
       | UnsignedExtendByte (_, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
-         let result = xrm in
+         let result = XOp (XBAnd, [xrm; int_constant_expr 255]) in
          let rresult = rewrite_expr result in
          (["a:vxxx"], [xd#index_variable vrd;
                        xd#index_xpr xrm;
@@ -1105,7 +1106,7 @@ object (self)
       | UnsignedExtendHalfword (_, rd, rm) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
-         let result = xrm in
+         let result = XOp (XBAnd, [xrm; int_constant_expr 65535]) in
          let rresult = rewrite_expr result in
          (["a:vxxx"], [xd#index_variable vrd;
                        xd#index_xpr xrm;

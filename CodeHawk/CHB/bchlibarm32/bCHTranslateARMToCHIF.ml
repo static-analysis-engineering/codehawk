@@ -922,6 +922,7 @@ let translate_arm_instruction
   | LoadRegisterByte (ACCAlways, dst, base, index, src, _) ->
      let floc = get_floc loc in
      let rhs = src#to_expr floc in
+     let rhs = XOp (XBAnd, [rhs; int_constant_expr 255]) in
      let (lhs, lhscmds) = dst#to_lhs floc in
      let cmd = floc#get_assign_commands lhs rhs in
      default (cmd @ lhscmds)
@@ -1592,8 +1593,8 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrm = rm#to_expr floc in
+     let result = XOp (XBAnd, [xrm; int_constant_expr 255]) in
      (* let result = XOp (XMod, [xrm; XConst (IntConst (mkNumerical 256))]) in *)
-     let result = xrm in
      let cmds = floc#get_assign_commands vrd result in
      default cmds
 
@@ -1607,8 +1608,8 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrm = rm#to_expr floc in
+     let result = XOp (XBAnd, [xrm; int_constant_expr 65535]) in
      (* let result = XOp (XMod, [xrm; XConst (IntConst (mkNumerical (256 * 256)))]) in *)
-     let result = xrm in
      let cmds = floc#get_assign_commands vrd result in
      default cmds
 
