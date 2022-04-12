@@ -919,19 +919,26 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | LoadRegisterByte (ACCAlways, dst, base, index, src, _) ->
+  (* ---------------------------------------------------- LoadRegisterByte -- *
+   * R[t] = ZeroExtend(MemU[address,1], 32);
+   * if wback then R[n] = offset_addr;
+   * -------------------------------------------------------------------------*)
+  | LoadRegisterByte (c, dst, base, index, src, _) ->
      let floc = get_floc loc in
      let rhs = src#to_expr floc in
-     let rhs = XOp (XBAnd, [rhs; int_constant_expr 255]) in
      let (lhs, lhscmds) = dst#to_lhs floc in
-     let cmd = floc#get_assign_commands lhs rhs in
-     default (cmd @ lhscmds)
-
-  | LoadRegisterByte (_, dst, _, _, _, _) ->
-     let floc = get_floc loc in
-     let (lhs, lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
+     let updatecmds =
+       if src#is_offset_address_writeback then
+         let addr = src#to_updated_offset_address floc in
+         let (baselhs, baselhscmds) = base#to_lhs floc in
+         let ucmds = floc#get_assign_commands baselhs addr in
+         baselhscmds @ ucmds
+       else
+         [] in
+     let cmds = lhscmds @ (floc#get_assign_commands lhs rhs) @updatecmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | LoadRegisterDual (_, rt, rt2, _, _, mem, mem2) ->
      let floc = get_floc loc in

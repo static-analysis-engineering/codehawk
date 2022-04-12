@@ -344,6 +344,46 @@ object (self)
 
   method private update_x86_varargs (s: function_interface_t) = None
 
+  method private update_arm_varargs (fintf: function_interface_t) =
+    let args = self#get_arm_call_arguments in
+    let argcount = List.length args in
+    if argcount = 0 then
+      None
+    else
+      let (lastpar, lastx) = List.nth args (argcount - 1) in
+      let arg = if is_formatstring_parameter lastpar then Some lastx else None in
+      match arg with
+      | Some (XConst (IntConst n)) ->
+         let addr = numerical_to_doubleword n in
+         if string_table#has_string addr then
+           let fmtstring = string_table#get_string addr in
+           let _ = pverbose [STR "Parse formatstring:"; STR fmtstring; NL] in
+           let fmtspec = parse_formatstring fmtstring false in
+           if fmtspec#has_arguments then
+             let args = fmtspec#get_arguments in
+             let pars =
+               List.mapi
+                 (fun i arg -> convert_fmt_spec_arg (argcount + i) arg) args in
+             let fts = fintf.fintf_type_signature in
+             let newpars = fts.fts_parameters @ pars in
+             let newfts = {fts with fts_parameters = newpars} in
+             begin
+               chlog#add
+                 "format args"
+                 (LBLOCK [
+                      self#l#toPretty;
+                      STR "; ";
+                      STR fintf.fintf_name;
+                      STR ": ";
+                      INT (List.length args)]);
+               Some {fintf with fintf_type_signature = newfts}
+             end
+           else
+             None
+         else
+           None
+      | _ -> None
+
   method private update_mips_varargs (fintf: function_interface_t) =
     let args = self#get_mips_call_arguments in
     let argcount = List.length args in
@@ -399,6 +439,8 @@ object (self)
     | _ ->
        if system_info#is_mips then
          self#update_mips_varargs fintf
+       else if system_info#is_arm then
+         self#update_arm_varargs fintf
        else
          self#update_x86_varargs fintf
 
