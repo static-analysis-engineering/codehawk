@@ -908,7 +908,7 @@ object (self)
            "a:"
            ^ (string_repeat "v" regcount)
            ^ (string_repeat "x" regcount)
-           ^ "x" in
+           ^ "x" in  (* base expression *)
          ([xtag],
           (List.map xd#index_variable memlhss)
           @ (List.map xd#index_xpr rrhss)
@@ -929,7 +929,7 @@ object (self)
            "a:"
            ^ (string_repeat "v" regcount)
            ^ (string_repeat "x" regcount)
-           ^ "x" in
+           ^ "x" in  (* base expression *)
          ([xtag],
           (List.map xd#index_variable memlhss)
           @ (List.map xd#index_xpr rrhss)
@@ -950,7 +950,7 @@ object (self)
            "a:"
            ^ (string_repeat "v" regcount)
            ^ (string_repeat "x" regcount)
-           ^ "x" in
+           ^ "x" in  (* base expression *)
          ([xtag],
           (List.map xd#index_variable memlhss)
           @ (List.map xd#index_xpr rrhss)

@@ -3316,7 +3316,7 @@ let parse_t16_store_load_multiple
   | 1 ->
      (* LDM<c> <Rn>, <registers> *)
      (* LDM<c> <Rn>!, <registers> *)
-     let wback = List.mem rnreg regs in
+     let wback = not (List.mem rnreg regs) in
      let regmode = if wback then RW else RD in
      LoadMultipleIncrementAfter (wback, cc, rn regmode, rl WR, mmem RD)
 
