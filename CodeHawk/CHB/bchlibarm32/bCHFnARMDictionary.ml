@@ -184,19 +184,28 @@ object (self)
 
     let key =
       match instr#get_opcode with
-      | Add (_, _, rd, rn, rm, _) ->
+      | Add (_, c, rd, rn, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let result = XOp (XPlus, [xrn; xrm]) in
          let rresult = rewrite_expr result in
          let _ = ignore (get_string_reference floc rresult) in
-         (["a:vxxxx"],
-          [xd#index_variable vrd;
-           xd#index_xpr xrn;
-           xd#index_xpr xrm;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+         let tags = ["a:vxxxx"] in
+         let args = [
+             xd#index_variable vrd;
+             xd#index_xpr xrn;
+             xd#index_xpr xrm;
+             xd#index_xpr result;
+             xd#index_xpr rresult] in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> (tags, args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition tags args tcond
+           | _ -> (tags @ [ "uc"], args) in
+         (tags, args)
 
       | AddCarry (_, _, rd, rn, rm, _) ->
          let vrd = rd#to_variable floc in
