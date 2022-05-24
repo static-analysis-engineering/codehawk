@@ -589,7 +589,9 @@ let main () =
       let _ = global_system_state#initialize in
       let _ = file_metrics#load_xml in
       let _ = load_elf_files () in
-      let _ = List.iter parse_cil_file system_info#ifiles in
+      let _ =
+        List.iter
+          (fun f -> parse_cil_file ~removeUnused:false f) system_info#ifiles in
       let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
       let _ = disassemble_mips_sections () in
@@ -634,7 +636,9 @@ let main () =
       let _ = global_system_state#initialize in
       let _ = file_metrics#load_xml in
       let _ = load_elf_files () in
-      let _ = List.iter parse_cil_file system_info#ifiles in
+      let _ =
+        List.iter
+          (fun f -> parse_cil_file ~removeUnused:false f) system_info#ifiles in
       let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
       let _ = disassemble_arm_sections () in
@@ -696,7 +700,7 @@ let main () =
 
     else
       begin
-	pr_debug [ STR "Command " ; STR !cmd ; STR " not recognized" ; NL ] ;
+	pr_debug [ STR "Command " ; STR !cmd ; STR " not recognized" ; NL ];
 	exit 1
       end
   with
