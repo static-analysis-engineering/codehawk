@@ -463,11 +463,11 @@ object (self)
              let memref = self#f#env#mk_local_stack_reference in
              let argvar =
                match self#get_stackpointer_offset "mips" with
-               | (0,sprange) ->
+               | (0, sprange) ->
                   (match sprange#singleton with
                    | Some num -> 
                       self#f#env#mk_memory_variable
-                        memref (num#add (mkNumerical 16))
+                        memref (num#add (mkNumerical (16 + (i * 4))))
                    | _ ->
                       self#f#env#mk_unknown_memory_variable p.apar_name)
                | _ ->
@@ -515,7 +515,7 @@ object (self)
                   (match sprange#singleton with
                    | Some num ->
                       self#f#env#mk_memory_variable
-                        memref (num#add (mkNumerical 0))
+                        memref (num#add (mkNumerical (i * 4)))
                    | _ ->
                       self#f#env#mk_unknown_memory_variable p.apar_name)
                | _ ->
