@@ -516,6 +516,19 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
+  (* ------------------------------------------------------------- AddCarry -- *
+   * if ConditionPassed() then
+   *   (result, carry, overflow) = AddWithCarry(R[n], op2, APSR.C)
+   *   if d == 15 then
+   *     ALUWritePC(result);
+   *   else
+   *     R[d] = result;
+   *     if setflags then
+   *       APSR.N = result<31>;
+   *       APSR.Z = IsZeroBit(result);
+   *       APSR.C = carry;
+   *       APSR.V = overflow;
+   * ------------------------------------------------------------------------ *)
   | AddCarry (_, c, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
