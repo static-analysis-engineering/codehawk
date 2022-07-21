@@ -1211,13 +1211,22 @@ let get_arm_flags_used (opc: arm_opcode_t): arm_cc_flag_t list =
 let get_arm_opcode_condition (opc: arm_opcode_t): arm_opcode_cc_t option =
   (get_record opc).ccode
 
+
+let is_opcode_conditional (opc: arm_opcode_t): bool =
+  match get_arm_opcode_condition opc with
+  | Some cc -> is_cond_conditional cc
+  | _ -> false
+
+
 let arm_opcode_to_string ?(width=12) (opc:arm_opcode_t) =
   let formatter = new string_formatter_t width in
   let default () = (get_record opc).ida_asm formatter in
   default ()
 
+
 let get_operands_written (opc:arm_opcode_t) =
   List.filter (fun op -> op#is_write) (get_record opc).operands
+
 
 let get_operands_read (opc:arm_opcode_t) =
   List.filter (fun op -> op#is_read) (get_record opc).operands

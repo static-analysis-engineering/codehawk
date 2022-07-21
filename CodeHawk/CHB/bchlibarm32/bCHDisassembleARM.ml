@@ -1077,6 +1077,12 @@ let associate_condition_code_users () =
     let loc = ctxt_string_to_location faddr ctxtiaddr in
     let revInstrs: arm_assembly_instruction_int list =
       block#get_instructions_rev ~high:loc#i () in
+
+    (* remove the conditional instruction itself *)
+    let revInstrs: arm_assembly_instruction_int list =
+      match revInstrs with
+      | h::tl -> tl
+      | [] -> [] in
     let rec set l =
       match l with
       | [] ->
@@ -1103,6 +1109,14 @@ let associate_condition_code_users () =
 	      | flags -> set_condition flags faddr iaddr block) ) )
 
 
+(* Return true if the two instructions encode the assignment of a
+   predicate to a variable.
+
+   Pattern:
+   ITE  c                                   ITE  c
+   MOV  Rx, #0x0   ->  Rx := !c     or      MOV  Rx, #0x1   ->  Rx := c
+   MOV  Rx, #0x1                            MOV  Rx, #0x0
+ *)
 let is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr =
   let iszero op floc =
     match op#to_expr floc with
@@ -1123,6 +1137,8 @@ let is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr =
        false
   | _ -> false
 
+
+(* Return the lhs to which the predicate expression should be assigned *)
 let get_ite_predicate_dstop thenfloc theninstr elsefloc elseinstr =
   if is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr then
     match theninstr#get_opcode with

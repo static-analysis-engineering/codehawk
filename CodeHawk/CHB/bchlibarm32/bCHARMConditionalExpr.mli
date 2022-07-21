@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,4 +42,14 @@ val arm_conditional_expr:
   -> testopc:arm_opcode_t
   -> condloc:location_int
   -> testloc:location_int
+  -> (variable_t list * xpr_t option)
+
+
+val arm_conditional_conditional_expr:
+  condopc: arm_opcode_t
+  -> testopc: arm_opcode_t
+  -> testtestopc: arm_opcode_t
+  -> condloc: location_int
+  -> testloc: location_int
+  -> testtestloc: location_int
   -> (variable_t list * xpr_t option)

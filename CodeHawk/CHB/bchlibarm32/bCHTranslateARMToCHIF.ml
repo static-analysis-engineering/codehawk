@@ -137,11 +137,48 @@ let make_instr_local_tests
   let reqN () = env#mk_num_temp in
   let reqC i = env#request_num_constant i in
   let (frozenVars, optboolxpr) =
+    if is_opcode_conditional testinstr#get_opcode then
+      let finfo = testfloc#f in
+      let faddr = testfloc#fa in
+      if finfo#has_associated_cc_setter testloc#ci then
+        let testtestiaddr = finfo#get_associated_cc_setter testloc#ci in
+        let testtestloc = ctxt_string_to_location faddr testtestiaddr in
+        let testtestaddr = testtestloc#i in
+        let testtestinstr = !arm_assembly_instructions#at_address testtestaddr in
+        let _ =
+          chlog#add
+            "conditional conditional test"
+            (LBLOCK [
+                 testfloc#l#toPretty;
+                 STR ": ";
+                 STR (arm_opcode_to_string testinstr#get_opcode);
+                 STR " with setter ";
+                 STR (arm_opcode_to_string testtestinstr#get_opcode)]) in
+        arm_conditional_conditional_expr
+          ~condopc:condinstr#get_opcode
+          ~testopc: testinstr#get_opcode
+          ~testtestopc: testtestinstr#get_opcode
+          ~condloc
+          ~testloc
+          ~testtestloc
+      else
+        arm_conditional_expr
+          ~condopc:condinstr#get_opcode
+          ~testopc:testinstr#get_opcode
+          ~condloc
+          ~testloc
+    else
+      arm_conditional_expr
+        ~condopc:condinstr#get_opcode
+        ~testopc:testinstr#get_opcode
+        ~condloc
+        ~testloc in
+(*  let (frozenVars, optboolxpr) =
     arm_conditional_expr
       ~condopc:condinstr#get_opcode
       ~testopc:testinstr#get_opcode
       ~condloc
-      ~testloc in
+      ~testloc in *)
   let convert_to_chif expr =
     let (cmds,bxpr) = xpr_to_boolexpr reqN reqC expr in
     cmds @ [ASSERT bxpr] in
@@ -208,11 +245,43 @@ let make_tests
   let reqN () = env#mk_num_temp in
   let reqC i = env#request_num_constant i in
   let (frozenVars, optboolxpr) =
-    arm_conditional_expr
-      ~condopc:condinstr#get_opcode
-      ~testopc:testinstr#get_opcode
-      ~condloc
-      ~testloc in
+    if is_opcode_conditional testinstr#get_opcode then
+      let finfo = testfloc#f in
+      let faddr = testfloc#fa in
+      if finfo#has_associated_cc_setter testloc#ci then
+        let testtestiaddr = finfo#get_associated_cc_setter testloc#ci in
+        let testtestloc = ctxt_string_to_location faddr testtestiaddr in
+        let testtestaddr = testtestloc#i in
+        let testtestinstr = !arm_assembly_instructions#at_address testtestaddr in
+        let _ =
+          chlog#add
+            "conditional conditional test"
+            (LBLOCK [
+                 testfloc#l#toPretty;
+                 STR ": ";
+                 STR (arm_opcode_to_string testinstr#get_opcode);
+                 STR " with setter ";
+                 STR (arm_opcode_to_string testtestinstr#get_opcode)]) in
+        arm_conditional_conditional_expr
+          ~condopc:condinstr#get_opcode
+          ~testopc: testinstr#get_opcode
+          ~testtestopc: testtestinstr#get_opcode
+          ~condloc
+          ~testloc
+          ~testtestloc
+      else
+        arm_conditional_expr
+          ~condopc:condinstr#get_opcode
+          ~testopc:testinstr#get_opcode
+          ~condloc
+          ~testloc
+    else
+      arm_conditional_expr
+        ~condopc:condinstr#get_opcode
+        ~testopc:testinstr#get_opcode
+        ~condloc
+        ~testloc in
+
   let convert_to_chif expr =
     let (cmds,bxpr) = xpr_to_boolexpr reqN reqC expr in
     cmds @ [ASSERT bxpr] in
@@ -1309,11 +1378,13 @@ let translate_arm_instruction
      let cmds = floc#get_abstract_commands vrd () in
      default cmds
 
-  | SignedExtendHalfword (_, rd, _, _) ->
+  | SignedExtendHalfword (c, rd, _, _) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = rd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
+     (match c with
+      | ACCAlways -> default (lhscmds @ cmds)
+      | _ -> make_conditional_commands c (lhscmds @ cmds))
 
   | SignedMostSignificantWordMultiply (_, dst, _, _, _) ->
      let floc = get_floc loc in

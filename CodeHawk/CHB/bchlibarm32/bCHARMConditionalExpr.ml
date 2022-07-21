@@ -265,8 +265,11 @@ let cc_expr_bare
        let d2 = XOp (XLAnd, [c2; XOp (XGe, [v y; ic31])]) in
        XOp (XLOr, [d1; d2])
 
-    | (Compare (ACCAlways, x, y, _), ACCCarrySet) ->
+    | (Compare (_, x, y, _), ACCCarrySet) ->
        XOp (XGe, [v x; v y])
+
+    | (Compare (_, x, y, _), ACCCarryClear) ->
+       XOp (XLt, [v x; v y])
 
     | (Compare (ACCAlways, x, y, _), ACCUnsignedHigher) ->
        XOp (XGt, [v x; v y])
@@ -294,16 +297,7 @@ let arm_conditional_expr
     | Some c when is_cond_conditional c ->
        cc_expr_bare v vu testfloc testopc c
     | _ -> (false, None) in
-             (*
-    match condopc with
-    | Branch (c, _, _)
-      | BranchExchange (c, _) when is_cond_conditional c ->
-       cc_expr v vu testfloc testopc c
-    | IfThen (c, _) when is_cond_conditional c ->
-       cc_expr v vu testfloc testopc c
-    | Move (_, c, _, _, _) when is_cond_conditional c ->
-       cc_expr v vu testfloc testopc c
-    | _ -> (false, None) in *)
+
   if found then
     match optxpr with
     | Some expr ->
@@ -327,4 +321,61 @@ let arm_conditional_expr
 	     STR (arm_opcode_to_string testopc)]);
       (frozenVars#listOfValues, None)
     end
-      
+
+
+let arm_conditional_conditional_expr
+      ~(condopc: arm_opcode_t)
+      ~(testopc: arm_opcode_t)
+      ~(testtestopc: arm_opcode_t)
+      ~(condloc: location_int)
+      ~(testloc: location_int)
+      ~(testtestloc: location_int) =
+  let condfloc = get_floc condloc in
+  let (fv1, cond1) =
+    arm_conditional_expr
+      ~condopc: testopc
+      ~testopc: testtestopc
+      ~condloc: testloc
+      ~testloc: testtestloc in
+  let (fv2, cond2) =
+    arm_conditional_expr
+      ~condopc
+      ~testopc
+      ~condloc
+      ~testloc in
+  let (fv3, cond3) =
+    arm_conditional_expr
+      ~condopc
+      ~testopc: testtestopc
+      ~condloc
+      ~testloc: testtestloc in
+  let frozenVars = new VariableCollections.set_t in
+  let _ = frozenVars#addList fv1 in
+  let _ = frozenVars#addList fv2 in
+  let _ = frozenVars#addList fv3 in
+  match (cond1, cond2, cond3) with
+  | (Some cond1, Some cond2, Some cond3) ->
+     let _ =
+       chlog#add
+         "conditional condition expressions"
+         (LBLOCK [
+              STR (arm_opcode_to_string condopc);
+              STR "; ";
+              STR (arm_opcode_to_string testopc);
+              STR "; ";
+              STR (arm_opcode_to_string testtestopc);
+              STR ": cond1: ";
+              x2p cond1;
+              STR "; cond2: ";
+              x2p cond2;
+              STR "; cond3: ";
+              x2p cond3]) in
+
+     let xpr = XOp (XLOr, [XOp (XLAnd, [XOp (XLNot, [cond1]); cond3]); cond2]) in
+     begin
+       chlog#add "condition" (x2p xpr);
+       condfloc#set_test_expr xpr;
+       (frozenVars#toList, Some xpr)
+     end
+  | _ -> (frozenVars#toList, None)
+
