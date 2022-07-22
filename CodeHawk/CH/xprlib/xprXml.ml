@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -65,39 +67,44 @@ let get_sumtype_from_table (table:(string,'a) Hashtbl.t) (name:string) =
   else
     raise (Invalid_argument ("get_sumtype_from_table: " ^ name ^ " not found"))
 
+
 let _ =
   List.iter (fun (op,s) ->
       add_to_table op_symbols_to_string op_symbols_from_string op s)
-            [ (XNeg,    "minus" );
-              (XBNot,   "bnot" );
-              (XBNor,   "bnor" );
-              (XLNot,   "not" );
-              (XPlus,   "plus");
-              (XMinus,  "minus");
-              (XMult,   "times");
-              (XDiv,    "divide");
-              (XMod,    "rem");
-              (XPow,    "pow");
-              (XShiftlt, "shiftleft");
-              (XShiftrt, "shiftright");
-              (XLt,     "lt");
-              (XGt,     "gt");
-              (XLe,     "leq");
-              (XGe,     "geq");
-              (XEq,     "eq");
-              (XNe,     "neq");
-              (XSubset, "subset");
-              (XDisjoint, "disjoint");
-              (XBAnd,   "band");
-              (XBXor,   "bxor");
-              (XBOr,    "bor");
-              (XLAnd,   "and");
-              (XLOr,    "or");
-              (XNumJoin, "numjoin");
-              (XNumRange, "numrange") ;
-              (Xf "buffersize", "buffersize") ;
-              (Xf "max", "max") ]
-  
+    [(XNeg, "minus" );
+     (XBNot, "bnot" );
+     (XBNor, "bnor" );
+     (XLNot, "not" );
+     (XPlus, "plus");
+     (XMinus, "minus");
+     (XMult, "times");
+     (XDiv, "divide");
+     (XMod, "rem");
+     (XPow, "pow");
+     (XShiftlt, "shiftleft");
+     (XShiftrt, "shiftright");
+     (XLsr, "lsr");
+     (XAsr, "asr");
+     (XLsl, "lsl");
+     (XLt, "lt");
+     (XGt, "gt");
+     (XLe, "leq");
+     (XGe, "geq");
+     (XEq, "eq");
+     (XNe, "neq");
+     (XSubset, "subset");
+     (XDisjoint, "disjoint");
+     (XBAnd, "band");
+     (XBXor, "bxor");
+     (XBOr, "bor");
+     (XLAnd, "and");
+     (XLOr, "or");
+     (XNumJoin, "numjoin");
+     (XNumRange, "numrange") ;
+     (Xf "buffersize", "buffersize");
+     (Xf "max", "max")]
+
+
 let _ =
   List.iter (fun (vt,s) ->
       add_to_table variable_types_to_string variable_types_from_string vt s)

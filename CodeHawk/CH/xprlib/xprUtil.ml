@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -167,7 +169,7 @@ and xop_2_boolexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (op:xop_t) (l:xpr
   let default = (make_nested_nop (), RANDOM) in
   match (op, l) with
     (_, []) ->
-      failwith "Empty operand list in xop_2_boolexpr"
+      raise (CHFailure (STR "Empty operand list in xop_2_boolexpr"))
 
   | (XNeg, [e]) ->
       xpr_2_boolexpr reqN reqC (XOp (XNe, [ XOp (op, l) ; zero_constant_expr]))
@@ -187,8 +189,11 @@ and xop_2_boolexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (op:xop_t) (l:xpr
   | (XDiv, _)
   | (XMod, _)
   | (XShiftlt, _)
-  | (XShiftrt, _) ->
-      xpr_2_boolexpr reqN reqC (XOp (XNe, [XOp (op,l) ; zero_constant_expr ]))
+  | (XShiftrt, _)
+  | (XLsr, _)
+  | (XAsr, _)
+  | (XLsl, _) ->
+      xpr_2_boolexpr reqN reqC (XOp (XNe, [XOp (op,l); zero_constant_expr]))
 
   | (XLt, [e1; e2])
   | (XLe, [e1; e2])
@@ -207,7 +212,7 @@ and xop_2_boolexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (op:xop_t) (l:xpr
 	| XEq -> EQ  (r1, r2)
 	| XNe -> NEQ (r1, r2)
 	| _ ->
-	    failwith "Unexpected operator in xop_2_boolexpr"
+	    raise (CHFailure (STR "Unexpected operator in xop_2_boolexpr"))
       in
       (make_nested_cmd_block [c1; c2], bxpr)
 
@@ -227,15 +232,24 @@ let xpr2boolexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (xpr:xpr_t):code_bo
     let (_, sim_expr) = simplify_expr xpr in
     xpr_2_boolexpr reqN reqC sim_expr
 
-let xpr_to_numexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (xpr:xpr_t):(cmd_t list * numerical_exp_t) =
+let xpr_to_numexpr
+      (reqN:tmp_provider_t)
+      (reqC:cst_provider_t)
+      (xpr:xpr_t):(cmd_t list * numerical_exp_t) =
   let (c,e) = xpr2numexpr reqN reqC xpr in
   (nested_cmd_2_cmds c, e)
 
-let xpr_to_numvar (reqN:tmp_provider_t) (reqC:cst_provider_t) (xpr:xpr_t):(cmd_t list * variable_t) =
+let xpr_to_numvar
+      (reqN:tmp_provider_t)
+      (reqC:cst_provider_t)
+      (xpr:xpr_t):(cmd_t list * variable_t) =
   let (c,v) = xpr2numvar reqN reqC xpr in
   (nested_cmd_2_cmds c, v)
 
-let xpr_to_boolexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (xpr:xpr_t):(cmd_t list * boolean_exp_t) =
+let xpr_to_boolexpr
+      (reqN:tmp_provider_t)
+      (reqC:cst_provider_t)
+      (xpr:xpr_t):(cmd_t list * boolean_exp_t) =
   let (c,e) = xpr2boolexpr reqN reqC xpr in
   (nested_cmd_2_cmds c, e)
 

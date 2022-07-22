@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,27 +43,57 @@ open XprTypes
 let xop_mfts:xop_t mfts_int  =
   mk_fn_mfts
     "xop_t"
-    [ (XNeg, "neg"); (XBNot, "bnot"); (XLNot, "lnot"); (XPlus, "plus");
-      (XMinus, "minus"); (XMult, "mult"); (XDiv, "div"); (XMod, "mod"); (XPow, "pow");
-      (XShiftlt, "shiftlt"); (XShiftrt, "shiftrt"); (XLt, "lt"); (XGt, "gt");
-      (XLe, "le"); (XGe, "ge"); (XEq, "eq"); (XNe, "ne"); (XSubset, "subset");
-      (XDisjoint, "disjoint"); (XBAnd, "band"); (XBXor,"bxor"); (XBOr, "bor");
-      (XBNor, "bnor"); (XLAnd, "land"); (XLOr, "lor"); (XNumJoin, "numjoin");
-      (XNumRange, "range") ]
+    [(XNeg, "neg");
+     (XBNot, "bnot");
+     (XLNot, "lnot");
+     (XPlus, "plus");
+     (XMinus, "minus");
+     (XMult, "mult");
+     (XDiv, "div");
+     (XMod, "mod");
+     (XPow, "pow");
+     (XShiftlt, "shiftlt");
+     (XShiftrt, "shiftrt");
+     (XLsr, "lsr");
+     (XAsr, "asr");
+     (XLsl, "lsl");
+     (XLt, "lt");
+     (XGt, "gt");
+     (XLe, "le");
+     (XGe, "ge");
+     (XEq, "eq");
+     (XNe, "ne");
+     (XSubset, "subset");
+     (XDisjoint, "disjoint");
+     (XBAnd, "band");
+     (XBXor,"bxor");
+     (XBOr, "bor");
+     (XBNor, "bnor");
+     (XLAnd, "land");
+     (XLOr, "lor");
+     (XNumJoin, "numjoin");
+     (XNumRange, "range")]
     (fun x ->
       match x with
       | Xf f -> "xf_" ^ f
-      | _ -> raise (CHFailure
-                      (LBLOCK [ STR "internal error in xop_t sumtype" ;
-                                STR " serializer" ])))
+      | _ ->
+         raise
+           (CHFailure
+              (LBLOCK [
+                   STR "internal error in xop_t sumtype";
+                   STR " serializer"])))
     (fun s ->
       match (nsplit '_' s) with
-      | [ "xf" ; f ] -> Xf f
+      | ["xf"; f] -> Xf f
       | _ ->
-         raise (CHFailure
-                  (LBLOCK [ STR "String " ; STR s ;
-                            STR " not recognized as a valid xop_t type" ])))
-  
+         raise
+           (CHFailure
+              (LBLOCK [
+                   STR "String ";
+                   STR s;
+                   STR " not recognized as a valid xop_t type"])))
+
+
 class xcst_mcts: [xcst_t] mfts_int =
 object
 
@@ -79,6 +111,7 @@ object
   method tags = [ "bc"; "ic"; "r"; "ss"; "ui"; "us" ]
 
 end
+
 
 let xcst_mcts = new xcst_mcts
 
