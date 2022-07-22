@@ -826,24 +826,32 @@ object (self)
              let m = get_multiplier n in
              let result = XOp (XMult, [ rhs ; m ]) in
              let rresult = rewrite_expr result in
-             ([ "a:vxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
-                             xd#index_xpr result ; xd#index_xpr rresult ])
+             (["a:vxxx"],
+              [xd#index_variable lhs;
+               xd#index_xpr rhs;
+               xd#index_xpr result;
+               xd#index_xpr rresult])
           | _ ->
-             raise (BCH_failure
-                      (LBLOCK [ STR "Unexpected operand for ShiftLeftLogical" ;
-                                imm#toPretty ])))
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Unexpected operand for ShiftLeftLogical";
+                       imm#toPretty])))
 
-      | ShiftLeftLogicalVariable (dst,src1,src2) ->
+      | ShiftLeftLogicalVariable (dst, src1, src2) ->
          let rhs1 = src1#to_expr floc in
          let rhs2 = src2#to_expr floc in
          let lhs = dst#to_variable floc in
-         let result = XOp (XShiftlt, [ rhs1 ; rhs2 ]) in
+         let result = XOp (XLsl, [rhs1; rhs2]) in
          let rresult = rewrite_expr result in
-         ([ "a:vxxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
-                          xd#index_xpr result ; xd#index_xpr rresult ])         
-         
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
 
-      | ShiftRightArithmetic (dst,src,imm) ->
+      | ShiftRightArithmetic (dst, src, imm) ->
          let rhs = src#to_expr floc in
          let lhs = dst#to_variable floc in
          (match imm#to_expr floc with
@@ -851,23 +859,32 @@ object (self)
              let m = get_multiplier n in
              let result = XOp (XDiv, [ rhs ; m ]) in
              let rresult = rewrite_expr result in
-             ([ "a:vxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
-                             xd#index_xpr result ; xd#index_xpr rresult ])
+             (["a:vxxx"],
+              [xd#index_variable lhs;
+               xd#index_xpr rhs;
+               xd#index_xpr result;
+               xd#index_xpr rresult])
           | _ ->
-             raise (BCH_failure
-                      (LBLOCK [ STR "Unexpected operand for ShiftRightArithmetic: " ;
-                                imm#toPretty ])))
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Unexpected operand for ShiftRightArithmetic: ";
+                       imm#toPretty])))
 
-      | ShiftRightArithmeticVariable (dst,src1,src2) ->
+      | ShiftRightArithmeticVariable (dst, src1, src2) ->
          let rhs1 = src1#to_expr floc in
          let rhs2 = src2#to_expr floc in
          let lhs = dst#to_variable floc in
-         let result = XOp (XShiftrt, [ rhs1 ; rhs2 ]) in
+         let result = XOp (XAsr, [rhs1; rhs2]) in
          let rresult = rewrite_expr result in
-         ([ "a:vxxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
-                          xd#index_xpr result ; xd#index_xpr rresult ])         
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
 
-      | ShiftRightLogical (dst,src,imm) ->
+      | ShiftRightLogical (dst, src, imm) ->
          let rhs = src#to_expr floc in
          let lhs = dst#to_variable floc in
          (match imm#to_expr floc with
@@ -875,21 +892,30 @@ object (self)
              let m = get_multiplier n in
              let result = XOp (XDiv, [ rhs ; m ]) in
              let rresult = rewrite_expr result in
-             ([ "a:vxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
-                             xd#index_xpr result ; xd#index_xpr rresult ])
+             (["a:vxxx"],
+              [xd#index_variable lhs;
+               xd#index_xpr rhs;
+               xd#index_xpr result;
+               xd#index_xpr rresult])
           | _ ->
-             raise (BCH_failure
-                      (LBLOCK [ STR "Unexpected operand for ShiftRightLogical: " ;
-                                imm#toPretty ])))
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Unexpected operand for ShiftRightLogical: ";
+                       imm#toPretty])))
 
-      | ShiftRightLogicalVariable (dst,src1,src2) ->
+      | ShiftRightLogicalVariable (dst, src1, src2) ->
          let rhs1 = src1#to_expr floc in
          let rhs2 = src2#to_expr floc in
          let lhs = dst#to_variable floc in
-         let result = XOp (XShiftrt, [ rhs1 ; rhs2 ]) in
+         let result = XOp (XLsr, [rhs1; rhs2]) in
          let rresult = rewrite_expr result in
-         ([ "a:vxxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs1 ; xd#index_xpr rhs2 ;
-                          xd#index_xpr result ; xd#index_xpr rresult ])
+         (["a:vxxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs1;
+           xd#index_xpr rhs2;
+           xd#index_xpr result;
+           xd#index_xpr rresult])
 
       | SignExtendByte (dst,src) ->
          let rhs = src#to_expr floc in

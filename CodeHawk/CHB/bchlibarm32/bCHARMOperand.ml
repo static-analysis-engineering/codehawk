@@ -433,12 +433,12 @@ object (self:'a)
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSR, n)) ->
        let env = floc#f#env in
        XOp
-         (XShiftrt,
+         (XLsr,
           [XVar (env#mk_arm_register_variable r); int_constant_expr n])
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, n)) ->
        let env = floc#f#env in
        XOp
-         (XShiftlt,
+         (XLsl,
           [XVar (env#mk_arm_register_variable r); int_constant_expr n])
     | ARMShiftedReg _ -> XConst (XRandom)
     | ARMRegBitSequence (r,lsb,widthm1) -> XConst (XRandom)
