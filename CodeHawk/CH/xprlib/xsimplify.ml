@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -55,6 +55,7 @@ type e_struct_t =
   | SLScalar of xop_t * numerical_t * xpr_t
   | Unreduced
 
+
 let get_struct expr =
   match expr with
   | XConst (IntConst n) -> 
@@ -74,12 +75,11 @@ let get_struct expr =
        match (get_const e1, get_const e2) with
 	 (Some c1, Some c2) -> 
 	 begin
-	   chlog#add "unreduced constants in simplification"
-                     (LBLOCK [ xpr_to_pretty expr ]) ;
+	   chlog#add
+             "unreduced constants in simplification"
+             (LBLOCK [xpr_to_pretty expr]);
 	   Unreduced
 	 end
-       (*		  raise (CSimplificationProblem
-							(LBLOCK [STR "unsimplified constants: "; s ]))   *)
        | (Some c1, _ ) -> SLScalar (op, c1, e2)
        | (_, Some c2 ) -> SRScalar (op, e1, c2)
        | _ -> Unreduced
@@ -122,6 +122,9 @@ let rec sim_expr (m:bool) (e:xpr_t):(bool * xpr_t) =
        | XLOr -> reduce_or m s1 s2
        | XShiftlt -> reduce_shiftleft m s1 s2
        | XShiftrt -> reduce_shiftright m s1 s2
+       | XLsr -> reduce_lsr m s1 s2
+       | XAsr -> reduce_asr m s1 s2
+       | XLsl -> reduce_lsl m s1 s2
        | XBAnd -> reduce_bitwiseand m s1 s2
        | XDisjoint -> reduce_disjoint m s1 s2
        | XSubset -> reduce_subset m s1 s2
@@ -907,45 +910,92 @@ and reduce_bitwiseand m e1 e2 =
        default
      end
 
-and reduce_shiftleft m e1 e2 =
+
+and reduce_shiftleft (m: bool) (e1: xpr_t) (e2: xpr_t): bool * xpr_t =
   let default = (m, XOp (XShiftlt, [e1 ; e2])) in
   let ne n = num_constant_expr n in
   try
     match (get_struct e1, get_struct e2) with
     | (SConst a, SConst b) ->
-       if b#is_zero then (true,e1)
-       else if b#lt numerical_zero || b#geq (mkNumerical 32)
-       then default
+       if b#is_zero then
+         (true,e1)
        else
-         (try
-            let ai = a#toInt in
-            let bi = b#toInt in
-            let shifted = ai lsl bi in
-            (true, ne (mkNumerical shifted))
-          with
-            Failure _ -> default)
+         if b#lt numerical_zero || b#geq (mkNumerical 32) then
+           default
+         else
+           (try
+              let ai = a#toInt in
+              let bi = b#toInt in
+              let shifted = ai lsl bi in
+              (true, ne (mkNumerical shifted))
+            with
+              Failure _ -> default)
     | _ -> default
   with
   | CHFailure p ->
      begin
-       chlog#add "simplification"
-                 (LBLOCK [ STR "reduce shift left: " ; xpr_to_pretty e1 ; STR ", " ;
-                           xpr_to_pretty e2 ; STR ": " ; p ]) ;
+       chlog#add
+         "simplification"
+         (LBLOCK [
+              STR "reduce shift left: ";
+              xpr_to_pretty e1;
+              STR ", ";
+              xpr_to_pretty e2;
+              STR ": ";
+              p]);
        default
      end
 
-and reduce_shiftright m e1 e2 =
-  let default = (m, XOp (XShiftrt, [ e1 ; e2])) in
+
+and reduce_lsl (m: bool) (e1: xpr_t) (e2: xpr_t): bool * xpr_t =
+  let default = (m, XOp (XLsl, [e1 ; e2])) in
+  let ne n = num_constant_expr n in
+  try
+    match (get_struct e1, get_struct e2) with
+    | (SConst a, SConst b) ->
+       if b#is_zero then
+         (true,e1)
+       else
+         if b#lt numerical_zero || b#geq (mkNumerical 32) then
+           default
+         else
+           (try
+              let ai = a#toInt in
+              let bi = b#toInt in
+              let shifted = ai lsl bi in
+              (true, ne (mkNumerical shifted))
+            with
+              Failure _ -> default)
+    | _ -> default
+  with
+  | CHFailure p ->
+     begin
+       chlog#add
+         "simplification"
+         (LBLOCK [
+              STR "reduce logical shift left: ";
+              xpr_to_pretty e1;
+              STR ", ";
+              xpr_to_pretty e2;
+              STR ": ";
+              p]);
+       default
+     end
+
+
+and reduce_shiftright (m: bool) (e1: xpr_t) (e2: xpr_t): bool * xpr_t =
+  let default = (m, XOp (XShiftrt, [e1; e2])) in
   let ne n = num_constant_expr n in
   let ni i = num_constant_expr (mkNumerical i) in
   try
     match (get_struct e1, get_struct e2) with
     | (SConst a, SConst b) ->
-       if b#is_zero then (true,e1)
-       else if b#lt numerical_zero || b#geq (mkNumerical 32)
-       then default
-       else if a#lt numerical_zero
-       then default
+       if b#is_zero then
+         (true, e1)
+       else if b#lt numerical_zero || b#geq (mkNumerical 32) then
+         default
+       else if a#lt numerical_zero then
+         default
        else
          (try
             let ai = a#toInt in
@@ -955,17 +1005,18 @@ and reduce_shiftright m e1 e2 =
           with
             Failure _ -> default)
     | (_, SConst b) ->
-       if b#is_zero then (true, e1)
-       else if b#lt numerical_zero || b#geq (mkNumerical 32)
-       then default
+       if b#is_zero then
+         (true, e1)
+       else if b#lt numerical_zero || b#geq (mkNumerical 32) then
+         default
        else
          (try
             let bi = b#toInt in
             match bi with
-            | 1 -> (true, XOp (XDiv, [ e1; ni 2 ]))
-            | 2 -> (true, XOp (XDiv, [ e1; ni 4 ]))
-            | 3 -> (true, XOp (XDiv, [ e1; ni 8 ]))
-            | 4 -> (true, XOp (XDiv, [ e1; ni 16 ]))
+            | 1 -> (true, XOp (XDiv, [e1; ni 2]))
+            | 2 -> (true, XOp (XDiv, [e1; ni 4]))
+            | 3 -> (true, XOp (XDiv, [e1; ni 8]))
+            | 4 -> (true, XOp (XDiv, [e1; ni 16]))
             | _ -> default
           with
             Failure _ -> default)
@@ -973,12 +1024,117 @@ and reduce_shiftright m e1 e2 =
   with
   | CHFailure p ->
      begin
-       chlog#add "simplification"
-                 (LBLOCK [ STR "reduce shift right: " ; xpr_to_pretty e1 ; STR ", " ;
-                           xpr_to_pretty e2 ; STR ": " ; p ]) ;
+       chlog#add
+         "simplification"
+         (LBLOCK [
+              STR "reduce shift right: ";
+              xpr_to_pretty e1;
+              STR ", ";
+              xpr_to_pretty e2;
+              STR ": ";
+              p]);
        default
      end
-         
+
+
+and reduce_lsr (m: bool) (e1: xpr_t) (e2: xpr_t): bool * xpr_t =
+  let default = (m, XOp (XLsr, [e1; e2])) in
+  let ne n = num_constant_expr n in
+  try
+    match (get_struct e1, get_struct e2) with
+    | (SConst a, SConst b) ->
+       if b#is_zero then
+         (true, e1)
+       else if b#lt numerical_zero || b#geq (mkNumerical 32) then
+         default
+       else if a#lt numerical_zero then
+         default
+       else
+         (try
+            let ai = a#toInt in
+            let bi = b#toInt in
+            let shifted = ai lsr bi in
+            (true, ne (mkNumerical shifted))
+          with
+            Failure _ -> default)
+    | (_, SConst b) ->
+       if b#is_zero then
+         (true, e1)
+       else if b#lt numerical_zero || b#geq (mkNumerical 32) then
+         default   (* this usually is an error, in 32-bit systems *)
+       else
+         default   (* defer this case to deal with sign inversion *)
+    | _ -> default
+  with
+  | CHFailure p ->
+     begin
+       chlog#add
+         "simplification"
+         (LBLOCK [
+              STR "reduce logical shift right: ";
+              xpr_to_pretty e1;
+              STR ", ";
+              xpr_to_pretty e2;
+              STR ": ";
+              p]);
+       default
+     end
+
+
+and reduce_asr (m: bool) (e1: xpr_t) (e2: xpr_t): bool * xpr_t =
+  let default = (m, XOp (XAsr, [e1; e2])) in
+  let ne n = num_constant_expr n in
+  let ni i = num_constant_expr (mkNumerical i) in
+  try
+    match (get_struct e1, get_struct e2) with
+    | (SConst a, SConst b) ->
+       if b#is_zero then
+         (true, e1)
+       else if b#lt numerical_zero || b#geq (mkNumerical 32) then
+         default
+       else if a#lt numerical_zero then
+         default
+       else
+         (try
+            let ai = a#toInt in
+            let bi = b#toInt in
+            let shifted = ai lsr bi in
+            (true, ne (mkNumerical shifted))
+          with
+            Failure _ -> default)
+    | (_, SConst b) ->
+       if b#is_zero then
+         (true, e1)
+       else if b#lt numerical_zero || b#geq (mkNumerical 32) then
+         default
+       else
+         (try
+            let bi = b#toInt in
+            match bi with
+            | 1 -> (true, XOp (XDiv, [e1; ni 2]))
+            | 2 -> (true, XOp (XDiv, [e1; ni 4]))
+            | 3 -> (true, XOp (XDiv, [e1; ni 8]))
+            | 4 -> (true, XOp (XDiv, [e1; ni 16]))
+            | _ -> default
+          with
+            Failure _ -> default)
+    | _ -> default
+  with
+  | CHFailure p ->
+     begin
+       chlog#add
+         "simplification"
+         (LBLOCK [
+              STR "reduce arithmetic shift right: ";
+              xpr_to_pretty e1;
+              STR ", ";
+              xpr_to_pretty e2;
+              STR ": ";
+              p]);
+       default
+     end
+
+
 and reduce_disjoint m e1 e2 =
   let default = (m, XOp (XDisjoint,  [ e1 ; e2])) in
   let be b = XConst (BoolConst b) in
