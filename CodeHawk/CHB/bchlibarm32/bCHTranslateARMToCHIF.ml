@@ -620,7 +620,7 @@ let translate_arm_instruction
        match xrm with
        | XConst (IntConst n) when n#toInt = 2->
           XOp (XDiv, [xrn; XConst (IntConst (mkNumerical 4))])
-       | _ -> XOp (XShiftrt, [xrn; xrm]) in
+       | _ -> XOp (XAsr, [xrn; xrm]) in
      let cmds = floc#get_assign_commands vrd asrr in
      default cmds
 
@@ -1097,7 +1097,7 @@ let translate_arm_instruction
      let vrd = rd#to_variable floc in
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
-     let result = XOp (XShiftlt, [xrn; xrm]) in
+     let result = XOp (XLsl, [xrn; xrm]) in
      let cmds = floc#get_assign_commands vrd result in
      default cmds
 
@@ -1112,7 +1112,7 @@ let translate_arm_instruction
      let vrd = rd#to_variable floc in
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
-     let result = XOp (XShiftrt, [xrn; xrm]) in
+     let result = XOp (XLsr, [xrn; xrm]) in
      let cmds = floc#get_assign_commands vrd result in
      default cmds
 

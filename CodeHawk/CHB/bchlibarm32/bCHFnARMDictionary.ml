@@ -234,7 +234,7 @@ object (self)
            match xrm with
            | XConst (IntConst n) when n#toInt = 2 ->
               XOp (XDiv, [xrn; XConst (IntConst (mkNumerical 4))])
-           | _ -> XOp (XShiftrt, [xrn; xrm]) in
+           | _ -> XOp (XAsr, [xrn; xrm]) in
          let rresult = rewrite_expr result in
          (["a:vxxxx"], [xd#index_variable vrd;
                        xd#index_xpr xrn;
@@ -632,7 +632,7 @@ object (self)
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
-         let result = XOp (XShiftlt, [xrn; xrm]) in
+         let result = XOp (XLsl, [xrn; xrm]) in
          let rresult = rewrite_expr result in
          (["a:vxxxx"],
           [xd#index_variable vrd;
@@ -645,7 +645,7 @@ object (self)
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
-         let result = XOp (XShiftrt, [xrn; xrm]) in
+         let result = XOp (XLsr, [xrn; xrm]) in
          let rresult = rewrite_expr result in
          (["a:vxxxx"],
           [xd#index_variable vrd;

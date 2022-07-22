@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -784,7 +784,7 @@ let translate_mips_instruction
                   (LBLOCK [ STR "Unexpected operand in ShiftLeftLogical: " ;
                             imm#toPretty ])))
 
-  | ShiftLeftLogicalVariable (rd,rt,rs) ->
+  | ShiftLeftLogicalVariable (rd, rt, rs) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = rd#to_lhs floc in
      let rhs1 = rt#to_expr floc in
@@ -795,11 +795,11 @@ let translate_mips_instruction
            let result = XOp (XPow, [ int_constant_expr 2 ; rhs2 ]) in
            floc#get_assign_commands lhs result
         | _ ->
-           let result = XOp (XShiftlt, [ rhs1 ; rhs2 ]) in
+           let result = XOp (XLsl, [rhs1; rhs2]) in
            floc#get_assign_commands lhs result) in
      default (lhscmds @ cmds)
 
-  | ShiftRightLogical (dst,src,imm) ->
+  | ShiftRightLogical (dst, src, imm) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = dst#to_lhs floc in
      let rhs1 = src#to_expr floc in
@@ -808,48 +808,50 @@ let translate_mips_instruction
        match rhs2 with
        | XConst (IntConst n) when n#toInt = 31 ->
           (match rewrite_expr floc rhs1 with
-           | XOp (XBNor, [ x1 ; x2 ]) when is_zero x1 ->
-              floc#get_assign_commands lhs (XOp (XGe, [ x2 ; x1 ]))
-           | XOp (XBNor, [ x1 ; x2 ]) when is_zero x2 ->
-              floc#get_assign_commands lhs (XOp (XGe, [ x1 ; x2 ]))
+           | XOp (XBNor, [x1; x2]) when is_zero x1 ->
+              floc#get_assign_commands lhs (XOp (XGe, [x2; x1]))
+           | XOp (XBNor, [x1; x2]) when is_zero x2 ->
+              floc#get_assign_commands lhs (XOp (XGe, [x1; x2]))
            | _ ->
-              let result = XOp (XGe, [ rhs1 ; zero_constant_expr ]) in
+              let result = XOp (XGe, [rhs1; zero_constant_expr]) in
               floc#get_assign_commands lhs result)
        | _ ->
-          let result = XOp (XShiftrt, [ rhs1 ; rhs2 ]) in
+          let result = XOp (XLsr, [rhs1; rhs2]) in
           floc#get_assign_commands lhs result in
      default (lhscmds @ cmds)
 
-  | ShiftRightLogicalVariable (rd,rt,rs) ->
+  | ShiftRightLogicalVariable (rd, rt, rs) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = rd#to_lhs floc in
      let rhs1 = rt#to_expr floc in
      let rhs2 = rs#to_expr floc in
-     let result = XOp (XShiftrt, [ rhs1 ; rhs2 ]) in
+     let result = XOp (XLsr, [rhs1; rhs2]) in
      let cmds = floc#get_assign_commands lhs result in
      default (lhscmds @ cmds)
 
-  | ShiftRightArithmetic (dst,src,imm) ->
+  | ShiftRightArithmetic (dst, src, imm) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = dst#to_lhs floc in
      let rhs = src#to_expr floc in
      (match imm#to_expr floc with
       | XConst (IntConst n) ->
          let m = get_multiplier n in
-         let result = XOp (XDiv, [ rhs ; m ]) in
+         let result = XOp (XDiv, [rhs; m]) in
          let cmds = floc#get_assign_commands lhs result in
          default (lhscmds @ cmds)
       | _ ->
-         raise (BCH_failure
-                  (LBLOCK [ STR "Unexpected operand in ShiftRightArithmetic: " ;
-                            imm#toPretty ])))
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Unexpected operand in ShiftRightArithmetic: ";
+                   imm#toPretty])))
 
-  | ShiftRightArithmeticVariable (rd,rt,rs) ->
+  | ShiftRightArithmeticVariable (rd, rt, rs) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = rd#to_lhs floc in
      let rhs1 = rt#to_expr floc in
      let rhs2 = rs#to_expr floc in
-     let result = XOp (XShiftrt, [ rhs1 ; rhs2 ]) in
+     let result = XOp (XAsr, [rhs1; rhs2]) in
      let cmds = floc#get_assign_commands lhs result in
      default (lhscmds @ cmds)
 
