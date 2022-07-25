@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -86,30 +86,21 @@ let raise_error (node:xml_element_int) (msg:pretty_t) =
 
 let hex_cutoff = mkNumerical 10000  (* above this number print as hex value *)
 
-let nsplit (separator:char) (s:string):string list =
-  let result = ref [] in
-  let len = String.length s in
-  let start = ref 0 in
-  begin
-    while !start < len do
-      let s_index = try String.index_from s !start separator with Not_found -> len in
-      let substring = String.sub s !start (s_index - !start) in
-      begin
-	result := substring :: !result ;
-	start := s_index + 1
-      end 
-    done;
-    !result
-  end
+
+(* The original function did not reverse the list like the utility function;
+   not sure if the reversal is significant here. *)
+let nsplit (separator: char) (s: string): string list =
+  List.rev (CHUtil.string_nsplit separator s)
+
 
 let pr_expr = xpr_formatter#pr_expr
 let expr_compare = syntactic_comparison
 
-let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
-  let length = List.length in
-  if (length l1) < (length l2) then -1
-  else if (length l1) > (length l2) then 1 
-  else List.fold_right2 (fun e1 e2 a -> if a = 0 then (f e1 e2) else a) l1 l2 0
+
+(* Use the list_compare version that compares the elements starting from the
+   last element *)
+let list_compare = CHUtil.list_compare_r
+
 
 let non_relational_value_compare v1 v2 =
   let opt_num_compare i1 i2 = match (i1,i2) with
@@ -121,17 +112,22 @@ let non_relational_value_compare v1 v2 =
   | (FSymbolicExpr f1,FSymbolicExpr f2) -> expr_compare f1 f2
   | (FSymbolicExpr _,_) -> -1
   | (_,FSymbolicExpr _) -> 1
-  | (FIntervalValue (lb1,ub1),FIntervalValue (lb2,ub2)) ->
-    let l0 = opt_num_compare lb1 lb2 in if l0 = 0 then opt_num_compare ub1 ub2 else l0
+  | (FIntervalValue (lb1, ub1), FIntervalValue (lb2, ub2)) ->
+     let l0 = opt_num_compare lb1 lb2 in
+     if l0 = 0 then
+       opt_num_compare ub1 ub2
+     else
+       l0
   | (FIntervalValue _,_) -> -1
   | (_, FIntervalValue _) -> 1
-  | (FBaseOffsetValue (b1,lb1,ub1,_),FBaseOffsetValue (b2,lb2,ub2,_)) ->
+  | (FBaseOffsetValue (b1, lb1, ub1,_), FBaseOffsetValue (b2, lb2, ub2,_)) ->
     let l0 = b1#compare b2 in
     if l0 = 0 then
       let l1 = opt_num_compare lb1 lb2 in
       if l1 = 0 then opt_num_compare ub1 ub2 else l1
     else l0
-    
+
+
 let non_relational_value_to_pretty v =
   try
     let num_to_pretty num = 
@@ -143,46 +139,64 @@ let non_relational_value_to_pretty v =
         with
         | _ -> num#toPretty in
     match v with
-    | FSymbolicExpr v -> LBLOCK [ STR "(" ; pr_expr v ; STR ")" ]
-    | FIntervalValue (Some lb,Some ub) when lb#equal ub -> num_to_pretty lb
+    | FSymbolicExpr v -> LBLOCK [STR "("; pr_expr v; STR ")"]
+    | FIntervalValue (Some lb, Some ub) when lb#equal ub -> num_to_pretty lb
     | FIntervalValue (lb,ub) ->
-       LBLOCK [ STR "["   ; (match lb with Some v -> num_to_pretty v | _ -> STR "-oo") ; 
-	        STR " ; " ; (match ub with Some v -> num_to_pretty v | _ -> STR "oo") ; 
-	        STR "]" ]
+       LBLOCK [
+           STR "[";
+           (match lb with Some v -> num_to_pretty v | _ -> STR "-oo");
+	   STR " ; ";
+           (match ub with Some v -> num_to_pretty v | _ -> STR "oo");
+	   STR "]"]
     | FBaseOffsetValue (base,lb,ub,canbenull) ->
-       LBLOCK [ STR "(" ; base#toPretty ; STR ")" ; 
-	        (match (lb,ub) with
-	         | (None,None) -> STR ""
-	         | (Some lb,None) -> LBLOCK [ STR "+[ " ; num_to_pretty lb ; STR " ; oo ]" ]
-	         | (None,Some ub) -> LBLOCK [ STR "+[ -oo ; " ; num_to_pretty ub ; STR " ]" ]
-	         | (Some lb, Some ub) when lb#equal ub  && lb#equal numerical_zero -> STR ""
-	         | (Some lb, Some ub) when lb#equal ub ->
-	            LBLOCK [ STR "+ " ; num_to_pretty lb ]
-	         | (Some lb, Some ub) -> LBLOCK [ STR "+[" ; num_to_pretty lb ; STR ";" ; 
-					          num_to_pretty ub ; STR "]" ]) ; 
-	        (if canbenull then STR "" else STR " (not-null)") ]
+       LBLOCK [
+           STR "(";
+           base#toPretty;
+           STR ")";
+	   (match (lb,ub) with
+	    | (None, None) -> STR ""
+	    | (Some lb, None) ->
+               LBLOCK [STR "+[ "; num_to_pretty lb; STR "; oo ]"]
+	    | (None,Some ub) ->
+               LBLOCK [STR "+[ -oo ; "; num_to_pretty ub; STR " ]"]
+	    | (Some lb, Some ub) when lb#equal ub  && lb#equal numerical_zero ->
+               STR ""
+	    | (Some lb, Some ub) when lb#equal ub ->
+	       LBLOCK [ STR "+ "; num_to_pretty lb]
+	    | (Some lb, Some ub) ->
+               LBLOCK [
+                   STR "+[";
+                   num_to_pretty lb;
+                   STR ";";
+		   num_to_pretty ub;
+                   STR "]"]);
+	   (if canbenull then STR "" else STR " (not-null)")]
   with
   | BCH_failure p ->
-     let msg = LBLOCK [ STR "non-relational-value-to-pretty: " ; p ] in
+     let msg = LBLOCK [STR "non-relational-value-to-pretty: "; p] in
      begin
-       ch_error_log#add "non-relational-value-to-pretty" msg ;
+       ch_error_log#add "non-relational-value-to-pretty" msg;
        raise (BCH_failure msg)
      end
 
+
 let linear_equality_to_canonical_form lineq =
-  let factors = List.sort (fun (_,v1) (_,v2) -> v1#compare v2) lineq.leq_factors in
+  let factors =
+    List.sort (fun (_, v1) (_, v2) -> v1#compare v2) lineq.leq_factors in
   let (fc,_) = List.hd factors in
   if fc#gt numerical_zero then 
-    { leq_factors = factors ; leq_constant = lineq.leq_constant }
+    {leq_factors = factors; leq_constant = lineq.leq_constant}
   else
     let factors = List.map (fun (c,f) -> (c#neg,f)) factors in
-    { leq_factors = factors ; leq_constant = lineq.leq_constant#neg }
+    {leq_factors = factors; leq_constant = lineq.leq_constant#neg}
 
-let numerical_constraint_to_linear_equality (nc:numerical_constraint_t) =
+
+let numerical_constraint_to_linear_equality (nc: numerical_constraint_t) =
   let lineq = 
-    { leq_factors = List.map (fun (c,f) -> (c,f#getVariable)) nc#getFactorsList ;
-      leq_constant = nc#getConstant } in
+    {leq_factors = List.map (fun (c,f) -> (c, f#getVariable)) nc#getFactorsList;
+     leq_constant = nc#getConstant} in
   linear_equality_to_canonical_form lineq
+
 
 let linear_equality_to_pretty e =
   let pp_coeff first c =
@@ -196,19 +210,23 @@ let linear_equality_to_pretty e =
     else if c#lt numerical_zero then
       c#toPretty
     else
-      LBLOCK [ (if first then STR "" else STR " + ") ; c#toPretty ] in
-  let (lhs,_) = List.fold_left (fun (a,first) (c,f) -> 
-    ((LBLOCK [ pp_coeff first c ; f#toPretty])::a,false))
-    ([],true) e.leq_factors in
-  LBLOCK [ LBLOCK (List.rev lhs) ; STR " = " ; e.leq_constant#toPretty ]
+      LBLOCK [(if first then STR "" else STR " + "); c#toPretty] in
+  let (lhs, _) =
+    List.fold_left (fun (a, first) (c, f) ->
+        ((LBLOCK [pp_coeff first c; f#toPretty])::a, false))
+      ([],true) e.leq_factors in
+  LBLOCK [LBLOCK (List.rev lhs); STR " = "; e.leq_constant#toPretty]
 
-let linear_equality_get_vars e = List.map (fun (_,v) -> v) e.leq_factors
 
-let linear_equality_get_unity_vars e = 
-  List.fold_left (fun acc (c,v) -> 
-    if c#equal numerical_one || c#neg#equal numerical_one then 
+let linear_equality_get_vars e = List.map (fun (_, v) -> v) e.leq_factors
+
+
+let linear_equality_get_unity_vars e =
+  List.fold_left (fun acc (c, v) ->
+    if c#equal numerical_one || c#neg#equal numerical_one then
       v :: acc 
     else acc) [] e.leq_factors
+
 
 let is_variable_equality (lineq: linear_equality_t) =
   if lineq.leq_constant#equal numerical_zero then
@@ -219,44 +237,59 @@ let is_variable_equality (lineq: linear_equality_t) =
   else
     false
 
+
 let get_variable_equality_variables (lineq: linear_equality_t) =
   if is_variable_equality lineq then
     linear_equality_get_vars lineq
   else
     []
 
+
 let linear_equality_get_expr e v =
-  let make_factor c f = if c#equal numerical_one then 
+  let make_factor c f =
+    if c#equal numerical_one then
       XVar f 
     else 
-      XOp (XMult, [ num_constant_expr c ; XVar f]) in
+      XOp (XMult, [num_constant_expr c; XVar f]) in
   try
     let (c,f) = List.find (fun (_,f) -> f#equal v) e.leq_factors in
-    let xfactors = List.filter (fun (_,f) -> not (f#equal v)) e.leq_factors in
-    let x = if c#equal numerical_one then
-	List.fold_left (fun a (c,f) -> XOp (XPlus, [ a ; make_factor c#neg f ])) 
+    let xfactors = List.filter (fun (_, f) -> not (f#equal v)) e.leq_factors in
+    let x =
+      if c#equal numerical_one then
+	List.fold_left (fun a (c,f) -> XOp (XPlus, [a; make_factor c#neg f]))
 	  (num_constant_expr e.leq_constant) xfactors
       else if c#equal numerical_one#neg then
-	List.fold_left (fun a (c,f) -> XOp (XPlus, [ a ; make_factor c f ]))
+	List.fold_left (fun a (c,f) -> XOp (XPlus, [a; make_factor c f]))
 	  (num_constant_expr e.leq_constant#neg) xfactors
       else
-	raise (BCH_failure 
-		 (LBLOCK [ STR "Case with higher coefficients not yet handled: " ;
-			   linear_equality_to_pretty e ])) in
+	raise
+          (BCH_failure
+	     (LBLOCK [
+                  STR "Case with higher coefficients not yet handled: ";
+		  linear_equality_to_pretty e])) in
     simplify_xpr x
   with
     Not_found ->
-      raise (BCH_failure 
-	       (LBLOCK [ STR "Variable " ; v#toPretty ; 
-			 STR " not found in linear equality " ; 
-			 linear_equality_to_pretty e ]))
+    raise
+      (BCH_failure
+	 (LBLOCK [
+              STR "Variable ";
+              v#toPretty;
+	      STR " not found in linear equality ";
+	      linear_equality_to_pretty e]))
+
 
 let linear_equality_compare e1 e2 =
   let l0 = e1.leq_constant#compare e2.leq_constant in
-  if l0 = 0 then list_compare e1.leq_factors e2.leq_factors 
-    (fun (c1,f1) (c2,f2) -> let l0 = c1#compare c2 in if l0 = 0 then f1#compare f2 else l0)
+  if l0 = 0 then
+    list_compare
+      e1.leq_factors
+      e2.leq_factors
+      (fun (c1,f1) (c2,f2) ->
+        let l0 = c1#compare c2 in if l0 = 0 then f1#compare f2 else l0)
   else
     l0
+
 
 let invariant_fact_compare f1 f2 =
   match (f1,f2) with
@@ -264,7 +297,8 @@ let invariant_fact_compare f1 f2 =
   | (Unreachable _,_) -> -1
   | (_,Unreachable _) -> 1
   | (NonRelationalFact (x1,v1),NonRelationalFact (x2,v2)) ->
-    let l0 = x1#compare x2 in if l0 = 0 then non_relational_value_compare v1 v2 else l0
+     let l0 = x1#compare x2 in
+     if l0 = 0 then non_relational_value_compare v1 v2 else l0
   | (NonRelationalFact _,_) -> -1
   | (_,NonRelationalFact _) -> 1
   | (RelationalFact e1,RelationalFact e2) -> linear_equality_compare e1 e2
@@ -279,45 +313,64 @@ let invariant_fact_compare f1 f2 =
   | (TestVarEquality (v1,_,ta1,ja1), TestVarEquality (v2,_,ta2,ja2)) -> 
     let l0 = v1#compare v2 in 
     if l0 = 0 then 
-      let l1 = Stdlib.compare ta1 ta2 in if l1 = 0 then Stdlib.compare ja1 ja2 else l1
+      let l1 = Stdlib.compare ta1 ta2 in
+      if l1 = 0 then Stdlib.compare ja1 ja2 else l1
     else l0
 		   
 
 let invariant_fact_to_pretty f =
   match f with
-  | Unreachable d -> LBLOCK [ STR "unreachable(" ; STR d ; STR ")" ]
+  | Unreachable d ->
+     LBLOCK [STR "unreachable("; STR d; STR ")"]
   | NonRelationalFact (p,v) ->
-    LBLOCK [ STR p#getName#getBaseName ; STR ": " ; non_relational_value_to_pretty v ]
-  | RelationalFact e -> linear_equality_to_pretty e
-  | InitialVarEquality (v,vi) -> LBLOCK [ STR "initvar(" ; v#toPretty ; STR ")" ]
-  | InitialVarDisEquality (v,vi) -> LBLOCK [ STR "initmod(" ; v#toPretty ; STR ")" ]
-  | TestVarEquality (v,_,taddr,jaddr) -> 
-    LBLOCK [ STR "testvar(" ; v#toPretty ; STR "@" ; STR taddr ; STR "_to_" ;
-	     STR jaddr ; STR ")" ]
-    
+     LBLOCK [
+         STR p#getName#getBaseName; STR ": "; non_relational_value_to_pretty v]
+  | RelationalFact e ->
+     linear_equality_to_pretty e
+  | InitialVarEquality (v,vi) ->
+     LBLOCK [STR "initvar("; v#toPretty; STR ")"]
+  | InitialVarDisEquality (v,vi) ->
+     LBLOCK [STR "initmod("; v#toPretty; STR ")"]
+  | TestVarEquality (v, _, taddr, jaddr) ->
+     LBLOCK [
+         STR "testvar(";
+         v#toPretty;
+         STR "@";
+         STR taddr;
+         STR "_to_";
+	 STR jaddr;
+         STR ")"]
+
+
 let is_smaller_nrv (f1:non_relational_value_t) (f2:non_relational_value_t) =
   let is_smaller_interval lb1 ub1 lb2  ub2 =
     match (lb1,ub1,lb2,ub2) with
-    | (Some lb1,Some ub1,Some lb2,Some ub2) -> lb1#geq lb2 && ub1#leq ub2
-    | (Some lb1,Some ub1,Some lb2,_) -> lb1#geq lb2
-    | (Some lb1,Some ub1,_,Some ub2) -> ub1#leq ub2
-    | (Some lb1,Some ub1,_,_) -> true
+    | (Some lb1, Some ub1, Some lb2, Some ub2) -> lb1#geq lb2 && ub1#leq ub2
+    | (Some lb1, Some ub1, Some lb2, _) -> lb1#geq lb2
+    | (Some lb1, Some ub1, _, Some ub2) -> ub1#leq ub2
+    | (Some lb1, Some ub1, _, _) -> true
     | _ -> false in
   match (f1,f2) with
-  | (FIntervalValue (lb1,ub1), FIntervalValue (lb2,ub2)) ->
+  | (FIntervalValue (lb1, ub1), FIntervalValue (lb2, ub2)) ->
      is_smaller_interval lb1 ub1 lb2 ub2
-  | (FBaseOffsetValue (s1,lb1,ub1,_), FBaseOffsetValue(s2,lb2,ub2,_)) ->
+  | (FBaseOffsetValue (s1, lb1, ub1, _), FBaseOffsetValue(s2, lb2, ub2, _)) ->
      (s1#equal s2) && (is_smaller_interval lb1 ub1 lb2 ub2)
   | _ ->
     begin
-      ch_error_log#add "invariant comparison"
-	(LBLOCK [ STR "Invariant facts are not intervals: " ; 
-		  non_relational_value_to_pretty f1 ; STR " and " ;
-		  non_relational_value_to_pretty f2 ]) ;
-      raise (BCH_failure
-	       (LBLOCK [  STR "Invariant facts are not intervals: " ; 
-		  non_relational_value_to_pretty f1 ; STR " and " ;
-		  non_relational_value_to_pretty f2 ]))
+      ch_error_log#add
+        "invariant comparison"
+	(LBLOCK [
+             STR "Invariant facts are not intervals: ";
+	     non_relational_value_to_pretty f1;
+             STR " and ";
+	     non_relational_value_to_pretty f2]);
+      raise
+        (BCH_failure
+	   (LBLOCK [
+                STR "Invariant facts are not intervals: ";
+		non_relational_value_to_pretty f1;
+                STR " and ";
+		non_relational_value_to_pretty f2]))
     end
      
 
@@ -348,22 +401,22 @@ object (self:'a)
 
   method is_constant =
     match fact with
-    | NonRelationalFact (_,FIntervalValue (Some lb,Some ub)) -> lb#equal ub
+    | NonRelationalFact (_, FIntervalValue (Some lb, Some ub)) -> lb#equal ub
     | _ -> false
 
   method is_interval =
     match fact with
-    | NonRelationalFact (_,FIntervalValue _) -> true
+    | NonRelationalFact (_, FIntervalValue _) -> true
     | _ -> false
 
   method is_base_offset_value =
     match fact with
-    | NonRelationalFact (_,FBaseOffsetValue _) -> true
+    | NonRelationalFact (_, FBaseOffsetValue _) -> true
     | _ -> false
 
   method is_symbolic_expr =
     match fact with
-    | NonRelationalFact (_,FSymbolicExpr _) -> true
+    | NonRelationalFact (_, FSymbolicExpr _) -> true
     | _ -> false
 
   method is_linear_equality =
@@ -388,15 +441,23 @@ object (self:'a)
 
   method is_smaller (other:'a) =
     match (fact, other#get_fact) with
-    | (NonRelationalFact (_,i1), NonRelationalFact (_,i2)) -> is_smaller_nrv i1 i2
+    | (NonRelationalFact (_, i1), NonRelationalFact (_, i2)) -> is_smaller_nrv i1 i2
     | _ ->
       begin
-	ch_error_log#add "invariant comparison"
-	  (LBLOCK [ STR "Invariants are not non-relational values: " ; 
-		    self#toPretty ; STR " and " ; other#toPretty ]) ;
-	raise (BCH_failure
-		 (LBLOCK [ STR "Invariants are not non-relational values: " ; 
-			   self#toPretty ; STR " and " ; other#toPretty ]))
+	ch_error_log#add
+          "invariant comparison"
+	  (LBLOCK [
+               STR "Invariants are not non-relational values: ";
+	       self#toPretty;
+               STR " and ";
+               other#toPretty]);
+	raise
+          (BCH_failure
+	     (LBLOCK [
+                  STR "Invariants are not non-relational values: ";
+		  self#toPretty;
+                  STR " and ";
+                  other#toPretty]))
       end
 
   method get_variables =
@@ -404,14 +465,16 @@ object (self:'a)
 
   method write_xml (node:xml_element_int) =
     begin
-      invd#write_xml_invariant_fact node self#get_fact ;
+      invd#write_xml_invariant_fact node self#get_fact;
       node#setIntAttribute "index" index
     end
 
   method toPretty = invariant_fact_to_pretty fact
 end
 
-let read_xml_invariant (invd:invdictionary_int) (node:xml_element_int):invariant_int =
+
+let read_xml_invariant
+      (invd:invdictionary_int) (node:xml_element_int):invariant_int =
   let index = node#getIntAttribute "index" in
   let fact = invd#read_xml_invariant_fact node in
   new invariant_t ~invd ~index ~fact
@@ -422,12 +485,12 @@ class location_invariant_t
 object (self)
 
   val invd = invd
-  val table = H.create 5     (* non-relational facts indexed by variable seq number *)
-  val facts = H.create 3     (* invariant-fact index -> invariant_int  *)
+  val table = H.create 5   (* non-relational facts indexed by variable seq number *)
+  val facts = H.create 3   (* invariant-fact index -> invariant_int  *)
 
   method reset =
     begin
-      H.clear table ;
+      H.clear table;
       H.clear facts
     end
 
@@ -440,9 +503,10 @@ object (self)
         self#integrate_fact inv;
         track_location
           iaddr
-          (LBLOCK [STR iaddr;
-                   STR ": add fact ";
-                   inv#toPretty])
+          (LBLOCK [
+               STR iaddr;
+               STR ": add fact ";
+               inv#toPretty])
       end
 
   method private integrate_fact  (inv:invariant_int) =
@@ -483,15 +547,18 @@ object (self)
                f :: (List.filter (fun p -> not p#is_base_offset_value) e)
             | [ p ] -> e
             | _ ->
-               let msg = LBLOCK [ STR "Multiple base-offset-value  facts: " ;
-                                  pretty_print_list pfacts (fun p -> p#toPretty) "{" "," "}" ] in
+               let msg =
+                 LBLOCK [
+                     STR "Multiple base-offset-value  facts: ";
+                     pretty_print_list pfacts
+                       (fun p -> p#toPretty) "{" "," "}" ] in
                begin
                  ch_error_log#add "base-offset-value facts" msg;
                  raise (BCH_failure msg)
                end
 	  else f :: e
 	else
-	  [ f ] in
+	  [f] in
       H.replace table index entry in
     let add_relational_equality f =
       if f#is_variable_equality then
@@ -514,12 +581,11 @@ object (self)
                  (LBLOCK [
                       STR "new v1facts: ";
                       LBLOCK
-                        (List.map (
-                             fun inv -> LBLOCK [inv#toPretty; STR "; "]) v1newfacts)]) in
+                        (List.map (fun inv ->
+                             LBLOCK [inv#toPretty; STR "; "]) v1newfacts)]) in
              if H.mem table v1index then
                let v1facts = H.find table v1index in
                List.iter (fun f -> add v1 f) (v1newfacts @ v1facts)
-                         (* H.replace table v1index (v1newfacts @ v1facts) *)
              else
                H.add table v1index v1newfacts
            else
@@ -529,10 +595,10 @@ object (self)
         () in
     begin
       match inv#get_fact with
-      | NonRelationalFact (v,_)
-      | InitialVarEquality (v,_)
-      | InitialVarDisEquality (v,_)
-      | TestVarEquality (v,_,_,_) -> add v inv
+      | NonRelationalFact (v, _)
+      | InitialVarEquality (v, _)
+      | InitialVarDisEquality (v, _)
+      | TestVarEquality (v, _, _, _) -> add v inv
       | RelationalFact lineq -> add_relational_equality inv
       | _ -> ()
     end
@@ -542,16 +608,20 @@ object (self)
     let facts = if H.mem table index then H.find table index else [] in
     let _ =
       track_location
-        iaddr (LBLOCK [ STR "get_var_facts: " ; v#toPretty ;
-                        pretty_print_list facts (fun f -> f#toPretty) "[" "," "]" ]) in
+        iaddr
+        (LBLOCK [
+             STR "get_var_facts: ";
+             v#toPretty;
+             pretty_print_list facts (fun f -> f#toPretty) "[" "," "]" ]) in
     List.map (fun f -> f#get_fact) facts
 
   method get_facts =
     let factslist = H.fold (fun _ v a -> v::a) facts [] in
     factslist @
       (let l = ref [] in
-       let _ = H.iter (fun _ v ->
-                    l := (List.filter (fun i -> i#is_interval) v) @ !l) table in !l)
+       let _ =
+         H.iter (fun _ v ->
+             l := (List.filter (fun i -> i#is_interval) v) @ !l) table in !l)
     
   method get_count = 
     let nrCount = H.fold (fun _ v a -> a + (List.length v)) table 0 in
@@ -574,7 +644,7 @@ object (self)
 	if List.exists (fun f -> v#equal f) vars then
 	  let vars = List.sort comparator vars in
 	  if (List.hd vars)#equal v then 
-	    None           (* variable is highest priority and should not be replaced *)
+	    None   (* variable is highest priority and should not be replaced *)
 	  else
 	    Some (linear_equality_get_expr e v)
 	else
@@ -583,13 +653,19 @@ object (self)
 
   method rewrite_expr (x:xpr_t) (comparator:(variable_t -> variable_t -> int)) =
     let subst1 v = 
-      if self#is_constant v then XConst (IntConst (self#get_constant v)) else XVar v in
+      if self#is_constant v then
+        XConst (IntConst (self#get_constant v))
+      else
+        XVar v in
     let subst2 v = 
       match self#get_affine v with 
       | Some x -> x
       | _ -> XVar v in
     let subst3 v =
-      if self#var_has_initial_value v then XVar (self#get_initial_value v) else XVar v in
+      if self#var_has_initial_value v then
+        XVar (self#get_initial_value v)
+      else
+        XVar v in
     let subst4 v =
       match self#get_external_exprs v with
       | [] -> XVar v
@@ -604,19 +680,21 @@ object (self)
         iaddr
         (LBLOCK [
              STR "rewrite: " ; x2p x; STR " --> ";
-             STR "; x1: " ; x2p x1 ;
-             STR "; x2: " ; x2p x2 ;
-             STR "; x3: " ; x2p x3 ;
-             STR "; x4: " ; x2p x4 ;
-             STR "; result: " ; x2p result]) in
+             STR "; x1: " ; x2p x1;
+             STR "; x2: " ; x2p x2;
+             STR "; x3: " ; x2p x3;
+             STR "; x4: " ; x2p x4;
+             STR "; result: "; x2p result]) in
     result
 
 
   method get_constant (v:variable_t) =
     let rec aux l =
       match l with
-      | [] -> raise (BCH_failure 
-		       (LBLOCK [ STR "Variable " ; v#toPretty ; STR " is not a constant" ]))
+      | [] ->
+         raise
+           (BCH_failure
+	      (LBLOCK [STR "Variable "; v#toPretty; STR " is not a constant"]))
       | f::tl ->
 	match f with
 	| NonRelationalFact (w, FIntervalValue (Some lb, Some ub)) 
@@ -628,8 +706,9 @@ object (self)
     let rec aux l =
       match l with
       | [] -> 
-	raise (BCH_failure 
-		 (LBLOCK [ STR "Variable " ; v#toPretty ; STR " is not an interval" ]))
+	 raise
+           (BCH_failure
+	      (LBLOCK [STR "Variable "; v#toPretty; STR " is not an interval"]))
       | f::tl ->
 	match f with
 	| NonRelationalFact (w, FIntervalValue (lb,ub)) when w#equal v -> 
@@ -647,8 +726,10 @@ object (self)
 	    match x with
 	    | XVar w when w#equal off -> Some numerical_zero
 	    | XOp (XPlus, [ XVar w; XConst (IntConst n) ])
-	    | XOp (XPlus, [ XConst (IntConst n); XVar w ]) when w#equal base -> Some n
-	    | XOp (XMinus, [ XVar w ; XConst (IntConst n) ]) when w#equal base -> Some n#neg
+	      | XOp (XPlus, [ XConst (IntConst n); XVar w ]) when w#equal base ->
+               Some n
+	    | XOp (XMinus, [ XVar w ; XConst (IntConst n) ]) when w#equal base ->
+               Some n#neg
 	    | _ -> None
 	  end
 	| _ -> None) None (self#get_var_facts off)
@@ -658,8 +739,11 @@ object (self)
     | Some n -> mkSingletonInterval n
     | _ ->
       if self#is_base_offset off then
-	let (sym,intv) = self#get_base_offset off in
-	if sym#equal base#getName then intv else topInterval
+	let (sym, intv) = self#get_base_offset off in
+	if sym#equal base#getName then
+          intv
+        else
+          topInterval
       else
 	topInterval
 
@@ -670,13 +754,16 @@ object (self)
       let result =
         List.fold_left (fun acc f ->
             match f with
-            | NonRelationalFact (w,FSymbolicExpr x) when w#equal v -> x :: acc | _ -> acc) [] 
-                       (self#get_var_facts v) in
+            | NonRelationalFact (w,FSymbolicExpr x) when w#equal v ->
+               x :: acc | _ -> acc) [] (self#get_var_facts v) in
       let _ =
         track_location
           iaddr
-          (LBLOCK [ STR "get_external_exprs: " ; v#toPretty ; STR " --> " ;
-                    pretty_print_list result x2p "[" "," "]" ]) in
+          (LBLOCK [
+               STR "get_external_exprs: ";
+               v#toPretty;
+               STR " --> ";
+               pretty_print_list result x2p "[" "," "]"]) in
       result
 
   method get_known_variables =
@@ -686,9 +773,9 @@ object (self)
       List.iter (fun f ->
 	match f#get_fact with
 	| NonRelationalFact (v,FSymbolicExpr _) -> add v
-	| NonRelationalFact (v,FIntervalValue (Some lb,Some ub)) when lb#equal ub -> add v
+	| NonRelationalFact (v,FIntervalValue (Some lb,Some ub))
+             when lb#equal ub -> add v
 	| InitialVarEquality (v,_) -> add v
-	(* | TestVarEquality (tv,_,_,jaddr) when jaddr = iaddr -> add tv *)
 	| _ -> ()) facts) table in
     !nrFacts
 
@@ -701,24 +788,27 @@ object (self)
 	  | RelationalFact le ->
 	    let vars = List.map snd le.leq_factors in
 	    let coeffs = List.map fst le.leq_factors in
-	    (List.length vars) = 2 &&
-		le.leq_constant#equal numerical_zero &&
-		List.exists (fun v -> v1#equal v) vars &&
-		List.exists (fun v -> v2#equal v) vars &&
-		(match coeffs with
+	    (List.length vars) = 2
+	    && le.leq_constant#equal numerical_zero
+	    && List.exists (fun v -> v1#equal v) vars
+	    && List.exists (fun v -> v2#equal v) vars
+	    && (match coeffs with
 		| [ c1 ; c2 ] -> 
-		  (c1#equal numerical_one && c2#equal numerical_one#neg) ||
-		     (c1#equal numerical_one#neg && c2#equal numerical_one)
+		   (c1#equal numerical_one && c2#equal numerical_one#neg)
+                   || (c1#equal numerical_one#neg && c2#equal numerical_one)
 		| _ -> acc)
 	  | _ -> acc) facts false   (* apply to relational facts only *)
 		      
 	      
-  method test_var_is_equal (v:variable_t) (taddr:ctxt_iaddress_t) (jaddr:ctxt_iaddress_t) =
+  method test_var_is_equal
+           (v:variable_t) (taddr:ctxt_iaddress_t) (jaddr:ctxt_iaddress_t) =
     List.fold_left (fun acc f ->
         if acc then
           acc
         else
-          let _ = track_location jaddr (LBLOCK [STR "testvar: "; invariant_fact_to_pretty f]) in
+          let _ =
+            track_location jaddr
+              (LBLOCK [STR "testvar: "; invariant_fact_to_pretty f]) in
 	  match f with
 	  | TestVarEquality (tv,_,ta,ja) -> ta = taddr && ja = jaddr
 	  | _ -> acc) false (self#get_var_facts v)
@@ -738,16 +828,19 @@ object (self)
 	| _ -> acc) None (self#get_var_facts var) in
     match result with
     | Some v -> v
-    | _ -> raise (BCH_failure 
-		    (LBLOCK [ STR "Variable does not have an initial value: " ; 
-			      var#toPretty ]))
+    | _ ->
+       raise
+         (BCH_failure
+	    (LBLOCK [
+                 STR "Variable does not have an initial value: "; 
+		 var#toPretty]))
 
   method get_init_disequalities =
     let result = ref [] in
     let add v = result := v :: !result in
     let _ = H.iter (fun _ facts ->
       List.iter (fun f ->
-	match f#get_fact with InitialVarDisEquality (_,iv) -> add iv | _ -> ()) 
+	match f#get_fact with InitialVarDisEquality (_, iv) -> add iv | _ -> ()) 
 	facts) table in
     !result
 
@@ -756,7 +849,7 @@ object (self)
     let add v = result := v :: !result in
     let _ = H.iter (fun _ facts ->
       List.iter (fun f ->
-	match f#get_fact with InitialVarEquality (_,iv) -> add iv | _ -> ())
+	match f#get_fact with InitialVarEquality (_, iv) -> add iv | _ -> ())
 	facts) table in
     !result
 
@@ -778,8 +871,10 @@ object (self)
     let rec aux l =
       match l with
       | [] -> 
-	raise (BCH_failure 
-		 (LBLOCK [ STR "Variable " ; v#toPretty ; STR " is not a base-offset" ]))
+	 raise
+           (BCH_failure
+	      (LBLOCK [
+                   STR "Variable "; v#toPretty; STR " is not a base-offset"]))
       | f::tl ->
 	match f with 
 	| NonRelationalFact (w, FBaseOffsetValue (base,lb,ub,_)) when w#equal v ->
@@ -791,8 +886,10 @@ object (self)
     let rec aux l =
       match l with
       | [] -> 
-	raise (BCH_failure 
-		 (LBLOCK [ STR "Variable " ; v#toPretty ; STR " is not a base-offset" ]))
+	 raise
+           (BCH_failure
+	      (LBLOCK [
+                   STR "Variable "; v#toPretty; STR " is not a base-offset"]))
       | f::tl ->
 	match f with 
 	| NonRelationalFact (w, FBaseOffsetValue (base,Some lb,Some ub,_))
@@ -852,9 +949,11 @@ object (self)
           List.map int_of_string  (nsplit ',' (node#getAttribute "ifacts"))
         with
         | Failure _ ->
-           raise (BCH_failure
-                    (LBLOCK [ STR "location_invariant:read_xml: int_of_strinngn on " ;
-                              STR (node#getAttribute "ifacts") ])) in
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "location_invariant:read_xml: int_of_strinngn on ";
+                     STR (node#getAttribute "ifacts") ])) in
       let facts = List.map invd#get_invariant_fact attr in
       let facts = List.sort invariant_fact_compare facts  in
       List.iter self#add_fact facts
@@ -870,23 +969,37 @@ object (self)
       match f with Unreachable s -> s :: acc | _ -> acc) [] facts in
     let pUnr = match unrDomains with
       | [] -> STR ""
-      | _ -> LBLOCK [ STR "Unreachability signalled by: " ; 
-		      pretty_print_list unrDomains (fun s -> STR s) "" ", " "" ; NL ] in
+      | _ ->
+         LBLOCK [
+             STR "Unreachability signalled by: ";
+	     pretty_print_list unrDomains (fun s -> STR s) "" ", " "";
+             NL] in
     let initFactVars = List.fold_left (fun acc f ->
       match f with InitialVarEquality (v,_) -> v :: acc | _ -> acc) [] facts in
     let initFactVars = List.sort (fun v1 v2 -> 
       Stdlib.compare v2#getName#getBaseName v1#getName#getBaseName) initFactVars in
     let pInit = List.map  (fun v -> 
-      LBLOCK [ STR "   " ; STR v#getName#getBaseName ; NL ]) initFactVars in
+      LBLOCK [STR "   "; STR v#getName#getBaseName; NL]) initFactVars in
     let pInit = match pInit with
       | [] -> STR ""
-      | _ -> LBLOCK [ STR "Variables that still have their initial value: " ; NL ;
-		      LBLOCK pInit ; NL ] in
+      | _ ->
+         LBLOCK [
+             STR "Variables that still have their initial value: ";
+             NL;
+	     LBLOCK pInit;
+             NL] in
     let pTest = List.fold_left (fun acc f ->
       match f with
       | TestVarEquality (v,_,taddr,jaddr) ->
-	(LBLOCK [ STR "Test var: " ; v#toPretty ; STR " (" ; STR taddr ;
-		  STR " -> " ; STR jaddr ; STR ")" ; NL ]) :: acc
+	 (LBLOCK [
+              STR "Test var: ";
+              v#toPretty;
+              STR " (";
+              STR taddr;
+	      STR " -> ";
+              STR jaddr;
+              STR ")";
+              NL]) :: acc
       | _ -> acc) [] facts in
     let nrFacts = List.fold_left (fun acc f ->
       match f with NonRelationalFact (v,x) -> (v,x) :: acc | _ -> acc) [] facts in
@@ -904,41 +1017,53 @@ object (self)
         with
         | BCH_failure p -> n#toPretty        
       else if isprintable n then
-	LBLOCK [ n#toPretty ; STR " ('" ;
-                 STR (String.make 1 (Char.chr n#toInt)) ; STR "')" ]
+	LBLOCK [
+            n#toPretty;
+            STR " ('";
+            STR (String.make 1 (Char.chr n#toInt)); STR "')"]
       else 
 	n#toPretty in
     let p_intv lb ub = match (lb,ub) with
       | (Some lb, Some ub) when lb#equal ub -> p_num lb
       | (Some lb, Some ub) -> 
-	LBLOCK [ STR "[" ; p_num lb ; STR " ; " ; p_num ub ; STR "]" ]
-      | (Some lb, _) ->	LBLOCK [ STR "[" ; p_num lb ; STR " ; ->)" ]
-      | (_, Some ub) -> LBLOCK [ STR "(<- ; " ; p_num ub ; STR "]" ]
+	LBLOCK [STR "["; p_num lb; STR " ; "; p_num ub; STR "]"]
+      | (Some lb, _) ->	LBLOCK [STR "["; p_num lb; STR " ; ->)"]
+      | (_, Some ub) -> LBLOCK [STR "(<- ; "; p_num ub; STR "]"]
       | _ -> STR "" in
     let pNrv = List.fold_left (fun acc (v,x) ->
       let prefix = 
-	LBLOCK [ fixed_length_pretty (STR v#getName#getBaseName) maxNameLen ; 
-		 STR ": " ] in
+	LBLOCK [
+            fixed_length_pretty (STR v#getName#getBaseName) maxNameLen;
+	    STR ": "] in
       match x with
       | FSymbolicExpr x -> 
-	(LBLOCK [ prefix ; xpr_formatter#pr_expr x ; NL ]) :: acc
-      | FIntervalValue (lb,ub) -> (LBLOCK [ prefix ; p_intv lb ub ; NL ]) :: acc
+	(LBLOCK [prefix; xpr_formatter#pr_expr x; NL]) :: acc
+      | FIntervalValue (lb,ub) -> (LBLOCK [prefix; p_intv lb ub; NL]) :: acc
       | FBaseOffsetValue (base,lb,ub,canbenull) ->
-	(LBLOCK [ prefix ; STR "(base) " ; base#toPretty ; 
-		  STR " + " ; p_intv lb ub ; STR " " ; p_null canbenull ; NL]) :: acc)
+	 (LBLOCK [
+              prefix;
+              STR "(base) ";
+              base#toPretty;
+	      STR " + ";
+              p_intv lb ub;
+              STR " "; p_null canbenull;
+              NL]) :: acc)
       [] nrFacts in
     let pRel = List.fold_left (fun acc f ->
       match f with
-      | RelationalFact lineq -> (LBLOCK [ linear_equality_to_pretty lineq ; NL ]) :: acc
+      | RelationalFact lineq ->
+         (LBLOCK [linear_equality_to_pretty lineq; NL]) :: acc
       | _ -> acc) [] facts in
-    LBLOCK [ pUnr ; pInit ; LBLOCK pTest ; LBLOCK pNrv ; NL ; LBLOCK pRel ]
+    LBLOCK [pUnr; pInit; LBLOCK pTest; LBLOCK pNrv; NL; LBLOCK pRel]
 end
+
 
 let make_location_invariant = new location_invariant_t
 
                             
 let get_bound (b:bound_t) =
   match b#getBound with MINUS_INF | PLUS_INF -> None | NUMBER n -> Some n
+
 
 class invariant_io_t
         (optnode:xml_element_int option)
@@ -973,25 +1098,35 @@ object (self)
     self#add iaddr (NonRelationalFact (v,FIntervalValue (Some n,Some n)))
 
   method add_interval_fact (iaddr:string) (v:variable_t) (i:interval_t) =
-    let fact = if i#isBottom then
+    let fact =
+      if i#isBottom then
 	Unreachable "intervals"
       else
-	NonRelationalFact (v,FIntervalValue (get_bound i#getMin, get_bound i#getMax)) in
+	NonRelationalFact
+          (v,FIntervalValue (get_bound i#getMin, get_bound i#getMax)) in
     self#add iaddr fact
 
-  method add_valueset_fact (iaddr:string) (v:variable_t) (base:symbol_t) (i:interval_t)
-    (canbenull:bool) =
-    let fact = if i#isBottom then
+  method add_valueset_fact
+           (iaddr:string)
+           (v:variable_t)
+           (base:symbol_t)
+           (i:interval_t)
+           (canbenull:bool) =
+    let fact =
+      if i#isBottom then
 	Unreachable "valuesets"
       else
-	let nrv = FBaseOffsetValue (base, get_bound i#getMin, get_bound i#getMax, canbenull) in
+	let nrv =
+          FBaseOffsetValue
+            (base, get_bound i#getMin, get_bound i#getMax, canbenull) in
 	NonRelationalFact (v,nrv) in
     self#add iaddr fact
 
   method add_initial_value_fact (iaddr:string) (v:variable_t) (ival:variable_t) =
     self#add iaddr (InitialVarEquality (v,ival))
 
-  method add_initial_disequality_fact (iaddr:string) (v:variable_t) (ival:variable_t) =
+  method add_initial_disequality_fact
+           (iaddr:string) (v:variable_t) (ival:variable_t) =
     self#add iaddr (InitialVarDisEquality (v,ival))
 
   method add_test_value_fact (iaddr:string) (tvar:variable_t) (tval:variable_t) 
@@ -1012,7 +1147,9 @@ object (self)
     match invariants#get k with
     | Some locInv -> 
       List.fold_left (fun acc i -> 
-	if i#is_constant then i#get_variables @ acc else acc) [] locInv#get_facts
+	  if i#is_constant then
+            i#get_variables @ acc
+          else acc) [] locInv#get_facts
     | _ -> []
 
   method get_invariant_count =
@@ -1051,6 +1188,7 @@ object (self)
       LBLOCK [ STR fname ; STR ": " ; NL ; LBLOCK (List.rev !pp) ]
     end
 end
+
 
 let mk_invariant_io (optnode:xml_element_int option) (vard:vardictionary_int) =
   let invd = mk_invdictionary vard in
