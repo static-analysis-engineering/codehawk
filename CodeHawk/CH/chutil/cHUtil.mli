@@ -52,6 +52,7 @@ val list_suffix: int -> 'a list -> 'a list
 
 val list_maxf: 'a list -> ('a -> 'a -> int) -> 'a
 val list_compare: 'a list -> 'a list -> ('a -> 'a -> int) -> int
+val list_compare_r: 'a list -> 'a list -> ('a -> 'a -> int) -> int
 
 val list_union_f: 'a list -> 'a list -> ('a -> 'a -> bool) -> 'a list
 val list_difference: 'a list -> 'a list -> ('a -> 'a -> bool) -> 'a list

@@ -223,6 +223,17 @@ let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
       (fun a e1 e2 -> if a = 0 then (f e1 e2) else a) 0 l1 l2
 
 
+let list_compare_r (l1: 'a list) (l2: 'b list) (f: 'a -> 'b -> int): int =
+  let length = List.length in
+  if (length l1) < (length l2) then
+    -1
+  else if (length l1) > (length l2) then
+    1
+  else
+    List.fold_right2
+      (fun e1 e2 a -> if a = 0 then (f e1 e2) else a) l1 l2 0
+
+
   (* Compares to optional values, with the Some value smaller than None,
      two None values are considered equal, and otherwise the provided
      function decides *)
