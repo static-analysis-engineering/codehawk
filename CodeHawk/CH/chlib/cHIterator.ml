@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,7 @@ exception Found_breakout_fwd
 exception Found_breakout_bwd of atlas_t
 exception Not_stable
 
+
 type op_semantics_t =
   invariant: atlas_t
   -> stable: bool
@@ -48,11 +49,13 @@ type op_semantics_t =
   -> context: symbol_t stack_t
   -> operation: operation_t -> atlas_t
 
+
 type cmd_processor_t =
   invariant: atlas_t
   -> context: symbol_t stack_t
   -> cmd: (code_int, cfg_int) command_t
   -> (code_int, cfg_int) command_t
+
 
 type proc_semantics_t =
   invariant: atlas_t
@@ -62,17 +65,20 @@ type proc_semantics_t =
   -> args: (symbol_t * variable_t) list
   -> atlas_t
 
+
 type iteration_strategy_t = {
     widening: int -> bool * string;
     narrowing: int -> bool;
   }
+
 
 type iteration_mode_t =
   | WIDENING_MODE
   | NARROWING_MODE
   | STABLE_MODE
   | BREAKOUT_POINT of symbol_t * (atlas_t ref)
-                    
+
+
 class boxed_mode_t mode =
 object
   
@@ -89,9 +95,11 @@ object
        LBLOCK [STR "BREAKOUT_POINT: "; s#toPretty; STR " => "; (!breakout_inv)#toPretty]
       
 end
-  
+
+
 open CHSCC
-   
+
+
 module CFGAtlasTable =
   CHAtlasTable.Make
     (struct
@@ -108,7 +116,8 @@ module FwdBwdTable =
       let compare = Stdlib.compare
       let toPretty (id1, id2) = LBLOCK [INT id1; STR "@"; INT id2]
     end)
-  
+
+
 class fwd_graph_t (g: cfg_int) =
 object
   
@@ -119,7 +128,8 @@ object
   method getNextNodes s = (graph#getState s)#getOutgoingEdges
                         
 end
-  
+
+
 class bwd_graph_t (g: cfg_int) =
 object
   
@@ -130,7 +140,8 @@ object
   method getNextNodes s = (graph#getState s)#getIncomingEdges
                         
 end
-  
+
+
 class loop_counter_factory_t =
 object (self: _)
      
@@ -145,14 +156,16 @@ object (self: _)
     new variable_t (self#mkSCCCounterName head) NUM_LOOP_COUNTER_TYPE
     
   method mkCounter = 
-    let v = new variable_t
-                (new symbol_t "LOOP_COUNTER")
-                ~suffix:count NUM_LOOP_COUNTER_TYPE in
+    let v =
+      new variable_t
+        (new symbol_t "LOOP_COUNTER")
+        ~suffix:count NUM_LOOP_COUNTER_TYPE in
     let _ = count <- count + 1 in
     v
     
 end
-  
+
+
 class iterator_t
         ?(db_enabled = true)
         ?strategy ?(do_narrowing = true)
@@ -193,12 +206,19 @@ object (self: _)
   method private stable =
     let l = iteration_stack#listFromTop in
     List.fold_left (fun a m ->
-        a && (match m with STABLE_MODE | BREAKOUT_POINT _ -> true | _ -> false)) true l
+        a && (match m with
+              | STABLE_MODE | BREAKOUT_POINT _ -> true
+              | _ -> false)) true l
     
   method private getInv table s =
     match table#get s with
-    | None -> raise (CHFailure (LBLOCK [STR "State "; s#toPretty;
-                                        STR " not found in invariant table"]))
+    | None ->
+       raise
+         (CHFailure
+            (LBLOCK [
+                 STR "State ";
+                 s#toPretty;
+                 STR " not found in invariant table"]))
     | Some inv -> inv
 	        
   method private propagateInv
@@ -258,7 +278,8 @@ object (self: _)
     let propagate invariant =
       match inv_table#get tgt with
       | None -> inv_table#set tgt invariant
-      | Some inv' -> inv_table#set tgt (inv'#join ?variables:(Some mods#toList) invariant)
+      | Some inv' ->
+         inv_table#set tgt (inv'#join ?variables:(Some mods#toList) invariant)
     in
     match (loop_stack_table#get src, loop_stack_table#get tgt) with
     | (Some src_stack, Some tgt_stack) ->
@@ -274,8 +295,9 @@ object (self: _)
 	   ) true src_suffix#getStack 
        in
        if src_suffix_is_stable then
-	 propagate (add_loop_counters
-                      (remove_loop_counters inv src_suffix#getStack) tgt_suffix#getStack)
+	 propagate
+           (add_loop_counters
+              (remove_loop_counters inv src_suffix#getStack) tgt_suffix#getStack)
        else
 	 ()
     | (_, _) -> raise (CHFailure (LBLOCK [STR "Internal error in loop stack"]))
@@ -363,7 +385,8 @@ object (self: _)
 	     let _ = loop_mode_table#set head (new boxed_mode_t STABLE_MODE) in
 	     let _ = modified#addList mods#toList in
 	     let _ = stride modified in
-	     let _ = if do_loop_counters then modified#remove loop_counter else () in
+	     let _ =
+               if do_loop_counters then modified#remove loop_counter else () in
 	     let _ = iteration_stack#pop in
 	     let _ = loop_mode_table#remove head in
 	     let _ = inv_table#remove head in
@@ -376,7 +399,9 @@ object (self: _)
 	     let _ = iteration_stack#pop in
 	     let _ = loop_mode_table#remove head in
 	     let mods_l = mods#toList in
-	     let post = initial#join ?variables:(Some mods_l) (self#getInv inv_table head) in
+	     let post =
+               initial#join
+                 ?variables:(Some mods_l) (self#getInv inv_table head) in
 	     let narrowed =
                if strategy.narrowing i then
                  pre#narrowing ?variables:(Some mods_l) post
@@ -394,7 +419,9 @@ object (self: _)
 	     let _ = iteration_stack#pop in
 	     let _ = loop_mode_table#remove head in
 	     let mods_l = mods#toList in
-	     let post = initial#join ?variables:(Some mods_l) (self#getInv inv_table head) in
+	     let post =
+               initial#join
+                 ?variables:(Some mods_l) (self#getInv inv_table head) in
 	     if post#leq ?variables:(Some mods_l) pre then
 	       let _ = inv_table#set head post in
 	       if do_narrowing then
@@ -727,7 +754,8 @@ object (self: _)
 		begin
 		  match pre_table#get (code_id, i) with
 		  | None -> ()
-		  | Some pre -> acc' := (!acc')#meet ?variables:(Some modified#toList) pre
+		  | Some pre ->
+                     acc' := (!acc')#meet ?variables:(Some modified#toList) pre
 		end
 	   in
 	   begin
@@ -736,7 +764,10 @@ object (self: _)
 		 | None -> ()
 		 | Some f ->
                     code#setCmdAt
-                      i (f ~invariant:safe_acc ~context:context ~cmd:(code#getCmdAt i))
+                      i
+                      (f ~invariant:safe_acc
+                         ~context:context
+                         ~cmd:(code#getCmdAt i))
 	       in
 	       let _ = match fwd_bwd with
 		 | None -> ()
@@ -813,7 +844,11 @@ object (self: _)
 	       | _ -> 
 		  ())
 		     iteration_stack#listFromTop;
-	   raise (CHFailure (STR "Break statement encountered outside of a matching breakout block"))
+	   raise
+             (CHFailure
+                (LBLOCK [
+                     STR "Break statement encountered outside of ";
+                     STR "a matching breakout block"]))
 	 with
          | Found_breakout_bwd pre -> pre
        end  
@@ -842,8 +877,12 @@ object (self: _)
        let goto_table = goto_table_stack#top in
        let pre = match goto_table#get label with
 	 | None ->
-            raise (CHFailure (LBLOCK [STR "Command GOTO "; label#toPretty;
-                                      STR " has no matching label"]))
+            raise
+              (CHFailure
+                 (LBLOCK [
+                      STR "Command GOTO ";
+                      label#toPretty;
+                      STR " has no matching label"]))
 	 | Some pre' -> pre'
        in
        pre
@@ -945,12 +984,17 @@ object (self: _)
       | ASSERT _ ->
        let mods = modified_vars_in_cmd_bwd cmd in
        let _ = modified#addList mods in
-       (if in_transaction then post#analyzeBwdInTransaction else post#analyzeBwd) cmd
+       (if in_transaction then
+          post#analyzeBwdInTransaction
+        else
+          post#analyzeBwd) cmd
     | SELECT _
       | INSERT _
       | DELETE _
       | ASSIGN_TABLE _ ->
-       raise (CHFailure (STR "Database command encountered during backward iteration"))
+       raise
+         (CHFailure
+            (STR "Database command encountered during backward iteration"))
     | BRANCH cl ->
        let sym = new symbol_t "branch" in
        let mods = new VariableCollections.set_t in
@@ -1318,7 +1362,8 @@ object (self: _)
 		begin
 		  match post_table#get (code_id, i) with
 		  | None -> ()
-		  | Some post -> acc' := (!acc')#meet ?variables:(Some modified#toList) post
+		  | Some post ->
+                     acc' := (!acc')#meet ?variables:(Some modified#toList) post
 		end
 	   in
 	   begin
@@ -1326,7 +1371,11 @@ object (self: _)
 	       let _ = match cmd_processor with
 		 | None -> ()
 		 | Some f ->
-                    code#setCmdAt i (f ~invariant:safe_acc ~context:context ~cmd:(code#getCmdAt i))
+                    code#setCmdAt
+                      i
+                      (f ~invariant:safe_acc
+                         ~context:context
+                         ~cmd:(code#getCmdAt i))
 	       in
 	       let _ =
 		 match fwd_bwd with
@@ -1391,8 +1440,12 @@ object (self: _)
            ~cmd:cmd' in
        begin
 	 match iteration_stack#pop with
-	 | BREAKOUT_POINT (s', breakout_inv) when s#equal s'-> post#join (!breakout_inv)
-	 | _ -> raise (CHFailure (STR "Internal error in iterator: breakout block expected"))
+	 | BREAKOUT_POINT (s', breakout_inv) when s#equal s'->
+            post#join (!breakout_inv)
+	 | _ ->
+            raise
+              (CHFailure
+                 (STR "Internal error in iterator: breakout block expected"))
        end
     | BREAK s ->
        begin
@@ -1409,8 +1462,13 @@ object (self: _)
 	       | _ -> 
 		  raise Not_stable)
 		     iteration_stack#listFromTop;
-	   raise (CHFailure (STR "Break statement encountered outside of a matching breakout block"))
-	 with Found_breakout_fwd | Not_stable -> pre#mkBottom
+	   raise
+             (CHFailure
+                (LBLOCK [
+                     STR "Break statement encountered outside of ";
+                     STR "a matching breakout block"]))
+	 with
+         | Found_breakout_fwd | Not_stable -> pre#mkBottom
        end
     | GOTO_BLOCK code ->
        let sym = new symbol_t "goto_block" in
@@ -1532,7 +1590,10 @@ object (self: _)
       | ASSERT _ ->
        let mods = modified_vars_in_cmd_fwd cmd in
        let _ = modified#addList mods in
-       (if in_transaction then pre#analyzeFwdInTransaction else pre#analyzeFwd) cmd
+       (if in_transaction then
+          pre#analyzeFwdInTransaction
+        else
+          pre#analyzeFwd) cmd
     | SELECT _ ->
        if db_enabled then
 	 pre#analyzeDBQuery cmd
@@ -1798,7 +1859,8 @@ object (self: _)
   method runFwd
            ?(iterate_on_transactions = true)
            ?(iterate_on_relations = true)
-           ?domains:doms ~atlas:(init: atlas_t)
+           ?domains:doms
+           ~atlas:(init: atlas_t)
            cmd =
     let _ = iteration_stack#clear in
     let _ = goto_table_stack#clear in
@@ -1826,7 +1888,8 @@ object (self: _)
            ?(must_terminate = false)
            ?(iterate_on_transactions = true)
            ?(iterate_on_relations = true)
-           ?domains:doms ~atlas:(init: atlas_t)
+           ?domains:doms
+           ~atlas:(init: atlas_t)
            cmd =
     let _ = iteration_stack#clear in
     let _ = goto_table_stack#clear in
@@ -1852,7 +1915,8 @@ object (self: _)
       ~cmd:cmd
 
   method runFwdBwd
-           ?domains:doms ~pre:(init_pre: atlas_t)
+           ?domains:doms
+           ~pre:(init_pre: atlas_t)
            ~post:(init_post: atlas_t)
            cmd =
     let _ = iteration_stack#clear in
@@ -1906,7 +1970,8 @@ object (self: _)
       let (pre', post') = onePass pre post in
       let (pre'', post'') = 
 	if strategy.narrowing i then
-	  (pre#narrowing ?variables:None pre', post#narrowing ?variables:None post')
+	  (pre#narrowing
+             ?variables:None pre', post#narrowing ?variables:None post')
 	else
 	  (pre#meet ?variables:None pre', post#meet ?variables:None post')
       in

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +38,8 @@ type sym_set_t =
   | SET of SymbolCollections.set_t
   | TOP
   | BOTTOM
-  
+
+
 class symbolic_set_t (l: symbol_t list) =
 object (self: 'a)
      
