@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -48,8 +50,14 @@ object (self: 'a)
     match v_value#getValue with
     | SYM_SET_VAL i -> i
     | TOP_VAL -> topSymbolicSet
-    | _ -> raise (CHFailure (LBLOCK [ STR "Symbolic set expected. " ; v#toPretty ;
-				      STR ": " ; v_value#toPretty]))
+    | _ ->
+       raise
+         (CHFailure
+            (LBLOCK [
+                 STR "Symbolic set expected. ";
+                 v#toPretty;
+		 STR ": ";
+                 v_value#toPretty]))
 	 
   method private setValue' t v x =
     self#setValue t v (new non_relational_domain_value_t (SYM_SET_VAL x))
@@ -90,13 +98,6 @@ object (self: 'a)
 	 let symbols = self#getValue' x in
 	 let result = symbols#meet (new symbolic_set_t syms) in
 	 if result#isBottom then
-           let _ =
-             pr_trace
-               1
-               [ STR "Bottom from SUBSET: " ; x#toPretty ; NL ;
-                 INDENT (3, LBLOCK [ STR "syms: " ;
-                                     pretty_print_list syms (fun s -> s#toPretty) "[" "," "]" ; NL ]) ;
-                 INDENT (3, LBLOCK [ STR "symbols: " ; symbols#toPretty ; NL ]) ] in
 	   self#mkBottom
 	 else
 	   begin
@@ -107,13 +108,6 @@ object (self: 'a)
 	 let symbols = self#getValue' x in
 	 let result = symbols#delta syms in
 	 if result#isBottom then
-           let _ =
-             pr_trace
-               1
-               [ STR "Bottom from DISJOINT: " ; x#toPretty ; NL ;
-                 INDENT (3, LBLOCK [ STR "syms: " ;
-                                     pretty_print_list syms (fun s -> s#toPretty) "[" "," "]"; NL ]) ;
-                 INDENT (3, LBLOCK [ STR "symbols: " ; symbols#toPretty ; NL ]) ] in
 	   self#mkBottom
 	 else
 	   begin
@@ -141,11 +135,6 @@ object (self: 'a)
 	 let x_s = self#getValue' x in
 	 let x_s' = x_s#meet (new symbolic_set_t [s]) in
 	 if x_s'#isBottom then
-           let _ =
-             pr_trace
-               1
-               [ STR "Bottom from ASSIGN_SYM-BW: " ; x#toPretty ; NL ;
-                 INDENT (3, LBLOCK [ STR "s: " ; s#toPretty ]) ; NL ; NL ] in
 	   self#mkBottom
 	 else
 	   begin
@@ -157,11 +146,6 @@ object (self: 'a)
 	 let y_s = self#getValue' y in
 	 let y_s' = y_s#meet x_s in
 	 if y_s'#isBottom then
-           let _ =
-             pr_trace
-               1
-               [ STR "Bottom from ASSIGN_SYM_VAR-BW: " ; x#toPretty ;
-                 STR ", " ; y#toPretty ; NL ] in
 	   self#mkBottom
 	 else
 	   begin
