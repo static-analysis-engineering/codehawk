@@ -47,6 +47,7 @@ open BCHDictionary
 open BCHInterfaceDictionary
 open BCHLibTypes
 open BCHLocationInvariant
+open BCHLocationVarInvariant
 open BCHSystemData
 open BCHSystemSettings
 open BCHTypeInvariants
@@ -358,14 +359,22 @@ let get_function_filename (fname:string) (ext:string) =
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_" ^ fname ^ "_" ^ ext)
 
+
 let get_vars_filename (fname:string) =
   get_function_filename fname "vars.xml"
+
 
 let get_invs_filename (fname:string) =
   get_function_filename fname "invs.xml"
 
+
 let get_tinvs_filename (fname:string) =
   get_function_filename fname "tinvs.xml"
+
+
+let get_varinvs_filename (fname: string) =
+  get_function_filename fname "varinvs.xml"
+
 
 let get_functions_directory () =
   let fdir = get_analysis_dir () in
@@ -888,6 +897,24 @@ let save_tinvs (fname:string) (tinvio:type_invariant_io_int) =
 let read_tinvs (fname:string) (vard:vardictionary_int):type_invariant_io_int =
   let optnode = extract_function_file fname "tinvs.xml" "function" in
   mk_type_invariant_io optnode vard fname
+
+
+let save_varinvs (fname: string) (varinvio: var_invariant_io_int) =
+  let filename = get_varinvs_filename fname in
+  let doc = xmlDocument () in
+  let root = get_bch_root "function" in
+  let fnode = xmlElement "function" in
+  begin
+    varinvio#write_xml fnode;
+    fnode#setAttribute "fname" fname;
+    doc#setNode root;
+    root#appendChildren [fnode];
+    file_output#saveFile filename doc#toPretty
+  end
+
+let read_varinvs (fname: string) (vard: vardictionary_int): var_invariant_io_int =
+  (* let optnode = extract_function_file fname "varinvs.xml" "function" in *)
+  mk_var_invariant_io None vard fname
 
 let extract_function_info_file (fname:string) =
   try

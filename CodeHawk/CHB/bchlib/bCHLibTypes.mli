@@ -1080,6 +1080,77 @@ type demangled_name_t = {
   dm_vftable      : bool 
   }
 
+
+(* ================================================== Variable invariants === *)
+
+type vardefuse_t = variable_t * symbol_t list
+
+
+type var_invariant_fact_t =
+  | ReachingDef of vardefuse_t
+  | DefUse of vardefuse_t
+  | DefUseHigh of vardefuse_t
+
+
+class type var_invariant_int =
+  object ('a)
+    method index: int
+    method compare: 'a -> int
+
+    (* accessors *)
+    method get_fact: var_invariant_fact_t
+    method get_variable: variable_t
+
+    (* predicates *)
+    method is_reaching_def: bool
+    method is_def_use: bool
+    method is_def_use_high: bool
+
+    (* i/o *)
+    method write_xml: xml_element_int -> unit
+    method toPretty: pretty_t
+  end
+
+
+class type location_var_invariant_int =
+  object
+    method reset: unit
+    method add_fact: var_invariant_fact_t -> unit
+
+    (* accessors *)
+    method get_var_facts: variable_t -> var_invariant_int list
+    method get_var_reaching_defs: variable_t -> var_invariant_int list
+    method get_var_def_uses: variable_t -> var_invariant_int list
+    method get_var_def_uses_high: variable_t -> var_invariant_int list
+    method get_facts: var_invariant_int list
+    method get_count: int
+
+    (* predicates *)
+    method has_facts: bool
+
+    (* i/o *)
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
+    method toPretty: pretty_t
+  end
+
+
+class type var_invariant_io_int =
+  object
+    method add_reaching_def: string -> variable_t -> symbol_t list  -> unit
+    method add_def_use: string -> variable_t -> symbol_t list -> unit
+    method add_def_use_high: string -> variable_t -> symbol_t list -> unit
+
+    (* accessors *)
+    method get_location_var_invariant: string -> location_var_invariant_int
+
+    (* i/o *)
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
+    method toPretty: pretty_t
+
+  end
+
 (* ======================================================= Type invariants === *)
 
 type type_invariant_fact_t = 
@@ -1294,7 +1365,7 @@ class type invdictionary_int =
              ?tag:string -> xml_element_int -> invariant_fact_t
 
     method write_xml: xml_element_int -> unit
-    method read_xml : xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
 
     method toPretty: pretty_t
   end
@@ -1313,7 +1384,30 @@ class type tinvdictionary_int =
              ?tag:string -> xml_element_int -> type_invariant_fact_t
 
     method write_xml: xml_element_int -> unit
-    method read_xml : xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
+
+    method toPretty: pretty_t
+
+  end
+
+
+class type varinvdictionary_int =
+  object
+
+    method xd: xprdictionary_int
+    method index_var_def_use: vardefuse_t -> int
+    method index_var_invariant_fact: var_invariant_fact_t -> int
+
+    method get_var_def_use: int -> vardefuse_t
+    method get_var_invariant_fact: int -> var_invariant_fact_t
+
+    method write_xml_var_invariant_fact:
+             ?tag:string -> xml_element_int -> var_invariant_fact_t -> unit
+    method read_xml_var_invariant_fact:
+             ?tag:string -> xml_element_int -> var_invariant_fact_t
+
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
 
     method toPretty: pretty_t
 
@@ -2406,6 +2500,7 @@ class type function_environment_int =
 
     method get_variable: int -> variable_t
     method get_variables: variable_t list
+    method get_sym_variables: variable_t list
     method get_local_variables: variable_t list
     method get_external_memory_variables: variable_t list
     method get_virtual_target : variable_t -> function_interface_t
@@ -2446,12 +2541,13 @@ class type function_environment_int =
     method get_sideeffvar_count: int
          
     (* scope and transactions *)
-    method get_scope           : scope_int
-    method start_transaction   : unit
-    method end_transaction     : cmd_t list
-    method mk_num_temp         : variable_t
-    method mk_sym_temp         : variable_t
+    method get_scope: scope_int
+    method start_transaction: unit
+    method end_transaction: cmd_t list
+    method mk_num_temp: variable_t
+    method mk_sym_temp: variable_t
     method request_num_constant: numerical_t -> variable_t
+    method mk_symbolic_variable: variable_t -> variable_t
          
     (* variable manager predicates *)
     method is_unknown_base_memory_variable: variable_t -> bool
@@ -2592,12 +2688,16 @@ end
 class type function_info_int =
 object
 
-  method a  : doubleword_int  (* address of this function *)
-  method env: function_environment_int
-  method finv : invariant_io_int   (* function invariant *)
+  method a: doubleword_int  (* address of this function *)
+  method env: function_environment_int  (* variable definitions *)
+
+  (* invariant accessors *)
+  method finv: invariant_io_int   (* function invariant *)
   method ftinv: type_invariant_io_int  (* function type invariant *)
+  method fvarinv: var_invariant_io_int  (* function variables invariant *)
   method iinv : ctxt_iaddress_t -> location_invariant_int (* instruction invariant *)
   method itinv: ctxt_iaddress_t -> location_type_invariant_int
+  method ivarinv: ctxt_iaddress_t -> location_var_invariant_int
 
   (* setters *)
 
@@ -2788,6 +2888,7 @@ object
   method env: function_environment_int (* variable environment of the function *)
   method inv: location_invariant_int
   method tinv: location_type_invariant_int
+  method varinv: location_var_invariant_int
 
   method evaluate_summary_address_term: bterm_t -> variable_t option
   method evaluate_summary_term: bterm_t -> variable_t -> xpr_t
@@ -2872,6 +2973,15 @@ object
            -> ?size:xpr_t
            -> ?vtype:btype_t
            -> xpr_t
+           -> cmd_t list
+
+  (* returns the CHIF code to set definition/use instruction addresses *)
+  method get_vardef_commands:
+           ?defs:variable_t list
+           -> ?clobbers:variable_t list
+           -> ?use:variable_t list
+           -> ?usehigh:variable_t list
+           -> string
            -> cmd_t list
 
   method get_conditional_assign_commands:

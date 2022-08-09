@@ -87,10 +87,8 @@ val load_segment_file: int -> xml_element_int option
 val load_section_file: string -> xml_element_int option
 val extract_function_info_file: string -> xml_element_int option
 val extract_inferred_function_summary_file: string -> xml_element_int option
-val extract_inferred_function_arguments_from_summary_file:string -> xml_element_int option
-val read_vars: string -> variable_manager_int
-val read_invs: string -> vardictionary_int -> invariant_io_int
-val read_tinvs: string -> vardictionary_int -> type_invariant_io_int
+val extract_inferred_function_arguments_from_summary_file:
+  string -> xml_element_int option
 
 val read_memory_string_file: string -> string
 
@@ -114,12 +112,26 @@ val save_userdata_function_summaries_file: xml_element_int -> unit
 val load_export_ordinal_table: string -> xml_element_int option
 val save_resultdata_file    : xml_element_int -> unit
 val save_cfgs: xml_element_int -> unit
-val save_vars: string -> vardictionary_int -> unit
-val save_invs: string -> invariant_io_int -> unit
-val save_tinvs: string -> type_invariant_io_int -> unit
+
 val save_executable_dump: xml_element_int -> unit
 val save_app_function_results_file: string -> xml_element_int -> unit
 val save_resultmetrics: xml_element_int -> unit
+
+(* save and restore function variable dictionary *)
+val save_vars: string -> vardictionary_int -> unit
+val read_vars: string -> variable_manager_int
+
+(* save and restore function invariants *)
+val save_invs: string -> invariant_io_int -> unit
+val read_invs: string -> vardictionary_int -> invariant_io_int
+
+(* save and restore function type invariants *)
+val save_tinvs: string -> type_invariant_io_int -> unit
+val read_tinvs: string -> vardictionary_int -> type_invariant_io_int
+
+(* save and restore function variable invariants *)
+val save_varinvs: string -> var_invariant_io_int -> unit
+val read_varinvs: string -> vardictionary_int -> var_invariant_io_int
 
 val create_userdata_system_file: string -> unit
 
