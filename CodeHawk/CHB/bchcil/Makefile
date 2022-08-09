@@ -22,7 +22,7 @@ CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	-I $(ZARITHLIB) \
 	-I $(CIL) \
 	$(ZARITHLIB)/zarith.cmxa \
-	$(EXTLIB)/extLib.cmxa \
+	$(EXTLIB)/extlib.cmxa \
 	$(ZIPLIB)/zip.cmxa \
 	$(CIL)/cil.cmxa \
 	$(CHLIB)/chlib.cmxa \

@@ -30,7 +30,7 @@ CAMLC := ocamlopt -I str -I cmi -I cmx \
 CAMLBUILD := ocamlopt str.cmxa unix.cmxa  \
 	-I $(ZIPLIB) \
 	-I $(ZARITHLIB) \
-	$(EXTLIB)/extLib.cmxa \
+	$(EXTLIB)/extlib.cmxa \
 	$(ZARITHLIB)/zarith.cmxa \
 	$(CHLIB)/chlib.cmxa \
 	$(CHUTIL)/chutil.cmxa \

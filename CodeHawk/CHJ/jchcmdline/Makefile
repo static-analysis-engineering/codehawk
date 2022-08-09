@@ -22,7 +22,7 @@ CAMLBUILD := ocamlopt str.cmxa unix.cmxa \
 	-I $(ZIPLIB) \
 	-I $(ZARITHLIB) \
 	$(ZARITHLIB)/zarith.cmxa \
-	$(EXTLIB)/extLib.cmxa \
+	$(EXTLIB)/extlib.cmxa \
 	$(CHLIB)/chlib.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(ZIPLIB)/zip.cmxa \

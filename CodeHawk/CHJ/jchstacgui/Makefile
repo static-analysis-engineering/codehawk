@@ -43,7 +43,7 @@ CAMLBUILD := ocamlopt str.cmxa unix.cmxa \
         $(GTKLIB)/lablgtk.cmxa \
         $(GTKLIB)/gtkInit.cmx \
         $(GTKLIB)/lablgnomecanvas.cmxa \
-	$(EXTLIB)/extLib.cmxa \
+	$(EXTLIB)/extlib.cmxa \
 	$(CHLIB)/chlib.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(ZIPLIB)/zip.cmxa \
