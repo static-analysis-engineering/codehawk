@@ -38,7 +38,7 @@ CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	$(GTKLIB)/gtkInit.cmx \
 	$(GTKLIB)/lablgnomecanvas.cmxa \
 	$(CHLIB)/chlib.cmxa \
-	$(EXTLIB)/extLib.cmxa \
+	$(EXTLIB)/extlib.cmxa \
 	$(ZIPLIB)/zip.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(XPRLIB)/xpr.cmxa \

@@ -142,7 +142,6 @@ object (self)
       end
 
   method get_var_facts (var: variable_t): var_invariant_int list =
-    let facts = self#get_facts in
     List.filter (fun f -> f#get_variable#equal var) self#get_facts
 
   method get_var_reaching_defs (var: variable_t): var_invariant_int list =

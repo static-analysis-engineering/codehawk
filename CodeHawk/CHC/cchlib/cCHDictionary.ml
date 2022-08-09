@@ -35,6 +35,7 @@ open CHLogger
 open CHIndexTable
 open CHPrettyUtil
 open CHStringIndexTable
+open CHUtil
 open CHXmlDocument
    
 (* cchlib *)

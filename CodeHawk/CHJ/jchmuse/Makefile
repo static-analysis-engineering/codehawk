@@ -45,7 +45,7 @@ CAMLLINK := ocamlopt -I cmi -I cmx \
 CAMLBUILD := ocamlopt str.cmxa unix.cmxa \
 	-I $(ZIPLIB) \
 	-I $(ZARITHLIB) \
-	$(EXTLIB)/extLib.cmxa \
+	$(EXTLIB)/extlib.cmxa \
 	$(ZARITHLIB)/zarith.cmxa \
 	$(CHLIB)/chlib.cmxa \
 	$(CHUTIL)/chutil.cmxa \
@@ -57,7 +57,7 @@ CAMLBUILD := ocamlopt str.cmxa unix.cmxa \
 CAMLBUILDPOLY := ocamlopt str.cmxa unix.cmxa \
 	-I $(ZIPLIB) \
 	-I $(ZARITHLIB) \
-	$(EXTLIB)/extLib.cmxa \
+	$(EXTLIB)/extlib.cmxa \
 	$(ZARITHLIB)/zarith.cmxa \
 	$(CHLIB)/chlib.cmxa \
 	$(CHUTIL)/chutil.cmxa \

@@ -145,7 +145,7 @@ let speclist =
     ("-disassemble", Arg.Unit (fun () -> cmd := "disassemble"),
      "save an assembly listing of the executable in text format") ;
     ("-analyze", Arg.Unit (fun () -> cmd := "analyze"),
-     "analyze the executable and save intermediate results in xml format (applicable to xml rep only)") ;
+     "analyze the executable and save intermediate results in xml format");
     ("-ignore_stable", Arg.Unit (fun () -> BCHAnalyzeApp.analyze_all := true),
      "continue analyzing functions that have stabilized");
     ("-fn_exclude", Arg.String (fun s -> exclude_function s),
@@ -670,7 +670,6 @@ let main () =
         save_log_files logcmd;
         exit 0
       end
-      
 
     else if !cmd = "saveexports" then
       begin

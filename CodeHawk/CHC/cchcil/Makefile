@@ -15,7 +15,7 @@ CAMLC := ocamlopt -I str -I cmi -I cmx \
 
 CAMLLINK := ocamlopt  \
 	-I $(ZARITHLIB) \
-	$(EXTLIB)/extLib.cmxa \
+	$(EXTLIB)/extlib.cmxa \
 	$(ZARITHLIB)/zarith.cmxa \
 	$(CHLIB)/chlib.cmxa \
 	$(CHUTIL)/chutil.cmxa \

@@ -74,7 +74,7 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-chutil.cmxa: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa  $(EXTLIB)/extLib.cmxa $(ZARITHLIB)/zarith.cmxa
+chutil.cmxa: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa  $(EXTLIB)/extlib.cmxa $(ZARITHLIB)/zarith.cmxa
 	$(CAMLLINK) -a -o chutil.cmxa  $(OBJECTS)
 
 cmi/%.cmi: %.mli
@@ -85,7 +85,7 @@ cmx/%.cmx: %.ml
 
 
 xmlreader: chutil.cmxa mainXmlReader.cmx
-	$(CAMLLINK) -o xmlreader unix.cmxa $(EXTLIB)/extLib.cmxa $(CHLIB)/chlib.cmxa chutil.cmxa mainXmlReader.cmx
+	$(CAMLLINK) -o xmlreader unix.cmxa $(EXTLIB)/extlib.cmxa $(CHLIB)/chlib.cmxa chutil.cmxa mainXmlReader.cmx
 
 doc: $(OBJECTS)
 	rm -rf doc

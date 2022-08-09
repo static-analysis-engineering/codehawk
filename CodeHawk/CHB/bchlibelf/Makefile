@@ -24,7 +24,7 @@ CAMLLINK := ocamlopt -I str.cmxa -I unix.cmxa \
 CAMLBUILD := ocamlopt str.cmxa unix.cmxa \
 	-I $(ZIPLIB) \
 	$(CHLIB)/chlib.cmxa \
-	$(EXTLIB)/extLib.cmxa \
+	$(EXTLIB)/extlib.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(XPRLIB)/xpr.cmxa \
 	$(BCHLIB)/bchlib.cmxa \
