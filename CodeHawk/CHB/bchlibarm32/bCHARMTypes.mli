@@ -620,6 +620,7 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: source *)
       * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rm/imm: index/immediate *)
       * arm_operand_int  (* mem: memory location *)
       * bool             (* T.W *)
   | StoreRegisterByte of
@@ -1229,6 +1230,7 @@ class type arm_chif_system_int =
 
     (* setters *)
     method add_arm_procedure: procedure_int -> unit
+    method add_arm_definitions_procedure: procedure_int -> unit
 
     (* accessors *)
     method get_arm_system: system_int

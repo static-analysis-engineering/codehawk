@@ -48,7 +48,6 @@ open BCHFloc
 open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
-open BCHLocationInvariant
 open BCHVariable
 
 (* bchlibarm32 *)

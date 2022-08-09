@@ -647,9 +647,9 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "STMIB" c [rn; rl])
     }
-  | StoreRegister (c, rt, rn, mem, tw) -> {
+  | StoreRegister (c, rt, rn, rm, mem, tw) -> {
       mnemonic = "STR";
-      operands = [rt; rn; mem];
+      operands = [rt; rn; rm; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "STR" c [rt; mem])

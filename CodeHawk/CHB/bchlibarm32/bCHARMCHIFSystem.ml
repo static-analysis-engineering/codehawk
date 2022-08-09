@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,9 +40,12 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
+
 module LF = CHOnlineCodeSet.LanguageFactory
 
+
 let make_arm_proc_name (addr:doubleword_int) = doubleword_to_symbol "proc" addr
+
 
 class arm_chif_system_t:arm_chif_system_int =
 object (self)
@@ -52,6 +55,8 @@ object (self)
   method reset = system <- LF.mkSystem (new symbol_t "arm-analysis-system")
 
   method add_arm_procedure (p:procedure_int) = system#addProcedure p
+
+  method add_arm_definitions_procedure (p: procedure_int) = system#addProcedure p
 
   method get_arm_procedure_names = system#getProcedures
 
