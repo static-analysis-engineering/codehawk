@@ -1960,11 +1960,12 @@ let parse_thumb32_31
        mk_arm_offset_address_op
          rnreg offset ~isadd:true ~isindex:true ~iswback:false in
      (* STR<c>.W <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
-     StoreRegister (cc, rt RD, rn RD, mem WR, true)
+     StoreRegister (cc, rt RD, rn RD, rm RD, mem WR, true)
 
   (* < 31>0000100<rn><rt>1puw<-imm8->   STR (immediate) - T4 *)
   | 4 when (b 11 11) = 1 ->
      let offset = ARMImmOffset (b 7 0) in
+     let immop = mk_arm_immediate_op false 4 (mkNumerical (b 7 0)) in
      let isindex = (b 10 10) = 1 in
      let isadd = (b 9 9) = 1 in
      let iswback = (b 8 8) = 1 in
@@ -1972,7 +1973,7 @@ let parse_thumb32_31
      (* STR<c> <Rt>, [<Rn>, #-<imm8>] 
         STR<c> <Rt>, [<Rn>], #+/-<imm8>
         STR<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
-     StoreRegister (cc, rt RD, rn RD, mem WR, false)
+     StoreRegister (cc, rt RD, rn RD, immop, mem WR, false)
 
   (* < 31>0000101<13><rt>101100000100   POP - T3 *)
   | 5 when (b 19 16) = 13 && (b 11 11) = 1 && (b 10 8) = 3 && (b 7 0) = 4 ->
@@ -2019,7 +2020,7 @@ let parse_thumb32_31
 
   (* < 31>0001000<rn><rt><--imm12--->   STRB (immediate) - T2 *)
   | 8 ->
-  (* STRB<c>.W <Rt>, [<Rn, #<imm12>] *)
+     (* STRB<c>.W <Rt>, [<Rn, #<imm12>] *)
      StoreRegisterByte (cc, rt RD, rn RD, mem WR, true)
 
   (* < 31>00010W1<rn><15><--imm12--->   PLD (immediate, T1) *)
@@ -2046,7 +2047,8 @@ let parse_thumb32_31
   (* < 31>0001100<rn><rt><--imm12--->   STR (immediate) - T3 *)
   | 12 ->
      (* STR<c>.W <Rt>, [<Rn>, #<imm12>] *)
-     StoreRegister (cc, rt RD, rn RD, mem WR, true)
+     let immop = mk_arm_immediate_op false 4 (mkNumerical (b 11 0)) in
+     StoreRegister (cc, rt RD, rn RD, immop, mem WR, true)
 
   (* 11111000U101<15><rt><--imm12--->   LDR (literal, U=1) *)
   | 13 when (b 19 16) = 15 ->
@@ -2971,7 +2973,7 @@ let parse_t16_load_store_reg
   (* 0101000<r><r><r>  STR (register) - T1 *)
   | 0 ->
      (* STR<c> <Rt>, [<Rn>, <Rm>] *)
-     StoreRegister (cc, rt RD, rn RD, mem WR, false)
+     StoreRegister (cc, rt RD, rn RD, rm RD, mem WR, false)
 
   (* 0101001<r><r><r>  STRH (register) - T1 *)
   | 1 ->
@@ -3055,7 +3057,7 @@ let parse_t16_load_store_imm
   (* 01100<imm><r><r>  STR (immediate) - T1 *)
   | 0 ->
      (* STR<c> <Rt>, [<Rn>, #<imm>] *)
-     StoreRegister (cc, rt RD, rn RD, mem 4 WR, false)
+     StoreRegister (cc, rt RD, rn RD, imm, mem 4 WR, false)
 
   (* 10001<imm><r><r>  LDRH (immediate) - T1 *)
   | 1 when hw ->
@@ -3105,7 +3107,7 @@ let parse_t16_load_store_imm_relative
   (* 10010<r><-imm8->  STR (immediate) - T2 *)
   | 2 ->
      (* STR<c> <Rt>, [SP, #<imm>] *)
-     StoreRegister (cc, rt RD, sp RD, mem 4 WR, false)
+     StoreRegister (cc, rt RD, sp RD, immop, mem 4 WR, false)
 
   (* 10011<r><-imm8->  LDR (immediate) - T2 *)
   | 3 ->

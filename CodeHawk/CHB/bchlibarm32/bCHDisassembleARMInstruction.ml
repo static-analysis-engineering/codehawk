@@ -963,7 +963,7 @@ let parse_load_store_imm_type (instr: doubleword_int) (cond: int) =
      (* STR<c> <Rt>, [<Rn>{, #+/-<imm12>}]       Offset: (index,wback) = (T,F)
       * STR<c> <Rt>, [<Rn>, #+/-<imm12>]!        Pre-x : (index,wback) = (T,T)
       * STR<c> <Rt>, [<Rn>], #+/-<imm12>         Post-x: (index,wback) = (F,T) *)
-     StoreRegister (c, rt RD ,rn, mem, false)
+     StoreRegister (c, rt RD ,rn, imm, mem, false)
 
   (* <cc><2>01001<13><rt><-imm12:4--> *)   (* POP - A2 *)
   | (0, 1, (13, false, true, false, 4)) ->
@@ -1030,7 +1030,7 @@ let parse_load_store_reg_type (instr: doubleword_int) (cond: int) =
      let mem = mk_mem WR in
      (* STR<c> <Rt>, [<Rn>,+/-<Rm>{, <shift>}]{!} *)
      (* STR<c> <Rt>, [<Rn>],+/-<Rm>{, <shift>} *)
-     StoreRegister (c, rt RD, rn, mem, false)
+     StoreRegister (c, rt RD, rn, rm, mem, false)
 
   (* <cc><3>pu0w1<rn><rt><imm>ty0<rm> *)   (* LDR (register) - A1 *)
   | (0, 1) ->

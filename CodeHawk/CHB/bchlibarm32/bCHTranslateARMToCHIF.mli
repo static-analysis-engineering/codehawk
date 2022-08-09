@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,5 +33,6 @@ open BCHLibTypes
 
 (* bchlibarm32 *)
 open BCHARMTypes
+
 
 val translate_arm_assembly_function: arm_assembly_function_int -> unit
