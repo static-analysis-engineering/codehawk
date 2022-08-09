@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -55,6 +55,7 @@ val save_function_info: function_info_int -> unit
 val save_function_variables: function_info_int -> unit
 val save_function_type_invariants: function_info_int -> unit
 val save_function_invariants: function_info_int -> unit
+val save_function_var_invariants: function_info_int -> unit
 val save_function_summary: function_info_int -> unit
 val save_results_jni_calls: unit -> unit
 

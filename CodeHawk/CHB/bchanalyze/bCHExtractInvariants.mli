@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,10 +34,10 @@ open CHAtlas
 open BCHLibTypes
 
 val extract_ranges: 
-  function_info_int -> (string, (string,atlas_t) Hashtbl.t) Hashtbl.t -> unit
+  function_info_int -> (string, (string, atlas_t) Hashtbl.t) Hashtbl.t -> unit
 
 val extract_linear_equalities: 
-  function_info_int -> (string, (string,atlas_t) Hashtbl.t) Hashtbl.t -> unit
+  function_info_int -> (string, (string, atlas_t) Hashtbl.t) Hashtbl.t -> unit
 
 val extract_valuesets:
-  function_info_int -> (string, (string,atlas_t) Hashtbl.t) Hashtbl.t -> unit
+  function_info_int -> (string, (string, atlas_t) Hashtbl.t) Hashtbl.t -> unit

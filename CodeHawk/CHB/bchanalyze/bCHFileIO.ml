@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -289,16 +289,25 @@ let save_function_variables (finfo:function_info_int) =
   let fname = finfo#get_address#to_hex_string in
   save_vars fname finfo#env#varmgr#vard
 
+
 let save_function_invariants (finfo:function_info_int) =
   let fname = finfo#get_address#to_hex_string in
   save_invs fname finfo#finv
-  
+
+
 let save_function_type_invariants (finfo:function_info_int) =
   let fname = finfo#get_address#to_hex_string in
   save_tinvs fname finfo#ftinv
 
+
+let save_function_var_invariants (finfo: function_info_int) =
+  let fname = finfo#get_address#to_hex_string in
+  save_varinvs fname finfo#fvarinv
+
+
 let save_function_summary (finfo:function_info_int) = ()
-                                                    
+
+
 let save_function_chif (fname:string) (proc:procedure_int) =
   let filename = get_function_filename fname "chif.txt" in
   file_output#saveFile filename proc#toPretty
@@ -306,13 +315,15 @@ let save_function_chif (fname:string) (proc:procedure_int) =
 
 let write_xml_jni_calls (node:xml_element_int) jniCalls = ()
 
+
 let save_results_jni_calls () =
   let jniCalls = get_jni_calls() in
   let num_calls = (List.fold_left (fun acc (_,l) -> acc + (List.length l)) 0 jniCalls) in
   let results_file_name = (get_resultmetrics_filename()) in
   try
     let results_doc = readXmlDocument results_file_name in
-    let disassembly_metrics_node = (results_doc#getRoot#getTaggedChild "disassembly_metrics") in
+    let disassembly_metrics_node =
+      (results_doc#getRoot#getTaggedChild "disassembly_metrics") in
     let jnicalls_node = xmlElement "jnicalls" in
     begin
       jnicalls_node#setIntAttribute "jnicalls" num_calls ;
