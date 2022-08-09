@@ -75,8 +75,11 @@ open BCHTranslateARMToCHIF
 (* bchanalyze *)
 open BCHAnalysisTypes
 open BCHAnalyzeProcedure
+open BCHDefUse
+open BCHDefUseHigh
 open BCHExtractInvariants
 open BCHFileIO
+open BCHReachingDefs
 open BCHTrace
 
 let analyze_all = ref false
@@ -347,12 +350,19 @@ let analyze_arm_function faddr f count =
          analyze_procedure_with_linear_equalities
            proc arm_chif_system#get_arm_system);
       analyze_procedure_with_valuesets proc arm_chif_system#get_arm_system;
+      analyze_procedure_with_reaching_defs proc arm_chif_system#get_arm_system;
+      analyze_procedure_with_def_use proc arm_chif_system#get_arm_system;
+      analyze_procedure_with_def_use_high proc arm_chif_system#get_arm_system;
       extract_ranges finfo bb_invariants#get_invariants;
       extract_linear_equalities finfo bb_invariants#get_invariants;
       extract_valuesets finfo bb_invariants#get_invariants;
+      extract_reaching_defs finfo bb_invariants#get_invariants;
+      extract_def_use finfo bb_invariants#get_invariants;
+      extract_def_use_high finfo bb_invariants#get_invariants;
       finfo#reset_invariants;
       save_function_info finfo;
       save_function_invariants finfo;
+      save_function_var_invariants finfo;
       arm_analysis_results#record_results f;
       save_function_variables finfo;
       file_metrics#record_results

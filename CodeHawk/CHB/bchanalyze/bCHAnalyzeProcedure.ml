@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,8 @@ open CHAnalysisSetup
 open BCHAnalysisTypes
 
 module H = Hashtbl
-	
+
+
 class bb_invariants_t:bb_invariants_int =
 object
   val invariants = H.create 3
@@ -90,11 +91,12 @@ let analyze_procedure_with_valuesets (proc:procedure_int) (system:system_int) =
     analysis_setup#setOpSemantics (default_opsemantics "valuesets") ;
     analysis_setup#analyze_procedure system proc
   end
-    
-let analyze_procedure_with_symbolic_sets (proc:procedure_int) (system:system_int) =
+
+
+let analyze_procedure_with_symbolic_sets (proc: procedure_int) (system: system_int) =
   let analysis_setup = mk_analysis_setup () in
   begin
-    analysis_setup#addDomain "symbolicsets" (new symbolic_sets_domain_no_arrays_t) ;
-    analysis_setup#setOpSemantics (default_opsemantics "symbolicsets") ;
+    analysis_setup#addDomain "symbolicsets" (new symbolic_sets_domain_no_arrays_t);
+    analysis_setup#setOpSemantics (default_opsemantics "symbolicsets");
     analysis_setup#analyze_procedure system proc
   end

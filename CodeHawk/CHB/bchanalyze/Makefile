@@ -37,6 +37,9 @@ MLIS := \
 	bCHNumericalConstraints \
 	bCHExtractInvariants \
 	bCHAnalyzeProcedure \
+	bCHReachingDefs \
+	bCHDefUse \
+	bCHDefUseHigh \
 	bCHFileIO \
 	bCHTrace \
 	bCHAnalyzeApp \
@@ -49,6 +52,9 @@ SOURCES := \
 	bCHNumericalConstraints \
 	bCHExtractInvariants \
 	bCHAnalyzeProcedure \
+	bCHReachingDefs \
+	bCHDefUse \
+	bCHDefUseHigh \
 	bCHFileIO \
 	bCHTrace \
 	bCHAnalyzeApp \
