@@ -34,6 +34,7 @@ MLIS := \
 	bCHInterfaceDictionary \
 	bCHVarDictionary \
 	bCHInvDictionary \
+	bCHVarInvDictionary \
 	bCHTypeInvDictionary \
 	bCHJavaBasicTypes \
 	bCHVariableType \
@@ -72,6 +73,7 @@ MLIS := \
 	bCHVariable \
 	bCHLocationInvariant \
 	bCHTypeInvariants \
+	bCHLocationVarInvariant \
 	bCHDataBlock \
 	bCHJumpTable \
 	bCHPreFileIO \
@@ -113,6 +115,7 @@ SOURCES := \
 	bCHMemoryReference \
 	bCHVarDictionary \
 	bCHInvDictionary \
+	bCHVarInvDictionary \
 	bCHTypeInvDictionary \
 	bCHTypeDefinitions \
 	bCHVariableTypeUtil \
@@ -144,6 +147,7 @@ SOURCES := \
 	bCHVariable \
 	bCHLocationInvariant \
 	bCHTypeInvariants \
+	bCHLocationVarInvariant \
 	bCHDataBlock \
 	bCHJumpTable \
 	bCHPreFileIO \

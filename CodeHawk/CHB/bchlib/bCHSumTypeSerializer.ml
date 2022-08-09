@@ -528,6 +528,7 @@ end
 let non_relational_value_mcts:non_relational_value_t mfts_int =
   new non_relational_value_mcts_t
 
+
 class invariant_fact_mcts_t: [invariant_fact_t] mfts_int =
 object
 
@@ -548,6 +549,7 @@ end
 
 let invariant_fact_mcts:invariant_fact_t mfts_int =  new invariant_fact_mcts_t
 
+
 class type_invariant_fact_mcts_t:[type_invariant_fact_t] mfts_int =
 object
 
@@ -565,3 +567,22 @@ end
 
 let type_invariant_fact_mcts:type_invariant_fact_t mfts_int =
   new type_invariant_fact_mcts_t
+
+
+class var_invariant_fact_mcts_t: [var_invariant_fact_t] mfts_int =
+object
+
+  inherit [var_invariant_fact_t] mcts_t "var_invariant_fact_t"
+
+  method ts (t: var_invariant_fact_t) =
+    match t with
+    | ReachingDef _ -> "r"
+    | DefUse _ -> "d"
+    | DefUseHigh _ -> "h"
+
+  method tags = ["d"; "h"; "r"]
+
+end
+
+let var_invariant_fact_mcts: var_invariant_fact_t mfts_int =
+  new var_invariant_fact_mcts_t

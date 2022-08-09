@@ -619,6 +619,7 @@ object (self)
   (* --------------------------------------------------- program variables -- *)
 
   val chifvars = H.create 5
+  val symchifvars = H.create 5
 
   method private add_chifvar (v:assembly_variable_int) (vt:variable_type_t) =
     if H.mem chifvars v#index then
@@ -634,9 +635,24 @@ object (self)
   method private mk_variable (v:assembly_variable_int) =
     self#add_chifvar v NUM_VAR_TYPE
 
+  (* create a SYM_VAR_TYPE variable for the same assembly variable *)
+  method mk_symbolic_variable (v: variable_t): variable_t =
+    let name = v#getName in
+    let seqnr = name#getSeqNumber in
+    if H.mem symchifvars seqnr then
+      H.find symchifvars seqnr
+    else
+      let symchifvar = scope#mkVariable name SYM_VAR_TYPE in
+      begin
+        H.add symchifvars seqnr symchifvar;
+        symchifvar
+      end
+
   method private has_chifvar index = H.mem chifvars index
 
   method get_variables = H.fold (fun _ v a -> v::a) chifvars []
+
+  method get_sym_variables = H.fold (fun _ v a -> v::a) symchifvars []
 
   method get_variable (index:int) = 
     if H.mem chifvars index then H.find chifvars index else
@@ -1301,10 +1317,11 @@ end
 
 
 class function_info_t 
-        (faddr:doubleword_int)
-        (varmgr:variable_manager_int)
-        (invio:invariant_io_int)
-        (tinvio:type_invariant_io_int):function_info_int = 
+        (faddr: doubleword_int)
+        (varmgr: variable_manager_int)
+        (invio: invariant_io_int)
+        (tinvio: type_invariant_io_int)
+        (varinvio: var_invariant_io_int):function_info_int =
 object (self)
 
   (* Function info permanent state: ------------------------------------------ *
@@ -1380,16 +1397,25 @@ object (self)
   method call_targets_were_set = call_targets_set
 
   method get_address = faddr
+
   method a = faddr
+
   method env = env
-  method finv = invio  
+
+  method finv = invio
+
   method ftinv = tinvio
+
+  method fvarinv = varinvio
                
-  method iinv (iaddr:ctxt_iaddress_t) =
+  method iinv (iaddr: ctxt_iaddress_t): location_invariant_int =
     invio#get_location_invariant iaddr
 
-  method itinv (iaddr:ctxt_iaddress_t) =
+  method itinv (iaddr: ctxt_iaddress_t): location_type_invariant_int =
     tinvio#get_location_type_invariant iaddr
+
+  method ivarinv (iaddr: ctxt_iaddress_t): location_var_invariant_int =
+    varinvio#get_location_var_invariant iaddr
 
   method reset_invariants =
     if invariants_to_be_reset then
@@ -2381,7 +2407,8 @@ let load_function_info ?(reload=false) (faddr:doubleword_int) =
       let varmgr = read_vars fname  in
       let invio = read_invs fname varmgr#vard in
       let tinvio = read_tinvs fname varmgr#vard in
-      let finfo = new function_info_t faddr varmgr invio tinvio in
+      let varinvio = read_varinvs fname varmgr#vard in
+      let finfo = new function_info_t faddr varmgr invio tinvio varinvio in
       let _ =
         match extract_function_info_file fname with
         | Some node -> finfo#read_xml node
