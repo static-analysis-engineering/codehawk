@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2020 Henny Sipma
-   Copyright (c) 2021      Aarno Labs
+   Copyright (c) 2021-2022 Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@ open CHNumericalConstraints
 (* chlib *)
 open BCHLibTypes
 
+
 exception BCH_failure of pretty_t
 
 (* raised in cases an internal inconsistency is encountered *)
@@ -51,19 +52,29 @@ exception Invocation_error of string
    the assumptions made in the program *)
 exception Invalid_input of string
 
-exception Request_function_retracing       (* raised when control flow is found to be altered *)
+(* raised when control flow is found to be altered *)
+exception Request_function_retracing
 
 val get_version: unit -> string
 
-val eflag_to_string  : eflag_t -> string
+val eflag_to_string: eflag_t -> string
 
 val eflag_from_string: string -> eflag_t
 
-val eflag_compare  : eflag_t -> eflag_t -> int
+val eflag_compare: eflag_t -> eflag_t -> int
 
 val arm_cc_flag_to_string: arm_cc_flag_t -> string
 
 val arm_cc_flag_from_string: string -> arm_cc_flag_t
+
+val arm_cc_flag_compare: arm_cc_flag_t -> arm_cc_flag_t -> int
+
+val flag_to_string: flag_t -> string
+
+val flag_from_string: string -> flag_t
+
+val flag_compare: flag_t -> flag_t -> int
+
 
 type risk_type_t =
     OutOfBoundsRead
@@ -72,10 +83,10 @@ type risk_type_t =
   | TypeConditionViolation
   | FunctionFailure
 
-val risk_type_to_string  : risk_type_t -> string
+val risk_type_to_string: risk_type_t -> string
 val risk_type_from_string: string -> risk_type_t
 
-val symbol_to_pretty  : symbol_t -> pretty_t
-val factor_to_pretty  : numerical_factor_t -> pretty_t
-val symbol_to_string  : symbol_t -> string
-val factor_to_string  : numerical_factor_t -> string
+val symbol_to_pretty: symbol_t -> pretty_t
+val factor_to_pretty: numerical_factor_t -> pretty_t
+val symbol_to_string: symbol_t -> string
+val factor_to_string: numerical_factor_t -> string

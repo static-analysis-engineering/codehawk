@@ -82,7 +82,7 @@ let eflag_mfts: eflag_t mfts_int =
   mk_mfts
     "eflag_t"
     [ (OFlag, "o"); (CFlag, "c"); (ZFlag, "z"); (SFlag, "s"); (PFlag, "p");
-      (DFlag, "d"); (IFlag, "i") ]
+      (DFlag, "d"); (IFlag, "i")]
 
 
 let cpureg_mfts: cpureg_t mfts_int =
@@ -104,6 +104,12 @@ let mips_reg_mfts: mips_reg_t mfts_int =
       (MRs4,"s4"); (MRs5,"s5"); (MRs6,"s6"); (MRs7,"s7"); (MRt8,"t8");
       (MRt9,"t9"); (MRk0,"k0"); (MRk1,"k1"); (MRgp,"gp"); (MRsp,"sp");
       (MRfp,"fp"); (MRra,"ra") ]
+
+
+let arm_cc_flag_mfts: arm_cc_flag_t mfts_int =
+  mk_mfts
+    "arm_cc_flag_t"
+    [(APSR_Z, "Z"); (APSR_N, "N"); (APSR_C, "C"); (APSR_V, "V")]
 
 
 let arm_reg_mfts: arm_reg_t mfts_int =
@@ -149,6 +155,23 @@ let arm_extension_reg_type_mfts: arm_extension_reg_type_t mfts_int =
   mk_mfts
     "arm_extension_reg_type"
     [(XSingle, "S"); (XDouble, "D"); (XQuad, "Q")]
+
+
+class flag_mcts_t: [flag_t] mfts_int =
+object
+
+  inherit [flag_t] mcts_t "flag_t"
+
+  method ts (f: flag_t) =
+    match f with
+    | X86Flag _ -> "x"
+    | ARMCCFlag _ -> "a"
+
+  method tags = ["a"; "x"]
+
+end
+
+let flag_mcts: flag_t mfts_int = new flag_mcts_t
 
 
 class register_mcts_t:[register_t] mfts_int =

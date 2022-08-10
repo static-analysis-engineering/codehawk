@@ -41,6 +41,7 @@ val arg_io_mfts: arg_io_t mfts_int
 val formatstring_type_mfts: formatstring_type_t mfts_int
 
 val eflag_mfts: eflag_t mfts_int
+val arm_cc_flag_mfts: arm_cc_flag_t mfts_int
 val cpureg_mfts: cpureg_t mfts_int
 val segment_mfts: segment_t mfts_int
 
@@ -51,6 +52,7 @@ val arm_reg_mfts: arm_reg_t mfts_int
 val arm_special_reg_mfts: arm_special_reg_t mfts_int
 val arm_extension_reg_type_mfts: arm_extension_reg_type_t mfts_int
 
+val flag_mcts: flag_t mfts_int  
 val register_mcts: register_t mfts_int
 
 val parameter_location_mcts: parameter_location_t mfts_int

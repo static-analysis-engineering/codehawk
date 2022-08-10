@@ -155,10 +155,10 @@ object (self)
   method index_assembly_variable_denotation (v:assembly_variable_denotation_t) =
     let tags = [ assembly_variable_denotation_mcts#ts v ] in
     let key = match v with
-      | MemoryVariable (i,o) -> (tags, [ i ; self#index_memory_offset o])
-      | RegisterVariable r -> (tags, [ bd#index_register r ])
-      | CPUFlagVariable f -> (tags @ [ eflag_mfts#ts f ],[])
-      | AuxiliaryVariable a -> (tags, [ self#index_constant_value_variable a ]) in
+      | MemoryVariable (i,o) -> (tags, [i; self#index_memory_offset o])
+      | RegisterVariable r -> (tags, [bd#index_register r])
+      | CPUFlagVariable f -> (tags,[bd#index_flag f])
+      | AuxiliaryVariable a -> (tags, [self#index_constant_value_variable a]) in
     assembly_variable_denotation_table#add key
 
   method get_assembly_variable_denotation (index:int) =
@@ -169,7 +169,7 @@ object (self)
     match (t 0) with
     | "m" -> MemoryVariable (a 0, self#get_memory_offset (a 1))
     | "r" -> RegisterVariable (bd#get_register (a 0))
-    | "f" -> CPUFlagVariable (eflag_mfts#fs (t 1))
+    | "f" -> CPUFlagVariable (bd#get_flag (a 0))
     | "a" -> AuxiliaryVariable (self#get_constant_value_variable (a 0))
     | s -> raise_tag_error name s assembly_variable_denotation_mcts#tags
 

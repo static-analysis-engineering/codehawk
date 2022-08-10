@@ -767,7 +767,7 @@ object (self)
   method mk_register_variable (register:register_t) =
     self#mk_variable (varmgr#make_register_variable register)
       
-  method mk_flag_variable (flag:eflag_t) =
+  method mk_flag_variable (flag: flag_t) =
     self#mk_variable (varmgr#make_flag_variable flag)
       
   method mk_cpu_register_variable (cpureg:cpureg_t) = 

@@ -96,10 +96,10 @@ let raise_memref_type_error (r:memory_reference_int) (msg:pretty_t) =
 
 let rec denotation_to_pretty (v:assembly_variable_denotation_t) =
   match v with
-  | MemoryVariable (memref,offset) -> LBLOCK [ STR "Mem " ; INT memref ]
-  | RegisterVariable r -> LBLOCK [ STR "Reg " ; STR (register_to_string r) ]
-  | CPUFlagVariable f -> LBLOCK [ STR "Flag " ; STR (eflag_to_string f) ]
-  | AuxiliaryVariable v -> LBLOCK [ STR "Aux " ; aux_var_to_pretty v ]
+  | MemoryVariable (memref,offset) -> LBLOCK [STR "Mem "; INT memref]
+  | RegisterVariable r -> LBLOCK [STR "Reg "; STR (register_to_string r)]
+  | CPUFlagVariable f -> LBLOCK [STR "Flag "; STR (flag_to_string f)]
+  | AuxiliaryVariable v -> LBLOCK [STR "Aux "; aux_var_to_pretty v]
 
 
 and aux_var_to_pretty (v:constant_value_variable_t) =
@@ -167,7 +167,7 @@ object (self:'a)
           | "gv" -> global_offset_to_name offset
           | _ -> basename ^ (memory_offset_to_string offset))
       | RegisterVariable reg -> register_to_string reg
-      | CPUFlagVariable flag -> eflag_to_string flag
+      | CPUFlagVariable flag -> flag_to_string flag
       | AuxiliaryVariable a ->
 	match a with
 	| InitialRegisterValue (r,level) -> (register_to_string r) ^ "_in" ^ 
@@ -602,7 +602,7 @@ object (self)
   method make_register_variable (reg:register_t) =
     self#mk_variable (RegisterVariable reg)
 
-  method make_flag_variable (flag:eflag_t) =
+  method make_flag_variable (flag: flag_t) =
     self#mk_variable (CPUFlagVariable flag)
 
   method make_global_variable (n:numerical_t) =
