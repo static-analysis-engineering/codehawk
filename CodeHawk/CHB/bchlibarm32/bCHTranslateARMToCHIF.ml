@@ -1559,14 +1559,25 @@ let translate_arm_instruction
          (fun (acc, off) reglhs ->
            let (splhs,splhscmds) = (sp_r RD)#to_lhs floc in
            let stackop = arm_sp_deref ~with_offset:off RD in
+           let stackvar = stackop#to_variable floc in
            let stackrhs = stackop#to_expr floc in
            let cmds1 = floc#get_assign_commands reglhs stackrhs in
-           let defcmds1 = floc#get_vardef_commands ~defs:[reglhs] ctxtiaddr in
+           let usehigh = get_use_high_vars [stackrhs] in
+           let defcmds1 =
+             floc#get_vardef_commands
+               ~defs:[reglhs]
+               ~use:[stackvar]
+               ~usehigh:usehigh
+               ctxtiaddr in
            (acc @ defcmds1 @ cmds1 @ splhscmds, off+4)) ([],0) reglhss in
      let (splhs,splhscmds) = (sp_r WR)#to_lhs floc in
      let increm = XConst (IntConst (mkNumerical (4 * regcount))) in
      let cmds = floc#get_assign_commands splhs (XOp (XPlus, [sprhs; increm])) in
-     let defcmds = floc#get_vardef_commands ~defs:[splhs] ctxtiaddr in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[splhs]
+         ~use:(get_register_vars [sp])
+         ctxtiaddr in
      let cmds = stackops @ defcmds @ cmds in
      (match c with
       | ACCAlways -> default cmds
@@ -1597,23 +1608,33 @@ let translate_arm_instruction
   | Push (c, sp, rl, _) ->
      let floc = get_floc loc in
      let regcount = rl#get_register_count in
-     let sprhs = sp#to_expr floc in     
-     let rhsexprs = rl#to_multiple_expr floc in
-     let rhsexprs = List.map (rewrite_expr floc) rhsexprs in
+     let sprhs = sp#to_expr floc in
+     let rhsvars = rl#to_multiple_variable floc in
      let (stackops,_) =
        List.fold_left
-         (fun (acc,off) rhsexpr ->
+         (fun (acc, off) rhsvar ->
            let (splhs,splhscmds) = (sp_r RD)#to_lhs floc in
            let stackop = arm_sp_deref ~with_offset:off WR in
            let (stacklhs, stacklhscmds) = stackop#to_lhs floc in
+           let rhsexpr = rewrite_expr floc (XVar rhsvar) in
            let cmds1 = floc#get_assign_commands stacklhs rhsexpr in
-           let defcmds1 = floc#get_vardef_commands ~defs:[stacklhs] ctxtiaddr in
+           let usehigh = get_use_high_vars [rhsexpr] in
+           let defcmds1 =
+             floc#get_vardef_commands
+               ~defs:[stacklhs]
+               ~use:[rhsvar]
+               ~usehigh:usehigh
+               ctxtiaddr in
            (acc @ stacklhscmds @ splhscmds @ defcmds1 @ cmds1, off+4))
-         ([],(-(4*regcount))) rhsexprs in
+         ([],(-(4*regcount))) rhsvars in
      let (splhs,splhscmds) = (sp_r WR)#to_lhs floc in
      let decrem = XConst (IntConst (mkNumerical(4 * regcount))) in
      let cmds = floc#get_assign_commands splhs (XOp (XMinus, [sprhs; decrem])) in
-     let defcmds = floc#get_vardef_commands ~defs:[splhs] ctxtiaddr in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[splhs]
+         ~use:(get_register_vars [sp])
+         ctxtiaddr in
      let cmds = stackops @ defcmds @ cmds in
      (match c with
       | ACCAlways -> default cmds

@@ -604,7 +604,7 @@ object (self)
          let xrmem = rewrite_expr xmem in
          let (tagstring, args) =
            mk_instrx_data
-             ~vars:[vrt]
+             ~vars:[vrt; vmem]
              ~xprs:[xrn; xrm; xmem; xrmem]
              ~rdefs:rdefs
              ~uses:uses
@@ -626,17 +626,40 @@ object (self)
              (tags, args) in
          (tags, args)
 
-      | LoadRegisterByte (_, rt, rn, _, mem, _) ->
+      | LoadRegisterByte (c, rt, rn, rm, mem, _) ->
          let vrt = rt#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
-         let xmem = XOp (XBAnd, [xmem; int_constant_expr 255]) in
+         (* let xmem = XOp (XBAnd, [xmem; int_constant_expr 255]) in *)
          let xrmem = rewrite_expr xmem in
-         (["a:vvxx"],
-          [xd#index_variable vrt;
-           xd#index_variable vmem;
-           xd#index_xpr xmem;
-           xd#index_xpr xrmem])
+         let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem] in
+         let uses = [get_def_use vrt] in
+         let useshigh = [get_def_use_high vrt] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrt; vmem]
+             ~xprs:[xrn; xrm; xmem; xrmem]
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) =
+           if mem#is_offset_address_writeback then
+             let vrn = rn#to_variable floc in
+             let xaddr = mem#to_updated_offset_address floc in
+             add_base_update tags args vrn xaddr
+           else
+             (tags, args) in
+         (tags, args)
 
       | LoadRegisterDual (_, rt, rt2, _, _, mem, mem2) ->
          let vrt = rt#to_variable floc in
@@ -827,52 +850,76 @@ object (self)
            xd#index_xpr xxdiff])
 
       | Pop (c, sp, rl, _) ->
+         let splhs = sp#to_variable floc in
+         let sprhs = sp#to_expr floc in
+         let spresult = XOp (XPlus, [sprhs; int_constant_expr 4]) in
+         let rspresult = rewrite_expr spresult in
          let lhsvars =
            List.map (fun op -> op#to_variable floc) rl#get_register_op_list in
-         let rhsexprs =
+         let rhsops =
            List.map (fun offset ->
                arm_sp_deref ~with_offset:offset RD)
              (List.init rl#get_register_count (fun i -> 4 * i)) in
-         let rhsexprs =
-           List.map (fun x -> rewrite_expr (x#to_expr floc)) rhsexprs in
-         let xtag =
-           "a:"
-           ^ (string_repeat "v" rl#get_register_count)
-           ^ (string_repeat "x" rl#get_register_count) in
-         let tags = [xtag] in
-         let args =
-           (List.map xd#index_variable lhsvars)
-           @ (List.map xd#index_xpr rhsexprs) in
-         (match c with
-          | ACCAlways -> (tags, args)
-          | c when is_cond_conditional c && floc#has_test_expr ->
-             let tcond = rewrite_expr floc#get_test_expr in
-             add_instr_condition tags args tcond
-          | _ -> (tags @ ["uc"], args))
+         let rhsexprs = List.map (fun x -> x#to_expr floc) rhsops in
+         let rrhsexprs = List.map rewrite_expr rhsexprs in
+         let rdefs = List.map get_rdef (sprhs :: rhsexprs) in
+         let uses = List.map get_def_use (splhs :: lhsvars) in
+         let useshigh = List.map get_def_use_high (splhs :: lhsvars) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:(splhs :: lhsvars)
+             ~xprs:(sprhs :: spresult :: rspresult :: rrhsexprs)
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | PreloadData (w, _, base, mem) ->
          let xbase = base#to_expr floc in
          let xmem = mem#to_expr floc in
          (["a:xx"], [xd#index_xpr xbase; xd#index_xpr xmem])
 
-      | Push (_, sp, rl, _) ->
+      | Push (c, sp, rl, _) ->
+         let splhs = sp#to_variable floc in
+         let sprhs = sp#to_expr floc in
          let rhsexprs =
-           List.map
-             (fun op -> rewrite_expr (op#to_expr floc))
-             rl#get_register_op_list in
+           List.map (fun op -> op#to_expr floc) rl#get_register_op_list in
+         let rrhsexprs = List.map rewrite_expr rhsexprs in
          let regcount = List.length rhsexprs in
          let lhsops =
            List.map (fun offset ->
                arm_sp_deref ~with_offset:offset WR)
-             (List.init rl#get_register_count (fun i -> ((-4*regcount) + (4*i)))) in
+             (List.init
+                rl#get_register_count (fun i -> ((-4*regcount) + (4*i)))) in
          let lhsvars = List.map (fun v -> v#to_variable floc) lhsops in
-         let xtag = "a:"
-                    ^ (string_repeat "v" rl#get_register_count)
-                    ^ (string_repeat "x" rl#get_register_count) in
-         let tags = [xtag] in
-         let args =
-           (List.map xd#index_variable lhsvars)
-           @ (List.map xd#index_xpr rhsexprs) in
+         let rdefs = List.map get_rdef (sprhs :: rhsexprs) in
+         let uses = List.map get_def_use (splhs :: lhsvars) in
+         let useshigh = List.map get_def_use_high (splhs :: lhsvars) in
+         let spresult = XOp (XMinus, [sprhs; int_constant_expr 4]) in
+         let rspresult = rewrite_expr spresult in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:(splhs :: lhsvars)
+             ~xprs:(sprhs :: spresult :: rspresult :: rrhsexprs)
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring ::["uc"], args) in
          (tags, args)
 
       | ReverseSubtract (_, _, dst, src1, src2, _) ->
