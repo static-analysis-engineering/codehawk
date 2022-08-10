@@ -191,7 +191,7 @@ let get_string_instruction_destination
     (size:xpr_t) 
     (width:int) =
   let env = floc#f#env in
-  let dfVar = env#mk_flag_variable DFlag in
+  let dfVar = env#mk_flag_variable (X86Flag DFlag) in
   let dfVal = floc#rewrite_variable_to_external dfVar in
   if is_zero dfVal then
     dst#to_lhs floc
@@ -219,7 +219,7 @@ let get_string_instruction_destination
 let advance_string_pointer (reg:cpureg_t) (floc:floc_int) (size:xpr_t) =
   let regOp = register_op reg 4 WR in
   let env = floc#f#env in
-  let dfVar = env#mk_flag_variable DFlag in
+  let dfVar = env#mk_flag_variable (X86Flag DFlag) in
   let zero = env#request_num_constant numerical_zero in
   let one = env#request_num_constant numerical_one in
   let dfZero = ASSERT (EQ (dfVar, zero)) in
@@ -238,7 +238,7 @@ let advance_string_pointers (floc:floc_int) (size:xpr_t) =
   let esi = env#mk_cpu_register_variable Esi in
   let (ediLhs,ediLhsCmds) = (edi_r WR)#to_lhs floc in
   let (esiLhs,esiLhsCmds) = (esi_r WR)#to_lhs floc in
-  let dfVar = env#mk_flag_variable DFlag in
+  let dfVar = env#mk_flag_variable (X86Flag DFlag) in
   let zero = env#request_num_constant numerical_zero in
   let one = env#request_num_constant numerical_one in
   let dfZero = ASSERT (EQ (dfVar, zero)) in
@@ -1514,7 +1514,7 @@ let translate_instruction
 
     (* bit test operations *)
     | BitTest (op1, op2) ->
-      let cfVar = env#mk_flag_variable CFlag in
+      let cfVar = env#mk_flag_variable (X86Flag CFlag) in
       let cmd = ABSTRACT_VARS [ cfVar ] in
       default [ cmd ]
 	
@@ -1563,7 +1563,7 @@ let translate_instruction
     | BitTestReset (op1, op2) ->
       let floc = get_floc loc in
       let (lhs, lhsCmds) = op1#to_lhs floc in
-      let cfVar = env#mk_flag_variable CFlag in
+      let cfVar = env#mk_flag_variable (X86Flag CFlag) in
       let cmds = floc#get_abstract_commands lhs	~size:(int_constant_expr op1#size) () in
       let cfAbstract = ABSTRACT_VARS [ cfVar ] in
       let cmds = lhsCmds @ [ cfAbstract ] @ cmds in
@@ -1650,7 +1650,7 @@ let translate_instruction
 	(List.concat regCmds) in
       default cmds
 
-    (* ------------------------------------------------- op = mem[esp] ; esp = esp + 4 *)
+    (* ---------------------------------------- op = mem[esp] ; esp = esp + 4 *)
     | Pop (size,op) ->
       let floc = get_floc loc in
       let (lhs, lhsCmds) = op#to_lhs floc in
@@ -1659,7 +1659,8 @@ let translate_instruction
       let stackRhs = (esp_deref RD)#to_variable floc in
       let opsize = int_constant_expr size in
       let cmds1 = floc#get_assign_commands lhs (XVar stackRhs) in
-      let cmds2 = floc#get_assign_commands espLhs (XOp (XPlus, [ XVar espRhs ; opsize ])) in
+      let cmds2 =
+        floc#get_assign_commands espLhs (XOp (XPlus, [XVar espRhs; opsize ])) in
       let cmds = espLhsCommands @ lhsCmds @ cmds1 @ cmds2 in
       let _ =   (* inform function-info if this instruction restores a register *)
 	if op#is_register then 
@@ -1668,24 +1669,25 @@ let translate_instruction
 	    finfo#restore_register floc#cia (CPURegister op#get_cpureg) in
       default cmds
 
-    (* ------------------------------------------------- flags = mem[esp] ; esp = esp + 4 *)
+    (* ------------------------------------- flags = mem[esp] ; esp = esp + 4 *)
     | PopFlags ->
       let floc = get_floc loc in
       let espRhs = env#mk_cpu_register_variable Esp in
       let (espLhs, espLhsCommands) = (esp_r WR)#to_lhs floc in
       let four = int_constant_expr 4 in
-      let popCmds = floc#get_assign_commands espLhs (XOp (XPlus, [ XVar espRhs ; four ])) in
-      let ofVar = env#mk_flag_variable OFlag in
-      let cfVar = env#mk_flag_variable CFlag in
-      let zfVar = env#mk_flag_variable ZFlag in
-      let sfVar = env#mk_flag_variable SFlag in
-      let pfVar = env#mk_flag_variable PFlag in
-      let flagCmd = ABSTRACT_VARS [ ofVar ; cfVar ; zfVar ; sfVar ; pfVar ] in
-      let cmds = espLhsCommands @ popCmds @ [ flagCmd ] in
+      let popCmds =
+        floc#get_assign_commands espLhs (XOp (XPlus, [XVar espRhs; four])) in
+      let ofVar = env#mk_flag_variable (X86Flag OFlag) in
+      let cfVar = env#mk_flag_variable (X86Flag CFlag) in
+      let zfVar = env#mk_flag_variable (X86Flag ZFlag) in
+      let sfVar = env#mk_flag_variable (X86Flag SFlag) in
+      let pfVar = env#mk_flag_variable (X86Flag PFlag) in
+      let flagCmd = ABSTRACT_VARS [ofVar; cfVar; zfVar; sfVar; pfVar] in
+      let cmds = espLhsCommands @ popCmds @ [flagCmd] in
       default cmds
 
-    (* ------------------------------------------------- pop registers ; esp = esp + 32 *)
-    (* Esp is not being reloaded from the stack                                         *)
+    (* --------------------------------------- pop registers ; esp = esp + 32 *)
+    (* Esp is not being reloaded from the stack                               *)
     | PopRegisters ->
       let floc = get_floc loc in
       let espRhs = env#mk_cpu_register_variable Esp in
@@ -1718,54 +1720,54 @@ let translate_instruction
       let branch = BRANCH [ LF.mkCode zCmds ; LF.mkCode oCmds ] in
       default (lhsCmds @ [ branch ])
 
-    (* --------------------------------------------------------------------------- CF := 1 *)
+    (* --------------------------------------------------------------- CF := 1 *)
     | SetCF ->
-      let cfVar = env#mk_flag_variable CFlag in
+      let cfVar = env#mk_flag_variable (X86Flag CFlag) in
       let cmd = ASSIGN_NUM (cfVar, NUM numerical_one) in
       default [ cmd ]
 
-    (* --------------------------------------------------------------------------- DF := 1 *)
+    (* -------------------------------------------------------------- DF := 1 *)
     | SetDF ->
-      let dfVar = env#mk_flag_variable DFlag in
+      let dfVar = env#mk_flag_variable (X86Flag DFlag) in
       let cmd = ASSIGN_NUM (dfVar, NUM numerical_one) in
       default [ cmd ]
 
-    (* --------------------------------------------------------------------------- IF := 1 *)
+    (* -------------------------------------------------------------- IF := 1 *)
     | SetInterruptFlag ->
-      let ifVar = env#mk_flag_variable IFlag in
+      let ifVar = env#mk_flag_variable (X86Flag IFlag) in
       let cmd = ASSIGN_NUM (ifVar, NUM numerical_one) in
       default [ cmd ]
 	
-    (* ---------------------------------------------------------------------------- DF := 0 *)
+    (* -------------------------------------------------------------- DF := 0 *)
     | ClearDF ->
-      let dfVar = env#mk_flag_variable DFlag in
+      let dfVar = env#mk_flag_variable (X86Flag DFlag) in
       let cmd = ASSIGN_NUM (dfVar, NUM numerical_zero) in
       default [ cmd ]
 
-    (* ---------------------------------------------------------------------------- CF := 0 *)
+    (* -------------------------------------------------------------- CF := 0 *)
     | ClearCF ->
-      let cfVar = env#mk_flag_variable CFlag in
+      let cfVar = env#mk_flag_variable (X86Flag CFlag) in
       let cmd = ASSIGN_NUM (cfVar, NUM numerical_zero) in
       default [ cmd ]
 	
-    (* ------------------------ ------------------------------------------------ CF := 1-CF *)
+    (* ------------------------ ---------------------------------- CF := 1-CF *)
     | ComplementCF ->
-      let cfVar = env#mk_flag_variable DFlag in
+      let cfVar = env#mk_flag_variable (X86Flag DFlag) in
       let one = env#request_num_constant numerical_one in
       let cmd = ASSIGN_NUM (cfVar, MINUS (one, cfVar)) in
       default [ cmd ]
 	
-    (* ---------------------------------------------------------------- store AH into flags *)
+    (* -------------------------------------------------- store AH into flags *)
     | StoreFlags ->
-      let ofVar = env#mk_flag_variable OFlag in
-      let cfVar = env#mk_flag_variable CFlag in
-      let zfVar = env#mk_flag_variable ZFlag in
-      let sfVar = env#mk_flag_variable SFlag in
-      let pfVar = env#mk_flag_variable PFlag in
-      default [ ABSTRACT_VARS [ ofVar ; cfVar ; zfVar ; sfVar ; pfVar ] ]
+      let ofVar = env#mk_flag_variable (X86Flag OFlag) in
+      let cfVar = env#mk_flag_variable (X86Flag CFlag) in
+      let zfVar = env#mk_flag_variable (X86Flag ZFlag) in
+      let sfVar = env#mk_flag_variable (X86Flag SFlag) in
+      let pfVar = env#mk_flag_variable (X86Flag PFlag) in
+      default [ABSTRACT_VARS [ofVar; cfVar; zfVar; sfVar; pfVar]]
 
     (* special instructions *)
-    (* ---------------------------------------------------------------- cpu identification *)
+    (* --------------------------------------------------- cpu identification *)
     | Cpuid ->                                                    
       let eax = env#mk_cpu_register_variable Eax in
       let ebx = env#mk_cpu_register_variable Ebx in
@@ -1775,8 +1777,11 @@ let translate_instruction
       let idB = env#mk_runtime_constant "cpuId_B" in
       let idC = env#mk_runtime_constant "cpuId_C" in
       let idD = env#mk_runtime_constant "cpuId_D" in
-      let cmds = [ ASSIGN_NUM (eax, NUM_VAR idA) ; ASSIGN_NUM (ebx, NUM_VAR idB) ;
-		   ASSIGN_NUM (ecx, NUM_VAR idC) ; ASSIGN_NUM (edx, NUM_VAR idD) ] in
+      let cmds =
+        [ASSIGN_NUM (eax, NUM_VAR idA);
+         ASSIGN_NUM (ebx, NUM_VAR idB);
+	 ASSIGN_NUM (ecx, NUM_VAR idC);
+         ASSIGN_NUM (edx, NUM_VAR idD)] in
       default cmds
 	
     (* return instruction is used as an indirect jump *)
@@ -1785,7 +1790,8 @@ let translate_instruction
       let espRhs = env#mk_cpu_register_variable Esp in
       let (espLhs, espLhsCommands) = (esp_r WR)#to_lhs floc in
       let four = int_constant_expr 4 in
-      let cmds = floc#get_assign_commands espLhs (XOp (XPlus, [ XVar espRhs ; four ])) in
+      let cmds =
+        floc#get_assign_commands espLhs (XOp (XPlus, [XVar espRhs; four])) in
       let cmds = espLhsCommands @ cmds in
       default cmds
 
@@ -1797,10 +1803,13 @@ let translate_instruction
          match adj with
          | None -> int_constant_expr 4
          | Some a -> int_constant_expr (4 + a) in
-       let cmds = floc#get_assign_commands espLhs (XOp (XPlus, [ XVar espRhs ; adj ])) in
+       let cmds =
+         floc#get_assign_commands espLhs (XOp (XPlus, [XVar espRhs; adj])) in
        let cmds = espLhsCommands @ cmds in
-       let _ = chlog#add "inline-return"
-                         (LBLOCK [ pretty_print_list cmds cmd_to_pretty "[" ", " "]" ]) in
+       let _ =
+         chlog#add
+           "inline-return"
+           (LBLOCK [pretty_print_list cmds cmd_to_pretty "[" ", " "]" ]) in
        default cmds       
 
     (* different control flow *)
@@ -2021,12 +2030,16 @@ object (self)
        entry and upon exit from a function.
        ------------------------------------------------------------------------- *)
     let dfFlagCmd =
-      let dfVar = finfo#env#mk_flag_variable DFlag in
+      let dfVar = finfo#env#mk_flag_variable (X86Flag DFlag) in
       ASSIGN_NUM (dfVar, NUM numerical_zero) in
     let constantAssigns = env#end_transaction in
-    let cmds = constantAssigns @ rAsserts @ mAsserts @ [ initializeScalar ; dfFlagCmd ] @ 
-      initializeBasePointerOperations  in
-    TRANSACTION ( new symbol_t "entry", LF.mkCode cmds, None)
+    let cmds =
+      constantAssigns
+      @ rAsserts
+      @ mAsserts
+      @ [initializeScalar; dfFlagCmd]
+      @ initializeBasePointerOperations  in
+    TRANSACTION (new symbol_t "entry", LF.mkCode cmds, None)
 
   method initialize_types =
     let esp = finfo#env#mk_cpu_register_variable Esp in
