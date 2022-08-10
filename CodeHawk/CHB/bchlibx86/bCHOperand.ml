@@ -5,7 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (v) 2020-2021 Henny Sipma
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -419,7 +420,7 @@ object (self:'a)
 	  (LBLOCK [ STR "Immediate cannot be converted to a variable" ]) ;
 	raise (Invocation_error "operand#to_variable")
       end
-    | Flag flag -> env#mk_flag_variable flag
+    | Flag flag -> env#mk_flag_variable (X86Flag flag)
     | Reg register -> env#mk_cpu_register_variable register
     | FpuReg regIndex -> env#mk_fpu_register_variable regIndex
     | ControlReg regIndex -> env#mk_control_register_variable regIndex
