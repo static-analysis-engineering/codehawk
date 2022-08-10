@@ -77,6 +77,7 @@ object (self)
   val arm_extension_register_replicated_element_table =
     mk_index_table "arm-extension-register-replicated-element-table"
   val register_table = mk_index_table "register-table"
+  val flag_table = mk_index_table "flag-table"
 
   val mutable tables = []
   val mutable stringtables = []
@@ -89,6 +90,7 @@ object (self)
         arm_extension_register_element_table;
         arm_extension_register_replicated_element_table;
         register_table;
+        flag_table;
       ];
       stringtables <- [
           string_table
@@ -97,7 +99,7 @@ object (self)
   
   method reset =
     begin
-      List.iter (fun t -> t#reset) stringtables ;
+      List.iter (fun t -> t#reset) stringtables;
       List.iter (fun t -> t#reset) tables
     end
 
@@ -165,8 +167,24 @@ object (self)
      armxrr_elem_size = (a 1);
      armxrr_elem_count = (a 2)}
 
+  method index_flag (f: flag_t) =
+    let tags = [flag_mcts#ts f] in
+    let key = match f with
+      | X86Flag e -> (tags @ [eflag_mfts#ts e], [])
+      | ARMCCFlag c -> (tags @ [arm_cc_flag_mfts#ts c], []) in
+    flag_table#add key
+
+  method get_flag (index: int) =
+    let name = flag_mcts#name in
+    let (tags, args) = flag_table#retrieve index in
+    let t = t name tags in
+    match (t 0) with
+    | "x" -> X86Flag (eflag_mfts#fs (t 1))
+    | "a" -> ARMCCFlag (arm_cc_flag_mfts#fs (t 1))
+    | s -> raise_tag_error name s flag_mcts#tags
+
   method index_register (r:register_t) =
-    let tags = [ register_mcts#ts r ] in
+    let tags = [register_mcts#ts r] in
     let key = match r with
       | SegmentRegister s -> (tags @ [ segment_mfts#ts s ],[])
       | CPURegister r -> (tags @ [ cpureg_mfts#ts r ],[])

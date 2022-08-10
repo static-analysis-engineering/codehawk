@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -78,14 +78,14 @@ val apply_to_xml_jar:
   -> Zip.in_file -> unit
 
 val add_to_sumtype_tables:
-  ('a,string) Hashtbl.t -> (string,'a) Hashtbl.t -> 'a -> string -> unit
+  ('a, string) Hashtbl.t -> (string, 'a) Hashtbl.t -> 'a -> string -> unit
 
-val get_string_from_table : string -> ('a,string) Hashtbl.t -> 'a -> string
-val get_sumtype_from_table: string -> (string,'a) Hashtbl.t -> string -> 'a
-val is_string_of_sumtype  : (string,'a) Hashtbl.t -> string -> bool
-val get_sumtype_table_keys: ('a,string) Hashtbl.t -> 'a list
+val get_string_from_table: string -> ('a, string) Hashtbl.t -> 'a -> string
+val get_sumtype_from_table: string -> (string, 'a) Hashtbl.t -> string -> 'a
+val is_string_of_sumtype: (string, 'a) Hashtbl.t -> string -> bool
+val get_sumtype_table_keys: ('a, string) Hashtbl.t -> 'a list
 
-val interval_compare : interval_t -> interval_t -> int
+val interval_compare: interval_t -> interval_t -> int
 
 val list_compare: 'a list -> 'a list -> ('a -> 'a -> int) -> int
 

@@ -393,11 +393,15 @@ type register_t =
 | PowerGPRegister of int
 
 
-(* =============================================================== Doubleword === *)
+type flag_t =
+  | X86Flag of eflag_t
+  | ARMCCFlag of arm_cc_flag_t
 
-(** doubleword_int -------------------------------------------------------------
+(* ============================================================ Doubleword === *)
+
+(** doubleword_int -----------------------------------------------------------
     32-bit word constructed from an unsigned 64-bit integer (immutable)
-    ---------------------------------------------------------------------------- *)
+    -------------------------------------------------------------------------- *)
 
 type dw_index_t = int
 
@@ -453,7 +457,7 @@ object ('a)
   method toPretty: pretty_t
 end
 
-(* ================================================================ Immediate === *)
+(* ============================================================ Immediate === *)
 
 class type immediate_int =
 object ('a)
@@ -482,7 +486,7 @@ object ('a)
   method toPretty: pretty_t
 end
 
-(* ========================================================== Pushback stream === *)
+(* ====================================================== Pushback stream === *)
 
 class type virtual stream_wrapper_int = 
 object
@@ -1918,7 +1922,7 @@ end
 type assembly_variable_denotation_t =
   | MemoryVariable of int * memory_offset_t    (* memory reference index *)
   | RegisterVariable of register_t
-  | CPUFlagVariable of eflag_t
+  | CPUFlagVariable of flag_t
   | AuxiliaryVariable of constant_value_variable_t
 
 and constant_value_variable_t =
@@ -2041,20 +2045,21 @@ object ('a)
 
   (* printing *)
   method toPretty: pretty_t
-                     (* method write_xml  : xml_element_int -> unit *)
+
 end
 
 class type variable_manager_int =
 object
   (* reset *)
   method reset: unit
-  method vard : vardictionary_int
+  method vard: vardictionary_int
   method memrefmgr: memory_reference_manager_int
 
   (* constructors *)
-  method make_memory_variable: memory_reference_int -> memory_offset_t -> assembly_variable_int
+  method make_memory_variable:
+           memory_reference_int -> memory_offset_t -> assembly_variable_int
   method make_register_variable: register_t -> assembly_variable_int
-  method make_flag_variable: eflag_t -> assembly_variable_int
+  method make_flag_variable: flag_t -> assembly_variable_int
   method make_global_variable: numerical_t -> assembly_variable_int
   method make_frozen_test_value: 
     variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t-> assembly_variable_int
@@ -2087,7 +2092,8 @@ object
   method get_memvar_offset: variable_t -> memory_offset_t
   method get_memval_offset: variable_t -> memory_offset_t
   method get_global_variable_address: variable_t -> doubleword_int
-  method get_stack_parameter_index: variable_t -> int option (* assuming 4-byte parameters *)
+  method get_stack_parameter_index:
+           variable_t -> int option (* assuming 4-byte parameters *)
   method get_register: variable_t -> register_t
   method get_initial_register_value_register: variable_t -> register_t
   method get_pointed_to_function_name: variable_t -> string
@@ -2273,6 +2279,7 @@ class type bdictionary_int =
     method index_arm_extension_register_replicated_element:
              arm_extension_register_replicated_element_t -> int
     method index_register: register_t -> int
+    method index_flag: flag_t -> int
          
     method get_string: int -> string
     method get_address: int -> doubleword_int
@@ -2283,6 +2290,7 @@ class type bdictionary_int =
     method get_arm_extension_register_replicated_element:
              int -> arm_extension_register_replicated_element_t
     method get_register: int -> register_t
+    method get_flag: int -> flag_t
 
     method write_xml_register: ?tag:string -> xml_element_int -> register_t -> unit
     method write_xml_string: ?tag:string -> xml_element_int -> string -> unit
@@ -2462,8 +2470,8 @@ class type function_environment_int =
     method mk_initial_register_value: ?level:int -> register_t -> variable_t
     method mk_initial_memory_value  : variable_t -> variable_t
 
-    method mk_flag_variable  : eflag_t -> variable_t
-    method mk_bridge_value   : ctxt_iaddress_t -> int -> variable_t
+    method mk_flag_variable: flag_t -> variable_t
+    method mk_bridge_value: ctxt_iaddress_t -> int -> variable_t
 
     method mk_memory_variable:
              ?save_name:bool -> memory_reference_int -> numerical_t -> variable_t
