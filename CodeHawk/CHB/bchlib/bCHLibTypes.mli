@@ -1092,6 +1092,7 @@ type vardefuse_t = variable_t * symbol_t list
 
 type var_invariant_fact_t =
   | ReachingDef of vardefuse_t
+  | FlagReachingDef of vardefuse_t
   | DefUse of vardefuse_t
   | DefUseHigh of vardefuse_t
 
@@ -1107,6 +1108,7 @@ class type var_invariant_int =
 
     (* predicates *)
     method is_reaching_def: bool
+    method is_flag_reaching_def: bool
     method is_def_use: bool
     method is_def_use_high: bool
 
@@ -1124,6 +1126,7 @@ class type location_var_invariant_int =
     (* accessors *)
     method get_var_facts: variable_t -> var_invariant_int list
     method get_var_reaching_defs: variable_t -> var_invariant_int list
+    method get_var_flag_reaching_defs: variable_t -> var_invariant_int list
     method get_var_def_uses: variable_t -> var_invariant_int list
     method get_var_def_uses_high: variable_t -> var_invariant_int list
     method get_facts: var_invariant_int list
@@ -1142,6 +1145,7 @@ class type location_var_invariant_int =
 class type var_invariant_io_int =
   object
     method add_reaching_def: string -> variable_t -> symbol_t list  -> unit
+    method add_flag_reaching_def: string -> variable_t -> symbol_t list -> unit
     method add_def_use: string -> variable_t -> symbol_t list -> unit
     method add_def_use_high: string -> variable_t -> symbol_t list -> unit
 
@@ -2261,7 +2265,7 @@ end
 
 
 
-(* ============================================================== dictionary ==== *)
+(* ========================================================== dictionary ==== *)
 
 type constantstring = string * bool * int
 
@@ -2509,6 +2513,7 @@ class type function_environment_int =
     method get_variable: int -> variable_t
     method get_variables: variable_t list
     method get_sym_variables: variable_t list
+    method get_domain_sym_variables: string -> variable_t list
     method get_local_variables: variable_t list
     method get_external_memory_variables: variable_t list
     method get_virtual_target : variable_t -> function_interface_t
@@ -2533,8 +2538,10 @@ class type function_environment_int =
     method get_calltarget_value: variable_t -> call_target_t
     method get_symbolic_value_expr: variable_t -> xpr_t
          
-    method get_argbasevar_with_offsets: variable_t -> (variable_t * numerical_t list) option
-    method get_globalbasevar_with_offsets: variable_t -> (variable_t * numerical_t list) option
+    method get_argbasevar_with_offsets:
+             variable_t -> (variable_t * numerical_t list) option
+    method get_globalbasevar_with_offsets:
+             variable_t -> (variable_t * numerical_t list) option
          
     method get_initialized_call_target_value: variable_t -> call_target_t
     method get_initialized_string_value: variable_t -> int -> string
@@ -2555,7 +2562,7 @@ class type function_environment_int =
     method mk_num_temp: variable_t
     method mk_sym_temp: variable_t
     method request_num_constant: numerical_t -> variable_t
-    method mk_symbolic_variable: variable_t -> variable_t
+    method mk_symbolic_variable: ?domains:string list -> variable_t -> variable_t
          
     (* variable manager predicates *)
     method is_unknown_base_memory_variable: variable_t -> bool
@@ -2855,7 +2862,7 @@ object
 end
 
 
-(* ==================================================================== Floc === *)
+(* ================================================================== Floc === *)
 
 class type floc_int =
 object
@@ -2864,7 +2871,8 @@ object
   method set_instruction_bytes: string -> unit
 
   (* sets the targets for an indirect jump at this instruction *)
-  method set_jumptable_target: doubleword_int -> jumptable_int -> register_t -> unit
+  method set_jumptable_target:
+           doubleword_int -> jumptable_int -> register_t -> unit
 
   method set_call_target: call_target_info_int -> unit
   method update_call_target: unit
@@ -2989,6 +2997,7 @@ object
            -> ?clobbers:variable_t list
            -> ?use:variable_t list
            -> ?usehigh:variable_t list
+           -> ?flagdefs:variable_t list
            -> string
            -> cmd_t list
 

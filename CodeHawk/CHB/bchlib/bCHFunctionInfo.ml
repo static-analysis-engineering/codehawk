@@ -621,6 +621,9 @@ object (self)
   val chifvars = H.create 5
   val symchifvars = H.create 5
 
+  (* Keep a separate map of symbolic variables per domain *)
+  val dom_symchifvars = H.create 5
+
   method private add_chifvar (v:assembly_variable_int) (vt:variable_type_t) =
     if H.mem chifvars v#index then
       H.find chifvars v#index
@@ -635,8 +638,23 @@ object (self)
   method private mk_variable (v:assembly_variable_int) =
     self#add_chifvar v NUM_VAR_TYPE
 
+  method private add_domain_symchifvar
+                   (domain: string) (seqnr: int) (v: variable_t) =
+    let dom_chifvar_entry =
+      if H.mem dom_symchifvars domain then
+        H.find dom_symchifvars domain
+      else
+        let entry = H.create 3 in
+        let _ = H.add dom_symchifvars domain entry in
+        entry in
+    if H.mem dom_chifvar_entry seqnr then
+      ()
+    else
+      H.add dom_chifvar_entry seqnr v
+
   (* create a SYM_VAR_TYPE variable for the same assembly variable *)
-  method mk_symbolic_variable (v: variable_t): variable_t =
+  method mk_symbolic_variable
+           ?(domains: string list = [])(v: variable_t): variable_t =
     let name = v#getName in
     let seqnr = name#getSeqNumber in
     if H.mem symchifvars seqnr then
@@ -645,6 +663,9 @@ object (self)
       let symchifvar = scope#mkVariable name SYM_VAR_TYPE in
       begin
         H.add symchifvars seqnr symchifvar;
+        List.iter
+          (fun dom ->
+            self#add_domain_symchifvar dom seqnr symchifvar) domains;
         symchifvar
       end
 
@@ -653,6 +674,12 @@ object (self)
   method get_variables = H.fold (fun _ v a -> v::a) chifvars []
 
   method get_sym_variables = H.fold (fun _ v a -> v::a) symchifvars []
+
+  method get_domain_sym_variables (domain: string) =
+    if H.mem dom_symchifvars domain then
+      H.fold (fun _ v a -> v::a) (H.find dom_symchifvars domain) []
+    else
+      []
 
   method get_variable (index:int) = 
     if H.mem chifvars index then H.find chifvars index else

@@ -87,6 +87,7 @@ object (self)
     let key =
       match f with
       | ReachingDef d -> (tags, [self#index_var_def_use d])
+      | FlagReachingDef d -> (tags, [self#index_var_def_use d])
       | DefUse d -> (tags, [self#index_var_def_use d])
       | DefUseHigh d -> (tags, [self#index_var_def_use d]) in
     var_invariant_fact_table#add key
@@ -98,6 +99,7 @@ object (self)
     let a = a name args in
     match (t 0) with
     | "r" -> ReachingDef (self#get_var_def_use (a 0))
+    | "f" -> FlagReachingDef (self#get_var_def_use (a 0))
     | "d" -> DefUse (self#get_var_def_use (a 0))
     | "h" -> DefUseHigh (self#get_var_def_use (a 0))
     | s -> raise_tag_error name s var_invariant_fact_mcts#tags
