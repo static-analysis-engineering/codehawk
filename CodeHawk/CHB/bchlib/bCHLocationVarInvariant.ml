@@ -50,6 +50,8 @@ let var_invariant_fact_to_pretty (f: var_invariant_fact_t) =
   match f with
   | ReachingDef vardefuse ->
      LBLOCK [STR "reaching-def: "; vardefuse_to_pretty vardefuse]
+  | FlagReachingDef vardefuse ->
+     LBLOCK [STR "flag-reaching-def: "; vardefuse_to_pretty vardefuse]
   | DefUse vardefuse ->
      LBLOCK [STR "def-use: "; vardefuse_to_pretty vardefuse]
   | DefUseHigh vardefuse ->
@@ -78,6 +80,11 @@ object (self: 'a)
     | ReachingDef _ -> true
     | _ -> false
 
+  method is_flag_reaching_def: bool =
+    match fact with
+    | FlagReachingDef _ -> true
+    | _ -> false
+
   method is_def_use: bool =
     match fact with
     | DefUse _ -> true
@@ -91,6 +98,7 @@ object (self: 'a)
   method get_variable: variable_t =
     match fact with
     | ReachingDef (v, _)
+      | FlagReachingDef (v, _)
       | DefUse (v, _)
       | DefUseHigh (v, _) -> v
 
@@ -146,6 +154,9 @@ object (self)
 
   method get_var_reaching_defs (var: variable_t): var_invariant_int list =
     List.filter (fun f -> f#is_reaching_def) (self#get_var_facts var)
+
+  method get_var_flag_reaching_defs (var: variable_t): var_invariant_int list =
+    List.filter (fun f -> f#is_flag_reaching_def) (self#get_var_facts var)
 
   method get_var_def_uses (var: variable_t): var_invariant_int list =
     List.filter (fun f -> f#is_def_use) (self#get_var_facts var)
@@ -209,6 +220,10 @@ object (self)
   method add_reaching_def
            (iaddr: string) (var: variable_t) (locs: symbol_t list) =
     self#add iaddr (ReachingDef (var, locs))
+
+  method add_flag_reaching_def
+           (iaddr: string) (var: variable_t) (locs: symbol_t list) =
+    self#add iaddr (FlagReachingDef (var, locs))
 
   method add_def_use
            (iaddr: string) (var: variable_t) (locs: symbol_t list) =

@@ -600,10 +600,11 @@ object
   method ts (t: var_invariant_fact_t) =
     match t with
     | ReachingDef _ -> "r"
+    | FlagReachingDef _ -> "f"
     | DefUse _ -> "d"
     | DefUseHigh _ -> "h"
 
-  method tags = ["d"; "h"; "r"]
+  method tags = ["d"; "f"; "h"; "r"]
 
 end
 

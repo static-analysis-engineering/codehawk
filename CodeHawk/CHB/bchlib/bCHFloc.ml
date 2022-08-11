@@ -1423,16 +1423,18 @@ object (self)
             ?(defs: variable_t list = [])
             ?(clobbers: variable_t list = [])
             ?(use: variable_t list = [])
-            ?(usehigh: variable_t list= [])
+            ?(usehigh: variable_t list = [])
+            ?(flagdefs: variable_t list = [])
             (iaddr: string): cmd_t list =
      let op_name (kind: string) = new symbol_t ~atts:[iaddr] kind in
      let def_op_name = op_name "def" in
      let clobber_op_name = op_name "clobber" in
      let use_op_name = op_name "use" in
      let usehigh_op_name = op_name "use_high" in
+     let flagdef_op_name = op_name "def" in
      let mk_ops (doms: string list) (opname: symbol_t) (vars: variable_t list) =
        List.map (fun v ->
-           let symv = self#f#env#mk_symbolic_variable v in
+           let symv = self#f#env#mk_symbolic_variable ~domains:doms v in
            let op = {op_name = opname; op_args = [("dst", symv, WRITE)]} in
            DOMAIN_OPERATION (doms, op)) vars in
      let defdoms = ["reachingdefs"; "defuse"; "defusehigh"] in
@@ -1440,7 +1442,8 @@ object (self)
      let clobberops = mk_ops defdoms clobber_op_name clobbers in
      let useops = mk_ops ["defuse"] use_op_name use in
      let usehighops = mk_ops ["defusehigh"] usehigh_op_name usehigh in
-     useops @ usehighops @ defops @ clobberops
+     let flagdefops = mk_ops ["flagreachingdefs"] flagdef_op_name flagdefs in
+     useops @ usehighops @ defops @ clobberops @ flagdefops
 	 
    method private evaluate_fts_argument (p: fts_parameter_t) =
      match p.apar_location with
