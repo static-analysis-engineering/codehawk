@@ -171,6 +171,15 @@ object (self)
       let args = args @ [xd#index_xpr x] in
       (tags, args) in
 
+    let flagrdefs: int list =
+      let flags_used = get_arm_flags_used instr#get_opcode in
+      List.concat
+        (List.map (fun f ->
+          let flagvar = floc#f#env#mk_flag_variable (ARMCCFlag f) in
+          let symflagvar = floc#f#env#mk_symbolic_variable flagvar in
+          let varinvs = varinv#get_var_flag_reaching_defs symflagvar in
+          List.map (fun vinv -> vinv#index) varinvs) flags_used) in
+
     let get_rdef (xpr: xpr_t): int =
       match xpr with
       | XVar v ->
@@ -228,21 +237,24 @@ object (self)
       let rdefcount = List.length rdefs in
       let defusecount = List.length uses in
       let defusehighcount = List.length useshigh in
+      let flagrdefcount = List.length flagrdefs in
       let varstring = string_repeat "v" varcount in
       let xprstring = string_repeat "x" xprcount in
       let rdefstring = string_repeat "r" rdefcount in
       let defusestring = string_repeat "d" defusecount in
       let defusehighstring = string_repeat "h" defusehighcount in
+      let flagrdefstring = string_repeat "f" flagrdefcount in
       let tagstring =
         "a:"
         ^ varstring
         ^ xprstring
         ^ rdefstring
         ^ defusestring
-        ^ defusehighstring in
+        ^ defusehighstring
+        ^ flagrdefstring in
       let varargs = List.map xd#index_variable vars in
       let xprargs = List.map xd#index_xpr xprs in
-      (tagstring, varargs @ xprargs @ rdefs @ uses @ useshigh) in
+      (tagstring, varargs @ xprargs @ rdefs @ uses @ useshigh @ flagrdefs) in
 
     let key =
       match instr#get_opcode with
@@ -408,14 +420,18 @@ object (self)
          let tcond = floc#get_test_expr in
          let fcond = rewrite_expr (XOp (XLNot, [tcond])) in
          let csetter = floc#f#get_associated_cc_setter floc#cia in
-         let instr = (!arm_assembly_instructions)#at_address (string_to_doubleword csetter) in
+         let instr =
+           (!arm_assembly_instructions)#at_address
+             (string_to_doubleword csetter) in
          let bytestr = instr#get_bytes_ashexstring in
-         (["a:xxxxx"; "TF"; csetter; bytestr],
-          [xd#index_xpr txpr;
-           xd#index_xpr fxpr;
-           xd#index_xpr tcond;
-           xd#index_xpr fcond;
-           xd#index_xpr xtgt])
+         let rdefs = [get_rdef tcond] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~xprs:[txpr; fxpr; tcond; fcond; xtgt]
+             ~rdefs:rdefs
+             () in
+         let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
+         (tags, args)
 
       | Branch (_, tgt, _) ->
          let xtgt = tgt#to_expr floc in

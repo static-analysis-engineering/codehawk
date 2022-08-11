@@ -535,6 +535,9 @@ let translate_arm_instruction
         let xw = inv#rewrite_expr x comparator in
         let xs = simplify_xpr xw in
         (vars_in_expr_list [xs]) @ acc) [] xprs in
+  let flagdefs =
+    let flags_set = get_arm_flags_set instr#get_opcode in
+    List.map (fun f -> finfo#env#mk_flag_variable (ARMCCFlag f)) flags_set in
 
   match instr#get_opcode with
 
@@ -617,6 +620,7 @@ let translate_arm_instruction
          ~defs:[vrd]
          ~use:usevars
          ~usehigh:usehigh
+         ~flagdefs:flagdefs
          ctxtiaddr in
      let cmds = defcmds @ cmds in
      (match c with
@@ -959,6 +963,7 @@ let translate_arm_instruction
        floc#get_vardef_commands
          ~use:usevars
          ~usehigh:usehigh
+         ~flagdefs:flagdefs
          ctxtiaddr in
      default defcmds
 
@@ -2347,10 +2352,18 @@ object (self)
         finfo#get_base_pointers in
     let initialize_reaching_defs: cmd_t list =
       List.map (fun v ->
-          OPERATION
-            {op_name = new symbol_t ~atts:["init"] "def";
-             op_args = [("dst", v, WRITE)]})
-        finfo#env#get_sym_variables in
+          DOMAIN_OPERATION
+            (["reachingdefs"],
+             {op_name = new symbol_t ~atts:["init"] "def";
+              op_args = [("dst", v, WRITE)]}))
+        (finfo#env#get_domain_sym_variables "reachingdefs") in
+    let initialize_flag_reaching_defs: cmd_t list =
+      List.map (fun v ->
+          DOMAIN_OPERATION
+            (["flagreachingdefs"],
+             {op_name = new symbol_t ~atts:["init"] "def";
+              op_args = [("dst", v, WRITE)]}))
+         (finfo#env#get_domain_sym_variables "flagreachingdefs") in
     let constantAssigns = env#end_transaction in
     let cmds =
       constantAssigns
@@ -2359,7 +2372,8 @@ object (self)
       @ mAsserts
       @ [ initializeScalar ]
       @ initializeBasePointerOperations
-      @ initialize_reaching_defs in
+      @ initialize_reaching_defs
+      @ initialize_flag_reaching_defs in
     TRANSACTION (new symbol_t "entry", LF.mkCode cmds, None)
 
   method private get_exit_cmd =
@@ -2368,10 +2382,10 @@ object (self)
     let cmds: cmd_t list =
       List.map (fun v ->
           DOMAIN_OPERATION
-            (["defuseasm"],
-             {op_name = new symbol_t "initialize";
+            (["defuse"],
+             {op_name = new symbol_t ~atts:["exit"] "use";
               op_args = [("dst", v, WRITE)]}))
-        finfo#env#get_sym_variables in
+        (finfo#env#get_domain_sym_variables "defuse") in
     TRANSACTION (new symbol_t "exit", LF.mkCode cmds, None)
 
   method translate =
@@ -2381,7 +2395,8 @@ object (self)
     let exitLabel = make_code_label ~modifier:"exit" funloc#ci in
     let procname = make_arm_proc_name faddr in
     let _ = f#iter (fun b -> self#translate_block b exitLabel) in
-    let argconstraints = system_info#get_argument_constraints faddr#to_hex_string in
+    let argconstraints =
+      system_info#get_argument_constraints faddr#to_hex_string in
     let entrycmd = self#get_entry_cmd argconstraints in
     let exitcmd = self#get_exit_cmd in
     let scope = finfo#env#get_scope in
@@ -2389,14 +2404,9 @@ object (self)
     let _ = codegraph#add_node exitLabel [exitcmd] in
     let _ = codegraph#add_edge entryLabel firstInstrLabel in
     let cfg = codegraph#to_cfg entryLabel exitLabel in
-    (* let cfgrev = codegraph#to_cfg exitLabel entryLabel in *)
     let body = LF.mkCode [CFG (procname, cfg)] in
-    (* let procname_r = doubleword_to_symbol "proc_r" faddr in *)
-    (* let bodyrev = LF.mkCode [CFG (procname_r, cfgrev)] in *)
     let proc = LF.mkProcedure procname [] [] scope body in
-    (* let procrev = LF.mkProcedure procname_r [] [] scope bodyrev in *)
-    (* let _ = pr_debug [proc#toPretty; NL] in
-    let _ = pr_debug [procrev#toPretty; NL] in *)
+    let _ = pr_debug [proc#toPretty; NL] in
     begin
       arm_chif_system#add_arm_procedure proc;
       (* arm_chif_system#add_arm_procedure procrev; *)
