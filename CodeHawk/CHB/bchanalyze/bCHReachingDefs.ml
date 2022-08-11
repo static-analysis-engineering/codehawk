@@ -167,12 +167,6 @@ let opsemantics (domain: string) =
     ~(context: CHLanguage.symbol_t CHStack.stack_t)
     ~(operation: CHLanguage.operation_t) ->
   match operation.op_name#getBaseName with
-  | "def" ->
-     let (v, sym) = get_vardefuse operation in
-     if fwd_direction then
-       invariant#analyzeFwd (ASSIGN_SYM (v, sym))
-     else
-       invariant#analyzeBwd (ASSIGN_SYM (v, sym))
   | "invariant" ->
      let _ =
        if stable then
@@ -202,6 +196,26 @@ let analyze_procedure_with_reaching_defs
   ()
 
 
+let analyze_procedure_with_flag_reaching_defs
+      (proc: procedure_int) (system: system_int) =
+  let strategy: iteration_strategy_t = {
+      widening = (fun _ -> true, ""); narrowing = (fun _ -> true)} in
+  let iterator =
+    new iterator_t
+      ~db_enabled:false
+      ~do_loop_counters:false
+      ~strategy
+      ~op_semantics:(opsemantics "flagreachingdefs") system in
+  let code = LF.mkCode [CODE (new symbol_t "code", proc#getBody)] in
+  let init = [("flagreachingdefs", new reaching_defs_domain_no_arrays_t)] in
+  let _ =
+    iterator#runFwd
+      ~domains:["flagreachingdefs"]
+      ~atlas:(new atlas_t ~sigmas:[] init)
+      (CODE (new symbol_t "code", code)) in
+  ()
+
+
 let extract_reaching_defs
       (finfo: function_info_int)
       (invariants: (string, (string, atlas_t) H.t) H.t) =
@@ -225,6 +239,26 @@ let extract_reaching_defs
                  finfo#fvarinv#add_reaching_def k v symbols
               | _ -> ()) vars) invariants
 
-  
 
-                                                            
+let extract_flag_reaching_defs
+      (finfo: function_info_int)
+      (invariants: (string, (string, atlas_t) H.t) H.t) =
+  H.iter (fun k v ->
+      if H.mem v "flagreachingdefs" then
+        let inv = H.find v "flagreachingdefs" in
+        let domain = inv#getDomain "flagreachingdefs" in
+        let varObserver = domain#observer#getNonRelationalVariableObserver in
+        let vars = domain#observer#getObservedVariables in
+        List.iter (fun (v: variable_t) ->
+            let reachingdefs = (varObserver v)#toSymbolicSet in
+            if reachingdefs#isTop then
+              ()
+            else
+              match reachingdefs#getSymbols with
+              | SET symbols ->
+                 let symbols =
+                   List.sort (fun s1 s2 ->
+                       Stdlib.compare
+                         s1#getBaseName s2#getBaseName) symbols#toList in
+                 finfo#fvarinv#add_flag_reaching_def k v symbols
+              | _ -> ()) vars) invariants

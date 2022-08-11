@@ -37,3 +37,8 @@ val analyze_procedure_with_reaching_defs: procedure_int -> system_int -> unit
 
 val extract_reaching_defs:
   function_info_int -> (string, (string, atlas_t) Hashtbl.t) Hashtbl.t -> unit
+
+val analyze_procedure_with_flag_reaching_defs: procedure_int -> system_int -> unit
+
+val extract_flag_reaching_defs:
+  function_info_int -> (string, (string, atlas_t) Hashtbl.t) Hashtbl.t -> unit
