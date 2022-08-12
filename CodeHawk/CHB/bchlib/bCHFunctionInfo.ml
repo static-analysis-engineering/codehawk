@@ -657,17 +657,21 @@ object (self)
            ?(domains: string list = [])(v: variable_t): variable_t =
     let name = v#getName in
     let seqnr = name#getSeqNumber in
-    if H.mem symchifvars seqnr then
-      H.find symchifvars seqnr
-    else
-      let symchifvar = scope#mkVariable name SYM_VAR_TYPE in
-      begin
-        H.add symchifvars seqnr symchifvar;
-        List.iter
-          (fun dom ->
-            self#add_domain_symchifvar dom seqnr symchifvar) domains;
-        symchifvar
-      end
+    let symchifvar =
+      if H.mem symchifvars seqnr then
+        H.find symchifvars seqnr
+      else
+        let symchifvar = scope#mkVariable name SYM_VAR_TYPE in
+        begin
+          H.add symchifvars seqnr symchifvar;
+          symchifvar
+        end in
+    begin
+      List.iter
+        (fun dom ->
+          self#add_domain_symchifvar dom seqnr symchifvar) domains;
+      symchifvar
+    end
 
   method private has_chifvar index = H.mem chifvars index
 
