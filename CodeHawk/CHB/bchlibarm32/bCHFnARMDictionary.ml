@@ -190,6 +190,13 @@ object (self)
           | _ -> -1)
       | _ -> -1 in
 
+    let get_all_rdefs (xpr: xpr_t): int list =
+      let vars = variables_in_expr xpr in
+      List.fold_left (fun acc v ->
+          let symvar = floc#env#mk_symbolic_variable v in
+          let varinvs = varinv#get_var_reaching_defs symvar in
+          (List.map (fun vinv -> vinv#index) varinvs) @ acc) [] vars in
+
     let get_rdef_memvar (v: variable_t): int =
       let symvar = floc#f#env#mk_symbolic_variable v in
       let varinvs = varinv#get_var_reaching_defs symvar in
@@ -424,7 +431,7 @@ object (self)
            (!arm_assembly_instructions)#at_address
              (string_to_doubleword csetter) in
          let bytestr = instr#get_bytes_ashexstring in
-         let rdefs = [get_rdef tcond] in
+         let rdefs = get_all_rdefs tcond in
          let (tagstring, args) =
            mk_instrx_data
              ~xprs:[txpr; fxpr; tcond; fcond; xtgt]

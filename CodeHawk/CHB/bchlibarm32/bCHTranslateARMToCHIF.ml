@@ -2319,6 +2319,8 @@ object (self)
       ASSERT (EQ (regVar, initVar)) in
     let freeze_external_memory_values (v:variable_t) =
       let initVar = env#mk_initial_memory_value v in
+      let _ =
+        ignore(finfo#env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
       ASSERT (EQ (v, initVar)) in
     let rAsserts = List.map freeze_initial_register_value arm_regular_registers in
     let externalMemvars = env#get_external_memory_variables in
