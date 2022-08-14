@@ -627,6 +627,7 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: source *)
       * arm_operand_int  (* rn: base *)
+      * arm_operand_int  (* rm/imm: index/immediate *)
       * arm_operand_int  (* mem: memory location *)
       * bool             (* T.W. *)
   | StoreRegisterDual of
@@ -724,8 +725,8 @@ type arm_opcode_t =
       * bool            (* T.W. *)
   | UnsignedExtendHalfword of
       arm_opcode_cc_t   (* condition *)
-      * arm_operand_int (* destination *)
-      * arm_operand_int (* source *)
+      * arm_operand_int (* rd: destination *)
+      * arm_operand_int (* rm: source *)
   | UnsignedMultiplyAccumulateLong of
       bool   (* flags are set *)
       * arm_opcode_cc_t   (* condition *)

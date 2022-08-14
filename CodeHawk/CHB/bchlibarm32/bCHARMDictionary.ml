@@ -297,8 +297,8 @@ object (self)
          (ctags c, [ setb wb; oi rn; oi rl; oi mem; setb tw ])
       | StoreRegister (c, rt, rn, rm, mem, tw) ->
          (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw])
-      | StoreRegisterByte (c, rt, rn, mem, tw) ->
-         (ctags c, [oi rt; oi rn; oi mem; setb tw])
+      | StoreRegisterByte (c, rt, rn, rm, mem, tw) ->
+         (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw])
       | StoreRegisterHalfword (c, rt, rn, rm, mem, tw) ->
          (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw ])
       | StoreRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
