@@ -985,7 +985,7 @@ let parse_load_store_imm_type (instr: doubleword_int) (cond: int) =
      (* STRB<c> <Rt>, [<Rn>{, #+/-<imm12>}]       Offset: (index,wback) = (T,F)
       * STRB<c> <Rt>, [<Rn>, #+/-<imm12>]!        Pre-x : (index,wback) = (T,T)
       * STRB<c> <Rt>, [<Rn>], #+/-<imm12>         Post-x: (index,wback) = (F,T) *)
-     StoreRegisterByte (c, rt RD, rn, mem, false)
+     StoreRegisterByte (c, rt RD, rn, imm, mem, false)
 
   (* <cc><2>pu1w1<rn><rt><--imm12---> *)   (* LDRB-imm *)
   | (1, 1, _) ->
@@ -1044,7 +1044,7 @@ let parse_load_store_reg_type (instr: doubleword_int) (cond: int) =
      let mem = mk_mem WR in
      (* STRB<c> <Rt>, [<Rn>,+/-<Rm>{, <shift>}]{!} *)
      (* STRB<c> <Rt>, [<Rn>],+/-<Rm>{, <shift>} *)
-     StoreRegisterByte (c, rt RD, rn, mem, false)
+     StoreRegisterByte (c, rt RD, rn, rm, mem, false)
 
   (* <cc><3>pu1w1<rn><rt><imm>ty0<rm> *)   (* LDRB (register) - A1 *)
   | (1, 1) ->

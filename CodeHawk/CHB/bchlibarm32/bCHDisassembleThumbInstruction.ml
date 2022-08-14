@@ -1852,11 +1852,12 @@ let parse_thumb32_31
        mk_arm_offset_address_op
          rnreg offset ~isadd:true ~isindex:true ~iswback:false in
      (* STRB<c>.W <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
-     StoreRegisterByte (cc, rt RD, rn RD, mem WR, true)
+     StoreRegisterByte (cc, rt RD, rn RD, rm RD, mem WR, true)
 
   (* < 31>0000000<rn><rt>1puw<-imm8->   STRB (immediate) - T3 *)
   | 0 when (b 11 11) = 1 ->
      let offset = ARMImmOffset (b 7 0) in
+     let imm = mk_arm_immediate_op false 4 (mkNumerical (b 7 0)) in
      let isindex = (b 10 10) = 1 in
      let isadd = (b 9 9) = 1 in
      let iswback = (b 8 8) = 1 in
@@ -1864,7 +1865,7 @@ let parse_thumb32_31
      (* STRB<c> <Rt>, [<Rn>, #-<imm8>]
         STRB<c> <Rt>, [<Rn>], #+/-<imm8>
         STRB<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
-     StoreRegisterByte (cc, rt RD, rn RD, mem WR, true)
+     StoreRegisterByte (cc, rt RD, rn RD, imm, mem WR, true)
 
   (* < 31>000U001<15><15><--imm12--->   (PLD (literal, T1)) *)
   | 1 | 9 when (b 19 16) = 15 && (b 15 12) = 15 ->
@@ -2021,7 +2022,8 @@ let parse_thumb32_31
   (* < 31>0001000<rn><rt><--imm12--->   STRB (immediate) - T2 *)
   | 8 ->
      (* STRB<c>.W <Rt>, [<Rn, #<imm12>] *)
-     StoreRegisterByte (cc, rt RD, rn RD, mem WR, true)
+     let immop = mk_arm_immediate_op false 4 (mkNumerical (b 11 0)) in
+     StoreRegisterByte (cc, rt RD, rn RD, immop, mem WR, true)
 
   (* < 31>00010W1<rn><15><--imm12--->   PLD (immediate, T1) *)
   | 9 | 11 when (b 15 12) = 15 ->
@@ -2983,7 +2985,7 @@ let parse_t16_load_store_reg
   (* 0101010<r><r><r>  STRB (register) - T1 *)
   | 2 ->
      (* STRB<c> <Rt>, [<Rn>, <Rm>] *)
-     StoreRegisterByte (cc, rt RD, rn RD, mem WR, false)
+     StoreRegisterByte (cc, rt RD, rn RD, rm RD, mem WR, false)
 
   (* 0101011<r><r><r>  LDRSB (register) - T1 *)
   | 3 ->
@@ -3072,7 +3074,7 @@ let parse_t16_load_store_imm
   (* 01110<imm><r><r>  STRB (immediate) - T1 *)
   | 2 ->
      (* STRB<c> <Rt>, [<Rn>, #<imm5>] *)
-     StoreRegisterByte (cc, rt RD, rn RD, mem 1 WR, false)
+     StoreRegisterByte (cc, rt RD, rn RD, imm, mem 1 WR, false)
 
   (* 01111<imm><r><r>  LDRB (immediate) - T1*)
   | 3 ->
