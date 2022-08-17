@@ -673,6 +673,9 @@ object (self)
       symchifvar
     end
 
+  method get_symbolic_num_variable(v: variable_t): variable_t =
+    self#get_variable v#getName#getSeqNumber
+
   method private has_chifvar index = H.mem chifvars index
 
   method get_variables = H.fold (fun _ v a -> v::a) chifvars []
@@ -685,8 +688,10 @@ object (self)
     else
       []
 
-  method get_variable (index:int) = 
-    if H.mem chifvars index then H.find chifvars index else
+  method get_variable (index: int): variable_t =
+    if H.mem chifvars index then
+      H.find chifvars index
+    else
       raise
         (BCH_failure
            (LBLOCK [

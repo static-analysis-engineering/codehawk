@@ -562,12 +562,26 @@ object (self)
                ~testopc:testinstr#get_opcode
                ~condloc:floc#l
                ~testloc:testloc in
-           (match optpredicate with
-            | Some p ->
-               let lhs = dstop#to_variable floc in
-               (["a:vx"], [xd#index_variable lhs; xd#index_xpr p])
-            | _ ->
-               ([], []))
+           let (tags, args) =
+             (match optpredicate with
+              | Some p ->
+                 let lhs = dstop#to_variable floc in
+                 let rdefs = get_all_rdefs p in
+                 let (tagstring, args) =
+                   mk_instrx_data
+                     ~vars:[lhs]
+                     ~xprs:[p]
+                     ~rdefs:rdefs
+                     ~uses:[get_def_use lhs]
+                     ~useshigh:[get_def_use_high lhs]
+                     () in
+                 ([tagstring], args)
+              | _ ->
+                 ([], [])) in
+           let dependents =
+             List.map (fun d -> d#to_hex_string) instr#get_dependents in
+           let tags = tags @ ["subsumes"] @ dependents in
+           (tags, args)
          else
            ([], [])
 
@@ -846,14 +860,10 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | Move _ when instr#is_subsumed ->
-         (["subsumed"], [])
-
       | Move(_, c, rd, rm, _, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
          let result = rewrite_expr xrm in
-         let _ = pr_debug [STR "Move: "; x2p result; NL] in
          let rdefs = (get_rdef xrm) :: (get_all_rdefs result) in
          let (tagstring, args) =
            mk_instrx_data
@@ -870,7 +880,11 @@ object (self)
               let tcond = rewrite_expr floc#get_test_expr in
               add_instr_condition [tagstring] args tcond
            | _ -> (tagstring :: ["uc"], args) in
-         (tags, args)
+         if instr#is_subsumed then
+           let subsumedby = instr#subsumed_by#to_hex_string in
+           (tags @ ["subsumed"; subsumedby], args)
+         else
+           (tags, args)
 
       | MoveRegisterCoprocessor (_, _, _, dst, _, _, _) ->
          let vdst = dst#to_variable floc in
