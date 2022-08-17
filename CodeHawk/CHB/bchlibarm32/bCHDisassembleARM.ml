@@ -1172,15 +1172,18 @@ let aggregate_ite () =
                  let elseinstr = !arm_assembly_instructions#at_address elseaddr in
                  let thenfloc = get_i_floc itefloc thenaddr in
                  let elsefloc = get_i_floc itefloc elseaddr in
-                 if is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr then
-                   let dstop = get_ite_predicate_dstop thenfloc theninstr elsefloc elseinstr in
+                 if is_ite_predicate_assignment
+                      thenfloc theninstr elsefloc elseinstr then
+                   let dstop =
+                     get_ite_predicate_dstop
+                       thenfloc theninstr elsefloc elseinstr in
                    begin
                      chlog#add
                        "aggregate ite"
                        (LBLOCK [STR ciaddr; STR ": "; instr#toPretty]);
                      instr#set_aggregate dstop [thenaddr; elseaddr];
-                     theninstr#set_subsumed;
-                     elseinstr#set_subsumed
+                     theninstr#set_subsumed_by iaddr;
+                     elseinstr#set_subsumed_by iaddr
                    end
               | _ -> ())))
 

@@ -2514,6 +2514,7 @@ class type function_environment_int =
     method get_variables: variable_t list
     method get_sym_variables: variable_t list
     method get_domain_sym_variables: string -> variable_t list
+    method get_symbolic_num_variable: variable_t -> variable_t
     method get_local_variables: variable_t list
     method get_external_memory_variables: variable_t list
     method get_virtual_target : variable_t -> function_interface_t

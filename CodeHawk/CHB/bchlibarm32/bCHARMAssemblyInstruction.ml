@@ -60,7 +60,7 @@ object (self)
   val mutable inlined_call = false
   val mutable aggregate_dst = None
   val mutable aggregate = []
-  val mutable subsumed = false
+  val mutable subsumedby = None
 
   method set_block_entry = block_entry <- true
 
@@ -73,6 +73,8 @@ object (self)
       aggregate <- dependents;
       aggregate_dst <- Some dstop
     end
+
+  method get_dependents = aggregate
 
   method is_aggregate =
     match aggregate with
@@ -88,9 +90,16 @@ object (self)
             (LBLOCK [STR "Internal error in get_aggregate_dst"]))
 
   (* applies to dependents of aggregate instructions *)
-  method set_subsumed = subsumed <- true
+  method set_subsumed_by (iaddr: doubleword_int) = subsumedby <- Some iaddr
 
-  method is_subsumed = subsumed
+  method is_subsumed = match subsumedby with Some _ -> true | _ -> false
+
+  method subsumed_by =
+    match subsumedby with
+    | Some iaddr -> iaddr
+    | _ ->
+       raise
+         (BCH_failure (LBLOCK [STR "Instruction is not subsumed"]))
 
   method is_arm32 = is_arm
 
@@ -122,7 +131,7 @@ object (self)
     match opcode with
     | NotCode (Some b) -> b
     | _ ->
-       let msg = (LBLOCK [ STR "No data block found at " ; vaddr#toPretty ]) in
+       let msg = (LBLOCK [STR "No data block found at "; vaddr#toPretty]) in
        begin
          ch_error_log#add "assembly instructions" msg;
          raise (BCH_failure msg)

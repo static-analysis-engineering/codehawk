@@ -1024,7 +1024,7 @@ class type arm_assembly_instruction_int =
     method set_block_entry: unit
     method set_inlined_call: unit
     method set_aggregate: arm_operand_int -> doubleword_int list -> unit
-    method set_subsumed: unit
+    method set_subsumed_by: doubleword_int -> unit
 
     (* accessors *)
     method get_address: doubleword_int
@@ -1033,6 +1033,8 @@ class type arm_assembly_instruction_int =
     method get_bytes_ashexstring: string
     method get_non_code_block: not_code_t
     method get_aggregate_dst: arm_operand_int
+    method get_dependents: doubleword_int list
+    method subsumed_by: doubleword_int
 
     (* predicates *)
     method is_arm32: bool

@@ -1024,7 +1024,15 @@ let translate_arm_instruction
          | Some p ->
             let (lhs, lhscmds) = dstop#to_lhs floc in
             let cmds = floc#get_assign_commands lhs p in
-            let defcmds = floc#get_vardef_commands ~defs:[lhs] ctxtiaddr in
+            let usevars = vars_in_expr_list [p] in
+            let usehigh = get_use_high_vars [p] in
+            let defcmds =
+              floc#get_vardef_commands
+                ~defs:[lhs]
+                ~use:usevars
+                ~usehigh:usehigh
+                ~flagdefs:flagdefs
+                ctxtiaddr in
             let _ =
               chlog#add
                 "assign ite predicate"
@@ -1444,12 +1452,25 @@ let translate_arm_instruction
    *    APSR.N = result<31>;
    *    APSR.Z = IsZeroBit(result);
    * ------------------------------------------------------------------------ *)
-  | Move _ when instr#is_subsumed ->
+  | Move (_, c, rd, rm, _, _) when instr#is_subsumed ->
      let _ =
        chlog#add
          "instr subsumed"
          (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; instr#toPretty]) in
-     default []
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let xrm = rm#to_expr floc in
+     let xxrm = floc#inv#rewrite_expr xrm floc#env#get_variable_comparator in
+     let usevars = get_register_vars [rm] in
+     let usehigh = get_use_high_vars [xxrm] in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vrd]
+         ~use:usevars
+         ~usehigh:usehigh
+         ~flagdefs:flagdefs
+         ctxtiaddr in
+     default defcmds
 
   | Move (setflags, c, rd, rm, _, _) ->
      let floc = get_floc loc in
@@ -2420,6 +2441,22 @@ object (self)
              {op_name = new symbol_t ~atts:["exit"] "use";
               op_args = [("dst", v, WRITE)]}))
         (finfo#env#get_domain_sym_variables "defuse") in
+    let cmdshigh: cmd_t list =
+      let symvars = finfo#env#get_domain_sym_variables "defusehigh" in
+      let symvars =
+        List.filter (fun v ->
+            if v#getName#getSeqNumber >= 0 then
+              let numvar = finfo#env#get_symbolic_num_variable v in
+              not (finfo#env#is_register_variable numvar
+                   || finfo#env#is_local_variable numvar)
+            else
+              false) symvars in
+      List.map (fun v ->
+          DOMAIN_OPERATION
+            (["defusehigh"],
+             {op_name = new symbol_t ~atts:["exit"] "use_high";
+              op_args = [("dst", v, WRITE)]})) symvars in
+    let cmds = cmds @ cmdshigh in
     TRANSACTION (new symbol_t "exit", LF.mkCode cmds, None)
 
   method translate =
