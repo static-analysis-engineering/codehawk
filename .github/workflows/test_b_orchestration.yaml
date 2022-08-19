@@ -23,7 +23,7 @@ jobs:
         ocaml-version: 4.09.0
     - name: Install dependencies
       run: |
-        opam install extlib camlzip zarith ocamlbuild goblint-cil
+        opam install extlib camlzip zarith ocamlbuild goblint-cil=1.8.2
     - name: Compile CodeHawk
       run: eval $(opam env) && cd codehawk/CodeHawk && ./full_make_no_gui.sh
     - name: Replace prebuilt codehawk ocaml binary
