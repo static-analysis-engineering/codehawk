@@ -333,6 +333,8 @@ object (self)
          (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | UnsignedSaturatingSubtract8 (c, rd, rn, rm) ->
          (ctags c, [oi rd; oi rn; oi rm])
+      | VectorAbsolute (c, dt, dst, src) ->
+         (ctags c, [di dt; oi dst; oi src])
       | VectorAdd (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorAddLong (c, dt, dst, src1, src2) ->
@@ -373,9 +375,13 @@ object (self)
       | VMoveToSystemRegister (c, dst, src) -> (ctags c, [oi dst; oi src])
       | VectorMultiply (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorMultiplyAccumulate (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorMultiplyAccumulateLong (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorMultiplyLong (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorMultiplySubtract (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorNegate (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
       | VectorPop (c, sp, rl, mem) -> (ctags c, [oi sp; oi rl; oi mem])

@@ -746,6 +746,11 @@ type arm_opcode_t =
       * arm_operand_int (* rd: destination *)
       * arm_operand_int (* rn: first operand *)
       * arm_operand_int (* rm: second operand *)
+  | VectorAbsolute of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* datatype *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
   | VectorAdd of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* data type *)
@@ -869,6 +874,12 @@ type arm_opcode_t =
       * arm_operand_int (* destination *)
       * arm_operand_int (* source 1 *)
       * arm_operand_int (* source 2 *)
+  | VectorMultiplyAccumulate of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
   | VectorMultiplyAccumulateLong of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* data type *)
@@ -876,6 +887,12 @@ type arm_opcode_t =
       * arm_operand_int (* source 1 *)
       * arm_operand_int (* source 2 *)
   | VectorMultiplyLong of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+  | VectorMultiplySubtract of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* data type *)
       * arm_operand_int (* destination *)
