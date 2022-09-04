@@ -817,6 +817,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UQSUB8" c [rd; rn; rm])
     }
+  | VectorAbsolute (c, dt, dst, src) -> {
+      mnemonic = "VABS";
+      operands = [dst; src];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VABS" c [dst; src])
+    }
   | VectorAdd (c, dt, dst, src1, src2) -> {
       mnemonic = "VADD";
       operands = [dst; src1; src2];
@@ -981,6 +988,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMUL" c [dst; src1; src2])
     }
+  | VectorMultiplyAccumulate (c, dt, dst, src1, src2) -> {
+      mnemonic = "VMLA";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VMLA" c [dst; src1; src2])
+    }
   | VectorMultiplyAccumulateLong (c, dt, dst, src1, src2) -> {
       mnemonic = "VMLAL";
       operands = [dst; src1; src2];
@@ -994,6 +1008,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMULL" c [dst; src1; src2])
+    }
+  | VectorMultiplySubtract (c, dt, dst, src1, src2) -> {
+      mnemonic = "VMLS";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VMLS" c [dst; src1; src2])
     }
   | VectorNegate (c, dt, dst, src) -> {
       mnemonic = "VNEG";
