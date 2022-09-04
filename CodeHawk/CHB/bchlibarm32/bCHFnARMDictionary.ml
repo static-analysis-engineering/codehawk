@@ -1426,7 +1426,8 @@ object (self)
       | UnsignedExtendHalfword (c, rd, rm) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
-         let result = XOp (XBAnd, [xrm; int_constant_expr 65535]) in
+         (* let result = XOp (XBAnd, [xrm; int_constant_expr 65535]) in *)
+         let result = xrm in
          let rresult = rewrite_expr result in
          let rdefs = [get_rdef xrm] @ (get_all_rdefs rresult) in
          let (tagstring, args) =
