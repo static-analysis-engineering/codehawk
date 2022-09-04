@@ -246,7 +246,7 @@ let disassemble_mips_sections () =
          0x46df98  09 f8 20 03       jalr     $ra, $t9
          0x46df9c  b9 01 18 24       li       $t8, 441
 
-     1080998 f2178e003 09f82003 b9011824
+     1080998f 2178e003 09f82003 b9011824
 
      F B 0x403810  8f 99 80 10       lw       $t9, -0x7ff0($gp)
          0x403814  03 e0 78 21       move     $t7, $ra
@@ -277,6 +277,21 @@ let disassemble_mips_sections () =
       D 0x401abc  25 f8 5a 08       addiu    $t8, $t7, 23048
 
 
+    F D 0x402810  3c 0f 00 4b       lui      $t7, 75
+      B 0x402814  8d f9 94 38       lw       $t9, -0x6bc8($t7)
+        0x402818  25 f8 94 38       addiu    $t8, $t7, -27592
+        0x40281c  03 20 00 08       jr       $t9
+    F D 0x402810  3c 0f 00 4b       lui      $t7, 75
+
+    F D 0x402820  3c 0f 00 4b       lui      $t7, 75
+      B 0x402824  8d f9 94 3c       lw       $t9, -0x6bc4($t7)
+        0x402828  25 f8 94 3c       addiu    $t8, $t7, -27588
+        0x40282c  03 20 00 08       jr       $t9
+
+    F D 0x402840  3c 0f 00 4b       lui      $t7, 75
+      B 0x402844  8d f9 94 44       lw       $t9, -0x6bbc($t7)
+        0x402848  25 f8 94 44       addiu    $t8, $t7, -27580
+        0x40284c  03 20 00 08       jr       $t9
    *)
 
 let is_library_stub faddr =
@@ -290,11 +305,14 @@ let is_library_stub faddr =
         "1080998f2178e00309f82003\\(....\\)1824";
         "8f99801003e078210320f8092418\\(....\\)";
         "3c0f00438df9f\\(...\\)0320000825f8f\\(...\\)";
-        "3c0f00438df95\\(...\\)0320000825f85\\(...\\)"
+        "3c0f00438df95\\(...\\)0320000825f85\\(...\\)";
+        "3c0f004b8df9\\(....\\)25f8\\(....\\)03200008"
       ] in
-    List.exists (fun s ->
-        let regex = Str.regexp s in
-        Str.string_match regex bytestring 0) instrseqs
+    let result =
+      List.exists (fun s ->
+          let regex = Str.regexp s in
+          Str.string_match regex bytestring 0) instrseqs in
+    result
   else
     false
 
@@ -338,7 +356,24 @@ let set_library_stub_name faddr =
         else
           chlog#add "no stub name found" addr#toPretty
       else
-        chlog#add "no string match for stub" faddr#toPretty
+        let regex = Str.regexp "3c0f004b8df9\\(....\\)25f8\\(....\\)03200008" in
+        if Str.string_match regex bytestring 0 then
+          let offset = "0x" ^ Str.matched_group 1 bytestring in
+          let addr =
+            (string_to_doubleword "0x4a0000")#add (string_to_doubleword offset) in
+          if functions_data#has_function_name addr then
+            let fndata = functions_data#add_function faddr in
+            begin
+              fndata#add_name (functions_data#get_function addr)#get_function_name;
+              fndata#set_library_stub;
+              chlog#add
+                "ELF library stub"
+                (LBLOCK [faddr#toPretty; STR ": "; STR fndata#get_function_name])
+            end
+          else
+            chlog#add "no stub name found" addr#toPretty
+        else
+          chlog#add "no string match for stub" faddr#toPretty
   else
     chlog#add "faddr is not a program address" faddr#toPretty
 
