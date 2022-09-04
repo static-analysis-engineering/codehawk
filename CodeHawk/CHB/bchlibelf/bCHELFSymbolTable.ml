@@ -256,7 +256,7 @@ object (self)
            (match !indata with
             | Some _ -> ()
             | None -> indata := Some (index_to_doubleword addrix))
-        | "$t" ->
+        | "$t" when system_settings#has_thumb ->
            begin
              let addr = index_to_doubleword addrix in
              (if !inarm then
@@ -267,7 +267,8 @@ object (self)
                 end);
              make_db addr
            end
-        | "$a" | "$a.0" | "$a.1" | "$a.2" ->    (* $a.0,1,2 llvm-generated code? *)
+        (* $a.0,1,2 llvm-generated code? *)
+        | "$a" | "$a.0" | "$a.1" | "$a.2" when system_settings#has_thumb ->
            begin
              let addr = index_to_doubleword addrix in
              (if not (!inarm) then
