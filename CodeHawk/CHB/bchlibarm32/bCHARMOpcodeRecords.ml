@@ -312,8 +312,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "FSTMIAX" c [rn; rl])
     }
-  | LoadCoprocessor (islong, c, coproc, crd, src, option) ->
-     let mnemonic = if islong then "LDCL" else "LDC" in
+  | LoadCoprocessor (islong, ista2, c, coproc, crd, src, option) ->
+     let mnemonic =
+       match (islong, ista2) with
+       | (false, false) -> "LDC"
+       | (false, true) -> "LDC2"
+       | (true, false) -> "LDCL"
+       | (true, true) -> "LDC2L" in
      let preops =
        "p" ^ (string_of_int coproc) ^ ", " ^ "c" ^ (string_of_int crd) in
      {
@@ -626,6 +631,22 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SBFX" c [rd;rn])
     }
+  | StoreCoprocessor (islong, ista2, c, coproc, crd, dst, option) ->
+     let mnemonic =
+       match (islong, ista2) with
+       | (false, false) -> "STC"
+       | (false, true) -> "STC2"
+       | (true, false) -> "STCL"
+       | (true, true) -> "STC2L" in
+     let preops =
+       "p" ^ (string_of_int coproc) ^ ", " ^ "c" ^ (string_of_int crd) in
+     {
+       mnemonic = mnemonic;
+       operands = [dst];
+       flags_set = [];
+       ccode = Some c;
+       ida_asm = (fun f -> f#opscc ~preops mnemonic c [dst])
+     }
   | StoreMultipleDecrementBefore (wb, c, rn, rl, mem, tw) -> {
       mnemonic = "STMDB";
       operands = [rn; rl];

@@ -352,6 +352,7 @@ type arm_opcode_t =
       * string           (* <x><y><z> *)
   | LoadCoprocessor of
       bool               (* long *)
+      * bool             (* ta2 *)
       * arm_opcode_cc_t  (* condition *)
       * int              (* coprocessor *)
       * int              (* CRd: coprocessor destination register *)
@@ -595,6 +596,14 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source *)
+  | StoreCoprocessor of
+      bool               (* long *)
+      * bool             (* ta2 *)
+      * arm_opcode_cc_t  (* condition *)
+      * int              (* coprocessor *)
+      * int              (* CRd: coprocessor source register *)
+      * arm_operand_int  (* destination location *)
+      * int option       (* option *)
   | StoreMultipleDecrementBefore of
       bool    (* writeback *)
       * arm_opcode_cc_t (* condition *)

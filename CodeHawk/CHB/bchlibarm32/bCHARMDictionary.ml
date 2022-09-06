@@ -228,8 +228,8 @@ object (self)
          (ctags c, [setb wb; oi rn; oi rl; oi mem])
       | FStoreMultipleIncrementAfter (wb, c, rn, rl, mem) ->
          (ctags c, [setb wb; oi rn; oi rl; oi mem])
-      | LoadCoprocessor (islong, c, coproc, crd, mem, opt) ->
-         (ctags c, [setb islong; coproc; crd; oi mem; setopt opt])
+      | LoadCoprocessor (islong, ista2, c, coproc, crd, mem, opt) ->
+         (ctags c, [setb islong; setb ista2; coproc; crd; oi mem; setopt opt])
       | LoadMultipleDecrementBefore (wb,c,rn,rl,mem)
         | LoadMultipleDecrementAfter (wb,c,rn,rl,mem)
         | LoadMultipleIncrementAfter (wb,c,rn,rl,mem)
@@ -291,6 +291,8 @@ object (self)
         | SignedMultiplyAccumulateLong (s,c,rdlo,rdhi,rn,rm) ->
          (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | SingleBitFieldExtract (c,rd,rn) -> (ctags c, [ oi rd; oi rn ])
+      | StoreCoprocessor (islong, ista2, c, coproc, crd, mem, opt) ->
+         (ctags c, [setb islong; setb ista2; coproc; crd; oi mem; setopt opt])
       | StoreMultipleDecrementBefore (wb,c,rn,rl,mem,tw)
         | StoreMultipleIncrementAfter (wb,c,rn,rl,mem,tw)
         | StoreMultipleIncrementBefore (wb,c,rn,rl,mem,tw) ->
