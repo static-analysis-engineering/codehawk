@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,8 +50,10 @@ module H = Hashtbl
 
 let s2d = string_to_doubleword
 
+
 let has_user_data (sectionname:string) =
   section_header_infos#has_section_header_info sectionname
+
 
 let get_user_data (sectionname:string):section_header_info_int =
   if has_user_data sectionname then
@@ -60,6 +62,33 @@ let get_user_data (sectionname:string):section_header_info_int =
     raise
       (BCH_failure
          (LBLOCK [STR "No user data found for "; STR sectionname]))
+
+
+let ud_has_size (sectionname: string) =
+  has_user_data sectionname && (get_user_data sectionname)#has_size
+
+
+let ud_get_size (sectionname: string) =
+  if ud_has_size sectionname then
+    (get_user_data sectionname)#get_size
+  else
+    raise
+      (BCH_failure
+         (LBLOCK [STR "No size found for "; STR sectionname]))
+
+
+let ud_has_address (sectionname: string) =
+  has_user_data sectionname && (get_user_data sectionname)#has_addr
+
+
+let ud_get_address (sectionname: string) =
+  if ud_has_address sectionname then
+    (get_user_data sectionname)#get_addr
+  else
+    raise
+      (BCH_failure
+         (LBLOCK [STR "No addr found for "; STR sectionname]))
+
 
 let assumption_violation (p:pretty_t) =
   let msg = LBLOCK [STR "Section header creation assumption violation: "; p] in
@@ -359,20 +388,31 @@ object (self)
    * - info: ?
    *)
   method private create_dynsym_header =
-    let sectionname = ".dynsym" in    
+    let sectionname = ".dynsym" in
     if dynamicsegment#has_symtab_address
-       && dynamicsegment#has_syment
-       && dynamicsegment#has_symtabno then
+       && dynamicsegment#has_syment then
       let vaddr = dynamicsegment#get_symtab_address in
       let syment = dynamicsegment#get_syment in
-      let symtabno = dynamicsegment#get_symtabno in
-      let symtabsize = numerical_to_doubleword (syment#mult symtabno) in
+      let size =
+        if dynamicsegment#has_symtabno then
+          let symtabno = dynamicsegment#get_symtabno in
+          numerical_to_doubleword (syment#mult symtabno)
+        else if ud_has_size sectionname then
+          ud_get_size sectionname
+        else
+          begin
+            chlog#add "dynamic table" (dynamicsegment#toPretty);
+            assumption_violation
+              (LBLOCK [
+                   STR "Unable to determine size of dynamic symbol table";
+                   NL;
+                   dynamicsegment#toPretty])
+          end in
       let sh = mk_elf_section_header () in
       let stype = s2d "0xb" in
       let flags = s2d "0x2" in
       let addr = vaddr in
       let offset = self#get_offset_1 vaddr in
-      let size = symtabsize in
       let entsize = numerical_to_doubleword syment in
       let addralign = s2d "0x4" in
       let info = s2d "0x1" in
@@ -417,7 +457,15 @@ object (self)
       let size = numerical_to_doubleword dynamicsegment#get_string_table_size in
       let addralign = s2d "0x1" in
       begin
-        sh#set_fields ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+        sh#set_fields
+          ~stype
+          ~flags
+          ~addr
+          ~offset
+          ~size
+          ~addralign
+          ~sectionname
+          ();
         section_headers <- sh :: section_headers
       end
     else
@@ -564,11 +612,8 @@ object (self)
           if vaddr#lt entrypoint then
             fileheader#get_program_entry_point#subtract vaddr
           else
-            if has_user_data ".rodata"
-               && (let userdata = get_user_data ".rodata" in
-                   userdata#has_addr) then
-              let userdata = get_user_data ".rodata" in
-              let rodata_addr = userdata#get_addr in
+            if ud_has_address ".rodata" then
+              let rodata_addr = ud_get_address ".rodata" in
               rodata_addr#subtract vaddr
           else
             let (_,ph,_) = List.hd loadsegments in
@@ -583,20 +628,6 @@ object (self)
                             STR " from " ;
                             STR "address + file size: ";
                             phend#toPretty])) in
-      (*  assumption_violation
-             (L BLOCK [ STR "program entry point < DT_INIT. " ;
-             STR "program entry point: " ;
-             fileheader#get_program_entry_point#toPretty ;
-             STR "; dynamic segment initial address: " ;
-             vaddr#toPretty ]) in  *)
-      (*let _ =
-        pr_debug [ STR "Assumption violation: " ;
-        STR "program entry point < DT_INIT. " ;
-        STR "program entry point: " ;
-        fileheader#get_program_entry_point#toPretty ;
-        STR "; dynamic segment initial address: " ;
-        vaddr#toPretty ; NL ; NL ] in
-        wordzero in *)
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
@@ -639,7 +670,9 @@ object (self)
           | _ -> assumption_violation (STR "DT_INIT < program entry point")
         else
           assumption_violation
-            (STR "DT_INIT and DT_FINI not present; please provide size of .text section in fixup data") in
+            (LBLOCK [
+                 STR "DT_INIT and DT_FINI not present; ";
+                 STR "please provide size of .text section in fixup data"]) in
     let addralign = s2d "0x4" in
     begin
       sh#set_fields
@@ -661,7 +694,11 @@ object (self)
       let flags = s2d "0x6" in
       let addr = vaddr in
       let offset = self#get_offset_1 vaddr in
-      let size = s2d "0x54" in
+      let size =
+        if ud_has_size sectionname then
+          ud_get_size sectionname
+        else
+          s2d "0x54" in
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
@@ -680,24 +717,26 @@ object (self)
   method private create_rodata_header =
     let sectionname = ".rodata" in
     let (vaddr,size) =
-      if has_user_data sectionname
-         && (let userdata = get_user_data sectionname in
-             userdata#has_addr && userdata#has_size) then
-        let userdata = get_user_data sectionname in
-        (userdata#get_addr,userdata#get_size)
+      if ud_has_size sectionname && ud_has_address sectionname then
+        (ud_get_size sectionname, ud_get_address sectionname)
       else
         if dynamicsegment#has_fini_address then
           let finiaddr = dynamicsegment#get_fini_address in
+          let finisize =
+            if ud_has_size ".fini" then
+              ud_get_size ".fini"
+            else
+              s2d "0x4c" in
           let (_,ph,_) = List.hd loadsegments in
           let phend = ph#get_vaddr#add ph#get_file_size in
-          let vaddr = finiaddr#add (s2d "0x4c") in
+          let vaddr = finiaddr#add finisize in
           let size =
             try
-              (phend#subtract finiaddr)#subtract (s2d "0x50")
+              (phend#subtract finiaddr)#subtract finisize
             with
             | _ ->
                assumption_violation (STR "PT_Load(end) < finiaddr")  in
-          (vaddr,size)
+          (vaddr, size)
         else
           begin
             assumption_violation
@@ -735,7 +774,7 @@ object (self)
     let addralign = s2d "0x4" in
     begin
       sh#set_fields
-        ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+        ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
       section_headers <- sh :: section_headers
     end
 
@@ -758,7 +797,7 @@ object (self)
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
         section_headers <- sh :: section_headers
       end
     else
@@ -783,7 +822,7 @@ object (self)
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
         section_headers <- sh :: section_headers
       end
     else
@@ -808,7 +847,7 @@ object (self)
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
         section_headers <- sh :: section_headers
       end
     else
@@ -862,7 +901,7 @@ object (self)
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
         section_headers <- sh :: section_headers
       end
       
@@ -884,7 +923,7 @@ object (self)
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
         section_headers <- sh :: section_headers
       end
 
@@ -937,13 +976,14 @@ object (self)
       let size = align_doubleword size addralign#to_int in
     begin
       sh#set_fields
-        ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+        ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
       section_headers <- sh :: section_headers
     end
 
   method toPretty =
     let headers =
-      List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) self#get_section_headers in
+      List.sort (fun (i1,_) (i2,_) ->
+          Stdlib.compare i1 i2) self#get_section_headers in
     let addressmap =
       List.rev
         (List.fold_left (fun a (i,h) ->
@@ -964,15 +1004,29 @@ object (self)
                    (endaddr#subtract h#get_addr,true) in
                (h#get_addr, h#get_size, gap, neg) :: a) [] headers) in
     LBLOCK [
-        LBLOCK (List.map (fun (i,h) ->
-                    LBLOCK [ STR "section header " ; INT i ; NL ;
-                             h#toPretty ; NL ]) headers) ; NL ;
-        STR "Address Map" ; NL ;
-        LBLOCK (List.map (fun (addr,size,gap,  neg) ->
-                    LBLOCK [ fixed_length_pretty ~alignment:StrRight addr#toPretty 8 ; STR "  " ;
-                             fixed_length_pretty ~alignment:StrRight size#toPretty 8 ; STR "  " ;
-                             fixed_length_pretty ~alignment:StrRight gap#toPretty 8 ;
-                             (if neg then STR " (neg)" else STR "") ; NL ]) addressmap) ]
+        LBLOCK
+          (List.map (fun (i,h) ->
+               LBLOCK [
+                   STR "section header ";
+                   INT i;
+                   NL;
+                   h#toPretty;
+                   NL])
+             headers);
+        NL;
+        STR "Address Map";
+        NL;
+        LBLOCK
+          (List.map
+             (fun (addr,size,gap,  neg) ->
+               LBLOCK [
+                   fixed_length_pretty ~alignment:StrRight addr#toPretty 8;
+                   STR "  ";
+                   fixed_length_pretty ~alignment:StrRight size#toPretty 8;
+                   STR "  ";
+                   fixed_length_pretty ~alignment:StrRight gap#toPretty 8;
+                   (if neg then STR " (neg)" else STR "");
+                   NL]) addressmap) ]
 
                              
 
