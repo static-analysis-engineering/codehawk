@@ -488,9 +488,10 @@ object (self)
          let args =
            List.map (fun r -> arm_register_op r RD) [AR0; AR1; AR2; AR3] in
          let argxprs = List.map (fun a -> a#to_expr floc) args in
+         let rdef = get_rdef xtgt in
          let rargxprs = List.map rewrite_expr argxprs in
-         (["a:xxxxx"],
-          (xd#index_xpr xtgt) :: (List.map xd#index_xpr rargxprs))
+         (["a:xxxxxr"],
+          ((xd#index_xpr xtgt) :: (List.map xd#index_xpr rargxprs)) @ [rdef])
 
       | ByteReverseWord(_, rd, rm, _) ->
          let vrd = rd#to_variable floc in
