@@ -40,6 +40,7 @@ open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
 open BCHSectionHeadersInfo
+open BCHSystemInfo
 
 (* bchlibelf *)
 open BCHELFSectionHeader
@@ -397,6 +398,11 @@ object (self)
         if dynamicsegment#has_symtabno then
           let symtabno = dynamicsegment#get_symtabno in
           numerical_to_doubleword (syment#mult symtabno)
+        else if system_info#is_arm
+                && dynamicsegment#has_strtab_address
+                && vaddr#lt dynamicsegment#get_strtab_address then
+          let strtab_vaddr = dynamicsegment#get_strtab_address in
+          strtab_vaddr#subtract vaddr
         else if ud_has_size sectionname then
           ud_get_size sectionname
         else
