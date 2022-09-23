@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,9 +44,14 @@ val xpr2numexpr: tmp_provider_t -> cst_provider_t -> xpr_t -> code_num_t
 val xpr2numvar : tmp_provider_t -> cst_provider_t -> xpr_t -> code_var_t
 val xpr2boolexpr: tmp_provider_t -> cst_provider_t -> xpr_t -> code_bool_t
 
-val xpr_to_numexpr: tmp_provider_t -> cst_provider_t -> xpr_t -> (cmd_t list * numerical_exp_t)
-val xpr_to_numvar : tmp_provider_t -> cst_provider_t -> xpr_t -> (cmd_t list * variable_t)
-val xpr_to_boolexpr: tmp_provider_t -> cst_provider_t -> xpr_t -> (cmd_t list * boolean_exp_t)
+val xpr_to_numexpr:
+  tmp_provider_t -> cst_provider_t -> xpr_t -> (cmd_t list * numerical_exp_t)
+val xpr_to_numvar :
+  tmp_provider_t -> cst_provider_t -> xpr_t -> (cmd_t list * variable_t)
+val xpr_to_boolexpr:
+  tmp_provider_t -> cst_provider_t -> xpr_t -> (cmd_t list * boolean_exp_t)
 
-val get_pepr_range_xprs: pepr_params_int -> pepr_range_int -> pepr_xpr_extract
-val get_pepr_dependency_xprs: pepr_params_int -> param_constraint_set_int -> xpr_t list
+val get_pepr_range_xprs:
+  pepr_params_int -> pepr_range_int -> pepr_xpr_extract
+val get_pepr_dependency_xprs:
+  pepr_params_int -> param_constraint_set_int -> xpr_t list
