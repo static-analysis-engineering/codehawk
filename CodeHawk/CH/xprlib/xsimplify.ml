@@ -887,26 +887,36 @@ and reduce_bitwiseand m e1 e2 =
   let ne n = num_constant_expr n in
   try
     match get_struct e2 with
-    | SConst b ->
+    | SConst b ->                                              (* e1 & 0 -> 0 *)
        if b#is_zero then
          (true, ne numerical_zero)
        else
          (match get_struct e1 with
           | SConst a ->
-             if a#is_zero then
+             if a#is_zero then                                (* 0 & b -> 0 *)
                (true, ne numerical_zero)
-             else if a#equal b then
+             else if a#equal b then                           (* b & b -> b *)
                (true, e1)
              else
                default
-          | _ -> default)
+          | _ ->
+             (match e1 with
+              | XOp (XBAnd, [e11; XConst (IntConst a)]) when a#equal b ->
+                 (true, e1)
+              | _ -> default))
     | _ -> default
   with
   | CHFailure p ->
      begin
-       chlog#add "simplification"
-                 (LBLOCK [ STR "bitwise and:" ; xpr_to_pretty e1 ; STR ", " ;
-                           xpr_to_pretty e2 ; STR ": " ; p ]) ;
+       chlog#add
+         "simplification"
+         (LBLOCK [
+              STR "bitwise and:";
+              xpr_to_pretty e1;
+              STR ", ";
+              xpr_to_pretty e2;
+              STR ": ";
+              p]);
        default
      end
 
