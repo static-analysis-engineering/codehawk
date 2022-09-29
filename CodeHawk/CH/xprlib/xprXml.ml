@@ -100,7 +100,9 @@ let _ =
      (XLAnd, "and");
      (XLOr, "or");
      (XNumJoin, "numjoin");
-     (XNumRange, "numrange") ;
+     (XNumRange, "numrange");
+     (XXlsb, "lsb");
+     (XXlsh, "lsh");
      (Xf "buffersize", "buffersize");
      (Xf "max", "max")]
 

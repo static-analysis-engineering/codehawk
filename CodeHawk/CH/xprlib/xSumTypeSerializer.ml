@@ -71,6 +71,9 @@ let xop_mfts:xop_t mfts_int  =
      (XBNor, "bnor");
      (XLAnd, "land");
      (XLOr, "lor");
+     (XXlsb, "lsb");
+     (XXlsh, "lsh");
+     (XXbyte, "xbyte");
      (XNumJoin, "numjoin");
      (XNumRange, "range")]
     (fun x ->
