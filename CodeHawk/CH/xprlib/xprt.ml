@@ -277,6 +277,9 @@ let op_strings =
    (XBNor, "XBNor");
    (XNumJoin, "XNumJoin");
    (XNumRange, "XNumRange");
+   (XXlsb, "XXlsb");
+   (XXlsh, "XXlsh");
+   (XXbyte, "XXbyte");
    (Xf "","Xf")]
 
 

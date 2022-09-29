@@ -71,6 +71,9 @@ type xop_t =
   | XLOr
   | XNumJoin
   | XNumRange
+  | XXlsb  (* extract least significant byte *)
+  | XXlsh  (* extract least significant halfword (2 bytes) *)
+  | XXbyte  (* extract one byte from a word: XXbyte [index, word] *)
   | Xf of string   (* uninterpreted function *)
 
 type xcst_t = 

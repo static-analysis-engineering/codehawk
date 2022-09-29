@@ -64,6 +64,9 @@ let xop_to_string = function
   | XLOr     -> "or"
   | XNumJoin -> "(+)"
   | XNumRange -> "<+>"
+  | XXlsb    -> "lsb"
+  | XXlsh    -> "lsh"
+  | XXbyte   -> "xbyte"
   | Xf s     -> "f_" ^ s
 
 
@@ -154,6 +157,7 @@ object (self)
          | XBNor -> wrap (STR " nor ")
 	 | XLAnd -> wrap (STR " and ")
 	 | XLOr -> wrap (STR " or ")
+         | XXbyte -> wrap (STR " xbyte ")
 	 | XNumJoin -> wrap (STR " (+) ")
 	 | XNumRange ->
 	    LBLOCK [ STR "[" ; f1 ; STR " .. " ; f2 ; STR "]" ]
@@ -176,6 +180,8 @@ object (self)
 	 | XLNot -> wrap (STR " not ")
 	 | XNumJoin -> wrap (STR " (+) ")
 	 | XNumRange -> wrap (STR " <+> ")
+         | XXlsb -> wrap (STR " lsb ")
+         | XXlsh -> wrap (STR " lsh ")
 	 | Xf s -> LBLOCK [ STR s ; STR " (" ; f ; STR ")" ]
 	 | _ ->
 	    begin

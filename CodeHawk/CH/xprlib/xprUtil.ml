@@ -80,7 +80,9 @@ and xop_2_numexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (op:xop_t) (l:xpr_
        xpr_2_numexpr reqN reqC (XOp (XMinus, [ zero_constant_expr ; e ]))
 
     | (XLNot, [e])
-    | (XBNot, [e]) ->
+    | (XBNot, [e])
+    | (XXlsb, [e])
+    | (XXlsh, [e]) ->
        (make_nested_nop (), NUM_VAR (reqN ()))
 
     | (XMult, [ XConst (IntConst n) ; XVar v ])
@@ -174,7 +176,9 @@ and xop_2_boolexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (op:xop_t) (l:xpr
   | (XNeg, [e]) ->
       xpr_2_boolexpr reqN reqC (XOp (XNe, [ XOp (op, l) ; zero_constant_expr]))
   | (XLNot, [e])
-  | (XBNot, [e]) ->
+  | (XBNot, [e])
+  | (XXlsb, [e])
+  | (XXlsh, [e]) ->
       default
 
   | (XDisjoint, [XVar v ; XConst (SymSet l) ]) ->
