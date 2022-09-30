@@ -940,6 +940,16 @@ let translate_arm_instruction
          ctxtiaddr in
      default (lhscmds @ defcmds @ cmds)
 
+  (* --------------------------------------------- ByteReversePackedHalfword --
+   * Reverses the byte order in each 16-bit halfword of a 32-bit register.
+   *
+   * bits(32) result;
+   * result<31:24> = R[m]<23:16>
+   * result<23:16> = R[m]<31:24>
+   * result<15:8> = R[m]<7:0>
+   * result<7>0> = R[m]<15:8>
+   * R[d] = result;
+   * ------------------------------------------------------------------------ *)
   | ByteReversePackedHalfword (_, rd, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
@@ -1301,7 +1311,7 @@ let translate_arm_instruction
    * -------------------------------------------------------------------------*)
   | LoadRegisterByte (c, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
-     let rhs = mem#to_expr floc in
+     let rhs = XOp (XXlsb, [mem#to_expr floc]) in
      let (lhs, lhscmds) = rt#to_lhs floc in
      let updatecmds =
        if mem#is_offset_address_writeback then
@@ -1369,7 +1379,7 @@ let translate_arm_instruction
 
   | LoadRegisterHalfword (c, rt, rn,rm, mem, _) ->
      let floc = get_floc loc in
-     let rhs = mem#to_expr floc in
+     let rhs = XOp (XXlsh, [mem#to_expr floc]) in
      let (lhs, lhscmds) = rt#to_lhs floc in
      let cmds = floc#get_assign_commands lhs rhs in
      let usevars = get_register_vars [rn; rm] in
@@ -1546,17 +1556,24 @@ let translate_arm_instruction
    * R[d]<31:16> = imm16;
    * // R[d]<15:0> unchanged
    * ------------------------------------------------------------------------ *)
-  | MoveTop (c, dst, src) ->
+  | MoveTop (c, rd, imm) ->
      let floc = get_floc loc in
-     let (lhs, lhscmds) = dst#to_lhs floc in
-     let rhs = dst#to_expr floc in
-     let rhs = rewrite_expr floc rhs in
-     let imm16 = src#to_expr floc in
+     let (vrd, lhscmds) = rd#to_lhs floc in
+     let xrd = rd#to_expr floc in
+     let xrd = rewrite_expr floc xrd in
+     let imm16 = imm#to_expr floc in
      let ximm16 = XOp (XMult, [imm16; int_constant_expr e16]) in
-     let xrdm16 = XOp (XMod, [rhs; int_constant_expr e16]) in
+     let xrdm16 = XOp (XXlsh, [xrd]) in
      let rhsxpr = XOp (XPlus, [xrdm16; ximm16]) in
-     let cmds = floc#get_assign_commands lhs rhsxpr in
-     let defcmds = floc#get_vardef_commands ~defs:[lhs] ctxtiaddr in
+     let cmds = floc#get_assign_commands vrd rhsxpr in
+     let usevars = get_register_vars [rd] in
+     let usehigh = get_use_high_vars [xrd] in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vrd]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
      let cmds = lhscmds @ defcmds @ cmds in
      (match c with
       | ACCAlways -> default cmds
@@ -2036,7 +2053,7 @@ let translate_arm_instruction
   | StoreRegisterByte (c, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
      let (vmem, memcmds) = mem#to_lhs floc in
-     let xrt = rt#to_expr floc in
+     let xrt = XOp (XXlsb, [rt#to_expr floc]) in
      let cmds = floc#get_assign_commands vmem xrt in
      let usevars = get_register_vars [rt; rn; rm] in
      let usehigh = get_use_high_vars [xrt] in
@@ -2157,12 +2174,23 @@ let translate_arm_instruction
      let defcmds = floc#get_vardef_commands ~defs:[vrd] ctxtiaddr in
      default (defcmds @ cmds)
 
-  | UnsignedBitFieldExtract (_, rd, rn) ->
+  | UnsignedBitFieldExtract (c, rd, rn) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
-     let cmds = floc#get_abstract_commands vrd () in
-     let defcmds = floc#get_vardef_commands ~defs:[vrd] ctxtiaddr in
-     default (defcmds @ cmds)
+     let xrn = rn#to_expr floc in
+     let cmds = floc#get_assign_commands vrd xrn in
+     let usevars = get_register_vars [rn] in
+     let usehigh = get_use_high_vars [xrn] in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vrd]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = (defcmds @ cmds) in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | UnsignedDivide (_, rd, _, _) ->
      let floc = get_floc loc in
@@ -2188,8 +2216,7 @@ let translate_arm_instruction
   | UnsignedExtendByte (c, rd, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
-     let xrm = rm#to_expr floc in
-     (* let result = XOp (XBAnd, [xrm; int_constant_expr 255]) in *)
+     let xrm = XOp (XXlsb, [rm#to_expr floc]) in
      let result = xrm in
      let cmds = floc#get_assign_commands vrd result in
      let usevars = get_register_vars [rm] in
@@ -2208,8 +2235,7 @@ let translate_arm_instruction
   | UnsignedExtendHalfword (c, rd, rm) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
-     let xrm = rm#to_expr floc in
-     (* let result = XOp (XBAnd, [xrm; int_constant_expr 65535]) in *)
+     let xrm = XOp (XXlsh, [rm#to_expr floc]) in
      let result = xrm in
      let cmds = floc#get_assign_commands vrd result in
      let usevars = get_register_vars [rm] in
@@ -2234,13 +2260,22 @@ let translate_arm_instruction
      let defcmds = floc#get_vardef_commands ~defs:[vlo; vhi] ctxtiaddr in
      default (defcmds @ cmdslo @ cmdshi)
 
-  | UnsignedMultiplyLong (_, _, rdlo, rdhi, _, _) ->
+  | UnsignedMultiplyLong (_, c, rdlo, rdhi, rn, rm) ->
      let floc = get_floc loc in
      let vlo = rdlo#to_variable floc in
      let vhi = rdhi#to_variable floc in
+     let xrn = rn#to_expr floc in
+     let xrm = rm#to_expr floc in
+     let usevars = get_register_vars [rn; rm] in
+     let usehigh = get_use_high_vars [xrn; xrm] in
      let cmdslo = floc#get_abstract_commands vlo () in
      let cmdshi = floc#get_abstract_commands vhi () in
-     let defcmds = floc#get_vardef_commands ~defs:[vlo; vhi] ctxtiaddr in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vlo; vhi]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
      default (defcmds @ cmdslo @ cmdshi)
 
   | UnsignedSaturatingSubtract8 (_, rd, _, _) ->
