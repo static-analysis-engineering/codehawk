@@ -1225,6 +1225,34 @@ let parse_thumb32_29
      (* VCVT.F64.S32 <Dd>, <Sm> *)
      VectorConvert (roundzero, cc, dt1, dt2, dst, src)
 
+  (* < 29>1101D110111<vd>101s11M0<vmd>   VCVT (between dp and sp), T1 *)
+  | 53 | 55 when
+         (b 20 19) = 2
+         && (b 18 16) = 7
+         && (b 11 9) = 5
+         && (b 7 6) = 3
+         && (bv 4) = 0 ->
+     let double2single = (bv 8) = 1 in
+     let vd = b 15 12 in
+     let dbit = bv 22 in
+     let mbit = bv 5 in
+     let vm = b 3 0 in
+     let (d, m, dt1, dt2) =
+       if double2single then
+         (postfix_bit dbit vd, prefix_bit mbit vm, VfpFloat 32, VfpFloat 64)
+       else
+         (prefix_bit dbit vd, postfix_bit mbit vm, VfpFloat 64, VfpFloat 32) in
+     if double2single then
+       let sd = arm_extension_register_op XSingle d in
+       let dm = arm_extension_register_op XDouble m in
+       (* VCVT<c>.F32.F64 <Sd>, <Dm> *)
+       VectorConvert (false, cc, dt1, dt2, sd WR, dm RD)
+     else
+       let dd = arm_extension_register_op XDouble d in
+       let sm = arm_extension_register_op XSingle m in
+       (* VCVT<c>.F64.F32 <Dd>, <Sm> *)
+       VectorConvert (false, cc, dt1, dt2, dd WR, sm RD)
+
   (* < 29>1101111< 1><rt>10100001< 0>   VMRS - T1 *)
   | 55 when
          (b 20 16) = 17
