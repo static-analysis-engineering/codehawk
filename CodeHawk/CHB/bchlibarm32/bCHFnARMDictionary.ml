@@ -70,6 +70,7 @@ open BCHARMDisassemblyUtils
 open BCHARMLoopStructure
 open BCHARMOperand
 open BCHARMOpcodeRecords
+open BCHARMPseudocode
 open BCHARMTypes
 
 module B = Big_int_Z
@@ -182,7 +183,10 @@ object (self)
 
     let get_rdef (xpr: xpr_t): int =
       match xpr with
-      | XVar v ->
+      | XVar v
+        | XOp (XXlsh, [XVar v])
+        | XOp (XXlsb, [XVar v])
+        | XOp (XXbyte, [_; XVar v]) ->
          let symvar = floc#f#env#mk_symbolic_variable v in
          let varinvs = varinv#get_var_reaching_defs symvar in
          (match varinvs with
@@ -381,18 +385,29 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | BitwiseExclusiveOr (_, _, rd, rn, rm, _) ->
+      | BitwiseExclusiveOr (_, c, rd, rn, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let result = XOp (XBXor, [xrn; xrm]) in
          let rresult = rewrite_expr result in
-         (["a:vxxxx"],
-          [xd#index_variable vrd;
-           xd#index_xpr xrn;
-           xd#index_xpr xrm;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xrn; xrm; result; rresult]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vrd]
+             ~useshigh:[get_def_use_high vrd]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | BitwiseNot (_, _, rd, rm, _) ->
          let vrd = rd#to_variable floc in
@@ -405,18 +420,29 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | BitwiseOr (_, _, rd, rn, rm, _) ->
+      | BitwiseOr (_, c, rd, rn, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let result = XOp (XBOr, [xrn; xrm]) in
          let rresult = rewrite_expr result in
-         (["a:vxxxx"],
-          [xd#index_variable vrd;
-           xd#index_xpr xrn;
-           xd#index_xpr xrm;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xrn; xrm; result; rresult]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vrd]
+             ~useshigh:[get_def_use_high vrd]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | BitwiseOrNot (_, _, rd, rn, rm) ->
          let vrd = rd#to_variable floc in
@@ -477,10 +503,19 @@ object (self)
            when floc#has_call_target
                 && floc#get_call_target#is_signature_valid ->
          let args = List.map snd floc#get_arm_call_arguments in
-         let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
-         ([xtag; "call"],
-          (List.map xd#index_xpr args)
-          @ [ixd#index_call_target floc#get_call_target#get_target])
+         let rdefs = List.concat (List.map get_all_rdefs args) in
+         let vrd = (arm_register_op (get_arm_reg 0) WR)#to_variable floc in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~xprs:args
+             ~rdefs:rdefs
+             ~uses:[get_def_use vrd]
+             ~useshigh:[get_def_use_high vrd]
+             () in
+         let (tags, args) = (
+             tagstring :: ["call"],
+             args @ [ixd#index_call_target floc#get_call_target#get_target]) in
+         (tags, args)
 
       | BranchLink (_, tgt)
       | BranchLinkExchange (_, tgt) ->
@@ -493,19 +528,49 @@ object (self)
          (["a:xxxxxr"],
           ((xd#index_xpr xtgt) :: (List.map xd#index_xpr rargxprs)) @ [rdef])
 
-      | ByteReverseWord(_, rd, rm, _) ->
+      | ByteReverseWord(c, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
          let xrmm = rewrite_expr xrm in
-         (["a:vxx"],
-          [xd#index_variable vrd; xd#index_xpr xrm; xd#index_xpr xrmm])
+         let rdefs = [get_rdef xrm] @ (get_all_rdefs xrmm) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xrm; xrmm]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vrd]
+             ~useshigh:[get_def_use_high vrd]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
-      | ByteReversePackedHalfword (_, rd, rm, _) ->
+      | ByteReversePackedHalfword (c, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
          let xrmm = rewrite_expr xrm in
-         (["a:vxx"],
-          [xd#index_variable vrd; xd#index_xpr xrm; xd#index_xpr xrmm])
+         let rdefs = [get_rdef xrm] @ (get_all_rdefs xrmm) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xrm; xrmm]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vrd]
+             ~useshigh:[get_def_use_high vrd]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | Compare (c, rn, rm, _) ->
          let xrn = rn#to_expr floc in
@@ -708,8 +773,7 @@ object (self)
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let vmem = mem#to_variable floc in
-         let xmem = mem#to_expr floc in
-         (* let xmem = XOp (XBAnd, [xmem; int_constant_expr 255]) in *)
+         let xmem = XOp (XXlsb, [mem#to_expr floc]) in
          let xrmem = rewrite_expr xmem in
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem] in
          let uses = [get_def_use vrt] in
@@ -768,16 +832,39 @@ object (self)
            xd#index_xpr xmem;
            xd#index_xpr xrmem])
 
-      | LoadRegisterHalfword (_, rt, rn, _, mem, _) ->
+      | LoadRegisterHalfword (c, rt, rn, rm, mem, _) ->
          let vrt = rt#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
          let vmem = mem#to_variable floc in
-         let xmem = mem#to_expr floc in
+         let xmem = XOp (XXlsh, [mem#to_expr floc]) in
          let xrmem = rewrite_expr xmem in
-         (["a:vvxx"],
-          [xd#index_variable vrt;
-           xd#index_variable vmem;
-           xd#index_xpr xmem;
-           xd#index_xpr xrmem])
+         let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem] in
+         let uses = [get_def_use vrt] in
+         let useshigh = [get_def_use_high vrt] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrt; vmem]
+             ~xprs:[xrn; xrm; xmem; xrmem]
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) =
+           if mem#is_offset_address_writeback then
+             let vrn = rn#to_variable floc in
+             let xaddr = mem#to_updated_offset_address floc in
+             add_base_update tags args vrn xaddr
+           else
+             (tags, args) in
+         (tags, args)
 
       | LoadRegisterSignedByte (_, rt, rn, _, mem, _) ->
          let vrt = rt#to_variable floc in
@@ -848,18 +935,29 @@ object (self)
            | _ -> (tagstring :: ["uc"], args) in
          (tags, args)
 
-      | LogicalShiftRight (_, _, rd, rn, rm, _) ->
+      | LogicalShiftRight (_, c, rd, rn, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let result = XOp (XLsr, [xrn; xrm]) in
          let rresult = rewrite_expr result in
-         (["a:vxxxx"],
-          [xd#index_variable vrd;
-           xd#index_xpr xrn;
-           xd#index_xpr xrm;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xrn; xrm; result; rresult]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vrd]
+             ~useshigh:[get_def_use_high vrd]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | Move(_, c, rd, rm, _, _) ->
          let vrd = rd#to_variable floc in
@@ -896,22 +994,34 @@ object (self)
          let rsrc = rewrite_expr src in
          (["a:xx"], [xd#index_xpr src; xd#index_xpr rsrc])
 
-      | MoveTop (_, rd, imm) ->
+      | MoveTop (c, rd, imm) ->
          let vrd = rd#to_variable floc in
          let ximm = imm#to_expr floc in
          let xrd = rd#to_expr floc in
          let ximm16 = XOp (XMult, [ximm; int_constant_expr e16]) in
-         let xrdm16 = XOp (XMod, [xrd; int_constant_expr e16]) in
+         let xrdm16 = XOp (XXlsh, [xrd]) in
          let result = XOp (XPlus, [xrdm16; ximm16]) in
          let rresult = rewrite_expr result in
          let _ = ignore (get_string_reference floc rresult) in
-         (["a:vxxxxx"],
-          [xd#index_variable vrd;
-           xd#index_xpr ximm;
-           xd#index_xpr xrd;
-           xd#index_xpr xrdm16;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+         let rdefs = [get_rdef xrd] in
+         let uses = get_def_use vrd in
+         let useshigh = get_def_use_high vrd in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[ximm; xrd; xrdm16; result; rresult]
+             ~rdefs:rdefs
+             ~uses:[uses]
+             ~useshigh:[useshigh]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | MoveTwoRegisterCoprocessor (_, _, _, rt, rt2, _) ->
          let v1 = rt#to_variable floc in
@@ -1042,18 +1152,31 @@ object (self)
            | _ -> (tagstring ::["uc"], args) in
          (tags, args)
 
-      | ReverseSubtract (_, _, dst, src1, src2, _) ->
-         let lhs = dst#to_variable floc in
-         let rhs1 = src1#to_expr floc in
-         let rhs2 = src2#to_expr floc in
-         let result = XOp (XMinus, [rhs2; rhs1]) in
+      | ReverseSubtract (_, c, rd, rn, rm, _) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         let result = XOp (XMinus, [xrm; xrn]) in
          let rresult = rewrite_expr result in
-         (["a:vxxxx"],
-          [xd#index_variable lhs;
-           xd#index_xpr rhs1;
-           xd#index_xpr rhs2;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+         let rdefs = [get_rdef xrn; get_rdef xrm] in
+         let uses = [get_def_use vrd] in
+         let useshigh = [get_def_use_high vrd] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xrn; xrm; result; rresult]
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | SignedBitFieldExtract (_, rd, rn) ->
          let lhs = rd#to_variable floc in
@@ -1235,7 +1358,7 @@ object (self)
          let vmem = mem#to_variable floc in
          let xrt = rt#to_expr floc in
          let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
+         let xrm = XOp (XXlsb, [rm#to_expr floc]) in
          let xxrt = rewrite_expr xrt in
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef xrt; get_rdef xxrt] in
          let uses = [get_def_use vmem] in
@@ -1380,12 +1503,27 @@ object (self)
          (["a:vxx"],
           [xd#index_variable lhs; xd#index_xpr xrn; xd#index_xpr xrm])
 
-      | UnsignedBitFieldExtract (_, rd, rn) ->
-         let lhs = rd#to_variable floc in
-         let rhs = rn#to_expr floc in
-         let rrhs = rewrite_expr rhs in
-         (["a:vxx"],
-          [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr rrhs])
+      | UnsignedBitFieldExtract (c, rd, rn) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xxrn = rewrite_expr xrn in
+         let rdefs = [get_rdef xrn] @ (get_all_rdefs xxrn) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xrn; xxrn]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vrd]
+             ~useshigh:[get_def_use_high vrd]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | UnsignedExtendAddByte (_, rd, rn, rm) ->
          let lhs = rd#to_variable floc in
@@ -1404,7 +1542,7 @@ object (self)
       | UnsignedExtendByte (c, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
-         let result = XOp (XBAnd, [xrm; int_constant_expr 255]) in
+         let result = XOp (XXlsb, [xrm]) in
          let rresult = rewrite_expr result in
          let rdefs = [get_rdef xrm] @ (get_all_rdefs rresult) in
          let (tagstring, args) =
@@ -1427,8 +1565,7 @@ object (self)
       | UnsignedExtendHalfword (c, rd, rm) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
-         (* let result = XOp (XBAnd, [xrm; int_constant_expr 65535]) in *)
-         let result = xrm in
+         let result = XOp (XXlsh, [xrm]) in
          let rresult = rewrite_expr result in
          let rdefs = [get_rdef xrm] @ (get_all_rdefs rresult) in
          let (tagstring, args) =

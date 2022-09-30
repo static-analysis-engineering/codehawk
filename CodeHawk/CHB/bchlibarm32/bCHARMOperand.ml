@@ -441,7 +441,13 @@ object (self:'a)
          (XLsl,
           [XVar (env#mk_arm_register_variable r); int_constant_expr n])
     | ARMShiftedReg _ -> XConst (XRandom)
-    | ARMRegBitSequence (r,lsb,widthm1) -> XConst (XRandom)
+    | ARMRegBitSequence (r, lsb, widthm1) ->
+       (match (lsb, widthm1) with
+        | (8, 7) ->
+           let env = floc#env in
+           let regvar = XVar (env#mk_arm_register_variable r) in
+           XOp (XXbyte, [int_constant_expr 1; regvar])
+        | _ -> XConst XRandom)
     | _ ->
        raise
          (BCH_failure
