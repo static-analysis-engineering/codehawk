@@ -107,6 +107,7 @@ let export_directory = ref ""
 let savecfgs = ref false
 let save_xml = ref false  (* save disassembly status in xml *)
 let save_asm = ref false
+let set_datablocks = ref false   (* only supported for arm *)
 
 let architecture = ref "x86"
 let fileformat = ref "pe"
@@ -174,6 +175,8 @@ let speclist =
      "save disassembly status in xml for bulk evaluation");
     ("-save_asm", Arg.Unit (fun () -> save_asm := true),
      "save assembly listing in the analysis directory");
+    ("-set_datablocks", Arg.Unit (fun () -> set_datablocks := true),
+     "set data blocks for code not included in any function");
     ("-specialization", Arg.String specializations#activate_specialization,
      "apply named specialization");
     ("-ifile", Arg.String system_info#add_ifile,
@@ -466,11 +469,13 @@ let main () =
       let _ = disassembly_summary#record_disassembly_time
                 ((Unix.gettimeofday ()) -. !t) in
       let _ = construct_functions_arm() in
+      let _ = if !set_datablocks then
+                arm_assembly_functions#set_datablocks in
       let _ = disassembly_summary#record_construct_functions_time
                 ((Unix.gettimeofday ()) -. !t) in
       let _ = disassembly_summary#set_disassembly_metrics
                 (get_arm_disassembly_metrics ()) in
-      let _ =  pr_debug [ NL; NL; disassembly_summary#toPretty ; NL ] in
+      let _ = pr_debug [NL; NL; disassembly_summary#toPretty; NL] in
       begin
         if !save_asm then
           begin
