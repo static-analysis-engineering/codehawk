@@ -86,7 +86,11 @@ object (self)
 
   method set_verbose = verbose <- true
 
-  method set_thumb = thumb <- true
+  method set_thumb =
+    begin
+      chlog#add "settings" (STR "set thumb");
+      thumb <- true
+    end
 
   method has_thumb = thumb
 

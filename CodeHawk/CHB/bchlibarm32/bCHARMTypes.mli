@@ -1103,7 +1103,7 @@ class type arm_assembly_instructions_int =
 
     (* iterators *)
     method iteri: (int -> arm_assembly_instruction_int -> unit) -> unit
-    method itera: (doubleword_int ->arm_assembly_instruction_int -> unit) -> unit
+    method itera: (doubleword_int -> arm_assembly_instruction_int -> unit) -> unit
 
     (* predicates *)
     method is_code_address: doubleword_int -> bool
@@ -1198,6 +1198,8 @@ class type arm_assembly_functions_int =
     (* setters *)
     method add_function: arm_assembly_function_int -> unit
     method add_functions_by_preamble: doubleword_int list
+
+    method set_datablocks: unit
 
     (* accessors *)
     method get_callgraph: callgraph_int

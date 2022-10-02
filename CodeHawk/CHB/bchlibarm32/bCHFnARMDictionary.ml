@@ -738,6 +738,7 @@ object (self)
          let vrt = rt#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
+         let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem] in
@@ -747,7 +748,7 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
-             ~xprs:[xrn; xrm; xmem; xrmem]
+             ~xprs:[xrn; xrm; xmem; xrmem; xaddr]
              ~rdefs:rdefs
              ~uses:uses
              ~useshigh:useshigh
@@ -772,6 +773,7 @@ object (self)
          let vrt = rt#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
+         let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
          let xmem = XOp (XXlsb, [mem#to_expr floc]) in
          let xrmem = rewrite_expr xmem in
@@ -781,7 +783,7 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
-             ~xprs:[xrn; xrm; xmem; xrmem]
+             ~xprs:[xrn; xrm; xmem; xrmem; xaddr]
              ~rdefs:rdefs
              ~uses:uses
              ~useshigh:useshigh
@@ -836,6 +838,7 @@ object (self)
          let vrt = rt#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
+         let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
          let xmem = XOp (XXlsh, [mem#to_expr floc]) in
          let xrmem = rewrite_expr xmem in
@@ -845,7 +848,7 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
-             ~xprs:[xrn; xrm; xmem; xrmem]
+             ~xprs:[xrn; xrm; xmem; xrmem; xaddr]
              ~rdefs:rdefs
              ~uses:uses
              ~useshigh:useshigh
@@ -881,6 +884,7 @@ object (self)
          let vrt = rt#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
+         let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
@@ -890,7 +894,7 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
-             ~xprs:[xrn; xrm; xmem; xrmem]
+             ~xprs:[xrn; xrm; xmem; xrmem; xaddr]
              ~rdefs:rdefs
              ~uses:uses
              ~useshigh:useshigh
@@ -1330,6 +1334,7 @@ object (self)
 
       | StoreRegister (c, rt, rn, rm, mem, _) ->
          let vmem = mem#to_variable floc in
+         let xaddr = mem#to_address floc in
          let xrt = rt#to_expr floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
@@ -1340,7 +1345,7 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]
-             ~xprs:[xrn; xrm; xrt; xxrt]
+             ~xprs:[xrn; xrm; xrt; xxrt; xaddr]
              ~rdefs:rdefs
              ~uses:uses
              ~useshigh:useshigh
@@ -1356,6 +1361,7 @@ object (self)
 
       | StoreRegisterByte (c, rt, rn, rm, mem, _) ->
          let vmem = mem#to_variable floc in
+         let xaddr = mem#to_address floc in
          let xrt = rt#to_expr floc in
          let xrn = rn#to_expr floc in
          let xrm = XOp (XXlsb, [rm#to_expr floc]) in
@@ -1366,7 +1372,7 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]
-             ~xprs:[xrn; xrm; xrt; xxrt]
+             ~xprs:[xrn; xrm; xrt; xxrt; xaddr]
              ~rdefs:rdefs
              ~uses:uses
              ~useshigh:useshigh
@@ -1408,6 +1414,7 @@ object (self)
 
       | StoreRegisterHalfword (c, rt, rn, rm, mem, _) ->
          let vmem = mem#to_variable floc in
+         let xaddr = mem#to_address floc in
          let xrt = rt#to_expr floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
@@ -1418,7 +1425,7 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]
-             ~xprs:[xrn; xrm; xrt; xxrt]
+             ~xprs:[xrn; xrm; xrt; xxrt; xaddr]
              ~rdefs:rdefs
              ~uses:uses
              ~useshigh:useshigh
