@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs, LLC
+   Copyright (c) 2021-2022 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@ open CHXmlDocument
 open BCHBasicTypes
 open BCHByteUtilities
 open BCHCallgraph
+open BCHDataBlock
 open BCHDoubleword
 open BCHFunctionData
 open BCHFunctionInfo
@@ -308,8 +309,53 @@ object (self)
 
   method dark_matter_to_string =
     let table = self#get_live_instructions in
-    let filter = (fun i -> H.mem table i#get_address#index) in
+    let filter = (fun i -> not (H.mem table i#get_address#index)) in
     !arm_assembly_instructions#toString ~filter ()
+
+  method set_datablocks =
+    let table = self#get_live_instructions in
+    let filter = (fun i -> not (H.mem table i#get_address#index)) in
+    let datablocks = ref [] in
+    let dbstart = ref wordzero in
+    let inBlock = ref false in
+    let count = ref 0 in
+    begin
+      !arm_assembly_instructions#itera
+        (fun va instr ->
+          try
+            if filter instr then
+              match instr#get_opcode with
+              | OpInvalid -> ()
+              | NotCode _ -> ()
+              | _ ->
+                 if not !inBlock then
+                   begin
+                     dbstart := va;
+                     inBlock := true
+                   end
+                 else
+                   ()
+            else
+              if !inBlock then
+                let db = make_data_block !dbstart va "inferred" in
+                begin
+                  system_info#add_data_block db;
+                  inBlock := false;
+                  count := !count + 1
+                end
+          with
+          | BCH_failure p ->
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Error in instruction: ";
+                       va#toPretty;
+                       STR ": ";
+                       p])));
+      chlog#add
+        "set data-blocks"
+        (LBLOCK [STR "Added "; INT !count; STR " data blocks"])
+    end
 
   method duplicates_to_string =
     let table = self#get_duplicate_instructions in
