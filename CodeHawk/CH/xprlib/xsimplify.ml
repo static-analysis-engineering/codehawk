@@ -98,9 +98,13 @@ let zero_num x = x#equal numerical_zero
 let rec sim_expr (m:bool) (e:xpr_t):(bool * xpr_t) =
   match e with
   | XOp (XNeg, [e1]) ->
-     let (m,s) = sim_expr m e1 in reduce_neg m s
+     let (m, s) = sim_expr m e1 in reduce_neg m s
   | XOp (XLNot, [e1]) ->
-     let (m,s) = sim_expr m e1 in reduce_logical_not m s
+     let (m, s) = sim_expr m e1 in reduce_logical_not m s
+  | XOp (XXlsb, [e1]) ->
+     let (m, s) = sim_expr m e1 in reduce_lsb m s
+  | XOp (XXlsh, [e1]) ->
+     let (m, s) = sim_expr m e1 in reduce_lsh m s
   | XOp ( op, [e1 ; e2] ) ->
      let (m1,s1) = sim_expr m e1 in
      let (m2,s2) = sim_expr m e2 in
@@ -141,9 +145,27 @@ let rec sim_expr (m:bool) (e:xpr_t):(bool * xpr_t) =
   | _ -> (m, e)
 
 and reduce_neg m e1 =
-  let default () = (m, XOp (XNeg, [ e1 ])) in
+  let default () = (m, XOp (XNeg, [e1])) in
   match e1 with
   | XConst (IntConst num) -> (true, XConst (IntConst num#neg))
+  | _ -> default ()
+
+and reduce_lsb m e1 =
+  let default () = (m, XOp (XXlsb, [e1])) in
+  match e1 with
+  | XConst (IntConst num) when num#leq (mkNumerical 255) ->
+     (true, e1)
+  | XOp (XXlsb, [ee1]) -> (true, e1)
+  | XOp (XXlsh, [ee1]) -> (true, XOp (XXlsb, [ee1]))
+  | _ -> default ()
+
+and reduce_lsh m e1 =
+  let default () = (m, XOp (XXlsb, [e1])) in
+  match e1 with
+  | XConst (IntConst num) when num#leq (mkNumerical 65535) ->
+     (true, e1)
+  | XOp (XXlsh, [ee1]) -> (true, e1)
+  | XOp (XXlsb, [ee1]) -> (true, e1)
   | _ -> default ()
        
 and reduce_max m e1 e2 =
