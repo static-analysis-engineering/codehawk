@@ -255,7 +255,30 @@ object (self:'a)
            match (offset, isadd) with
            | (ARMImmOffset i, true) -> int_constant_expr i
            | (ARMImmOffset i, false) -> int_constant_expr (-i)
-           | _ -> random_constant_expr
+           | (ARMIndexOffset (indexreg, indexoffset), true) ->
+              let indexvar = env#mk_arm_register_variable indexreg in
+              XOp (XPlus, [XVar indexvar; int_constant_expr indexoffset])
+           | (ARMShiftedIndexOffset (indexreg, srt, indexoffset), true) ->
+              let indexvar = env#mk_arm_register_variable indexreg in
+              let xoffset = int_constant_expr indexoffset in
+              (match srt with
+               | ARMImmSRT (SRType_LSL, 2) ->
+                  let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 4]) in
+                  XOp (XPlus, [shifted; xoffset])
+               | _ ->
+                  begin
+                    chlog#add
+                      "operand#to_address"
+                      (LBLOCK [STR "ARMShiftedIndexOffset: "; self#toPretty]);
+                    random_constant_expr
+                  end)
+           | _ ->
+              begin
+                chlog#add
+                  "operand#to_address"
+                  (LBLOCK [STR "memoff: "; self#toPretty]);
+                random_constant_expr
+              end
          else
            zero_constant_expr in
        let rvar = env#mk_arm_register_variable r in
@@ -268,10 +291,12 @@ object (self:'a)
        let addr = XOp (XPlus, [rvarx; memoff]) in
        floc#inv#rewrite_expr addr env#get_variable_comparator
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Address of "; self#toPretty; STR " not yet implemented"]))
+       begin
+         chlog#add
+           "operand#to_address"
+           (LBLOCK [STR "Other address: "; self#toPretty]);
+         random_constant_expr
+       end
 
   method to_updated_offset_address (floc: floc_int): xpr_t =
     match kind with

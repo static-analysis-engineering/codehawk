@@ -1034,12 +1034,19 @@ object (self)
     let _ =
       if List.length (node#getTaggedChildren "switch") > 0 then
         system_settings#set_thumb in
-    List.iter (fun n ->
-        let get = n#getAttribute in
-        let iaddr = get "ia" in
-        let tgtarch = get "tgt" in
-        H.add arm_thumb_switches iaddr tgtarch)
-    (node#getTaggedChildren "switch")
+    begin
+      List.iter (fun n ->
+          let get = n#getAttribute in
+          let iaddr = get "ia" in
+          let tgtarch = get "tgt" in
+          H.add arm_thumb_switches iaddr tgtarch)
+        (node#getTaggedChildren "switch");
+      chlog#add
+        "arm-thumb userdata"
+        (LBLOCK [
+             STR "Arm-thumb switches: ";
+             INT (List.length (node#getTaggedChildren "switch"))])
+    end
 
   method private read_xml_fixed_true_conditionals (node:xml_element_int) = ()
 
