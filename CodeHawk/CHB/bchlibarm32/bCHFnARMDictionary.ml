@@ -1032,18 +1032,29 @@ object (self)
          let v2 = rt2#to_variable floc in
          (["a:vv"], [xd#index_variable v1; xd#index_variable v2])
 
-      | Multiply(_, _, rd, rn, rm) ->
+      | Multiply(_, c, rd, rn, rm) ->
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
-         let xprd = XOp (XMult, [xrn; xrm]) in
-         let xrprd = rewrite_expr xprd in
-         (["a:vxxxx"],
-          [xd#index_variable vrd;
-           xd#index_xpr xrn;
-           xd#index_xpr xrm;
-           xd#index_xpr xprd;
-           xd#index_xpr xrprd])
+         let result = XOp (XMult, [xrn; xrm]) in
+         let rresult = rewrite_expr result in
+         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xrn; xrm; result; rresult]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vrd]
+             ~useshigh:[get_def_use_high vrd]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | MultiplyAccumulate (_, _, rd, rn, rm, ra) ->
          let vrd = rd#to_variable floc in
@@ -1607,20 +1618,30 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | UnsignedMultiplyLong (_, _, rdlo, rdhi, rn, rm) ->
-         let lhslo = rdlo#to_variable floc in
-         let lhshi = rdhi#to_variable floc in
-         let rhs1 = rn#to_expr floc in
-         let rhs2 = rm#to_expr floc in
-         let result = XOp (XMult, [rhs1; rhs2]) in
+      | UnsignedMultiplyLong (_, c, rdlo, rdhi, rn, rm) ->
+         let vlo = rdlo#to_variable floc in
+         let vhi = rdhi#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         let result = XOp (XMult, [xrn; xrm]) in
          let rresult = rewrite_expr result in
-         (["a:vvxxxx"],
-          [xd#index_variable lhslo;
-           xd#index_variable lhshi;
-           xd#index_xpr rhs1;
-           xd#index_xpr rhs2;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vlo; vhi]
+             ~xprs:[xrn; xrm; result; rresult]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vlo; get_def_use vhi]
+             ~useshigh:[get_def_use_high vlo; get_def_use_high vhi]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | UnsignedSaturatingSubtract8 (_, rd, rn, rm) ->
          let vrd = rd#to_variable floc in
