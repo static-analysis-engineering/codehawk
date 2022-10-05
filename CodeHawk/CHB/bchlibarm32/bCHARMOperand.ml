@@ -91,8 +91,8 @@ let shift_rotate_type_to_string (srt:shift_rotate_type_t) =
 
 let register_shift_to_string (rs:register_shift_rotate_t) =
   match rs with
-  | ARMImmSRT (SRType_ROR,0) -> ""
-  | ARMImmSRT (srt,imm) ->
+  | ARMImmSRT (SRType_ROR, 0) -> ""
+  | ARMImmSRT (srt, imm) ->
      (shift_rotate_type_to_string srt) ^ " #" ^ (string_of_int imm)
   | ARMRegSRT (srt,reg) ->
      (shift_rotate_type_to_string srt) ^ " " ^ (armreg_to_string reg)
@@ -262,8 +262,13 @@ object (self:'a)
               let indexvar = env#mk_arm_register_variable indexreg in
               let xoffset = int_constant_expr indexoffset in
               (match srt with
+               | ARMImmSRT (_, 0)-> XOp (XPlus, [XVar indexvar; xoffset])
                | ARMImmSRT (SRType_LSL, 2) ->
                   let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 4]) in
+                  XOp (XPlus, [shifted; xoffset])
+               | ARMRegSRT (SRType_LSL, srtreg) ->
+                  let shiftvar = env#mk_arm_register_variable srtreg in
+                  let shifted = XOp (XLsl, [XVar indexvar; XVar shiftvar]) in
                   XOp (XPlus, [shifted; xoffset])
                | _ ->
                   begin
@@ -290,6 +295,7 @@ object (self:'a)
            XVar rvar in
        let addr = XOp (XPlus, [rvarx; memoff]) in
        floc#inv#rewrite_expr addr env#get_variable_comparator
+    | ARMLiteralAddress dw -> num_constant_expr dw#to_numerical
     | _ ->
        begin
          chlog#add
