@@ -1312,6 +1312,7 @@ let translate_arm_instruction
   | LoadRegisterByte (c, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
      let rhs = XOp (XXlsb, [mem#to_expr floc]) in
+     let rhs = floc#inv#rewrite_expr rhs floc#env#get_variable_comparator in
      let (lhs, lhscmds) = rt#to_lhs floc in
      let updatecmds =
        if mem#is_offset_address_writeback then
@@ -2568,7 +2569,8 @@ object (self)
             (["defusehigh"],
              {op_name = new symbol_t ~atts:["exit"] "use_high";
               op_args = [("dst", v, WRITE)]})) symvars in
-    let cmds = cmds @ cmdshigh in
+    let constantAssigns = env#end_transaction in
+    let cmds = constantAssigns @ cmds @ cmdshigh in
     TRANSACTION (new symbol_t "exit", LF.mkCode cmds, None)
 
   method translate =
@@ -2590,10 +2592,7 @@ object (self)
     let body = LF.mkCode [CFG (procname, cfg)] in
     let proc = LF.mkProcedure procname [] [] scope body in
     (* let _ = pr_debug [proc#toPretty; NL] in *)
-    begin
-      arm_chif_system#add_arm_procedure proc;
-      (* arm_chif_system#add_arm_procedure procrev; *)
-    end
+    arm_chif_system#add_arm_procedure proc
 
 end
 

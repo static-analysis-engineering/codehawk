@@ -111,6 +111,7 @@ let set_datablocks = ref false   (* only supported for arm *)
 
 let architecture = ref "x86"
 let fileformat = ref "pe"
+let analysisrepeats = ref 1
 
 let stream_start_address = ref wordzero
 let set_stream_start_address s =
@@ -157,6 +158,8 @@ let speclist =
      "do not apply linear equality analysis to the function with the given address");
     ("-preamble_cutoff", Arg.Int system_info#set_preamble_cutoff,
      "minimum number of preamble instructions observed to add as function entry point");
+    ("-analysisrepeats", Arg.Int (fun i -> analysisrepeats := i),
+     "repeat the analysis the given number of times in one cycle");
     ("-save_cfgs", Arg.Unit (fun () -> savecfgs := true),
      "save basic blocks and loops (applicable to .exe file)") ;
     ("-summaries", Arg.String system_settings#set_summary_jar,
@@ -629,7 +632,7 @@ let main () =
       end
 
     else if !cmd = "analyze" && !architecture = "arm" && !fileformat = "elf" then
-      let starttime = Unix.gettimeofday () in
+      (* let starttime = Unix.gettimeofday () in *)
       let _ = system_info#set_elf in
       let _ = system_info#set_arm in
       let _ = load_bcdictionary () in
@@ -648,7 +651,11 @@ let main () =
       let logcmd = "analyze_" ^ (string_of_int index) in
       let _ = disassemble_arm_sections () in
       let _ = construct_functions_arm () in
-      let _ = analyze_arm starttime in
+      let _ =
+        for i = 0 to (!analysisrepeats - 1) do
+          let analysisstart = Unix.gettimeofday () in
+          analyze_arm analysisstart
+        done in
       let _ = file_metrics#set_disassembly_results
                 (get_arm_disassembly_metrics ()) in
       begin
