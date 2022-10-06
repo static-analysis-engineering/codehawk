@@ -1721,29 +1721,55 @@ object (self)
             (LBLOCK [STR "Finfo:get-mips-local-function-api: "; p]))
 
   method private get_arm_local_function_api =
-    try
+    let argregs = [
+        ARMRegister AR0;
+        ARMRegister AR1;
+        ARMRegister AR2;
+        ARMRegister AR3] in
+    let default () =
       let parameters = env#get_arm_argument_values in
       let paramregs =
         List.map self#env#get_initial_register_value_register parameters in
       let ftsparams = List.map mk_register_parameter paramregs in
       let ftsparams =
         match ftsparams with
-        | [] ->
-           let argregs = [
-               ARMRegister AR0;
-               ARMRegister AR1;
-               ARMRegister AR2;
-               ARMRegister AR3] in
-           List.map mk_register_parameter argregs
+        | [] -> List.map mk_register_parameter argregs
         | _ -> ftsparams in
       let _ =
         List.iter (fun p -> ignore (self#add_fts_parameter p)) ftsparams in
-      default_function_interface self#get_name self#get_fts_parameters
-    with
-    | BCH_failure p ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Finfo:get-arm-local-function-api: "; p]))
+      default_function_interface self#get_name self#get_fts_parameters in
+
+    if functions_data#has_function_name faddr then
+      let functionname = (functions_data#get_function faddr)#get_function_name in
+      if bcfiles#has_varinfo functionname then
+        let vinfo = bcfiles#get_varinfo functionname in
+        let bvtype = vinfo.bvtype in
+        match bvtype with
+        | TFun (returnty, Some funargs, _, _) ->
+           if (List.length funargs) <= 4 then
+             let ftsparams =
+               List.mapi
+                 (fun i (name, btype, _) ->
+                   mk_register_parameter ~name ~btype (List.nth argregs i)) funargs in
+             let _ =
+               List.iter (fun p -> ignore (self#add_fts_parameter p)) ftsparams in
+             let _ =
+               chlog#add
+                 "function signature from headers"
+                 (LBLOCK [
+                      faddr#toPretty;
+                      STR ": ";
+                      STR functionname;
+                      STR ": ";
+                      btype_to_pretty bvtype]) in
+             default_function_interface functionname self#get_fts_parameters
+           else
+             default ()
+        | _ -> default()
+      else
+        default ()
+    else
+      default ()
 
   method private get_local_function_api =
     try
