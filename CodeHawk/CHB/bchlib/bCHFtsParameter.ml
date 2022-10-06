@@ -242,6 +242,7 @@ let mk_stack_parameter
   }
 
 let mk_register_parameter
+      ?(name="")
       ?(btype=t_unknown)
       ?(desc="")
       ?(roles=[])
@@ -249,7 +250,8 @@ let mk_register_parameter
       ?(size=4)
       ?(fmt=NoFormat)
       (reg:register_t) =
-  { apar_name = "reg_" ^ (register_to_string reg) ;
+  { apar_name =
+      if name = "" then "reg_" ^ (register_to_string reg) else name;
     apar_type = btype ;
     apar_desc = desc ;
     apar_roles = roles ;

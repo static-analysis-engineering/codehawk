@@ -67,7 +67,8 @@ val mk_stack_parameter:
   -> fts_parameter_t
 
 val mk_register_parameter:
-  ?btype:btype_t
+  ?name:string
+  -> ?btype:btype_t
   -> ?desc:string
   -> ?roles:(string * string) list
   -> ?io:arg_io_t
