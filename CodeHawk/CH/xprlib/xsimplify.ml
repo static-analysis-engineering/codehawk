@@ -160,7 +160,7 @@ and reduce_lsb m e1 =
   | _ -> default ()
 
 and reduce_lsh m e1 =
-  let default () = (m, XOp (XXlsb, [e1])) in
+  let default () = (m, XOp (XXlsh, [e1])) in
   match e1 with
   | XConst (IntConst num) when num#leq (mkNumerical 65535) ->
      (true, e1)
