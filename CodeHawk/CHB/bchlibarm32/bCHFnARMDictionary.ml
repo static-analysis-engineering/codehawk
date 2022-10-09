@@ -186,7 +186,9 @@ object (self)
       | XVar v
         | XOp (XXlsh, [XVar v])
         | XOp (XXlsb, [XVar v])
-        | XOp (XXbyte, [_; XVar v]) ->
+        | XOp (XXbyte, [_; XVar v])
+        | XOp (XLsr, [XVar v; _])
+        | XOp (XLsl, [XVar v; _]) ->
          let symvar = floc#f#env#mk_symbolic_variable v in
          let varinvs = varinv#get_var_reaching_defs symvar in
          (match varinvs with
@@ -600,7 +602,18 @@ object (self)
       | CompareBranchZero (rn, tgt) ->
          let xrn = rn#to_expr floc in
          let xtgt = tgt#to_expr floc in
-         (["a:xx"], [xd#index_xpr xrn; xd#index_xpr xtgt])
+         let txpr = XOp (XEq, [xrn; int_constant_expr 0]) in
+         let fxpr = XOp (XNe, [xrn; int_constant_expr 0]) in
+         let tcond = rewrite_expr txpr in
+         let fcond = rewrite_expr fxpr in
+         let rdefs = [get_rdef xrn] @ (get_all_rdefs tcond) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~xprs:[xrn; txpr; fxpr; tcond; fcond; xtgt]
+             ~rdefs:rdefs
+             () in
+         let (tags, args) = (tagstring :: ["TF"], args) in
+         (tags, args)
 
       | CompareNegative (_, rn, rm) ->
          let xrn = rn#to_expr floc in
@@ -775,7 +788,7 @@ object (self)
          let xrm = rm#to_expr floc in
          let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
-         let xmem = XOp (XXlsb, [mem#to_expr floc]) in
+         let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem] in
          let uses = [get_def_use vrt] in
@@ -840,7 +853,7 @@ object (self)
          let xrm = rm#to_expr floc in
          let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
-         let xmem = XOp (XXlsh, [mem#to_expr floc]) in
+         let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem] in
          let uses = [get_def_use vrt] in
@@ -1279,9 +1292,11 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | StoreMultipleDecrementBefore (_, _, base, rl, _, _) ->
+      | StoreMultipleDecrementBefore (wback, c, base, rl, _, _) ->
          let basereg = base#get_register in
          let regcount = rl#get_register_count in
+         let baselhs = base#to_variable floc in
+         let baserhs = base#to_expr floc in
          let rhss = rl#to_multiple_expr floc in
          let rrhss = List.map rewrite_expr rhss in
          let (memlhss, _) =
@@ -1289,17 +1304,41 @@ object (self)
              (fun (acc, off) reg ->
                let memop = arm_reg_deref ~with_offset:off basereg WR in
                let memlhs = memop#to_variable floc in
-               (acc @ [memlhs], off + 4))
+               let memop1 = arm_reg_deref ~with_offset:(off+1) basereg WR in
+               let memlhs1 = memop1#to_variable floc in
+               let memop2 = arm_reg_deref ~with_offset:(off+2) basereg WR in
+               let memlhs2 = memop2#to_variable floc in
+               let memop3 = arm_reg_deref ~with_offset:(off+3) basereg WR in
+               let memlhs3 = memop3#to_variable floc in
+               (acc @ [memlhs; memlhs1; memlhs2; memlhs3], off + 4))
              ([], -(4 * regcount)) rl#get_register_op_list in
-         let xtag =
-           "a:"
-           ^ (string_repeat "v" regcount)
-           ^ (string_repeat "x" regcount)
-           ^ "x" in  (* base expression *)
-         ([xtag],
-          (List.map xd#index_variable memlhss)
-          @ (List.map xd#index_xpr rrhss)
-          @ [xd#index_xpr (base#to_expr floc)])
+         let rdefs = List.map get_rdef (baserhs :: rhss) in
+         let uses = List.map get_def_use_high (baselhs :: memlhss) in
+         let useshigh = List.map get_def_use_high (baselhs :: memlhss) in
+         let wbackresults =
+           if wback then
+             let decrem = int_constant_expr (4 * regcount) in
+             let baseresult = XOp (XMinus, [baserhs; decrem]) in
+             let rbaseresult = rewrite_expr baseresult in
+             [baseresult; rbaseresult]
+           else
+             [baserhs; baserhs] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:(baselhs :: memlhss)
+             ~xprs:((baserhs :: wbackresults) @ rhss @ rrhss)
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring ::["uc"], args) in
+         (tags, args)
 
       | StoreMultipleIncrementAfter (_, _, base, rl, _, _) ->
          let basereg = base#get_register in
@@ -1375,7 +1414,7 @@ object (self)
          let xaddr = mem#to_address floc in
          let xrt = rt#to_expr floc in
          let xrn = rn#to_expr floc in
-         let xrm = XOp (XXlsb, [rm#to_expr floc]) in
+         let xrm = rm#to_expr floc in
          let xxrt = rewrite_expr xrt in
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef xrt; get_rdef xxrt] in
          let uses = [get_def_use vmem] in
@@ -1560,7 +1599,7 @@ object (self)
       | UnsignedExtendByte (c, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
-         let result = XOp (XXlsb, [xrm]) in
+         let result = xrm in
          let rresult = rewrite_expr result in
          let rdefs = [get_rdef xrm] @ (get_all_rdefs rresult) in
          let (tagstring, args) =
@@ -1583,7 +1622,7 @@ object (self)
       | UnsignedExtendHalfword (c, rd, rm) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
-         let result = XOp (XXlsh, [xrm]) in
+         let result = xrm in
          let rresult = rewrite_expr result in
          let rdefs = [get_rdef xrm] @ (get_all_rdefs rresult) in
          let (tagstring, args) =

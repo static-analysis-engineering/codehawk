@@ -527,7 +527,14 @@ let translate_arm_instruction
         if op#is_register then
           (op#to_variable floc) :: acc
         else
-          acc) [] ops in
+          match op#get_kind with
+          | ARMShiftedReg (r, ARMImmSRT _) ->
+             (floc#env#mk_arm_register_variable r) :: acc
+          | ARMShiftedReg (r, ARMRegSRT (_, rs)) ->
+             let rvar = floc#env#mk_arm_register_variable r in
+             let rsvar = floc#env#mk_arm_register_variable rs in
+             rvar :: rsvar :: acc
+          | _ -> acc) [] ops in
   let get_use_high_vars (xprs: xpr_t list):variable_t list =
     let inv = floc#inv in
     let comparator = floc#env#get_variable_comparator in
@@ -578,7 +585,9 @@ let translate_arm_instruction
     | CompareBranchNonzero (op, tgt) ->
      let thenaddr = (make_i_location loc tgt#get_absolute_address)#ci in
      let elseaddr = codepc#get_false_branch_successor in
-     let cmds = cmds @ [invop] in
+     let usevars = get_register_vars [op] in
+     let defcmds = floc#get_vardef_commands ~use:usevars ctxtiaddr in
+     let cmds = cmds @ defcmds @ [invop] in
      let transaction = package_transaction finfo blocklabel cmds in
      let (nodes, edges) =
        make_local_condition instr loc blocklabel thenaddr elseaddr in
@@ -891,12 +900,19 @@ let translate_arm_instruction
      let vr3 = floc#f#env#mk_arm_register_variable AR3 in
      let args = List.map snd floc#get_arm_call_arguments in
      let usehigh = get_use_high_vars args in
+     let use =
+       match List.length args with
+       | 0 -> []
+       | 1 -> [vr0]
+       | 2 -> [vr0; vr1]
+       | 3 -> [vr0; vr1; vr2]
+       | _ -> [vr0; vr1; vr2; vr3] in
      let cmds = floc#get_arm_call_commands in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vr0]
          ~clobbers:[vr1; vr2; vr3]
-         ~use:[vr0; vr1; vr2; vr3]
+         ~use:use
          ~usehigh:usehigh
          ctxtiaddr in
      let cmds = defcmds @ cmds in
@@ -2005,18 +2021,30 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let basereg = base#get_register in
      let regcount = rl#get_register_count in
-     let rhsexprs = rl#to_multiple_expr floc in
-     let rhsexprs = List.map (rewrite_expr floc) rhsexprs in
+     let rhsvars = rl#to_multiple_variable floc in
      let (memassigns, _) =
        List.fold_left
-         (fun (acc, off) rhsexpr ->
+         (fun (acc, off) rhsvar ->
            let memop = arm_reg_deref ~with_offset:off basereg WR in
            let (memlhs, memlhscmds) = memop#to_lhs floc in
+           let memop1 = arm_reg_deref ~with_offset:(off+1) basereg WR in
+           let memlhs1 = memop1#to_variable floc in
+           let memop2 = arm_reg_deref ~with_offset:(off+2) basereg WR in
+           let memlhs2 = memop2#to_variable floc in
+           let memop3 = arm_reg_deref ~with_offset:(off+3) basereg WR in
+           let memlhs3 = memop3#to_variable floc in
+           let rhsexpr = rewrite_expr floc (XVar rhsvar) in
            let cmds1 = floc#get_assign_commands memlhs rhsexpr in
-           let defcmds1 = floc#get_vardef_commands ~defs:[memlhs] ctxtiaddr in
+           let usehigh = get_use_high_vars [rhsexpr] in
+           let defcmds1 =
+             floc#get_vardef_commands
+               ~defs:[memlhs; memlhs1; memlhs2; memlhs3]
+               ~use:[rhsvar]
+               ~usehigh:usehigh
+               ctxtiaddr in
            (acc @ memlhscmds @ defcmds1 @ cmds1, off + 4))
          ([], -(4 * regcount))
-         rhsexprs in
+         rhsvars in
      let wbackassign =
        if wback then
          let (lhs, lhscmds) = base#to_lhs floc in
@@ -2024,7 +2052,11 @@ let translate_arm_instruction
          let decrem = int_constant_expr (4 * regcount) in
          let newrhs = XOp (XMinus, [rhs; decrem]) in
          let wbackcmds = floc#get_assign_commands lhs newrhs in
-         let wbackdefcmds = floc#get_vardef_commands ~defs:[lhs] ctxtiaddr in
+         let wbackdefcmds =
+           floc#get_vardef_commands
+             ~defs:[lhs]
+             ~use:(get_register_vars [base])
+             ctxtiaddr in
          wbackdefcmds @ wbackcmds
        else
          [] in
