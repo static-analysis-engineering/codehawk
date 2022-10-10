@@ -524,7 +524,7 @@ let translate_arm_instruction
       default [BRANCH [LF.mkCode cmds; LF.mkCode [SKIP]]] in
   let get_register_vars (ops: arm_operand_int list) =
     List.fold_left (fun acc op ->
-        if op#is_register then
+        if op#is_register || op#is_extension_register then
           (op#to_variable floc) :: acc
         else
           match op#get_kind with
@@ -2326,9 +2326,81 @@ let translate_arm_instruction
 
   | VectorBitwiseNot _ -> default []
 
-  | VDivide _ -> default []
+  | VCompare (_, _, _, src1, src2) ->
+     let floc = get_floc loc in
+     let xsrc1 = src1#to_expr floc in
+     let xsrc2 = src2#to_expr floc in
+     let usevars = get_register_vars [src1; src2] in
+     let usehigh = get_use_high_vars [xsrc1; xsrc2] in
+     let defcmds =
+       floc#get_vardef_commands
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     default defcmds
+
+  | VectorConvert (_, _, _, _, dst, src) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let xsrc = src#to_expr floc in
+     let usevars = get_register_vars [src] in
+     let usehigh = get_use_high_vars [xsrc] in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     default (defcmds @ cmds)
+
+  | VDivide (_, _, dst, src1, src2) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let xsrc1 = src1#to_expr floc in
+     let xsrc2 = src2#to_expr floc in
+     let usevars = get_register_vars [src1; src2] in
+     let usehigh = get_use_high_vars [xsrc1; xsrc2] in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     default (defcmds @ cmds)
 
   | VectorDuplicate _ -> default []
+
+  | VectorMove (_, _, [dst; src]) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let xsrc = src#to_expr floc in
+     let usevars = get_register_vars [src] in
+     let usehigh = get_use_high_vars [xsrc] in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     default (defcmds @ cmds)
+
+  | VMoveRegisterStatus (_, dst, src) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let xsrc = src#to_expr floc in
+     let usevars = get_register_vars [src] in
+     let usehigh = get_use_high_vars [xsrc] in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     default (defcmds @ cmds)
 
   | VectorMultiply _ -> default []
 

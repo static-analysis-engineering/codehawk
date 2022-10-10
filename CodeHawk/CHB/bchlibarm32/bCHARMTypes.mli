@@ -164,6 +164,7 @@ class type arm_operand_int =
     method is_write: bool
     method is_immediate: bool
     method is_register: bool
+    method is_extension_register: bool
     method is_writeback_register: bool
     method is_special_register: bool
     method is_register_list: bool
