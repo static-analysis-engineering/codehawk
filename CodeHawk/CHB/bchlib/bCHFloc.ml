@@ -502,6 +502,17 @@ object (self)
           let avar = self#env#mk_arm_register_variable reg in
           (p, self#inv#rewrite_expr (XVar avar) self#env#get_variable_comparator))
         pars in
+    let get_float_arg (par: fts_parameter_t) =
+      match par.apar_location with
+      | RegisterParameter (ARMExtensionRegister r) ->
+         let avar = self#env#mk_arm_extension_register_variable r in
+         [(par, self#inv#rewrite_expr (XVar avar) self#env#get_variable_comparator)]
+      | _ ->
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Internal error in get_float_arg: ";
+                   fts_parameter_to_pretty par])) in
     let get_stackargs pars =
       List.map
         (fun p ->
@@ -535,7 +546,13 @@ object (self)
       let fintf = ctinfo#get_function_interface in
       let fts = fintf.fintf_type_signature in
       let npars = List.length fts.fts_parameters in
-      if npars < 5 then
+      if npars = 1 then
+        let ftspar = List.hd fts.fts_parameters in
+        let ftspartype = ftspar.apar_type in
+        match ftspartype with
+        | TFloat _ -> get_float_arg ftspar
+        | _ -> get_regargs fts.fts_parameters
+      else if npars < 5 then
         get_regargs fts.fts_parameters
       else
         let (regpars,stackpars) = split_list 4 fts.fts_parameters in
