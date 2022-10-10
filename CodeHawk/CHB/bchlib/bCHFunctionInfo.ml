@@ -1745,6 +1745,26 @@ object (self)
         let vinfo = bcfiles#get_varinfo functionname in
         let bvtype = vinfo.bvtype in
         match bvtype with
+        | TFun (TFloat (fkind, _, _), Some [funarg], _, _) ->
+           let ftsparam =
+             let (name, btype, _) = funarg in
+             let regtype =
+               match fkind with
+               | FFloat -> XSingle
+               | _ -> XDouble in
+             let ftsreg = ARMExtensionRegister ({armxr_type=regtype; armxr_index=0}) in
+             mk_register_parameter ~name ~btype ftsreg in
+           let _ = ignore (self#add_fts_parameter ftsparam) in
+           let _ =
+             chlog#add
+               "floating-point function signature from headers"
+               (LBLOCK [
+                    faddr#toPretty;
+                    STR ": ";
+                    STR functionname;
+                    STR ": ";
+                    btype_to_pretty bvtype]) in
+           default_function_interface functionname self#get_fts_parameters
         | TFun (returnty, Some funargs, _, _) ->
            if (List.length funargs) <= 4 then
              let ftsparams =
