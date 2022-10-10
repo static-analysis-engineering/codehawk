@@ -1689,23 +1689,69 @@ object (self)
          (["a:vxx"],
           [xd#index_variable vrd; xd#index_xpr xrn; xd#index_xpr xrm])
 
-      | VCompare (_, _, _, op1, op2) ->
-         let src1 = op1#to_expr floc in
-         let src2 = op2#to_expr floc in
-         let rsrc1 = rewrite_expr src1 in
-         let rsrc2 = rewrite_expr src2 in
-         (["a:xxxx"],
-          [xd#index_xpr src1;
-           xd#index_xpr src2;
-           xd#index_xpr rsrc1;
-           xd#index_xpr rsrc2])
+      | VCompare (_, c, _, src1, src2) ->
+         let xsrc1 = src1#to_expr floc in
+         let xsrc2 = src2#to_expr floc in
+         let rxsrc1 = rewrite_expr xsrc1 in
+         let rxsrc2 = rewrite_expr xsrc2 in
+         let rdefs = [get_rdef xsrc1; get_rdef xsrc2] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~xprs:[xsrc1; xsrc2; rxsrc1; rxsrc2]
+             ~rdefs:rdefs
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
-      | VectorConvert (_, _, _, _, dst, src) ->
+      | VectorConvert (_, c, _, _, dst, src) ->
          let vdst = dst#to_variable floc in
-         let src = src#to_expr floc in
-         let rsrc = rewrite_expr src in
-         (["a:vxx"],
-          [xd#index_variable vdst; xd#index_xpr src; xd#index_xpr rsrc])
+         let xsrc = src#to_expr floc in
+         let rxsrc = rewrite_expr xsrc in
+         let rdefs = [get_rdef xsrc] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vdst]
+             ~xprs:[xsrc; rxsrc]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vdst]
+             ~useshigh:[get_def_use_high vdst]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
+
+      | VDivide (c, _, dst, src1, src2) ->
+         let vdst = dst#to_variable floc in
+         let xsrc1 = src1#to_expr floc in
+         let xsrc2 = src2#to_expr floc in
+         let rdefs = [get_rdef xsrc1; get_rdef xsrc2] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vdst]
+             ~xprs:[xsrc1; xsrc2]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vdst]
+             ~useshigh:[get_def_use_high vdst]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)         
 
       | VectorDuplicate (_, _, _, _, _, src) ->
          let src = src#to_expr floc in
@@ -1716,6 +1762,48 @@ object (self)
          let vvd = vd#to_variable floc in
          let xmem = mem#to_expr floc in
          (["a:vx"], [xd#index_variable vvd; xd#index_xpr xmem])
+
+      | VectorMove (c, _, [dst; src]) ->
+         let vdst = dst#to_variable floc in
+         let xsrc = src#to_expr floc in
+         let rdefs = [get_rdef xsrc] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vdst]
+             ~xprs:[xsrc]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vdst]
+             ~useshigh:[get_def_use_high vdst]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
+
+      | VMoveRegisterStatus (c, dst, src) ->
+         let vdst = dst#to_variable floc in
+         let xsrc = src#to_expr floc in
+         let rdefs = [get_rdef xsrc] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vdst]
+             ~xprs:[xsrc]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vdst]
+             ~useshigh:[get_def_use_high vdst]
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | VMoveToSystemRegister (_, _, src) ->
          let xsrc = src#to_expr floc in

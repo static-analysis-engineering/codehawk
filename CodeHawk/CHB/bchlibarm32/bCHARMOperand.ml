@@ -332,12 +332,15 @@ object (self:'a)
        env#mk_arm_register_variable r
     | ARMExtensionReg r -> env#mk_arm_extension_register_variable r
     | ARMSpecialReg r ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Semantics of special register ";
-                 STR (arm_special_reg_to_string r);
-                 STR " should be handled separaly"]))
+       begin
+         ch_error_log#add
+           "special register variable"
+           (LBLOCK [
+                STR "Semantics of special register ";
+                STR (arm_special_reg_to_string r);
+                STR " should be handled separaly"]);
+         env#mk_special_variable (arm_special_reg_to_string r)
+       end
     | ARMLiteralAddress dw ->
        floc#env#mk_global_variable dw#to_numerical
     | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex) ->
@@ -430,12 +433,15 @@ object (self:'a)
     | ARMFPConstant _ -> XConst XRandom
     | ARMReg _ | ARMWritebackReg _ -> XVar (self#to_variable floc)
     | ARMSpecialReg r ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Semantics of special register ";
-                 STR (arm_special_reg_to_string r);
-                 STR " should be handled separately"]))
+       begin
+         ch_error_log#add
+           "special register handling"
+           (LBLOCK [
+                STR "Semantics of special register ";
+                STR (arm_special_reg_to_string r);
+                STR " should be handled separately"]);
+         XConst (XRandom)
+       end
     | ARMExtensionReg _ -> XVar (self#to_variable floc)
     | ARMExtensionRegElement _ -> XConst XRandom
     | ARMOffsetAddress _ -> XVar (self#to_variable floc)
@@ -529,6 +535,11 @@ object (self:'a)
 
   method is_register =
     match kind with ARMReg _ | ARMWritebackReg _ -> true | _ -> false
+
+  method is_extension_register =
+    match kind with
+    | ARMExtensionReg _ -> true
+    | _ -> false
 
   method is_writeback_register =
     match kind with ARMWritebackReg _ -> true | _ -> false
