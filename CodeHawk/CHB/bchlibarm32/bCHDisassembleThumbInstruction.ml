@@ -1105,7 +1105,7 @@ let parse_thumb32_29
        ch_error_log#add
          "floating point constant"
          (LBLOCK [iaddr#toPretty; STR ": "; vfp#toPretty]) in
-     let imm = mk_arm_immediate_op false (size / 8) numerical_zero in
+     let imm = mk_arm_immediate_op false (size / 8) vfp in
      (* VMOV<c>.<dt> <D/Sd>, #<imm> *)
      VectorMove (cc, dt, [fpreg WR; imm])
 

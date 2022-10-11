@@ -170,19 +170,29 @@ let read_xml_fts_parameter (node:xml_element_int): fts_parameter_t =
 let is_global_parameter (p: fts_parameter_t) =
   match p.apar_location with GlobalParameter _ -> true | _ -> false
 
+
 let is_stack_parameter (p: fts_parameter_t) =
   match p.apar_location with StackParameter _ -> true | _ -> false
+
 
 let is_register_parameter (p: fts_parameter_t) =
   match p.apar_location with RegisterParameter _ -> true | _ -> false
 
+
 let is_arg_parameter (p: fts_parameter_t) =
   is_register_parameter p || is_stack_parameter p
+
 
 let is_formatstring_parameter (p: fts_parameter_t) =
   match p.apar_fmt with
   | NoFormat -> false
   | _ -> true
+
+
+let is_floating_point_parameter (p: fts_parameter_t) =
+  match p.apar_type with
+  | TFloat _ -> true
+  | _ -> false
 
 (* ---------------------------------------------------------------- operators *)
 

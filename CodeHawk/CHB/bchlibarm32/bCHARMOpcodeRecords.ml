@@ -906,7 +906,10 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        "VCMP" ^ (if nan then "E" else "") in
      { mnemonic = mnemonic;
        operands = [op1; op2];
-       flags_set = [];   (* floating point status word not yet supported *)
+       (* use for now, to reflect that the results are often transferred
+          via VMRS *)
+       flags_set = [APSR_N; APSR_Z; APSR_C; APSR_V];
+       (* flags_set = [];  floating point status word not yet supported *)
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~dt mnemonic c [op1; op2])
      }
@@ -985,9 +988,10 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
     }
   | VMoveRegisterStatus (c, dst, src) ->
      let flags_set =
+     (*  disable to enable shortcut from VCompare
        if dst#is_special_register then
          [APSR_N; APSR_Z; APSR_C; APSR_V]
-       else
+       else *)
          [] in
      { mnemonic = "VMRS";
        operands = [dst; src];

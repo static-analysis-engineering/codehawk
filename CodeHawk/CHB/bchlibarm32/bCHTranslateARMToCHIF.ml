@@ -49,6 +49,7 @@ open BCHCodegraph
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc
+open BCHFtsParameter
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHFunctionSummary
@@ -898,19 +899,29 @@ let translate_arm_instruction
      let vr1 = floc#f#env#mk_arm_register_variable AR1 in
      let vr2 = floc#f#env#mk_arm_register_variable AR2 in
      let vr3 = floc#f#env#mk_arm_register_variable AR3 in
+     let pars = List.map fst floc#get_arm_call_arguments in
      let args = List.map snd floc#get_arm_call_arguments in
-     let usehigh = get_use_high_vars args in
-     let use =
-       match List.length args with
-       | 0 -> []
-       | 1 -> [vr0]
-       | 2 -> [vr0; vr1]
-       | 3 -> [vr0; vr1; vr2]
-       | _ -> [vr0; vr1; vr2; vr3] in
+     let (defs, use, usehigh) =
+       if ((List.length pars) = 1
+           && (is_floating_point_parameter (List.hd pars))) then
+         let s0: arm_extension_register_t =
+           {armxr_type = XSingle; armxr_index = 0} in
+         let s0var = floc#f#env#mk_arm_extension_register_variable s0 in
+         ([s0var], [s0var], [s0var])
+       else
+         let usehigh = get_use_high_vars args in
+         let use =
+           match List.length args with
+           | 0 -> []
+           | 1 -> [vr0]
+           | 2 -> [vr0; vr1]
+           | 3 -> [vr0; vr1; vr2]
+           | _ -> [vr0; vr1; vr2; vr3] in
+         ([vr0], use, usehigh) in
      let cmds = floc#get_arm_call_commands in
      let defcmds =
        floc#get_vardef_commands
-         ~defs:[vr0]
+         ~defs:defs
          ~clobbers:[vr1; vr2; vr3]
          ~use:use
          ~usehigh:usehigh

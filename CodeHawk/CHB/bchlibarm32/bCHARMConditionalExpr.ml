@@ -207,6 +207,9 @@ let cc_expr
        let d2 = XOp (XLAnd, [c2; XOp (XGe, [v y; ic31])]) in
        XOp (XLOr, [d1; d2])
 
+    | (VCompare (_, ACCAlways, _, x, y), ACCSignedGT) ->
+       XOp (XGt, [v x; v y])
+
     | (Compare (ACCAlways, x, y, _), ACCUnsignedHigher) ->
        XOp (XGt, [v x; v y])
 
@@ -264,6 +267,9 @@ let cc_expr_bare
        let d2 = XOp (XLAnd, [c2; XOp (XGe, [v y; ic31])]) in
        XOp (XLOr, [d1; d2])
 
+    | (VCompare (_, ACCAlways, _, x, y), ACCSignedGT) ->
+       XOp (XGt, [v x; v y])
+       
     | (Compare (_, x, y, _), ACCCarrySet) ->
        XOp (XGe, [v x; v y])
 
