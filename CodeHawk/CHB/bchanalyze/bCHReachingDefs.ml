@@ -136,10 +136,15 @@ object (self: 'a)
            default ()
          end
        else
-         begin
-           table'#remove v;
-           default ()
-         end
+         let v_sym = self#getValue' v in
+         let v_sym' = v_sym#meet (new symbolic_set_t [sym]) in
+         if v_sym'#isBottom then
+           self#mkBottom
+         else
+           begin
+             table'#remove v;
+             default ()
+           end
     | s ->
        begin
          pr_debug [STR "Unexpected operation in reachingdefs: "; STR s; NL];

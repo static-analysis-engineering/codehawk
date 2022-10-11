@@ -504,9 +504,15 @@ object (self)
         | BranchLinkExchange (_, tgt)
            when floc#has_call_target
                 && floc#get_call_target#is_signature_valid ->
+         let pars = List.map fst floc#get_arm_call_arguments in
          let args = List.map snd floc#get_arm_call_arguments in
          let rdefs = List.concat (List.map get_all_rdefs args) in
-         let vrd = (arm_register_op (get_arm_reg 0) WR)#to_variable floc in
+         let vrd =
+           if ((List.length pars) = 1
+               && (is_floating_point_parameter (List.hd pars))) then
+             (arm_extension_register_op XSingle 0 WR)#to_variable floc
+           else
+             (arm_register_op (get_arm_reg 0) WR)#to_variable floc in
          let (tagstring, args) =
            mk_instrx_data
              ~xprs:args

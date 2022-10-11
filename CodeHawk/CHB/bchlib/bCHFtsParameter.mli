@@ -109,4 +109,4 @@ val is_arg_parameter: fts_parameter_t -> bool
 
 val is_formatstring_parameter: fts_parameter_t -> bool
 
-
+val is_floating_point_parameter: fts_parameter_t -> bool
