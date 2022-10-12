@@ -3089,6 +3089,7 @@ class type section_header_info_int =
     method get_type: doubleword_int
     method get_link: doubleword_int
     method get_info: doubleword_int
+    method get_flags: doubleword_int
     method get_addralign: doubleword_int
     method get_entsize: doubleword_int
 
@@ -3099,6 +3100,7 @@ class type section_header_info_int =
     method has_type: bool
     method has_link: bool
     method has_info: bool
+    method has_flags: bool
     method has_addralign: bool
     method has_entsize: bool
 
@@ -3115,6 +3117,7 @@ class type section_header_infos_int  =
 
     (* predicates *)
     method has_section_header_info: string -> bool   (* section name *)
+    method has_section_header_infos: bool
 
     (* i/o *)
     method read_xml: xml_element_int -> unit

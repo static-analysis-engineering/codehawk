@@ -141,10 +141,14 @@ object (self)
       vaddr#subtract base1
     with
     | _ ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Error in computing section header offset-1: " ;
-                          STR "base1: " ; base1#toPretty ;
-                          STR "; addr: " ; vaddr#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in computing section header offset-1: ";
+                 STR "base1: ";
+                 base1#toPretty;
+                 STR "; addr: ";
+                 vaddr#toPretty ]))
 
   method private get_offset_2 (vaddr:doubleword_int) =
     match loadsegments with
@@ -160,9 +164,12 @@ object (self)
        | _ ->
           raise
             (BCH_failure
-               (LBLOCK [ STR "Error in computing section header offset-2: " ;
-                         STR "base2: " ; base2#toPretty ;
-                         STR "; addr: " ; vaddr#toPretty ]))
+               (LBLOCK [
+                    STR "Error in computing section header offset-2: ";
+                    STR "base2: ";
+                    base2#toPretty;
+                    STR "; addr: ";
+                    vaddr#toPretty ]))
 
   method private has_interp_program_header =
     List.exists
@@ -297,7 +304,7 @@ object (self)
     let size = ph#get_file_size in
     let addralign = s2d "0x1" in
     begin
-      sh#set_fields ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+      sh#set_fields ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
       section_headers <- sh :: section_headers
     end
 
@@ -319,7 +326,7 @@ object (self)
       let size = ph#get_file_size in
       let addralign = ph#get_align in
       begin
-        sh#set_fields ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+        sh#set_fields ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
         section_headers <- sh :: section_headers
       end
       
@@ -627,13 +634,14 @@ object (self)
             try
               phend#subtract vaddr
             with _ ->
-              raise (BCH_failure
-                       (LBLOCK [
-                            STR "Create_init_header: subtracting vaddr: ";
-                            vaddr#toPretty;
-                            STR " from " ;
-                            STR "address + file size: ";
-                            phend#toPretty])) in
+              raise
+                (BCH_failure
+                   (LBLOCK [
+                        STR "Create_init_header: subtracting vaddr: ";
+                        vaddr#toPretty;
+                        STR " from " ;
+                        STR "address + file size: ";
+                        phend#toPretty])) in
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
@@ -1038,7 +1046,6 @@ object (self)
 
 end
   
-
 
 let create_section_headers
       (phdrs:(int * elf_program_header_int * elf_segment_t) list)
