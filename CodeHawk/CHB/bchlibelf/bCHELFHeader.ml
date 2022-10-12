@@ -58,6 +58,7 @@ open BCHCallbackTables
 open BCHDoubleword
 open BCHLibTypes
 open BCHPreFileIO
+open BCHSectionHeadersInfo
 open BCHStreamWrapper
 open BCHStructTables
 open BCHSystemInfo
@@ -386,24 +387,36 @@ object(self)
     let input = IO.input_string fileString in
     begin
       e_ident <- Bytes.to_string (IO.really_nread input 16);
-      self#check_elf ;
-      self#set_endianness ;
+      self#check_elf;
+      self#set_endianness;
       elf_file_header#read;
+
       pr_debug [STR "File header"; NL; elf_file_header#toPretty; NL];
+
       (if elf_file_header#get_type = 1 then
          pr_debug [STR "File is an object file, not an executable!"; NL]);
-      self#read_program_headers ;
+
+      self#read_program_headers;
       H.iter (fun k v -> pr_debug [v#toPretty; NL]) program_header_table;
+
       (if elf_file_header#get_section_header_table_entry_num = 0 then
          self#create_section_headers
        else
-         self#read_section_headers) ;
+         begin
+           self#read_section_headers;
+
+           (* check if the user defined some additional section headers *)
+           (if section_header_infos#has_section_header_infos then
+              self#add_user_defined_section_headers)
+         end);
+
       pr_debug [
-          STR "Number of sections: "; INT (H.length section_header_table); NL];
-      self#set_section_header_names ;
-      self#set_symbol_names ;
-      self#set_dynamic_symbol_names ;
-      self#set_relocation_symbols ;
+        STR "Number of sections: "; INT (H.length section_header_table); NL];
+
+      self#set_section_header_names;
+      self#set_symbol_names;
+      self#set_dynamic_symbol_names;
+      self#set_relocation_symbols;
     end
 
   method has_sections = (H.length section_header_table) > 0
@@ -411,15 +424,16 @@ object(self)
   method private create_section_headers =
     let segments = self#get_program_segments in
     let sectionheaders = create_section_headers segments elf_file_header in
-    List.iter (fun (index, sh) -> H.add section_header_table index sh)
-              sectionheaders
+    List.iter
+      (fun (index, sh) -> H.add section_header_table index sh)
+      sectionheaders
 
   method get_sections =
     let result = ref [] in
     let _ = H.iter (fun k v -> result := (k,v) :: !result) section_header_table in
     let compare = fun (i1,_) (i2,_) -> Stdlib.compare i1 i2 in
     let result = List.sort compare !result in
-    List.map (fun (index,sh) -> 
+    List.map (fun (index, sh) -> 
         (index, sh, self#get_section index)) result
 
   method get_program_segments =
@@ -929,27 +943,65 @@ object(self)
     let shoff = elf_file_header#get_section_header_table_offset in
     let shentsize = elf_file_header#get_section_header_table_entry_size in
     let shnum = elf_file_header#get_section_header_table_entry_num in
-    let _ =  pr_debug [ STR  "Number of section headers: " ; INT shnum ; NL ] in
-    for i=0 to (shnum - 1) do
+    let _ = pr_debug [STR  "Number of section headers: "; INT shnum; NL] in
+    for i = 0 to (shnum - 1) do
       let sh = mk_elf_section_header () in
       let offset = shoff#add_int (shentsize * i) in
       begin
-	sh#read offset shentsize ;
+	sh#read offset shentsize;
 	H.add section_header_table i sh
       end
     done
 
+  method private add_user_defined_section_headers =
+    let shnum = elf_file_header#get_section_header_table_entry_num in
+    try
+      List.iteri
+        (fun i name ->
+          let sh = mk_elf_section_header () in
+          let shinfo = section_header_infos#get_section_header_info name in
+          let name = shinfo#get_name in
+          let addr = shinfo#get_addr in
+          let size = shinfo#get_size in
+          let stype = shinfo#get_type in
+          let offset = shinfo#get_offset in
+          let flags = shinfo#get_flags in
+          begin
+            sh#set_fields
+              ~stype:stype
+              ~size:size
+              ~addr:addr
+              ~offset:offset
+              ~flags:flags
+              ~sectionname:name ();
+            chlog#add "user-defined section" (LBLOCK [sh#toPretty]);
+            H.add section_header_table (shnum + i) sh
+          end) section_header_infos#get_section_header_names
+    with
+    | BCH_failure p ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in creating user-defined section headers: ";
+                 p]))
+
   method private add_section (index:int) =
-    if H.mem section_table index then () else
+    if H.mem section_table index then
+      ()
+    else
       if H.mem section_header_table index then
 	let sh = H.find section_header_table index in
-	let xString = if sh#get_size#equal wordzero then "" else 
+	let xString =
+          if sh#get_size#equal wordzero then
+            ""
+          else
 	    system_info#get_file_string ~hexSize:sh#get_size sh#get_offset in
 	let section = make_elf_section sh xString in
 	H.add section_table index section
       else
-	raise (BCH_failure
-                 (LBLOCK [ STR "No section header found for " ; INT index ]))
+	raise
+          (BCH_failure
+             (LBLOCK [STR "No section header found for "; INT index]))
 
   method private add_segment (index:int) =
     if H.mem segment_table index then
@@ -1004,7 +1056,7 @@ object(self)
       let hNode = xmlElement "section-header" in
       begin
 	h#write_xml hNode ;
-	hNode#setIntAttribute "index" k ;
+	hNode#setIntAttribute "index" k;
 	hNode
       end) headers)
 
@@ -1268,10 +1320,10 @@ let save_elf_files () =
   begin
     save_elf_header () ;
     (if elf_header#has_sections then
-       List.iter (fun (index,header,s) ->
+       List.iter (fun (index, header, s) ->
            save_elf_section index header s) elf_header#get_sections
      else
-       save_elf_program_segments ()) ;
+       save_elf_program_segments ());
     save_elf_dictionary ()
   end
 

@@ -47,6 +47,7 @@ open BCHDoubleword
 open BCHELFTypes
 open BCHELFUtil
 
+
 class elf_section_header_t:elf_section_header_int =
 object (self)
 
@@ -461,5 +462,6 @@ object (self)
                                 STR " (" ; INT sh_entsize#to_int ; STR ")" ; NL ]
 	 
 end
+
 
 let mk_elf_section_header () = new elf_section_header_t
