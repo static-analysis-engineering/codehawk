@@ -757,12 +757,13 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | BitwiseBitClear (_, _, rd, rn, rm, _) ->
+  | BitwiseBitClear (_, c, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
-     let cmds = floc#get_abstract_commands vrd () in
+     let result = XOp (XBAnd, [xrn; XOp (XBNot, [xrm])]) in
+     let cmds = floc#get_assign_commands vrd result in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [xrn; xrm] in
      let defcmds =
@@ -772,9 +773,12 @@ let translate_arm_instruction
          ~usehigh:usehigh
          ~flagdefs:flagdefs
          ctxtiaddr in
-     default (defcmds @ cmds)
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
-  | BitwiseExclusiveOr (_, _, rd, rn, rm, _) ->
+  | BitwiseExclusiveOr (_, c, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrn = rn#to_expr floc in
@@ -789,7 +793,10 @@ let translate_arm_instruction
          ~usehigh:usehigh
          ~flagdefs:flagdefs
          ctxtiaddr in
-     default (defcmds @ cmds)
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   (* ---------------------------------------------------------- BitwiseNot -- *
    * if immediate
@@ -849,7 +856,7 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | BitwiseOr (_, _, rd, rn, rm, _) ->
+  | BitwiseOr (_, c, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrn = rn#to_expr floc in
@@ -863,9 +870,12 @@ let translate_arm_instruction
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
-     default (defcmds @ cmds)
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
-  | BitwiseOrNot (_, _, rd, rn, rm) ->
+  | BitwiseOrNot (_, c, rd, rn, rm) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrn = rn#to_expr floc in
@@ -879,7 +889,10 @@ let translate_arm_instruction
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
-     default (defcmds @ cmds)
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   (* ---------------------------------------------------------- BranchLink -- *
    * if CurrentInstrSet() == InstrSet_ARM then
@@ -952,7 +965,7 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | ByteReverseWord (_, rd, rm, _) ->
+  | ByteReverseWord (c, rd, rm, _) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = rd#to_lhs floc in
      let xrm = rm#to_expr floc in
@@ -965,7 +978,10 @@ let translate_arm_instruction
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
-     default (lhscmds @ defcmds @ cmds)
+     let cmds = (lhscmds @ defcmds @ cmds) in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   (* --------------------------------------------- ByteReversePackedHalfword --
    * Reverses the byte order in each 16-bit halfword of a 32-bit register.
@@ -977,7 +993,7 @@ let translate_arm_instruction
    * result<7>0> = R[m]<15:8>
    * R[d] = result;
    * ------------------------------------------------------------------------ *)
-  | ByteReversePackedHalfword (_, rd, rm, _) ->
+  | ByteReversePackedHalfword (c, rd, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrm = rm#to_expr floc in
@@ -990,7 +1006,10 @@ let translate_arm_instruction
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
-     default (defcmds @ cmds)
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | Compare (c, rn, rm, _) ->
      let floc = get_floc loc in
@@ -1013,19 +1032,24 @@ let translate_arm_instruction
       | ACCAlways -> default defcmds
       | _ -> make_conditional_commands c defcmds)
 
-  | CompareNegative (_, rn, rm) ->
+  | CompareNegative (c, rn, rm) ->
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
+     let xresult = XOp (XPlus, [xrn; xrm]) in
+     let xresult = rewrite_expr floc xresult in
      let usevars = get_register_vars [rn; rm] in
-     let usehigh = get_use_high_vars [xrn; xrm] in
+     let usehigh = get_use_high_vars [xresult] in
      let defcmds =
        floc#get_vardef_commands
          ~use:usevars
          ~usehigh:usehigh
+         ~flagdefs:flagdefs
          ctxtiaddr in
-     default defcmds
+     (match c with
+      | ACCAlways -> default defcmds
+      | _ -> make_conditional_commands c defcmds)
 
-  | CountLeadingZeros (_, rd, rm) ->
+  | CountLeadingZeros (c, rd, rm) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = rd#to_lhs floc in
      let xrm = rm#to_expr floc in
@@ -1038,7 +1062,10 @@ let translate_arm_instruction
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
-     default (lhscmds @ defcmds @ cmds)
+     let cmds = (lhscmds @ defcmds @ cmds) in
+     (match c with
+      | ACCAlways -> default defcmds
+      | _ -> make_conditional_commands c cmds)
 
   | DataMemoryBarrier _ ->
      default []
