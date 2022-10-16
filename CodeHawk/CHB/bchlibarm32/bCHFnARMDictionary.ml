@@ -498,7 +498,7 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrd]
-             ~xprs:[xrm]
+             ~xprs:[xrm; result; rresult]
              ~rdefs:rdefs
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
