@@ -10,12 +10,10 @@
       <ll>int open(</ll>
       <ld>const char *filename</ld>
       <ld>int oflag</ld>
-      <ld>int pmode</ld>
       <ll>)</ll>
      </pt>
      <par name="filename">File name</par>
      <par name="oflag">kind of operations allowed</par>
-     <par name="pmode">permission mode</par>
      <return>
       <rc cond="success">a file descriptor for the opened file</rc>
       <rc cond="failure">-1</rc>
@@ -31,9 +29,6 @@
      </roles>
     </par>
     <par loc="stack" name="oflag" io="r" roles="none" nr="2">
-     <type>int</type>
-    </par>
-    <par loc="stack" name="pmode" io="r" roles="none" nr="3">
      <type>int</type>
     </par>
     <returntype>int</returntype>
