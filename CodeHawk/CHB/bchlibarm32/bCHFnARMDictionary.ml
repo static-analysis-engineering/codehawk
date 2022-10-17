@@ -1906,10 +1906,31 @@ object (self)
          let rsrc = rewrite_expr src in
          (["a:xx"], [xd#index_xpr src; xd#index_xpr rsrc])
 
-      | VLoadRegister (_, vd, rn, mem) ->
+      | VLoadRegister (c, vd, rn, mem) ->
          let vvd = vd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xaddr = mem#to_address floc in
+         let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
-         (["a:vx"], [xd#index_variable vvd; xd#index_xpr xmem])
+         let rdefs = [get_rdef xrn; get_rdef_memvar vmem] @ (get_all_rdefs xmem) in
+         let uses = [get_def_use_high vvd] in
+         let useshigh = [get_def_use_high vvd] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vvd; vmem]
+             ~xprs:[xrn; xmem; xaddr]
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | VectorMove (c, _, [dst; src]) ->
          let vdst = dst#to_variable floc in
@@ -1959,8 +1980,28 @@ object (self)
 
       | VStoreRegister (c, vd, rn, mem) ->
          let vmem = mem#to_variable floc in
+         let xaddr = mem#to_address floc in
          let xvd = vd#to_expr floc in
-         (["a:vx"], [xd#index_variable vmem; xd#index_xpr xvd])
+         let xrn = rn#to_expr floc in
+         let rdefs = [get_rdef xrn; get_rdef xvd] in
+         let uses = [get_def_use vmem] in
+         let useshigh = [get_def_use_high vmem] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vmem]
+             ~xprs:[xrn; xvd; xaddr]
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring :: ["uc"], args) in
+         (tags, args)
 
       | _ -> ([], []) in
     instrx_table#add key

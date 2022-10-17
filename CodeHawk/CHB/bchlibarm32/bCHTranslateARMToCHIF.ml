@@ -2319,7 +2319,7 @@ let translate_arm_instruction
 
   | StoreRegisterHalfword (c, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
-     let (vmem,memcmds) = mem#to_lhs floc in
+     let (vmem, memcmds) = mem#to_lhs floc in
      let xrt = rt#to_expr floc in
      let cmds = floc#get_assign_commands vmem xrt in
      let usevars = get_register_vars [rt; rn; rm] in
@@ -2576,6 +2576,25 @@ let translate_arm_instruction
          ctxtiaddr in
      default (defcmds @ cmds)
 
+  | VLoadRegister(c, dst, rn, mem) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let xrn = rn#to_expr floc in
+     let xmem = mem#to_expr floc in
+     let usevars = get_register_vars [rn] in
+     let usehigh = get_use_high_vars [xrn; xmem] in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
   | VMoveRegisterStatus (_, dst, src) ->
      let floc = get_floc loc in
      let vdst = dst#to_variable floc in
@@ -2600,6 +2619,24 @@ let translate_arm_instruction
   | VectorReverseWords _ -> default []
 
   | VectorReverseHalfwords _ -> default []
+
+  | VStoreRegister(c, dd, rn, mem) ->
+     let floc = get_floc loc in
+     let (vmem, memcmds) = mem#to_lhs floc in
+     let xdd = dd#to_expr floc in
+     let cmds = memcmds @ (floc#get_abstract_commands vmem ()) in
+     let usevars = get_register_vars [dd; rn] in
+     let usehigh = get_use_high_vars [xdd] in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vmem]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | VectorSubtract _ -> default []
 
