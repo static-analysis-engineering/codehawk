@@ -1791,10 +1791,16 @@ let translate_arm_instruction
      let (splhs,splhscmds) = (sp_r WR)#to_lhs floc in
      let increm = XConst (IntConst (mkNumerical (4 * regcount))) in
      let cmds = floc#get_assign_commands splhs (XOp (XPlus, [sprhs; increm])) in
+     let useshigh =
+       if rl#includes_pc then
+         [floc#f#env#mk_arm_register_variable AR0]
+       else
+         [] in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[splhs]
          ~use:(get_register_vars [sp])
+         ~usehigh:useshigh
          ctxtiaddr in
      let cmds = stackops @ defcmds @ cmds in
      (match c with

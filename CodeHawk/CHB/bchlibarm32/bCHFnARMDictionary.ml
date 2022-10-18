@@ -855,9 +855,11 @@ object (self)
           @ (List.map xd#index_xpr memreads)
           @ [xd#index_xpr (base#to_expr floc)])
 
-      | LoadMultipleIncrementAfter (_, _, base, rl, _) ->
+      | LoadMultipleIncrementAfter (wback, c, base, rl, _) ->
          let reglhss = rl#to_multiple_variable floc in
          let basereg = base#get_register in
+         let baselhs = base#to_variable floc in
+         let baserhs = base#to_expr floc in
          let regcount = rl#get_register_count in
          let (memreads, _) =
            List.fold_left
@@ -865,15 +867,33 @@ object (self)
                let memop = arm_reg_deref ~with_offset:off basereg RD in
                let memrhs = memop#to_expr floc in
                (acc @ [memrhs], off + 4)) ([], 0) reglhss in
-         let xtag =
-           "a:"
-           ^ (string_repeat "v" regcount)
-           ^ (string_repeat "x" regcount)
-           ^ "x" in    (* base expression *)
-         ([xtag],
-          (List.map xd#index_variable reglhss)
-          @ (List.map xd#index_xpr memreads)
-          @ [xd#index_xpr (base#to_expr floc)])
+         let rdefs = List.map get_rdef (baserhs :: memreads) in
+         let uses = List.map get_def_use_high (baselhs :: reglhss) in
+         let useshigh = List.map get_def_use_high (baselhs :: reglhss) in
+         let wbackresults =
+           if wback then
+             let increm = int_constant_expr (4 * regcount) in
+             let baseresult = XOp (XPlus, [baserhs; increm]) in
+             let rbaseresult = rewrite_expr baseresult in
+             [baseresult; rbaseresult]
+           else
+             [baserhs; baserhs] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:(baselhs :: reglhss)
+             ~xprs:((baserhs :: wbackresults) @ memreads)
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) =
+           match c with
+           | ACCAlways -> ([tagstring], args)
+           | c when is_cond_conditional c && floc#has_test_expr ->
+              let tcond = rewrite_expr floc#get_test_expr in
+              add_instr_condition [tagstring] args tcond
+           | _ -> (tagstring ::["uc"], args) in
+         (tags, args)
 
       | LoadMultipleIncrementBefore (_, _, base, rl, _) ->
          let reglhss = rl#to_multiple_variable floc in
