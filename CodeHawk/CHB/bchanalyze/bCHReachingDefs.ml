@@ -38,6 +38,9 @@ open CHSymbolicSets
 open CHSymbolicSetsDomainNoArrays
 open CHPretty
 
+(* chutil *)
+open CHLogger
+
 (* bchlib *)
 open BCHBasicTypes
 open BCHLibTypes
@@ -59,14 +62,14 @@ object (self: 'a)
     let v_value = self#getValue v in
     match v_value#getValue with
     | SYM_SET_VAL i -> i
-    | TOP_VAL  -> topSymbolicSet
+    | TOP_VAL -> topSymbolicSet
     | _ ->
        raise
          (CHFailure
             (LBLOCK [
                  STR "Symbolic set expected. ";
                  v#toPretty;
-                 STR ": ";
+		 STR ": ";
                  v_value#toPretty]))
 
   method private setValue' t v x =
@@ -82,30 +85,47 @@ object (self: 'a)
       self#mkBottom
     else
       let table' = table#clone in
-      let default () = {< table = table' >} in
+      let default () =
+	{< table = table' >}
+      in
       match cmd with
       | ABSTRACT_VARS l ->
-         begin
-           self#abstractVariables table' l;
-           default ()
-         end
+	 begin
+	   self#abstractVariables table' l;
+	   default ()
+	 end
+      | ASSIGN_SYM (x, SYM s) ->
+	 self#setValue' table' x (new symbolic_set_t [s]);
+	 default ()
       | _ ->
-         default ()
+	 default ()
 
   method private analyzeBwd' (cmd: (code_int, cfg_int) command_t) =
     if bottom then
       self#mkBottom
     else
       let table' = table#clone in
-      let default () = {< table = table' >} in
+      let default () =
+	{< table = table' >}
+      in
       match cmd with
       | ABSTRACT_VARS l ->
-         begin
-           self#abstractVariables table' l;
-           default ()
-         end
+	 begin
+	   self#abstractVariables table' l;
+	   default ()
+	 end
+      | ASSIGN_SYM (x, SYM s) ->
+	 let x_s = self#getValue' x in
+	 let x_s' = x_s#meet (new symbolic_set_t [s]) in
+	 if x_s'#isBottom then
+	   self#mkBottom
+	 else
+	   begin
+	     table'#remove x;
+	     default ()
+	   end
       | _ ->
-         default ()
+	 default ()
 
   method analyzeOperation
            ~(domain_name: string)
@@ -113,17 +133,18 @@ object (self: 'a)
            ~(operation: operation_t):'a =
     let name = operation.op_name#getBaseName in
     let table' = table#clone in
-    let default () = {< table = table' >} in
+    let default () =
+      {< table = table' >} in
     let (v, sym) =
       match operation.op_args with
       | [(_, v, WRITE)] ->
          let iaddr = List.hd operation.op_name#getAttributes in
          let sym =
-           match operation.op_name#getBaseName with
+           match name with
            | "def" -> new symbol_t iaddr
            | "clobber" -> new symbol_t ~atts:["clobber"] iaddr
            | s -> new symbol_t ~atts:["?" ^ s ^ "?"] iaddr in
-         (v, sym)         
+         (v, sym)
       | _ ->
          raise
            (BCH_failure
@@ -147,7 +168,9 @@ object (self: 'a)
            end
     | s ->
        begin
-         pr_debug [STR "Unexpected operation in reachingdefs: "; STR s; NL];
+         ch_error_log#add
+           "reachingdefs"
+           (LBLOCK [STR "Unexpected operation: "; STR s]);
          default ()
        end
 
@@ -178,6 +201,12 @@ let opsemantics (domain: string) =
          bb_invariants#add_invariant
            (List.hd (operation.op_name#getAttributes)) domain invariant in
      invariant
+  | "def" | "clobber" ->
+     let (v, sym) = get_vardefuse operation in
+     if fwd_direction then
+       invariant#analyzeFwd (ASSIGN_SYM (v, sym))
+     else
+       invariant#analyzeBwd (ASSIGN_SYM (v, sym))
   | _ -> invariant
 
 

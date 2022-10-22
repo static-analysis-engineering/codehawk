@@ -1453,7 +1453,7 @@ object (self)
        List.map (fun v ->
            let symv = self#f#env#mk_symbolic_variable ~domains:doms v in
            let op = {op_name = opname; op_args = [("dst", symv, WRITE)]} in
-           DOMAIN_OPERATION (doms, op)) vars in
+           OPERATION op) vars in
      let defdoms = ["reachingdefs"; "defuse"; "defusehigh"] in
      let defops = mk_ops defdoms def_op_name defs in
      let clobberops = mk_ops defdoms clobber_op_name clobbers in

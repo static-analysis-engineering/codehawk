@@ -181,7 +181,7 @@ end
 
 let get_vardefuse (op: CHLanguage.operation_t):(variable_t * symbolic_exp_t) =
   match op.op_args with
-  | [("src", v, READ)] ->
+  | [("dst", v, WRITE)] ->
      (v, SYM (new symbol_t (List.hd op.op_name#getAttributes)))
   | _ ->
      raise
@@ -215,6 +215,18 @@ let opsemantics (domain: string) =
          let iaddr = List.hd (operation.op_name#getAttributes) in
          bb_invariants#add_invariant iaddr domain invariant in
      invariant
+  | "def" | "clobber" ->
+     let (v, sym) = get_vardefuse operation in
+     if fwd_direction then
+       invariant#analyzeFwd (ABSTRACT_VARS [v])
+     else
+       invariant#analyzeBwd (ABSTRACT_VARS [v])
+  | "use" ->
+     let (v, sym) = get_vardefuse operation in
+     if fwd_direction then
+       invariant#analyzeFwd (ASSIGN_SYM (v, sym))
+     else
+       invariant#analyzeBwd (ASSIGN_SYM (v, sym))
   | s ->
      invariant
 
