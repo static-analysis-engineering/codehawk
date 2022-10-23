@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -65,27 +65,6 @@ object (self: 'a)
 
 end
 
-class logmsg_factory_t =
-object
-
-  val mutable count = 0
-
-  method log (tag:string) (msg:pretty_t) = 
-    begin
-      count <- count + 1;
-      new log_message_t count tag msg
-    end
-
-end
-
-let logmsg_factory = new logmsg_factory_t
-	  
-module LogMessageCollections = CHCollections.Make
-    (struct
-      type t = log_message_t
-      let compare m1 m2 = m1#compare m2
-      let toPretty m = m#toPretty
-    end)
 
 class type logger_int =
   object
@@ -96,6 +75,7 @@ class type logger_int =
     method tagsize: string -> int
     method toPretty: pretty_t
   end
+
 
 class logger_t:logger_int =
 object (self)
@@ -109,13 +89,25 @@ object (self)
   method set_max_entry_size n = max_entry_size <- n
 
   method add (tag:string) (msg:pretty_t) =
-    if List.mem tag tags_discontinued then () else
-      let _ = if H.mem store tag then () else 
-	  begin H.add order tag index ; index <- index + 1 end in
-      let entry = if H.mem store tag then H.find store tag else [] in
+    if List.mem tag tags_discontinued then
+      ()
+    else
+      let _ =
+        if H.mem store tag then
+          ()
+        else
+	  begin
+            H.add order tag index;
+            index <- index + 1
+          end in
+      let entry =
+        if H.mem store tag then
+          H.find store tag
+        else
+          [] in
       if max_entry_size > 0 && (List.length entry) > (max_entry_size -2) then
 	begin
-	  tags_discontinued <- tag :: tags_discontinued ;
+	  tags_discontinued <- tag :: tags_discontinued;
 	  H.replace store tag ((STR "DISCONTINUED") :: entry)
 	end
       else  
@@ -130,19 +122,33 @@ object (self)
 
   method toPretty = 
     let tags = ref [] in
-    let _ = H.iter (fun k _ -> tags := (k,H.find order k) :: !tags) store in
-    let tags = List.sort (fun (_,i1) (_,i2) -> Stdlib.compare i2 i1) !tags in
+    let _ = H.iter (fun k _ -> tags := (k, H.find order k) :: !tags) store in
+    let tags = List.sort (fun (_, i1) (_, i2) -> Stdlib.compare i2 i1) !tags in
     let pp = ref [] in
-    let _ = List.iter (fun (t,_) ->
-      let entry = H.find store t in
-      let ppl = ref [] in
-      let _ = List.iter (fun p -> ppl := (LBLOCK [ STR "     " ; p ; NL ]) :: !ppl) entry in
-      pp := (LBLOCK [ NL ; STR "~~~~~~~~~~" ; STR t ; STR " (" ; 
-		      INT (List.length entry) ; STR ")" ; 
-		      STR " ~~~~~~~~~~" ; NL ; LBLOCK !ppl ; NL ]) :: !pp) tags in
-    LBLOCK [ (if max_entry_size > 0 then 
-	LBLOCK [ STR "Maximum entry size: " ; INT max_entry_size ; NL ; NL ]
-      else STR "") ; LBLOCK !pp ; NL ]
+    let _ =
+      List.iter (fun (t, _) ->
+          let entry = H.find store t in
+          let ppl = ref [] in
+          let _ =
+            List.iter
+              (fun p -> ppl := (LBLOCK [ STR "     "; p; NL]) :: !ppl) entry in
+          pp :=
+            (LBLOCK [
+                 NL;
+                 STR "~~~~~~~~~~";
+                 STR t;
+                 STR " (";
+		 INT (List.length entry);
+                 STR ")";
+		 STR " ~~~~~~~~~~";
+                 NL;
+                 LBLOCK !ppl;
+                 NL]) :: !pp) tags in
+    LBLOCK [
+        (if max_entry_size > 0 then
+	   LBLOCK [STR "Maximum entry size: "; INT max_entry_size; NL; NL]
+         else
+           STR ""); LBLOCK !pp; NL]
 
 end
       
@@ -152,3 +158,4 @@ let mk_logger () = new logger_t
 let chlog = new logger_t
 let ch_info_log = new logger_t
 let ch_error_log = new logger_t
+let ch_diagnostics_log = new logger_t
