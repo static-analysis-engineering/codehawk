@@ -308,18 +308,20 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
     if pos + len <= String.length x then
       let _ = Bytes.blit (Bytes.of_string x) pos sdata 0 len in
       begin
-        chlog#add
-          "skip data block"
-          (LBLOCK [STR "pos: "; INT pos; STR "; length: "; INT len]);
+        (if system_settings#collect_diagnostics then
+           ch_diagnostics_log#add
+             "skip data block"
+             (LBLOCK [STR "pos: "; INT pos; STR "; length: "; INT len]));
         ch#skip_bytes len;
         not_code_set_string nonCodeBlock (Bytes.to_string sdata)
       end
     else
       ch_error_log#add
         "data block problem"
-        (LBLOCK [STR "Data block at ";
-                 (base#add_int pos)#toPretty;
-                 STR " extends beyond end of section. Ignore"]) in
+        (LBLOCK [
+             STR "Data block at ";
+             (base#add_int pos)#toPretty;
+             STR " extends beyond end of section. Ignore"]) in
   let _ =
     chlog#add
       "disassembly"
@@ -327,8 +329,8 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
            STR "base: ";
            base#toPretty ;
            STR "; displacement: ";
-           INT displacement ;
-           STR "; size: " ;
+           INT displacement;
+           STR "; size: ";
            INT size]) in
   try
     let _ = pverbose [STR "disassemble thumb instructions"; NL] in
@@ -633,14 +635,15 @@ let collect_data_references () =
   let add (a:doubleword_int) (instr: arm_assembly_instruction_int) =
     let hxa = a#to_hex_string in
     let _ =
-      chlog#add
-        "load literals"
-        (LBLOCK [
-             instr#get_address#toPretty;
-             STR "  ";
-             instr#toPretty;
-             STR ": ";
-             a#toPretty]) in
+      if system_settings#collect_diagnostics then
+        ch_diagnostics_log#add
+          "load literals"
+          (LBLOCK [
+               instr#get_address#toPretty;
+               STR "  ";
+               instr#toPretty;
+               STR ": ";
+               a#toPretty]) in
     let entry =
       if H.mem table hxa then
         H.find table hxa
@@ -728,8 +731,9 @@ let set_block_boundaries () =
         | BCH_failure _ ->
            chlog#add
              "disassembly"
-             (LBLOCK [ STR "function entry point incorrect: " ;
-                       fe#toPretty ])) feps ;
+             (LBLOCK [
+                  STR "function entry point incorrect: ";
+                  fe#toPretty])) feps;
 
     (* -------------------------------- record end of data blocks -- *)
     List.iter
@@ -740,8 +744,9 @@ let set_block_boundaries () =
         | BCH_failure _ ->
            chlog#add
              "disassembly"
-             (LBLOCK [ STR "data block end address incorrect: ";
-                       db#get_end_address#toPretty ])) datablocks;
+             (LBLOCK [
+                  STR "data block end address incorrect: ";
+                  db#get_end_address#toPretty])) datablocks;
 
     (* --------------------------------------- record jumptables -- *)
     List.iter
@@ -783,8 +788,11 @@ let set_block_boundaries () =
         | BCH_failure p ->
            chlog#add
              "disassembly"
-             (LBLOCK [ STR "assembly instruction creates incorrect block entry: ";
-                       instr#toPretty ; STR ": " ; p ]));
+             (LBLOCK [
+                  STR "assembly instruction creates incorrect block entry: ";
+                  instr#toPretty;
+                  STR ": ";
+                  p]));
 
     (* -------------------------- incorporate jump successors -- *)
     !arm_assembly_instructions#itera
@@ -839,10 +847,15 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
         [!arm_assembly_instructions#get_next_valid_instruction_address iaddr]
       else
         begin
-          chlog#add
-            "disassembly"
-            (LBLOCK [STR "Next instruction for "; iaddr#toPretty ;
-                     STR " "; instr#toPretty; STR " was not found" ]);
+          (if system_settings#collect_diagnostics then
+             ch_diagnostics_log#add
+               "disassembly"
+               (LBLOCK [
+                    STR "Next instruction for ";
+                    iaddr#toPretty ;
+                    STR " ";
+                    instr#toPretty;
+                    STR " was not found"]));
           []
         end in
     let successors =
@@ -883,10 +896,13 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
              true
            else
              begin
-               chlog#add
-                 "disassembly"
-                 (LBLOCK [STR "Successor of " ; va#toPretty;
-                          STR " is not a valid code address"]);
+               (if system_settings#collect_diagnostics then
+                  ch_diagnostics_log#add
+                    "disassembly"
+                    (LBLOCK [
+                         STR "Successor of ";
+                         va#toPretty;
+                         STR " is not a valid code address"]));
                false
              end) successors)
 
@@ -928,13 +944,19 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       (Some [], va, [])
     else if is_tail_call floc va then
       let _ =
-        chlog#add
-          "tail call"
-          (LBLOCK [
-               faddr#toPretty; STR " "; va#toPretty; STR "  "; instr#toPretty]) in
+        if system_settings#collect_diagnostics then
+          ch_diagnostics_log#add
+            "tail call"
+            (LBLOCK [
+                 faddr#toPretty;
+                 STR " ";
+                 va#toPretty;
+                 STR "  ";
+                 instr#toPretty]) in
       (Some [], va, [])
     else if
-      (match instr#get_opcode with PermanentlyUndefined _ -> true | _ -> false) then
+      (match instr#get_opcode with
+       | PermanentlyUndefined _ -> true | _ -> false) then
       let _ =
         chlog#add
           "permanently undefined instruction"
@@ -1178,9 +1200,10 @@ let aggregate_ite () =
                      get_ite_predicate_dstop
                        thenfloc theninstr elsefloc elseinstr in
                    begin
-                     chlog#add
-                       "aggregate ite"
-                       (LBLOCK [STR ciaddr; STR ": "; instr#toPretty]);
+                     (if system_settings#collect_diagnostics then
+                        ch_diagnostics_log#add
+                          "aggregate ite"
+                          (LBLOCK [STR ciaddr; STR ": "; instr#toPretty]));
                      instr#set_aggregate dstop [thenaddr; elseaddr];
                      theninstr#set_subsumed_by iaddr;
                      elseinstr#set_subsumed_by iaddr
@@ -1210,7 +1233,7 @@ let construct_functions_arm () =
           | BCH_failure p ->
              ch_error_log#add
                "construct functions"
-               (LBLOCK [ STR "Function " ; faddr#toPretty ; STR ": " ; p ]) in
+               (LBLOCK [STR "Function "; faddr#toPretty; STR ": "; p]) in
         if functions_data#is_function_entry_point faddr then
           let fndata = functions_data#get_function faddr in
           if fndata#is_library_stub then
@@ -1221,7 +1244,7 @@ let construct_functions_arm () =
                 fndata#set_library_stub;
                 chlog#add
                   "ELF library stub"
-                  (LBLOCK [ faddr#toPretty ; STR ": " ; STR fndata#get_function_name ])
+                  (LBLOCK [faddr#toPretty; STR ": "; STR fndata#get_function_name])
               end
             else
               default ()

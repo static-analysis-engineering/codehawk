@@ -169,9 +169,11 @@ let speclist =
     ("-appsdir", Arg.String system_settings#set_apps_dir,
      "directory that holds application-dependent summaries") ;
     ("-save_exports", Arg.Unit (fun () -> cmd := "saveexports"),
-     "save function summary of exported functions in named directory")  ;
+     "save function summary of exported functions in named directory");
     ("-verbose", Arg.Unit (fun () -> system_settings#set_verbose),
-     "print out analysis intermediate results and progress messages") ;
+     "print out analysis intermediate results and progress messages");
+    ("-diagnostics", Arg.Unit (fun () -> system_settings#set_collect_diagnostics),
+     "collect diagnostic messages and save in diagnostics log");
     ("-show_chif", Arg.String (fun s -> set_chif s),
      "print out CHIF code");
     ("-save_disassembly_status_in_xml", Arg.Unit (fun () -> save_xml := true),

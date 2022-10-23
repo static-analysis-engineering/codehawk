@@ -206,8 +206,9 @@ object (self)
       let _ =
         chlog#add
           "provide successors"
-          (LBLOCK [ STR hxa; STR ": ";
-                    INT (List.length (H.find successors hxa))]) in
+          (LBLOCK [
+               STR hxa; STR ": ";
+               INT (List.length (H.find successors hxa))]) in
       H.find successors hxa
     else
       []
@@ -229,7 +230,7 @@ object (self)
     match load_ida_dbfe_file () with
     | Some node ->
        begin
-         chlog#add "initialization" (STR "ida function entry points") ;
+         chlog#add "initialization" (STR "ida function entry points");
          List.iter (fun fnode ->
              let fa = string_to_doubleword (fnode#getAttribute "a") in
              if functions_data#is_function_entry_point fa then () else
@@ -273,8 +274,12 @@ object (self)
 	  ignore (functions_data#add_function start_addr) ;
           chlog#add
             "set thread start address"
-            (LBLOCK [ faddr#toPretty ; STR ", " ; STR iaddr ; STR ": " ;
-                      start_addr#toPretty ]) ;
+            (LBLOCK [
+                 faddr#toPretty;
+                 STR ", ";
+                 STR iaddr;
+                 STR ": ";
+                 start_addr#toPretty]);
 	  e 
 	end in
     H.replace entry (faddr#index,iaddr) args
@@ -289,8 +294,12 @@ object (self)
       let _ = H.iter (fun _ v -> result := v :: !result) entry in
       !result
     else
-      raise (BCH_failure (LBLOCK [ STR "Address " ; addr#toPretty ;
-				   STR " is not a known thread start address" ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Address ";
+                addr#toPretty;
+		STR " is not a known thread start address"]))
 
   method add_ifile (name: string) =
     ifiles <- name :: ifiles
@@ -324,7 +333,7 @@ object (self)
       fd#add_inlined_block baddr ;
       chlog#add
         "add inlined block"
-        (LBLOCK [ faddr#toPretty ; STR ": " ; baddr#toPretty ])
+        (LBLOCK [faddr#toPretty; STR ": "; baddr#toPretty])
     end
 
   method has_esp_adjustment (faddr:doubleword_int) (iaddr:doubleword_int) =
@@ -340,8 +349,13 @@ object (self)
     else if H.mem esp_adjustments (faddr#index, iaddr#index) then
       H.find esp_adjustments (faddr#index, iaddr#index)
     else
-      raise (BCH_failure (LBLOCK [ STR "No esp adjustment found for " ;
-				   faddr#toPretty ; STR "@" ; iaddr#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "No esp adjustment found for ";
+		faddr#toPretty;
+                STR "@";
+                iaddr#toPretty]))
 
   method has_call_target (faddr: doubleword_int) (iaddr: doubleword_int) =
     H.mem function_call_targets (faddr#index, iaddr#index)
@@ -366,8 +380,13 @@ object (self)
     if self#has_indirect_jump_targets faddr iaddr then
       H.find indirect_jump_targets (faddr#index,iaddr#index)
     else
-      raise (BCH_failure (LBLOCK [ STR "No indirect jump targets found for " ;
-                                   faddr#toPretty ; STR "@" ; iaddr#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "No indirect jump targets found for ";
+                faddr#toPretty;
+                STR "@";
+                iaddr#toPretty]))
 
   method has_jump_table_target (faddr:doubleword_int) (iaddr:doubleword_int) =
     if H.mem jumptabletargets (faddr#index,iaddr#index) then
@@ -375,12 +394,19 @@ object (self)
       let lboffset = 4 * lb in
       let uboffset = 4 * ub in
       let _ =
-        chlog#add
-          "user-provided jump-table target"
-          (LBLOCK [ iaddr#toPretty ; STR ": " ; jta#toPretty ;
-                    STR " with offsets " ; INT lboffset ; STR " - " ;
-                    INT uboffset ]) in
-      List.exists (fun jt -> jt#includes_address (jta#add_int lboffset)) jumptables
+        if system_settings#collect_diagnostics then
+          ch_diagnostics_log#add
+            "user-provided jump-table target"
+            (LBLOCK [
+                 iaddr#toPretty;
+                 STR ": ";
+                 jta#toPretty;
+                 STR " with offsets ";
+                 INT lboffset;
+                 STR " - ";
+                 INT uboffset]) in
+      List.exists
+        (fun jt -> jt#includes_address (jta#add_int lboffset)) jumptables
     else
       false
 
@@ -419,17 +445,18 @@ object (self)
                      STR ": ";
                      STR s])) in
       let _ =
-        chlog#add
-          "user-provided jump-table target"
-          (LBLOCK [
-               iaddr#toPretty;
-               STR ": ";
-               jtstart#toPretty;
-               STR " (";
-               INT lbnew;
-               STR ", ";
-               INT ubnew;
-               STR ")"]) in
+        if system_settings#collect_diagnostics then
+          ch_diagnostics_log#add
+            "user-provided jump-table target"
+            (LBLOCK [
+                 iaddr#toPretty;
+                 STR ": ";
+                 jtstart#toPretty;
+                 STR " (";
+                 INT lbnew;
+                 STR ", ";
+                 INT ubnew;
+                 STR ")"]) in
       (jt, jta, lbnew, ubnew)
     else
       raise
@@ -447,15 +474,16 @@ object (self)
                    (lb:int)     (* lower bound index *)
                    (ub:int) =   (* upper bound index *)
     let _ =
-      chlog#add
-        "jump-table targets"
-        (LBLOCK [
-             STR "(";
-             faddr#toPretty;
-             STR ",";
-             iaddr#toPretty;
-             STR "): ";
-             jta#toPretty]) in
+      if system_settings#collect_diagnostics then
+        ch_diagnostics_log#add
+          "jump-table targets"
+          (LBLOCK [
+               STR "(";
+               faddr#toPretty;
+               STR ",";
+               iaddr#toPretty;
+               STR "): ";
+               jta#toPretty]) in
     H.add jumptabletargets (faddr#index,iaddr#index) (jta,lb,ub)
    
   method get_lib_functions_loaded =
@@ -1002,7 +1030,7 @@ object (self)
         let _ =
           chlog#add
             "add successors"
-            (LBLOCK [ STR "Instruction at " ; STR ia ]) in
+            (LBLOCK [STR "Instruction at "; STR ia]) in
         H.add successors ia addrs)
       (node#getTaggedChildren "instr")
  
@@ -1056,7 +1084,7 @@ object (self)
       let getx tag = string_to_doubleword (get tag) in
       let jtaddr = getx "a" in
       begin
-	chlog#add "exclude jumptable" jtaddr#toPretty ;
+	chlog#add "exclude jumptable" jtaddr#toPretty;
 	excluded_jumptables#add jtaddr
       end) (node#getTaggedChildren "jt")
 
@@ -1066,7 +1094,7 @@ object (self)
       let getx tag = string_to_doubleword (get tag) in
       let jtaddr = getx "a" in
       begin
-	chlog#add "invalidate jumptable startaddress" jtaddr#toPretty ;
+	chlog#add "invalidate jumptable startaddress" jtaddr#toPretty;
 	invalidated_jumptable_startaddresses#add jtaddr
       end) (node#getTaggedChildren "jt")
 
@@ -1076,7 +1104,7 @@ object (self)
         let jtaddr = get "a" in
         let sizes = List.map int_of_string (nsplit ',' (get "sizes")) in
           begin
-            chlog#add "split jumptable" (STR jtaddr) ;
+            chlog#add "split jumptable" (STR jtaddr);
             H.add jumptable_splits jtaddr sizes
           end) (node#getTaggedChildren "jt")
 
@@ -1196,7 +1224,7 @@ object (self)
       let va = getx "va" in
       let size = getx "size" in
       begin
-	chlog#add "add user-declared code section" va#toPretty ;
+	chlog#add "add user-declared code section" va#toPretty;
 	userdeclared_codesections#set va size
       end) (node#getTaggedChildren "code")
 
@@ -1584,15 +1612,16 @@ object (self)
 
   method add_data_block (db:data_block_int) = 
     begin
-      data_blocks#add db ;
-      chlog#add
-        "add data block"
-	(LBLOCK [
-             db#get_start_address#toPretty;
-             STR " - ";
-	     db#get_end_address#toPretty;
-             STR ": ";
-             STR db#get_name])
+      data_blocks#add db;
+      (if system_settings#collect_diagnostics then
+         chlog#add
+           "add data block"
+	   (LBLOCK [
+                db#get_start_address#toPretty;
+                STR " - ";
+	        db#get_end_address#toPretty;
+                STR ": ";
+                STR db#get_name]))
     end
       
   method get_data_blocks = data_blocks#toList
@@ -1607,14 +1636,18 @@ object (self)
     try
       H.find jumptargets jaddr#index
     with
-      Not_found ->
-	raise (BCH_failure 
-		 (LBLOCK [ STR "No jump target found at " ; jaddr#toPretty ]))
+    | Not_found ->
+      raise
+        (BCH_failure
+	   (LBLOCK [STR "No jump target found at "; jaddr#toPretty]))
     
   method private write_xml_data_blocks (node:xml_element_int) =
     node#appendChildren (List.map (fun d -> 
       let dNode = xmlElement "db" in 
-      begin d#write_xml dNode ; dNode end) data_blocks#toList)
+      begin
+        d#write_xml dNode;
+        dNode
+      end) data_blocks#toList)
       
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    *                                            stage 2: function entry points *
@@ -1634,7 +1667,7 @@ object (self)
 	  (LBLOCK [
                STR "system-info: collected ";
                INT (List.length feps);
-	       STR " function entry points"]) ;
+	       STR " function entry points"]);
 	List.iter (fun fe -> ignore (functions_data#add_function fe)) feps
       end
 
@@ -1676,7 +1709,7 @@ object (self)
       goto_returns#set iaddr tgt ;
       chlog#add
         "add goto return"
-        (LBLOCK [ iaddr#toPretty ; STR ": " ; tgt#toPretty ])
+        (LBLOCK [iaddr#toPretty; STR ": "; tgt#toPretty])
     end
 
   method is_goto_return (iaddr:doubleword_int) = 

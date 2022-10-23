@@ -45,6 +45,7 @@ open BCHLibTypes
 open BCHStreamWrapper
 open BCHStrings
 open BCHSystemInfo
+open BCHSystemSettings
 
 (* bchlibelf *)
 open BCHELFHeader
@@ -69,7 +70,7 @@ let initialize_arm_instructions (len:int) =
   let _ =
     chlog#add
       "disassembly"
-      (LBLOCK [ STR "Initialize " ; INT len ; STR " instructions" ]) in
+      (LBLOCK [STR "Initialize "; INT len; STR " instructions"]) in
   let remaining = ref len in
   let index = ref 0 in
   begin
@@ -147,28 +148,31 @@ object (self)
     let startaddr = db#get_start_address in
     let endaddr = db#get_end_address in
     if startaddr#lt codeBase then
-      chlog#add
-        "not code"
-        (LBLOCK [
-             STR "Ignoring data block ";
-             STR db#toString;
-             STR "; start address is less than start of code"])
+      (if system_settings#collect_diagnostics then
+         ch_diagnostics_log#add
+           "not code"
+           (LBLOCK [
+                STR "Ignoring data block ";
+                STR db#toString;
+                STR "; start address is less than start of code"]))
     else if codeEnd#lt endaddr then
-      chlog#add
-        "not code"
-        (LBLOCK [
-             STR "Ignoring data block ";
-             STR db#toString;
-             STR "; end address is beyond end of code section"])
+      (if system_settings#collect_diagnostics then
+         ch_diagnostics_log#add
+           "not code"
+           (LBLOCK [
+                STR "Ignoring data block ";
+                STR db#toString;
+                STR "; end address is beyond end of code section"]))
     else
       let _ =
-        chlog#add
-          "not code"
-          (LBLOCK [
-               STR "start: ";
-               startaddr#toPretty;
-               STR "; end: ";
-               endaddr#toPretty]) in
+        if system_settings#collect_diagnostics then
+          ch_diagnostics_log#add
+            "not code"
+            (LBLOCK [
+                 STR "start: ";
+                 startaddr#toPretty;
+                 STR "; end: ";
+                 endaddr#toPretty]) in
       let startindex =
         try
           (startaddr#subtract codeBase)#to_int
@@ -219,29 +223,32 @@ object (self)
     let saddr = jumptable#get_start_address in
     let eaddr = jumptable#get_end_address in
     if saddr#lt codeBase then
-      chlog#add
-        "jumptable"
-        (LBLOCK [
-             STR "Ignoring jump table ";
-             STR "; start address is less than start of code"])
-    else if codeEnd#lt eaddr then
-      chlog#add
-        "jumptable"
-        (LBLOCK [
-             STR "Ignoring jump table ";
-             STR "; end address is beyond end of code section"])
-    else
-      let _ =
-        chlog#add
+      (if system_settings#collect_diagnostics then
+        ch_diagnostics_log#add
           "jumptable"
           (LBLOCK [
-               STR "start: ";
-               saddr#toPretty;
-               (jumptable#toPretty
-                  ~is_function_entry_point:(fun _ -> false)
-                  ~get_opt_function_name:(fun _ -> None));
-               STR "; end: ";
-               eaddr#toPretty]) in
+               STR "Ignoring jump table ";
+               STR "; start address is less than start of code"]))
+    else if codeEnd#lt eaddr then
+      (if system_settings#collect_diagnostics then
+         ch_diagnostics_log#add
+           "jumptable"
+           (LBLOCK [
+                STR "Ignoring jump table ";
+                STR "; end address is beyond end of code section"]))
+    else
+      let _ =
+        if system_settings#collect_diagnostics then
+          ch_diagnostics_log#add
+            "jumptable"
+            (LBLOCK [
+                 STR "start: ";
+                 saddr#toPretty;
+                 (jumptable#toPretty
+                    ~is_function_entry_point:(fun _ -> false)
+                    ~get_opt_function_name:(fun _ -> None));
+                 STR "; end: ";
+                 eaddr#toPretty]) in
       let startindex =
         try
           (saddr#subtract codeBase)#to_int
@@ -587,7 +594,9 @@ object (self)
 
 end
 
+
 let arm_assembly_instructions = ref (new arm_assembly_instructions_t 1 wordzero)
+
 
 let initialize_arm_assembly_instructions
       (length:int)  (* in bytes *)
@@ -596,13 +605,18 @@ let initialize_arm_assembly_instructions
   begin
     chlog#add
       "disassembly"
-      (LBLOCK [ STR "Initialize " ; INT length ; STR " bytes: " ;
-                codebase#toPretty ; STR " - " ;
-                (codebase#add_int length)#toPretty ]);
+      (LBLOCK [
+           STR "Initialize ";
+           INT length;
+           STR " bytes: ";
+           codebase#toPretty;
+           STR " - ";
+           (codebase#add_int length)#toPretty]);
     initialize_instruction_segment length;
     arm_assembly_instructions := new arm_assembly_instructions_t length codebase;
     !arm_assembly_instructions#set_not_code datablocks
   end
+
 
 let set_data_references (lst: doubleword_int list) =
   let lst = List.sort (fun d1 d2 -> d1#compare d2) lst in

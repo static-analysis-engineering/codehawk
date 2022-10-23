@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs, LLC
+   Copyright (c) 2021-2022 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,15 +34,9 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
-(* val extract_so_symbol: arm_opcode_t list -> doubleword_int option *)
 
 val disassemble: doubleword_int -> int -> string -> unit
+
 val disassemble_arm_sections: unit -> doubleword_int
 
 val construct_functions_arm: unit -> unit
-(*
-val construct_functions: (unit -> doubleword_int list) -> unit
-
-
-val resolve_indirect_arm_calls: arm_assembly_function_int -> unit
- *)

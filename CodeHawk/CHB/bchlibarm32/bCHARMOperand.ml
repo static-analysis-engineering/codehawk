@@ -272,16 +272,18 @@ object (self:'a)
                   XOp (XPlus, [shifted; xoffset])
                | _ ->
                   begin
-                    chlog#add
-                      "operand#to_address"
-                      (LBLOCK [STR "ARMShiftedIndexOffset: "; self#toPretty]);
+                    (if system_settings#collect_diagnostics then
+                       ch_diagnostics_log#add
+                         "operand#to_address"
+                         (LBLOCK [STR "ARMShiftedIndexOffset: "; self#toPretty]));
                     random_constant_expr
                   end)
            | _ ->
               begin
-                chlog#add
-                  "operand#to_address"
-                  (LBLOCK [STR "memoff: "; self#toPretty]);
+                (if system_settings#collect_diagnostics then
+                   ch_diagnostics_log#add
+                     "operand#to_address"
+                     (LBLOCK [STR "memoff: "; self#toPretty]));
                 random_constant_expr
               end
          else
@@ -298,9 +300,10 @@ object (self:'a)
     | ARMLiteralAddress dw -> num_constant_expr dw#to_numerical
     | _ ->
        begin
-         chlog#add
-           "operand#to_address"
-           (LBLOCK [STR "Other address: "; self#toPretty]);
+         (if system_settings#collect_diagnostics then
+            ch_diagnostics_log#add
+              "operand#to_address"
+              (LBLOCK [STR "Other address: "; self#toPretty]));
          random_constant_expr
        end
 
@@ -382,28 +385,53 @@ object (self:'a)
                          floc#env#mk_global_variable n
                       | _ ->
                          let _ =
-                           chlog#add
-                             "shifted index offset memory variable"
-                             (LBLOCK [
-                                  self#toPretty;
-                                  STR "; rx: ";
-                                  x2p rx;
-                                  STR ": ivax: ";
-                                  x2p ivax]) in
+                           if system_settings#collect_diagnostics then
+                             ch_diagnostics_log#add
+                               "shifted index offset memory variable"
+                               (LBLOCK [
+                                    self#toPretty;
+                                    STR "; rx: ";
+                                    x2p rx;
+                                    STR ": ivax: ";
+                                    x2p ivax]) in
                          env#mk_unknown_memory_variable "operand")
                    else
                      floc#get_memory_variable_3 rvar ivar scale (mkNumerical i)
                 | _ ->
+                   let _ =
+                     if system_settings#collect_diagnostics then
+                       ch_diagnostics_log#add
+                         "unknown memory variable"
+                         (LBLOCK [
+                              STR "ARMShiftedIndexOffset without scale: ";
+                              self#toPretty]) in
                    env#mk_unknown_memory_variable "operand")
-            | _ -> env#mk_unknown_memory_variable "operand")
-        | _ -> env#mk_unknown_memory_variable "operand")
+            | _ ->
+               let _ =
+                 if system_settings#collect_diagnostics then
+                   ch_diagnostics_log#add
+                     "unknonwn memory variable"
+                     (LBLOCK [
+                          STR "ARMShiftedIndexOffset not recognized: ";
+                          self#toPretty]) in
+               env#mk_unknown_memory_variable "operand")
+        | _ ->
+           let _ =
+             if system_settings#collect_diagnostics then
+               ch_diagnostics_log#add
+                 "unknown memory variable"
+                 (LBLOCK [
+                      STR "ARMOffsetAddress not recognized: ";
+                      self#toPretty]) in
+           env#mk_unknown_memory_variable "operand")
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
        env#mk_arm_register_variable r
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Operand:to_variable not yet implemented for: ";
-                      self#toPretty]))
+            (LBLOCK [
+                 STR "Operand:to_variable not yet implemented for: ";
+                 self#toPretty]))
 
   method to_multiple_variable (floc:floc_int): variable_t list =
     let env = floc#f#env in

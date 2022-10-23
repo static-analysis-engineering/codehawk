@@ -44,6 +44,7 @@ open CHPrettyUtil
 open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
+open BCHSystemSettings
    
 (* bchlibarm32 *)
 open BCHARMTypes
@@ -670,19 +671,20 @@ let vfp_expand_imm (imm8: int) (n: int): numerical_t =
   let sv = "0b" ^ (string_of_int sign) ^ exp ^ frac in
   let v = mkNumericalFromInt64 (Int64.of_string sv) in
   let _ =
-    chlog#add
-      "vfp-expand"
-      (LBLOCK [
-           STR "imm8: ";
-           INT imm8;
-           STR "; exp: ";
-           STR exp;
-           STR "; frac: ";
-           STR frac;
-           STR "; sv: ";
-           STR sv;
-           STR "; value: ";
-           v#toPretty]) in
+    if system_settings#collect_diagnostics then
+      ch_diagnostics_log#add
+        "vfp-expand"
+        (LBLOCK [
+             STR "imm8: ";
+             INT imm8;
+             STR "; exp: ";
+             STR exp;
+             STR "; frac: ";
+             STR frac;
+             STR "; sv: ";
+             STR sv;
+             STR "; value: ";
+             v#toPretty]) in
   v
 
 
