@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +31,7 @@
 
 (* chlib *)
 open CHPretty
-   
+
 class type logger_int =
   object
     method set_max_entry_size: int -> unit
@@ -45,3 +47,4 @@ val mk_logger: unit -> logger_int
 val chlog: logger_int
 val ch_error_log: logger_int
 val ch_info_log: logger_int
+val ch_diagnostics_log: logger_int
