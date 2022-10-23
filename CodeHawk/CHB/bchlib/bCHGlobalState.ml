@@ -401,8 +401,12 @@ object (self)
     | Some node -> 
       begin
 	self#read_xml node ;
-	chlog#add "global state" 
-	  (LBLOCK [STR "Loaded "; INT global_variables#size; STR " from file"])
+	chlog#add
+          "global state"
+	  (LBLOCK [
+               STR "Loaded ";
+               INT global_variables#size;
+               STR " from file"])
       end
     | _ -> 
       chlog#add "global state" (STR "No file found")

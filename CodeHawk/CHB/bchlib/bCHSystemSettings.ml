@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -74,6 +74,7 @@ object (self)
   val mutable so_libraries = []    (* names of so-libraries *)
   val mutable exportdir = ""
   val mutable verbose = false
+  val mutable collect_diagnostics = false
   val mutable thumb = false
   val mutable jni_enabled = false
   val mutable set_vftables_enabled = false
@@ -85,6 +86,8 @@ object (self)
   val mutable app_name = None
 
   method set_verbose = verbose <- true
+
+  method set_collect_diagnostics = collect_diagnostics <- true
 
   method set_thumb =
     begin
@@ -101,7 +104,7 @@ object (self)
   method set_apps_dir s = 
     begin
       apps_dir <- Some s ;
-      chlog#add "applications directory" (LBLOCK [ STR "Set to " ; STR s])
+      chlog#add "applications directory" (LBLOCK [STR "Set to "; STR s])
     end
 
   method set_export_dir s = exportdir <- s
@@ -110,42 +113,48 @@ object (self)
 
   method set_abstract_stackvars_disabled =
     begin
-      abstract_stackvars_disabled <- true ;
-      chlog#add "settings" (STR "disable abstraction of stackvars when esp is unknown")
+      abstract_stackvars_disabled <- true;
+      chlog#add
+        "settings"
+        (STR "disable abstraction of stackvars when esp is unknown")
     end
 
   method enable_sideeffects_on_globals (l:string list) =
     match l with
     | [] ->
        begin
-         sideeffects_on_globals_enabled <- false ;
+         sideeffects_on_globals_enabled <- false;
          chlog#add "settings" (STR "disable sideeffects on globals")
        end
     | _ ->
        begin
-         sideeffects_on_globals_enabled <- true ;
-         not_record_sideeffects_on_globals <- [] ;
-         record_sideeffects_on_globals <- l ;
-	 chlog#add "settings"
-	           (LBLOCK [ STR "enable sideeffects on globals on " ;
-		             pretty_print_list l (fun a -> STR a) " [" "; " "]" ])
+         sideeffects_on_globals_enabled <- true;
+         not_record_sideeffects_on_globals <- [];
+         record_sideeffects_on_globals <- l;
+	 chlog#add
+           "settings"
+	   (LBLOCK [
+                STR "enable sideeffects on globals on ";
+		pretty_print_list l (fun a -> STR a) " [" "; " "]"])
        end
 
   method disable_sideeffects_on_globals (l:string list) =
     match l with
     | [] -> 
       begin
-	sideeffects_on_globals_enabled <- true ;
+	sideeffects_on_globals_enabled <- true;
 	chlog#add "settings" (STR "disable sideeffects on globals")
       end
     | _ ->
        begin
-         sideeffects_on_globals_enabled <- true ;
-	 not_record_sideeffects_on_globals <- l ;
-         record_sideeffects_on_globals <- [] ;
-	 chlog#add "settings" 
-	           (LBLOCK [ STR "disable sideeffects on globals on " ;
-		             pretty_print_list l (fun a -> STR a) " [" "; " "]" ])
+         sideeffects_on_globals_enabled <- true;
+	 not_record_sideeffects_on_globals <- l;
+         record_sideeffects_on_globals <- [];
+	 chlog#add
+           "settings"
+	   (LBLOCK [
+                STR "disable sideeffects on globals on ";
+		pretty_print_list l (fun a -> STR a) " [" "; " "]"])
        end
 
   method set_summary_jar s = 
@@ -169,23 +178,30 @@ object (self)
       let appjSigFilename = appJDir ^ appname ^ "_jsignatures.jar" in
       let appSumFilename = appDir ^ appname ^ "_summaries.jar" in 
       begin
-	app_name <- Some appname ;
-	self#set_summary_jar appSumFilename  ;
-	self#set_summary_jar sumFilename ;
-	self#set_jsignature_jar appjSigFilename ;
+	app_name <- Some appname;
+	self#set_summary_jar appSumFilename;
+	self#set_summary_jar sumFilename;
+	self#set_jsignature_jar appjSigFilename;
 	self#set_jsignature_jar jSigFilename ;
-	chlog#add "applications directory" (LBLOCK [ STR "application name: " ; STR appname ])
+	chlog#add
+          "applications directory"
+          (LBLOCK [STR "application name: "; STR appname])
       end
-    | _ -> chlog#add "applications directory" (STR "Not set")
+    | _ ->
+       chlog#add "applications directory" (STR "Not set")
 
   method set_jsignature_jar s =
-    match open_path s with Some p -> jsignature_paths <- jsignature_paths @ [ p ] | _ -> ()
+    match open_path s with
+    | Some p -> jsignature_paths <- jsignature_paths @ [ p ]
+    | _ -> ()
 
   method get_summary_paths = summary_paths
 
   method get_jsignature_paths = jsignature_paths
 
   method is_verbose = verbose
+
+  method collect_diagnostics = collect_diagnostics
 
   method is_abstract_stackvars_disabled = abstract_stackvars_disabled
 
@@ -196,7 +212,9 @@ object (self)
         | l -> List.mem gv l)
 
 end
-  
+
+
 let system_settings = new system_settings_t
-  
+
+
 let pverbose l = if system_settings#is_verbose then pr_debug l else ()

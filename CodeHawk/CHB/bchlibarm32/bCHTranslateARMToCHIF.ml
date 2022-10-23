@@ -161,14 +161,15 @@ let make_instr_local_tests
         let testtestaddr = testtestloc#i in
         let testtestinstr = !arm_assembly_instructions#at_address testtestaddr in
         let _ =
-          chlog#add
-            "conditional conditional test"
-            (LBLOCK [
-                 testfloc#l#toPretty;
-                 STR ": ";
-                 STR (arm_opcode_to_string testinstr#get_opcode);
-                 STR " with setter ";
-                 STR (arm_opcode_to_string testtestinstr#get_opcode)]) in
+          if system_settings#collect_diagnostics then
+            ch_diagnostics_log#add
+              "conditional conditional test"
+              (LBLOCK [
+                   testfloc#l#toPretty;
+                   STR ": ";
+                   STR (arm_opcode_to_string testinstr#get_opcode);
+                   STR " with setter ";
+                   STR (arm_opcode_to_string testtestinstr#get_opcode)]) in
         arm_conditional_conditional_expr
           ~condopc:condinstr#get_opcode
           ~testopc: testinstr#get_opcode
@@ -269,14 +270,15 @@ let make_tests
         let testtestaddr = testtestloc#i in
         let testtestinstr = !arm_assembly_instructions#at_address testtestaddr in
         let _ =
-          chlog#add
-            "conditional conditional test"
-            (LBLOCK [
-                 testfloc#l#toPretty;
-                 STR ": ";
-                 STR (arm_opcode_to_string testinstr#get_opcode);
-                 STR " with setter ";
-                 STR (arm_opcode_to_string testtestinstr#get_opcode)]) in
+          if system_settings#collect_diagnostics then
+            ch_diagnostics_log#add
+              "conditional conditional test"
+              (LBLOCK [
+                   testfloc#l#toPretty;
+                   STR ": ";
+                   STR (arm_opcode_to_string testinstr#get_opcode);
+                   STR " with setter ";
+                   STR (arm_opcode_to_string testtestinstr#get_opcode)]) in
         arm_conditional_conditional_expr
           ~condopc:condinstr#get_opcode
           ~testopc: testinstr#get_opcode
@@ -1116,31 +1118,35 @@ let translate_arm_instruction
                 ~flagdefs:flagdefs
                 ctxtiaddr in
             let _ =
-              chlog#add
-                "assign ite predicate"
-                (LBLOCK [
-                     testaddr#toPretty;
-                     STR ": " ;
-                     lhs#toPretty;
-                     STR " := ";
-                     x2p p]) in
-            let _ =
-              chlog#add
-                "ite assign cmds"
-                (LBLOCK (List.map (command_to_pretty 0) cmds)) in
+              if system_settings#collect_diagnostics then
+                begin
+                  ch_diagnostics_log#add
+                    "assign ite predicate"
+                    (LBLOCK [
+                         testaddr#toPretty;
+                         STR ": ";
+                         lhs#toPretty;
+                         STR " := ";
+                         x2p p]);
+                  ch_diagnostics_log#add
+                    "ite assign cmds"
+                    (LBLOCK (List.map (command_to_pretty 0) cmds))
+                end in
             lhscmds @ defcmds @ cmds
        | _ ->
           let _ =
-            chlog#add
-              "no ite predicate"
-              (LBLOCK [testaddr#toPretty; STR ": " ; testinstr#toPretty]) in
+            if system_settings#collect_diagnostics then
+              ch_diagnostics_log#add
+                "no ite predicate"
+                (LBLOCK [testaddr#toPretty; STR ": " ; testinstr#toPretty]) in
           [] in
        default cmds
      else
        let _ =
-         chlog#add
-           "aggregate without ite predicate"
-           (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
+         if system_settings#collect_diagnostics then
+           ch_diagnostics_log#add
+             "aggregate without ite predicate"
+             (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
        default []
 
   (* ---------------------------------------- LoadMultipleDecrementAfter --
@@ -1601,9 +1607,10 @@ let translate_arm_instruction
    * ------------------------------------------------------------------------ *)
   | Move (_, c, rd, rm, _, _) when instr#is_subsumed ->
      let _ =
-       chlog#add
-         "instr subsumed"
-         (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; instr#toPretty]) in
+       if system_settings#collect_diagnostics then
+         ch_diagnostics_log#add
+           "instr subsumed"
+           (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; instr#toPretty]) in
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrm = rm#to_expr floc in
@@ -2652,9 +2659,10 @@ let translate_arm_instruction
      let _ =
        chlog#add
          "no semantics"
-         (LBLOCK [loc#toPretty;
-                  STR ": ";
-                  STR (arm_opcode_to_string instr)]) in
+         (LBLOCK [
+              loc#toPretty;
+              STR ": ";
+              STR (arm_opcode_to_string instr)]) in
      default []
         
 
@@ -2680,12 +2688,13 @@ object (self)
         with
         | BCH_failure p ->
            let msg =
-             LBLOCK [STR "function: ";
-                     funloc#toPretty;
-                     STR ", block: ";
-                     blocklabel#toPretty;
-                     STR ": ";
-                     p] in
+             LBLOCK [
+                 STR "function: ";
+                 funloc#toPretty;
+                 STR ", block: ";
+                 blocklabel#toPretty;
+                 STR ": ";
+                 p] in
            begin
              ch_error_log#add "translate arm block" msg;
              raise (BCH_failure msg)
@@ -2828,12 +2837,13 @@ object (self)
     let externalMemvars = env#get_external_memory_variables in
     let externalMemvars = List.filter env#has_constant_offset externalMemvars in
     let _ =
-      chlog#add
-        "external memory variables"
-        (LBLOCK [
-             finfo#get_address#toPretty;
-             pretty_print_list
-               externalMemvars (fun v -> v#toPretty) " [" ", " "]"]) in
+      if system_settings#collect_diagnostics then
+        ch_diagnostics_log#add
+          "external memory variables"
+          (LBLOCK [
+               finfo#get_address#toPretty;
+               pretty_print_list
+                 externalMemvars (fun v -> v#toPretty) " [" ", " "]"]) in
     let mAsserts = List.map freeze_external_memory_values externalMemvars in
     let sp0 = env#mk_initial_register_value (ARMRegister ARSP) in
     let _ = finfo#add_base_pointer sp0 in

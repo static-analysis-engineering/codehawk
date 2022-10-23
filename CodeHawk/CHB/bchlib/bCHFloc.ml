@@ -752,21 +752,22 @@ object (self)
          self#env#mk_index_offset_memory_variable memref memoffset
       | _ ->
          begin
-           chlog#add
-             "scaled register memory variable"
-             (LBLOCK [
-                  STR "base: ";
-                  base#toPretty;
-                  STR "; index: ";
-                  index#toPretty;
-                  STR "; scale: ";
-                  INT scale;
-                  STR "; offset: ";
-                  offset#toPretty;
-                  STR "; address: ";
-                  x2p address;
-                  STR "; memoffset: ";
-                  memory_offset_to_pretty memoffset]);
+           (if system_settings#collect_diagnostics then
+              ch_diagnostics_log#add
+                "scaled register memory variable"
+                (LBLOCK [
+                     STR "base: ";
+                     base#toPretty;
+                     STR "; index: ";
+                     index#toPretty;
+                     STR "; scale: ";
+                     INT scale;
+                     STR "; offset: ";
+                     offset#toPretty;
+                     STR "; address: ";
+                     x2p address;
+                     STR "; memoffset: ";
+                     memory_offset_to_pretty memoffset]));
            default ()
          end
 
@@ -1117,22 +1118,22 @@ object (self)
 		       if num#equal numerical_zero then
 			 begin
 			   chlog#add "null dereference" 
-			     (LBLOCK [ self#l#toPretty ]) ;
+			     (LBLOCK [self#l#toPretty ]);
 			 end
 		       else if num#lt numerical_zero then
 			 begin
 			   chlog#add "negative address" 
-			     (LBLOCK [ self#l#toPretty ; STR ": " ; num#toPretty ]) ;
+			     (LBLOCK [self#l#toPretty; STR ": "; num#toPretty]);
 			 end
 		       else
 			 begin
 			   chlog#add "low address" 
-			     (LBLOCK [ self#l#toPretty ; STR ": " ; x2p x ]) ;
+			     (LBLOCK [self#l#toPretty; STR ": "; x2p x]);
 			 end
 		   | _ -> 
 		     begin
 		       chlog#add "low address" 
-			 (LBLOCK [ self#l#toPretty ; STR ": " ; x2p x ]) ;
+			 (LBLOCK [self#l#toPretty; STR ": "; x2p x]);
 		     end in
 		 None
 	       end
@@ -1143,10 +1144,10 @@ object (self)
 	 let msg = LBLOCK [  
 	   x2p x ; 
 	   pretty_print_list ptrs 
-	     (fun v -> self#env#variable_name_to_pretty v)  " (" ", " ")" ] in
+	     (fun v -> self#env#variable_name_to_pretty v)  " (" ", " ")"] in
 	 begin
 	   chlog#add "error:multiple pointers" 
-	     (LBLOCK [ self#l#toPretty ; STR ": " ; msg ]) ;
+	     (LBLOCK [self#l#toPretty; STR ": "; msg]);
 	   None
 	 end in
      try
@@ -1162,17 +1163,23 @@ object (self)
        | _ -> default ()
      with
        Invalid_argument s ->
-	 let msg = LBLOCK [ STR " address: " ; x2p x ; STR " : " ; STR s ] in
+	 let msg = LBLOCK [STR " address: "; x2p x; STR " : "; STR s] in
 	 begin
 	   chlog#add "error:memory reference"	
-	     (LBLOCK [ self#l#toPretty ; STR ": " ; msg ]) ;
+	     (LBLOCK [self#l#toPretty; STR ": "; msg]);
 	   default ()
 	 end
      | Invocation_error s ->
        begin
-	 ch_error_log#add "variable_manager" 
-	   (LBLOCK [ self#l#toPretty ; STR ". get_memory_reference_from_address: " ; 
-		     x2p x ; STR " (" ; STR s ; STR ")" ]) ;
+	 ch_error_log#add
+           "variable_manager"
+	   (LBLOCK [
+                self#l#toPretty;
+                STR ". get_memory_reference_from_address: ";
+		x2p x;
+                STR " (";
+                STR s;
+                STR ")"]);
 	 default ()
        end
        
@@ -1586,7 +1593,7 @@ object (self)
                   end)
 	   | _ -> 
 	     begin
-	       chlog#add "function-pointer: no address" (self#l#toPretty) ;
+	       chlog#add "function-pointer: no address" (self#l#toPretty);
 	       None 
 	     end in
 	 match fname with
@@ -1601,15 +1608,21 @@ object (self)
 	     end
 	 | _ -> 
 	   begin
-	     chlog#add "function-pointer: no name" (self#l#toPretty) ;
+	     chlog#add "function-pointer: no name" (self#l#toPretty);
 	     [] 
 	   end 
        with
 	 Invalid_argument s ->
 	   begin
-	     ch_error_log#add "invalid argument" 
-	       (LBLOCK [ STR "assert post: " ; self#l#toPretty ; STR ": " ; STR s ;
-			 STR " " ; STR name ]) ;
+	     ch_error_log#add
+               "invalid argument"
+	       (LBLOCK [
+                    STR "assert post: ";
+                    self#l#toPretty;
+                    STR ": ";
+                    STR s;
+		    STR " ";
+                    STR name]);
 	     []
 	   end in
      let get_null_var (term:bterm_t) =
@@ -1645,13 +1658,13 @@ object (self)
 	    (* ctinfo#set_nonreturning ; *)
 	    chlog#add
               "function retracing"
-              (LBLOCK [ self#l#toPretty ; STR ": " ; STR name ]) ;
+              (LBLOCK [ self#l#toPretty; STR ": "; STR name]);
 	    raise Request_function_retracing
 	  end
      | _ ->
        let msg = postcondition_to_pretty post in
        begin
-	 chlog#add "postcondition not used" (LBLOCK [ self#l#toPretty ; msg ]) ;
+	 chlog#add "postcondition not used" (LBLOCK [self#l#toPretty; msg]);
 	 []
        end
 	 
@@ -1669,7 +1682,7 @@ object (self)
 	 self#assert_post name epost returnvar string_retriever) 
 	  summary#get_errorpostconditions) in
      match (postCommands, errorPostCommands) with
-       ([],[]) -> []
+     | ([],[]) -> []
      | (_, []) -> postCommands 
      | ([], _) -> errorPostCommands
      | _ -> [BRANCH [LF.mkCode postCommands; LF.mkCode errorPostCommands]]
@@ -1686,25 +1699,33 @@ object (self)
 	       if system_info#is_code_address a then
 		 begin
 		   ignore (functions_data#add_function a) ;
-		   chlog#add "function entry point from precondition"
-		     (LBLOCK [ self#l#toPretty ; STR ": " ; a#toPretty ])
+		   chlog#add
+                     "function entry point from precondition"
+		     (LBLOCK [self#l#toPretty; STR ": "; a#toPretty])
 		 end
 	       else
 		 chlog#add
                    "function pointer precondition error"
-		   (LBLOCK [ self#l#toPretty ; STR ": " ; a#toPretty ;
-                             STR " is not a code address" ])
+		   (LBLOCK [
+                        self#l#toPretty;
+                        STR ": ";
+                        a#toPretty;
+                        STR " is not a code address"])
 	     with
 	     | BCH_failure p ->
 	        chlog#add
                   "function pointer precondition error"
-		  (LBLOCK [ self#l#toPretty ;
-                            STR ": argument cannot be converted to address" ])
+		  (LBLOCK [
+                       self#l#toPretty;
+                       STR ": argument cannot be converted to address"])
 	   end
 	 | x -> 
-	   chlog#add "function pointer precondition"
-	     (LBLOCK [ self#l#toPretty ; STR ": unknown argument " ;
-		       xpr_formatter#pr_expr x ])
+	    chlog#add
+              "function pointer precondition"
+	      (LBLOCK [
+                   self#l#toPretty;
+                   STR ": unknown argument ";
+		   xpr_formatter#pr_expr x])
        end
      | _ -> ()
 	 
@@ -1761,7 +1782,7 @@ object (self)
 	   seAssign @ fldAssigns
 	 | _ -> 
 	    begin	
-	      chlog#add "side-effect ignored" msg ; 
+	      chlog#add "side-effect ignored" msg;
 	      [] 
 	    end
        end 
@@ -1787,17 +1808,21 @@ object (self)
 	 match sizeExpr with
 	 | XConst (IntConst num) ->
 	   let adj = self#env#request_num_constant num in
-	   [ ASSIGN_NUM (esp, MINUS (esp, adj)) ]
+	   [ASSIGN_NUM (esp, MINUS (esp, adj))]
 	 | _ -> 
 	   begin
-	     chlog#add "alloca" (LBLOCK [ self#l#toPretty ; STR " size not known: " ; 
-					  x2p sizeExpr ]) ;
-	     [ ABSTRACT_VARS [ esp ] ]
+	     chlog#add
+               "alloca"
+               (LBLOCK [
+                    self#l#toPretty;
+                    STR " size not known: ";
+		    x2p sizeExpr]);
+	     [ABSTRACT_VARS [esp]]
 	   end
        end
      | _ -> 
        begin 
-	 chlog#add "side-effect ignored" msg ;
+	 chlog#add "side-effect ignored" msg;
 	 [] 
        end
 
@@ -1812,7 +1837,7 @@ object (self)
      let add_type_facts v x t =
        if is_known_type t then
 	 begin
-	   self#add_var_type_fact v t ;
+	   self#add_var_type_fact v t;
 	   self#add_xpr_type_fact x t
 	 end in
      List.iter (fun p ->
@@ -2012,18 +2037,18 @@ object (self)
     let is_external = self#env#is_function_initial_value in
     let normalize_offset (offset:xpr_t) =
       match offset with
-	XConst _ -> offset
+      | XConst _ -> offset
       | XVar _ -> offset
-      | XOp (XMult, [ XConst _ ; XVar _ ]) -> offset
-      | XOp (XMult, [ XVar v ; XConst (IntConst n) ]) -> 
-	XOp (XMult, [ XConst (IntConst n) ; XVar v ])
+      | XOp (XMult, [XConst _; XVar _]) -> offset
+      | XOp (XMult, [XVar v; XConst (IntConst n)]) ->
+	XOp (XMult, [XConst (IntConst n); XVar v])
       | _ -> 
 	begin
-	  chlog#add "unrecognized offset" (x2p offset) ;
+	  chlog#add "unrecognized offset" (x2p offset);
 	  offset
 	end in
     match address with
-      XVar v -> address
+    | XVar v -> address
     | XOp (XPlus, [XVar v1; XVar v2]) when not (is_external v1) && is_external v2 ->
        XOp (XPlus, [XVar v2; XVar v1])
     | XOp (XPlus, [XVar v; offset])

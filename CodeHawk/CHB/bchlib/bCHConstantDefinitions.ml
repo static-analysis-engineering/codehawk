@@ -344,7 +344,7 @@ let read_xml_symbolic_flags (node:xml_element_int) =
   let _ = chlog#add "symbolic flags" (btype_to_pretty t) in
   let getc = (node#getTaggedChild "values")#getTaggedChildren in
   begin
-    List.iter (fun n -> read_xml_symbolic_flag n t) (getc "symf") ;
+    List.iter (fun n -> read_xml_symbolic_flag n t) (getc "symf");
     List.iter (fun n -> read_xml_symbolic_constant n t) (getc "symc") 
   end
 

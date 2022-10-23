@@ -48,6 +48,7 @@ open BCHFloc
 open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
+open BCHSystemSettings
 open BCHVariable
 
 (* bchlibarm32 *)
@@ -103,11 +104,11 @@ open BCHARMOpcodeRecords
 
 let x2p = xpr_formatter#pr_expr
 
-let tracked_locations = [ "0x10d90"; "0x10d98" ]
+let tracked_locations = []
 
 let track_location loc p =
   if List.mem loc tracked_locations then
-    chlog#add ("tracked:" ^ loc) p
+    ch_diagnostics_log#add ("tracked:" ^ loc) p
 
 
 let freeze_variables
@@ -308,22 +309,24 @@ let arm_conditional_expr
     | Some expr ->
        if is_false expr then (frozenVars#listOfValues, None) else
 	 begin
-           chlog#add "condition" (x2p expr);
-	   condfloc#set_test_expr expr ;
-	   testfloc#set_test_variables frozenVars#listOfPairs ;
+           (if system_settings#collect_diagnostics then
+              ch_diagnostics_log#add "condition" (x2p expr));
+	   condfloc#set_test_expr expr;
+	   testfloc#set_test_variables frozenVars#listOfPairs;
 	   (frozenVars#listOfValues, optxpr)
 	 end
     | _ -> (frozenVars#listOfValues, None)
   else
     begin
-      chlog#add
-        "unused condition"
-        (LBLOCK [
-             condfloc#l#toPretty;
-             STR ": "; 
-	     STR (arm_opcode_to_string condopc);
-             STR " with "; 
-	     STR (arm_opcode_to_string testopc)]);
+      (if system_settings#collect_diagnostics then
+         ch_diagnostics_log#add
+           "unused condition"
+           (LBLOCK [
+                condfloc#l#toPretty;
+                STR ": ";
+	        STR (arm_opcode_to_string condopc);
+                STR " with ";
+	        STR (arm_opcode_to_string testopc)]));
       (frozenVars#listOfValues, None)
     end
 
@@ -361,24 +364,26 @@ let arm_conditional_conditional_expr
   match (cond1, cond2, cond3) with
   | (Some cond1, Some cond2, Some cond3) ->
      let _ =
-       chlog#add
-         "conditional condition expressions"
-         (LBLOCK [
-              STR (arm_opcode_to_string condopc);
-              STR "; ";
-              STR (arm_opcode_to_string testopc);
-              STR "; ";
-              STR (arm_opcode_to_string testtestopc);
-              STR ": cond1: ";
-              x2p cond1;
-              STR "; cond2: ";
-              x2p cond2;
-              STR "; cond3: ";
-              x2p cond3]) in
+       if system_settings#collect_diagnostics then
+         ch_diagnostics_log#add
+           "conditional condition expressions"
+           (LBLOCK [
+                STR (arm_opcode_to_string condopc);
+                STR "; ";
+                STR (arm_opcode_to_string testopc);
+                STR "; ";
+                STR (arm_opcode_to_string testtestopc);
+                STR ": cond1: ";
+                x2p cond1;
+                STR "; cond2: ";
+                x2p cond2;
+                STR "; cond3: ";
+                x2p cond3]) in
 
      let xpr = XOp (XLOr, [XOp (XLAnd, [XOp (XLNot, [cond1]); cond3]); cond2]) in
      begin
-       chlog#add "condition" (x2p xpr);
+       (if system_settings#collect_diagnostics then
+          ch_diagnostics_log#add "condition" (x2p xpr));
        condfloc#set_test_expr xpr;
        (frozenVars#toList, Some xpr)
      end

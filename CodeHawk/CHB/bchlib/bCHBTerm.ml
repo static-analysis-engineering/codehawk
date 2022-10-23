@@ -49,6 +49,7 @@ open BCHCBasicTypes
 open BCHFtsParameter
 open BCHBasicTypes
 open BCHLibTypes
+open BCHSystemSettings
 open BCHUtilities
 open BCHVariableType
 open BCHXmlUtil
@@ -278,6 +279,7 @@ let is_arithmetic_operator (numOperator:string) =
   | "plus" | "minus" | "times" | "divide" -> true
   | _ -> false
 
+
 let get_arithmetic_operator (numOperator:string) =
   match numOperator with
   | "plus" -> PPlus
@@ -292,11 +294,13 @@ let get_arithmetic_operator (numOperator:string) =
       raise (Internal_error "get_arithmetic_operator")
     end
 
+
 let arithmetic_op_to_xop = function
   | PPlus -> XPlus
   | PMinus -> XMinus
   | PDivide -> XDiv
   | PTimes -> XMult
+
 
 let xop_to_arithmetic_op op =
   match op with
@@ -312,9 +316,11 @@ let xop_to_arithmetic_op op =
                STR (xop_to_string op);
 	       STR " cannot be represented by an arithmetic operator"]))
 
+
 let is_arithmetic_xop = function
   | XPlus | XMinus | XDiv | XMult -> true
   | _ -> false
+
 
 let rec xpr_to_bterm (xpr:xpr_t) (subst:variable_t -> bterm_t) =
   match xpr with
@@ -328,13 +334,16 @@ let rec xpr_to_bterm (xpr:xpr_t) (subst:variable_t -> bterm_t) =
       | _ -> None
     else
       begin
-	chlog#add "xpr to bterm failure" (xpr_formatter#pr_expr xpr) ;
+	(if system_settings#collect_diagnostics then
+           ch_diagnostics_log#add
+             "xpr to bterm failure" (xpr_formatter#pr_expr xpr));
 	None
       end
   | XVar v -> 
      let nv = subst v in
      begin match nv with RunTimeValue -> None | _ -> Some nv end
   | _ -> None
+
 
 let mk_global_parameter_term
       ?(btype=t_unknown)
@@ -345,6 +354,7 @@ let mk_global_parameter_term
       (gaddr:doubleword_int) =
   ArgValue (mk_global_parameter ~btype ~desc ~roles ~io ~size gaddr)
 
+
 let mk_stack_parameter_term
       ?(btype=t_unknown)
       ?(desc="")
@@ -353,6 +363,7 @@ let mk_stack_parameter_term
       ?(size=4)
       (arg_index:int) =
   ArgValue (mk_stack_parameter ~btype ~desc ~roles ~io ~size arg_index)
+
 
 let rec modify_types_bterm (f:type_transformer_t) (t:bterm_t) =
   let aux = modify_types_bterm f in

@@ -912,6 +912,7 @@ let save_varinvs (fname: string) (varinvio: var_invariant_io_int) =
     file_output#saveFile filename doc#toPretty
   end
 
+
 let read_varinvs (fname: string) (vard: vardictionary_int): var_invariant_io_int =
   (* let optnode = extract_function_file fname "varinvs.xml" "function" in *)
   mk_var_invariant_io None vard fname
@@ -927,8 +928,10 @@ let extract_function_info_file (fname:string) =
 let extract_inferred_function_summary_file (fname:string) =
   extract_function_file fname "fsum.xml" "function-summary"
 
+
 let extract_inferred_function_arguments_from_summary_file (fname:string) =
   extract_function_file fname "fsum.xml" "function-arguments"
+
 
 let save_log_files name =
   let exename = get_filename () in
@@ -939,8 +942,13 @@ let save_log_files name =
   let errorlogfilename = Filename.concat fdir (name ^ ".ch_error_log") in
   begin
     file_output#saveFile logfilename chlog#toPretty ;
-    file_output#saveFile errorlogfilename ch_error_log#toPretty
+    file_output#saveFile errorlogfilename ch_error_log#toPretty;
+    (if system_settings#collect_diagnostics then
+       let diagnosticsfilename =
+         Filename.concat fdir (name ^ ".ch_diagnostics_log") in
+       file_output#saveFile diagnosticsfilename ch_diagnostics_log#toPretty)
   end
+
 
 let read_memory_string_file (address:string) =
   let filename = get_memory_string_filename address in

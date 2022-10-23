@@ -76,6 +76,7 @@ open BCHParseBCFunctionSummary
 open BCHPreFileIO
 open BCHSideeffect
 open BCHSystemInfo
+open BCHSystemSettings
 open BCHUtilities
 open BCHVariable
 open BCHVariableNames
@@ -1457,7 +1458,7 @@ object (self)
     if invariants_to_be_reset then
       begin
 	invio#reset ;
-	chlog#add "reset invariants" (STR faddr#to_hex_string) ;
+	chlog#add "reset invariants" (STR faddr#to_hex_string);
       end
 
   method schedule_invariant_reset = invariants_to_be_reset <- true
@@ -1480,7 +1481,7 @@ object (self)
       | Some n when n > 0 ->
          chlog#add
            "set stack adjustment"
-           (LBLOCK [ self#get_address#toPretty ; STR ": " ; INT n  ])
+           (LBLOCK [self#get_address#toPretty; STR ": "; INT n])
       | _ -> () in
     stack_adjustment <- a
       
@@ -1627,8 +1628,8 @@ object (self)
     if nonreturning then () else
       let fa = self#get_address in
       begin
-	chlog#add "set nonreturning" (LBLOCK [ fa#toPretty ]) ;
-	(functions_data#get_function fa)#set_non_returning ;
+	chlog#add "set nonreturning" (LBLOCK [fa#toPretty]);
+	(functions_data#get_function fa)#set_non_returning;
 	nonreturning <- true
       end
 
@@ -2102,15 +2103,16 @@ object (self)
            (jt:jumptable_int)
            (reg:register_t) =
     begin
-      H.replace jump_targets jumpAddr (JumptableTarget (base,jt,reg)) ;
-      chlog#add
-        "set jumptable target"
-        (LBLOCK [
-             STR jumpAddr;
-             STR "; base: ";
-             base#toPretty;
-             STR "; on register: ";
-             STR (register_to_string reg)])
+      H.replace jump_targets jumpAddr (JumptableTarget (base,jt,reg));
+      (if system_settings#collect_diagnostics then
+         chlog#add
+           "set jumptable target"
+           (LBLOCK [
+                STR jumpAddr;
+                STR "; base: ";
+                base#toPretty;
+                STR "; on register: ";
+                STR (register_to_string reg)]))
     end
 
   method set_offsettable_target

@@ -846,6 +846,7 @@ object
   method add_so_library: string -> unit    (* name of so-library *)
   method set_jsignature_jar: string -> unit
   method set_verbose: unit
+  method set_collect_diagnostics: unit
   method set_vftables: unit
   method set_thumb: unit
   method enable_sideeffects_on_globals : string list -> unit
@@ -862,6 +863,7 @@ object
   method so_libraries: string list  (* names of so-libraries *)
 
   (* predicates *)
+  method collect_diagnostics: bool
   method is_verbose: bool
   method is_sideeffects_on_global_enabled: string -> bool
   method is_abstract_stackvars_disabled: bool

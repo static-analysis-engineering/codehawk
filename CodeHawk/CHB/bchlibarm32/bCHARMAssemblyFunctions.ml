@@ -196,9 +196,11 @@ object (self)
 	calls := (List.map (fun callee -> (faddr, callee)) appCallees) @ !calls) in
       let addresses = List.map (fun f -> f#get_address) self#get_functions in
       let (orderedList,stats,cycle) = create_ordering addresses !calls in
-      let _ = chlog#add "callgraph order"
-	(LBLOCK [ pretty_print_list stats (fun s -> INT s) "[" "; " "]" ;
-		  (if cycle then STR " (cycle)" else STR "" ) ]) in
+      let _ =
+        chlog#add "callgraph order"
+	  (LBLOCK [
+               pretty_print_list stats (fun s -> INT s) "[" "; " "]";
+	       (if cycle then STR " (cycle)" else STR "")]) in
       let _ = callgraphorder <- Some orderedList in
       orderedList
 
@@ -303,8 +305,10 @@ object (self)
     let _ =
       chlog#add
         "initialization"
-        (LBLOCK [STR "Add "; INT (List.length !fnsAdded);
-                 STR " functions by preamble"]) in
+        (LBLOCK [
+             STR "Add ";
+             INT (List.length !fnsAdded);
+             STR " functions by preamble"]) in
     !fnsAdded
 
   method dark_matter_to_string =
@@ -315,7 +319,6 @@ object (self)
   method set_datablocks =
     let table = self#get_live_instructions in
     let filter = (fun i -> not (H.mem table i#get_address#index)) in
-    let datablocks = ref [] in
     let dbstart = ref wordzero in
     let inBlock = ref false in
     let count = ref 0 in

@@ -211,9 +211,14 @@ object (self)
 	self#read_dll_function_summary_string dll fname xstring
       else
 	begin
-	  chlog#add "no summary"
-	    (LBLOCK [ STR fname ; STR " (" ; STR dll ; STR ")" ; 
-		      STR (self#get_demangled_name fname) ]) ;
+	  chlog#add
+            "no summary"
+	    (LBLOCK [
+                 STR fname;
+                 STR " (";
+                 STR dll;
+                 STR ")";
+		 STR (self#get_demangled_name fname)]);
 	  self#add_missing_summary dll fname ;
 	  H.add nosummaries (dll,fname) true
 	end
@@ -243,7 +248,7 @@ object (self)
           ()
         else
           begin
-            chlog#add "no so summary" (LBLOCK [STR fname]) ;
+            chlog#add "no so summary" (LBLOCK [STR fname]);
             missing_so_summaries#add fname
           end
 
@@ -263,7 +268,7 @@ object (self)
 	  let node = root#getTaggedChild "jnifun" in
 	  let summary = read_xml_function_summary node in
 	  begin
-	    H.add jnitemplates templatename summary ;
+	    H.add jnitemplates templatename summary;
 	    chlog#add "jni template" (LBLOCK [STR templatename])
 	  end
 	else
@@ -284,7 +289,7 @@ object (self)
 	self#read_jni_function_summary_string index xstring
       else
 	begin
-	  chlog#add "no jni summary" (LBLOCK [ STR "Jni index: " ; INT index ]);
+	  chlog#add "no jni summary" (LBLOCK [STR "Jni index: "; INT index]);
 	  missingjnisummaries#add index 
 	end
 
@@ -376,8 +381,11 @@ object (self)
 	  H.add jnisummaries summary#get_jni_index summary;
 	  chlog#add
             "jni summary" 
-	    (LBLOCK [ STR "Jni index " ; INT index ; STR ": " ;
-                      STR summary#get_name ])
+	    (LBLOCK [
+                 STR "Jni index ";
+                 INT index;
+                 STR ": ";
+                 STR summary#get_name])
 	end
       else if node#hasOneTaggedChild "refer-to" then
 	self#read_template_jni_summary node index
@@ -452,15 +460,18 @@ object (self)
       let jnisummary = base#modify_types jniname transformer in
       begin
 	chlog#add "jni typed summary" 
-	  (LBLOCK [ STR jniname ; STR " for type " ; STR typename ]) ;
+	  (LBLOCK [STR jniname; STR " for type "; STR typename]);
 	chlog#add "jni summary" 
-	  (LBLOCK [ STR "Jni index " ; INT index ; STR ": " ; STR jniname ]) ;
+	  (LBLOCK [STR "Jni index "; INT index; STR ": "; STR jniname]);
 	H.add jnisummaries index jnisummary
       end
     else
       raise_xml_error node
-	(LBLOCK [ STR "Templated summary for " ; STR prefix ; STR suffix ;
-		  STR " not found" ])
+	(LBLOCK [
+             STR "Templated summary for ";
+             STR prefix;
+             STR suffix;
+	     STR " not found"])
       
   method private read_dll_function_summary_string 
     (dll:string) (fname:string) (xstring:string) =
@@ -549,7 +560,7 @@ object (self)
       begin
 	chlog#add
           "aw function summary"
-	  (LBLOCK [STR fname; STR " from "; STR rName]) ;
+	  (LBLOCK [STR fname; STR " from "; STR rName]);
 	H.add dllsummaries (dll, fname) awsummary ;
 	H.add dllnames dll fname 
       end
@@ -684,16 +695,15 @@ object (self)
 	if has_summary_file path filename then
 	  let xstring = get_summary_file path filename in
 	  begin
-	    self#read_lib_function_summary_string fname pkgname xstring  ;
+	    self#read_lib_function_summary_string fname pkgname xstring;
 	    H.mem libsummaries (String.concat "::" pkgs,fname)
 	  end
 	else
 	  begin
 	    H.add nolibsummaries index true ;
-	    chlog#add "no lib function summary" (LBLOCK [ STR filename ]) ;
+	    chlog#add "no lib function summary" (LBLOCK [STR filename]);
 	    false
 	  end
-    
 
   method has_jni_function (index:int) = 
     if H.mem jnisummaries index then
@@ -730,7 +740,7 @@ object (self)
       begin
 	chlog#add
           "lib function summary"
-	  (LBLOCK [STR fname; STR " ("; STR dir; STR ")"]) ;
+	  (LBLOCK [STR fname; STR " ("; STR dir; STR ")"]);
 	H.add libsummaries (pkgs,fname) summary
       end
     else

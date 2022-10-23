@@ -109,7 +109,7 @@ let resolve_type (ty: btype_t) =
      aux (add_attributes (get_typedef name) a)
   | TNamed (name, _) ->
      begin
-       chlog#add
+       ch_diagnostics_log#add
          "unknown typedef"
          (LBLOCK [STR "Named type "; STR name; STR " not defined"]);
        t
@@ -223,7 +223,9 @@ and byte_size_of_array (t: btype_t) (len: bexp_t) =
     | BinOp (MinusA, e1, e2, _) -> (getlen e1) - (getlen e2)
     | SizeOf t -> byte_size_of_typ t
     | _ ->
-       let _ = chlog#add "array size expression" (STR (exp_to_string e)) in 0 in
+       let _ =
+         ch_diagnostics_log#add
+           "array size expression" (STR (exp_to_string e)) in 0 in
   let arraylen = getlen len in
   let elementsize = byte_size_of_typ t in
   let elementsize = add_trailing elementsize (alignof_type t) in
@@ -238,7 +240,7 @@ and byte_size_of_comp (comp: bcompinfo_t): int =
     let size =
       add_trailing lastoff.oa_first_free (alignof_type (TComp (comp.bckey, []))) in
     let _ =
-      chlog#add
+      ch_diagnostics_log#add
         "struct size"
         (LBLOCK [
              STR "ckey: ";
@@ -255,7 +257,7 @@ and byte_size_of_comp (comp: bcompinfo_t): int =
           else
             mx) 0 comp.bcfields in
     let _ =
-      chlog#add
+      ch_diagnostics_log#add
         "union size"
         (LBLOCK [
              STR "ckey: ";
