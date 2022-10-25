@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,7 @@ open CHXmlDocument
 open Xprt
 open XprToPretty
 open XprTypes
+open Xsimplify
 
 (* bchlib *)
 open BCHFtsParameter
@@ -111,8 +112,14 @@ object (self)
    *) 
 
   method index_instr (instr:assembly_instruction_int) (floc:floc_int) =
-    let rewrite_expr x:xpr_t =
+    let rewrite_expr (x: xpr_t):xpr_t =
       floc#inv#rewrite_expr x floc#env#get_variable_comparator in
+    let rewrite_test_expr (csetter: ctxt_iaddress_t) (x: xpr_t): xpr_t =
+      let testloc = ctxt_string_to_location floc#fa csetter in
+      let testfloc = get_floc testloc in
+      let xpr =
+        testfloc#inv#rewrite_expr x testfloc#env#get_variable_comparator in
+      simplify_xpr xpr in
     let key =
       match instr#get_opcode with
       (* ------------------------------------------------------------- Add -- *)
@@ -203,13 +210,16 @@ object (self)
          let tgtop = op#to_expr floc in
          ([ "a:x" ],[ xd#index_xpr tgtop ])
 
-      (* ------------------------------------------------------------- Jcc -- *)                           
+      (* ------------------------------------------------------------- Jcc -- *)
       | Jcc (_,op) | Jecxz op ->
          if op#is_absolute_address then
            if floc#has_test_expr then
              let tcond = floc#get_test_expr in
-             let fcond = rewrite_expr (XOp (XLNot, [ tcond ])) in
-             ([ "a:xx" ],[ xd#index_xpr tcond ; xd#index_xpr fcond ])
+             let fcond = XOp (XLNot, [tcond]) in
+             let csetter = floc#f#get_associated_cc_setter floc#cia in
+             let tcond = rewrite_test_expr csetter tcond in
+             let fcond = rewrite_test_expr csetter fcond in
+             (["a:xx"], [xd#index_xpr tcond; xd#index_xpr fcond])
            else
              ([],[])
          else
