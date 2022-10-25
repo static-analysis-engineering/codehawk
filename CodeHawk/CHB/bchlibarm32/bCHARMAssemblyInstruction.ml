@@ -60,7 +60,9 @@ object (self)
   val mutable inlined_call = false
   val mutable aggregate_dst = None
   val mutable aggregate = []
-  val mutable subsumedby = None
+  val mutable subsumedby = None  (* refers to IT instruction *)
+  val mutable blockcondition = false
+  val mutable conditioncoveredby = None  (* refers to IT instruction *)
 
   method set_block_entry = block_entry <- true
 
@@ -100,6 +102,23 @@ object (self)
     | _ ->
        raise
          (BCH_failure (LBLOCK [STR "Instruction is not subsumed"]))
+
+  method set_block_condition = blockcondition <- true
+
+  method is_block_condition = blockcondition
+
+  method set_condition_covered_by (iaddr: doubleword_int) =
+    conditioncoveredby <- Some iaddr
+
+  method is_condition_covered =
+    match conditioncoveredby with Some _ -> true | _ -> false
+
+  method condition_covered_by =
+    match conditioncoveredby with
+    | Some iaddr -> iaddr
+    | _ ->
+       raise
+         (BCH_failure (LBLOCK [STR "Instruction condition is not covered"]))
 
   method is_arm32 = is_arm
 

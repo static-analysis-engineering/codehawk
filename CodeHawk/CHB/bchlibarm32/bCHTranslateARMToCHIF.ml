@@ -449,15 +449,29 @@ let make_condition
       ([(thentestlabel, thennode); (elsetestlabel, elsenode)],
        thenedges @ elseedges)
   | _ ->
-    let abstractlabel =
-      make_code_label ~modifier:"abstract" testloc#ci in
-    let transaction =
-      TRANSACTION (abstractlabel, LF.mkCode [ABSTRACT_VARS frozenVars], None) in
-    let edges = [(blocklabel, abstractlabel);
-                 (abstractlabel, thenlabel);
-		 (abstractlabel, elselabel)] in
-    ([(abstractlabel, [transaction])], edges)
-    
+     let _ =
+       if system_settings#collect_diagnostics then
+         ch_diagnostics_log#add
+           "make condition: no tests"
+           (LBLOCK [
+                STR "cond: ";
+                condloc#toPretty;
+                STR ": ";
+                condinstr#toPretty;
+                STR "; ";
+                testloc#toPretty;
+                STR ": ";
+                testinstr#toPretty]) in
+     let abstractlabel =
+       make_code_label ~modifier:"abstract" testloc#ci in
+     let transaction =
+       TRANSACTION (abstractlabel, LF.mkCode [ABSTRACT_VARS frozenVars], None) in
+     let edges = [
+         (blocklabel, abstractlabel);
+         (abstractlabel, thenlabel);
+	 (abstractlabel, elselabel)] in
+     ([(abstractlabel, [transaction])], edges)
+
 
 let translate_arm_instruction
       ~(funloc:location_int)
@@ -1148,6 +1162,42 @@ let translate_arm_instruction
              "aggregate without ite predicate"
              (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
        default []
+
+  | IfThen (c, _) when instr#is_block_condition ->
+     let thenaddr = codepc#get_true_branch_successor in
+     let elseaddr = codepc#get_false_branch_successor in
+     let cmds = cmds @ [invop] in
+     let transaction = package_transaction finfo blocklabel cmds in
+     if finfo#has_associated_cc_setter ctxtiaddr then
+       let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+       let testloc = ctxt_string_to_location faddr testiaddr in
+       let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
+       let _ =
+         if system_settings#collect_diagnostics then
+           ch_diagnostics_log#add
+             "IT block with condition"
+             (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
+       let (nodes, edges) =
+         make_condition
+           ~condinstr:instr
+           ~testinstr:(!arm_assembly_instructions#at_address testaddr)
+           ~condloc:loc
+           ~testloc
+           ~blocklabel
+           ~thenaddr
+           ~elseaddr in
+       ((blocklabel, [transaction]) :: nodes, edges, [])
+     else
+       let _ =
+         if system_settings#collect_diagnostics then
+           ch_diagnostics_log#add
+             "IT block without condition"
+             (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
+       let thenlabel = make_code_label thenaddr in
+       let elselabel = make_code_label elseaddr in
+       let nodes = [(blocklabel, [transaction])] in
+       let edges = [(blocklabel, thenlabel); (blocklabel, elselabel)] in
+       (nodes, edges, [])
 
   (* ---------------------------------------- LoadMultipleDecrementAfter --
    * Loads multiple registers from consecutive memory locations using an

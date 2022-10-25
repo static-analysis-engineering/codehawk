@@ -120,7 +120,7 @@ let freeze_variables
   let testfloc = get_floc testloc in
   let condfloc = get_floc condloc in
   let env = testfloc#f#env in
-  let opXpr = op#to_expr testfloc in
+  let opXpr = op#to_expr ~unsigned testfloc in
   let frozenVars = new VariableCollections.table_t in
   let vars = (variables_in_expr opXpr) in
   let varsKnown = ref true in
@@ -130,16 +130,20 @@ let freeze_variables
         if v#isTmp then
           varsKnown := false
         else if env#is_local_variable v then
-          let _ = track_location
-                    testloc#ci
-                    (LBLOCK [v#toPretty; NL;
-                             testfloc#inv#toPretty; NL;
-                             condfloc#inv#toPretty]) in
+          let _ =
+            track_location
+              testloc#ci
+              (LBLOCK [
+                   v#toPretty; NL;
+                   testfloc#inv#toPretty; NL;
+                   condfloc#inv#toPretty]) in
           if condfloc#inv#test_var_is_equal v testloc#ci condloc#ci then
-            let _ = track_location
-                      condloc#ci
-                      (LBLOCK [v#toPretty; NL;
-                               STR " test_var_is_equal"]) in
+            let _ =
+              track_location
+                condloc#ci
+                (LBLOCK [
+                     v#toPretty; NL;
+                     STR " test_var_is_equal"]) in
             ()
           else
             let fv =
@@ -168,123 +172,40 @@ let cc_expr
       (testopc: arm_opcode_t)
       (cc: arm_opcode_cc_t): (bool * xpr_t option) =
   let found = ref true in
-  let iszero op =
-    match testfloc#inv#rewrite_expr
-            (op#to_expr testfloc) testfloc#env#get_variable_comparator with
-    | XConst (IntConst n) -> n#equal numerical_zero
-    | _ -> false in
-  let gezero op =
-    match testfloc#inv#rewrite_expr
-            (op#to_expr testfloc) testfloc#env#get_variable_comparator with
-    | XConst (IntConst n) -> n#gt numerical_zero
-    | _ -> false in
   let expr = 
     match (testopc, cc) with
     | (Compare (ACCAlways, x, y, _), ACCEqual) -> XOp (XEq, [v x; v y])
     | (Compare (ACCAlways, x, y, _), ACCNotEqual) -> XOp (XNe, [v x; v y])
-                                                   
-    | (Compare (ACCAlways, x, y, _), ACCSignedLE) when iszero x && iszero y ->
-       true_constant_expr
-    | (Compare (ACCAlways, x, y, _), ACCSignedLE) when gezero x && iszero y ->
-           XOp (XGe, [v x;  int_constant_expr e31])
-    | (Compare (ACCAlways, x, y, _), ACCSignedLE) when iszero y ->
-       (match v x with
-        | XVar var when testfloc#env#is_signed_symbolic_value var ->
-           XOp (XLOr, [XOp (XEq, [v x; zero_constant_expr]);
-                       XOp (XGe, [v x; int_constant_expr e15])])
-        | _ ->
-           XOp (XLOr, [XOp (XEq, [v x; zero_constant_expr]);
-                       XOp (XGe, [v x; int_constant_expr e31])]))
 
-    | (Compare (ACCAlways, x, y, _), ACCSignedGE) when iszero y ->
-       XOp (XLAnd, [XOp (XGe, [v x; v y]);
-                    XOp (XLt, [v x; int_constant_expr e31])])
+    | (Compare (_, x, y, _), ACCCarrySet) -> XOp (XGe, [v x; v y])
+    | (Compare (_, x, y, _), ACCCarryClear) -> XOp (XLt, [v x; v y])
 
-    | (Compare (ACCAlways, x, y, _), ACCSignedGE) ->
-       let ic31 = int_constant_expr e31 in
-       let c1 = XOp (XLAnd, [XOp (XGe, [v x; v y]); XOp (XLt, [v x; ic31])]) in
-       let d1 = XOp (XLAnd, [c1; XOp (XLt, [v y; ic31])]) in
-       let c2 = XOp (XLAnd, [XOp (XLt, [v x; v y]); XOp (XLt, [v x; ic31])]) in
-       let d2 = XOp (XLAnd, [c2; XOp (XGe, [v y; ic31])]) in
-       XOp (XLOr, [d1; d2])
+    | (Compare (ACCAlways, x, y, _), ACCUnsignedHigher) ->
+       XOp (XGt, [vu x; vu y])
+    | (Compare (ACCAlways, x, y, _), ACCNotUnsignedHigher) ->
+       XOp (XLe, [vu x; vu y])
+
+    | (Compare (ACCAlways, x, y, _), ACCSignedGE) -> XOp (XGe, [v x; v y])
+    | (Compare (ACCAlways, x, y, _), ACCSignedLT) -> XOp (XLt, [v x; v y])
+
+    | (Compare (ACCAlways, x, y, _), ACCSignedLE) -> XOp (XLe, [v x; v y])
+    | (Compare (ACCAlways, x, y, _), ACCSignedGT) -> XOp (XGt, [v x; v y])
 
     | (VCompare (_, ACCAlways, _, x, y), ACCSignedGT) ->
        XOp (XGt, [v x; v y])
 
-    | (Compare (ACCAlways, x, y, _), ACCUnsignedHigher) ->
-       XOp (XGt, [v x; v y])
+    | (Add (true, ACCAlways, _, x, y, _), ACCNotEqual) ->
+       XOp (XNe, [XOp (XPlus, [v x; v y]); zero_constant_expr])
 
-    | (Compare (ACCAlways, x, y, _), ACCNotUnsignedHigher) ->
-       XOp (XLe, [v x; v y])
-                  
-    | _ -> begin found := false; random_constant_expr end in
-  let expr = simplify_xpr expr in
-  if is_random expr then (!found, None) else (true, Some expr)
-
-
-let cc_expr_bare
-      (v: arm_operand_int -> xpr_t)   (* signed *)
-      (vu: arm_operand_int -> xpr_t)  (* unsigned *)
-      (testfloc: floc_int)
-      (testopc: arm_opcode_t)
-      (cc: arm_opcode_cc_t): (bool * xpr_t option) =
-  let found = ref true in
-  let iszero op =
-    match testfloc#inv#rewrite_expr
-            (op#to_expr testfloc) testfloc#env#get_variable_comparator with
-    | XConst (IntConst n) -> n#equal numerical_zero
-    | _ -> false in
-  let gezero op =
-    match testfloc#inv#rewrite_expr
-            (op#to_expr testfloc) testfloc#env#get_variable_comparator with
-    | XConst (IntConst n) -> n#gt numerical_zero
-    | _ -> false in
-  let expr = 
-    match (testopc, cc) with
-    | (Compare (ACCAlways, x, y, _), ACCEqual) -> XOp (XEq, [v x; v y])
-    | (Compare (ACCAlways, x, y, _), ACCNotEqual) -> XOp (XNe, [v x; v y])
-    | (Compare (ACCAlways, x, y, _), ACCSignedLE) when iszero x && iszero y ->
-       true_constant_expr
-    | (Compare (ACCAlways, x, y, _), ACCSignedLE) when gezero x && iszero y ->
-           XOp (XGe, [v x;  int_constant_expr e31])
-    | (Compare (ACCAlways, x, y, _), ACCSignedLE) when iszero y ->
-       (match v x with
-        | XVar var when testfloc#env#is_signed_symbolic_value var ->
-           XOp (XLOr, [XOp (XEq, [v x; zero_constant_expr]);
-                       XOp (XGe, [v x; int_constant_expr e15])])
-        | _ ->
-           XOp (XLOr, [XOp (XEq, [v x; zero_constant_expr]);
-                       XOp (XGe, [v x; int_constant_expr e31])]))
-
-    | (Compare (ACCAlways, x, y, _), ACCSignedGE) when iszero y ->
-       XOp (XLAnd, [XOp (XGe, [v x; v y]);
-                    XOp (XLt, [v x; int_constant_expr e31])])
-
-    | (Compare (ACCAlways, x, y, _), ACCSignedGE) ->
-       let ic31 = int_constant_expr e31 in
-       let c1 = XOp (XLAnd, [XOp (XGe, [v x; v y]); XOp (XLt, [v x; ic31])]) in
-       let d1 = XOp (XLAnd, [c1; XOp (XLt, [v y; ic31])]) in
-       let c2 = XOp (XLAnd, [XOp (XLt, [v x; v y]); XOp (XLt, [v x; ic31])]) in
-       let d2 = XOp (XLAnd, [c2; XOp (XGe, [v y; ic31])]) in
-       XOp (XLOr, [d1; d2])
-
-    | (VCompare (_, ACCAlways, _, x, y), ACCSignedGT) ->
-       XOp (XGt, [v x; v y])
-       
-    | (Compare (_, x, y, _), ACCCarrySet) ->
-       XOp (XGe, [v x; v y])
-
-    | (Compare (_, x, y, _), ACCCarryClear) ->
-       XOp (XLt, [v x; v y])
-
-    | (Compare (ACCAlways, x, y, _), ACCUnsignedHigher) ->
-       XOp (XGt, [v x; v y])
-
-    | (Compare (ACCAlways, x, y, _), ACCNotUnsignedHigher) ->
-       XOp (XLe, [v x; v y])
-
-    | _ -> begin found := false; random_constant_expr end in
-  if is_random expr then (!found, None) else (true, Some expr)
+    | _ ->
+       begin
+         found := false;
+         random_constant_expr
+       end in
+  if is_random expr then
+    (!found, None)
+  else
+    (true, Some expr)
 
 
 let arm_conditional_expr
@@ -301,7 +222,7 @@ let arm_conditional_expr
   let (found, optxpr) =
     match get_arm_opcode_condition condopc with
     | Some c when is_cond_conditional c ->
-       cc_expr_bare v vu testfloc testopc c
+       cc_expr v vu testfloc testopc c
     | _ -> (false, None) in
 
   if found then

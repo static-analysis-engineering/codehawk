@@ -779,6 +779,28 @@ let set_block_boundaries () =
               else
                 ()
 
+           (* create a block for IT block with two T instructions *)
+           | IfThen (c, xyz) when xyz = "T" ->
+              let va1 =
+                !arm_assembly_instructions#get_next_valid_instruction_address va in
+              let instr1 = !arm_assembly_instructions#at_address va1 in
+              let va2 =
+                !arm_assembly_instructions#get_next_valid_instruction_address va1 in
+              let instr2 = !arm_assembly_instructions#at_address va2 in
+              let va3 =
+                !arm_assembly_instructions#get_next_valid_instruction_address va2 in
+              begin
+                (if system_settings#collect_diagnostics then
+                   ch_diagnostics_log#add
+                     "ITT block"
+                     (LBLOCK [va1#toPretty; STR ", "; va3#toPretty]));
+                set_block_entry va1;
+                set_block_entry va3;
+                instr#set_block_condition;
+                instr1#set_condition_covered_by va;
+                instr2#set_condition_covered_by va
+              end
+
            | BranchLink _ | BranchLinkExchange _
                 when is_nr_call_instruction instr ->
               set_block_entry (va#add_int 4)
@@ -811,12 +833,13 @@ let set_block_boundaries () =
         let opcode = instr#get_opcode in
         let is_block_ending =
           match opcode with
-          | Pop (_,_,rl,_) -> rl#includes_pc
+          | Pop (_, _, rl, _) -> rl#includes_pc
           | Branch _ | BranchExchange _ -> true
           | CompareBranchZero _ | CompareBranchNonzero _ -> true
           | LoadRegister (_, dst, _, _, _, _)
                when dst#is_register && dst#get_register = ARPC -> true
-          | LoadMultipleDecrementBefore (_,_,_,rl,_) when rl#includes_pc -> true
+          | LoadMultipleDecrementBefore (_, _, _, rl, _) when rl#includes_pc ->
+             true
           | _ -> false in
         if is_block_ending
            && !arm_assembly_instructions#has_next_valid_instruction va then
@@ -862,23 +885,35 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
       match system_info#get_successors iaddr with
       | [] ->
          (match opcode with
-          | Pop (ACCAlways,_,rl,tw) when rl#includes_pc -> []
+          | Pop (ACCAlways, _, rl, _) when rl#includes_pc -> []
+          | Pop (_, _, rl, _)
+               when rl#includes_pc && instr#is_condition_covered -> []
           | Branch (ACCAlways, op, _)
-            | BranchExchange (ACCAlways,op)
+            | BranchExchange (ACCAlways, op)
                when op#is_register && op#get_register == ARLR ->
              []
           | Branch (ACCAlways, op, _)
-            | BranchExchange (ACCAlways,op) when op#is_absolute_address ->
+            | BranchExchange (ACCAlways, op) when op#is_absolute_address ->
              [op#get_absolute_address]
-          | Branch (_,op, _)
+          | Branch (_, op, _)
             | BranchExchange (_, op)
                when op#is_register && op#get_register == ARLR ->
              (next ())
-          | Branch (_,op, _)
+          | Branch (_, op, _)
             | BranchExchange (_, op)
             | CompareBranchZero (_, op)
             | CompareBranchNonzero (_, op) when op#is_absolute_address ->
+             (* false branch first, true branch second *)
              (next ()) @ [op#get_absolute_address]
+          | IfThen (_, xyz) when xyz = "T" ->
+             let va1 =
+               !arm_assembly_instructions#get_next_valid_instruction_address iaddr in
+             let va2 =
+               !arm_assembly_instructions#get_next_valid_instruction_address va1 in
+             let va3 =
+               !arm_assembly_instructions#get_next_valid_instruction_address va2 in
+             (* here va3 is the false branch, va1 is the true branch *)
+             [va3; va1]
           | TableBranchByte _
             | TableBranchHalfword _
                when system_info#has_jumptable (iaddr#add_int 4) ->
@@ -1140,11 +1175,11 @@ let associate_condition_code_users () =
    MOV  Rx, #0x1                            MOV  Rx, #0x0
  *)
 let is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr =
-  let iszero op floc =
+  let iszero (op: arm_operand_int) (floc: floc_int): bool =
     match op#to_expr floc with
     | XConst (IntConst n) -> n#equal numerical_zero
     | _ -> false in
-  let isone op floc =
+  let isone (op: arm_operand_int) (floc: floc_int): bool =
     match op#to_expr floc with
     | XConst (IntConst n) -> n#equal numerical_one
     | _ -> false in
