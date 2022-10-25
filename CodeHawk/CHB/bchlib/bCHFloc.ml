@@ -1242,13 +1242,8 @@ object (self)
 	 
    method get_test_variables = self#f#get_test_variables self#cia
      
-   method get_test_expr = 
-     self#inv#rewrite_expr
-       (self#f#get_test_expr self#cia) (self#env#get_variable_comparator)
+   method get_test_expr = self#f#get_test_expr self#cia
 
-   method get_raw_test_expr =
-     self#f#get_test_expr self#cia
-     
    (* return the address of the memory reference *)
    method private get_address_bterm
                     (memref:memory_reference_int)

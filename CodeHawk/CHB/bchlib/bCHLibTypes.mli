@@ -2758,16 +2758,16 @@ object
   (* connects the user of a condition code (such as a conditional jump
    * (at first address) to the address of the instruction that sets the
    * condition code (second address) *)
-  method connect_cc_user         : ctxt_iaddress_t -> ctxt_iaddress_t -> unit
+  method connect_cc_user: ctxt_iaddress_t -> ctxt_iaddress_t -> unit
 
   (* set targets for indirect jumps *)
   method set_java_native_method_signature: java_native_method_api_t -> unit
   method set_unknown_java_native_method_signature: unit
-  method set_jumptable_target   : 
+  method set_jumptable_target:
     ctxt_iaddress_t -> doubleword_int -> jumptable_int -> register_t -> unit
-  method set_offsettable_target : 
+  method set_offsettable_target:
     ctxt_iaddress_t -> doubleword_int -> jumptable_int -> data_block_int -> unit
-  method set_global_jumptarget  : ctxt_iaddress_t -> variable_t -> unit
+  method set_global_jumptarget: ctxt_iaddress_t -> variable_t -> unit
   method set_argument_jumptarget: ctxt_iaddress_t -> variable_t -> unit
   method set_dll_jumptarget:
            ctxt_iaddress_t -> string -> string -> call_target_info_int -> unit
@@ -2786,10 +2786,10 @@ object
   method record_return_value: ctxt_iaddress_t -> xpr_t -> unit
 
   (* accessors *)
-  method get_associated_cc_setter : ctxt_iaddress_t -> ctxt_iaddress_t
-  method get_associated_cc_user   : ctxt_iaddress_t -> ctxt_iaddress_t
+  method get_associated_cc_setter: ctxt_iaddress_t -> ctxt_iaddress_t
+  method get_associated_cc_user: ctxt_iaddress_t -> ctxt_iaddress_t
   method get_num_conditions_associated: int
-  method get_num_test_expressions     : int
+  method get_num_test_expressions: int
 
   method get_instruction_bytes: ctxt_iaddress_t -> string
 
@@ -2797,17 +2797,20 @@ object
 
   method get_call_target: ctxt_iaddress_t -> call_target_info_int
 
-  method get_callees         : call_target_info_int list
-  method get_callees_located : (ctxt_iaddress_t * call_target_info_int) list
+  method get_callees: call_target_info_int list
+  method get_callees_located: (ctxt_iaddress_t * call_target_info_int) list
 
-  method get_address         : doubleword_int (* address of this function *)
-  method get_name            : string
-  method get_summary         : function_summary_int
-  method get_constant        : variable_t -> numerical_t  (* auxiliary variable with constant value *)
-  method get_base_pointers   : variable_t list (* list of base pointers used *)
+  method get_address: doubleword_int (* address of this function *)
+  method get_name: string
+  method get_summary: function_summary_int
+
+  (* auxiliary variable with constant value *)
+  method get_constant: variable_t -> numerical_t
+  method get_base_pointers: variable_t list (* list of base pointers used *)
   method get_stack_adjustment: int option
 
-  method get_test_exprs    : (ctxt_iaddress_t * xpr_t) list (* all test expressions in the function *)
+  (* all test expressions in the function *)
+  method get_test_exprs: (ctxt_iaddress_t * xpr_t) list
   method get_test_expr: ctxt_iaddress_t -> xpr_t  (* branch expr (simplified) *)
 
   (* variable mapping for conditional jump expression *)
@@ -2933,17 +2936,23 @@ object
   (* returns the interval value of a variable at this instruction *)
   method get_interval: variable_t -> interval_t
 
-  (* returns the memory reference corresponding to the address in variable plus offset *)
-  method get_memory_variable_1: ?align:int -> variable_t -> numerical_t -> variable_t
+  (* returns the memory reference corresponding to the address in
+     variable plus offset *)
+  method get_memory_variable_1:
+           ?align:int -> variable_t -> numerical_t -> variable_t
 
-  (* returns the memory reference corresponding to a base and index variable plust offset *)
-  method get_memory_variable_2: variable_t -> variable_t -> numerical_t -> variable_t
+  (* returns the memory reference corresponding to a base and index
+     variable plus offset *)
+  method get_memory_variable_2:
+           variable_t -> variable_t -> numerical_t -> variable_t
 
-  (* returns the memory reference corresponding to a base and scaled index variable 
-     plus offset *)
-  method get_memory_variable_3: variable_t -> variable_t -> int -> numerical_t -> variable_t
+  (* returns the memory reference corresponding to a base and scaled index
+     variable plus offset *)
+  method get_memory_variable_3:
+           variable_t -> variable_t -> int -> numerical_t -> variable_t
 
-  (* returns the memory reference corresponding to a global base and scaled index variable *)
+  (* returns the memory reference corresponding to a global base and scaled
+     index variable *)
   method get_memory_variable_4: variable_t -> int -> numerical_t -> variable_t
 
   (* returns the memory reference that corresponds to the address expression *)
@@ -2952,7 +2961,8 @@ object
   (* returns the variable associated with the address expression *)
   method get_lhs_from_address: xpr_t -> variable_t
 
-  (* returns the value of the bridge variable for a given stack parameter at this instruction *)
+  (* returns the value of the bridge variable for a given stack
+     parameter at this instruction *)
   method get_bridge_variable_value: int -> variable_t -> xpr_t
 
   (* returns the difference between esp and the location of the return address, 
@@ -2973,7 +2983,6 @@ object
 
   (* returns the test expression for a conditional jump in this instruction *)
   method get_test_expr: xpr_t
-  method get_raw_test_expr: xpr_t (* branch expr *)
 
   (* returns the auxiliary variables used in a test expression *)
   method get_test_variables: (variable_t * variable_t) list
