@@ -52,6 +52,7 @@ open BCHPreFileIO
 open BCHSpecializations
 open BCHSystemInfo
 open BCHSystemSettings
+open BCHVersion
 open BCHXmlUtil
 
 (* bchlibpe *)
@@ -92,8 +93,6 @@ open BCHAnalyzeApp
 open BCHFileIO
 open BCHSaveExports
 
-(* bchcmdline *)
-open BCHVersion
 
 (* -------------------------------------------------------------------------
  * Command-line switches:

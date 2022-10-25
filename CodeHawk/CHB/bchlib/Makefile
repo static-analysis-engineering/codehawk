@@ -24,6 +24,7 @@ CAMLLINK := ocamlopt \
 
 MLIS := \
 	bCHLibTypes \
+	bCHVersion \
 	bCHXprUtil \
 	bCHXmlUtil \
 	bCHUtilities \
@@ -100,6 +101,7 @@ MLIS := \
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
 SOURCES := \
+	bCHVersion \
 	bCHXprUtil \
 	bCHUtilities \
 	bCHBasicTypes \

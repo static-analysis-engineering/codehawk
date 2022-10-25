@@ -54,6 +54,7 @@ open BCHTypeInvariants
 open BCHXmlUtil
 open BCHUtilities
 open BCHVariable
+open BCHVersion
 
 (* Filename conventions -------------------------------------------------------
  *
@@ -148,12 +149,16 @@ let string_nsplit (separator:char) (s:string):string list =
 let get_bch_root (info:string):xml_element_int =
   let exename = system_data#get_filename in
   let root = xmlElement "codehawk-binary-analyzer" in
+  let chversion = version#get_version in
+  let chdate = version#get_date in
   let hNode = xmlElement "header" in
   begin
-    hNode#setAttribute "name" exename ;
-    hNode#setAttribute "info" info ;
-    hNode#setAttribute "time" (current_time_to_string ()) ;
-    root#appendChildren [ hNode ] ;
+    hNode#setAttribute "name" exename;
+    hNode#setAttribute "info" info;
+    hNode#setAttribute "time" (current_time_to_string ());
+    hNode#setAttribute "chb-version" chversion;
+    hNode#setAttribute "chb-date" chdate;
+    root#appendChildren [hNode];
     root
   end
 
