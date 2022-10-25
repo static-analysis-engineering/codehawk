@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -58,8 +58,10 @@ object (self)
     match instruction_list with
     | [] ->
        let msg =
-         LBLOCK [block#get_first_address#toPretty; STR ": ";
-                 STR "arm_code_pc#get_next_instruction"] in
+         LBLOCK [
+             block#get_first_address#toPretty;
+             STR ": ";
+             STR "arm_code_pc#get_next_instruction"] in
        begin
          ch_error_log#add "cfg error" msg;
          raise (BCH_failure msg)
@@ -78,16 +80,20 @@ object (self)
     | [successor] -> successor
     | [] ->
        let msg =
-         LBLOCK [block#get_first_address#toPretty; STR ": ";
-                 STR "get_block_successor has no successors"] in
+         LBLOCK [
+             block#get_first_address#toPretty;
+             STR ": ";
+             STR "get_block_successor has no successors"] in
        begin
          ch_error_log#add "cfg error" msg;
          raise (BCH_failure msg)
        end
     | _ ->
        let msg =
-         LBLOCK [block#get_first_address#toPretty; STR ": ";
-                 STR "block_successor has more than one successor"] in
+         LBLOCK [
+             block#get_first_address#toPretty;
+             STR ": ";
+             STR "block_successor has more than one successor"] in
        begin
          ch_error_log#add "cfg error" msg;
          raise (BCH_failure msg)
@@ -99,9 +105,17 @@ object (self)
     | [false_branch; _] -> false_branch
     | bsucc ->
        let msg =
-         LBLOCK [block#get_first_address#toPretty; NL; block#toPretty; NL;
-                 INDENT (3, LBLOCK [STR "get_false_branch_successor has ";
-                                    INT (List.length bsucc); STR " successors"])] in
+         LBLOCK [
+             block#get_first_address#toPretty;
+             NL;
+             block#toPretty;
+             NL;
+             INDENT (
+                 3,
+                 LBLOCK [
+                     STR "get_false_branch_successor has ";
+                     INT (List.length bsucc);
+                     STR " successors"])] in
        begin
          ch_error_log#add "cfg error" msg;
          raise (BCH_failure msg)
@@ -112,8 +126,14 @@ object (self)
     | [_; true_branch] -> true_branch
     | _ ->
        let msg =
-         LBLOCK [block#get_first_address#toPretty; NL; block#toPretty; NL;
-                 INDENT (3, STR "get_true-branch_successor does not have two successors")] in
+         LBLOCK [
+             block#get_first_address#toPretty;
+             NL;
+             block#toPretty;
+             NL;
+             INDENT (
+                 3,
+                 STR "get_true-branch_successor does not have two successors")] in
        begin
          ch_error_log#add "cfg error" msg;
          raise (BCH_failure msg)
@@ -131,11 +151,13 @@ object (self)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [STR "No conditional jump info found for block at address: ";
-                     block#get_first_address#toPretty;
-                     STR " in function ";
-                     block#get_faddr#toPretty]))
+            (LBLOCK [
+                 STR "No conditional jump info found for block at address: ";
+                 block#get_first_address#toPretty;
+                 STR " in function ";
+                 block#get_faddr#toPretty]))
 
 end
+
 
 let make_arm_code_pc (block:arm_assembly_block_int) = new arm_code_pc_t block

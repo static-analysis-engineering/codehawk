@@ -153,7 +153,7 @@ class type arm_operand_int =
     method to_address: floc_int -> xpr_t
     method to_variable: floc_int -> variable_t
     method to_multiple_variable: floc_int -> variable_t list
-    method to_expr: floc_int -> xpr_t
+    method to_expr: ?unsigned:bool -> floc_int -> xpr_t
     method to_multiple_expr: floc_int -> xpr_t list
     method to_lhs: floc_int -> variable_t * cmd_t list
     method to_multiple_lhs: floc_int -> variable_t list * cmd_t list
@@ -1052,6 +1052,8 @@ class type arm_assembly_instruction_int =
     method set_inlined_call: unit
     method set_aggregate: arm_operand_int -> doubleword_int list -> unit
     method set_subsumed_by: doubleword_int -> unit
+    method set_block_condition: unit
+    method set_condition_covered_by: doubleword_int -> unit
 
     (* accessors *)
     method get_address: doubleword_int
@@ -1062,6 +1064,7 @@ class type arm_assembly_instruction_int =
     method get_aggregate_dst: arm_operand_int
     method get_dependents: doubleword_int list
     method subsumed_by: doubleword_int
+    method condition_covered_by: doubleword_int
 
     (* predicates *)
     method is_arm32: bool
@@ -1070,8 +1073,10 @@ class type arm_assembly_instruction_int =
     method is_valid_instruction: bool
     method is_non_code_block: bool
     method is_not_code: bool
-    method is_aggregate: bool
-    method is_subsumed: bool
+    method is_aggregate: bool    (* IT turned into assignment *)
+    method is_subsumed: bool     (* subsumed by IT turned into assignment *)
+    method is_block_condition: bool  (* IT turned into conditional jump *)
+    method is_condition_covered: bool  (* condition covered by IT cond. jump *)
 
     (* i/o *)
     method write_xml: xml_element_int -> unit

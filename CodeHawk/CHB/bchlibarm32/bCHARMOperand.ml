@@ -454,9 +454,10 @@ object (self:'a)
             (LBLOCK [STR "to-multiple-variable not applicable: ";
                      self#toPretty]))
 
-  method to_expr (floc:floc_int): xpr_t =
+  method to_expr ?(unsigned=false) (floc:floc_int): xpr_t =
     match kind with
     | ARMImmediate imm ->
+       let imm = if unsigned then imm#to_unsigned else imm in
        big_int_constant_expr imm#to_big_int
     | ARMFPConstant _ -> XConst XRandom
     | ARMReg _ | ARMWritebackReg _ -> XVar (self#to_variable floc)
@@ -524,15 +525,16 @@ object (self:'a)
     match kind with
     | ARMRegList rl ->
        let rlops = self#get_register_op_list in
-       List.map (fun op -> op#to_expr floc) rlops
+       List.map (fun (op: 'a) -> op#to_expr floc) rlops
     | ARMExtensionRegList rl ->
        let rlops = self#get_extension_register_op_list in
-       List.map (fun op -> op#to_expr floc) rlops
+       List.map (fun (op: 'a) -> op#to_expr floc) rlops
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [STR "to-multiple-expr not applicable: ";
-                     self#toPretty]))
+            (LBLOCK [
+                 STR "to-multiple-expr not applicable: ";
+                 self#toPretty]))
 
   method to_lhs (floc:floc_int) =
     match kind with

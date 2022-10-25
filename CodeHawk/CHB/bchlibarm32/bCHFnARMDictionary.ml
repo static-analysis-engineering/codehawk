@@ -158,6 +158,12 @@ object (self)
                         NL];
               raise IO.No_more_input
             end in
+    let rewrite_test_expr (csetter: ctxt_iaddress_t) (x: xpr_t) =
+      let testloc = ctxt_string_to_location floc#fa csetter in
+      let testfloc = get_floc testloc in
+      let xpr =
+        testfloc#inv#rewrite_expr x testfloc#env#get_variable_comparator in
+      simplify_xpr xpr in
     let add_instr_condition
           (tags: string list)
           (args: int list)
@@ -269,6 +275,19 @@ object (self)
       let xprargs = List.map xd#index_xpr xprs in
       (tagstring, varargs @ xprargs @ rdefs @ uses @ useshigh @ flagrdefs) in
 
+    let add_optional_instr_condition
+          (tagstring: string)
+          (args: int list)
+          (c: arm_opcode_cc_t): (string list * int list) =
+      match c with
+      | ACCAlways -> ([tagstring], args)
+      | _ when instr#is_condition_covered -> ([tagstring], args)
+      | c when is_cond_conditional c && floc#has_test_expr ->
+         let csetter = floc#f#get_associated_cc_setter floc#cia in
+         let tcond = rewrite_test_expr csetter floc#get_test_expr in
+         add_instr_condition [tagstring] args tcond
+      | _ -> (tagstring :: ["uc"], args) in
+
     let key =
       match instr#get_opcode with
       | Add (_, c, rd, rn, rm, _) ->
@@ -289,13 +308,7 @@ object (self)
              ~uses:[uses]
              ~useshigh:[useshigh]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | AddCarry (_, c, rd, rn, rm, _) ->
@@ -316,13 +329,7 @@ object (self)
              ~uses:[uses]
              ~useshigh:[useshigh]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | Adr (c, rd, imm) ->
@@ -337,13 +344,7 @@ object (self)
              ~uses:[uses]
              ~useshigh:[useshigh]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | ArithmeticShiftRight (_, c, rd, rn, rm, _) ->
@@ -365,13 +366,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitFieldClear (c, rd, _, _, _) ->
@@ -386,13 +381,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitFieldInsert (c, rd, rn, _, _, _) ->
@@ -408,13 +397,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitwiseAnd (_, c, rd, rn, rm, _) ->
@@ -432,13 +415,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitwiseBitClear (_, c, rd, rn, rm, _) ->
@@ -456,13 +433,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitwiseExclusiveOr (_, c, rd, rn, rm, _) ->
@@ -480,13 +451,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitwiseNot (_, c, rd, rm, _) ->
@@ -503,13 +468,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitwiseOr (_, c, rd, rn, rm, _) ->
@@ -527,13 +486,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitwiseOrNot (_, c, rd, rn, rm) ->
@@ -552,13 +505,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | Branch (_, tgt, _)
@@ -574,11 +521,11 @@ object (self)
                 && tgt#is_absolute_address
                 && floc#has_test_expr ->
          let xtgt = tgt#to_expr floc in
-         let txpr = floc#get_raw_test_expr in
+         let txpr = floc#get_test_expr in
          let fxpr = XOp (XLNot, [txpr]) in
-         let tcond = floc#get_test_expr in
-         let fcond = rewrite_expr (XOp (XLNot, [tcond])) in
          let csetter = floc#f#get_associated_cc_setter floc#cia in
+         let tcond = rewrite_test_expr csetter txpr in
+         let fcond = rewrite_test_expr csetter fxpr in
          let instr =
            (!arm_assembly_instructions)#at_address
              (string_to_doubleword csetter) in
@@ -630,7 +577,8 @@ object (self)
          let xtgt = tgt#to_expr floc in
          let args =
            List.map (fun r -> arm_register_op r RD) [AR0; AR1; AR2; AR3] in
-         let argxprs = List.map (fun a -> a#to_expr floc) args in
+         let argxprs =
+           List.map (fun (a: arm_operand_int) -> a#to_expr floc) args in
          let rdef = get_rdef xtgt in
          let rargxprs = List.map rewrite_expr argxprs in
          (["a:xxxxxr"],
@@ -649,13 +597,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | ByteReversePackedHalfword (c, rd, rm, _) ->
@@ -671,13 +613,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | Compare (c, rn, rm, _) ->
@@ -691,13 +627,7 @@ object (self)
              ~xprs:[xrn; xrm; xresult]
              ~rdefs:rdefs
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | CompareBranchNonzero (rn, tgt) ->
@@ -743,13 +673,7 @@ object (self)
              ~xprs:[xrn; xrm; xresult]
              ~rdefs:rdefs
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | CountLeadingZeros (c, rd, rm) ->
@@ -765,13 +689,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | IfThen (c, xyz) when instr#is_aggregate ->
@@ -811,6 +729,25 @@ object (self)
            (tags, args)
          else
            ([], [])
+
+      | IfThen (c, xyz) when instr#is_block_condition && floc#has_test_expr ->
+         let txpr = floc#get_test_expr in
+         let fxpr = XOp (XLNot, [txpr]) in
+         let csetter = floc#f#get_associated_cc_setter floc#cia in
+         let tcond = rewrite_test_expr csetter txpr in
+         let fcond = rewrite_test_expr csetter fxpr in
+         let instr =
+           (!arm_assembly_instructions)#at_address
+             (string_to_doubleword csetter) in
+         let bytestr = instr#get_bytes_ashexstring in
+         let rdefs = get_all_rdefs tcond in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~xprs:[txpr; fxpr; tcond; fcond]
+             ~rdefs:rdefs
+             () in
+         let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
+         (tags, args)
 
       | IfThen (c, xyz)  ->
          ([], [])
@@ -886,13 +823,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring ::["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | LoadMultipleIncrementBefore (_, _, base, rl, _) ->
@@ -934,13 +865,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
@@ -969,13 +894,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
@@ -1034,13 +953,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
@@ -1080,13 +993,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
@@ -1111,13 +1018,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | LogicalShiftRight (_, c, rd, rn, rm, _) ->
@@ -1135,13 +1036,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | Move(_, c, rd, rm, _, _) ->
@@ -1157,13 +1052,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          if instr#is_subsumed then
            let subsumedby = instr#subsumed_by#to_hex_string in
            (tags @ ["subsumed"; subsumedby], args)
@@ -1199,13 +1088,7 @@ object (self)
              ~uses:[uses]
              ~useshigh:[useshigh]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | MoveTwoRegisterCoprocessor (_, _, _, rt, rt2, _) ->
@@ -1228,13 +1111,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | MultiplyAccumulate (_, _, rd, rn, rm, ra) ->
@@ -1281,12 +1158,14 @@ object (self)
          let spresult = XOp (XPlus, [sprhs; int_constant_expr 4]) in
          let rspresult = rewrite_expr spresult in
          let lhsvars =
-           List.map (fun op -> op#to_variable floc) rl#get_register_op_list in
+           List.map (fun (op: arm_operand_int) ->
+               op#to_variable floc) rl#get_register_op_list in
          let rhsops =
            List.map (fun offset ->
                arm_sp_deref ~with_offset:offset RD)
              (List.init rl#get_register_count (fun i -> 4 * i)) in
-         let rhsexprs = List.map (fun x -> x#to_expr floc) rhsops in
+         let rhsexprs =
+           List.map (fun (x: arm_operand_int) -> x#to_expr floc) rhsops in
          let rrhsexprs = List.map rewrite_expr rhsexprs in
          let rdefs = List.map get_rdef (sprhs :: rhsexprs) in
          let uses = List.map get_def_use (splhs :: lhsvars) in
@@ -1299,13 +1178,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | PreloadData (w, _, base, mem) ->
@@ -1317,7 +1190,8 @@ object (self)
          let splhs = sp#to_variable floc in
          let sprhs = sp#to_expr floc in
          let rhsexprs =
-           List.map (fun op -> op#to_expr floc) rl#get_register_op_list in
+           List.map (fun (op: arm_operand_int) ->
+               op#to_expr floc) rl#get_register_op_list in
          let rrhsexprs = List.map rewrite_expr rhsexprs in
          let regcount = List.length rhsexprs in
          let lhsops =
@@ -1339,13 +1213,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring ::["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | ReverseSubtract (_, c, rd, rn, rm, _) ->
@@ -1365,13 +1233,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | SignedBitFieldExtract (_, rd, rn) ->
@@ -1499,13 +1361,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring ::["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | StoreMultipleIncrementAfter (_, _, base, rl, _, _) ->
@@ -1568,13 +1424,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | StoreRegisterByte (c, rt, rn, rm, mem, _) ->
@@ -1595,13 +1445,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | StoreRegisterDual (_, rt, rt2, _, _, mem, mem2) ->
@@ -1648,13 +1492,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | Subtract (_, c, rd, rn, rm, _, _) ->
@@ -1674,13 +1512,7 @@ object (self)
              ~uses:[uses]
              ~useshigh:[usehigh]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | SubtractCarry (_, _, rd, rn, rm, _) ->
@@ -1778,13 +1610,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | UnsignedExtendHalfword (c, rd, rm) ->
@@ -1801,13 +1627,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | UnsignedMultiplyAccumulateLong (_, _, rdlo, rdhi, rn, rm) ->
@@ -1841,13 +1661,7 @@ object (self)
              ~uses:[get_def_use vlo; get_def_use vhi]
              ~useshigh:[get_def_use_high vlo; get_def_use_high vhi]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | UnsignedSaturatingSubtract8 (_, rd, rn, rm) ->
@@ -1868,13 +1682,7 @@ object (self)
              ~xprs:[xsrc1; xsrc2; rxsrc1; rxsrc2]
              ~rdefs:rdefs
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VectorConvert (_, c, _, _, dst, src) ->
@@ -1890,13 +1698,7 @@ object (self)
              ~uses:[get_def_use vdst]
              ~useshigh:[get_def_use_high vdst]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VDivide (c, _, dst, src1, src2) ->
@@ -1912,13 +1714,7 @@ object (self)
              ~uses:[get_def_use vdst]
              ~useshigh:[get_def_use_high vdst]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)         
 
       | VectorDuplicate (_, _, _, _, _, src) ->
@@ -1943,13 +1739,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VectorMove (c, _, [dst; src]) ->
@@ -1964,13 +1754,7 @@ object (self)
              ~uses:[get_def_use vdst]
              ~useshigh:[get_def_use_high vdst]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VMoveRegisterStatus (c, dst, src) ->
@@ -1985,13 +1769,7 @@ object (self)
              ~uses:[get_def_use vdst]
              ~useshigh:[get_def_use_high vdst]
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VMoveToSystemRegister (_, _, src) ->
@@ -2014,13 +1792,7 @@ object (self)
              ~uses:uses
              ~useshigh:useshigh
              () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | _ -> ([], []) in
