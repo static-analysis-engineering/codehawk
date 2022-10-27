@@ -734,11 +734,10 @@ object (self)
          let txpr = floc#get_test_expr in
          let fxpr = XOp (XLNot, [txpr]) in
          let csetter = floc#f#get_associated_cc_setter floc#cia in
+         let testloc = ctxt_string_to_location floc#fa csetter in
          let tcond = rewrite_test_expr csetter txpr in
          let fcond = rewrite_test_expr csetter fxpr in
-         let instr =
-           (!arm_assembly_instructions)#at_address
-             (string_to_doubleword csetter) in
+         let instr = (!arm_assembly_instructions)#at_address testloc#i in
          let bytestr = instr#get_bytes_ashexstring in
          let rdefs = get_all_rdefs tcond in
          let (tagstring, args) =

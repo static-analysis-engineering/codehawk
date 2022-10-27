@@ -708,6 +708,8 @@ let collect_function_entry_points () =
 
 let set_block_boundaries () =
   let _ = pverbose [STR "Set block boundaries"; NL] in
+  let set_inlined_call (a: doubleword_int) =
+    (!arm_assembly_instructions#at_address a)#set_inlined_call in
   let set_block_entry a =
     try
       (!arm_assembly_instructions#at_address a)#set_block_entry
@@ -840,6 +842,14 @@ let set_block_boundaries () =
                when dst#is_register && dst#get_register = ARPC -> true
           | LoadMultipleDecrementBefore (_, _, _, rl, _) when rl#includes_pc ->
              true
+          | BranchLink (_, op) | BranchLinkExchange (_, op)
+               when op#is_absolute_address
+                    && system_info#is_inlined_function op#get_absolute_address ->
+             begin
+               chlog#add "add inlined call" va#toPretty;
+               set_inlined_call va;
+               true
+             end
           | _ -> false in
         if is_block_ending
            && !arm_assembly_instructions#has_next_valid_instruction va then
@@ -848,6 +858,7 @@ let set_block_boundaries () =
         else
           ())
   end
+
 
 let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
   if system_info#is_nonreturning_call faddr iaddr then
@@ -941,7 +952,10 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
                false
              end) successors)
 
+
 let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
+  let set_block_entry a =
+    (!arm_assembly_instructions#at_address a)#set_block_entry in
   let get_instr a =
     try
       !arm_assembly_instructions#at_address a
@@ -969,9 +983,9 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
     let floc = get_floc (make_location { loc_faddr = faddr; loc_iaddr = va }) in
     let _ = floc#set_instruction_bytes instr#get_instruction_bytes in
     if va#equal wordzero then
-      (Some [],prev,[])
+      (Some [], prev, [])
     else if instr#is_block_entry then
-      (None,prev,[])
+      (None, prev, [])
     else if is_nr_call_instruction instr then
       let _ =
         chlog#add
@@ -999,10 +1013,50 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       (Some [], va, [])
     else if floc#has_call_target && floc#get_call_target#is_nonreturning then
       let _ = chlog#add "non-returning" floc#l#toPretty in
-      (Some [],va,[])
+      (Some [], va, [])
+    else if instr#is_inlined_call then
+      let a =
+        match instr#get_opcode with
+        | BranchLink (_, op) | BranchLinkExchange (_, op)
+             when op#is_absolute_address ->
+           op#get_absolute_address
+        | _ ->
+           raise
+             (BCH_failure
+                (LBLOCK [STR "Internal error in trace block: inlined call"])) in
+      let fn = arm_assembly_functions#get_function_by_address a in
+      let returnsite = get_next_instr_address va in
+      let  _ = set_block_entry returnsite in
+      let _ =
+        chlog#add
+          "inline blocks"
+          (LBLOCK [
+               STR "fn: ";
+               a#toPretty;
+               STR " with return to: ";
+               returnsite#toPretty]) in
+      let ctxt =
+        FunctionContext
+          {ctxt_faddr = faddr;
+           ctxt_callsite = va;
+           ctxt_returnsite = returnsite} in
+      let tgtloc = make_location {loc_faddr = a; loc_iaddr = a} in
+      let ctxttgtloc = make_c_location tgtloc ctxt in
+      let callsucc = ctxttgtloc#ci in
+      let inlinedblocks =
+        List.map
+          (fun b ->
+            let succ =
+              match b#get_successors with
+              | [] ->
+                 [(make_location {loc_faddr = faddr; loc_iaddr = returnsite})#ci]
+              | l ->
+                 List.map (fun s -> add_ctxt_to_ctxt_string faddr s ctxt) l in
+            make_ctxt_arm_assembly_block ctxt b succ) fn#get_blocks in
+      (Some [callsucc], va, inlinedblocks)
     else if !arm_assembly_instructions#has_next_valid_instruction va then
       find_last_instruction (get_next_instr_address va) va
-    else (None,va,[]) in
+    else (None, va, []) in
 
   let (succ, lastaddr, inlinedblocks) =
     if is_nr_call_instruction (get_instr baddr) then
@@ -1021,6 +1075,7 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
     | _ -> get_successors faddr lastaddr in
   (inlinedblocks, make_arm_assembly_block faddr baddr lastaddr successors)
 
+
 let trace_function (faddr:doubleword_int) =
   let _ = pverbose [STR "Trace function "; faddr#toPretty; NL] in
   let workset = new DoublewordCollections.set_t in
@@ -1032,14 +1087,24 @@ let trace_function (faddr:doubleword_int) =
     List.iter (fun a -> if doneset#has a then () else workset#add a) l in
   let blocks = ref [] in
   let rec add_block (blockentry:doubleword_int) =
-    let (inlinedblocks,block) = trace_block faddr blockentry in
-    let blocksuccessors = block#get_successors in
+    let (inlinedblocks, block) = trace_block faddr blockentry in
+    let blocksuccessors =
+      match inlinedblocks with
+      | [] -> block#get_successors
+      | _ -> [] in
+    let inlinedblocksuccessors =
+      List.fold_left
+        (fun acc b ->
+          match b#get_successors with
+          | [h] when is_iaddress h -> h::acc
+          | _ -> acc) [] inlinedblocks in
     begin
       set_block_entry blockentry;
       workset#remove blockentry;
       doneset#add blockentry;
       blocks := (block :: inlinedblocks) @ !blocks;
-      add_to_workset (List.map get_iaddr blocksuccessors);
+      add_to_workset
+        (List.map get_iaddr (blocksuccessors @ inlinedblocksuccessors));
       match workset#choose with Some a -> add_block a | _ -> ()
     end in
   let _ = add_block faddr in
@@ -1052,6 +1117,7 @@ let trace_function (faddr:doubleword_int) =
         let src = b#get_context_string in
         (List.map (fun tgt -> (src,tgt)) b#get_successors) @ acc) [] blocklist in
   make_arm_assembly_function faddr blocklist successors
+
 
 let construct_assembly_function (count:int) (faddr:doubleword_int) =
       try

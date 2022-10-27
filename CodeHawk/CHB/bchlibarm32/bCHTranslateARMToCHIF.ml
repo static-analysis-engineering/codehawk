@@ -525,7 +525,9 @@ let translate_arm_instruction
   let default newcmds =
     ([], [], cmds @ frozenAsserts @ (invop :: newcmds) @ [bwdinvop] @ pcassign) in
   let make_conditional_commands (c: arm_opcode_cc_t) (cmds: cmd_t list) =
-    if finfo#has_associated_cc_setter ctxtiaddr then
+    if instr#is_condition_covered then
+      default cmds
+    else if finfo#has_associated_cc_setter ctxtiaddr then
       let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
       let testloc = ctxt_string_to_location faddr testiaddr in
       let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
@@ -1844,8 +1846,8 @@ let translate_arm_instruction
                ~use:[stackvar]
                ~usehigh:usehigh
                ctxtiaddr in
-           (acc @ defcmds1 @ cmds1 @ splhscmds, off+4)) ([],0) reglhss in
-     let (splhs,splhscmds) = (sp_r WR)#to_lhs floc in
+           (acc @ defcmds1 @ cmds1 @ splhscmds, off+4)) ([], 0) reglhss in
+     let (splhs, splhscmds) = (sp_r WR)#to_lhs floc in
      let increm = XConst (IntConst (mkNumerical (4 * regcount))) in
      let cmds = floc#get_assign_commands splhs (XOp (XPlus, [sprhs; increm])) in
      let useshigh =

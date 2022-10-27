@@ -49,10 +49,14 @@ let nsplit (separator:char) (s:string):string list =
   let start = ref 0 in
   begin
     while !start < len do
-      let s_index = try String.index_from s !start separator with Not_found -> len in
+      let s_index =
+        try
+          String.index_from s !start separator
+        with
+        | Not_found -> len in
       let substring = String.sub s !start (s_index - !start) in
       begin
-	result := substring :: !result ;
+	result := substring :: !result;
 	start := s_index + 1
       end 
     done;
@@ -67,12 +71,14 @@ let fcontext_compare (c1:fcontext_t) (c2:fcontext_t) =
   else
     l0
 
+
 let context_compare (c1:context_t) (c2:context_t) =
   match (c1,c2) with
-  | (BlockContext b1,BlockContext b2) -> b1#compare b2
+  | (BlockContext b1, BlockContext b2) -> b1#compare b2
   | (BlockContext _, _) -> 1
-  |  (_,BlockContext _) -> -1
-  | (FunctionContext f1,FunctionContext f2) -> fcontext_compare  f1 f2
+  |  (_, BlockContext _) -> -1
+  | (FunctionContext f1, FunctionContext f2) -> fcontext_compare f1 f2
+
 
 let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
   let length = List.length in
@@ -80,15 +86,20 @@ let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
   else if (length l1) > (length l2) then 1 
   else List.fold_right2 (fun e1 e2 a -> if a = 0 then (f e1 e2) else a) l1 l2 0
 
+
 let context_list_compare (lst1:context_t list) (lst2:context_t list) =
   list_compare lst1 lst2 context_compare
 
+
 let ctxt_string_to_string (s:ctxt_iaddress_t):string = s
+
 
 let mk_base_location (faddr:doubleword_int) (iaddr:doubleword_int) =
   { loc_faddr = faddr ; loc_iaddr = iaddr }
-                                                     
+
+
 let contexts = H.create 3
+
 
 let add_function_ctxt_iaddress
       (faddr:doubleword_int)      (* outer function address *)
@@ -108,6 +119,7 @@ let add_function_ctxt_iaddress
     ()
   else
     H.add f_entry s (basef,c)
+
 
 let get_context (faddr:doubleword_int) (s:string) =
   if s = "" then
@@ -142,12 +154,15 @@ let decompose_ctxt_string
      let (basef,ctxt) = get_context faddr ctxtstr in
      (ctxt,basef,iaddr)
 
+
 let is_iaddress (s:ctxt_iaddress_t) =
   let components = nsplit '_' s in (List.length components) = 1
 
+
 let is_same_iaddress (d:doubleword_int) (s:ctxt_iaddress_t) =
   (is_iaddress s) && (d#to_hex_string = s)
-    
+
+
 class location_t
         ?(ctxt=[])
         (loc:base_location_t)     (* inner function address, instruction address *)
@@ -214,6 +229,7 @@ object (self:'a)
     LBLOCK [ STR "(" ; self#f#toPretty ; STR "," ; self#i#toPretty ; STR ")" ]
 
 end
+
 
 let make_location = new location_t
 
