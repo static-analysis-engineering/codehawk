@@ -322,15 +322,15 @@ object (self)
   method private add_inlined_function (faddr:doubleword_int) =
     let fd = functions_data#add_function faddr in
     begin
-      fd#set_inlined ;
-      inlined_functions <- faddr :: inlined_functions ;
+      fd#set_inlined;
+      inlined_functions <- faddr :: inlined_functions;
       chlog#add "add inlined function" (faddr#toPretty)
     end
 
   method private add_inlined_block (faddr:doubleword_int) (baddr:doubleword_int) =
     let fd = functions_data#add_function faddr in
     begin
-      fd#add_inlined_block baddr ;
+      fd#add_inlined_block baddr;
       chlog#add
         "add inlined block"
         (LBLOCK [faddr#toPretty; STR ": "; baddr#toPretty])

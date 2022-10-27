@@ -43,6 +43,7 @@ open BCHByteUtilities
 open BCHFunctionData
 open BCHLibTypes
 open BCHSystemInfo
+open BCHSystemSettings
 
 (* bchlibarm32 *)
 open BCHARMDictionary
@@ -66,7 +67,13 @@ object (self)
 
   method set_block_entry = block_entry <- true
 
-  method set_inlined_call = inlined_call <- true
+  method set_inlined_call =
+    let _ =
+      if system_settings#collect_diagnostics then
+        ch_diagnostics_log#add
+          "inlined call"
+          (LBLOCK [vaddr#toPretty; STR ": "; self#toPretty]) in
+    inlined_call <- true
 
   (* applies to IfThen instruction:
      aggregates the dependents into one assignment *)
