@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +46,7 @@ open BCHLocation
 open BCHAssemblyInstructionAnnotations
 open BCHAssemblyInstructions
 open BCHLibx86Types
+
 
 class assembly_block_t
         ?(ctxt=[])
@@ -132,8 +135,9 @@ object (self)
   method toString =
     let instructionStrings = ref [] in
     let _ = self#itera (fun ctxtiaddr instr ->
-      instructionStrings := (ctxtiaddr ^ "  " ^ instr#toString) :: !instructionStrings) in
-    String.concat "\n"  (List.rev !instructionStrings)
+                instructionStrings :=
+                  (ctxtiaddr ^ "  " ^ instr#toString) :: !instructionStrings) in
+    String.concat "\n" (List.rev !instructionStrings)
 
   method toPretty =
     let pp = ref [] in
@@ -147,11 +151,15 @@ object (self)
                 let iloc = ctxt_string_to_location faddr ctxtiaddr in
                 let floc = get_floc iloc in
                 let ann = create_annotation floc in
-                pp := (LBLOCK [ STR ctxtiaddr ; STR "  " ; 
-		                fixed_length_pretty instr#toPretty 32 ;
-                                ann#toPretty ; NL ]) :: !pp) in
+                pp :=
+                  (LBLOCK [
+                       STR ctxtiaddr;
+                       STR "  ";
+		       fixed_length_pretty instr#toPretty 32;
+                       ann#toPretty;
+                       NL]) :: !pp) in
     LBLOCK (List.rev !pp)
-		      
+
 
   method write_xml (node:xml_element_int) =
     node#appendChildren
@@ -161,8 +169,8 @@ object (self)
            let iloc = make_i_location self#get_location instr#get_address in
            let floc = get_floc iloc in
            begin
-	     instr#write_xml iNode ;
-	     iNode#setPrettyAttribute "ann" (create_annotation floc)#toPretty ;  
+	     instr#write_xml iNode;
+	     iNode#setPrettyAttribute "ann" (create_annotation floc)#toPretty;
 	     iNode
            end) self#get_instructions)
 	 
@@ -173,20 +181,23 @@ object (self)
       begin aNode#setAttribute "a" a#to_hex_string ; aNode end in
     let mkC c =
       let cNode = xmlElement "l" in
-      begin cNode#setAttribute "a" c ; cNode end in
+      begin
+        cNode#setAttribute "a" c;
+        cNode
+      end in
     let node = xmlElement "block" in
     let lNode = xmlElement "locs" in
     let sNode = xmlElement "succ" in
     let nNode = xmlElement "nested-in"  in
     let nesting = loops#get_loop_levels self#get_first_address in
     begin
-      node#setAttribute "a" self#get_first_address#to_hex_string ;
-      node#setAttribute "e" self#get_last_address#to_hex_string ;
-      lNode#appendChildren (List.map mkC self#get_addresses) ;
-      sNode#appendChildren (List.map mkC self#get_successors) ;
-      nNode#setIntAttribute "num" (List.length nesting) ;
-      nNode#appendChildren (List.map mkL nesting) ;
-      node#appendChildren [ nNode ; sNode ; lNode ] ;
+      node#setAttribute "a" self#get_first_address#to_hex_string;
+      node#setAttribute "e" self#get_last_address#to_hex_string;
+      lNode#appendChildren (List.map mkC self#get_addresses);
+      sNode#appendChildren (List.map mkC self#get_successors);
+      nNode#setIntAttribute "num" (List.length nesting);
+      nNode#appendChildren (List.map mkL nesting);
+      node#appendChildren [nNode; sNode; lNode];
       node
     end
       
@@ -194,6 +205,7 @@ end
   
 
 let make_assembly_block = new assembly_block_t 
+
 
 (* create an assembly block for an inlined function *)
 let make_ctxt_assembly_block

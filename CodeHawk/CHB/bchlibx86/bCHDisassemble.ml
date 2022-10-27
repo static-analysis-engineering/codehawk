@@ -583,78 +583,109 @@ let is_nr_call (floc:floc_int) (instr:assembly_instruction_int) =
 let set_block_boundaries () =
   try
     let jumpTables = system_info#get_jumptables in
-    let set_block_entry a = (!assembly_instructions#at_address a)#set_block_entry in
-    let set_inlined_call a = (!assembly_instructions#at_address a)#set_inlined_call in
+    let set_block_entry a =
+      (!assembly_instructions#at_address a)#set_block_entry in
+    let set_inlined_call a =
+      (!assembly_instructions#at_address a)#set_inlined_call in
     let is_in_range = !assembly_instructions#is_in_code_range in
     let feps = functions_data#get_function_entry_points in
     begin
-      (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ record targets of jump tables *)
+      (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ record targets of jump tables *)
       List.iter (fun jt -> 
           try
 	    List.iter set_block_entry jt#get_all_targets
           with
           | BCH_failure p ->
-	     chlog#add "disassembly" 
-	               (LBLOCK [ STR "jump table targetb incorrect: " ; p ;
-		                 STR " (start: " ; jt#get_start_address#toPretty ; STR ")" ])
+	     chlog#add
+               "disassembly"
+	       (LBLOCK [
+                    STR "jump table targetb incorrect: ";
+                    p;
+		    STR " (start: ";
+                    jt#get_start_address#toPretty;
+                    STR ")"])
           | Invalid_argument s ->
-             raise (BCH_failure (LBLOCK [ STR "record jump-table targets: " ;
-                                          jt#get_start_address#toPretty ; STR ": " ; STR  s ]))
-        ) jumpTables ; 
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "record jump-table targets: ";
+                       jt#get_start_address#toPretty;
+                       STR ": ";
+                       STR  s]))
+        ) jumpTables;
       
-      (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ record function entry points *)
+      (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ record function entry points *)
       List.iter 
         (fun fe ->
 	  try
 	    set_block_entry fe 
 	  with 
 	  | BCH_failure _ ->
-	     chlog#add "disassembly" 
-	               (LBLOCK [ STR "function entry point incorrect: " ; fe#toPretty ])
+	     chlog#add
+               "disassembly"
+               (LBLOCK [STR "function entry point incorrect: "; fe#toPretty])
 	  | Invalid_argument s ->
-	     ch_error_log#add "disassembly"
-	                      (LBLOCK [ STR "function entry point problem: " ; fe#toPretty ; 
-		                        STR ": " ; STR s ])
-        ) feps ;
+	     ch_error_log#add
+               "disassembly"
+	       (LBLOCK [
+                    STR "function entry point problem: ";
+                    fe#toPretty;
+		    STR ": ";
+                    STR s])
+        ) feps;
       
-      (* ~~~~~~~~~~~~~~~~~~~~ record targets of unconditional and conditional jumps *)
+      (* ~~~~~~~~~~~~~~ record targets of unconditional and conditional jumps *)
       !assembly_instructions#itera
        (fun va instr ->
 	 try
 	   let opcode = instr#get_opcode in
 	   match opcode with
-	   | IndirectJmp op when op#is_absolute_address && 
-		                   is_dll_jump_target op#get_absolute_address -> ()
+	   | IndirectJmp op
+                when op#is_absolute_address
+		     && is_dll_jump_target op#get_absolute_address -> ()
 	   | _ ->
 	      if is_direct_jump_instruction instr#get_opcode then
 	        let targetOp =
 		  match get_operands opcode with
-                  | [ op ] | [ op ; _ ] -> op
+                  | [op] | [op; _] -> op
                   | _ ->
-		     raise (BCH_failure 
-			      (LBLOCK [ STR "Internal error in set_block_boundaries "])) in
+		     raise
+                       (BCH_failure
+			  (LBLOCK [
+                               STR "Internal error in set_block_boundaries "])) in
 	        if targetOp#is_absolute_address then
 		  let targetAddress = targetOp#get_absolute_address in
 		  if is_in_range targetAddress then
 		    set_block_entry targetAddress
 		  else
-		    disassembly_log#add "disassembly"
-		                        (LBLOCK [ STR "Jump target address is outside code range: " ; 
-			                          targetAddress#toPretty ])
+		    disassembly_log#add
+                      "disassembly"
+		      (LBLOCK [
+                           STR "Jump target address is outside code range: ";
+			   targetAddress#toPretty])
 	        else
 		  ()
 	      else
 	        ()
 	 with
 	 | BCH_failure p ->
-	    disassembly_log#add "disassembly" 
-	                        (LBLOCK [ STR "assembly instruction creates incorrect block entry: " ; 
-			                  instr#toPretty ; NL ; p ])
+	    disassembly_log#add
+              "disassembly"
+	      (LBLOCK [
+                   STR "assembly instruction creates incorrect block entry: ";
+		   instr#toPretty;
+                   NL;
+                   p])
          | Invalid_argument s ->
-            raise (BCH_failure (LBLOCK [ STR "record targets of jumps: " ; va#toPretty ;
-                                         STR ": " ; STR s ]))
+            raise
+              (BCH_failure
+                 (LBLOCK [
+                      STR "record targets of jumps: ";
+                      va#toPretty;
+                      STR ": ";
+                      STR s]))
        ) ;
-      (* ~~~~~~~~~~~~~~~~~~ add block entries due to previous block-ending instruction *)
+      (* ~~~~~~~~~ add block entries due to previous block-ending instruction *)
       !assembly_instructions#itera
        (fun va instr ->
          try
@@ -662,32 +693,41 @@ let set_block_boundaries () =
 	   let isBlockEnding = 
 	     is_jump_instruction opcode || 
 	       (match opcode with 
-	          Ret _ | BndRet _ | RepzRet | InterruptReturn _ -> true 
-	          | IndirectCall _ | DirectCall _ when is_nr_call_instruction instr -> true
-                  | DirectCall op when
-                         op#is_absolute_address
-                         && system_info#is_inlined_function op#get_absolute_address ->
-                     begin
-                       chlog#add "add inlined call" va#toPretty ;
-                       pverbose [ STR  "set inlined call " ; va#toPretty ; NL ] ;
-                       set_inlined_call va ;
-                       true
-                     end
-	          |	_ -> false) in
-	   if isBlockEnding && !assembly_instructions#has_next_valid_instruction va then
-	     set_block_entry (!assembly_instructions#get_next_valid_instruction_address va)
+	        | Ret _ | BndRet _ | RepzRet | InterruptReturn _ -> true 
+	        | IndirectCall _
+                  | DirectCall _ when is_nr_call_instruction instr -> true
+                | DirectCall op when
+                       op#is_absolute_address
+                       && system_info#is_inlined_function op#get_absolute_address ->
+                   begin
+                     chlog#add "add inlined call" va#toPretty ;
+                     pverbose [STR  "set inlined call "; va#toPretty; NL];
+                     set_inlined_call va;
+                     true
+                   end
+	        | _ -> false) in
+	   if isBlockEnding
+              && !assembly_instructions#has_next_valid_instruction va then
+	     set_block_entry
+               (!assembly_instructions#get_next_valid_instruction_address va)
 	   else
 	     ()
          with
          | Invalid_argument s ->
-            raise (BCH_failure (LBLOCK [ STR "previous block-ending instructions: " ;
-                                         va#toPretty ; STR ": " ; STR s ])))
+            raise
+              (BCH_failure
+                 (LBLOCK [
+                      STR "previous block-ending instructions: ";
+                      va#toPretty;
+                      STR ": ";
+                      STR s])))
     end
   with
   | BCH_failure p ->
-     raise (BCH_failure (LBLOCK [ STR "Error in set-block-boundaries: " ; p ]))
+     raise (BCH_failure (LBLOCK [STR "Error in set-block-boundaries: "; p]))
   | Invalid_argument s ->
-     raise (BCH_failure (LBLOCK [ STR "Error in set-block-boundaries: " ; STR s ]))
+     raise (BCH_failure (LBLOCK [ STR "Error in set-block-boundaries: "; STR s]))
+
 
 (* it is assumed that these are successors to a toplevel block;
    blocks of inlined functions are incorporated all at once *)
@@ -703,11 +743,17 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
         [ !assembly_instructions#get_next_valid_instruction_address iaddr ]
       else
         begin
-	  disassembly_log#add "disassembly" 
-	                      (LBLOCK [ STR "Next instruction for " ; iaddr#toPretty ; STR " " ; 
-		                        instr#toPretty ; STR " was not found" ]) ;
+	  disassembly_log#add
+            "disassembly"
+	    (LBLOCK [
+                 STR "Next instruction for ";
+                 iaddr#toPretty;
+                 STR " ";
+		 instr#toPretty;
+                 STR " was not found"]);
 	  []
         end in
+
     let get_absolute_op (op:operand_int) = 
       let floc = get_floc (make_location {loc_faddr = faddr; loc_iaddr = iaddr}) in
       let opExpr = op#to_expr floc in
@@ -724,9 +770,12 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
 	     _ -> None 
          end
       | _ -> None in
+
     let is_dll_jump_target_op op =
       (op#is_absolute_address && is_dll_jump_target op#get_absolute_address)
-      || (match get_absolute_op op with Some dw -> is_dll_jump_target dw | _ -> false) in
+      || (match get_absolute_op op with
+          | Some dw -> is_dll_jump_target dw | _ -> false) in
+
     let get_dll_jump_target_op op =
       let dw =
         if op#is_absolute_address then
@@ -734,136 +783,186 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
         else
 	  match get_absolute_op op with
 	  | Some dw -> dw
-	  | _ -> raise 
-	           (BCH_failure (STR "Internal failure in get_dll_jump_target_op (1)")) in
+	  | _ ->
+             raise
+	       (BCH_failure
+                  (STR "Internal failure in get_dll_jump_target_op (1)")) in
       match pe_sections#get_imported_function_by_index dw with
       | Some (lib, fname) -> (lib,fname) 
       | _ ->
          match pe_sections#get_imported_function dw with
          | Some (lib,fname) -> (lib,fname)
-         | _ -> raise (BCH_failure 
-		         (STR "Internal failure in get_dll_jump_target_op (2)")) in    
+         | _ ->
+            raise
+              (BCH_failure
+		 (STR "Internal failure in get_dll_jump_target_op (2)")) in
+
     let successors = match opcode with
-      (* | RepzRet | Ret None | BndRet None -> get_return_successors (get_floca faddr iaddr) *)
       | Ret _ | BndRet _ | RepzRet -> []
       | DirectJmp op 
-        | CfJmp(op,_,_) when op#is_absolute_address -> [ op#get_absolute_address ]
-      | Jcc (_,op) when system_info#is_fixed_true_branch iaddr && op#is_absolute_address ->
-         [ op#get_absolute_address ]
+        | CfJmp(op,_,_) when op#is_absolute_address -> [op#get_absolute_address]
+      | Jcc (_,op)
+           when system_info#is_fixed_true_branch iaddr && op#is_absolute_address ->
+         [op#get_absolute_address]
       | IndirectJmp _ when system_info#has_jump_target iaddr -> 
          let (base,jt,db) = system_info#get_jump_target iaddr in
          begin
-	   finfo#set_offsettable_target ctxtiaddr base jt db ;
+	   finfo#set_offsettable_target ctxtiaddr base jt db;
 	   (get_floc loc)#get_jump_successors
-      end
-    | IndirectJmp op when finfo#is_dll_jumptarget ctxtiaddr -> []
-    | IndirectJmp op when is_dll_jump_target_op op ->
-       let (lib,fname) = get_dll_jump_target_op op in
-       let ctinfo = mk_dll_target lib fname in
-      begin
-	finfo#set_dll_jumptarget ctxtiaddr lib fname ctinfo ;
-	[]
-      end
-    | IndirectJmp _ when finfo#has_jump_target ctxtiaddr -> 
-      (get_floc loc)#get_jump_successors
-    | IndirectJmp op ->
-      begin
-	match get_indirect_jump_targets op with
-	| Some (jumpBase,table,reg) ->
-	  begin
-	    finfo#set_jumptable_target ctxtiaddr jumpBase table reg ;
-	    (get_floc loc)#get_jump_successors
-	  end
-	| _ -> 
-	  if finfo#has_jump_target ctxtiaddr then [] else
-	    let floc = get_floc loc in
-	    let tgtexpr = op#to_expr floc in
-	    let tgtexpr = floc#inv#rewrite_expr tgtexpr 
-	      (finfo#env#get_variable_comparator) in
-	    begin
-	      match tgtexpr with
-	      | XVar tgtvar when not tgtvar#isTmp ->
-		 if finfo#env#is_global_variable tgtvar then
-		   begin 
-		     chlog#add "jump on global" 
-		               (LBLOCK [ floc#l#toPretty ; STR ": " ; tgtvar#toPretty ]) ;
-		     finfo#set_global_jumptarget ctxtiaddr tgtvar ; 
-		    []
-		   end
-		else
-		  begin finfo#set_unknown_jumptarget ctxtiaddr ; [] end 
-	      | _ -> begin finfo#set_unknown_jumptarget ctxtiaddr ; [] end
-	    end
-      end
-    | IndirectCall _ | DirectCall _
-         when finfo#has_call_target ctxtiaddr
-              && (finfo#get_call_target ctxtiaddr)#is_nonreturning ->
-      begin
-	chlog#add "non-returning instruction"
-	  (LBLOCK [ faddr#toPretty ; STR " " ; iaddr#toPretty ; STR " " ;
-		    instr#toPretty ]) ;
-	[]
-      end
-    | IndirectCall _ | DirectCall _
-         when finfo#has_call_target ctxtiaddr
-              && (finfo#get_call_target ctxtiaddr)#is_nonreturning ->
-      begin
-	chlog#add "non-returning instruction"
-	  (LBLOCK [ faddr#toPretty ; STR " " ; iaddr#toPretty ; STR " " ;
-		    instr#toPretty ]) ;
-	[]
-      end
-    | DirectCall op when op#is_absolute_address && 
-	(functions_data#add_function op#get_absolute_address)#is_non_returning ->
-      begin
-	chlog#add "non-returning instruction"
-	  (LBLOCK [ faddr#toPretty ; STR " " ; iaddr#toPretty ; STR " " ;
-		    instr#toPretty ]) ;
-	[]
-      end
-    | IndirectCall op | DirectCall op -> 
-      if is_nr_call_instruction instr || 
-	   finfo#has_call_target ctxtiaddr
-           && (finfo#get_call_target ctxtiaddr)#is_nonreturning then 
-	let _ = chlog#add "non-returning instruction"
-	  (LBLOCK [ faddr#toPretty ; STR " " ; STR ctxtiaddr ; STR " " ; 
-		    instr#toPretty ]) in
-	[ ] 
-      else
-	(next ())
-    | DirectLoop op ->
-      if op#is_absolute_address then
-	(next ()) @ [ op#get_absolute_address ]
-      else
-	begin
-	  chlog#add "disassembly"
-	    (LBLOCK [ STR "Target operand of loop instruction is not an absolute address: " ; 
-		      iaddr#toPretty ; STR " " ; op#toPretty ]) ;
-	  (next ())
-	end
-    | _ ->
-      if is_conditional_jump_instruction opcode then
-	let targetOp = get_jump_operand opcode in
-	if targetOp#is_absolute_address then
-	  (next ())  @ [ targetOp#get_absolute_address ]
-	else
-	  begin
-	    chlog#add "disassembly"
-	      (LBLOCK [ STR "Target operand of conditional jump instruction is not an absolute address: " ;
-			iaddr#toPretty ; STR "  " ; targetOp#toPretty ]) ;
-	    (next ())
-	  end
-      else
-	(next ()) in
+         end
+      | IndirectJmp op when finfo#is_dll_jumptarget ctxtiaddr -> []
+      | IndirectJmp op when is_dll_jump_target_op op ->
+         let (lib,fname) = get_dll_jump_target_op op in
+         let ctinfo = mk_dll_target lib fname in
+         begin
+	   finfo#set_dll_jumptarget ctxtiaddr lib fname ctinfo;
+	   []
+         end
+      | IndirectJmp _ when finfo#has_jump_target ctxtiaddr ->
+         (get_floc loc)#get_jump_successors
+      | IndirectJmp op ->
+         begin
+	   match get_indirect_jump_targets op with
+	   | Some (jumpBase,table,reg) ->
+	      begin
+	        finfo#set_jumptable_target ctxtiaddr jumpBase table reg;
+	        (get_floc loc)#get_jump_successors
+	      end
+	   | _ ->
+	      if finfo#has_jump_target ctxtiaddr then [] else
+	        let floc = get_floc loc in
+	        let tgtexpr = op#to_expr floc in
+	        let tgtexpr =
+                  floc#inv#rewrite_expr tgtexpr
+	            (finfo#env#get_variable_comparator) in
+	        begin
+	          match tgtexpr with
+	          | XVar tgtvar when not tgtvar#isTmp ->
+		     if finfo#env#is_global_variable tgtvar then
+		       begin
+		         chlog#add
+                           "jump on global"
+		           (LBLOCK [floc#l#toPretty; STR ": "; tgtvar#toPretty]);
+		         finfo#set_global_jumptarget ctxtiaddr tgtvar;
+		         []
+		       end
+		     else
+		       begin
+                         finfo#set_unknown_jumptarget ctxtiaddr;
+                         []
+                       end
+	          | _ ->
+                     begin
+                       finfo#set_unknown_jumptarget ctxtiaddr;
+                       []
+                     end
+	        end
+         end
+      | IndirectCall _ | DirectCall _
+           when finfo#has_call_target ctxtiaddr
+                && (finfo#get_call_target ctxtiaddr)#is_nonreturning ->
+         begin
+	   chlog#add
+             "non-returning instruction"
+	     (LBLOCK [
+                  faddr#toPretty;
+                  STR " ";
+                  iaddr#toPretty;
+                  STR " ";
+		  instr#toPretty]);
+	   []
+         end
+      | IndirectCall _ | DirectCall _
+           when finfo#has_call_target ctxtiaddr
+                && (finfo#get_call_target ctxtiaddr)#is_nonreturning ->
+         begin
+	   chlog#add
+             "non-returning instruction"
+	     (LBLOCK [
+                  faddr#toPretty;
+                  STR " ";
+                  iaddr#toPretty;
+                  STR " ";
+		  instr#toPretty]);
+	   []
+         end
+      | DirectCall op
+           when op#is_absolute_address
+                && (functions_data#add_function
+                      op#get_absolute_address)#is_non_returning ->
+         begin
+	   chlog#add
+             "non-returning instruction"
+	     (LBLOCK [
+                  faddr#toPretty;
+                  STR " ";
+                  iaddr#toPretty;
+                  STR " ";
+		  instr#toPretty]);
+	   []
+         end
+      | IndirectCall op | DirectCall op ->
+         if is_nr_call_instruction instr
+	   || finfo#has_call_target ctxtiaddr
+              && (finfo#get_call_target ctxtiaddr)#is_nonreturning then
+	   let _ =
+             chlog#add
+               "non-returning instruction"
+	       (LBLOCK [
+                    faddr#toPretty;
+                    STR " ";
+                    STR ctxtiaddr;
+                    STR " ";
+		    instr#toPretty]) in
+	   []
+         else
+	   (next ())
+      | DirectLoop op ->
+         if op#is_absolute_address then
+	   (next ()) @ [ op#get_absolute_address ]
+         else
+	   begin
+	     chlog#add
+               "disassembly"
+	       (LBLOCK [
+                    STR "Target operand of loop instruction is not an ";
+                    STR "absolute address: ";
+		    iaddr#toPretty;
+                    STR " ";
+                    op#toPretty]);
+	     (next ())
+	   end
+      | _ ->
+         if is_conditional_jump_instruction opcode then
+	   let targetOp = get_jump_operand opcode in
+	   if targetOp#is_absolute_address then
+	     (next ())  @ [targetOp#get_absolute_address]
+	   else
+	     begin
+	       chlog#add
+                 "disassembly"
+	         (LBLOCK [
+                      STR "Target operand of conditional jump instruction ";
+                      STR "is not an absolute address: ";
+		      iaddr#toPretty;
+                      STR "  ";
+                      targetOp#toPretty]);
+	       (next ())
+	     end
+         else
+	   (next ()) in
     List.map
       (fun va -> (make_location { loc_faddr = faddr ; loc_iaddr = va })#ci)
       (List.filter
          (fun va ->
            if !assembly_instructions#is_code_address va then true else
              begin 
-	       chlog#add "disassembly"
-	                 (LBLOCK [ STR "Successor of " ; va#toPretty ; 
-		                   STR " is not a valid code address" ]) ;
+	       chlog#add
+                 "disassembly"
+	         (LBLOCK [
+                      STR "Successor of ";
+                      va#toPretty;
+		      STR " is not a valid code address"]);
 	       false
              end) successors)
 
@@ -873,6 +972,7 @@ let get_call_addr instr =
   | DirectCall op when op#is_absolute_address -> op#get_absolute_address
   | _ -> raise (BCH_failure (LBLOCK [ STR "Internal error in get_call_addr" ]))
 
+
 (* it is assumed that the block is at the toplevel; blocks for inlined
    functions are incorporated together all at once *)
 let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
@@ -880,30 +980,34 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
   let get_instr = !assembly_instructions#at_address in
   let get_next_instr_address = 
     !assembly_instructions#get_next_valid_instruction_address in
+
   let rec find_last_instruction (va:doubleword_int) (prev:doubleword_int) =
     let instr = get_instr va in
     let floc = get_floc (make_location (mk_base_location faddr va)) in
     if va#equal wordzero then
-      (Some [],prev,[])
+      (Some [], prev, [])
     else if instr#is_block_entry then
-      (None,prev,[])
+      (None, prev, [])
     else if is_nr_call floc instr then
-      (Some [],va,[])
+      (Some [], va, [])
     else if instr#is_inlined_call then
-      let a = match instr#get_opcode with
+      let a =
+        match instr#get_opcode with
         | DirectCall op -> op#get_absolute_address
         | _ ->
-           raise (BCH_failure (LBLOCK [ STR "Internal error in trace block" ])) in
+           raise
+             (BCH_failure
+                (LBLOCK [STR "Internal error in trace block"])) in
       let fn = assembly_functions#get_function_by_address a in
       let _ = chlog#add "inline blocks" a#toPretty in
       let returnsite = get_next_instr_address va in
       let _ = set_block_entry returnsite in
       let ctxt =
         FunctionContext
-          { ctxt_faddr = faddr ;
-            ctxt_callsite = va ;
-            ctxt_returnsite = returnsite } in
-      let tgtloc = make_location { loc_faddr = a ; loc_iaddr = a } in
+          {ctxt_faddr = faddr;
+           ctxt_callsite = va;
+           ctxt_returnsite = returnsite} in
+      let tgtloc = make_location {loc_faddr = a; loc_iaddr = a} in
       let ctxttgtloc = make_c_location tgtloc ctxt in
       let callsucc = ctxttgtloc#ci in 
       let inlinedblocks =
@@ -911,22 +1015,27 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
           (fun b ->
             let succ =
               match b#get_successors with
-              | [] -> [ (make_location { loc_faddr = faddr ; loc_iaddr = returnsite })#ci  ]
-              | l -> List.map (fun s -> add_ctxt_to_ctxt_string faddr s ctxt) l in
+              | [] ->
+                 [(make_location {loc_faddr = faddr; loc_iaddr = returnsite})#ci]
+              | l ->
+                 List.map (fun s -> add_ctxt_to_ctxt_string faddr s ctxt) l in
             make_ctxt_assembly_block ctxt b succ) fn#get_blocks in
-      (Some [ callsucc ],va,inlinedblocks)
+      (Some [callsucc], va, inlinedblocks)
     else if !assembly_instructions#has_next_valid_instruction va then
       find_last_instruction (get_next_instr_address va) va
     else
-      (None,va,[]) in
-  let (succ,lastAddress,inlinedblocks) = 
+      (None, va, []) in
+
+  let (succ, lastAddress, inlinedblocks) =
     if !assembly_instructions#has_next_valid_instruction baddr then
       find_last_instruction (get_next_instr_address baddr) baddr
-    else (None,baddr,[]) in
+    else (None, baddr, []) in
+
   let successors = match succ with
     | Some s -> s
     | _ -> get_successors faddr lastAddress in
-  (inlinedblocks,make_assembly_block faddr baddr lastAddress successors)
+  (inlinedblocks, make_assembly_block faddr baddr lastAddress successors)
+
 
 let trace_function (faddr:doubleword_int) =
   let workSet = new DoublewordCollections.set_t in   (* toplevel only *)
@@ -937,23 +1046,24 @@ let trace_function (faddr:doubleword_int) =
     List.iter (fun a -> if doneSet#has a then () else workSet#add a) l in
   let blocks = ref [] in
   let rec add_block (blockEntry:doubleword_int) =
-    let (inlinedblocks,block) = trace_block faddr blockEntry in
+    let (inlinedblocks, block) = trace_block faddr blockEntry in
     let blockSuccessors =
       match inlinedblocks with
-      | []  ->  block#get_successors
+      | [] ->  block#get_successors
       | _ -> [] in
     let inlinedblocksuccessors =
       List.fold_left
         (fun acc b ->
           match b#get_successors with
-          | [ h ] when is_iaddress h -> h::acc
+          | [h] when is_iaddress h -> h::acc
           | _ -> acc) [] inlinedblocks in
     begin
-      set_block_entry blockEntry ;
-      workSet#remove blockEntry ;
-      doneSet#add blockEntry ;
-      blocks := (block :: inlinedblocks) @ !blocks ;
-      add_to_workset (List.map get_iaddr (blockSuccessors @ inlinedblocksuccessors)) ;
+      set_block_entry blockEntry;
+      workSet#remove blockEntry;
+      doneSet#add blockEntry;
+      blocks := (block :: inlinedblocks) @ !blocks;
+      add_to_workset
+        (List.map get_iaddr (blockSuccessors @ inlinedblocksuccessors));
       match workSet#choose with Some a -> add_block a | _ -> ()
     end in
   let _ = add_block faddr in
