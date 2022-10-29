@@ -222,6 +222,7 @@ object (self)
   method private set_jumptable (jumptable: jumptable_int) =
     let saddr = jumptable#get_start_address in
     let eaddr = jumptable#get_end_address in
+    let targetcount = List.length jumptable#get_all_targets in
     if saddr#lt codeBase then
       (if system_settings#collect_diagnostics then
         ch_diagnostics_log#add
@@ -244,11 +245,10 @@ object (self)
             (LBLOCK [
                  STR "start: ";
                  saddr#toPretty;
-                 (jumptable#toPretty
-                    ~is_function_entry_point:(fun _ -> false)
-                    ~get_opt_function_name:(fun _ -> None));
                  STR "; end: ";
-                 eaddr#toPretty]) in
+                 eaddr#toPretty;
+                 STR "; number of targets: ";
+                 INT targetcount]) in
       let startindex =
         try
           (saddr#subtract codeBase)#to_int
