@@ -113,7 +113,10 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   let is_data_block (pos:int) =
     (!arm_assembly_instructions#at_index (displacement+pos))#is_non_code_block in
 
-  let find_instr (testf: arm_assembly_instruction_int -> bool) offsets addr =
+  let find_instr
+        (testf: arm_assembly_instruction_int -> bool)
+        (offsets: int list)
+        (addr: doubleword_int):arm_assembly_instruction_int option =
     List.fold_left
       (fun acc offset ->
         match acc with
@@ -126,7 +129,30 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
            else
              None) None offsets in
 
-  (* format of LDR-based jumptable (in Thumb2):
+  (* format of BX-based jumptable (in Thumb2):
+
+     [2 bytes] CMP indexreg, maxcase
+     [2 bytes] BHI default address
+     [2 bytes] ADR basereg, start address
+     [4 bytes] LDR.W indexreg, [basereg, indexreg, LSL#2]
+     [2 bytes] ADD basereg, basereg, indexreg
+     [2 bytes] BX basereg
+
+     [4 bytes] CMP.W indexreg, maxcase
+     [4 bytes] BHI.W default address
+     [2 bytes] ADR basereg, start_address
+     [4 bytes] LDR.W tmpreg, [basereg, indexreg, LSL#2]
+     [2 bytes] ADDs basereg, basereg, tmpreg
+     [2 bytes] BX basereg
+
+     [2 bytes] CMP indexreg, maxcase
+     [4 bytes] BHI.W default address
+     [2 bytes] ADR basereg, start_address
+     [4 bytes] LDR.W indexreg, [basereg, indexreg, LSL#2]
+     [2 bytes] ADD basereg, indexreg
+     [2 bytes] BX basereg
+
+     format of LDR-based jumptable (in Thumb2):
 
      [2 bytes] CMP indexreg, maxcase
      [4 bytes] BHI.W default_address
@@ -142,6 +168,25 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   let adrtest reg instr =
     match instr#get_opcode with
     | Adr (_, rd, _) -> rd#is_register && rd#get_register = reg
+    | _ -> false in
+
+  let addtest reg instr =
+    match instr#get_opcode with
+    | Add (_, ACCAlways, rd, rn, _, _) ->
+       rd#is_register
+       && rn#is_register
+       && rd#get_register = reg
+       && rn#get_register = reg
+    | _ -> false in
+
+  let ldrtest tmpreg basereg instr =
+    match instr#get_opcode with
+    | LoadRegister (ACCAlways, rt, rn, rm, _, true) ->
+       rt#is_register
+       && rt#get_register = tmpreg
+       && rn#is_register
+       && rn#get_register = basereg
+       && rm#is_register
     | _ -> false in
 
   let is_ldr_jumptable (pos: int) (opcode: arm_opcode_t) =
@@ -160,9 +205,54 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
         | _ -> false)
     | _ -> false in
 
+  let is_bx_jumptable (pos: int) (opcode: arm_opcode_t) =
+    match opcode with
+    | BranchExchange (ACCAlways, baseregop) when baseregop#is_register ->
+       let addr = base#add_int pos in
+       let basereg = baseregop#get_register in
+       let opt_addinstr = find_instr (addtest basereg) [(-2)] addr in
+       (match opt_addinstr with
+        | Some addinstr ->
+           (match addinstr#get_opcode with
+            | Add (_, _, rd, rn, rm, _)
+                 when rd#is_register
+                      && rn#is_register
+                      && rm#is_register
+                      && rd#get_register = basereg
+                      && rn#get_register = basereg ->
+               let tmpreg = rm#get_register in
+               let opt_ldrinstr =
+                 find_instr (ldrtest tmpreg basereg) [(-6)] addr in
+               (match opt_ldrinstr with
+                | Some ldrinstr ->
+                   (match ldrinstr#get_opcode with
+                    | LoadRegister (_, _, _, rm, _, _) ->
+                       let indexreg = rm#get_register in
+                       let opt_adrinstr =
+                         find_instr (adrtest basereg) [(-8)] addr in
+                       (match opt_adrinstr with
+                        | Some _ ->
+                           let opt_cmpinstr =
+                             find_instr (cmptest indexreg) [(-12); (-14); (-16)] addr in
+                           (match opt_cmpinstr with
+                            | Some _ ->
+                               let _ =
+                                 if system_settings#collect_diagnostics then
+                                   ch_diagnostics_log#add
+                                     "bx-jumptable found"
+                                     (LBLOCK [addr#toPretty]) in
+                               true
+                            | _ -> false)
+                        | _ -> false)
+                    | _ -> false)
+                | _ -> false)
+            | _ -> false)
+        |_ -> false)
+    | _ -> false in
+
   let create_ldr_jumptable ch (pos: int) (opcode: arm_opcode_t) =
     match opcode with
-    | LoadRegister(_, dst, basereg, index, _, true)
+    | LoadRegister (_, dst, basereg, index, _, true)
          when dst#get_register = ARPC && index#is_register ->
        let addr = base#add_int pos in
        let cmpinstr = find_instr (cmptest index#get_register) [(-8)] addr in
@@ -207,8 +297,107 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                            ~targets:(List.rev !targets) in
                        begin
                          system_info#add_jumptable jt;
-                         !arm_assembly_instructions#set_jumptables [jt]
+                         !arm_assembly_instructions#set_jumptables [jt];
+                         (if system_settings#collect_diagnostics then
+                            ch_diagnostics_log#add
+                              "ldr-jumptable"
+                              (LBLOCK [
+                                   STR "base: ";
+                                   jtaddr#toPretty;
+                                   STR "; number of targets: ";
+                                   INT (List.length !targets)]))
                        end
+                    | _ -> ())
+                | _ -> ())
+            | _ -> ())
+        | _ -> ())
+    | _ -> () in
+
+  let create_bx_jumptable ch (pos: int) (opcode: arm_opcode_t) =
+    match opcode with
+    | BranchExchange(ACCAlways, baseregop) when baseregop#is_register ->
+       let addr = base#add_int pos in
+       let basereg = baseregop#get_register in
+       let opt_addinstr = find_instr (addtest basereg) [(-2)] addr in
+       (match opt_addinstr with
+        | Some addinstr ->
+           (match addinstr#get_opcode with
+            | Add (_, _, _, _, rm, _) when rm#is_register ->
+               let tmpreg = rm#get_register in
+               let opt_ldrinstr = find_instr (ldrtest tmpreg basereg) [(-6)] addr in
+               (match opt_ldrinstr with
+                | Some ldrinstr ->
+                   (match ldrinstr#get_opcode with
+                    | LoadRegister (_, _, _, rm, _, _) ->
+                       let indexreg = rm#get_register in
+                       let opt_cmpinstr =
+                         find_instr (cmptest indexreg) [(-12); (-14); (-16)] addr in
+                       (match opt_cmpinstr with
+                        | Some cmpinstr ->
+                           (match cmpinstr#get_opcode with
+                            | Compare (_, _, imm, _) when imm#is_immediate ->
+                               let size = imm#to_numerical#toInt in
+                               let opt_adrinstr =
+                                 find_instr (adrtest basereg) [(-8)] addr in
+                               (match opt_adrinstr with
+                                | Some adrinstr ->
+                                   (match adrinstr#get_opcode with
+                                    | Adr (_, _, imm) when imm#is_absolute_address ->
+                                       let jtaddr = imm#get_absolute_address in
+                                       let skips =
+                                         try
+                                           (jtaddr#subtract addr)#to_int - 2
+                                         with
+                                         | Invalid_argument s ->
+                                            raise
+                                              (BCH_failure
+                                                 (LBLOCK [
+                                                      STR "Error in create_bx_jumptable. ";
+                                                      STR "jtaddr: ";
+                                                      jtaddr#toPretty;
+                                                      STR "; addr: ";
+                                                      addr#toPretty;
+                                                      STR ": ";
+                                                      STR s])) in
+                                       let _ = if skips > 0 then ch#skip_bytes skips in
+                                       let targets = ref [] in
+                                       let _ =
+                                         for i = 0 to size do
+                                           let tgtoffset = ch#read_imm_signed_doubleword in
+                                           match tgtoffset#to_int with
+                                           | Some intoffset ->
+                                              (* compensate for BX bit in address *)
+                                              let tgt = jtaddr#add_int (intoffset - 1) in
+                                              targets := tgt :: !targets
+                                           | _ ->
+                                              raise
+                                                (BCH_failure
+                                                   (LBLOCK [
+                                                        STR "create_bx_jumptable: ";
+                                                        STR "error in offset: ";
+                                                        tgtoffset#toPretty]))
+                                         done in
+                                       let jt:jumptable_int =
+                                         make_jumptable
+                                           ~end_address:None
+                                           ~start_address:jtaddr
+                                           ~targets:(List.rev !targets) in
+                                       begin
+                                         system_info#add_jumptable jt;
+                                         !arm_assembly_instructions#set_jumptables [jt];
+                                         (if system_settings#collect_diagnostics then
+                                            ch_diagnostics_log#add
+                                              "bx-jumptable"
+                                              (LBLOCK [
+                                                   STR "base: ";
+                                                   jtaddr#toPretty;
+                                                   STR "; number of targets: ";
+                                                   INT (List.length !targets)]))
+                                       end
+                                    | _ -> ())
+                                | _ -> ())
+                            | _ -> ())
+                        | _ -> ())
                     | _ -> ())
                 | _ -> ())
             | _ -> ())
@@ -223,7 +412,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
       |TableBranchHalfword (_, basereg, indexop, _)
          when basereg#get_register = ARPC ->
        let addr = base#add_int pos in
-       let cmpinstr = find_instr cmptest [(-4); (-6)] addr in
+       let cmpinstr = find_instr cmptest [(-4); (-6); (-8)] addr in
        let indexreg =
          if indexop#is_register then
            indexop#get_register
@@ -250,7 +439,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
       | TableBranchHalfword (_, basereg, indexop, _)
          when basereg#get_register = ARPC ->
        let addr = base#add_int pos in
-       let cmpinstr = find_instr cmptest [(-4); (-6)] addr in
+       let cmpinstr = find_instr cmptest [(-4); (-6); (-8)] addr in
        (match cmpinstr with
         | Some instr ->
            (match instr#get_opcode with
@@ -264,8 +453,9 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                    let _ =
                      for i = 0 to size do
                        let byte = ch#read_byte in
-                       let tgt = addr#add_int ((2 * byte) + 4) in
-                       targets := tgt :: !targets
+                       if byte > 0 then
+                         let tgt = addr#add_int ((2 * byte) + 4) in
+                         targets := tgt :: !targets
                      done in
                    let end_address = jtaddr#add_int (size + 1) in
                    let jt =
@@ -275,7 +465,15 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                        ~targets:(List.rev !targets) in
                    begin
                      system_info#add_jumptable jt;
-                     !arm_assembly_instructions#set_jumptables [jt]
+                     !arm_assembly_instructions#set_jumptables [jt];
+                     (if system_settings#collect_diagnostics then
+                        ch_diagnostics_log#add
+                          "tbb-jumptable"
+                          (LBLOCK [
+                               STR "base: ";
+                               jtaddr#toPretty;
+                               STR "; number of targets: ";
+                               INT (List.length !targets)]))
                    end
                 | TableBranchHalfword _ ->
                    let targets = ref [] in
@@ -293,7 +491,15 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                        ~targets:(List.rev !targets) in
                    begin
                      system_info#add_jumptable jt;
-                     !arm_assembly_instructions#set_jumptables[jt]
+                     !arm_assembly_instructions#set_jumptables [jt];
+                     (if system_settings#collect_diagnostics then
+                        ch_diagnostics_log#add
+                          "tbh-jumptable"
+                          (LBLOCK [
+                               STR "base: ";
+                               jtaddr#toPretty;
+                               STR "; number of targets: ";
+                               INT (List.length !targets)]))
                    end
                 | _ -> ())
             | _ -> ())
@@ -400,6 +606,9 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
               let _ =
                 if is_ldr_jumptable prevPos opcode then
                   create_ldr_jumptable ch prevPos opcode in
+              let _ =
+                if is_bx_jumptable prevPos opcode then
+                  create_bx_jumptable ch prevPos opcode in
               ()
             else
               let instrbytes = ch#read_doubleword in
@@ -449,12 +658,12 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   with
   | BCH_failure p ->
      begin
-       pr_debug [ STR "Error in disassembly: " ; p ] ;
+       pr_debug [STR "Error in disassembly: "; p];
        raise (BCH_failure p)
      end
   | IO.No_more_input ->
      begin
-       pr_debug [ STR "Error in disassembly: No more input" ; NL ];
+       pr_debug [STR "Error in disassembly: No more input"; NL];
        raise IO.No_more_input
      end
 
@@ -836,11 +1045,16 @@ let set_block_boundaries () =
         let is_block_ending =
           match opcode with
           | Pop (_, _, rl, _) -> rl#includes_pc
+          | Move (_, _, dst, _, _, _) ->
+             dst#is_register && dst#get_register = ARPC
           | Branch _ | BranchExchange _ -> true
           | CompareBranchZero _ | CompareBranchNonzero _ -> true
           | LoadRegister (_, dst, _, _, _, _)
                when dst#is_register && dst#get_register = ARPC -> true
-          | LoadMultipleDecrementBefore (_, _, _, rl, _) when rl#includes_pc ->
+          | LoadMultipleDecrementBefore (_, _, _, rl, _)
+            | LoadMultipleDecrementAfter (_, _, _, rl, _)
+            | LoadMultipleIncrementBefore (_, _, _, rl, _)
+            | LoadMultipleIncrementAfter (_, _, _, rl, _) when rl#includes_pc ->
              true
           | BranchLink (_, op) | BranchLinkExchange (_, op)
                when op#is_absolute_address
@@ -899,16 +1113,26 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
           | Pop (ACCAlways, _, rl, _) when rl#includes_pc -> []
           | Pop (_, _, rl, _)
                when rl#includes_pc && instr#is_condition_covered -> []
+          | LoadMultipleDecrementBefore (_, ACCAlways, _, rl, _)
+            | LoadMultipleDecrementAfter (_, ACCAlways, _, rl, _)
+            | LoadMultipleIncrementBefore (_, ACCAlways, _, rl, _)
+            | LoadMultipleIncrementAfter (_, ACCAlways, _, rl, _)
+               when rl#includes_pc -> []
+          | Move (_, ACCAlways, dst, src, _, _)
+               when dst#is_register
+                    && dst#get_register = ARPC
+                    && src#is_register
+                    && src#get_register = ARLR -> []
           | Branch (ACCAlways, op, _)
             | BranchExchange (ACCAlways, op)
-               when op#is_register && op#get_register == ARLR ->
+               when op#is_register && op#get_register = ARLR ->
              []
           | Branch (ACCAlways, op, _)
             | BranchExchange (ACCAlways, op) when op#is_absolute_address ->
              [op#get_absolute_address]
           | Branch (_, op, _)
             | BranchExchange (_, op)
-               when op#is_register && op#get_register == ARLR ->
+               when op#is_register && op#get_register = ARLR ->
              (next ())
           | Branch (_, op, _)
             | BranchExchange (_, op)
@@ -932,6 +1156,25 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
           | LoadRegister _
                when system_info#has_jumptable (iaddr#add_int 4) ->
              (system_info#get_jumptable (iaddr#add_int 4))#get_all_targets
+          | LoadRegister _
+               when system_info#has_jumptable (iaddr#add_int 6) ->
+             (* accomodate cases with alignment at 4-byte boundary *)
+             (system_info#get_jumptable (iaddr#add_int 6))#get_all_targets
+          | LoadRegister (_, dst, _, _, _, _)
+               (* may or may not be return *)
+               when dst#is_register && dst#get_register = ARPC -> []
+          | Move (_, ACCAlways, dst, _, _, _)
+               when dst#is_register && dst#get_register = ARPC -> []
+          | BranchExchange _
+               when system_info#has_jumptable (iaddr#add_int 2) ->
+             (system_info#get_jumptable (iaddr#add_int 2))#get_all_targets
+          | BranchExchange _
+               when system_info#has_jumptable (iaddr#add_int 4) ->
+             (* accomodate cases with alignment at 4-byte boundary *)
+             (system_info#get_jumptable (iaddr#add_int 4))#get_all_targets
+          | Branch _ | BranchExchange _ ->
+             (* no information available *)
+             []
           | _ -> (next ()))
       | l -> l in
     List.map
@@ -946,7 +1189,11 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
                   ch_diagnostics_log#add
                     "disassembly"
                     (LBLOCK [
-                         STR "Successor of ";
+                         STR "Successor of (";
+                         faddr#toPretty;
+                         STR ", ";
+                         iaddr#toPretty;
+                         STR "): ";
                          va#toPretty;
                          STR " is not a valid code address"]));
                false
