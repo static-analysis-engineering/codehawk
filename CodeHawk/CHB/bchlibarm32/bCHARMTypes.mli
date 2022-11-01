@@ -231,6 +231,26 @@ type arm_opcode_t =
       arm_opcode_cc_t (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* imm: pc-relative address *)
+  | AESInverseMixColumns of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* operand 1 *)
+      * arm_operand_int  (* operand 2 *)
+  | AESMixColumns of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* operand 1 *)
+      * arm_operand_int  (* operand 2 *)
+  | AESSingleRoundDecryption of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* operand 1 *)
+      * arm_operand_int  (* operand 2 *)
+  | AESSingleRoundEncryption of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* operand 1 *)
+      * arm_operand_int  (* operand 2 *)
   | ArithmeticShiftRight of
       bool  (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -737,6 +757,7 @@ type arm_opcode_t =
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* rd: destination *)
       * arm_operand_int (* rm: source *)
+      * bool            (* T.W. *)
   | UnsignedMultiplyAccumulateLong of
       bool   (* flags are set *)
       * arm_opcode_cc_t   (* condition *)
@@ -801,6 +822,7 @@ type arm_opcode_t =
       * arm_operand_int (* source *)
   | VectorBitwiseOr of
       arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source 1 *)
       * arm_operand_int (* source 2 *)
@@ -968,6 +990,12 @@ type arm_opcode_t =
       * arm_operand_int (* destination *)
       * arm_operand_int (* source register *)
       * arm_operand_int (* source immediate *)
+  | VectorShiftRightNarrow of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source register *)
+      * arm_operand_int (* source immediate *)
   | VStoreRegister of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* floating-point source register *)
@@ -1001,6 +1029,12 @@ type arm_opcode_t =
       * arm_operand_int (* destination *)
       * arm_operand_int (* source 1 *)
       * arm_operand_int (* source 2 *)
+  | VectorTableLookup of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* extension register list *)
+      * arm_operand_int (* index vector *)
   | VectorTranspose of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* size *)

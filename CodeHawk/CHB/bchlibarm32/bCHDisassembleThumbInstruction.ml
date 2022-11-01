@@ -858,7 +858,7 @@ let parse_thumb32_29
 
   (* < 29>1010D101101<vd>1011<-imm8->    VPUSH - T1 *)
   (* < 29>1010D101101<vd>1010<-imm8->    VPUSH - T2 *)
-  | 37 | 39 when (b 19 16) = 13 && (b 11 9) = 5 && (bv 20) = 0 ->
+  | 41 | 43 when (b 19 16) = 13 && (b 11 9) = 5 && (bv 20) = 0 ->
      let dp = bv 8 in
      let xtype = if dp = 1 then XDouble else XSingle in
      let dbit = bv 22 in
@@ -912,13 +912,13 @@ let parse_thumb32_29
 
   (* < 29>101UD00<rn><vd>1011<-imm8->   VSTR (Encoding T1) *)
   (* < 29>101UD00<rn><vd>1010<-imm8->   VSTR (Encoding T2) *)
-  | 40 | 44 when (b 20 20) = 0 && (b 11 9) = 5 ->
+  | 40 | 44 | 46 when (b 20 20) = 0 && (b 11 9) = 5 ->
      let dp = b 8 8 in
      let xtype = if dp = 1 then XDouble else XSingle in
      let d = b 22 22 in
      let isadd = (b 23 23) = 1 in
      let vd = b 15 12 in
-     let vd = prefix_bit d vd in
+     let vd = if dp = 1 then prefix_bit d vd else postfix_bit d vd in
      let vd = arm_extension_register_op xtype vd in
      let rnreg = get_arm_reg (b 19 16) in
      let rn = arm_register_op rnreg in
@@ -932,7 +932,7 @@ let parse_thumb32_29
 
   (* < 29>101UD01<rn><vd>1011<-imm8->   VLDR (Encoding T1 *)
   (* < 29>101UD01<rn><vd>1010<-imm8->   VLDR (Encoding T2 *)     
-  | 40 | 44 when (b 20 20) = 1 && (b 11 9) = 5 ->
+  | 40 | 44 | 46 when (b 20 20) = 1 && (b 11 9) = 5 ->
      let dp = b 8 8 in
      let xtype = if dp = 1 then XDouble else XSingle in
      let d = b 22 22 in
@@ -1379,13 +1379,13 @@ let parse_thumb32_29
          let src1 = arm_extension_register_op XQuad (n / 2) RD in
          let src2 = arm_extension_register_op XQuad (m / 2) RD in
          (* VORR<c> <Qd>, <Qn>, <Qm> *)
-         VectorBitwiseOr (cc, dst, src1, src2)
+         VectorBitwiseOr (cc, VfpNone, dst, src1, src2)
        else
          let dst = arm_extension_register_op XDouble d WR in
          let src1 = arm_extension_register_op XDouble n RD in
          let src2 = arm_extension_register_op XDouble m RD in
          (* VORR<c> <Dd>, <Dn>, <Dm> *)
-         VectorBitwiseOr (cc, dst, src1, src2)
+         VectorBitwiseOr (cc, VfpNone, dst, src1, src2)
 
   (* < 29>1111Dsz<vn><vd>11o0N0M0<vm>    VMULL - T2 *)
   | 60 | 62 when
@@ -1539,6 +1539,28 @@ let parse_thumb32_29
        let dm = arm_extension_register_op XDouble m in
        (* VSHL<c>.<type><size> <Dd>, <Dm>, #<imm> *)
        VectorShiftLeft (cc, dt, dd WR, dm RD, imm)
+
+  (* < 29>1111D<imm6><vd>100000M1<vm>    VSHRN - T1 *)
+  | 60 | 61 | 62 | 63 when
+         (b 11 8) = 8
+         && (b 7 6) = 0
+         && (bv 4) = 1 ->
+     let imm6 = b 21 16 in
+     let (size, sam) =
+       if imm6 >= 32 then
+         (64, 64 - imm6)
+       else if imm6 >= 16 then
+         (32, 32 - imm6)
+       else
+         (16, 16 - imm6) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let dt = VfpInt size in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     let dd = arm_extension_register_op XDouble d in
+     let qm = arm_extension_register_op XQuad (m / 2) in
+     (* VHSRN<c>.I<size> <Dd>, <Qm>, #<imm> *)
+     VectorShiftRightNarrow (cc, dt, dd WR, qm RD, imm)
 
   | _ ->
      NotRecognized ("parse_thumb32_29:" ^ (string_of_int op), instr)
@@ -2271,7 +2293,7 @@ let parse_thumb32_31_1
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rotation = (b 5 4) lsl 3 in
      let rm = mk_arm_rotated_register_op (get_arm_reg (b 3 0)) rotation in
-     (* SXTH <Rd>, <Rm>{, <rotation>} *)
+     (* SXTH.W <Rd>, <Rm>{, <rotation>} *)
      SignedExtendHalfword (cc, rd WR, rm RD, true)
      
   (* < 31>010000S<rn><15><rd>0000<rm>   LSL (register) - T2 *)
@@ -2279,6 +2301,14 @@ let parse_thumb32_31_1
      let setflags = (b 20 20) = 1 in
      (* LSL{S}<c>.W <Rd>, <Rn>, <Rm> *)
      LogicalShiftLeft (setflags, cc, rd WR, rn RD, rm RD, true)
+
+  (* < 31>01<  1><15><15><rd>10ro<rm>   UXTH.W - T2 *)
+  | 1 when (b 19 16) = 15 && (b 15 12) = 15 && (b 7 6) = 2 ->
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rotation = (b 5 4) lsl 3 in
+     let rm = mk_arm_rotated_register_op (get_arm_reg (b 3 0)) rotation in
+     (* UXTH.W <Rd>, <Rm>{, <rotation>} *)
+     UnsignedExtendHalfword (cc, rd WR, rm RD, true)
 
   (* < 31>010001S<rn><15><rd>0000<rm>   LSR (register) - T2 *)
   | 2 | 3 when (b 15 12) = 15 && (b 7 4) = 0 ->
@@ -2465,7 +2495,27 @@ let parse_thumb32_31_3
      (* VEOR<c>{.<dt>} {<Q/Dd>}, <Q/Dn>, <Q/Dm> *)
      VectorBitwiseExclusiveOr (cc, vd WR, vn RD, vm RD)
 
-  (* < 31>1111Dsz<vn><vd>0010N1M0<vm>   VMLAL - T2 *)
+  (* < 31>1111Dsz<vn><vd>000oN0M0<vm>   VADDL (unsigned) - T1 *)
+  | (3, _, _, (0 | 1)) when (bv 6) = 0 && (bv 4) = 0 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let qd = arm_extension_register_op XQuad (d / 2) in
+     let dn = arm_extension_register_op XDouble n in
+     let dm = arm_extension_register_op XDouble m in
+     let dt =
+       match (b 21 20) with
+       | 0 -> VfpUnsignedInt 8
+       | 1 -> VfpUnsignedInt 16
+       | 2 -> VfpUnsignedInt 32
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [STR "Unexpected size in VADDL"])) in
+     (* VADDL<c>.<dt> <Qd>, <Dn>, <Dm> *)
+     VectorAddLong (cc, dt, qd WR, dn RD, dm RD)
+
+  (* < 31>1111Dsz<vn><vd>0010N1M0<vm>   VMLAL (by scalar)- T2 *)
   | (3, _, _, (2 | 6)) when (bv 6) = 1 && (bv 4) = 0 ->
      let d = prefix_bit (bv 22) (b 15 12) in
      let n = prefix_bit (bv 7) (b 19 16) in
@@ -2490,6 +2540,26 @@ let parse_thumb32_31_3
        VectorMultiplyAccumulateLong (cc, dt, qd WR, dn RD, elt RD)
      else
        raise (ARM_undefined ("VMLAL: sz = " ^ (string_of_int sz)))
+
+  (* < 31>1111Dsz<vn><vd>1000N0M0<vm>   VMLAL (integer) - T2-u *)
+  | (3, _, _, 8) when (bv 6) = 0 && (bv 4) = 0 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let dt =
+       match (b 21 20) with
+       | 0 -> VfpUnsignedInt 8
+       | 1 -> VfpUnsignedInt 16
+       | 2 -> VfpUnsignedInt 32
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [STR "Unexpected value for size in VMLAL"])) in
+     let qd = arm_extension_register_op XQuad (d / 2) in
+     let dn = arm_extension_register_op XDouble n in
+     let dm = arm_extension_register_op XDouble m in
+     (* VMLAL<c>.<dt> <Qd>, <Dn>, <Dm> *)
+     VectorMultiplyAccumulateLong (cc, dt, qd WR, dn RD, dm RD)
 
   (* < 31>1111Dsz<vn><vd>1010N1M0<vm>   VMULL (by scalar) - T2 *)
   | (3, _, _, 10) when (bv 6) = 1 && (bv 4) = 0 ->
@@ -3371,7 +3441,7 @@ let parse_t16_bit_extract
   (* 1011001010<r><r>  UXTH - T1 *)
   | 2 ->
      (* UXTH<c> <Rd>, <Rm> *)
-     UnsignedExtendHalfword (cc, rd WR, rm RD)
+     UnsignedExtendHalfword (cc, rd WR, rm RD, false)
     
   (* 1011001011<r><r>  UXTB - T1 *)
   | 3 ->
@@ -3571,14 +3641,16 @@ let disassemble_thumb_instruction
   | ARM_undefined s ->
      begin
        ch_error_log#add
-         "instruction:UNDEFINED" (LBLOCK [iaddr#toPretty; STR ": "; STR s]);
-       OpcodeUnpredictable s
+         "Thumb instruction:UNDEFINED"
+         (LBLOCK [iaddr#toPretty; STR ": "; STR s]);
+       OpcodeUndefined s
      end
   | ARM_unpredictable s ->
      begin
        ch_error_log#add
-         "instruction:UNPREDICTABLE" (LBLOCK [iaddr#toPretty; STR ": "; STR s]);
-       OpcodeUndefined s
+         "Thumb instruction:UNPREDICTABLE"
+         (LBLOCK [iaddr#toPretty; STR ": "; STR s]);
+       OpcodeUnpredictable s
      end
   | BCH_failure p ->
      begin

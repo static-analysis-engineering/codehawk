@@ -1612,7 +1612,7 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | UnsignedExtendHalfword (c, rd, rm) ->
+      | UnsignedExtendHalfword (c, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
          let result = xrm in
