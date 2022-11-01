@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -74,6 +76,7 @@ object
   method virtual read_doubleword : doubleword_int
 end
 
+
 class little_endian_stream_wrapper_t (input:IO.input) =  
 object
   inherit stream_wrapper_t input
@@ -90,6 +93,7 @@ object
     let h = IO.read_ui16 input in
     make_doubleword l h
 end
+
 
 class big_endian_stream_wrapper_t (input:IO.input) =  
 object
@@ -143,12 +147,18 @@ object (self)
     with
     | Invocation_error s
     | Invalid_argument s ->
-	raise (BCH_failure (LBLOCK [ STR "Unable to skip " ; INT n ; STR " bytes: " ; 
-				     STR s ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Unable to skip ";
+                 INT n;
+                 STR " bytes: ";
+		 STR s]))
 
   method read = begin pos <- pos+1 ; ch#read end
 
-  method nread n = let s = ch#nread n in begin pos <- pos + (String.length s) ; s end
+  method nread n =
+    let s = ch#nread n in begin pos <- pos + (String.length s) ; s end
 
   method really_nread n = begin pos <- pos + n ; ch#really_nread n end
 
@@ -183,7 +193,8 @@ object (self)
 
   method read_imm_signed_word = make_immediate true 2 (bii self#read_i16)
 
-  method read_imm_signed_doubleword = make_immediate true 4 (bii32 self#read_real_i32)
+  method read_imm_signed_doubleword =
+    make_immediate true 4 (bii32 self#read_real_i32)
 
   method read_imm_signed n = 
     match n with
@@ -227,17 +238,22 @@ object (self)
             Bytes.set s j (Char.chr a.(j)) 
           done;
 	  (if !i = maxLen - 1 then
-	      chlog#add "string length"
-		(LBLOCK [ STR "String length exceeds " ; INT maxLen ; 
-			  STR "characters (cut short)" ])) ;
+	     chlog#add
+               "string length"
+	       (LBLOCK [
+                    STR "String length exceeds ";
+                    INT maxLen;
+		    STR "characters (cut short)"]));
 	  Bytes.to_string s
 	end
       end
     with
       Invalid_argument _ ->
 	begin
-	  ch_error_log#add "invalid input"
-	    (LBLOCK [ STR "read_null_terminated_string: longer than 1000 characters"]);
+	  ch_error_log#add
+            "invalid input"
+	    (LBLOCK [
+                 STR "read_null_terminated_string: longer than 1000 characters"]);
 	  raise (Invalid_input "read_null_terminated_string")
 	end
     | IO.No_more_input ->
