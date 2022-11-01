@@ -187,8 +187,16 @@ object (self)
       | Add (s, c, rd, rn, imm, tw)
         | AddCarry (s, c, rd, rn, imm, tw) ->
          (ctags c, [setb s ; oi rd; oi rn; oi imm; setb tw])
-      | Adr (cond,rd,addr) ->
-         (tags @ [ ci cond ], [ oi rd ; oi addr ])
+      | Adr (c, rd, addr) ->
+         (ctags c, [oi rd; oi addr])
+      | AESInverseMixColumns (c, dt, vd, vm) ->
+         (ctags c, [di dt; oi vd; oi vm])
+      | AESMixColumns (c, dt, vd, vm) ->
+         (ctags c, [di dt; oi vd; oi vm])
+      | AESSingleRoundDecryption (c, dt, vd, vm) ->
+         (ctags c, [di dt; oi vd; oi vm])
+      | AESSingleRoundEncryption (c, dt, vd, vm) ->
+         (ctags c, [di dt; oi vd; oi vm])
       | ArithmeticShiftRight (s, c, rd, rn, rm, tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw ])
       | BitFieldClear (c, rd, lsb, width, msb) ->
@@ -328,7 +336,8 @@ object (self)
       | UnsignedExtendAddHalfword (c, rd, rn, rm) ->
          (ctags c, [oi rd; oi rn; oi rm])
       | UnsignedExtendByte (c, rd, rm, tw) -> (ctags c, [oi rd; oi rm; setb tw])
-      | UnsignedExtendHalfword (c,rd,rm) -> (ctags c, [oi rd; oi rm])
+      | UnsignedExtendHalfword (c, rd, rm, tw) ->
+         (ctags c, [oi rd; oi rm; setb tw])
       | UnsignedMultiplyAccumulateLong (s, c, rdlo, rdhi, rn, rm) ->
          (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | UnsignedMultiplyLong (s, c, rdlo, rdhi, rn, rm) ->
@@ -351,8 +360,8 @@ object (self)
          (ctags c, [oi dst; oi src1; oi src2])
       | VectorBitwiseNot (c, dt, dst, src) ->
          (ctags c, [di dt; oi dst; oi src])
-      | VectorBitwiseOr (c, dst, src1, src2) ->
-         (ctags c, [oi dst; oi src1; oi src2])
+      | VectorBitwiseOr (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VCompare (nan, c, dt, op1, op2) ->
          (ctags c, [if nan then 1 else 0; di dt; oi op1; oi op2])
       | VectorConvert (round, c, dstdt, srcdt, dst, src) ->
@@ -404,6 +413,8 @@ object (self)
          (ctags c, [di dt; oi dst; oi src; oi imm])
       | VectorShiftRightAccumulate (c, dt, dst, src, imm) ->
          (ctags c, [di dt; oi dst; oi src; oi imm])
+      | VectorShiftRightNarrow (c, dt, dst, src, imm) ->
+         (ctags c, [di dt; oi dst; oi src; oi imm])
       | VStoreRegister (c, src, base, mem) ->
          (ctags c, [oi src; oi base; oi mem])
       | VectorStoreMultipleIncrementAfter (wb, c, rn, rl, mem) ->
@@ -414,6 +425,8 @@ object (self)
          (ctags c, [setb wb; di sz; oi rl; oi rn; oi mem; oi rm])
       | VectorSubtract (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorTableLookup (c, dt, dst, table, index) ->
+         (ctags c, [di dt; oi dst; oi table; oi index])
       | VectorTranspose (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
 
       | OpInvalid | NotCode _ -> (tags,[])

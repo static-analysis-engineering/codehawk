@@ -2519,7 +2519,7 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | UnsignedExtendHalfword (c, rd, rm) ->
+  | UnsignedExtendHalfword (c, rd, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrm = XOp (XXlsh, [rm#to_expr floc]) in
@@ -2684,6 +2684,8 @@ let translate_arm_instruction
   | VectorReverseWords _ -> default []
 
   | VectorReverseHalfwords _ -> default []
+
+  | VectorShiftRightNarrow _ -> default []
 
   | VStoreRegister(c, dd, rn, mem) ->
      let floc = get_floc loc in

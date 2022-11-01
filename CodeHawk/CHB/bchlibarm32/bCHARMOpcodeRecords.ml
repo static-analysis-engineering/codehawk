@@ -141,6 +141,34 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "ADR" cc [rd; addr ])
     }
+  | AESInverseMixColumns (c, dt, vd, vm) -> {
+      mnemonic = "AESIMC";
+      operands = [vd; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "AESIMC" c [vd; vm])
+    }
+  | AESMixColumns (c, dt, vd, vm) -> {
+      mnemonic = "AESMC";
+      operands = [vd; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "AESMC" c [vd; vm])
+    }
+  | AESSingleRoundDecryption (c, dt, vd, vm) -> {
+      mnemonic = "AESD";
+      operands = [vd; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "AESD" c [vd; vm])
+    }
+  | AESSingleRoundEncryption (c, dt, vd, vm) -> {
+      mnemonic = "AESE";
+      operands = [vd; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "AESE" c [vd; vm])
+    }
   | ArithmeticShiftRight (s, c, rd, rn, rm, tw) -> {
       mnemonic = "ASR";
       operands = [rd; rn; rm];
@@ -810,12 +838,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "UXTB" c [rd; rm])
     }
-  | UnsignedExtendHalfword (c, rd, rm) -> {
+  | UnsignedExtendHalfword (c, rd, rm, tw) -> {
       mnemonic = "UXTH";
       operands = [rd; rm];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "UXTH" c [rd; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "UXTH" c [rd; rm])
     }
   | UnsignedMultiplyAccumulateLong (s, c, rdlo, rdhi, rn, rm) -> {
       mnemonic = "UMLAL";
@@ -878,7 +906,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [dst; imm];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "VBIC" c [dst; imm])
+      ida_asm = (fun f -> f#opscc ~dt "VBIC" c [dst; imm])
     }
   | VectorBitwiseExclusiveOr (c, dst, src1, src2) -> {
       mnemonic = "VEOR";
@@ -894,12 +922,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMVN" c [dst; src])
     }
-  | VectorBitwiseOr (c, dst, src1, src2) -> {
+  | VectorBitwiseOr (c, dt, dst, src1, src2) -> {
       mnemonic = "VORR";
       operands = [dst; src1; src2];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "VORR" c [dst; src1; src2])
+      ida_asm = (fun f -> f#opscc ~dt "VORR" c [dst; src1; src2])
     }
   | VCompare (nan, c, dt, op1, op2) ->
      let mnemonic =
@@ -1118,6 +1146,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VSRA" c [dst; src; imm])
     }
+  | VectorShiftRightNarrow (c, dt, dst, src, imm) -> {
+      mnemonic = "VSHRN";
+      operands = [dst; src; imm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VSHRN" c [dst; src; imm])
+    }
   | VStoreRegister (c, src, base, mem) -> {
       mnemonic = "VSTR";
       operands = [src; base; mem];
@@ -1152,6 +1187,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VSUB" c [dst; src1; src2])
+    }
+  | VectorTableLookup (c, dt, dst, table, index) -> {
+      mnemonic = "VTBL";
+      operands = [dst; table; index];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VTBL" c [dst; table; index])
     }
   | VectorTranspose (c, dt, dst, src) -> {
       mnemonic = "VTRN";
