@@ -417,6 +417,8 @@ object (self)
          (ctags c, [di dt; oi dst; oi src; oi imm])
       | VStoreRegister (c, src, base, mem) ->
          (ctags c, [oi src; oi base; oi mem])
+      | VectorStoreMultipleDecrementBefore (wb, c, rn, rl, mem) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem])
       | VectorStoreMultipleIncrementAfter (wb, c, rn, rl, mem) ->
          (ctags c, [setb wb; oi rn; oi rl; oi mem])
       | VectorStoreOne (wb, c, sz, rl, rn, mem, rm) ->

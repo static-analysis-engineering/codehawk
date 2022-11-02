@@ -1001,6 +1001,12 @@ type arm_opcode_t =
       * arm_operand_int (* floating-point source register *)
       * arm_operand_int (* base register *)
       * arm_operand_int (* mem: memory location *)
+  | VectorStoreMultipleDecrementBefore of
+      bool    (* writeback *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rn: base *)
+      * arm_operand_int (* rl: register list *)
+      * arm_operand_int (* mem: multiple memory locations *)
   | VectorStoreMultipleIncrementAfter of
       bool    (* writeback *)
       * arm_opcode_cc_t (* condition *)
