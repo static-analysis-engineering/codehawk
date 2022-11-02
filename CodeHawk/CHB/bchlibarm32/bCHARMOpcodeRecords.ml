@@ -1160,6 +1160,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VSTR" c [src; mem])
     }
+  | VectorStoreMultipleDecrementBefore (wb, c, rn, rl, mem) -> {
+      mnemonic = "VSTMDB";
+      operands = [rn; rl];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "VSTMDB" c [rn; rl])
+    }
   | VectorStoreMultipleIncrementAfter (wb, c, rn, rl, mem) -> {
       mnemonic = "VSTM";
       operands = [rn; rl];
