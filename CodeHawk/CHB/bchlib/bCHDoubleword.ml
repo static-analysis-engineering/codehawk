@@ -45,6 +45,8 @@ module B = Big_int_Z
 (* commonly used constant values *)
 let e7   = 128
 let e8   = 256
+let e9   = 512
+let e10  = 1024
 let e15  = e7 * e8
 let e16  = e8 * e8
 let e31  = e15 * e16
@@ -58,6 +60,15 @@ let rec pow2 n =
   match n with
   | 0 -> 1
   | 1 -> 2
+  | 2 -> 4
+  | 3 -> 8
+  | 4 -> 16
+  | 5 -> 32
+  | 6 -> 64
+  | 7 -> e7
+  | 8 -> e8
+  | 9 -> e9
+  | 10 -> e10
   | n ->
     let b = pow2 (n / 2) in
     b * b * (if n mod 2 = 0 then 1 else 2)
@@ -303,8 +314,9 @@ object (self:'a)
   (* return the value of the given bit (zero-based) *)
   method get_bitval (pos:int) =
     if pos < 0 || pos > 31 then
-      raise (BCH_failure
-               (LBLOCK [ STR "Error in get_bitval at " ; INT pos ]))
+      raise
+        (BCH_failure
+           (LBLOCK [STR "Error in get_bitval at "; INT pos]))
     else
       if self#is_nth_bit_set pos then 1 else 0
 
@@ -362,7 +374,7 @@ object (self:'a)
   method is_highest_bit_set = (unsigned_value lsr 31) = 1
 
   method is_nth_bit_set (n:int) =
-    if n >=0  && n < 32 then
+    if n >= 0  && n < 32 then
       (unsigned_value lsr n) mod 2 = 1
     else
       begin
