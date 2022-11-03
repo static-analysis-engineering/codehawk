@@ -972,6 +972,12 @@ type arm_opcode_t =
       * arm_operand_int (* destination *)
       * arm_operand_int (* source register *)
       * arm_operand_int (* source immediate / source register *)
+  | VectorShiftLeftInsert of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source register *)
+      * arm_operand_int (* source immediate *)
   | VectorShiftRight of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* data type *)
@@ -1046,6 +1052,11 @@ type arm_opcode_t =
       * vfp_datatype_t  (* size *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
+  | VectorZip of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* dst/src *)
+      * arm_operand_int (* dst/src *)
 
   (* SupervisorType *)
   | SupervisorCall of arm_opcode_cc_t * arm_operand_int

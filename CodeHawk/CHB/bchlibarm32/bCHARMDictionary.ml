@@ -407,6 +407,8 @@ object (self)
          (ctags c, [di dt; oi dst; oi src; oi imm])
       | VectorShiftLeft (c, dt, dst, src, src2) ->
          (ctags c, [di dt; oi dst; oi src; oi src2])
+      | VectorShiftLeftInsert (c, dt, dst, src, imm) ->
+         (ctags c, [di dt; oi dst; oi src; oi imm])
       | VectorShiftRight (c, dt, dst, src, imm) ->
          (ctags c, [di dt; oi dst; oi src; oi imm])
       | VectorShiftRightInsert (c, dt, dst, src, imm) ->
@@ -430,6 +432,7 @@ object (self)
       | VectorTableLookup (c, dt, dst, table, index) ->
          (ctags c, [di dt; oi dst; oi table; oi index])
       | VectorTranspose (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
+      | VectorZip (c, dt, op1, op2) -> (ctags c, [di dt; oi op1; oi op2])
 
       | OpInvalid | NotCode _ -> (tags,[])
       | NoOperation c -> (ctags c, [])

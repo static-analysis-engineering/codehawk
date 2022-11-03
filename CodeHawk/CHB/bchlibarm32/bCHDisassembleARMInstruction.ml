@@ -2649,7 +2649,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let d = prefix_bit (bv 22) (b 15 12) in
      let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
      let immop = mk_arm_immediate_op false 4 (mkNumerical imm8) in
-     let dt = adv_simd_mod_dt 0 cm "VMOV" in
+     let dt = adv_simd_mod_dt 0 cm "VMVN" in
      let vd = arm_extension_register_op XDouble d in
      (* VMVN<c>.<dt> <Dd>, #<imm> *)
      VectorBitwiseNot (cc, dt, vd WR, immop)
@@ -2661,9 +2661,8 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
          raise (ARM_undefined ("VMVN immediate with cmode=15")) in
      let d = prefix_bit (bv 22) (b 15 12) in
      let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
-     let imm64 = adv_simd_expand_imm 1 cm imm8 in
-     let immop = mk_arm_immediate_op false 4 imm64 in
-     let dt = adv_simd_mod_dt 0 cm "VMOV" in
+     let immop = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let dt = adv_simd_mod_dt 0 cm "VMVN" in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VMVN<c>.<dt> <Qd>, #<imm> *)
      VectorBitwiseNot (cc, dt, vd WR, immop)
@@ -3669,6 +3668,26 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      (* VTRN.<size> <Qd>, <Qm> *)
      VectorTranspose (cc, dt, vd WR, vm RD)
 
+  (* <15><  7>D11sz10<vd>< 1>1QM0<vm> *)   (* VZIP - A1 (Q=0) *)
+  | (7, 3, 1, 0, 0) when (b 17 16) = 2 && (bv 7) = 1 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpSize (8 lsl (b 19 18)) in
+     (* VZIP.<size> <Dd>, <Dm> *)
+     VectorZip (cc, dt, vd RW, vm RW)
+
+  (* <15><  7>D11sz10<vd>< 1>1QM0<vm> *)   (* VZIP - A1 (Q=1) *)
+  | (7, 3, 1, 1, 0) when (b 17 16) = 2 && (bv 7) = 1 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let dt = VfpSize (8 lsl (b 19 18)) in
+     (* VZIP.<size> <Qd>, <Qm> *)
+     VectorZip (cc, dt, vd RW, vm RW)
+
   (* <15><  7>D11sz10<vd>< 2>00M0<vm> *)   (* VMOVN - A1 *)
   | (7, 3, 2, 0, 0) when (b 17 16) = 2 && (bv 7) = 0 ->
      let d = prefix_bit (bv 22) (b 15 12) in
@@ -3908,7 +3927,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
                       INT (bv 7);
                       STR ", ";
                       INT (b 21 19)])) in
-       let dt = VfpUnsignedInt esize in
+       let dt = VfpSize esize in
        let imm = mk_arm_immediate_op false 4 (mkNumerical sam) in
        (* VSRI<c>.<size> <Dd>, <Dm>, #<imm> *)
        VectorShiftRightInsert (cc, dt, vd WR, vm RD, imm)
@@ -3934,10 +3953,62 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
                       INT (bv 7);
                       STR ", ";
                       INT (b 21 19)])) in
-       let dt = VfpUnsignedInt esize in
+       let dt = VfpSize esize in
        let imm = mk_arm_immediate_op false 4 (mkNumerical sam) in
        (* VSRI<c>.<size> <Qd>, <Qm>, #<imm> *)
        VectorShiftRightInsert (cc, dt, vd WR, vm RD, imm)
+
+  (* <15><  7>D<imm6><vd>< 5>LQM1<vm> *) (* VSLI - A1 (Q=0) *)
+  | (7, _, 5, 0, 1) when ((bv 7) = 1 || (b 21 19) > 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
+     let imm6 = b 21 16 in
+       let (esize, sam) =
+         match (bv 7, b 21 19) with
+         | (0, 1) -> (8, imm6 - 8)
+         | (0, (2 | 3)) -> (16, imm6 - 16)
+         | (0, (4 | 5 | 6 | 7)) -> (32, imm6 - 32)
+         | (1, _) -> (64, imm6)
+         | _ ->
+            raise
+              (BCH_failure
+                 (LBLOCK [
+                      STR "cond15:VSLI: ";
+                      INT (bv 7);
+                      STR ", ";
+                      INT (b 21 19)])) in
+       let dt = VfpSize esize in
+       let imm = mk_arm_immediate_op false 4 (mkNumerical sam) in
+       (* VSLI<c>.<size> <Dd>, <Dm>, #<imm> *)
+       VectorShiftLeftInsert (cc, dt, vd WR, vm RD, imm)
+
+  (* <15><  7>D<imm6><vd>< 5>LQM1<vm> *) (* VSLI - A1 (Q=1) *)
+  | (7, _, 5, 1, 1) when ((bv 7) = 1 || (b 21 19) > 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let imm6 = b 21 16 in
+       let (esize, sam) =
+         match (bv 7, b 21 19) with
+         | (0, 1) -> (8, imm6 - 8)
+         | (0, (2 | 3)) -> (16, imm6 - 16)
+         | (0, (4 | 5 | 6 | 7)) -> (32, imm6 - 32)
+         | (1, _) -> (64, imm6)
+         | _ ->
+            raise
+              (BCH_failure
+                 (LBLOCK [
+                      STR "cond15:VSLI: ";
+                      INT (bv 7);
+                      STR ", ";
+                      INT (b 21 19)])) in
+       let dt = VfpSize esize in
+       let imm = mk_arm_immediate_op false 4 (mkNumerical sam) in
+       (* VSLI<c>.<size> <Qd>, <Qm>, #<imm> *)
+       VectorShiftLeftInsert (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  7>Dsz<vn><vd>< 0>N0M0<vm> *) (* VADDL - A1-u *)
   | (7, ((0 | 1 | 2) as sz), 0, 0, 0) ->

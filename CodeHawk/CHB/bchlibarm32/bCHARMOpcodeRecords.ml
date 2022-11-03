@@ -246,14 +246,14 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [ addr ];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "BX" c [ addr ])
+      ida_asm = (fun f -> f#opscc "BX" c [addr])
     }
   | BranchLink (cc, addr) -> {
       mnemonic = "BL";
       operands = [addr];
       flags_set = [];
       ccode = Some cc;
-      ida_asm = (fun f -> f#opscc "BL" cc [ addr ])
+      ida_asm = (fun f -> f#opscc "BL" cc [addr])
     }
   | BranchLinkExchange (c, addr) -> {
       mnemonic = "BLX";
@@ -1125,6 +1125,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VSHL" c [dst; src; src2])
     }
+  | VectorShiftLeftInsert (c, dt, dst, src, imm) -> {
+      mnemonic = "VSLI";
+      operands = [dst; src; imm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VSLI" c [dst; src; imm])
+    }
   | VectorShiftRight (c, dt, dst, src, imm) -> {
       mnemonic = "VSHR";
       operands = [dst; src; imm];
@@ -1209,6 +1216,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VTRN" c [dst; src])
     }
+  | VectorZip (c, dt, op1, op2) -> {
+      mnemonic = "VZIP";
+      operands = [op1; op2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VZIP" c [op1; op2])
+    }
   | NoOperation c -> {
       mnemonic = "NOP";
       operands = [];
@@ -1285,23 +1299,36 @@ object (self)
     let wbmod = if writeback then "S" else "" in
     let mnemonic =
       s ^ wbmod ^ (get_cond_mnemonic_extension cc) ^ wmod ^ wdt ^ wdt2 in
-    self#ops ~preops ~postops mnemonic operands
+    try
+      self#ops ~preops ~postops mnemonic operands
+    with
+    | BCH_failure p ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in opcode: "; STR mnemonic; STR": "; p]))
 
   method no_ops (s:string) = s
+
 end
-                           
+
+
 let get_arm_operands (opc:arm_opcode_t) = (get_record opc).operands
+
 
 let get_arm_opcode_name (opc:arm_opcode_t): string
   = (get_record opc).mnemonic
 
+
 let get_arm_flags_set (opc: arm_opcode_t): arm_cc_flag_t list =
   (get_record opc).flags_set
+
 
 let get_arm_flags_used (opc: arm_opcode_t): arm_cc_flag_t list =
   match (get_record opc).ccode with
   | Some c -> get_cond_flags_used c
   | _ -> []
+
 
 let get_arm_opcode_condition (opc: arm_opcode_t): arm_opcode_cc_t option =
   (get_record opc).ccode
