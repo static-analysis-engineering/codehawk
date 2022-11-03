@@ -583,12 +583,18 @@ object (self)
           | BCH_failure p ->
              raise
                (BCH_failure
-                  (LBLOCK [STR "Error in instruction: "; va#toPretty;
-                           STR ": "; p]))
+                  (LBLOCK [
+                       STR "Error in instruction: ";
+                       va#toPretty;
+                       STR ": ";
+                       p]))
           | _ ->
              ch_error_log#add "unknown error in toString"
-               (LBLOCK [STR "Unknown error in instruction: "; va#toPretty;
-                        STR ": "; STR instr#toString]));
+               (LBLOCK [
+                    STR "Unknown error in instruction: ";
+                    va#toPretty;
+                    STR ": ";
+                    STR instr#toString]));
       String.concat "\n" (List.rev !lines)
     end
 

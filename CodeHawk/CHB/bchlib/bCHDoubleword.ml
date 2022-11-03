@@ -401,9 +401,12 @@ let create_doubleword (n:int) =
     if n >= 0 && n < e32 then n
     else if abs n <= e31 then n + e32
     else
-      raise (BCH_failure
-               (LBLOCK [ STR "create_doubleword: " ; INT n ;
-                         STR " cannot be represented as a 32 bit value"  ])) in
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "create_doubleword: ";
+                INT n;
+                STR " cannot be represented as a 32 bit value"])) in
   new doubleword_t sanitized_n
 
 
@@ -413,10 +416,16 @@ let make_doubleword (l:int) (h:int) =
     create_doubleword ((h * e16) + l)
   with
   | BCH_failure p ->
-     raise (BCH_failure
-              (LBLOCK [ STR "make_doubleword with low: " ;  INT l ;
-                        STR " and high: " ; INT h ; STR " (" ; p ;
-                        STR ")" ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "make_doubleword with low: ";
+               INT l;
+               STR " and high: ";
+               INT h; STR " (";
+               p;
+               STR ")"]))
+
 
 (* return the doubleword associated with a hash index value *)
 let index_to_doubleword (index:dw_index_t) = 
@@ -424,8 +433,10 @@ let index_to_doubleword (index:dw_index_t) =
     create_doubleword index
   with
   | BCH_failure p ->
-     raise (BCH_failure
-              (LBLOCK [ STR "index_to_doubleword: " ; p ]))
+     raise
+       (BCH_failure
+          (LBLOCK [STR "index_to_doubleword: "; p]))
+
 
 (* create a doubleword from an integer *)
 let int_to_doubleword i = 
@@ -433,9 +444,15 @@ let int_to_doubleword i =
     create_doubleword i
   with
   | BCH_failure p ->
-     raise (BCH_failure
-              (LBLOCK [ STR "int_to_doubleword: " ; INT i ;
-                        STR " (" ; p ; STR ")" ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "int_to_doubleword: ";
+               INT i;
+               STR " (";
+               p;
+               STR ")"]))
+
 
 let align_doubleword (dw:doubleword_int) (alignment:int) =
   let rem = dw#to_int mod alignment in
@@ -444,24 +461,36 @@ let align_doubleword (dw:doubleword_int) (alignment:int) =
   else
     int_to_doubleword (((dw#to_int / alignment) + 1) * 4)
 
+
 let big_int_to_doubleword bi = 
   try
     create_doubleword (B.int_of_big_int bi)
   with
   | BCH_failure p ->
-     raise (BCH_failure
-              (LBLOCK [ STR "big_int_to_doubleword: " ;
-                        STR (B.string_of_big_int bi) ;
-                        STR " ("  ; p ; STR ")" ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "big_int_to_doubleword: ";
+               STR (B.string_of_big_int bi);
+               STR " (";
+               p;
+               STR ")"]))
+
 
 let numerical_to_doubleword (num:numerical_t) =
   try
     big_int_to_doubleword num#getNum
   with
   |  BCH_failure p ->
-      raise (BCH_failure
-               (LBLOCK [ STR "numerical_to_doubleword: " ; num#toPretty ;
-                         STR " (" ; p ; STR ")" ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "numerical_to_doubleword: ";
+                num#toPretty;
+                STR " (";
+                p;
+                STR ")"]))
+
 
 let dw_index_to_string (index:dw_index_t) =
   try

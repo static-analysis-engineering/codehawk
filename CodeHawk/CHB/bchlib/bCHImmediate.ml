@@ -71,7 +71,22 @@ object (self: 'a)
 
   method to_int = try Some (B.int_of_big_int big_val) with Failure _ -> None
 
-  method to_doubleword = big_int_to_doubleword big_val
+  method to_doubleword =
+    try
+      big_int_to_doubleword big_val
+    with
+    | BCH_failure p ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Immediate cannot be represented by doubleword: ";
+                 STR (B.string_of_big_int big_val);
+                 STR " (size in bytes: ";
+                 INT size_in_bytes;
+                 STR ");";
+                 STR " (";
+                 p;
+                 STR ")"]))
     
   (* =========================================================== Transformers *)
 
@@ -93,7 +108,7 @@ object (self: 'a)
     else
       B.string_of_big_int big_val
 
-  method to_hex_string = 
+  method to_hex_string =
     let abs_val = B.abs_big_int big_val in
     if self#is_doubleword || size_in_bytes < 4 then
       let dw = big_int_to_doubleword abs_val in
@@ -117,10 +132,29 @@ object (self: 'a)
                 STR "Size for immediate not supported: ";
                 INT size_in_bytes]))
 
-  method toPretty = STR self#to_hex_string
+  method toPretty =
+    try
+      STR self#to_hex_string
+    with
+    | BCH_failure p ->
+       begin
+         ch_error_log#add
+           "immediate value inconsistent"
+           (LBLOCK [
+                STR (B.string_of_big_int big_val);
+                STR "; size in bytes: ";
+                INT size_in_bytes;
+                STR " (";
+                p;
+                STR ")"]);
+         STR (B.string_of_big_int big_val)
+       end
+
 end
 
+
 let make_immediate = new immediate_t
+
 
 let immediate_from_int i = new immediate_t true 4 (B.big_int_of_int i)
 let imm1 = immediate_from_int 1

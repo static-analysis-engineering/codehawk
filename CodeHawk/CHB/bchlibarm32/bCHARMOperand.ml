@@ -602,52 +602,58 @@ object (self:'a)
     | _ -> false
 
   method toString =
-    match kind with
-    | ARMDMBOption o -> dmb_option_to_string o
-    | ARMReg r -> armreg_to_string r
-    | ARMWritebackReg (issingle, r, _) ->
-       (armreg_to_string r) ^ (if issingle then "" else "!")
-    | ARMSpecialReg r -> arm_special_reg_to_string r
-    | ARMExtensionReg r -> arm_extension_reg_to_string r
-    | ARMExtensionRegElement e -> arm_extension_reg_element_to_string e
-    | ARMRegList l ->
-       "{" ^ String.concat "," (List.map armreg_to_string l) ^ "}"
-    | ARMExtensionRegList rl ->
-       "{" ^ String.concat "," (List.map arm_extension_reg_to_string rl) ^ "}"
-    | ARMShiftedReg (r,rs) ->
-       let pshift = register_shift_to_string rs in
-       let pshift = if pshift = "" then "" else "," ^ pshift in
-       (armreg_to_string r) ^ pshift
-    | ARMRegBitSequence (r,lsb,widthm1) ->
-       (armreg_to_string r) ^ ", #" ^ (string_of_int lsb)
-       ^ ", #" ^ (string_of_int (widthm1+1))
-    | ARMImmediate imm -> "#" ^ imm#to_hex_string
-    | ARMFPConstant x -> "#" ^ (Printf.sprintf "%.1f" x)
-    | ARMAbsolute addr -> addr#to_hex_string
-    | ARMLiteralAddress addr -> addr#to_hex_string
-    | ARMMemMultiple (r, align, n, size) ->
-       let alignment = if align = 0 then "" else ":" ^ (string_of_int align) in
-       (armreg_to_string r) ^ "<" ^ (string_of_int n) ^ ">" ^ alignment
-    | ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex) ->
-       let poffset = arm_memory_offset_to_string offset in
-       let poffset = if isadd then poffset else "-" ^ poffset in
-       (match (iswback, isindex) with
-        | (false, false) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
-        | (false, true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
-        | (true, true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]!"
-        | (true, false) -> "[" ^ (armreg_to_string reg) ^ "], " ^ poffset)
-    | ARMSIMDAddress (base, align, wback) ->
-       let palign = if align = 1 then "" else ":" ^ (string_of_int align) in
-       let pbase = armreg_to_string base in
-       (match wback with
-        | SIMDNoWriteback -> "[" ^ pbase ^ palign ^ "]"
-        | SIMDBytesTransferred _ -> "[" ^ pbase ^ palign ^ "]!"
-        | SIMDAddressOffsetRegister r ->
-           "[" ^ pbase ^ palign ^ "], " ^ (armreg_to_string r))
-    | ARMSIMDList rl ->
-       "{"
-       ^ (String.concat ", " (List.map arm_simd_list_element_to_string rl))
-       ^ "}"
+    try
+      match kind with
+      | ARMDMBOption o -> dmb_option_to_string o
+      | ARMReg r -> armreg_to_string r
+      | ARMWritebackReg (issingle, r, _) ->
+         (armreg_to_string r) ^ (if issingle then "" else "!")
+      | ARMSpecialReg r -> arm_special_reg_to_string r
+      | ARMExtensionReg r -> arm_extension_reg_to_string r
+      | ARMExtensionRegElement e -> arm_extension_reg_element_to_string e
+      | ARMRegList l ->
+         "{" ^ String.concat "," (List.map armreg_to_string l) ^ "}"
+      | ARMExtensionRegList rl ->
+         "{" ^ String.concat "," (List.map arm_extension_reg_to_string rl) ^ "}"
+      | ARMShiftedReg (r,rs) ->
+         let pshift = register_shift_to_string rs in
+         let pshift = if pshift = "" then "" else "," ^ pshift in
+         (armreg_to_string r) ^ pshift
+      | ARMRegBitSequence (r,lsb,widthm1) ->
+         (armreg_to_string r) ^ ", #" ^ (string_of_int lsb)
+         ^ ", #" ^ (string_of_int (widthm1+1))
+      | ARMImmediate imm -> "#" ^ imm#to_hex_string
+      | ARMFPConstant x -> "#" ^ (Printf.sprintf "%.1f" x)
+      | ARMAbsolute addr -> addr#to_hex_string
+      | ARMLiteralAddress addr -> addr#to_hex_string
+      | ARMMemMultiple (r, align, n, size) ->
+         let alignment = if align = 0 then "" else ":" ^ (string_of_int align) in
+         (armreg_to_string r) ^ "<" ^ (string_of_int n) ^ ">" ^ alignment
+      | ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex) ->
+         let poffset = arm_memory_offset_to_string offset in
+         let poffset = if isadd then poffset else "-" ^ poffset in
+         (match (iswback, isindex) with
+          | (false, false) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
+          | (false, true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
+          | (true, true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]!"
+          | (true, false) -> "[" ^ (armreg_to_string reg) ^ "], " ^ poffset)
+      | ARMSIMDAddress (base, align, wback) ->
+         let palign = if align = 1 then "" else ":" ^ (string_of_int align) in
+         let pbase = armreg_to_string base in
+         (match wback with
+          | SIMDNoWriteback -> "[" ^ pbase ^ palign ^ "]"
+          | SIMDBytesTransferred _ -> "[" ^ pbase ^ palign ^ "]!"
+          | SIMDAddressOffsetRegister r ->
+             "[" ^ pbase ^ palign ^ "], " ^ (armreg_to_string r))
+      | ARMSIMDList rl ->
+         "{"
+         ^ (String.concat ", " (List.map arm_simd_list_element_to_string rl))
+         ^ "}"
+    with
+    | BCH_failure p ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Error in instruction operand: "; p]))
 
   method toPretty = STR self#toString
 
