@@ -286,6 +286,11 @@ object (self)
          (ctags c, [setb s; oi rd; oi rn; oi rm])
       | RotateRightExtend (s,c,rd,rm) -> (ctags c, [setb s; oi rd; oi rm])
       | SelectBytes(c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
+      | SHA1FixedRotate (c, dt, vd, vm) -> (ctags c, [di dt; oi vd; oi vm])
+      | SHA1HashUpdateChoose (c, dt, vd, vn, vm) ->
+         (ctags c, [di dt; oi vd; oi vn; oi vm])
+      | SHA1HashUpdateMajority (c, dt, vd, vn, vm) ->
+         (ctags c, [di dt; oi vd; oi vn; oi vm])
       | SignedBitFieldExtract (c, rd, rn) -> (ctags c, [oi rd; oi rn])
       | SignedDivide (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | SignedExtendByte (c, rd, rm, tw) -> (ctags c, [oi rd; oi rm; setb tw ])
@@ -295,6 +300,8 @@ object (self)
          (ctags c, [oi rd; oi rm; oi rn; roundf])
       | SignedMostSignificantWordMultiplyAccumulate (c, rd, rm, rn, ra, roundf) ->
          (ctags c, [oi rd; oi rm; oi rn; oi ra; roundf])
+      | SignedMultiplyAccumulateBB (c, rd, rn, rm, ra) ->
+         (ctags c, [oi rd; oi rn; oi rm; oi ra])
       | SignedMultiplyLong (s,c,rdlo,rdhi,rn,rm)
         | SignedMultiplyAccumulateLong (s,c,rdlo,rdhi,rn,rm) ->
          (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
@@ -354,8 +361,8 @@ object (self)
          (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorBitwiseAnd (c, dst, src1, src2) ->
          (ctags c, [oi dst; oi src1; oi src2])
-      | VectorBitwiseBitClear (c, dt, dst, imm) ->
-         (ctags c, [di dt; oi dst; oi imm])
+      | VectorBitwiseBitClear (c, dt, vd, vm, vn) ->
+         (ctags c, [di dt; oi vd; oi vn; oi vm])
       | VectorBitwiseExclusiveOr (c, dst, src1, src2) ->
          (ctags c, [oi dst; oi src1; oi src2])
       | VectorBitwiseNot (c, dt, dst, src) ->

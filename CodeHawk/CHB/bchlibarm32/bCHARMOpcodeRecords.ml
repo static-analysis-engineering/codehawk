@@ -594,6 +594,27 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SEL" c [rd; rn; rm])
     }
+  | SHA1FixedRotate (c, dt, vd, vm) -> {
+      mnemonic = "SHA1H";
+      operands = [vd; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "SHA1H" c [vd; vm])
+    }
+  | SHA1HashUpdateChoose (c, dt, vd, vn, vm) -> {
+      mnemonic = "SHA1C";
+      operands = [vd; vn; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "SHA1C" c [vd; vn; vm])
+    }
+  | SHA1HashUpdateMajority (c, dt, vd, vn, vm) -> {
+      mnemonic = "SHA1M";
+      operands = [vd; vn; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "SHA1M" c [vd; vn; vm])
+    }
   | SignedDivide (c, rd, rn, rm) -> {
       mnemonic = "SDIV";
       operands = [rd; rn; rm];
@@ -644,6 +665,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = if s then [APSR_N; APSR_Z] else [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMLAL" ~writeback:s c [rdlo; rdhi; rn; rm])
+    }
+  | SignedMultiplyAccumulateBB (c, rd, rn, rm, ra) -> {
+      mnemonic = "SMLABB";
+      operands = [rd; rn; rm; ra];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMLABB" c [rd; rn; rm; ra])
     }
   | SignedMultiplyLong (s, c, rdlo, rdhi, rn, rm) -> {
       mnemonic = "SMULL";
@@ -901,12 +929,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VAND" c [dst; src1; src2])
     }
-  | VectorBitwiseBitClear (c, dt, dst, imm) -> {
+  | VectorBitwiseBitClear (c, dt, vd, vn, vm) -> {
       mnemonic = "VBIC";
-      operands = [dst; imm];
+      operands = [vd; vn; vm];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~dt "VBIC" c [dst; imm])
+      ida_asm = (fun f -> f#opscc ~dt "VBIC" c [vd; vn; vm])
     }
   | VectorBitwiseExclusiveOr (c, dst, src1, src2) -> {
       mnemonic = "VEOR";
