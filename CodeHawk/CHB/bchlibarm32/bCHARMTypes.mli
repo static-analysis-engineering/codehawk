@@ -567,6 +567,23 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: first operand *)
       * arm_operand_int  (* rm: second operand *)
+  | SHA1FixedRotate of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* vd: destination *)
+      * arm_operand_int  (* vm: source *)
+  | SHA1HashUpdateChoose of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* vd: destination *)
+      * arm_operand_int  (* vn: source 1 *)
+      * arm_operand_int  (* vm: source 2 *)
+  | SHA1HashUpdateMajority of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* vd: destination *)
+      * arm_operand_int  (* vn: source 1 *)
+      * arm_operand_int  (* vm: source 2 *)
   | SignedBitFieldExtract of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
@@ -599,6 +616,12 @@ type arm_opcode_t =
       * arm_operand_int  (* rm: second operand *)
       * arm_operand_int  (* ra: accumulation register *)
       * int              (* 0/1: multiplication is rounded *)
+  | SignedMultiplyAccumulateBB of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+      * arm_operand_int  (* ra: accumulated value *)
   | SignedMultiplyAccumulateLong of
       bool  (* flags are set *)
       * arm_opcode_cc_t    (* condition *)
@@ -808,8 +831,9 @@ type arm_opcode_t =
   | VectorBitwiseBitClear of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* data type *)
-      * arm_operand_int (* source / destination *)
-      * arm_operand_int (* immediate *)
+      * arm_operand_int (* vd: destination *)
+      * arm_operand_int (* vn: source 1 *)
+      * arm_operand_int (* vm: source 2 *)
   | VectorBitwiseExclusiveOr of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* destination *)

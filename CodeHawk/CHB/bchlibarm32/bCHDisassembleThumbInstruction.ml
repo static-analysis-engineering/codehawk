@@ -448,8 +448,7 @@ object
 end
 
 let itblock = new itblock_t
-  
-let parse_thumb32_29
+let parse_thumb32_29_0
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
       (ch: pushback_stream_int)
@@ -458,13 +457,97 @@ let parse_thumb32_29
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   let bv = instr#get_bitval in
-  let mk_imm5 i3 i2 = (i3 lsl 2) + i2 in
-  let mk_imm_shift_reg reg ty imm =
-    mk_arm_imm_shifted_register_op reg ty imm in
-  let op = b 26 21 in
-  match op with
-  (* < 29>0000100<rn><rt><rd><-imm8->   STREX - T1 *)
-  | 2 when (bv 20) = 0 ->
+  let selector = b 24 20 in
+  match selector with
+
+  (* < 29>00PU1W0<rn><rt><t2><-imm8->   STRD (immediate) - T1 *)
+  | (6 | 12 | 14 | 20 | 22 | 28 | 30) ->
+     let rt = arm_register_op (get_arm_reg (b 15 12)) in
+     let rt2 = arm_register_op (get_arm_reg (b 11 8)) in
+     let rnreg = get_arm_reg (b 19 16) in
+     let rn = arm_register_op rnreg in
+     let imm8 = 4 * (b 7 0) in
+     let imm = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let offset = ARMImmOffset imm8 in
+     let offset2 = ARMImmOffset (imm8 + 4) in
+     let (isadd, isindex, iswback) =
+       match selector with
+       | 6 -> (false, false, true)
+       | 12 -> (false, true, false)
+       | 14 -> (false, true, true)
+       | 20 -> (true, false, false)
+       | 22 -> (true, false, true)
+       | 28 -> (true, true, false)
+       | 30 -> (true, true, true)
+       | _ ->
+          raise
+            (BCH_failure
+             (LBLOCK [STR "Unexpected value in parse_thumb32_29_0:STRD"])) in
+     let mem =
+       mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
+     let mem2 =
+       mk_arm_offset_address_op rnreg offset2 ~isadd ~isindex ~iswback in
+     (* STRD<c> <Rt>, <Rt2>, [<Rn>{, #+/-<imm>}] *)
+     StoreRegisterDual (cc, rt WR, rt2 WR, rn RD, imm, mem WR, mem2 WR)
+
+  (* < 29>00< 13><rn><15>00000000<rm>   TBB - T1 *)
+  | 13 when (b 15 12) = 15 && (b 11 4) = 0 ->
+     let rnreg = get_arm_reg (b 19 16) in
+     let rmreg = get_arm_reg (b 3 0) in
+     let rn = arm_register_op rnreg in
+     let rm = arm_register_op rmreg in
+     let offset = arm_index_offset rmreg in
+     let mem =
+       mk_arm_offset_address_op
+         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+     (* TBB<c> [<Rn>, <Rm>] *)
+     TableBranchByte (cc, rn RD, rm RD, mem RD)
+
+  (* < 29>00< 13><rn><15>00000001<rm>   TBH - T1 *)
+  | 13 when (b 15 12) = 15 && (b 11 4) = 1 ->
+     let rnreg = get_arm_reg (b 19 16) in
+     let rmreg = get_arm_reg (b 3 0) in
+     let rn = arm_register_op rnreg in
+     let rm = arm_register_op rmreg in
+     let offset = arm_index_offset rmreg in
+     let mem =
+       mk_arm_offset_address_op
+         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+     (* TBB<c> [<Rn>, <Rm>] *)
+     TableBranchHalfword (cc, rn RD, rm RD, mem RD)
+
+  (* < 29>00PU1W1<rn><rt><t2><-imm8->   LDRD (immediate/literal) - T1 *)
+  | (7 | 13 | 15 | 21 | 23 | 29 | 31) ->
+     let rt = arm_register_op (get_arm_reg (b 15 12)) in
+     let rt2 = arm_register_op (get_arm_reg (b 11 8)) in
+     let rnreg = get_arm_reg (b 19 16) in
+     let rn = arm_register_op rnreg in
+     let imm8 = 4 * (b 7 0) in
+     let imm = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let offset = ARMImmOffset imm8 in
+     let offset2 = ARMImmOffset (imm8 + 4) in
+     let (isadd, isindex, iswback) =
+       match selector with
+       | 7 -> (false, false, true)
+       | 13 -> (false, true, false)
+       | 15 -> (false, true, true)
+       | 21 -> (true, false, false)
+       | 23 -> (true, false, true)
+       | 29 -> (true, true, false)
+       | 31 -> (true, true, true)
+       | _ ->
+          raise
+            (BCH_failure
+             (LBLOCK [STR "Unexpected value in parse_thumb32_29_0:LDRD"])) in
+     let mem =
+       mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
+     let mem2 =
+       mk_arm_offset_address_op rnreg offset2 ~isadd ~isindex ~iswback in
+     (* LDRD<c> <Rt>, <Rt2>, [<Rn>{, #+/-<imm>}] *)
+     LoadRegisterDual (cc, rt WR, rt2 WR, rn RD, imm, mem WR, mem2 WR)
+
+  (* < 29>00<  4><rn><rt><rd><-imm8->   STREX - T1 *)
+  | 4 ->
      let rt = arm_register_op (get_arm_reg (b 15 12)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rnreg = get_arm_reg (b 19 16) in
@@ -476,8 +559,8 @@ let parse_thumb32_29
      (* STREX<c> <Rd>, <Rt>, [<Rn>{, #<imm>}] *)
      StoreRegisterExclusive (cc, rd WR, rt RD, rn RD, mem WR)
 
-  (* < 29>0000101<rn><rt><15><-imm8->   LDREX - T1 *)
-  | 2 when (bv 20) = 1 && (b 11 8) = 15 ->
+  (* < 29>00<  5><rn><rt><15><-imm8->   LDREX - T1 *)
+  | 5 when (b 11 8) = 15 ->
      let rt = arm_register_op (get_arm_reg (b 15 12)) in
      let rnreg = get_arm_reg (b 19 16) in
      let rn = arm_register_op rnreg in
@@ -491,20 +574,20 @@ let parse_thumb32_29
      LoadRegisterExclusive (cc, rt WR, rn RD, immop, mem RD)
 
   (* < 29>00010W0<rn>0m0<---rlist--->   STM/STMIA/STMEA - T2 *)
-  | 4 | 5 when (bv 20) = 0 && (bv 15) = 0 && (bv 13) = 0 ->
-     let regs = ((b 14 14) lsl 14) + (b 12 0) in
+  | 8 | 10 when (bv 15) = 0 && (bv 13) = 0 ->
+     let regs = ((bv 14) lsl 14) + (b 12 0) in
      let reglist = get_reglist_from_int 16 regs in
      let rl = arm_register_list_op reglist in
      let rnreg = get_arm_reg (b 19 16) in
      let mem = mk_arm_mem_multiple_op rnreg (List.length reglist) in
-     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rn = arm_register_op rnreg in
      let wback = (bv 21) = 1 in
      let rn = if wback then rn RW else rn RD in
      (* STM<c>.W <Rn>{!}, <registers> *)
      StoreMultipleIncrementAfter (wback, cc, rn, rl RD , mem WR, true)
 
-  (* < 29>0001011<13>pm0<---rlist--->   POP.W - T2 *)
-  | 5 when (bv 20) = 1 && (b 19 16) = 13 && (bv 13) = 0 ->
+  (* < 29>00< 11><13>pm0<---rlist--->   POP.W - T2 *)
+  | 11 when (b 19 16) = 13 && (bv 13) = 0 ->
      let reglist = get_reglist_from_int 16 (b 15 0) in
      let rl = arm_register_list_op reglist in
      let sp = arm_register_op (get_arm_reg 13) in
@@ -512,457 +595,1012 @@ let parse_thumb32_29
      Pop (cc, sp RW, rl WR, true)
 
   (* < 29>00010W1<rn>0m0<---rlist--->   LDM/LDMIA/LDMFD - T2 *)
-  | 4 | 5 when (bv 20) = 1 && (bv 15) = 0 && (bv 13) = 0 ->
+  | 9 | 11 when (bv 15) = 0 && (bv 13) = 0 ->
      let regs = ((b 14 14) lsl 14) + (b 12 0) in
      let reglist = get_reglist_from_int 16 regs in
      let rl = arm_register_list_op reglist in
      let rnreg = get_arm_reg (b 19 16) in
      let mem = mk_arm_mem_multiple_op rnreg (List.length reglist) in
-     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rn = arm_register_op rnreg in
      let wback = (bv 21) = 1 in
      let rn = if wback then rn RW else rn RD in
      (* LDM<c>.W <Rn>{!}, <registers> *)
      LoadMultipleIncrementAfter (wback, cc, rn, rl RD , mem WR)
 
-  (* < 29>0001101<rn><15>00000000<rm>   TBB *)
-  | 6 when (b 20 20) = 1 && (b 15 12) = 15 && (b 11 5) = 0 && (b 4 4) = 0 ->
-     let rnreg = get_arm_reg (b 19 16) in
-     let rmreg = get_arm_reg (b 3 0) in
-     let rn = arm_register_op rnreg in
-     let rm = arm_register_op rmreg in
-     let offset = arm_index_offset rmreg in
-     let mem =
-       mk_arm_offset_address_op
-         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
-     (* TBB<c> [<Rn>, <Rm>] *)
-     TableBranchByte (cc, rn RD, rm RD, mem RD)
-
-  (* < 29>0001101<rn><15>00000001<rm>   TBH *)
-  | 6 when (b 20 20) = 1 && (b 15 12) = 15 && (b 11 5) = 0 && (b 4 4) = 1 ->
-     let rnreg = get_arm_reg (b 19 16) in
-     let rmreg = get_arm_reg (b 3 0) in
-     let rn = arm_register_op rnreg in
-     let rm = arm_register_op rmreg in
-     let offset = arm_index_offset rmreg in
-     let mem =
-       mk_arm_offset_address_op
-         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
-     (* TBB<c> [<Rn>, <Rm>] *)
-     TableBranchHalfword (cc, rn RD, rm RD, mem RD)
-
-  (* < 29>00100W0<rn>0m0<---rlist--->   STMDB/STMFD - T1 *)
-  | 8 when (b 15 15) = 0 && (b 13 13) = 0 ->
-     let regs = ((b 14 14) lsl 14) + (b 12 0) in
-     let reglist = get_reglist_from_int 16 regs in
-     let rl = arm_register_list_op reglist in
-     let rnreg = get_arm_reg (b 19 16) in
-     let mem = mk_arm_mem_multiple_op rnreg (List.length reglist) in
-     let rn = arm_register_op (get_arm_reg (b 19 16)) in
-     let wback = (b 21 21) = 1 in
-     let rn = if wback then rn RW else rn RD in
-     (* STM<c>.W <Rn>{!}, <registers> *)
-     StoreMultipleDecrementBefore (wback, cc, rn, rl RD , mem WR, true)
-
-  (* < 29>0010010<13>0M0<---rlist--->   PUSH.W - T2 *)
-  | 9 ->
+  (* < 29>00< 18><13>0M0<---rlist--->   PUSH.W - T2 *)
+  | 18 when (bv 15) = 0 && (bv 13) = 0 ->
      let reglist = get_reglist_from_int 16 (b 15 0) in
      let rl = arm_register_list_op reglist in
      let sp = arm_register_op (get_arm_reg 13) in
      (* PUSH<c>.W <registers> *)
      Push (cc, sp RW, rl RD, true)
 
-  (* < 29>00PU1W1<rn><rt><t2><-imm8->   LDRD (immediate/literal) - T1 *)
-  | 7 | 10 | 11 | 14 when (b 20 20) = 1 ->
-     let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let rt2 = arm_register_op (get_arm_reg (b 11 8)) in
-     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+  (* < 29>00100W0<rn>0m0<---rlist--->   STMDB/STMFD - T1 *)
+  | 16 | 18 when (bv 15) = 0 && (bv 13) = 0 ->
+     let regs = ((bv 14) lsl 14) + (b 12 0) in
+     let reglist = get_reglist_from_int 16 regs in
+     let rl = arm_register_list_op reglist in
      let rnreg = get_arm_reg (b 19 16) in
-     let imm = arm_immediate_op (immediate_from_int (4 * (b 7 0))) in
-     let offset = ARMImmOffset (4 * (b 7 0)) in
-     let offset2 = ARMImmOffset ((4 * (b 7 0)) + 4) in
-     let isindex = (b 24 24) = 1 in
-     let isadd = (b 23 23) = 1 in
-     let iswback = (b 21 21) = 1 in
-     let mem =
-       mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
-     let mem2 =
-       mk_arm_offset_address_op rnreg offset2 ~isadd ~isindex ~iswback RD in
-     (* LDRD<c> <Rt>, <Rt2>, [<Rn>{, #+/-<imm>}]  *)
-     LoadRegisterDual (cc, rt WR, rt2 WR, rn RD, imm, mem, mem2)
+     let mem = mk_arm_mem_multiple_op rnreg (List.length reglist) in
+     let rn = arm_register_op rnreg in
+     let wback = (b 21 21) = 1 in
+     let rn = if wback then rn RW else rn RD in
+     (* STM<c>.W <Rn>{!}, <registers> *)
+     StoreMultipleDecrementBefore (wback, cc, rn, rl RD , mem WR, true)
 
-  (* < 29>00PU1W0<rn><rt><t2><-imm8->   STRD - T1 *)
-  | 7 | 10 | 11 | 14 when (b 20 20) = 0 ->
-     let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let rt2 = arm_register_op (get_arm_reg (b 11 8)) in
-     let rn = arm_register_op (get_arm_reg (b 19 16)) in
-     let rnreg = get_arm_reg (b 19 16) in
-     let imm = arm_immediate_op (immediate_from_int (4 * (b 7 0))) in
-     let offset = ARMImmOffset (4 * (b 7 0)) in
-     let offset2 = ARMImmOffset ((4 * (b 7 0)) + 4) in
-     let isindex = (b 24 24) = 1 in
-     let isadd = (b 23 23) = 1 in
-     let iswback = (b 21 21) = 1 in
-     let mem =
-       mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback WR in
-     let mem2 =
-       mk_arm_offset_address_op rnreg offset2 ~isadd ~isindex ~iswback WR in
-     (* STRD<c> <Rt>, <Rt2>, [<Rn>{, #+/-<imm>}] *)
-     StoreRegisterDual (cc, rt WR, rt2 WR, rn RD, imm, mem, mem2)
+  | s ->
+     NotRecognized (
+         "parse_thumb32_29_0:" ^ (string_of_int selector), instr)
 
-  (* < 29>010000S<rn>0<i><rd>i2ty<rm>   AND (register) - T2 *)
-  | 16 when (b 15 15) = 0 ->
+
+let parse_thumb32_29_1
+      ?(in_it: bool = false)
+      ?(cc: arm_opcode_cc_t = ACCAlways)
+      (ch: pushback_stream_int)
+      (base: doubleword_int)
+      (iaddr: doubleword_int)
+      (instr: doubleword_int): arm_opcode_t =
+  let b = instr#get_segval in
+  let bv = instr#get_bitval in
+  let setflags = (bv 20) = 1 in
+  let mk_imm5 i3 i2 = (i3 lsl 2) + i2 in
+  let mk_imm_shift_reg reg ty imm =
+    mk_arm_imm_shifted_register_op reg ty imm in
+  let selector = b 24 21 in
+  let b15 = bv 15 in
+  match (selector, b15) with
+
+  (* < 29>01< 0>S<rn>0<i><rd>i2ty<rm>   AND (register) - T2 *)
+  | (0, 0) ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
      let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
-     let setflags = (b 20 20) = 1 in
      (* AND{S}<c>.W <Rd>, <Rn>, <Rm>{, <shift>} *)
      BitwiseAnd (setflags, cc, rd WR, rn RD, rm RD, true)
 
-  (* < 29>010001S<rn>0<i><rd>i2ty<rm>   BIC (register) - T2 *)
-  | 17 when (b 15 15) = 0 ->
+  (* < 29>01< 1>S<rn>0<i><rd>i2ty<rm>   BIC (register) - T2 *)
+  | (1, 0) ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
      let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
-     let setflags = (b 20 20) = 1 in
      (* BIC{S}<c>.W <Rd>, <Rn>, <Rm>{, <shifht>} *)
      BitwiseBitClear (setflags, cc, rd WR, rn RD, rm RD, true)
 
-  (* < 29>010010S<15>0<i><rd>i210<rm>   ASR (immediate) *)
-  | 18 when (b 19 16) = 15 && (b 15 15) = 0 && (b 5 4) = 2 ->
+  (* < 29>01< 2>S<15>< 0><rd>0000<rm>   MOV (register) - T3 *)
+  | (2, 0) when (b 19 16) = 15 && (b 14 12) = 0 && (b 7 4) = 0 ->
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rm = arm_register_op (get_arm_reg (b 3 0)) in
+     (* MOV{S}<c>.W <Rd>, <Rm> *)
+     Move (setflags, cc, rd WR, rm RD, true, false)
+
+  (* < 29>01< 2>S<15>0<i><rd>i200<rm>   LSL (immediate) - T2 *)
+  | (2, 0) when (b 19 16) = 15 && (b 5 4) = 0 ->
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rm = arm_register_op (get_arm_reg (b 3 0)) in
+     let imm = ((b 14 12) lsl 2) + (b 7 6) in
+     let (_, shift_n) = decode_imm_shift 1 imm in
+     let imm = mk_arm_immediate_op false 4 (mkNumerical shift_n) in
+     (* LSL{S}<c>.W <Rd>, <Rm>, #<imm> *)
+     LogicalShiftLeft (setflags, cc, rd WR, rm RD, imm, true)
+
+  (* < 29>01< 2>S<15>0<i><rd>i201<rm>   LSR (immediate) - T2 *)
+  | (2, 0) when (b 19 16) = 15 && (b 5 4) = 1 ->
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rm = arm_register_op (get_arm_reg (b 3 0)) in
+     let imm = ((b 14 12) lsl 2) + (b 7 6) in
+     let (_, shift_n) = decode_imm_shift 1 imm in
+     let imm = mk_arm_immediate_op false 4 (mkNumerical shift_n) in
+     (* LSR{S}<c>.W <Rd>, <Rm>, #<imm> *)
+     LogicalShiftRight (setflags, cc, rd WR, rm RD, imm, true)
+
+  (* < 29>01< 2>S<15>0<i><rd>i210<rm>   ASR (immediate) *)
+  | (2, 0) when (b 19 16) = 15 && (b 5 4) = 2 ->
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rm = arm_register_op (get_arm_reg (b 3 0)) in
      let imm = ((b 14 12) lsl 2) + (b 7 6) in
      let (_, shift_n) = decode_imm_shift 2 imm in
      let imm = mk_arm_immediate_op false 4 (mkNumerical shift_n) in
-     let setflags = (b 20 20) = 1 in
      (* ASR{S}<c>.W <Rd>, <Rm>, #<imm> *)
      ArithmeticShiftRight (setflags, cc, rd WR, rm RD, imm, true)
 
-  (* < 29>010010S<15>< 0><rd>0000<rm>   MOV (register) - T3 *)
-  | 18 when (b 19 16) = 15 && (b 15 15) = 0 && (b 7 4) = 0 ->
-     let rd = arm_register_op (get_arm_reg (b 11 8)) in
-     let rm = arm_register_op (get_arm_reg (b 3 0)) in
-     let setflags = (b 20 20) = 1 in
-     (* MOV{S}<c>.W <Rd>, <Rm> *)
-     Move (setflags, cc, rd WR, rm RD, true, false)
-
-  (* < 29>010010S<15>0<i><rd>i200<rm>   LSL (immediate) - T2 *)
-  | 18 when (b 19 16) = 15 && (b 15 15) = 0 && (b 5 4) = 0 ->
-     let rd = arm_register_op (get_arm_reg (b 11 8)) in
-     let rm = arm_register_op (get_arm_reg (b 3 0)) in
-     let imm = ((b 14 12) lsl 2) + (b 7 6) in
-     let (_, shift_n) = decode_imm_shift 1 imm in
-     let imm = mk_arm_immediate_op false 4 (mkNumerical shift_n) in
-     let setflags = (b 20 20) = 1 in
-     (* LSL{S}<c>.W <Rd>, <Rm>, #<imm> *)
-     LogicalShiftLeft (setflags, cc, rd WR, rm RD, imm, true)
-
-  (* < 29>010010S<15>0<i><rd>i201<rm>   LSR (immediate) - T2 *)
-  | 18 when (b 19 16) = 15 && (b 15 15) = 0 && (b 5 4) = 1 ->
-     let rd = arm_register_op (get_arm_reg (b 11 8)) in
-     let rm = arm_register_op (get_arm_reg (b 3 0)) in
-     let imm = ((b 14 12) lsl 2) + (b 7 6) in
-     let (_, shift_n) = decode_imm_shift 1 imm in
-     let imm = mk_arm_immediate_op false 4 (mkNumerical shift_n) in
-     let setflags = (b 20 20) = 1 in
-     (* LSR{S}<c>.W <Rd>, <Rm>, #<imm> *)
-     LogicalShiftRight (setflags, cc, rd WR, rm RD, imm, true)
-
-  (* < 29>010010S<rn>0<i><rd>i2ty<rm>   ORR (register) - T2 *)
-  | 18 when (b 15 15) = 0 ->
+  (* < 29>01< 2>S<rn>0<i><rd>i2ty<rm>   ORR (register) - T2 *)
+  | (2, 0) ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
      let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
-     let setflags = (b 20 20) = 1 in
      (* ORR{S}<c>.W <Rd>, <Rn>, <Rm>{, <shift>} *)
      BitwiseOr (setflags, cc, rd WR, rn RD, rm RD, true)
 
-  (* < 29>010011S<15>0<i><rd>i2ty<rm>   MVN.W (register) - T2 *)
-  | 19 when (b 19 16) = 15 && (b 15 15) = 0 ->
+  (* < 29>01< 3>S<15>0<i><rd>i2ty<rm>   MVN.W (register) - T2 *)
+  | (3, 0) when (b 19 16) = 15 ->
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
      let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
-     let setflags = (b 20 20) = 1 in
      (* MVN{S}<c>.W <Rd>, <Rm>{, <shift>} *)
      BitwiseNot (setflags, cc, rd WR, rm RD, true)
 
-  (* < 29>010011S<rn>0<i><rd>i2ty<rm>   ORN (register) - T1 *)
-  | 19 when (b 15 15) = 0 ->
+  (* < 29>01< 3>S<rn>0<i><rd>i2ty<rm>   ORN (register) - T1 *)
+  | (3, 0) ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
      let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
-     let setflags = (b 20 20) = 1 in
      (* ORN{S}<c> <Rd>, <Rn>{, <shift>} *)
      BitwiseOrNot (setflags, cc, rd WR, rn RD, rm RD)
 
-  (* < 29>010100S<rn>0<i><rd>i2ty<rm>   EOR (register) - T2 *)
-  | 20 when (b 15 15) = 0 ->
+  (* < 29>01< 4>S<rn>0<i><rd>i2ty<rm>   EOR (register) - T2 *)
+  | (4, 0) ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
      let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
-     let setflags = (b 20 20) = 1 in
      (* EOR{S}<c>.W <Rd>, <Rn>, <Rm>{, <shift>} *)
      BitwiseExclusiveOr (setflags, cc, rd WR, rn RD, rm RD, true)
 
-  (* < 29>011000S<rn>0<i><rd>i2ty<rm>   ADD (register) - T3 *)
-  | 24 when (b 15 15) = 0 ->
+  (* < 29>01< 8>S<rn>0<i><rd>i2ty<rm>   ADD (register) - T3 *)
+  | (8, 0) ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
      let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
-     let setflags = (b 20 20) = 1 in
      Add (setflags, cc, rd WR, rn RD, rm RD, true)
 
   (* < 29>011010S<rn>0<i><rd>i2ty<rm>   ADC (register) - T2 *)
-  | 26 when (b 15 15) = 0 ->
+  | (10, 0) ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
      let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
-     let setflags = (b 20 20) = 1 in
      (* ADC{S}<c>.W <Rd>, <Rn>, <Rm>{, <shift>} *)
      AddCarry (setflags, cc, rd WR, rn RD, rm RD, true)
 
-  (* < 29>011011S<rn>0<i><rd>i2ty<rm>   SBC (register) - T2 *)
-  | 27 when (b 15 15) = 0 ->
+  (* < 29>01<11>S<rn>0<i><rd>i2ty<rm>   SBC (register) - T2 *)
+  | (11, 0) ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
      let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
-     let setflags = (b 20 20) = 1 in
      (* SBC{S}.W <Rd>, <Rn>, <Rm>{, <shift>} *)
      SubtractCarry (setflags, cc, rd WR, rn RD, rm RD, true)
 
-  (* < 29>011101S<rn>0<i><rd>i2ty<rm>   SUB (register) - T2 *)
-  | 29 when (b 15 15) = 0 ->
+  (* < 29>01<13>S<rn>0<i><rd>i2ty<rm>   SUB (register) - T2 *)
+  | (13, 0) ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
      let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
-     let setflags = (b 20 20) = 1 in
      (* SUB{S}.W <Rd>, <Rn>, <Rm>{, <shift>} *)
      Subtract (setflags, cc, rd WR, rn RD, rm RD, true, false)
 
   (* < 29>011110S<rn>0<i><rd>i2ty<rm>   RSB (register) - T1 *)
-  | 30 when (b 15 15) = 0 ->
+  | (14, 0) ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let rmreg = get_arm_reg (b 3 0) in
      let rm = mk_imm_shift_reg rmreg (b 5 4) (mk_imm5 (b 14 12) (b 7 6)) in
-     let setflags = (b 20 20) = 1 in
      (* RSB{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
      ReverseSubtract (setflags, cc, rd WR, rn RD, rm RD, false)
 
-  (* < 29>1001D11<13><vd>1011<-imm8->   VPOP - T1 *)
-  (* < 29>1001D11<13><vd>1010<-imm8->   VPOP - T2 *)
-  | 37 | 39 when (b 19 16) = 13 && (b 11 9) = 5 && (bv 20) = 1 ->
-     let dp = bv 8 in
-     let xtype = if dp = 1 then XDouble else XSingle in
-     let dbit = bv 22 in
-     let vd = b 15 12 in
-     let d = if dp = 1 then prefix_bit dbit vd else postfix_bit dbit vd in
-     let spreg = get_arm_reg 13 in
-     let sp = arm_register_op spreg in
-     let imm8 = b 7 0 in
-     let regs = if dp = 1 then imm8 / 2 else imm8 in
-     let rl = arm_extension_register_list_op xtype d regs in
-     let size = if dp = 1 then 8 else 4 in
-     let mem = mk_arm_mem_multiple_op ~size spreg regs in
-     let isodd = (imm8 mod 2) = 1 in
-     if dp = 1 && isodd then
-       (* FLDMX<c> <SP>{!}, <list> *)
-       FLoadMultipleIncrementAfter (true, cc, sp WR, rl WR, mem RD)
-     else
+  | s ->
+     NotRecognized (
+         "parse_thumb32_29_1:" ^ (string_of_int selector), instr)
+
+
+let parse_thumb32_29_2
+      ?(in_it: bool = false)
+      ?(cc: arm_opcode_cc_t = ACCAlways)
+      (ch: pushback_stream_int)
+      (base: doubleword_int)
+      (iaddr: doubleword_int)
+      (instr: doubleword_int): arm_opcode_t =
+  let b = instr#get_segval in
+  let bv = instr#get_bitval in
+  if (b 11 9) != 5 then
+    if (b 24 20) = 5 then
+      (* < 29>1000101<r2><rt><cp><op><cm>   MRRC - T1 *)
+      let coproc = b 11 8 in
+      let opc = b 7 4 in
+      let crm = b 3 0 in
+      let rt = arm_register_op (get_arm_reg (b 15 12)) in
+      let rt2 = arm_register_op (get_arm_reg (b 19 16)) in
+      (* MRRC<c> <coproc>, <opc>, <Rt>, <Rt2>, <CRm> *)
+      MoveTwoRegisterCoprocessor (cc, coproc, opc, rt WR, rt2 WR, crm)
+    else
+      let isindex = (bv 24) = 1 in
+      let isadd = (bv 23) = 1 in
+      let iswback = (bv 21) = 1 in
+      let islong = (bv 22) = 1 in
+      let crd = b 15 12 in
+      let coproc = b 11 8 in
+      let imm32 = 4 * (b 7 0) in
+      let offset = ARMImmOffset imm32 in
+      let rnreg = get_arm_reg (b 19 16) in
+      let mem =
+        mk_arm_offset_address_op
+          ~align:4 rnreg offset ~isadd ~isindex ~iswback in
+      if (bv 20) = 0 then
+        (* STC{L}<c> <coproc>, <CRd>, [<Rn>, #+/-<imm>]{!} *)
+        StoreCoprocessor (islong, false, cc, coproc, crd, mem WR, None)
+      else
+        (* LDC{L}<c> <coproc>, <CRd>, [<Rn>, #+-<imm>}{!} *)
+        LoadCoprocessor (islong, false, cc, coproc, crd, mem RD, None)
+  else
+    let selector = b 24 23 in
+    let isz = b 21 20 in
+    let cmode = bv 8 in
+    match (selector, isz, cmode) with
+
+    (* VMOV (between two ARM core registers and a dw extension register *)
+    (* < 29>< 8>100<t2><rt><11>00M1<vm> VMOV -T1-from *)
+    | (0, 0, 1) when (bv 22) = 1 && (b 7 6) = 0 && (bv 4) = 1 ->
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let dm = arm_extension_register_op XDouble m in
+     let rt = arm_register_op (get_arm_reg (b 15 12)) in
+     let rt2 = arm_register_op (get_arm_reg (b 19 16)) in
+     (* VMOV<c> <Dm>, <Rt>, <Rt2> *)
+     VectorMove (cc, VfpNone, [dm WR; rt RD; rt2 RD])
+
+    (* VMOV between two ARM core registers and a doubleword extension register *)
+    (* <cc><6>00101<t2><rt><11>00M1<vm> - A1-to *)
+    | (0, 1, 1) when (bv 22) = 1 && (b 7 6) = 0 && (bv 4) = 1 ->
+       let m = prefix_bit (bv 5) (b 3 0) in
+       let dm = arm_extension_register_op XDouble m in
+       let rt = arm_register_op (get_arm_reg (b 15 12)) in
+       let rt2 = arm_register_op (get_arm_reg (b 19 16)) in
+       (* VMOV<c> <Dm>, <Rt>, <Rt2> *)
+       VectorMove (cc, VfpNone, [rt WR; rt2 WR; dm RD])
+
+    (* < 29>10PUDW0<rn><vd><5>0<-imm8->    VSTM - T2 *)
+    | (1, 0, 0) ->
+       let d = postfix_bit (bv 22) (b 15 12) in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let imm8 = b 7 0 in
+       let rl = arm_extension_register_list_op XSingle d imm8 in
+       let mem = mk_arm_mem_multiple_op ~size:4 rnreg imm8 in
+       (* VSTM<c> <Rn>, <list> *)
+       VectorStoreMultipleIncrementAfter (false, cc, rn RD, rl RD, mem WR)
+
+    (* < 29>10PUDW0<rn><vd><5>0<-imm8->    VSTM - T2-wb *)
+    | (1, 2, 0) ->
+       let d = postfix_bit (bv 22) (b 15 12) in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let imm8 = b 7 0 in
+       let rl = arm_extension_register_list_op XSingle d imm8 in
+       let mem = mk_arm_mem_multiple_op ~size:4 rnreg imm8 in
+       (* VSTM<c> <Rn>!, <list> *)
+       VectorStoreMultipleIncrementAfter (true, cc, rn RW, rl RD, mem WR)
+
+    (* < 29>10PUDW0<rn><vd><5>1<-imm8->    VSTM - T1 *)
+    | (1, 0, 1) when (bv 0) = 0 ->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let regs = (b 7 0) / 2 in
+       let rl = arm_extension_register_list_op XDouble d regs in
+       let mem = mk_arm_mem_multiple_op ~size:8 rnreg regs in
+       (* VSTM<c> <Rn>, <list> *)
+       VectorStoreMultipleIncrementAfter (false, cc, rn RD, rl RD, mem WR)
+
+    (* < 29>10PUDW0<rn><vd><5>1<-imm8->    VSTM - T1-wb *)
+    | (1, 2, 1) when (bv 0) = 0->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let regs = (b 7 0) / 2 in
+       let rl = arm_extension_register_list_op XDouble d regs in
+       let mem = mk_arm_mem_multiple_op ~size:8 rnreg regs in
+       (* VSTM<c> <Rn>!, <list> *)
+       VectorStoreMultipleIncrementAfter (true, cc, rn RW, rl RD, mem WR)
+
+    (* < 29>10PUDW0<rn><vd><5>1<-imm8->    VSTM - T1 *)
+    | (1, 0, 1) ->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let regs = (b 7 0) / 2 in
+       let rl = arm_extension_register_list_op XDouble d regs in
+       let mem = mk_arm_mem_multiple_op ~size:8 rnreg regs in
+       (* FSTMIAX<c> <Rn>, <list> *)
+       FStoreMultipleIncrementAfter (false, cc, rn RD, rl RD, mem WR)
+
+    (* < 29>10PUDW0<rn><vd><5>1<-imm8->    VSTM - T1-wb *)
+    | (1, 2, 1) ->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let regs = (b 7 0) / 2 in
+       let rl = arm_extension_register_list_op XDouble d regs in
+       let mem = mk_arm_mem_multiple_op ~size:8 rnreg regs in
+       (* FSTMIAX<c> <Rn>!, <list> *)
+       FStoreMultipleIncrementAfter (true, cc, rn RW, rl RD, mem WR)
+
+    (* < 29>1001D11<13><vd>1010<-imm8->   VPOP - T2 *)
+    | (1, 3, 0) when (b 19 16) = 13 ->
+       let d = postfix_bit (bv 22) (b 15 12) in
+       let spreg = get_arm_reg 13 in
+       let sp = arm_register_op spreg in
+       let imm8 = b 7 0 in
+       let rl = arm_extension_register_list_op XSingle d imm8 in
+       let mem = mk_arm_mem_multiple_op ~size:4 spreg imm8 in
        (* VPOP<c> <list> *)
        VectorPop (cc, sp WR, rl WR, mem RD)
 
-  (* < 29>10PUDW1<rn><vd>1011<-imm8->   VLDM - T1 *)
-  (* < 29>10PUDW1<rn><vd>1010<-imm8->   VLDM - T2 *)
-  (* PUDW  values  notes
-   * -----------------------------------------------
-   * 00x0 32, 34   related encodings
-   * 01x1 37, 39   when rn=13: VPOP
-   * 1xx0 40, 42, 46, 48  VLDR
-   * 1xx1 41, 43, 47, 49  UNDEFINED
-   *)
-  | 35 | 36 | 37 | 38 | 39 when (b 11 9) = 5 && (bv 20 = 1) ->
-     let dp = bv 8 in
-     let xtype = if dp = 1 then XDouble else XSingle in
-     let d = bv 22 in
-     let iswback = (bv 21) = 1 in
-     let vd = b 15 12 in
-     let vd = if (dp = 1) then prefix_bit d vd else postfix_bit d vd in
-     let rnreg = get_arm_reg (b 19 16) in
-     let rn = arm_register_op rnreg (if iswback then WR else RD) in
-     let imm8 = b 7 0 in
-     let regs = if (dp = 1) then imm8 / 2 else imm8 in
-     let rl = arm_extension_register_list_op xtype vd regs in
-     let size = if (dp = 1) then 8 else 4 in
-     let mem = mk_arm_mem_multiple_op ~size rnreg regs in
-     let isodd = (imm8 mod 2) = 1 in
-     if dp = 1 && isodd then
-       (* FLDMX<c> <Rn>{!?, <list> *)
-       FLoadMultipleIncrementAfter (iswback, cc, rn, rl WR, mem RD)
-     else
-       (* VLDM<c> <Rn>{!}, <list> *)
-       VectorLoadMultipleIncrementAfter (iswback, cc, rn, rl WR, mem RD)
+    (* < 29>1001D11<13><vd>1011<-imm8->   VPOP - T1 *)
+    | (1, 3, 1) when (b 19 16) = 13 && (bv 0) = 0 ->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let spreg = get_arm_reg (b 19 16) in
+       let sp = arm_register_op spreg in
+       let regs = (b 7 0) / 2 in
+       let rl = arm_extension_register_list_op XDouble d regs in
+       let mem = mk_arm_mem_multiple_op ~size:8 spreg regs in
+       (* VPOP<c> <list> *)
+       VectorPop (cc, sp WR, rl WR, mem RD)
 
-  (* < 29>10PUDW0<rn><cd><cp><-imm8->   STC - T1 *)
-  | 39 when (b 20 20) = 0 ->
-     let isindex = (b 24 24) = 1 in
-     let isadd = (b 23 23) = 1 in
-     let iswback = (b 21 21) = 1 in
-     let islong = (b 22 22) = 1 in
-     let crd = b 15 12 in
-     let coproc = b 11 8 in
-     let imm32 = 4 * (b 7 0) in
-     let offset = ARMImmOffset imm32 in
-     let rnreg = get_arm_reg (b 19 16) in
-     let mem =
-       mk_arm_offset_address_op
-         ~align:4 rnreg offset ~isadd ~isindex ~iswback in
-     (* STC{L}<c> <coproc>, <CRd>, [<Rn>, #+/-<imm>]{!} *)
-     StoreCoprocessor (islong, false, cc, coproc, crd, mem WR, None)
+    (* < 29>10PUDW1<rn><vd><5>0<-imm8->    VLDM - T2 *)
+    | (1, 1, 0) ->
+       let d = postfix_bit (bv 22) (b 15 12) in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let imm8 = b 7 0 in
+       let rl = arm_extension_register_list_op XSingle d imm8 in
+       let mem = mk_arm_mem_multiple_op ~size:4 rnreg imm8 in
+       (* VLDM<c> <Rn>, <list> *)
+       VectorLoadMultipleIncrementAfter (false, cc, rn RD, rl WR, mem RD)
 
-  (* < 29>10PUDW1<rn><cd><cp><-imm8->   LDC (immediate) - T1 *)
-  | 39 when (b 20 20) = 1 ->
-     let isindex = (b 24 24) = 1 in
-     let isadd = (b 23 23) = 1 in
-     let iswback = (b 21 21) = 1 in
-     let islong = (b 22 22) = 1 in
-     let crd = b 15 12 in
-     let coproc = b 11 8 in
-     let imm32 = 4 * (b 7 0) in
-     let offset = ARMImmOffset imm32 in
-     let rnreg = get_arm_reg (b 19 16) in
-     let mem =
-       mk_arm_offset_address_op
-         ~align:4 rnreg offset ~isadd ~isindex ~iswback in
-     (* LDC{L}<c> <coproc>, <CRd>, [<Rn>, #+-<imm>}{!} *)
-     LoadCoprocessor (islong, false, cc, coproc, crd, mem RD, None)
+    (* < 29>10PUDW1<rn><vd><5>0<-imm8->    VLDM - T2-wb *)
+    | (1, 3, 0) ->
+       let d = postfix_bit (bv 22) (b 15 12) in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let imm8 = b 7 0 in
+       let rl = arm_extension_register_list_op XSingle d imm8 in
+       let mem = mk_arm_mem_multiple_op ~size:4 rnreg imm8 in
+       (* VLD<c> <Rn>!, <list> *)
+       VectorLoadMultipleIncrementAfter (true, cc, rn RW, rl WR, mem RD)
 
-  (* < 29>1000101<r2><rt><cp><op><cm>   MRRC (encoding T1) *)
-  | 34 when (b 20 20) = 1 ->
-     let coproc = b 11 8 in
-     let opc = b 7 4 in
-     let crm = b 3 0 in
-     let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let rt2 = arm_register_op (get_arm_reg (b 19 16)) in
-     (* MRRC<c> <coproc>, <opc>, <Rt>, <Rt2>, <CRm> *)
-     MoveTwoRegisterCoprocessor (cc, coproc, opc, rt WR, rt2 WR, crm)
+    (* < 29>10PUDW1<rn><vd><5>1<-imm8->    VLDM - T1 *)
+    | (1, 1, 1) when (bv 0) = 0 ->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let regs = (b 7 0) / 2 in
+       let rl = arm_extension_register_list_op XDouble d regs in
+       let mem = mk_arm_mem_multiple_op ~size:8 rnreg regs in
+       (* VLDM<c> <Rn>, <list> *)
+       VectorLoadMultipleIncrementAfter (false, cc, rn RD, rl WR, mem RD)
 
-  (* < 29>1010D101101<vd>1011<-imm8->    VPUSH - T1 *)
-  (* < 29>1010D101101<vd>1010<-imm8->    VPUSH - T2 *)
-  | 41 | 43 when (b 19 16) = 13 && (b 11 9) = 5 && (bv 20) = 0 ->
-     let dp = bv 8 in
-     let xtype = if dp = 1 then XDouble else XSingle in
-     let dbit = bv 22 in
-     let vd = b 15 12 in
-     let d = if dp = 1 then prefix_bit dbit vd else postfix_bit dbit vd in
-     let spreg = get_arm_reg 13 in
-     let sp = arm_register_op spreg in
-     let imm8 = b 7 0 in
-     let regs = if dp = 1 then imm8 / 2 else imm8 in
-     let rl = arm_extension_register_list_op xtype d regs in
-     let size = if dp = 1 then 8 else 4 in
-     let mem = mk_arm_mem_multiple_op ~size spreg regs in
-     let isodd = (imm8 mod 2) = 1 in
-     if dp = 1 && isodd then
-       (* FSTMX<c> <SP>{!}, <list> *)
-       FStoreMultipleIncrementAfter (true, cc, sp WR, rl RD, mem WR)
-     else
+    (* < 29>10PUDW1<rn><vd><5>1<-imm8->    VLDM - T1-wb *)
+    | (1, 3, 1) when (bv 0) = 0->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let regs = (b 7 0) / 2 in
+       let rl = arm_extension_register_list_op XDouble d regs in
+       let mem = mk_arm_mem_multiple_op ~size:8 rnreg regs in
+       (* VLDM<c> <Rn>!, <list> *)
+       VectorLoadMultipleIncrementAfter (true, cc, rn RW, rl WR, mem RD)
+
+    (* < 29>10PUDW1<rn><vd><5>1<-imm8->    VLDM - T1 *)
+    | (1, 1, 1) ->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let regs = (b 7 0) / 2 in
+       let rl = arm_extension_register_list_op XDouble d regs in
+       let mem = mk_arm_mem_multiple_op ~size:8 rnreg regs in
+       (* FLDMX<c> <Rn>, <list> *)
+       FLoadMultipleIncrementAfter (false, cc, rn RD, rl WR, mem RD)
+
+    (* < 29>10PUDW1<rn><vd><5>1<-imm8->    VLDM - T1-wb *)
+    | (1, 3, 1) ->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let regs = (b 7 0) / 2 in
+       let rl = arm_extension_register_list_op XDouble d regs in
+       let mem = mk_arm_mem_multiple_op ~size:8 rnreg regs in
+       (* FLDMX<c> <Rn>!, <list> *)
+       FLoadMultipleIncrementAfter (true, cc, rn RW, rl WR, mem RD)
+
+    (* < 29>101UD00<rn><vd>1010<-imm8->   VSTR-sub - T2) *)
+    | (2, 0, 0) ->
+       let d = postfix_bit (bv 22) (b 15 12) in
+       let vd = arm_extension_register_op XSingle d in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let offset = ARMImmOffset (4 * (b 7 0)) in
+       let mem =
+         mk_arm_offset_address_op
+           rnreg offset ~isadd:false ~isindex:true ~iswback:false in
+       (* VSTR<c> <Sd>, [<Rn>{, #+/-<imm>}] *)
+       VStoreRegister (cc, vd RD, rn RD, mem WR)
+
+    (* < 29>101UD00<rn><vd>1010<-imm8->   VSTR-add - T2) *)
+    | (3, 0, 0) ->
+       let d = postfix_bit (bv 22) (b 15 12) in
+       let vd = arm_extension_register_op XSingle d in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let offset = ARMImmOffset (4 * (b 7 0)) in
+       let mem =
+         mk_arm_offset_address_op
+           rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+       (* VSTR<c> <Sd>, [<Rn>{, #+/-<imm>}] *)
+       VStoreRegister (cc, vd RD, rn RD, mem WR)
+
+    (* < 29>101UD00<rn><vd>1011<-imm8->   VSTR-sub - T1 *)
+    | (2, 0, 1) ->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let vd = arm_extension_register_op XDouble d in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let offset = ARMImmOffset (4 * (b 7 0)) in
+       let mem =
+         mk_arm_offset_address_op
+           rnreg offset ~isadd:false ~isindex:true ~iswback:false in
+       (* VSTR<c> <Dd>, [<Rn>{, #+/-<imm>}] *)
+       VStoreRegister (cc, vd RD, rn RD, mem WR)
+
+    (* < 29>101UD00<rn><vd>1011<-imm8->   VSTR-add - T1 *)
+    | (3, 0, 1) ->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let vd = arm_extension_register_op XDouble d in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let offset = ARMImmOffset (4 * (b 7 0)) in
+       let mem =
+         mk_arm_offset_address_op
+           rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+       (* VSTR<c> <Dd>, [<Rn>{, #+/-<imm>}] *)
+       VStoreRegister (cc, vd RD, rn RD, mem WR)
+
+    (* < 29>101UD01<rn><vd>1010<-imm8->   VLDR-sub - T2) *)
+    | (2, 1, 0) ->
+       let d = postfix_bit (bv 22) (b 15 12) in
+       let vd = arm_extension_register_op XSingle d in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let offset = ARMImmOffset (4 * (b 7 0)) in
+       let mem =
+         mk_arm_offset_address_op
+           rnreg offset ~isadd:false ~isindex:true ~iswback:false in
+       (* VLDR<c> <Sd>, [<Rn>{, #+/-<imm>}] *)
+       VLoadRegister (cc, vd RD, rn RD, mem WR)
+
+    (* < 29>101UD01<rn><vd>1010<-imm8->   VLDR-add - T2) *)
+    | (3, 1, 0) ->
+       let d = postfix_bit (bv 22) (b 15 12) in
+       let vd = arm_extension_register_op XSingle d in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let offset = ARMImmOffset (4 * (b 7 0)) in
+       let mem =
+         mk_arm_offset_address_op
+           rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+       (* VLDR<c> <Sd>, [<Rn>{, #+/-<imm>}] *)
+       VLoadRegister (cc, vd RD, rn RD, mem WR)
+
+    (* < 29>101UD01<rn><vd>1011<-imm8->   VLDR-sub - T1 *)
+    | (2, 1, 1) ->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let vd = arm_extension_register_op XDouble d in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let offset = ARMImmOffset (4 * (b 7 0)) in
+       let mem =
+         mk_arm_offset_address_op
+           rnreg offset ~isadd:false ~isindex:true ~iswback:false in
+       (* VLDR<c> <Dd>, [<Rn>{, #+/-<imm>}] *)
+       VLoadRegister (cc, vd RD, rn RD, mem WR)
+
+    (* < 29>101UD01<rn><vd>1011<-imm8->   VLDR-add - T1 *)
+    | (3, 1, 1) ->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let vd = arm_extension_register_op XDouble d in
+       let rnreg = get_arm_reg (b 19 16) in
+       let rn = arm_register_op rnreg in
+       let offset = ARMImmOffset (4 * (b 7 0)) in
+       let mem =
+         mk_arm_offset_address_op
+           rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+       (* VLDR<c> <Dd>, [<Rn>{, #+/-<imm>}] *)
+       VLoadRegister (cc, vd RD, rn RD, mem WR)
+
+    (* < 29>1010D101101<vd>1010<-imm8->    VPUSH - T2 *)
+    | (2, 2, 0) when (b 19 16) = 13 ->
+       let d = postfix_bit (bv 22) (b 15 12) in
+       let spreg = get_arm_reg 13 in
+       let sp = arm_register_op spreg in
+       let regs = b 7 0 in
+       let rl = arm_extension_register_list_op XSingle d regs in
+       let mem = mk_arm_mem_multiple_op ~size:4 spreg regs in
        (* VPUSH<c> <list> *)
        VectorPush (cc, sp WR, rl RD, mem WR)
 
-  (* < 29>10PUDW0<rn><vd>1011<-imm8->    VSTM - T1 *)
-  (* < 29>10PUDW0<rn><vd>1010<-imm8->    VSTM - T2 *)
-  (* PUDW  values  notes
-   * ------------------------------------------------
-   * 00x0 32, 34   related encodings
-   * 01x1 37, 39   when rn=13: VPUSH
-   * 1xx0 40, 42, 46, 48 VSTR
-   * 1xx1 41, 43, 47, 49 UNDEFINED
-   *)
-  | 35 | 36 | 37 | 38 | 39 when (b 11 9) = 5 && (bv 20) = 0 ->
-     let dp = bv 8 in
-     let xtype = if dp = 1 then XDouble else XSingle in
-     let d = bv 22 in
-     let iswback = (bv 21) = 1 in
-     let vd = b 15 12 in
-     let vd = if (dp = 1) then prefix_bit d vd else postfix_bit d vd in
-     let rnreg = get_arm_reg (b 19 16) in
-     let rn = arm_register_op rnreg (if iswback then WR else RD) in
-     let imm8 = b 7 0 in
-     let regs = if (dp = 1) then imm8 / 2 else imm8 in
-     let rl = arm_extension_register_list_op xtype vd regs in
-     let size = if (dp = 1) then 8 else 4 in
-     let mem = mk_arm_mem_multiple_op ~size rnreg regs in
-     let isodd = (imm8 mod 2) = 1 in
-     if dp = 1 && isodd then
-       (* FSTMX<c> <Rn>{!?, <list> *)
-       FStoreMultipleIncrementAfter (iswback, cc, rn, rl RD, mem WR)
-     else
-       (* VSTM<c> <Rn>{!}, <list> *)
-       VectorStoreMultipleIncrementAfter (iswback, cc, rn, rl RD, mem WR)
+    (* < 29>1010D101101<vd>1011<-imm8->    VPUSH - T1 *)
+    | (2, 2, 1) when (b 19 16) = 13 && (bv 0) = 0 ->
+       let d = prefix_bit (bv 22) (b 15 12) in
+       let spreg = get_arm_reg 13 in
+       let sp = arm_register_op spreg in
+       let regs = (b 7 0) / 2 in
+       let rl = arm_extension_register_list_op XDouble d regs in
+       let mem = mk_arm_mem_multiple_op ~size:8 spreg regs in
+       (* VPUSH<c> <list> *)
+       VectorPush (cc, sp WR, rl RD, mem WR)
 
-  (* < 29>101UD00<rn><vd>1011<-imm8->   VSTR (Encoding T1) *)
-  (* < 29>101UD00<rn><vd>1010<-imm8->   VSTR (Encoding T2) *)
-  | 40 | 44 | 46 when (b 20 20) = 0 && (b 11 9) = 5 ->
-     let dp = b 8 8 in
-     let xtype = if dp = 1 then XDouble else XSingle in
-     let d = b 22 22 in
-     let isadd = (b 23 23) = 1 in
-     let vd = b 15 12 in
-     let vd = if dp = 1 then prefix_bit d vd else postfix_bit d vd in
-     let vd = arm_extension_register_op xtype vd in
-     let rnreg = get_arm_reg (b 19 16) in
-     let rn = arm_register_op rnreg in
-     let imm = 4 * (b 7 0) in
-     let offset = ARMImmOffset imm in
-     let mem =
-       mk_arm_offset_address_op
-         rnreg offset ~isadd ~isindex:true ~iswback:false in
-     (* VSTR<c> <Dd>, [<Rn>{, #+/-<imm>}] *)
-     VStoreRegister (cc, vd RD, rn RD, mem WR)
+    | (a, b, c) ->
+       NotRecognized (
+           "parse_thumb32_29_2: "
+           ^ (string_of_int selector)
+           ^ "_"
+           ^ (string_of_int isz)
+           ^ "_"
+           ^ (string_of_int cmode),
+           instr)
 
-  (* < 29>101UD01<rn><vd>1011<-imm8->   VLDR (Encoding T1 *)
-  (* < 29>101UD01<rn><vd>1010<-imm8->   VLDR (Encoding T2 *)     
-  | 40 | 44 | 46 when (b 20 20) = 1 && (b 11 9) = 5 ->
-     let dp = b 8 8 in
-     let xtype = if dp = 1 then XDouble else XSingle in
-     let d = b 22 22 in
-     let isadd = (b 23 23) = 1 in
-     let vd = b 15 12 in
-     let vd = if dp = 1 then prefix_bit d vd else postfix_bit d vd in
-     let vd = arm_extension_register_op xtype vd in
-     let rnreg = get_arm_reg (b 19 16) in
-     let rn = arm_register_op rnreg in
-     let imm = 4 * (b 7 0) in
-     let offset = ARMImmOffset imm in
-     let mem =
-       mk_arm_offset_address_op
-         ~align:4 rnreg offset ~isadd ~isindex:true ~iswback:false in
-     (* VLDR<c> <Dd>, [<Rn>{, #+/-<imm>}] *)
-     VLoadRegister (cc, vd WR, rn RD, mem RD)
 
-  (* < 29>110000o<vn><rt>1010N001< 0>   VMOV  (between ARM core and SP reg *)
-  | 48 when (b 6 5) = 0 && (b 4 4) = 1 && (b 3 0) = 0->
+let parse_thumb32_29_12
+      ?(in_it: bool = false)
+      ?(cc: arm_opcode_cc_t = ACCAlways)
+      (ch: pushback_stream_int)
+      (base: doubleword_int)
+      (iaddr: doubleword_int)
+      (instr: doubleword_int): arm_opcode_t =
+  let b = instr#get_segval in
+  let bv = instr#get_bitval in
+  let isz = b 21 20 in
+  let cmode = bv 8 in
+  let q = bv 6 in
+  let b4 = bv 4 in
+  match (isz, cmode, q, b4) with
+
+  (* VMOV (between ARM core register and single-precision register *)
+  (* < 29><12>00o<vn><rt>1010N001< 0>  VMOV - T1-from *)
+  | (0, 0, 0, 1) when (bv 22) = 0 && (bv 5) = 0 && (b 3 0) = 0 ->
      let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let op = b 20 20 in
-     let n = b 7 7 in
-     let vn = b 19 16 in
-     let fpindex = if n = 1 then (2 * vn) + 1 else 2 * vn in
-     let vn = arm_extension_register_op XSingle fpindex in
-     let (dst, src) = if op = 1 then (rt, vn) else (vn, rt) in
-     VectorMove (cc, VfpNone, [dst WR; src RD])
+     let n = postfix_bit (bv 5) (b 19 16) in
+     let vn = arm_extension_register_op XSingle n in
+     (* VMOV<c> <Sn>, <Rt> *)
+     VectorMove (cc, VfpNone, [vn WR; rt RD])
 
-  (* < 29>110<1>1<cn><rt><co><2>1<cm>   MRC - T1 *)
-  | 48 when (b 20 20) = 1 && (b 4 4) = 1 ->
+  (* VMOV (between ARM core register and single-precision register *)
+  (* < 29><12>00o<vn><rt>1010N001< 0>  VMOV - T1-to *)
+  | (1, 0, 0, 1) when (bv 22) = 0 && (bv 5) = 0 && (b 3 0) = 0 ->
+     let rt = arm_register_op (get_arm_reg (b 15 12)) in
+     let n = postfix_bit (bv 5) (b 19 16) in
+     let vn = arm_extension_register_op XSingle n in
+     (* VMOV<c> <Rt>, <Sn> *)
+     VectorMove (cc, VfpNone, [vn WR; rt RD])
+
+  (* < 29><12>D00<vn><vd><5>0N0M0<vm>  VMLA (floating-point) - T2-single *)
+  | (0, 0, 0, 0) ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let n = postfix_bit (bv 7) (b 19 16) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vn = arm_extension_register_op XSingle n in
+     let vm = arm_extension_register_op XSingle m in
+     let dt = VfpFloat 32 in
+     (* VMLA<v>.F32 <Sd>, <Sn>, <Sm> *)
+     VectorMultiplyAccumulate (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><12>D00<vn><vd><5>1N0M0<vm>  VMLA (floating-point) - T2-double *)
+  | (0, 1, 0, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpFloat 64 in
+     (* VMLA<v>.F64 <Dd>, <Dn>, <Dm> *)
+     VectorMultiplyAccumulate (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><12>D00<vn><vd><5>0N1M0<vm>  VMLS (floating-point) - T2-single *)
+  | (0, 0, 1, 0) ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let n = postfix_bit (bv 7) (b 19 16) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vn = arm_extension_register_op XSingle n in
+     let vm = arm_extension_register_op XSingle m in
+     let dt = VfpFloat 32 in
+     (* VMLS<v>.F32 <Sd>, <Sn>, <Sm> *)
+     VectorMultiplySubtract (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><12>D00<vn><vd><5>1N1M0<vm>  VMLS (floating-point) - T2-double *)
+  | (0, 1, 1, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpFloat 64 in
+     (* VMLS<v>.F64 <Dd>, <Dn>, <Dm> *)
+     VectorMultiplySubtract (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><12>D10<vn><vd><5>0N0M0<vm>  VMUL (floating point) - T2-single *)
+  | (2, 0, 0, 0) ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let n = postfix_bit (bv 7) (b 19 16) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vn = arm_extension_register_op XSingle n in
+     let vm = arm_extension_register_op XSingle m in
+     let dt = VfpFloat 32 in
+     (* VMUL<v>.F32 <Sd>, <Sn>, <Sm> *)
+     VectorMultiply (cc, dt, vd WR, vn RD, vm RD)
+
+(* < 29><12>D10<vn><vd><5>1N0M0<vm>  VMUL (floating point) - T2-double *)
+  | (2, 1, 0 ,0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpFloat 64 in
+     (* VMUL<v>.F64 <Dd>, <Dn>, <Dm> *)
+     VectorMultiply (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><12>D11<vn><vd><5>0N1M0<vm>  VSUB (floating point) - T2-single *)
+  | (3, 0, 1, 0) ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let n = postfix_bit (bv 7) (b 19 16) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vn = arm_extension_register_op XSingle n in
+     let vm = arm_extension_register_op XSingle m in
+     let dt = VfpFloat 32 in
+     (* VSUB<v>.F32 <Sd>, <Sn>, <Sm> *)
+     VectorSubtract (cc, dt, vd WR, vn RD, vm RD)
+
+(* < 29><12>D11<vn><vd><5>1N1M0<vm>  VSUB (floating point) - T2-double *)
+  | (3, 1, 1 ,0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpFloat 64 in
+     (* VSUB<v>.F64 <Dd>, <Dn>, <Dm> *)
+     VectorSubtract (cc, dt, vd WR, vn RD, vm RD)
+
+  | (a, b, c, d) ->
+     NotRecognized (
+         "parse_thumb32_29_12:"
+         ^ (string_of_int a)
+         ^ "_"
+         ^ (string_of_int b)
+         ^ "_"
+         ^ (string_of_int c)
+         ^ "_"
+         ^ (string_of_int d),
+         instr)
+
+
+let parse_thumb32_29_13
+      ?(in_it: bool = false)
+      ?(cc: arm_opcode_cc_t = ACCAlways)
+      (ch: pushback_stream_int)
+      (base: doubleword_int)
+      (iaddr: doubleword_int)
+      (instr: doubleword_int): arm_opcode_t =
+  let b = instr#get_segval in
+  let bv = instr#get_bitval in
+  let isz = b 21 20 in
+  let cmode = bv 8 in
+  let q = bv 6 in
+  let b4 = bv 4 in
+  match (isz, cmode, q, b4) with
+
+  (* < 29><13>110< 1><rt><5>00001< 0>   VMSR - T1 *)
+  | (2, 0, 0, 1) when (bv 22) = 1 && (b 19 16) = 1 && (bv 7) = 0 && (bv 5) = 0 ->
+     let rt = arm_register_op (get_arm_reg (b 15 12)) in
+     let dst = arm_special_register_op FPSCR in
+     (* VMSR<c> FPSCR, <Rt> *)
+     VMoveToSystemRegister (cc, dst WR, rt RD)
+
+  (* < 29>1101111< 1><15>< 5>00001< 0>   VMRS - T1 *)
+  | (3, 0, 0, 1) when (bv 22) = 1 && (b 19 16) = 1 && (bv 7) = 0 && (bv 5) = 0 ->
+     let src = arm_special_register_op FPSCR in
+     if (b 15 12) = 15 then
+       let dst = arm_special_register_op APSR_nzcv in
+       (* VMRS<c> <PC>, FPSCR *)
+       VMoveRegisterStatus (cc, dst WR, src RD)
+     else
+       let dst = arm_register_op (get_arm_reg (b 15 12)) in
+       (* VMRS<c> <Rt>, FPSCR *)
+       VMoveRegisterStatus (cc, dst WR, src RD)
+
+  (* < 29><13>BQ0<vd><rt><5>1D0E1< 0>   VDUP (ARM core register) - T1 (Q=0) *)
+  | (0, 1, 0, 1) ->
+     let d = prefix_bit (bv 7) (b 19 16) in
+     let vd = arm_extension_register_op XDouble d in
+     let rt = arm_register_op (get_arm_reg (b 15 12)) in
+     let be = ((bv 22) lsl 1) + (bv 5) in
+     let (esize, elts) =
+       match be with
+       | 0 -> (32, 2)
+       | 1 -> (16, 4)
+       | 2 -> (8, 8)
+       | _ ->
+          raise (ARM_undefined ("VDUP:(B:E) = " ^ (string_of_int be))) in
+     let dt = VfpSize esize in
+     (* VDUP)<v>.<size> <Dd>, <Rt> *)
+     VectorDuplicate (cc, dt, 1, elts, vd WR, rt RD)
+
+  (* < 29><13>BQ0<vd><rt><5>1D0E1< 0>   VDUP (ARM core register) - T1 (Q=1) *)
+  | (2, 1, 0, 1) ->
+     let d = prefix_bit (bv 7) (b 19 16) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let rt = arm_register_op (get_arm_reg (b 15 12)) in
+     let be = ((bv 22) lsl 1) + (bv 5) in
+     let (esize, elts) =
+       match be with
+       | 0 -> (32, 2)
+       | 1 -> (16, 4)
+       | 2 -> (8, 8)
+       | _ ->
+          raise (ARM_undefined ("VDUP:(B:E) = " ^ (string_of_int be))) in
+     let dt = VfpSize esize in
+     (* VDUP)<v>.<size> <Qd>, <Rt> *)
+     VectorDuplicate (cc, dt, 2, elts, vd WR, rt RD)
+
+  (* < 29><13>D00<vn><vd><5>0N0M0<vm>  VDIV (floating point) - T1-single *)
+  | (0, 0, 0, 0) ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let n = postfix_bit (bv 7) (b 19 16) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vn = arm_extension_register_op XSingle n in
+     let vm = arm_extension_register_op XSingle m in
+     let dt = VfpFloat 32 in
+     (* VDIV<c>.F32 <Sd>, <Sn>, <Sm> *)
+     VDivide (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><13>D00<vn><vd><5>1N0M0<vm>  VDIV (floating point) - T1-double *)
+  | (0, 1, 0 ,0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpFloat 64 in
+     (* VDIV<c>.F64 <Dd>, <Dn>, <Dm> *)
+     VDivide (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><13>D11< 0><vd><5>001M0<vm>  VMOV (register) -T2-single *)
+  | (3, 0, 1, 0) when (b 19 16) = 0 && (bv 7) = 0 ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vm = arm_extension_register_op XSingle m in
+     let dt = VfpFloat 32 in
+     (* VMOV<c>.F32 <Sd>, <Sm> *)
+     VectorMove (cc, dt, [vd WR; vm RD])
+
+  (* < 29><13>D11< 0><vd<5>101M0<vm>  VMOV (register) -T2-double *)
+  | (3, 1, 1, 0) when (b 19 16) = 0 && (bv 7) = 0 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpFloat 64 in
+     (* VMOV<c>.F64 <Dd>, <Dm> *)
+     VectorMove (cc, dt, [vd WR; vm RD])
+
+  (* < 29><13>D11< 1><vd><5>001M0<vm>  VNEG - T2-single *)
+  | (3, 0, 1, 0) when (b 19 16) = 1 && (bv 7) = 0 ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vm = arm_extension_register_op XSingle m in
+     let dt = VfpFloat 32 in
+     (* VNEG<c>.F32 <Sd>, <Sm> *)
+     VectorNegate (cc, dt, vd WR, vm RD)
+
+  (* < 29><13>D11< 1><vd<5>101M0<vm>  VNEG -T2-double *)
+  | (3, 1, 1, 0) when (b 19 16) = 0 && (bv 7) = 0 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpFloat 64 in
+     (* VNEG<c>.F64 <Dd>, <Dm> *)
+     VectorNegate (cc, dt, vd WR, vm RD)
+
+  (* < 29><13>D11< 4><vd><5>0<E1M0<vm>   VCMP{E} - T1-single *)
+  | (3, 0, 1, 0) when (b 19 16) = 4 ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vm = arm_extension_register_op XSingle m in
+     let dt = VfpFloat 32 in
+     (* VCMP{E}<c>.F32 <Sd>, <Sm> *)
+     VCompare ((bv 7) = 1, cc, dt, vd RD, vm RD)
+
+  (* < 29><13>D11< 4><vd><5>0<E1M0<vm>   VCMP{E} - T1-double *)
+  | (3, 1, 1, 0) when (b 19 16) = 4 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpFloat 64 in
+     (* VCMP{E}<c>.F64 <Dd>, <Dm> *)
+     VCompare ((bv 7) = 1, cc, dt, vd RD, vm RD)
+
+  (* < 29><13>D11< 5><vd><5>0<E100< 0>  VCMP{E} - T2-single *)
+  | (3, 0, 1, 0) when (b 19 16) = 5 ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let vd = arm_extension_register_op XSingle d in
+     let zero = arm_fp_constant_op 0.0 in
+     let dt = VfpFloat 32 in
+     (* VCMP{E}<c>.F32 <Sd>, #0.0 *)
+     VCompare ((bv 7) = 1, cc, dt, vd RD, zero)
+
+  (* < 29><13>D11< 5><vd><5>0<E100< 0>  VCMP{E} - T2-double *)
+  | (3, 1, 1, 0) when (b 19 16) = 5 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let vd = arm_extension_register_op XDouble d in
+     let zero = arm_fp_constant_op 0.0 in
+     let dt = VfpFloat 64 in
+     (* VCMP{E}<c>.F64 <Dd>, #0.0 *)
+     VCompare ((bv 7) = 1, cc, dt, vd RD, zero)
+
+  (* VCVT between double-precision and single-precision *)
+  (* < 29><13>D11< 7><vd><5>011M0<vm> VCVT - T1-sd *)
+  | (3, 0, 1, 0) when (b 19 16) = 7 && (bv 7 = 1) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XSingle m in
+     let dtd = VfpFloat 64 in
+     let dtm = VfpFloat 32 in
+     (* VCVT<c>.F64.F32 <Dd>, <Sm> *)
+     VectorConvert (false, cc, dtd, dtm, vd WR, vm RD)
+
+  (* VCVT between double-precision and single-precision *)
+  (* < 29><13>D11< 7><vd><5>111M0<vm> VCVT - T1-ds *)
+  | (3, 1, 1, 0) when (b 19 16) = 7 && (bv 7 = 1) ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vm = arm_extension_register_op XDouble m in
+     let dtd = VfpFloat 32 in
+     let dtm = VfpFloat 64 in
+     (* VCVT<c>.F32.F64 <Dd>, <Sm> *)
+     VectorConvert (false, cc, dtd, dtm, vd WR, vm RD)
+
+  (* VCVT between floating-point and integer *)
+  (* < 29><13>D11< 8><vd><5>0o1M0<vm>  VCVT - T1-single-from *)
+  | (3, 0, 1, 0) when (b 19 16) = 8 ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vm = arm_extension_register_op XSingle m in
+     let dtd = VfpFloat 32 in
+     let dtm = if (bv 7) = 0 then VfpUnsignedInt 32 else VfpSignedInt 32 in
+     (* VCVT<c>.F32.U32 <Sd>, <Sm>  (op=0) *)
+     (* VCVT<c>.F32.S32 <Sd>, <Sm>  (op=1) *)
+     VectorConvert (false, cc, dtd, dtm, vd WR, vm RD)
+
+  (* VCVT between floating-point and integer *)
+  (* < 29><13>D11< 8><vd><5>1o1M0<vm>  VCVT - T1-double-from *)
+  | (3, 1, 1, 0) when (b 19 16) = 8 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XSingle m in
+     let dtd = VfpFloat 64 in
+     let dtm = if (bv 7) = 0 then VfpUnsignedInt 32 else VfpSignedInt 32 in
+     (* VCVT<c>.F64.U32 <Dd>, <Sm>  (op=0) *)
+     (* VCVT<c>.F64.S32 <Dd>, <Sm>  (op=1) *)
+     VectorConvert (false, cc, dtd, dtm, vd WR, vm RD)
+
+  (* VCVT between floating-point and integer *)
+  (* < 29><13>D11<12><vd><5>0o1M0<vm>  VCVT - T1-single-to-u *)
+  | (3, 0, 1, 0) when (b 19 16) = 12 ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vm = arm_extension_register_op XSingle m in
+     let dtd = VfpUnsignedInt 32 in
+     let dtm = VfpFloat 32 in
+     (* VCVT<c>.U32.F32 <Sd>, <Sm> *)
+     VectorConvert ((bv 7) = 1, cc, dtd, dtm, vd WR, vm RD)
+
+  (* VCVT between floating-point and integer *)
+  (* < 29><13>D11<12><vd><5>1o1M0<vm>  VCVT - T1-double-to-u *)
+  | (3, 1, 1, 0) when (b 19 16) = 12 ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vm = arm_extension_register_op XDouble m in
+     let dtd = VfpUnsignedInt 32 in
+     let dtm = VfpFloat 64 in
+     (* VCVT<c>.U32.F64 <Sd>, <Dm> *)
+     VectorConvert ((bv 7) = 1, cc, dtd, dtm, vd WR, vm RD)
+
+  (* VCVT between floating-point and integer *)
+  (* < 29><13>D11<13><vd><5>0o1M0<vm>  VCVT - T1-single-to-s *)
+  | (3, 0, 1, 0) when (b 19 16) = 13 ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vm = arm_extension_register_op XSingle m in
+     let dtd = VfpSignedInt 32 in
+     let dtm = VfpFloat 32 in
+     (* VCVT<c>.S32.F32 <Sd>, <Sm> *)
+     VectorConvert ((bv 7) = 1, cc, dtd, dtm, vd WR, vm RD)
+
+  (* VCVT between floating-point and integer *)
+  (* < 29><13>D11<13><vd><5>1o1M0<vm>  VCVT - T1-double-to-s *)
+  | (3, 1, 1, 0) when (b 19 16) = 13 ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vm = arm_extension_register_op XDouble m in
+     let dtd = VfpSignedInt 32 in
+     let dtm = VfpFloat 64 in
+     (* VCVT<c>.S32.F64 <Sd>, <Dm> *)
+     VectorConvert ((bv 7) = 1, cc, dtd, dtm, vd WR, vm RD)
+
+  (* < 29><13>D11<i4><vd><5>00000<i4>   VMOV (immediate) T2-single *)
+  | (3, 0, 0, 0) when (bv 7) = 0 && (bv 5) = 0 ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let vd = arm_extension_register_op XSingle d in
+     let imm8 = ((b 19 16) lsl 4) + (b 3 0) in
+     let vfp = vfp_expand_imm imm8 32 in
+     let imm = mk_arm_immediate_op false 4 vfp in
+     let dt = VfpFloat 32 in
+     (* VMOV<c>.F32 <Sd>, #<imm> *)
+     VectorMove (cc, dt, [vd WR; imm])
+
+  (* < 29><13>D11<i4><vd><5>10000<i4>   VMOV (immediate) T2-double *)
+  | (3, 1, 0, 0) when (bv 7) = 0 && (bv 5) = 0 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let vd = arm_extension_register_op XDouble d in
+     let imm8 = ((b 19 16) lsl 4) + (b 3 0) in
+     let vfp = vfp_expand_imm imm8 64 in
+     let imm = mk_arm_immediate_op false 8 vfp in
+     let dt = VfpFloat 64 in
+     (* VMOV<c>.F64 <Dd>, #<imm> *)
+     VectorMove (cc, dt, [vd WR; imm])
+
+  | (a, b, c, d) ->
+     NotRecognized (
+         "parse_thumb32_29_13:"
+         ^ (string_of_int a)
+         ^ "_"
+         ^ (string_of_int b)
+         ^ "_"
+         ^ (string_of_int c)
+         ^ "_"
+         ^ (string_of_int d),
+         instr)
+
+
+let parse_thumb32_29_110
+      ?(in_it: bool = false)
+      ?(cc: arm_opcode_cc_t = ACCAlways)
+      (ch: pushback_stream_int)
+      (base: doubleword_int)
+      (iaddr: doubleword_int)
+      (instr: doubleword_int): arm_opcode_t =
+  let b = instr#get_segval in
+  let bv = instr#get_bitval in
+
+  if (bv 24) = 0 && (bv 20) = 1 && (b 11 9) != 5 && (bv 4) = 1 then
+    (* < 29>110<1>1<cn><rt><co><2>1<cm>   MRC - T1 *)
      let rt = arm_register_op (get_arm_reg (b 15 12)) in
      let opc1 = b 23 21 in
      let crn = b 19 16 in
@@ -972,598 +1610,827 @@ let parse_thumb32_29
      (* MRC<c> <coproc>, <opc1>, <Rt>, <CRn>, <CRm>, <opc2> *)
      MoveRegisterCoprocessor (cc, coproc, opc1, rt WR, crn, crm, opc2)
 
-  (* < 29>1100D10<vn><vd>101sN0M0<vm>   VMUL (floating point) - T2 *)
-  | 49 | 51 when (b 20 20) = 0 && (b 11 9) = 5 && (b 6 6) = 0 && (b 4 4) = 0 ->
-     let d = b 22 22 in
-     let vn = b 19 16 in
-     let vd = b 15 12 in
-     let sz = b 8 8 in
-     let n = b 7 7 in
-     let m = b 5 5 in
-     let vm = b 3 0 in
-     let dp_op = (sz = 1) in
-     let (dreg, nreg, mreg) =
-       if dp_op then
-         (prefix_bit d vd, prefix_bit n vn, prefix_bit m vm)
-       else
-         (postfix_bit d vd, postfix_bit n vn, postfix_bit m vm) in
-     let (dt, xtype) =
-       if dp_op then (VfpFloat 64, XDouble) else (VfpFloat 32, XSingle) in
-     let vd = arm_extension_register_op xtype dreg in
-     let vn = arm_extension_register_op xtype nreg in
-     let vm = arm_extension_register_op xtype mreg in
-     (* VMUL<c>.F64 <Dd>, <Dn>, <Dm> *)
-     VectorMultiply (cc, dt, vd WR, vn RD, vm RD)
+  else
+    if (bv 23) = 0 then
+      parse_thumb32_29_12 ~in_it ~cc ch base iaddr instr
+    else
+      parse_thumb32_29_13 ~in_it ~cc ch base iaddr instr
 
-  (* < 29>1100D11<vn><vd>101sN1M0<vm>   VSUB (floating point) - T2 *)
-  | 49 | 51 when (b 20 20) = 1 && (b 11 9) = 5 && (b 6 6) = 1 && (b 4 4) = 0 ->
-     let d = b 22 22 in
-     let sz = b 8 8 in
-     let n = b 7 7 in
-     let m = b 5 5 in
-     let vn = b 19 16 in
-     let vd = b 15 12 in
-     let vm = b 3 0 in
-     let dp_op = (sz = 1) in
-     let (dreg, nreg, mreg) =
-       if dp_op then
-         (prefix_bit d vd, prefix_bit n vn, prefix_bit m vm)
-       else
-         (postfix_bit d vd, postfix_bit n vn, postfix_bit m vm) in
-     let (dt, xtype) =
-       if dp_op then (VfpFloat 64, XDouble) else (VfpFloat 32, XSingle) in
-     let vd = arm_extension_register_op xtype dreg in
-     let vn = arm_extension_register_op xtype nreg in
-     let vm = arm_extension_register_op xtype mreg in
-     (* VSUB<c>.F64 <Dd>, <Dn>, <Dm> *)
-     VectorSubtract (cc, dt, vd WR, vn RD, vm RD)
 
-  (* < 29>1101D00<vn><vd>101sN0M0<vm>   (VDIV (T1) *)
-  | 52 when (b 20 20) = 0 && (b 11 9) = 5 && (b 6 6) = 0 && (b 4 4) = 0 ->
-     let d = b 22 22 in
-     let n = b 7 7 in
-     let m = b 5 5 in
-     let sz = b 8 8 in
-     let vn = b 19 16 in
-     let vd = b 15 12 in
-     let vm = b 3 0 in
-     let dp_op = sz = 1 in
-     let dt = if dp_op then VfpFloat 64 else VfpFloat 32 in
-     let xtype = if dp_op then XDouble else XSingle in
-     let dreg = if dp_op then (d lsl 4) + vd else (vd lsl 1) + d in
-     let nreg = if dp_op then (n lsl 4) + vn else (vn lsl 1) + n in
-     let mreg = if dp_op then (m lsl 4) + vm else (vm lsl 1) + m in
-     let vd = arm_extension_register_op xtype dreg in
-     let vn = arm_extension_register_op xtype nreg in
-     let vm = arm_extension_register_op xtype mreg in
-     (* VDIV<c>.F64 <Dd>, <Dn>, <Dm> *)
-     VDivide (cc, dt, vd WR, vn RD, vm RD)
+let parse_thumb32_29_14
+      ?(in_it: bool = false)
+      ?(cc: arm_opcode_cc_t = ACCAlways)
+      (ch: pushback_stream_int)
+      (base: doubleword_int)
+      (iaddr: doubleword_int)
+      (instr: doubleword_int): arm_opcode_t =
+  let b = instr#get_segval in
+  let bv = instr#get_bitval in
+  let isz = b 21 20 in
+  let cmode = b 11 8 in
+  let q = bv 6 in
+  let b4 = bv 4 in
+  match (isz, cmode, q, b4) with
 
-  (* < 29>1101D11< 0><vd>101s01M0<vm>   VMOV (register) - T2 *)
-  | 53 when
-         (b 20 20) = 1
-         && (b 19 16) = 0
-         && (b 11 9) = 5
-         && (b 7 6) = 1
-         && (b 4 4) = 0 ->
-     let d = b 22 22 in
-     let m = b 5 5 in
-     let sz = b 8 8 in
-     let singlereg = sz = 0 in
-     let vd = b 15 12 in
-     let vm = b 3 0 in
-     let (dreg, mreg) =
-       if singlereg then
-         (postfix_bit d vd, postfix_bit m vm)
-       else
-         (prefix_bit d vd, prefix_bit m vm) in
-     let (dt, xtype) =
-       if singlereg then (VfpFloat 32, XSingle) else (VfpFloat 64, XDouble) in
-     let vd = arm_extension_register_op xtype dreg in
-     let vm = arm_extension_register_op xtype mreg in
-     (* VMOV<c>.F64 <Dd>, <Dm> *)
+  (* < 29><14>D00<vn><vd>0001NQM1<vm>    VAND (register) - T1 (Q=0) *)
+  | (0, 1, 0, 1) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     (* VAND<c> <Dd>, <Dn>, <Dm> *)
+     VectorBitwiseAnd (cc, vd WR, vn RD, vm RD)
+
+  (* < 29><14>D00<vn><vd>0001NQM1<vm>    VAND (register) - T1 (Q=1) *)
+  | (0, 1, 1, 1) ->
+     let _ =
+       if (bv 16) > 0 || (bv 12) > 0 || (bv 0) > 0 then
+         raise
+           (ARM_undefined
+              ("VAND: Q=1 && (Vd<0> == 1 || Vn<0> == 1 || Vm<0. == 1)")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XQuad (n / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     (* VAND<c> <Qd>, <Qn>, <Qm> *)
+     VectorBitwiseAnd (cc, vd WR, vn RD, vm RD)
+
+  (* < 29><14>D00<vn><vd><12>NQM0<vm> *) (* SHA1C - T1 *)
+  | (0, 12, 1, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XQuad (n / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let dt = VfpSize 32 in
+     (* SHA1C.32 <Qd>, <Qn>, <Qm> *)
+     SHA1HashUpdateChoose (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><14>D01<vm><vd>< 1>NQM1<vm> *)  (* VBIC (register - T1 (Q=0) *)
+  | (1, 1, 0, 1) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     (* VBIC<c> <Dd>, <Dn>, <Dm> *)
+     VectorBitwiseBitClear (cc, VfpNone, vd WR, vn RD, vm RD)
+
+  (* < 29><14>D01<vm><vd>< 1>NQM1<vm> *)  (* VBIC (register - T1 (Q=1) *)
+  | (1, 1, 1, 1) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XQuad (n / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     (* VBIC<c> <Dd>, <Dn>, <Dm> *)
+     VectorBitwiseBitClear (cc, VfpNone, vd WR, vn RD, vm RD)
+
+  (* < 29><14>D10<vm><vd>< 1>M0M1<vm> *) (* VMOV (register) - T1 (Q=0) *)
+  | (2, 1, 0, 1) when (b 19 16) = (b 3 0) && (bv 7) = (bv 5) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 7) (b 19 16) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpNone in
+     (* VMOV<v> <Dd>, <Dm> *)
      VectorMove (cc, dt, [vd WR; vm RD])
 
-  (* < 29>1101BQ0<vd><rt>1011D0E1< 0>   VDUP (ARM core register) - T1 *)
-  | 52 | 53 when
-         (b 20 20) = 0
-         && (b 11 8) = 11
-         && (b 6 6) = 0
-         && (b 3 0) = 0 ->
-     let regs = 0 in
-     let (esize, elements) = if (b 5 5) = 0 then (32, 2) else (16, 4) in
-     let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let q = b 21 21 in
-     let xtype = if q = 1 then XQuad else XDouble in
-     let dt = if q = 1 then VfpSize 128 else VfpSize 64 in
-     let vd = arm_extension_register_op xtype (b 19 16) in
-     (* VDUP{<c>}.<size> <Qd>, <Rt> *)
-     VectorDuplicate (cc, dt, regs, elements, vd WR, rt RD)
-
-  (* < 29>1101D11<i4><vd>101s0000<i4>   VMOV (immediate) T2 *)
-  | 53 | 55 when
-         (b 20 20) = 1
-         && (b 11 9) = 5
-         && (b 7 4) = 0 ->
-     let d = b 22 22 in
-     let sz = b 8 8 in
-     let size = if sz = 1 then 64 else 32 in
-     let singlereg = (sz = 0) in
-     let vd = b 15 12 in
-     let imm4H = b 19 16 in
-     let imm4L = b 3 0 in
-     let imm8 = (imm4H lsl 4) + imm4L in
-     let vfp = vfp_expand_imm imm8 size in
-     let dt = VfpFloat size in
-     let (dreg, xtype) =
-       if singlereg then
-         (postfix_bit d vd, XSingle)
-       else
-         (prefix_bit d vd, XDouble) in
-     let fpreg = arm_extension_register_op xtype dreg in
+  (* < 29><14>D10<vm><vd>< 1>M1M1<vm> *) (* VMOV (register) - T1 (Q=1) *)
+  | (2, 1, 1, 1) when (b 19 16) = (b 3 0) && (bv 7) = (bv 5) ->
      let _ =
-       ch_error_log#add
-         "floating point constant"
-         (LBLOCK [iaddr#toPretty; STR ": "; vfp#toPretty]) in
-     let imm = mk_arm_immediate_op false (size / 8) vfp in
-     (* VMOV<c>.<dt> <D/Sd>, #<imm> *)
-     VectorMove (cc, dt, [fpreg WR; imm])
+       if (bv 16) > 0 || (bv 0) > 0 then
+         raise
+           (ARM_undefined
+              ("VMOV: Q=1 && (Vd<0> == 1 || Vm<0> == 1)")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 7) (b 19 16) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let dt = VfpNone in
+     (* VMOV<v> <Dd>, <Dm> *)
+     VectorMove (cc, dt, [vd WR; vm RD])
 
-  (* < 29>1101D11< 1><vd>101s01M0<vm>   VNEG -T2 *)
-  | 53 when
-         (b 20 16) = 17
-         && (b 11 9) = 5
-         && (b 7 6) = 1
-         && (b 4 4) = 0 ->
-     let d = b 22 22 in
-     let vd = b 15 12 in
-     let sz = b 8 8 in
-     let m = b 5 5 in
-     let vm = b 3 0 in
-     let vd = if sz = 1 then (d lsl 4) + vd else (vd lsl 1) + d in
-     let vm = if sz = 1 then (m lsl 4) + vm else (vm lsl 1) + m in
-     let xtype = if sz = 1 then XDouble else XSingle in
-     let dst = arm_extension_register_op xtype vd in
-     let src = arm_extension_register_op xtype vm in
-     let dt = if sz = 1 then VfpFloat 64 else VfpFloat 32 in
-     (* VNEG{<c>}.<size> <Sd>, <Sm> *)
-     VectorNegate (cc, dt, dst WR, src RD)
+  (* < 29><14>D10<vn><vd>< 1>N0M1<vm> *) (* VORR (register) - T1 (Q=0) *)
+  | (2, 1, 0, 1) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     (* VORR<c> <Dd>, <Dn>, <Dm> *)
+     VectorBitwiseOr (cc, VfpNone, vd WR, vn RD, vm RD)
 
-  (* < 29>1101D110100<vd>101sE1M0<vm>   VCMP - T1 *)
-  | 53 | 55 when
-         (b 20 19) = 2
-         && (b 18 16) = 4
-         && (b 11 9) = 5
-         && (b 6 6) = 1
-         && (b 4 4) = 0 ->
-     let vd = b 15 12 in
-     let vm = b 3 0 in
-     let d = b 22 22 in
-     let sz = b 8 8 in
-     let e = b 7 7 in
-     let m = b 5 5 in
-     let src1 = if sz = 1 then prefix_bit d vd else postfix_bit d vd in
-     let src2 = if sz = 1 then prefix_bit m vm else postfix_bit m vm in
-     let xtype = if sz = 1 then XDouble else XSingle in
-     let dt = if sz = 1 then VfpFloat 64 else VfpFloat 32 in
-     let src1 = arm_extension_register_op xtype src1 RD in
-     let src2 = arm_extension_register_op xtype src2 RD in
-     (*VCMP{E}<c>.F64 <Dd>, <Dm> *)
-     (*VCMP{E}<c>.F32 <Sd>, <Sm> *)
-     VCompare (e = 1, cc, dt, src1, src2)
+  (* < 29><14>D10<vn><vd>< 1>N1M1<vm> *) (* VORR (register) - T1 (Q=1) *)
+  | (2, 1, 1, 1) ->
+     let _ =
+       if (bv 16) > 0 || (bv 12) > 0 || (bv 0) > 0 then
+         raise
+           (ARM_undefined
+              ("VORR: Q=1 && (Vd<0> == 1 || Vn<0> == 1 || Vm<0. == 1)")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XQuad (n / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     (* VORR<c> <Qd>, <Qn>, <Qm> *)
+     VectorBitwiseOr (cc, VfpNone, vd WR, vn RD, vm RD)
 
-  (* < 29>1101D110101<vd>101sE100< 0>   VCMP - T2 *)
-  | 53 | 55 when
-         (b 20 19) = 2
-         && (b 18 16) = 5
-         && (b 11 9) = 5
-         && (b 6 6) = 1
-         && (b 4 4) = 0 ->
-     let vd = b 15 12 in
-     let d = b 22 22 in
-     let sz = b 8 8 in
-     let e = b 7 7 in
-     let src1 = if sz = 1 then prefix_bit d vd else postfix_bit d vd in
-     let xtype = if sz = 1 then XDouble else XSingle in
-     let dt = if sz = 1 then VfpFloat 64 else VfpFloat 32 in
-     let src1 = arm_extension_register_op xtype src1 RD in
-     let src2 = arm_fp_constant_op 0.0 in
-     (*VCMP{E}<c>.F64 <Dd>, #0.0 *)
-     (*VCMP{E}<c>.F32 <Sd>, #0.0 *)
-     VCompare (e = 1, cc, dt, src1, src2)
+  (* < 29><14>D10<vn><vd><12>N!M0<vm> *) (* SHA1M - T1 *)
+  | (2, 12, 1, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XQuad (n / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let dt = VfpSize 32 in
+     (* SHA1M<dt> <Qd>, <Qn>, <Qm> *)
+     SHA1HashUpdateMajority (cc, dt, vd WR, vn RD, vm RD)
 
-  (* < 29>1101D111<o><vd>101so1M0<vm>   VCVT (between fp and int), T1 *)
-  | 53 | 55 when
-         (b 20 19) = 3
-         && ((b 18 16) = 0 || (b 18 17) = 2)   (* opc2 = 0, or opc2 in 10x *)
-         && (b 11 9) = 5
-         && (b 6 6) = 1
-         && (b 4 4) = 0 ->
-     let d = b 22 22 in
-     let opc2 = b 18 16 in
-     let vd = b 15 12 in
-     let vm = b 3 0 in
-     let m = b 5 5 in
-     let op = b 7 7 in
-     let sz = b 8 8 in
-     let to_int = ((b 18 18) = 1) in
-     let dp_op = (sz = 1) in
-     let (dreg, mreg) =
-       if to_int then
-         ((vd lsl 1) + d, if dp_op then (m lsl 4) + vm else (vm lsl 1) + m)
-       else
-         ((if dp_op then (d lsl 4) + vd else (vd lsl 1) + d), (vm lsl 1) + m) in
-     let roundzero = if to_int then op = 0 else false in
-     let (dt1, dt2) =
-       match (opc2, sz) with
-       | (5, 1) -> (VfpSignedInt 32, VfpFloat 64)
-       | (5, 0) -> (VfpSignedInt 32, VfpFloat 32)
-       | (4, 1) -> (VfpUnsignedInt 32, VfpFloat 64)
-       | (4, 0) -> (VfpUnsignedInt 32, VfpFloat 32)
-       | (0, 1) ->
-          (VfpFloat 64, if op = 1 then VfpSignedInt 32 else VfpUnsignedInt 32)
-       | (0, 0) ->
-          (VfpFloat 32, if op = 1 then VfpSignedInt 32 else VfpUnsignedInt 32)
+ (* < 29><14>Dsz<vn><vd>< 8>N0M0<vm> *) (* VADD (integer) - T1  (Q=0 *)
+  | (sz, 8, 0, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpInt (8 lsl sz) in
+     (* VADD<c>.<dt> <Dd>, <Dn>, <Dm> *)
+     VectorAdd (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><14>Dsz<vn><vd>< 8>N1M0<vm> *) (* VADD (integer) - T1  (Q=1 *)
+  | (sz, 8, 1, 0) ->
+     let _ =
+       if (bv 16) > 0 || (bv 12) > 0 || (bv 0) > 0 then
+         raise
+           (ARM_undefined
+              ("VADD: Q=1 && (Vd<0> == 1 || Vn<0> == 1 || Vm<0. == 1)")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XQuad (n / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let dt = VfpInt (8 lsl sz) in
+     (* VADD<c>.<dt> <Qd>, <Qn>, <Qm> *)
+     VectorAdd (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><14>Dsz<vn><vd>< 9>N0M1<vm> *) (* VMUL (integer) - T1 (Q=0) *)
+  | (sz, 9, 0, 1) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpInt (8 lsl sz) in
+     (* VMUL<c>.<dt> <Dd>, <Dn>, <Dm> *)
+     VectorMultiply (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><14>Dsz<vn><vd>< 9>N0M1<vm> *) (* VMUL (integer) - T1 (Q=1) *)
+  | (sz, 9, 1, 1) ->
+     let _ =
+       if (bv 16) > 0 || (bv 12) > 0 || (bv 0) > 0 then
+         raise
+           (ARM_undefined
+              ("VMUL: Q=1 && (Vd<0> == 1 || Vn<0> == 1 || Vm<0. == 1)")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XQuad (n / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let dt = VfpInt (8 lsl sz) in
+     (* VMUL<c>.<dt> <Qd>, <Qn>, <Qm> *)
+     VectorMultiply (cc, dt, vd WR, vn RD, vm RD)
+
+  | (a, b, c, d) ->
+     NotRecognized (
+         "parse_thumb32_29_14:"
+           ^ (string_of_int a)
+           ^ "_"
+           ^ (string_of_int b)
+           ^ "_"
+           ^ (string_of_int c)
+           ^ "_"
+           ^ (string_of_int d),
+           instr)
+
+
+let parse_thumb32_29_15
+      ?(in_it: bool = false)
+      ?(cc: arm_opcode_cc_t = ACCAlways)
+      (ch: pushback_stream_int)
+      (base: doubleword_int)
+      (iaddr: doubleword_int)
+      (instr: doubleword_int): arm_opcode_t =
+  let b = instr#get_segval in
+  let bv = instr#get_bitval in
+  let isz = b 21 20 in
+  let cmode = b 11 8 in
+  let q = bv 6 in
+  let b4 = bv 4 in
+  match (isz, cmode, q, b4) with
+
+  (* < 29><15>D000<i><vd><cm>0001<i4) *) (* VORR (immediate) - T1-0 (Q=0) *)
+  | (0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 0, 1)
+       when (bv 7) = 0 && (bv 5) = 0 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
+     let immop = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let dt =
+       match cm with
+       | 1 | 3 | 5 | 7 -> VfpInt 32
+       | 9 | 11 -> VfpInt 16
        | _ ->
           raise
             (BCH_failure
-               (LBLOCK [STR "VCVT (T1): inconsistent opc2: "; INT opc2])) in
-     let (xtype1, xtype2) =
-       match (opc2, sz) with
-       | (5, 1) -> (XSingle, XDouble)
-       | (5, 0) -> (XSingle, XSingle)
-       | (4, 1) -> (XSingle, XDouble)
-       | (4, 0) -> (XSingle, XSingle)
-       | (0, 1) -> (XDouble, XSingle)
-       | (0, 0) -> (XSingle, XSingle)
+               (LBLOCK [STR "VORR-immediate: not reachable"])) in
+     let vd = arm_extension_register_op XDouble d in
+     (* VORR<c>.<dt> <Dd>, #<imm> *)
+     VectorBitwiseOr (cc, dt, vd WR, vd RD, immop)
+
+  (* < 29><15>D000<i><vd><cm>0101<i4) *) (* VORR (immediate) - T1-0 (Q=1) *)
+  | (0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 1, 1)
+       when (bv 7) = 0 && (bv 5) = 0 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
+     let immop = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let dt =
+       match cm with
+       | 1 | 3 | 5 | 7 -> VfpInt 32
+       | 9 | 11 -> VfpInt 16
        | _ ->
           raise
             (BCH_failure
-               (LBLOCK [STR "VCVT (T1): inconsistent opc2: "; INT opc2])) in
-     let dst = arm_extension_register_op xtype1 dreg WR in
-     let src = arm_extension_register_op xtype2 mreg RD in
-     (* VCVT.F64.S32 <Dd>, <Sm> *)
-     VectorConvert (roundzero, cc, dt1, dt2, dst, src)
+               (LBLOCK [STR "VORR-immediate: not reachable"])) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     (* VORR<c>.<dt> <Dd>, #<imm> *)
+     VectorBitwiseOr (cc, dt, vd WR, vd RD, immop)
 
-  (* < 29>1101D110111<vd>101s11M0<vmd>   VCVT (between dp and sp), T1 *)
-  | 53 | 55 when
-         (b 20 19) = 2
-         && (b 18 16) = 7
-         && (b 11 9) = 5
-         && (b 7 6) = 3
-         && (bv 4) = 0 ->
-     let double2single = (bv 8) = 1 in
-     let vd = b 15 12 in
-     let dbit = bv 22 in
-     let mbit = bv 5 in
-     let vm = b 3 0 in
-     let (d, m, dt1, dt2) =
-       if double2single then
-         (postfix_bit dbit vd, prefix_bit mbit vm, VfpFloat 32, VfpFloat 64)
-       else
-         (prefix_bit dbit vd, postfix_bit mbit vm, VfpFloat 64, VfpFloat 32) in
-     if double2single then
-       let sd = arm_extension_register_op XSingle d in
-       let dm = arm_extension_register_op XDouble m in
-       (* VCVT<c>.F32.F64 <Sd>, <Dm> *)
-       VectorConvert (false, cc, dt1, dt2, sd WR, dm RD)
-     else
-       let dd = arm_extension_register_op XDouble d in
-       let sm = arm_extension_register_op XSingle m in
-       (* VCVT<c>.F64.F32 <Dd>, <Sm> *)
-       VectorConvert (false, cc, dt1, dt2, dd WR, sm RD)
+  (* < 29><15>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - T1-0-0 (Q=0) *)
+  | (0, cm, 0, 1) when (bv 7) = 0 && (bv 5) = 0 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
+     let immop = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let dt = adv_simd_mod_dt 0 cm "VMOV" in
+     let vd = arm_extension_register_op XDouble d in
+     (* VMOV<c>.<dt> <Dd>, #<imm> *)
+     VectorMove (cc, dt, [vd WR; immop])
 
-  (* < 29>1101111< 1><rt>10100001< 0>   VMRS - T1 *)
-  | 55 when
-         (b 20 16) = 17
-         && (b 11 8) = 10
-         && (b 7 5) = 0
-         && (b 4 4) = 1
-         && (b 3 0) = 0 ->
-     let rt = b 15 12 in
-     let dst =
-       if rt = 15 then
-         arm_special_register_op APSR_nzcv WR
-       else
-         arm_register_op (get_arm_reg rt) WR in
-     let src = arm_special_register_op FPSCR RD in
-     (* VMRS<c> <Rt>, FPSCR *)
-     VMoveRegisterStatus (cc, dst, src)
+  (* < 29><15>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - T1-0-0 (Q=1) *)
+  | (0, cm, 1, 1) when (bv 7) = 0 && (bv 5) = 0 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
+     let immop = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let dt = adv_simd_mod_dt 0 cm "VMOV" in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     (* VMOV<c>.<dt> <Dd>, #<imm> *)
+     VectorMove (cc, dt, [vd WR; immop])
 
-  (* < 29>1101110< 1><rt>10100001< 0>   VMSR *)
-  | 55 when
-         (b 20 16) = 1
-         && (b 11 8) = 10
-         && (b 7 5) = 0
-         && (b 4 4) = 1
-         && (b 3 0) = 0 ->
-     let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let dst = arm_special_register_op FPSCR WR in
-     (* VMSR<c> FPSCR, <Rt> *)
-     VMoveToSystemRegister (cc, dst, rt RD)
+  (* < 29><15>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - T1-0-1 (Q=0) *)
+  | (0, 14, 0, 1) when (bv 7) = 0 && (bv 5) = 1 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
+     let immop = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let dt = adv_simd_mod_dt 0 14 "VMOV" in
+     let vd = arm_extension_register_op XDouble d in
+     (* VMOV<c>.<dt> <Dd>, #<imm> *)
+     VectorMove (cc, dt, [vd WR; immop])
 
-  (* < 29>1110D00<vn><vd>0001NQM1<vm>    VAND (register) - T1 *)
-  | 56 | 58 when (bv 20) = 0 && (b 11 8) = 1 && (bv 4) = 1 ->
-     let q = bv 6 in
-     let hb = (bv 16) + (bv 12) + (bv 0) in
-     if q = 1 && hb > 0 then
-       raise
-         (ARM_undefined ("VAND: Q=1 && (Vd<0> == 1 || Vn<0> == 1 || Vm<0> == 1"))
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let n = prefix_bit (bv 7) (b 19 16) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       if q = 1 then
-         let dst = arm_extension_register_op XQuad (d / 2) WR in
-         let src1 = arm_extension_register_op XQuad (n / 2) RD in
-         let src2 = arm_extension_register_op XQuad (m / 2) RD in
-         (* VAND<c> <Qd>, <Qn>, <Qm> *)
-         VectorBitwiseAnd (cc, dst, src1, src2)
-       else
-         let dst = arm_extension_register_op XDouble d WR in
-         let src1 = arm_extension_register_op XDouble n RD in
-         let src2 = arm_extension_register_op XDouble m RD in
-         (* VAND<c> <Dd>, <Dn>, <Dm> *)
-         VectorBitwiseAnd (cc, dst, src1, src2)
+  (* < 29><15>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - T1-0-1 (Q=1) *)
+  | (0, 14, 1, 1) when (bv 7) = 0 && (bv 5) = 1 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
+     let immop = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let dt = adv_simd_mod_dt 0 14 "VMOV" in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     (* VMOV<c>.<dt> <Dd>, #<imm> *)
+     VectorMove (cc, dt, [vd WR; immop])
 
-  (* < 29>1110D10<vm><vd>0001MQM1<vm>    VMOV (register) - T1 *)
-  | 57 | 59 when
-         (bv 20) = 0
-         && (b 11 8) = 1
-         && (bv 4) = 1
-         && (b 19 16) = (b 3 0)
-         && (bv 7) = (bv 5) ->
-     let q = bv 6 in
-     let hb = (bv 16) + (bv 12) in
-     if q = 1 && hb > 0 then
-       raise (ARM_undefined ("VMOV: Q=1 && (Vd<0> == 1 || Vm<0> == 1"))
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       if q = 1 then
-         let dst = arm_extension_register_op XQuad (d / 2) WR in
-         let src = arm_extension_register_op XQuad (m / 2) RD in
-         (* VMOV<c> <Qd>, <Qm> *)
-         VectorMove (cc, VfpNone, [dst; src])
-       else
-         let dst = arm_extension_register_op XDouble d WR in
-         let src = arm_extension_register_op XDouble m RD in
-         (* VMOV<c> <Dd>, <Dm> *)
-         VectorMove (cc, VfpNone, [dst; src])
+  (* < 29><15>D000<i><vd><cm>0011<i4> *) (* VBIC (immediate) - T1-0 (Q=0) *)
+  | (0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 0, 1)
+       when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
+     let immop = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let dt =
+       match cm with
+       | 1 | 3 | 5 | 7 -> VfpInt 32
+       | 9 | 11 -> VfpInt 16
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [STR "VBIC-immediate: not reachable"])) in
+     let vd = arm_extension_register_op XDouble d in
+     (* VBIC<c>.<dt> <Dd>, #<imm> *)
+     VectorBitwiseBitClear (cc, dt, vd WR, vd RD, immop)
 
-  (* < 29>1110Dsz<vn><vd>1000NQM0<vm>    VADD (integer) - T1 *)
-  | 56 | 57 | 58 | 59 when (b 11 8) = 8 && (bv 4) = 0 ->
-     let q = bv 6 in
-     let lb = (bv 16) + (bv 12) + (bv 0) in
-     if q = 1 && lb > 0 then
-       raise
-         (ARM_undefined
-            ("VADD: Q == 1 && (Vd<0> == 1 || Vn<0> == 1 || Vm<0> == 1"))
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let n = prefix_bit (bv 7) (b 19 16) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       let dt =
-         match (b 21 20) with
-         | 0 -> VfpInt 8
-         | 1 -> VfpInt 16
-         | 2 -> VfpInt 32
-         | 3 -> VfpInt 64
-         | _ -> raise (BCH_failure (STR "VADD: internal error")) in
-       if q = 1 then
-         let qd = arm_extension_register_op XQuad (d / 2) in
-         let qn = arm_extension_register_op XQuad (n / 2) in
-         let qm = arm_extension_register_op XQuad (m / 2) in
-         (* VADD<c>.<dt> <Qd>, <Qn>, <Qm> *)
-         VectorAdd (cc, dt, qd WR, qn RD, qm RD)
-       else
-         let dd = arm_extension_register_op XDouble d in
-         let dn = arm_extension_register_op XDouble n in
-         let dm = arm_extension_register_op XDouble m in
-         (* VADD<c>.<dt> <Dd>, <Dn>, <Dm> *)
-         VectorAdd (cc, dt, dd WR, dn RD, dm RD)
+  (* < 29><15>D000<i><vd><cm>0111<i4> *) (* VBIC (immediate) - T1-0 (Q=1) *)
+  | (0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 1, 1)
+       when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
+     let immop = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let dt =
+       match cm with
+       | 1 | 3 | 5 | 7 -> VfpInt 32
+       | 9 | 11 -> VfpInt 16
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [STR "VBIC-immediate: not reachable"])) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     (* VBIC<c>.<dt> <Qd>, #<imm> *)
+     VectorBitwiseBitClear (cc, dt, vd WR, vd RD, immop)
 
-  (* < 29>1110D10<vn><vd>0001NQM1<vm>    VORR (register) - T1 *)
-  | 57 | 59 when (bv 20) = 0 && (b 11 8) = 1 && (bv 4) = 1 ->
-     let q = bv 6 in
-     let hb = (bv 16) + (bv 12) + (bv 0) in
-     if q = 1 && hb > 0 then
-       raise
-         (ARM_undefined ("VORR: Q=1 && (Vd<0> == 1 || Vn<0> == 1 || Vm<0> == 1"))
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let n = prefix_bit (bv 7) (b 19 16) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       if q = 1 then
-         let dst = arm_extension_register_op XQuad (d / 2) WR in
-         let src1 = arm_extension_register_op XQuad (n / 2) RD in
-         let src2 = arm_extension_register_op XQuad (m / 2) RD in
-         (* VORR<c> <Qd>, <Qn>, <Qm> *)
-         VectorBitwiseOr (cc, VfpNone, dst, src1, src2)
-       else
-         let dst = arm_extension_register_op XDouble d WR in
-         let src1 = arm_extension_register_op XDouble n RD in
-         let src2 = arm_extension_register_op XDouble m RD in
-         (* VORR<c> <Dd>, <Dn>, <Dm> *)
-         VectorBitwiseOr (cc, VfpNone, dst, src1, src2)
+  (* < 29><15>D000<i><vd><cm>0011<i4> *)  (* VMVN (immediate) - T1-0 (Q=0) *)
+  | (0, cm, 0, 1) when (bv 7) = 0 && (bv 5) = 1->
+     let _ =
+       if cm = 15 then
+         raise (ARM_undefined ("VMVN immediate with cmode=15")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
+     let immop = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let dt = adv_simd_mod_dt 0 cm "VMVN" in
+     let vd = arm_extension_register_op XDouble d in
+     (* VMVN<c>.<dt> <Dd>, #<imm> *)
+     VectorBitwiseNot (cc, dt, vd WR, immop)
 
-  (* < 29>1111Dsz<vn><vd>11o0N0M0<vm>    VMULL - T2 *)
-  | 60 | 62 when
-         (b 11 10) = 3
-         && (bv 8) = 0
-         && (bv 6) = 0
-         && (bv 4) = 0
-         && (not ((b 21 20) = 3)) ->
-     let op = bv 9 in
-     let sz = b 21 20 in
-     if op = 1 && (not (sz = 0)) then
-       raise (ARM_undefined ("VMULL: op == 1 && size != 0"))
-     else if bv 12 = 1 then
-       raise (ARM_undefined ("VMULL: Vd<0> == 1"))
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let n = prefix_bit (bv 7) (b 19 16) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       let esize = 8 lsl sz in
-       let dt =
-         if op = 0 then
-           VfpSignedInt esize
-         else
-           VfpPolynomial esize in
-       let qd = arm_extension_register_op XQuad (d / 2) in
-       let dn = arm_extension_register_op XDouble n in
-       let dm = arm_extension_register_op XDouble m in
-       (* VMULL<c>.<dt> <Qd>, <Dn>, <Dm> *)
-       VectorMultiplyLong (cc, dt, qd WR, dn RD, dm RD)
+  (* < 29><15>D000<i><vd><cm>0111<i4> *)  (* VMVN (immediate) - T1-0 (Q=1) *)
+  | (0, cm, 1, 1) when (bv 7) = 0 && (bv 5) = 1 ->
+     let _ =
+       if cm = 15 then
+         raise (ARM_undefined ("VMVN immediate with cmode=15")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
+     let immop = mk_arm_immediate_op false 4 (mkNumerical imm8) in
+     let dt = adv_simd_mod_dt 0 cm "VMVN" in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     (* VMVN<c>.<dt> <Qd>, #<imm> *)
+     VectorBitwiseNot (cc, dt, vd WR, immop)
 
-  (* < 29>1111D<imm6><vd>0000LQM1<vm>    VSHR - T1 *)
-  | 60 | 61 | 62 | 63 when
-         (b 11 8) = 0
-         && (bv 4) = 1
-         && (not ((bv 7) = 0 && (bv 19) = 0)) ->
+  (* < 29><15>D11<vn><vd><i4>NQM0<vm> *) (* VEXT - T1 (Q=0) *)
+  | (3, i4, 0, 0) ->
+     let _ =
+       if (bv 11) = 1 then
+         raise (ARM_undefined ("VEXT: Q=0 and imm4<3> = 1")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let imm = mk_arm_immediate_op false 4 (mkNumerical i4) in
+     (* VEXT<c>.8 <Dd>, <Dn>, <Dm>, #<imm> *)
+     VectorExtract (cc, VfpSize 8, vd WR, vn RD, vm RD, imm)
+
+  (* < 29><15>D11<vn><vd><i4>NQM0<vm> *) (* VEXT - T1 (Q=1) *)
+  | (3, i4, 1, 0) ->
+     let _ =
+       if (bv 16) = 1 || (bv 12) = 1 || (bv 0) = 1 then
+         raise
+           (ARM_undefined
+              ("VEXT: Q=1 and Vd<0> = 1 or Vn<0> = 1 or Vm<0> = 1")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XQuad (n / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let imm = mk_arm_immediate_op false 4 (mkNumerical i4) in
+     (* VEXT<c>.8 <Dd>, <Dn>, <Dm>, #<imm> *)
+     VectorExtract (cc, VfpSize 8, vd WR, vn RD, vm RD, imm)
+
+  (* < 29><15>D001000<vd><10>00M1<vm> *) (* VMOVL - T1-s *)
+  | (0, 10, 0, 1) when  (b 19 16) = 8 && (bv 7) = 0 ->
+     let _ =
+       if (bv 12) = 1 then
+         raise (ARM_undefined ("VMOVL: Vd<0> = 1")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpSignedInt 8 in
+     (* VMOVL<c>.<dt> <Qd>, <Dm> *)
+     VectorMoveLong (cc, dt, vd WR, vm RD)
+
+  (* < 29><15>D010000<vd><10>00M1<vm> *) (* VMOVL - T1-s *)
+  | (1, 10, 0, 1) when  (b 19 16) = 0 && (bv 7) = 0 ->
+     let _ =
+       if (bv 12) = 1 then
+         raise (ARM_undefined ("VMOVL: Vd<0> = 1")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpSignedInt 16 in
+     (* VMOVL<c>.<dt> <Qd>, <Dm> *)
+     VectorMoveLong (cc, dt, vd WR, vm RD)
+
+  (* < 29><15>D<imm6><vd>< 0>LQM1<vm> *) (* VSHR - T1-s (Q=0) *)
+  | (sz, 0, 0, 1) ->
      let imm6 = b 21 16 in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
      let (esize, sam) =
        match (bv 7, b 21 19) with
        | (0, 1) -> (8, 16 - imm6)
-       | (0, 2) | (0, 3) -> (16, 32 - imm6)
-       | (0, 4) | (0, 5) | (0, 6) | (0, 7) -> (32, 64 - imm6)
+       | (0, (2 | 3)) -> (16, 32 - imm6)
+       | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
        | (1, _) -> (64, 64 - imm6)
        | _ ->
           raise
             (BCH_failure
                (LBLOCK [
-                    STR "thumb_29:62: ";
+                    STR "cond15:VSHR: ";
                     INT (bv 7);
                     STR ", ";
                     INT (b 21 19)])) in
+     let dt = VfpSignedInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VSHR<c>.<dt> <Dd>, <Dm>, #<imm> *)
+     VectorShiftRight (cc, dt, vd WR, vm RD, imm)
+
+  (* < 29><15>D<imm6><vd>< 0>LQM1<vm> *) (* VSHR - T1-s (Q=1) *)
+  | (sz, 0, 1, 1) ->
+     let _ =
+       if (bv 12) = 1 || (bv 0) = 1 then
+         raise
+           (ARM_undefined ("VSHR: Q=1 and Vd<0> = 1 or Vm<0> = 1")) in
+     let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, 16 - imm6)
+       | (0, (2 | 3)) -> (16, 32 - imm6)
+       | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
+       | (1, _) -> (64, 64 - imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "cond15:VSHR: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
      let dt = VfpSignedInt esize in
-     let imm = mk_arm_immediate_op ((bv 24) = 0) 4 (mkNumerical sam) in
-     if (bv 6) = 1 then
-       let qd = arm_extension_register_op XQuad (d / 2) in
-       let qm = arm_extension_register_op XQuad (m / 2) in
-       (* VSHR<c>.<type><size> <Qd>, <Qm>, #<imm> *)
-       VectorShiftRight (cc, dt, qd WR, qm RD, imm)
-     else
-       let dd = arm_extension_register_op XDouble d in
-       let dm = arm_extension_register_op XDouble m in
-       (* VSHR<c>.<type><size> <Dd>, <Dm>, #<imm> *)
-       VectorShiftRight (cc, dt, dd WR, dm RD, imm)
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VSHR<c>.<dt> <Qd>, <Qm>, #<imm> *)
+     VectorShiftRight (cc, dt, vd WR, vm RD, imm)
 
-  (* < 29>1111D11<vn><vd><i4>NQM0<vm>    VEXT - T1 *)
-  | 61 | 63 when (bv 20) = 1 && (bv 4) = 0 ->
-     let q = bv 6 in
-     let hb = (bv 12) + (bv 16) + (bv 0) in
-     if q = 1 && hb > 0 then
-       raise
-         (ARM_undefined
-            ("VEXT: Q == 1 && (Vd<0> == 1 || Vn<0> == 1 || Vm<0> == 1)"))
-     else if q = 0 && (bv 11) = 1 then
-       raise (ARM_undefined ("VEXT: Q == 1 && imm4<3> == 1"))
-     else
-       let dt = VfpSize 8 in
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let n = prefix_bit (bv 7) (b 19 16) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       let imm4 = b 11 8 in
-       let pos = 8 * imm4 in
-       let imm = mk_arm_immediate_op false 4 (mkNumerical pos) in
-       if q = 1 then
-         let qd = arm_extension_register_op XQuad (d / 2) in
-         let qn = arm_extension_register_op XQuad (n / 2) in
-         let qm = arm_extension_register_op XQuad (m / 2) in
-         (* VEXT<c>.8 <Qd>, <Qn>, <Qm>, #<imm> *)
-         VectorExtract (cc, dt, qd WR, qn RD, qm RD, imm)
-       else
-         let dd = arm_extension_register_op XDouble d in
-         let dn = arm_extension_register_op XDouble n in
-         let dm = arm_extension_register_op XDouble m in
-         (* VEXT<c>.8 <Dd>, <Dn>, <Dm>, #<imm> *)
-         VectorExtract (cc, dt, dd WR, dn RD, dm RD, imm)
-
-  (* < 29>1111D000<i><vd><cm>0Qo1<i4>    VMOV (immediate) - T1 *)
-  | 62 when
-         (bv 19) = 0
-         && (bv 7) = 0
-         && (bv 4) = 1
-         && (not ((bv 5) = 0 && (bv 8) = 1 && (b 11 10) != 3))
-         && (not ((bv 5) = 1 && (b 11 8) != 14)) ->
-     let d = prefix_bit (bv 22) (b 15 12) in
-     let cmode = b 11 8 in
-     let op = bv 5 in
-     let imm8 = ((bv 28) lsl 7) + ((b 18 16) lsl 4) + (b 3 0) in
-     let imm64 = adv_simd_expand_imm op cmode imm8 in
-     let immop = mk_arm_immediate_op false 8 imm64 in
-     let dt = adv_simd_mod_dt op cmode "VMOV" in
-     if (bv 6) = 1 then
-       (* VMOV<c>.<dt> <Qd>, #<imm> *)
-       let qd = arm_extension_register_op XQuad (d / 2) in
-       VectorMove (cc, dt, [qd WR; immop])
-     else
-       (* VMOV<c>.<dt> <Dd>, #<imm> *)
-       let dd = arm_extension_register_op XDouble d in
-       VectorMove (cc, dt, [dd WR; immop])
-
-  (* < 29>1111D<imm6><vd>0101LQM1<vm>    VSHL (immediate) - T1 *)
-  | 60 | 61 | 62 | 63 when
-         (b 11 8) = 5
-         && (bv 4) = 1
-         && (not ((bv 7) = 0 && (b 21 19) = 0)) ->
+  (* < 29><15>D<imm6><vd>< 1>LQM1<vm> *) (* VSRA - T1-s (Q=0) *)
+  | (sz, 1, 0, 1) ->
      let imm6 = b 21 16 in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, 16 - imm6)
+       | (0, (2 | 3)) -> (16, 32 - imm6)
+       | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
+       | (1, _) -> (64, 64 - imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "VSHR: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpSignedInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VSRA<c>.<dt> <Dd>, <Dm>, #<imm> *)
+     VectorShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
+
+  (* < 29><15>D<imm6><vd>< 1>LQM1<vm> *) (* VSRA - T1-s (Q=1) *)
+  | (sz, 1, 1, 1) ->
+     let _ =
+       if (bv 12) = 1 || (bv 0) = 1 then
+         raise
+           (ARM_undefined ("VSRA: Q=1 and Vd<0> = 1 or Vm<0> = 1")) in
+     let imm6 = b 21 16 in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, 16 - imm6)
+       | (0, (2 | 3)) -> (16, 32 - imm6)
+       | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
+       | (1, _) -> (64, 64 - imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "VSHR: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpSignedInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VSRA<c>.<dt> <Qd>, <Qm>, #<imm> *)
+     VectorShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
+
+  (* < 29><15>D<imm6><vd>< 3>LQM1<vm> *) (* VRSRA - T1-s (Q=0) *)
+  | (sz, 3, 0, 1) ->
+     let imm6 = b 21 16 in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, 16 - imm6)
+       | (0, (2 | 3)) -> (16, 32 - imm6)
+       | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
+       | (1, _) -> (64, 64 - imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "VRSRA: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpSignedInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VRSRA<c>.<dt> <Dd>, <Dm>, #<imm> *)
+     VectorRoundingShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
+
+  (* < 29><15>D<imm6><vd>< 3>LQM1<vm> *) (* VRSRA - T1-s (Q=1) *)
+  | (sz, 3, 1, 1) ->
+     let _ =
+       if (bv 12) = 1 || (bv 0) = 1 then
+         raise
+           (ARM_undefined ("VRSRA: Q=1 and Vd<0> = 1 or Vm<0> = 1")) in
+     let imm6 = b 21 16 in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, 16 - imm6)
+       | (0, (2 | 3)) -> (16, 32 - imm6)
+       | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
+       | (1, _) -> (64, 64 - imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "VRSRA: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpSignedInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VRSRA<c>.<dt> <Qd>, <Qm>, #<imm> *)
+     VectorRoundingShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
+
+  (* < 29><15>D<imm6><vd>< 5>LQM1<vm> *) (* VSHL - T1 (Q=0) *)
+  | (sz, 5, 0, 1) ->
+     let imm6 = b 21 16 in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
      let (esize, sam) =
        match (bv 7, b 21 19) with
        | (0, 1) -> (8, imm6 - 8)
-       | (0, 2) | (0, 3) -> (16, imm6 - 16)
-       | (0, 4) | (0, 5) | (0, 6) | (0, 7) -> (32, imm6 - 32)
+       | (0, (2 | 3)) -> (16, imm6 - 16)
+       | (0, (4 | 5 | 6 | 7)) -> (32, imm6 - 32)
        | (1, _) -> (64, imm6)
        | _ ->
           raise
             (BCH_failure
                (LBLOCK [
-                    STR "parse_thumb:VSHL: ";
+                    STR "VSHL: ";
                     INT (bv 7);
                     STR ", ";
                     INT (b 21 19)])) in
-     let d = prefix_bit (bv 22) (b 15 12) in
-     let m = prefix_bit (bv 5) (b 3 0) in
      let dt = VfpInt esize in
-     let imm = mk_arm_immediate_op ((bv 24) = 0) 4 (mkNumerical sam) in
-     if (bv 6) = 1 then
-       let qd = arm_extension_register_op XQuad (d / 2) in
-       let qm = arm_extension_register_op XQuad (m / 2) in
-       (* VSHL<c>.<type><size> <Qd>, <Qm>, #<imm> *)
-       VectorShiftLeft (cc, dt, qd WR, qm RD, imm)
-     else
-       let dd = arm_extension_register_op XDouble d in
-       let dm = arm_extension_register_op XDouble m in
-       (* VSHL<c>.<type><size> <Dd>, <Dm>, #<imm> *)
-       VectorShiftLeft (cc, dt, dd WR, dm RD, imm)
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VSHL<c>.<dt> <Dd>, <Dm>, #<imm> *)
+     VectorShiftLeft (cc, dt, vd WR, vm RD, imm)
 
-  (* < 29>1111D<imm6><vd>100000M1<vm>    VSHRN - T1 *)
-  | 60 | 61 | 62 | 63 when
-         (b 11 8) = 8
-         && (b 7 6) = 0
-         && (bv 4) = 1 ->
+  (* < 29><15>D<imm6><vd>< 5>LQM1<vm> *) (* VSHL - T1 (Q=1) *)
+  | (sz, 5, 1, 1) ->
+     let _ =
+       if (bv 12) = 1 || (bv 0) = 1 then
+         raise
+           (ARM_undefined ("VSHL: Q=1 and Vd<0> = 1 or Vm<0> = 1")) in
      let imm6 = b 21 16 in
-     let (size, sam) =
-       if imm6 >= 32 then
-         (64, 64 - imm6)
-       else if imm6 >= 16 then
-         (32, 32 - imm6)
-       else
-         (16, 16 - imm6) in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
-     let dt = VfpInt size in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, imm6 - 8)
+       | (0, (2 | 3)) -> (16, imm6 - 16)
+       | (0, (4 | 5 | 6 | 7)) -> (32, imm6 - 32)
+       | (1, _) -> (64, imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "VSHL: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpInt esize in
      let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
-     let dd = arm_extension_register_op XDouble d in
-     let qm = arm_extension_register_op XQuad (m / 2) in
-     (* VHSRN<c>.I<size> <Dd>, <Qm>, #<imm> *)
-     VectorShiftRightNarrow (cc, dt, dd WR, qm RD, imm)
+     (* VSHL<c>.<dt> <Qd>, <Qm>, #<imm> *)
+     VectorShiftLeft (cc, dt, vd WR, vm RD, imm)
 
-  | _ ->
-     NotRecognized ("parse_thumb32_29:" ^ (string_of_int op), instr)
+  (* < 29><15>D<imm6><vd>< 8>00M1<vm> *) (* VSHRN - T1 *)
+  | (sz, 8, 0, 1) ->
+     let imm6 = b 21 16 in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let (esize, sam) =
+       match (b 21 19) with
+       | 0 -> (8, 16 - imm6)
+       | 1 -> (16, 32 - imm6)
+       | 2 | 3 -> (32, 64 - imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "cond15:VSHR: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VSHRN<c>.<dt> <Dd>, <Qm>, #<imm> *)
+     VectorShiftRightNarrow (cc, dt, vd WR, vm RD, imm)
+
+  (* < 29><15>Dsz<vn><vd>< 0>N0M0<vm> *) (* VADDL - T1-s *)
+  | (((0 | 1 | 2) as sz), 0, 0, 0) ->
+     let _ =
+       if (bv 12) = 1 then
+         raise (ARM_undefined ("VADDL: Vd<0> = 1")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpSignedInt (8 lsl sz) in
+     (* VADDL<c>.<dt> <Qd>, <Dn>, <Dm> *)
+     VectorAddLong (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><15>Dsz<vn><vd>< 1>N0M0<vm> *) (* VADDW - T1-s *)
+  | (((0 | 1 | 2) as sz), 1, 0, 0) ->
+     let _ =
+       if (bv 12) = 1 || (bv 16) = 1 then
+         raise (ARM_undefined ("VADDW: Vd<0> = 1 or Vn<0> = 1")) in
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XQuad (n / 2) in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpSignedInt (8 lsl sz) in
+     (* VADDW<c>.<dt> <Qd>, <Qn>, <Dm> *)
+     VectorAddWide (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><15>Dsz<vn><vd>< 2>N1M0<vm> *)  (* VMLAL (by scalar) - T2-s (sz=1) *)
+  | (1, 2, 1, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XDouble n in
+     let m = b 2 0 in
+     let index = ((bv 5) * 2) + (bv 3) in
+     let dt = VfpSignedInt 16 in
+     let elt = arm_extension_register_element_op XDouble m index 16 in
+     (* VMLAL<c>.<dt> <Qd>, <Dn>, <Dm[x]>) *)
+     VectorMultiplyAccumulateLong (cc, dt, vd WR, vn RD, elt RD)
+
+  (* < 29><15>Dsz<vn><vd>< 2>N1M0<vm> *)  (* VMLAL (by scalar) - T2-s (sz=2) *)
+  | (2, 2, 1, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XDouble n in
+     let m = b 3 0 in
+     let index = bv 5 in
+     let dt = VfpSignedInt 32 in
+     let elt = arm_extension_register_element_op XDouble m index 32 in
+     (* VMLAL<c>.<dt> <Qd>, <Dn>, <Dm[x]>) *)
+     VectorMultiplyAccumulateLong (cc, dt, vd WR, vn RD, elt RD)
+
+  (* < 29><15>Dsz<vn><vd>< 8>N0M0<vm> *)  (* VMLAL (integer) - T2-s *)
+  | (((0 | 1 | 2) as sz), 8, 0, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpSignedInt (8 lsl sz) in
+     (* VMLAL<c>.<dt> <Qd>, <Dn>, <Dm> *)
+     VectorMultiplyAccumulateLong (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><15>Dsz<vn><vd><10>N1M0<vm> *)  (* VMULL (by scalar) - T2-s (sz=1) *)
+  | (1, 10, 1, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XDouble n in
+     let m = b 2 0 in
+     let index = ((bv 5) * 2) + (bv 3) in
+     let dt = VfpSignedInt 16 in
+     let elt = arm_extension_register_element_op XDouble m index 16 in
+     (* VMULL<c>.<dt> <Qd>, <Dn>, <Dm[x]>) *)
+     VectorMultiplyLong (cc, dt, vd WR, vn RD, elt RD)
+
+  (* < 29><15>Dsz<vn><vd><10>N1M0<vm> *)  (* VMULL (by scalar) - T2-s (sz=2) *)
+  | (2, 10, 1, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XDouble n in
+     let m = b 3 0 in
+     let index = bv 5 in
+     let dt = VfpSignedInt 32 in
+     let elt = arm_extension_register_element_op XDouble m index 32 in
+     (* VMULL<c>.<dt> <Qd>, <Dn>, <Dm[x]>) *)
+     VectorMultiplyLong (cc, dt, vd WR, vn RD, elt RD)
+
+  (* < 29><15>Dsz<vn><vd><12>N0M0<vm> *) (* VMULL (integer) - T2-s *)
+  | (((0 | 1 | 2) as sz), 12, 0, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpSignedInt (8 lsl sz) in
+     (* VMULL<c>.<dt> <Qd>, <Dn>, <Dm> *)
+     VectorMultiplyLong (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><15>D00<vn><vd><14>N0M0<vm> *) (* VMULL (polynomial) - T2-p *)
+  | (0, 14, 0, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpPolynomial 8 in
+     (* VMULL<c>.<dt>, <Qd>, <Dn>, <Dm> *)
+     VectorMultiplyLong (cc, dt, vd WR, vn RD, vm RD)
+
+  (* VMULL (polynomial) - A2 (crypto extension) *)
+  (* < 29><15>D10<vn><vd><14>N0M0<vm> *)
+  | (2, 14, 0, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpPolynomial 64 in
+     (* VMULL<c>.<dt>, <Qd>, <Dn>, <Dm> *)
+     VectorMultiplyLong (cc, dt, vd WR, vn RD, vm RD)
+
+  | (a, b, c, d) ->
+     NotRecognized (
+         "parse_thumb32_29_15:"
+           ^ (string_of_int a)
+           ^ "_"
+           ^ (string_of_int b)
+           ^ "_"
+           ^ (string_of_int c)
+           ^ "_"
+           ^ (string_of_int d),
+           instr)
+
 
 let parse_t32_30_0
       ?(in_it: bool=false)
@@ -1909,7 +2776,8 @@ let parse_thumb32_30
   | 1 -> parse_t32_branch ~in_it ~cc ch base iaddr instr
   | _ ->
      NotRecognized ("parse_thumb32_30", instr)
-    
+
+
 let parse_thumb32_31_0
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
@@ -2410,6 +3278,15 @@ let parse_thumb32_31_1
      (* MLS<c> <Rd>, <Rn>, <Rm>, <Ra> *)
      MultiplySubtract (cc, rd WR, rn RD, rm RD, ra RD)
 
+  (* < 31>01< 17><rn><ra><rd>0000<rm>   SMLABB - T1 *)
+  | 17 when (b 7 4) = 0 ->
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let ra = arm_register_op (get_arm_reg (b 15 12)) in
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rm = arm_register_op (get_arm_reg (b 3 0)) in
+     (* MLS<c> <Rd>, <Rn>, <Rm>, <Ra> *)
+     SignedMultiplyAccumulateBB (cc, rd WR, rn RD, rm RD, ra RD)
+
   (* < 31>01< 24><rn><lo><hi>0000<rm>   SMULL - T1 *)
   | 24 when (b 7 4) = 0 ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
@@ -2476,7 +3353,7 @@ let parse_thumb32_31_110
        ("parse_thumb32_31_110:" ^ (string_of_int s), instr)
 
 
-let parse_thumb32_31_3_2
+let parse_thumb32_31_14
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (ch: pushback_stream_int)
@@ -2521,7 +3398,7 @@ let parse_thumb32_31_3_2
 
   | (a, b, c, d) ->
      NotRecognized (
-         "parse_thumb32_31_3_2:"
+         "parse_thumb32_31_14:"
          ^ (string_of_int a)
          ^ "_"
          ^ (string_of_int b)
@@ -2531,7 +3408,7 @@ let parse_thumb32_31_3_2
          ^ (string_of_int d), instr)
 
 
-let parse_thumb32_31_3_3
+let parse_thumb32_31_15
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (ch: pushback_stream_int)
@@ -2639,7 +3516,7 @@ let parse_thumb32_31_3_3
                (LBLOCK [STR "ARM:VBIC-immediate: not reachable"])) in
      let vd = arm_extension_register_op XDouble d in
      (* VBIC<c>.<dt> <Dd>, #<imm> *)
-     VectorBitwiseBitClear (cc, dt, vd RW, immop)
+     VectorBitwiseBitClear (cc, dt, vd WR, vd RD, immop)
 
   (* < 31><15>D000<i><vd><cm>0Q11<i4> *)  (* VBIC (immediate) - T1-1 (Q=1) *)
   | (0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 1, 1)
@@ -2657,7 +3534,7 @@ let parse_thumb32_31_3_3
                (LBLOCK [STR "ARM:VBIC-immediate: not reachable"])) in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VBIC<c>.<dt> <Qd>, #<imm> *)
-     VectorBitwiseBitClear (cc, dt, vd RW, immop)
+     VectorBitwiseBitClear (cc, dt, vd WR, vd RD, immop)
 
   (* < 31><15>D000<i><vd><cm>0011<i4> *)  (* VMVN (immediate) - T1-1 (Q=0) *)
   | (0, cm, 0, 1) when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
@@ -2979,6 +3856,16 @@ let parse_thumb32_31_3_3
      (* AESIMC.<dt> <Qd>, <Qm> *)
      AESInverseMixColumns (cc, dt, vd WR, vm RD)
 
+  (* < 31><15>D11sz01<vd>< 4>11M0<vm> *)  (* SHA1H - T1 *)
+  | (3, 4, 1, 0) when (b 17 16) = 0 && (bv 7) = 1 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let dt = VfpSize 32 in
+     (* SHA1H.<dt> <Qd>, <Qm> *)
+     SHA1FixedRotate (cc, dt, vd WR, vm RD)
+
   (* <31><15>D<imm6><vd>< 0>LQM1<vm> *)   (* VSHR - T1-u (Q=0) *)
   | (sz, 0, 0, 1) when ((bv 7) = 1 || (b 21 19) > 0) ->
      let imm6 = b 21 16 in
@@ -3247,7 +4134,7 @@ let parse_thumb32_31_3_3
 
   | (a, b, c, d) ->
      NotRecognized (
-         "parse_thumb32_31_3_3:"
+         "parse_thumb32_31_15:"
          ^ (string_of_int a)
          ^ "_"
          ^ (string_of_int b)
@@ -3266,7 +4153,25 @@ let parse_thumb32_opcode
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   match (b 31 27) with
-  | 29 -> parse_thumb32_29 ~in_it ~cc ch base iaddr instr
+  | 29 ->
+     (match (b 26 25) with
+      | 0 -> parse_thumb32_29_0 ~in_it ~cc ch base iaddr instr
+      | 1 -> parse_thumb32_29_1 ~in_it ~cc ch base iaddr instr
+      | 2 -> parse_thumb32_29_2 ~in_it ~cc ch base iaddr instr
+      | 3 ->
+         (match (b 24 23) with
+          | 0 | 1 -> parse_thumb32_29_110 ~in_it ~cc ch base iaddr instr
+          | 2 -> parse_thumb32_29_14 ~in_it ~cc ch base iaddr instr
+          | 3 -> parse_thumb32_29_15 ~in_it ~cc ch base iaddr instr
+          | _ ->
+             raise
+               (BCH_failure
+                  (LBLOCK [STR "Unexpected value in parse_thumb32:29"])))
+      | _ ->
+         raise
+           (BCH_failure
+              (LBLOCK [STR "Unexpected value in parse_thumb32:29"])))
+
   | 30 -> parse_thumb32_30 ~in_it ~cc ch base iaddr instr
   | 31 ->
      (match (b 26 25) with
@@ -3276,8 +4181,8 @@ let parse_thumb32_opcode
       | 3 ->
          (match (b 24 23) with
           | 0 | 1 -> parse_thumb32_31_110 ~in_it ~cc ch base iaddr instr
-          | 2 -> parse_thumb32_31_3_2 ~in_it ~cc ch base iaddr instr
-          | 3 -> parse_thumb32_31_3_3 ~in_it ~cc ch base iaddr instr
+          | 2 -> parse_thumb32_31_14 ~in_it ~cc ch base iaddr instr
+          | 3 -> parse_thumb32_31_15 ~in_it ~cc ch base iaddr instr
           | _ ->
              raise
                (BCH_failure

@@ -1763,7 +1763,7 @@ let parse_misc_7_type
      (* VMLS<c>.F32 <Sd>, <Sn>, <Sm> *)
      VectorMultiplySubtract (c, dt, vd WR, vn RD, vm RD)
 
-  (* <cc><7>00o10<vd><rt>1011Do21< 0> *) (* VMOV (ARM core to scalar) - A1 *)
+  (* <cc><7>00oo0<vd><rt>1011Doo1< 0> *) (* VMOV (ARM core to scalar) - A1 *)
   | (0, (0 | 1), _, 1) when (bv 20) = 0 && (b 11 8) = 11 && (b 3 0) = 0 ->
      let opc1 = b 22 21 in
      let opc2 = b 6 5 in
@@ -2419,6 +2419,18 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      (* VAND<c> <Qd>, <Qn>, <Qm> *)
      VectorBitwiseAnd (cc, vd WR, vn RD, vm RD)
 
+  (* <15><  4>D00<vn><vd><12>NQM0<vm> *) (* SHA1C - A1 *)
+  | (4, 0, 12, 0, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XQuad (n / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let dt = VfpSize 32 in
+     (* SHA1C.32 <Qd>, <Qn>, <Qm> *)
+     SHA1HashUpdateChoose (cc, dt, vd WR, vn RD, vm RD)
+
   (* <15><  4>D10<vm><vd>< 1>M0M1<vm> *) (* VMOV (register) - A1 (Q=0) *)
   | (4, 2, 1, 0, 1) when (b 19 16) = (b 3 0) && (bv 7) = (bv 5) ->
      let d = prefix_bit (bv 22) (b 15 12) in
@@ -2470,6 +2482,18 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let vm = arm_extension_register_op XQuad (m / 2) in
      (* VORR<c> <Qd>, <Qn>, <Qm> *)
      VectorBitwiseOr (cc, VfpNone, vd WR, vn RD, vm RD)
+
+  (* <15><  4>D10<vn><vd><12>N!M0<vm> *) (* SHA1M - A1 *)
+  | (4, 2, 12, 1, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vn = arm_extension_register_op XQuad (n / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let dt = VfpSize 32 in
+     (* SHA1M<dt> <Qd>, <Qn>, <Qm> *)
+     SHA1HashUpdateMajority (cc, dt, vd WR, vn RD, vm RD)
 
   (* <15><  4>Dsz<vn><vd>< 8>N0M0<vm> *) (* VADD (integer) - A1  (Q=0 *)
   | (4, sz, 8, 0, 0) ->
@@ -2621,7 +2645,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
                (LBLOCK [STR "ARM:VBIC-immediate: not reachable"])) in
      let vd = arm_extension_register_op XDouble d in
      (* VBIC<c>.<dt> <Dd>, #<imm> *)
-     VectorBitwiseBitClear (cc, dt, vd RW, immop)
+     VectorBitwiseBitClear (cc, dt, vd WR, vd RD, immop)
 
   (* <15><  5>D000<i><vd><cm>0111<i4> *) (* VBIC (immediate) - A1-0 (Q=1) *)
   | (5, 0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 1, 1)
@@ -2639,7 +2663,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
                (LBLOCK [STR "ARM:VBIC-immediate: not reachable"])) in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VBIC<c>.<dt> <Qd>, #<imm> *)
-     VectorBitwiseBitClear (cc, dt, vd RW, immop)
+     VectorBitwiseBitClear (cc, dt, vd WR, vd RD, immop)
 
   (* <15><  5>D000<i><vd><cm>0011<i4> *)  (* VMVN (immediate) - A1-0 (Q=0) *)
   | (5, 0, cm, 0, 1) when (bv 7) = 0 && (bv 5) = 1->
@@ -2741,44 +2765,28 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
   (* <15><  5>D<imm6><vd>< 0>LQM1<vm> *) (* VSHR - A1-s (Q=0) *)
   | (5, sz, 0, 0, 1) ->
      let imm6 = b 21 16 in
-     if (bv 7) = 0 && imm6 < 8 then
-       NotRecognized (
-           "arm:cond15:VSHR - A1-s: imm6: "
-           ^ (string_of_int (b 21 16))
-           ^ "_"
-           ^ "5"
-           ^ "_"
-           ^ (string_of_int sz)
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "1",
-             instr)
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       let vd = arm_extension_register_op XDouble d in
-       let vm = arm_extension_register_op XDouble m in
-       let (esize, sam) =
-         match (bv 7, b 21 19) with
-         | (0, 1) -> (8, 16 - imm6)
-         | (0, (2 | 3)) -> (16, 32 - imm6)
-         | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
-         | (1, _) -> (64, 64 - imm6)
-         | _ ->
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "cond15:VSHR: ";
-                      INT (bv 7);
-                      STR ", ";
-                      INT (b 21 19)])) in
-       let dt = VfpSignedInt esize in
-       let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
-       (* VSHR<c>.<dt> <Dd>, <Dm>, #<imm> *)
-       VectorShiftRight (cc, dt, vd WR, vm RD, imm)
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, 16 - imm6)
+       | (0, (2 | 3)) -> (16, 32 - imm6)
+       | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
+       | (1, _) -> (64, 64 - imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "cond15:VSHR: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpSignedInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VSHR<c>.<dt> <Dd>, <Dm>, #<imm> *)
+     VectorShiftRight (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 0>LQM1<vm> *) (* VSHR - A1-s (Q=1) *)
   | (5, sz, 0, 1, 1) ->
@@ -2787,86 +2795,54 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
          raise
            (ARM_undefined ("VSHR: Q=1 and Vd<0> = 1 or Vm<0> = 1")) in
      let imm6 = b 21 16 in
-     if (bv 7) = 0 && imm6 < 8 then
-       NotRecognized (
-           "arm:cond15:VSHR - A1-s: imm6: "
-           ^ (string_of_int (b 21 16))
-           ^ "_"
-           ^ "5"
-           ^ "_"
-           ^ (string_of_int sz)
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "1",
-             instr)
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       let vd = arm_extension_register_op XQuad (d / 2) in
-       let vm = arm_extension_register_op XQuad (m / 2) in
-       let (esize, sam) =
-         match (bv 7, b 21 19) with
-         | (0, 1) -> (8, 16 - imm6)
-         | (0, (2 | 3)) -> (16, 32 - imm6)
-         | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
-         | (1, _) -> (64, 64 - imm6)
-         | _ ->
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "cond15:VSHR: ";
-                      INT (bv 7);
-                      STR ", ";
-                      INT (b 21 19)])) in
-       let dt = VfpSignedInt esize in
-       let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
-       (* VSHR<c>.<dt> <Qd>, <Qm>, #<imm> *)
-       VectorShiftRight (cc, dt, vd WR, vm RD, imm)
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, 16 - imm6)
+       | (0, (2 | 3)) -> (16, 32 - imm6)
+       | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
+       | (1, _) -> (64, 64 - imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "VSHR: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpSignedInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VSHR<c>.<dt> <Qd>, <Qm>, #<imm> *)
+     VectorShiftRight (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 1>LQM1<vm> *) (* VSRA - A1-s (Q=0) *)
   | (5, sz, 1, 0, 1) ->
      let imm6 = b 21 16 in
-     if (bv 7) = 0 && imm6 < 8 then
-       NotRecognized (
-           "arm:cond15:VSRA - A1-s: imm6: "
-           ^ (string_of_int (b 21 16))
-           ^ "_"
-           ^ "5"
-           ^ "_"
-           ^ (string_of_int sz)
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "1",
-             instr)
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       let vd = arm_extension_register_op XDouble d in
-       let vm = arm_extension_register_op XDouble m in
-       let (esize, sam) =
-         match (bv 7, b 21 19) with
-         | (0, 1) -> (8, 16 - imm6)
-         | (0, (2 | 3)) -> (16, 32 - imm6)
-         | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
-         | (1, _) -> (64, 64 - imm6)
-         | _ ->
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "cond15:VSHR: ";
-                      INT (bv 7);
-                      STR ", ";
-                      INT (b 21 19)])) in
-       let dt = VfpSignedInt esize in
-       let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
-       (* VSRA<c>.<dt> <Dd>, <Dm>, #<imm> *)
-       VectorShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, 16 - imm6)
+       | (0, (2 | 3)) -> (16, 32 - imm6)
+       | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
+       | (1, _) -> (64, 64 - imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "VSHR: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpSignedInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VSRA<c>.<dt> <Dd>, <Dm>, #<imm> *)
+     VectorShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 1>LQM1<vm> *) (* VSRA - A1-s (Q=1) *)
   | (5, sz, 1, 1, 1) ->
@@ -2875,86 +2851,54 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
          raise
            (ARM_undefined ("VSRA: Q=1 and Vd<0> = 1 or Vm<0> = 1")) in
      let imm6 = b 21 16 in
-     if (bv 7) = 0 && imm6 < 8 then
-       NotRecognized (
-           "arm:cond15:VSRA- A1-s: imm6: "
-           ^ (string_of_int (b 21 16))
-           ^ "_"
-           ^ "5"
-           ^ "_"
-           ^ (string_of_int sz)
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "1",
-             instr)
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       let vd = arm_extension_register_op XQuad (d / 2) in
-       let vm = arm_extension_register_op XQuad (m / 2) in
-       let (esize, sam) =
-         match (bv 7, b 21 19) with
-         | (0, 1) -> (8, 16 - imm6)
-         | (0, (2 | 3)) -> (16, 32 - imm6)
-         | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
-         | (1, _) -> (64, 64 - imm6)
-         | _ ->
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "cond15:VSHR: ";
-                      INT (bv 7);
-                      STR ", ";
-                      INT (b 21 19)])) in
-       let dt = VfpSignedInt esize in
-       let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
-       (* VSRA<c>.<dt> <Qd>, <Qm>, #<imm> *)
-       VectorShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, 16 - imm6)
+       | (0, (2 | 3)) -> (16, 32 - imm6)
+       | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
+       | (1, _) -> (64, 64 - imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "cond15:VSHR: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpSignedInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VSRA<c>.<dt> <Qd>, <Qm>, #<imm> *)
+     VectorShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 3>LQM1<vm> *) (* VRSRA - A1-s (Q=0) *)
   | (5, sz, 3, 0, 1) ->
      let imm6 = b 21 16 in
-     if (bv 7) = 0 && imm6 < 8 then
-       NotRecognized (
-           "arm:cond15:VRSRA - A1-s: imm6: "
-           ^ (string_of_int (b 21 16))
-           ^ "_"
-           ^ "5"
-           ^ "_"
-           ^ (string_of_int sz)
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "1",
-             instr)
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       let vd = arm_extension_register_op XDouble d in
-       let vm = arm_extension_register_op XDouble m in
-       let (esize, sam) =
-         match (bv 7, b 21 19) with
-         | (0, 1) -> (8, 16 - imm6)
-         | (0, (2 | 3)) -> (16, 32 - imm6)
-         | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
-         | (1, _) -> (64, 64 - imm6)
-         | _ ->
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "cond15:VRSRA: ";
-                      INT (bv 7);
-                      STR ", ";
-                      INT (b 21 19)])) in
-       let dt = VfpSignedInt esize in
-       let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
-       (* VRSRA<c>.<dt> <Dd>, <Dm>, #<imm> *)
-       VectorRoundingShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, 16 - imm6)
+       | (0, (2 | 3)) -> (16, 32 - imm6)
+       | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
+       | (1, _) -> (64, 64 - imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "cond15:VRSRA: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpSignedInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VRSRA<c>.<dt> <Dd>, <Dm>, #<imm> *)
+     VectorRoundingShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 3>LQM1<vm> *) (* VRSRA - A1-s (Q=1) *)
   | (5, sz, 3, 1, 1) ->
@@ -2963,86 +2907,54 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
          raise
            (ARM_undefined ("VRSRA: Q=1 and Vd<0> = 1 or Vm<0> = 1")) in
      let imm6 = b 21 16 in
-     if (bv 7) = 0 && imm6 < 8 then
-       NotRecognized (
-           "arm:cond15:VRSRA- A1-s: imm6: "
-           ^ (string_of_int (b 21 16))
-           ^ "_"
-           ^ "5"
-           ^ "_"
-           ^ (string_of_int sz)
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "1",
-             instr)
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       let vd = arm_extension_register_op XQuad (d / 2) in
-       let vm = arm_extension_register_op XQuad (m / 2) in
-       let (esize, sam) =
-         match (bv 7, b 21 19) with
-         | (0, 1) -> (8, 16 - imm6)
-         | (0, (2 | 3)) -> (16, 32 - imm6)
-         | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
-         | (1, _) -> (64, 64 - imm6)
-         | _ ->
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "cond15:VRSRA: ";
-                      INT (bv 7);
-                      STR ", ";
-                      INT (b 21 19)])) in
-       let dt = VfpSignedInt esize in
-       let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
-       (* VRSRA<c>.<dt> <Qd>, <Qm>, #<imm> *)
-       VectorRoundingShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, 16 - imm6)
+       | (0, (2 | 3)) -> (16, 32 - imm6)
+       | (0, (4 | 5 | 6 | 7)) -> (32, 64 - imm6)
+       | (1, _) -> (64, 64 - imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "cond15:VRSRA: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpSignedInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VRSRA<c>.<dt> <Qd>, <Qm>, #<imm> *)
+     VectorRoundingShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 5>LQM1<vm> *) (* VSHL - A1 (Q=0) *)
   | (5, sz, 5, 0, 1) ->
      let imm6 = b 21 16 in
-     if (bv 7) = 0 && imm6 < 8 then
-       NotRecognized (
-           "arm:cond15:VSHL - A1-s: imm6: "
-           ^ (string_of_int (b 21 16))
-           ^ "_"
-           ^ "5"
-           ^ "_"
-           ^ (string_of_int sz)
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "1",
-             instr)
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       let vd = arm_extension_register_op XDouble d in
-       let vm = arm_extension_register_op XDouble m in
-       let (esize, sam) =
-         match (bv 7, b 21 19) with
-         | (0, 1) -> (8, imm6 - 8)
-         | (0, (2 | 3)) -> (16, imm6 - 16)
-         | (0, (4 | 5 | 6 | 7)) -> (32, imm6 - 32)
-         | (1, _) -> (64, imm6)
-         | _ ->
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "cond15:VSHL: ";
-                      INT (bv 7);
-                      STR ", ";
-                      INT (b 21 19)])) in
-       let dt = VfpInt esize in
-       let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
-       (* VSHL<c>.<dt> <Dd>, <Dm>, #<imm> *)
-       VectorShiftLeft (cc, dt, vd WR, vm RD, imm)
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vm = arm_extension_register_op XDouble m in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, imm6 - 8)
+       | (0, (2 | 3)) -> (16, imm6 - 16)
+       | (0, (4 | 5 | 6 | 7)) -> (32, imm6 - 32)
+       | (1, _) -> (64, imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "cond15:VSHL: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VSHL<c>.<dt> <Dd>, <Dm>, #<imm> *)
+     VectorShiftLeft (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 5>LQM1<vm> *) (* VSHL - A1 (Q=1) *)
   | (5, sz, 5, 1, 1) ->
@@ -3051,44 +2963,28 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
          raise
            (ARM_undefined ("VSHL: Q=1 and Vd<0> = 1 or Vm<0> = 1")) in
      let imm6 = b 21 16 in
-     if (bv 7) = 0 && imm6 < 8 then
-       NotRecognized (
-           "arm:cond15:VSHL- A1-s: imm6: "
-           ^ (string_of_int (b 21 16))
-           ^ "_"
-           ^ "5"
-           ^ "_"
-           ^ (string_of_int sz)
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "0"
-           ^ "_"
-           ^ "1",
-             instr)
-     else
-       let d = prefix_bit (bv 22) (b 15 12) in
-       let m = prefix_bit (bv 5) (b 3 0) in
-       let vd = arm_extension_register_op XQuad (d / 2) in
-       let vm = arm_extension_register_op XQuad (m / 2) in
-       let (esize, sam) =
-         match (bv 7, b 21 19) with
-         | (0, 1) -> (8, imm6 - 8)
-         | (0, (2 | 3)) -> (16, imm6 - 16)
-         | (0, (4 | 5 | 6 | 7)) -> (32, imm6 - 32)
-         | (1, _) -> (64, imm6)
-         | _ ->
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "cond15:VSHL: ";
-                      INT (bv 7);
-                      STR ", ";
-                      INT (b 21 19)])) in
-       let dt = VfpInt esize in
-       let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
-       (* VSHL<c>.<dt> <Qd>, <Qm>, #<imm> *)
-       VectorShiftLeft (cc, dt, vd WR, vm RD, imm)
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let (esize, sam) =
+       match (bv 7, b 21 19) with
+       | (0, 1) -> (8, imm6 - 8)
+       | (0, (2 | 3)) -> (16, imm6 - 16)
+       | (0, (4 | 5 | 6 | 7)) -> (32, imm6 - 32)
+       | (1, _) -> (64, imm6)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "cond15:VSHL: ";
+                    INT (bv 7);
+                    STR ", ";
+                    INT (b 21 19)])) in
+     let dt = VfpInt esize in
+     let imm = mk_arm_immediate_op true 4 (mkNumerical sam) in
+     (* VSHL<c>.<dt> <Qd>, <Qm>, #<imm> *)
+     VectorShiftLeft (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>Dsz<vn><vd>< 0>N0M0<vm> *) (* VADDL - A1-s *)
   | (5, ((0 | 1 | 2) as sz), 0, 0, 0) ->
@@ -3398,7 +3294,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
                (LBLOCK [STR "ARM:BIC-immediate:unreachable"])) in
      let vd = arm_extension_register_op XDouble d in
      (* VBIC<c>.<dt> <Dd>, #<imm> *)
-     VectorBitwiseBitClear (cc, dt, vd RW, immop)
+     VectorBitwiseBitClear (cc, dt, vd WR, vd RD, immop)
 
   (* <15><  7>D000<i><vd><cm>0111<i4> *) (* VBIC (immediate) - A1-1 (Q=1) *)
   | (7, 0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 1, 1)
@@ -3416,7 +3312,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
                (LBLOCK [STR "ARM:BIC-immediate:unreachable"])) in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VBIC<c>.<dt> <Qd>, #<imm> *)
-     VectorBitwiseBitClear (cc, dt, vd RW, immop)
+     VectorBitwiseBitClear (cc, dt, vd WR, vd RD, immop)
 
   (* <15><  7>D000<i><vd><cm>0011<i4> *)  (* VMVN (immediate) - A1-1 (Q=0) *)
   | (7, 0, cm, 0, 1) when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
@@ -3737,6 +3633,16 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let dt = VfpSize 8 in
      (* AESIMC.<dt> <Qd>, <Qm> *)
      AESInverseMixColumns (cc, dt, vd WR, vm RD)
+
+  (* <15><  7>D11sz01<vd>< 4>11M0<vm> *)  (* SHA1H - A1 *)
+  | (7, 3, 4, 1, 0) when (b 17 16) = 0 && (bv 7) = 1 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XQuad (d / 2) in
+     let vm = arm_extension_register_op XQuad (m / 2) in
+     let dt = VfpSize 32 in
+     (* SHA1H.<dt> <Qd>, <Qm> *)
+     SHA1FixedRotate (cc, dt, vd WR, vm RD)
 
   (* <15><  7>D<imm6><vd>< 0>LQM1<vm> *) (* VSHR - A1-u (Q=0) *)
   | (7, sz, 0, 0, 1)  when ((bv 7) = 1 || (b 21 19) > 0) ->
