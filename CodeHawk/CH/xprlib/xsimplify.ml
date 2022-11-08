@@ -307,26 +307,53 @@ and reduce_minus m e1 e2 =
   else if is_random e2 then (true, random_constant_expr)
   else
     match (e1, e2) with
-    | (XOp (XPlus, [ee1 ; ee2]), ee3) when syntactically_equal ee1 ee3 ->  (* (x+y)-x ~> y *)
+    (* (x << 3) - x)  -->  (7 * x) *)
+    | (XOp (XLsl, [ee1; XConst (IntConst n)]), ee3)
+         when syntactically_equal ee1 ee3 && n#equal (mkNumerical 3) ->
+       sim_expr true (XOp (XMult, [ee1; XConst (IntConst (mkNumerical 7))]))
+
+    (* (x + y)-x  -~>  y *)
+    | (XOp (XPlus, [ee1; ee2]), ee3) when syntactically_equal ee1 ee3 ->
        sim_expr true ee2
-    | (XOp (XPlus, [ee1 ; XVar v1]), XVar v2) when v1#equal v2 ->          (* (x+y)-y -> x *)
+
+    (* (x + y)-y  -->  x *)
+    | (XOp (XPlus, [ee1; XVar v1]), XVar v2) when v1#equal v2 ->
        sim_expr true ee1
-    | (XOp (XMinus, [XVar v1; ee2]), XVar v2) when v1#equal v2 ->         (* (x-y)-x -> -y *)
+
+    (* (x - y) - x  ->  -y *)
+    | (XOp (XMinus, [XVar v1; ee2]), XVar v2) when v1#equal v2 ->
        sim_expr true (XOp (XNeg, [ee2]))
-      
-    | (XOp (XPlus, [ XOp (XPlus, [ XVar v1 ; ee1 ]) ; ee2 ]), XVar v2) when v1#equal v2 ->
-       sim_expr true (XOp  (XPlus, [ ee1 ; ee2 ]))                 (* ((x+y)+z) - x -> y+z *)
-    | (XOp (XPlus, [ XOp (XPlus, [ ee1 ; XVar v1 ]) ; ee2 ]), XVar v2) when v1#equal v2 ->
-       sim_expr true (XOp (XPlus, [ ee1 ; ee2 ]))                  (* ((x+y)+z) - y -> x+z *)
-    | (XOp (XPlus, [ XOp (XMinus, [ XVar v1 ; ee1 ]) ; ee2 ]), XVar v2) when v1#equal v2 ->
-       sim_expr true (XOp (XPlus, [ XOp (XNeg, [ ee1 ]) ; ee2 ])) (* ((x-y)+z) - x -> -y+z *)
-    | (XOp (XPlus, [ ee1 ; XOp (XPlus, [ ee2 ; XVar v1 ])]), XVar v2) when v1#equal v2 ->
-       sim_expr true (XOp (XPlus, [ ee1 ; ee2 ]))                  (* (x+(y+z)) - z -> x+y *)
-      
-    | (XOp (XMinus, [ XOp (XPlus, [ XVar v1 ; ee1 ]) ; ee2 ]), XVar v2) when v1#equal v2 ->
-       sim_expr true (XOp (XMinus, [ ee1 ; ee2 ]))                 (* ((x+y)-z) - x -> y-z *)
-    | (XOp (XMinus, [ XOp (XPlus, [ ee1 ; XVar v1 ]) ; ee2 ]), XVar v2) when v1#equal v2 ->
-       sim_expr true (XOp (XMinus, [ ee1 ; ee2 ]))                 (* ((x+y)-z) - y -> x-z *)
+
+    (* ((x + y) + z) - x  -->  y + z *)
+    | (XOp (XPlus, [XOp (XPlus, [XVar v1; ee1]); ee2]), XVar v2)
+         when v1#equal v2 ->
+       sim_expr true (XOp  (XPlus, [ee1; ee2]))
+
+    (* ((x + y) + z) - y  -->  x + z *)
+    | (XOp (XPlus, [XOp (XPlus, [ee1; XVar v1]); ee2]), XVar v2)
+         when v1#equal v2 ->
+       sim_expr true (XOp (XPlus, [ee1; ee2]))
+
+    (* ((x - y) + z) - x  -->  -y + z *)
+    | (XOp (XPlus, [XOp (XMinus, [XVar v1; ee1]); ee2]), XVar v2)
+         when v1#equal v2 ->
+       sim_expr true (XOp (XPlus, [XOp (XNeg, [ee1]); ee2]))
+
+    (* (x + (y + z)) - z  -->  x + y *)
+    | (XOp (XPlus, [ee1; XOp (XPlus, [ee2; XVar v1])]), XVar v2)
+         when v1#equal v2 ->
+       sim_expr true (XOp (XPlus, [ee1; ee2]))
+
+    (* ((x + y) - z) - x  -->  y - z *)
+    | (XOp (XMinus, [ XOp (XPlus, [XVar v1; ee1]); ee2]), XVar v2)
+         when v1#equal v2 ->
+       sim_expr true (XOp (XMinus, [ee1; ee2]))
+
+    (* ((x + y) - z) - y -->  x - z *)
+    | (XOp (XMinus, [XOp (XPlus, [ee1; XVar v1]); ee2]), XVar v2)
+         when v1#equal v2 ->
+       sim_expr true (XOp (XMinus, [ee1; ee2]))
+
     | _ ->
        match (get_struct e1, get_struct e2) with
        | (SConst a, SConst b) ->                                                  (* a - b *)
