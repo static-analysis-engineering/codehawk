@@ -554,6 +554,17 @@ object (self)
          let pars = List.map fst floc#get_arm_call_arguments in
          let args = List.map snd floc#get_arm_call_arguments in
          let rdefs = List.concat (List.map get_all_rdefs args) in
+         let regargs =
+           match List.length(args) with
+           | 0 -> []
+           | 1 -> [AR0]
+           | 2 -> [AR0; AR1]
+           | 3 -> [AR0; AR1; AR2]
+           | _ -> [AR0; AR1; AR2; AR3] in
+         let regargs = List.map (fun r -> arm_register_op r RD) regargs in
+         let regrdefs =
+           List.map (
+               fun (r: arm_operand_int) -> get_rdef (r#to_expr floc)) regargs in
          let vrd =
            if ((List.length pars) = 1
                && (is_floating_point_parameter (List.hd pars))) then
@@ -563,7 +574,7 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data
              ~xprs:args
-             ~rdefs:rdefs
+             ~rdefs:(rdefs @ regrdefs)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
