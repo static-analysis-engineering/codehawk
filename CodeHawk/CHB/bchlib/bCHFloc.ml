@@ -1356,87 +1356,93 @@ object (self)
      ?(size=random_constant_expr) 
      ?(vtype=t_unknown)
      (rhs_expr:xpr_t) =
-     let is_external v = self#env#is_function_initial_value v in
-     let is_composite_symbolic_value x =
-       let rec is_symbolic_expr x =
+     if self#inv#is_unreachable then
+       [ASSERT FALSE]
+     else
+       let is_external v = self#env#is_function_initial_value v in
+       let is_composite_symbolic_value x =
+         let rec is_symbolic_expr x =
+           match x with
+           | XOp (_, l) -> List.for_all is_symbolic_expr l
+           | XVar v -> is_external v
+           | XConst _ -> true
+           | XAttr _ -> false in
          match x with
          | XOp (_, l) -> List.for_all is_symbolic_expr l
-         | XVar v -> is_external v
-         | XConst _ -> true
-         | XAttr _ -> false in
-       match x with
-       | XOp (_, l) -> List.for_all is_symbolic_expr l
-       | _ -> false in
+         | _ -> false in
 
-     let rhs_expr = simplify_xpr rhs_expr in
-     let rhs_expr =
-       self#inv#rewrite_expr rhs_expr self#env#get_variable_comparator in
+       let rhs_expr = simplify_xpr rhs_expr in
+       let rhs_expr =
+         self#inv#rewrite_expr rhs_expr self#env#get_variable_comparator in
 
-     (* if the rhs_expr is a composite symbolic expression, create a
+       (* if the rhs_expr is a composite symbolic expression, create a
         new variable for it *)
-     let rhs_expr =
-       if is_composite_symbolic_value rhs_expr then
-         XVar (self#env#mk_symbolic_value rhs_expr)
+       let rhs_expr =
+         if is_composite_symbolic_value rhs_expr then
+           XVar (self#env#mk_symbolic_value rhs_expr)
+         else
+           rhs_expr in
+
+       let vtype =
+         if btype_equal vtype t_unknown then
+	   self#get_assignment_type lhs rhs_expr
+         else
+	   vtype in
+       let reqN () = self#env#mk_num_temp in
+       let reqC = self#env#request_num_constant in
+       let (rhsCmds,rhs) = xpr_to_numexpr reqN reqC rhs_expr in
+       let get_gvalue (x:xpr_t) = match x with
+         | XConst (IntConst n) -> GConstant n
+         | XVar v when self#env#is_return_value v ->
+	    let callSite = self#env#get_call_site v in
+	    GReturnValue (ctxt_string_to_location self#fa callSite)
+         | XVar v when self#env#is_sideeffect_value v ->
+	    let callSite = self#env#get_call_site v in
+	    let argdescr = self#env#get_se_argument_descriptor v in
+	    GSideeffectValue (ctxt_string_to_location self#fa callSite,argdescr)
+         | XVar v when self#env#is_stack_parameter_variable v ->
+	    begin
+              try
+	        match self#env#get_stack_parameter_index v with
+	        | Some index -> GArgValue (self#fa, index, [])
+	        | _ -> GUnknownValue
+              with
+              | BCH_failure p ->
+                 raise
+                   (BCH_failure (LBLOCK [STR "Floc:get-assign-commands: "; p]))
+	    end
+         | _ -> GUnknownValue in
+
+       (* if the lhs is an external variable, record the assignment as a side effect *)
+       let _ =
+         if is_external lhs (* && (not (is_constant rhs_expr)) *) then
+	   let memref = self#env#get_memory_reference lhs in
+	   self#record_block_write memref size vtype in
+
+       (* if the lhs is a global variable, record the assignment in the global state *)
+       let _ =
+         let size = match size with
+	   | XConst (IntConst n) -> Some n#toInt | _ -> None in
+         if self#env#is_global_variable lhs && self#env#has_constant_offset lhs then
+	   global_system_state#add_writer ~ty:vtype ~size
+	     (get_gvalue rhs_expr) (self#env#get_global_variable_address lhs) self#l in
+
+       let _ =
+         if is_known_type vtype then
+	   begin
+	     self#add_var_type_fact lhs vtype;
+	     self#add_xpr_type_fact rhs_expr vtype
+	   end in
+
+       (* if the lhs is unknown, add an operation to record an unknown write *)
+       if lhs#isTmp || self#env#is_unknown_memory_variable lhs then
+         let op_args = get_rhs_op_args rhs in
+         [OPERATION ({ op_name = unknown_write_symbol; op_args = op_args});
+	  ASSIGN_NUM (lhs,rhs)]
+
+           (* else add the assignment to the lhs variable *)
        else
-         rhs_expr in
-     
-     let vtype = if btype_equal vtype t_unknown then
-	 self#get_assignment_type lhs rhs_expr
-       else
-	 vtype in
-     let reqN () = self#env#mk_num_temp in
-     let reqC = self#env#request_num_constant in
-     let (rhsCmds,rhs) = xpr_to_numexpr reqN reqC rhs_expr in
-     let get_gvalue (x:xpr_t) = match x with
-       | XConst (IntConst n) -> GConstant n 
-       | XVar v when self#env#is_return_value v -> 
-	 let callSite = self#env#get_call_site v in
-	 GReturnValue (ctxt_string_to_location self#fa callSite)
-       | XVar v when self#env#is_sideeffect_value v ->
-	 let callSite = self#env#get_call_site v in
-	 let argdescr = self#env#get_se_argument_descriptor v in
-	 GSideeffectValue (ctxt_string_to_location self#fa callSite,argdescr)
-       | XVar v when self#env#is_stack_parameter_variable v ->
-	  begin
-            try
-	      match self#env#get_stack_parameter_index v with
-	      | Some index -> GArgValue (self#fa,index,[])
-	      | _ -> GUnknownValue
-            with
-            | BCH_failure p ->
-               raise (BCH_failure (LBLOCK [ STR "Floc:get-assign-commands: " ; p ]))
-	 end
-       | _ -> GUnknownValue in
-
-     (* if the lhs is an external variable, record the assignment as a side effect *)
-     let _ =
-       if is_external lhs (* && (not (is_constant rhs_expr)) *) then
-	 let memref = self#env#get_memory_reference lhs in
-	 self#record_block_write memref size vtype in
-
-     (* if the lhs is a global variable, record the assignment in the global state *)
-     let _ = 
-       let size = match size with
-	 | XConst (IntConst n) -> Some n#toInt | _ -> None in
-       if self#env#is_global_variable lhs && self#env#has_constant_offset lhs then
-	 global_system_state#add_writer ~ty:vtype ~size
-	   (get_gvalue rhs_expr) (self#env#get_global_variable_address lhs) self#l in
-
-     let _ = if is_known_type vtype then 
-	 begin
-	   self#add_var_type_fact lhs vtype ;
-	   self#add_xpr_type_fact rhs_expr vtype 
-	 end in
-
-     (* if the lhs is unknown, add an operation to record an unknown write *)
-     if lhs#isTmp || self#env#is_unknown_memory_variable lhs then
-       let op_args = get_rhs_op_args rhs in
-       [ OPERATION ( { op_name = unknown_write_symbol ; op_args = op_args }) ;
-	 ASSIGN_NUM (lhs,rhs) ]
-
-     (* else add the assignment to the lhs variable *)
-     else
-       rhsCmds @ [ ASSIGN_NUM (lhs,rhs) ]
+         rhsCmds @ [ASSIGN_NUM (lhs,rhs)]
 
    method get_vardef_commands
             ?(defs: variable_t list = [])

@@ -929,6 +929,15 @@ object (self)
                when w#equal v && lb#equal ub -> true
           | _ -> false) false (self#get_var_facts v)
 
+  method is_unreachable =
+    List.fold_left (fun acc f ->
+        if acc then
+          acc
+        else
+          match f with
+          | Unreachable _ -> true
+          | _ -> acc) false self#get
+
   method var_has_symbolic_expr v =
     List.fold_left (fun acc f ->
       if acc then acc else

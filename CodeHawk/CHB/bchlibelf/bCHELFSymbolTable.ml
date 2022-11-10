@@ -245,6 +245,10 @@ object (self)
       | Some addr_d ->
          let db = make_data_block addr_d addr "symbol-table" in
          begin
+           (if system_settings#collect_diagnostics then
+              ch_diagnostics_log#add
+                "data block from symbol table"
+                (LBLOCK [addr_d#toPretty; STR " - "; addr#toPretty]));
            system_info#add_data_block db;
            indata := None
          end
