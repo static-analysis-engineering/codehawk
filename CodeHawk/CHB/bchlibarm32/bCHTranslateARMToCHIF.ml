@@ -42,6 +42,9 @@ open XprToPretty
 open XprUtil
 open Xsimplify
 
+(* bchcil *)
+open BCHCBasicTypes
+
 (* bchlib *)
 open BCHBasicTypes
 open BCHCallTarget
@@ -1851,8 +1854,18 @@ let translate_arm_instruction
      let increm = XConst (IntConst (mkNumerical (4 * regcount))) in
      let cmds = floc#get_assign_commands splhs (XOp (XPlus, [sprhs; increm])) in
      let useshigh =
+       let fname = finfo#get_summary#get_function_interface.fintf_name in
+       let fsig = finfo#get_summary#get_function_signature in
+       let rtype = fsig.fts_returntype in
+       let msg = LBLOCK [STR fname; STR ": "; btype_to_pretty rtype] in
        if rl#includes_pc then
-         [floc#f#env#mk_arm_register_variable AR0]
+         match rtype with
+         | TVoid _ ->
+            let _ = chlog#add "omit use of return value" msg in
+            []
+         | _ ->
+            let _ = chlog#add "register use of return value" msg in
+            [floc#f#env#mk_arm_register_variable AR0]
        else
          [] in
      let defcmds =
@@ -2708,6 +2721,8 @@ let translate_arm_instruction
   | VectorSubtract _ -> default []
 
   | VectorTranspose _ -> default []
+
+  | NotRecognized _ -> default [ASSERT FALSE]
 
   | instr ->
      let _ =

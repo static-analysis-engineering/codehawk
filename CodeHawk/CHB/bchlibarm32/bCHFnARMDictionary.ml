@@ -578,9 +578,13 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
-         let (tags, args) = (
-             tagstring :: ["call"],
-             args @ [ixd#index_call_target floc#get_call_target#get_target]) in
+         let tags =
+           if instr#is_inlined_call then
+             tagstring :: ["call"; "inlined"]
+           else
+             tagstring :: ["call"] in
+         let args =
+             args @ [ixd#index_call_target floc#get_call_target#get_target] in
          (tags, args)
 
       | BranchLink (_, tgt)

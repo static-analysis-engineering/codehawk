@@ -1291,6 +1291,7 @@ object
   method rewrite_expr      : xpr_t -> (variable_t -> variable_t -> int) ->  xpr_t
 
   (* predicates *)
+  method is_unreachable: bool
   method is_constant   : variable_t -> bool
   method is_interval   : variable_t -> bool
   method is_base_offset: variable_t -> bool
