@@ -54,7 +54,9 @@ let e32  = e16 * e16
 let ffff = e16 - 1
 let ffff_ffff = e32 - 1
 
+
 let nume32 = mkNumerical e32
+
 
 let rec pow2 n =
   match n with
@@ -73,12 +75,14 @@ let rec pow2 n =
     let b = pow2 (n / 2) in
     b * b * (if n mod 2 = 0 then 1 else 2)
 
+
 (* utility functions *)
 let get_nibbles v n =
   let rec aux v pos nibbles =
     if pos = n then nibbles 
     else aux (v lsr 4) (pos+1) ((v mod 16) :: nibbles) in
   aux v 0 []
+
 
 let get_bytes v n =
   let rec aux v pos bytes =
@@ -127,7 +131,7 @@ object (self:'a)
       let pc i = if i = 0 then "'\\0'" else Printf.sprintf "'%c'" (Char.chr i) in
       let bytes = get_bytes unsigned_value 4 in
       if List.for_all is_printable bytes then
-	match bytes with [ b4 ; b3 ; b2 ; b1 ] ->
+	match bytes with [b4; b3; b2; b1] ->
 	  Some ("[" ^ (pc b1) ^ " " ^ (pc b2) ^ " " ^ (pc b3) ^ " " ^ (pc b4) ^ "]")
 	  | _ -> None
       else
@@ -166,7 +170,7 @@ object (self:'a)
   method to_fixed_length_hex_string:string =
     let nibbles = get_nibbles unsigned_value 8 in
     match nibbles with
-	[ n8 ; n7 ; n6 ; n5 ; n4 ; n3 ; n2 ; n1 ] ->
+	[n8; n7; n6; n5; n4; n3; n2; n1] ->
 	  Printf.sprintf "%x%x%x%x%x%x%x%x" n8 n7 n6 n5 n4 n3 n2 n1
       | _ -> 
 	begin
@@ -396,6 +400,7 @@ let wordmax  = new doubleword_t ffff_ffff
 let wordnegone = wordmax
 let wordnegtwo = new doubleword_t (e32 - 2)
 
+
 let create_doubleword (n:int) =
   let sanitized_n = 
     if n >= 0 && n < e32 then n
@@ -497,19 +502,23 @@ let dw_index_to_string (index:dw_index_t) =
     (index_to_doubleword index)#to_numerical#toString
   with
   | BCH_failure p ->
-     raise (BCH_failure (LBLOCK [ STR "dw_index_to_string: " ; p ]))
+     raise (BCH_failure (LBLOCK [STR "dw_index_to_string: "; p ]))
+
 
 let string_to_dw_index (s:string) = 
   try
     (numerical_to_doubleword (mkNumericalFromString s))#index
   with
   | BCH_failure p ->
-     raise (BCH_failure (LBLOCK [ STR "string_to_dw_index: " ; STR s ;
-                                  STR " (" ; p ; STR ")"  ]))
+     raise
+       (BCH_failure
+          (LBLOCK [STR "string_to_dw_index: "; STR s; STR " ("; p; STR ")"]))
 
 let dw_index_to_int (index:dw_index_t) = index
 
+
 let int_to_dw_index (index:int) = index
+
 
 let string_to_doubleword s =
   try
@@ -518,22 +527,29 @@ let string_to_doubleword s =
     big_int_to_doubleword bi
   with
   | Failure f ->
-     raise (BCH_failure
-              (LBLOCK [ STR "string_to_doubleword: " ; STR s ; STR ": " ;
-                        STR f ]))
+     raise
+       (BCH_failure
+          (LBLOCK [STR "string_to_doubleword: "; STR s; STR ": "; STR f]))
   | BCH_failure p ->
-     raise (BCH_failure
-              (LBLOCK [ STR "string_to_doubleword: " ; STR s ;
-                        STR " (" ; p ; STR ")" ]))
+     raise
+       (BCH_failure
+          (LBLOCK [STR "string_to_doubleword: "; STR s; STR " ("; p; STR ")"]))
+
 
 let numerical_to_hex_string num = 
   try
     (big_int_to_doubleword num#getNum)#to_hex_string
   with
   | BCH_failure p  ->
-     raise (BCH_failure
-              (LBLOCK [ STR "numerical_to_hex_string: " ; num#toPretty ;
-                        STR " (" ; p ; STR ")" ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "numerical_to_hex_string: ";
+               num#toPretty;
+               STR " (";
+               p;
+               STR ")"]))
+
 
 let numerical_to_signed_hex_string num = 
   try
@@ -546,9 +562,15 @@ let numerical_to_signed_hex_string num =
       dw#to_hex_string
   with
   | BCH_failure p ->
-     raise (BCH_failure
-              (LBLOCK [ STR "numerical_to_signed_hex_string: " ; num#toPretty ;
-                        STR " (" ; p ; STR ")" ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "numerical_to_signed_hex_string: ";
+               num#toPretty;
+               STR " (";
+               p;
+               STR ")"]))
+
 
 let symbol_to_doubleword (symbol:symbol_t) =
   match symbol#getAttributes with
@@ -557,19 +579,30 @@ let symbol_to_doubleword (symbol:symbol_t) =
         string_to_doubleword s
       with
       | BCH_failure p ->
-         raise (BCH_failure
-                  (LBLOCK [ STR "symbol_to_doubleword: " ; STR s ;
-                            STR " (" ; p ; STR ")" ])))
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "symbol_to_doubleword: "; STR s; STR " ("; p; STR ")"])))
   | _ ->
-     raise (BCH_failure
-              (LBLOCK [ STR "Symbol cannot be converted to doubleword: " ;
-                        symbol#toPretty ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "Symbol cannot be converted to doubleword: ";
+               symbol#toPretty]))
+
 
 let doubleword_to_symbol (name:string) ?(atts=[]) (dw:doubleword_int) =
   try
     new symbol_t ~atts:(dw#to_hex_string::atts) name
   with
   | BCH_failure p ->
-     raise (BCH_failure
-              (LBLOCK [ STR "doubleword_to_symbol: " ; STR name ; STR ", " ;
-                        dw#toPretty ; STR " (" ; p ; STR ")" ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "doubleword_to_symbol: ";
+               STR name;
+               STR ", ";
+               dw#toPretty;
+               STR " (";
+               p;
+               STR ")"]))
