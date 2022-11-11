@@ -37,7 +37,7 @@
     and continue execution at an appropriate point. At the end of the run
     print out all exceptions that were thrown to the run with
 
-    pr_debug [ chlog#toPretty ]
+    pr_debug [chlog#toPretty]
 
     To distinguish between informational log messages and error log messages
     use the ch_info_log and ch_error_log with the same API
@@ -47,6 +47,12 @@
 open CHPretty
 
 module H = Hashtbl
+
+let diagnostics = ref false
+
+let activate_diagnostics () = diagnostics := true
+let deactivate_diagnostics () = diagnostics := false
+let collect_diagnostics () = !diagnostics
 
 
 class log_message_t (index:int) (tag:string) (msg:pretty_t) =

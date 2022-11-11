@@ -671,7 +671,7 @@ let vfp_expand_imm (imm8: int) (n: int): numerical_t =
   let sv = "0b" ^ (string_of_int sign) ^ exp ^ frac in
   let v = mkNumericalFromInt64 (Int64.of_string sv) in
   let _ =
-    if system_settings#collect_diagnostics then
+    if collect_diagnostics () then
       ch_diagnostics_log#add
         "vfp-expand"
         (LBLOCK [

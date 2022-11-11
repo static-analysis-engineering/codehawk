@@ -394,7 +394,7 @@ object (self)
       let lboffset = 4 * lb in
       let uboffset = 4 * ub in
       let _ =
-        if system_settings#collect_diagnostics then
+        if collect_diagnostics () then
           ch_diagnostics_log#add
             "user-provided jump-table target"
             (LBLOCK [
@@ -445,7 +445,7 @@ object (self)
                      STR ": ";
                      STR s])) in
       let _ =
-        if system_settings#collect_diagnostics then
+        if collect_diagnostics () then
           ch_diagnostics_log#add
             "user-provided jump-table target"
             (LBLOCK [
@@ -474,7 +474,7 @@ object (self)
                    (lb:int)     (* lower bound index *)
                    (ub:int) =   (* upper bound index *)
     let _ =
-      if system_settings#collect_diagnostics then
+      if collect_diagnostics () then
         ch_diagnostics_log#add
           "jump-table targets"
           (LBLOCK [
@@ -1613,7 +1613,7 @@ object (self)
   method add_data_block (db:data_block_int) = 
     begin
       data_blocks#add db;
-      (if system_settings#collect_diagnostics then
+      (if collect_diagnostics () then
          chlog#add
            "add data block"
 	   (LBLOCK [

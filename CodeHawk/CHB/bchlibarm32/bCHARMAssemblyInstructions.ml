@@ -148,7 +148,7 @@ object (self)
     let startaddr = db#get_start_address in
     let endaddr = db#get_end_address in
     if startaddr#lt codeBase then
-      (if system_settings#collect_diagnostics then
+      (if collect_diagnostics () then
          ch_diagnostics_log#add
            "not code"
            (LBLOCK [
@@ -156,7 +156,7 @@ object (self)
                 STR db#toString;
                 STR "; start address is less than start of code"]))
     else if codeEnd#lt endaddr then
-      (if system_settings#collect_diagnostics then
+      (if collect_diagnostics () then
          ch_diagnostics_log#add
            "not code"
            (LBLOCK [
@@ -165,7 +165,7 @@ object (self)
                 STR "; end address is beyond end of code section"]))
     else
       let _ =
-        if system_settings#collect_diagnostics then
+        if collect_diagnostics () then
           ch_diagnostics_log#add
             "not code"
             (LBLOCK [
@@ -224,14 +224,14 @@ object (self)
     let eaddr = jumptable#get_end_address in
     let targetcount = List.length jumptable#get_all_targets in
     if saddr#lt codeBase then
-      (if system_settings#collect_diagnostics then
+      (if collect_diagnostics () then
         ch_diagnostics_log#add
           "jumptable"
           (LBLOCK [
                STR "Ignoring jump table ";
                STR "; start address is less than start of code"]))
     else if codeEnd#lt eaddr then
-      (if system_settings#collect_diagnostics then
+      (if collect_diagnostics () then
          ch_diagnostics_log#add
            "jumptable"
            (LBLOCK [
@@ -239,7 +239,7 @@ object (self)
                 STR "; end address is beyond end of code section"]))
     else
       let _ =
-        if system_settings#collect_diagnostics then
+        if collect_diagnostics () then
           ch_diagnostics_log#add
             "jumptable"
             (LBLOCK [

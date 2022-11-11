@@ -164,7 +164,7 @@ let make_instr_local_tests
         let testtestaddr = testtestloc#i in
         let testtestinstr = !arm_assembly_instructions#at_address testtestaddr in
         let _ =
-          if system_settings#collect_diagnostics then
+          if collect_diagnostics () then
             ch_diagnostics_log#add
               "conditional conditional test"
               (LBLOCK [
@@ -273,7 +273,7 @@ let make_tests
         let testtestaddr = testtestloc#i in
         let testtestinstr = !arm_assembly_instructions#at_address testtestaddr in
         let _ =
-          if system_settings#collect_diagnostics then
+          if collect_diagnostics () then
             ch_diagnostics_log#add
               "conditional conditional test"
               (LBLOCK [
@@ -453,7 +453,7 @@ let make_condition
        thenedges @ elseedges)
   | _ ->
      let _ =
-       if system_settings#collect_diagnostics then
+       if collect_diagnostics () then
          ch_diagnostics_log#add
            "make condition: no tests"
            (LBLOCK [
@@ -1137,7 +1137,7 @@ let translate_arm_instruction
                 ~flagdefs:flagdefs
                 ctxtiaddr in
             let _ =
-              if system_settings#collect_diagnostics then
+              if collect_diagnostics () then
                 begin
                   ch_diagnostics_log#add
                     "assign ite predicate"
@@ -1154,7 +1154,7 @@ let translate_arm_instruction
             lhscmds @ defcmds @ cmds
        | _ ->
           let _ =
-            if system_settings#collect_diagnostics then
+            if collect_diagnostics () then
               ch_diagnostics_log#add
                 "no ite predicate"
                 (LBLOCK [testaddr#toPretty; STR ": " ; testinstr#toPretty]) in
@@ -1162,7 +1162,7 @@ let translate_arm_instruction
        default cmds
      else
        let _ =
-         if system_settings#collect_diagnostics then
+         if collect_diagnostics () then
            ch_diagnostics_log#add
              "aggregate without ite predicate"
              (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
@@ -1178,7 +1178,7 @@ let translate_arm_instruction
        let testloc = ctxt_string_to_location faddr testiaddr in
        let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
        let _ =
-         if system_settings#collect_diagnostics then
+         if collect_diagnostics () then
            ch_diagnostics_log#add
              "IT block with condition"
              (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
@@ -1194,7 +1194,7 @@ let translate_arm_instruction
        ((blocklabel, [transaction]) :: nodes, edges, [])
      else
        let _ =
-         if system_settings#collect_diagnostics then
+         if collect_diagnostics () then
            ch_diagnostics_log#add
              "IT block without condition"
              (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
@@ -1662,7 +1662,7 @@ let translate_arm_instruction
    * ------------------------------------------------------------------------ *)
   | Move (_, c, rd, rm, _, _) when instr#is_subsumed ->
      let _ =
-       if system_settings#collect_diagnostics then
+       if collect_diagnostics () then
          ch_diagnostics_log#add
            "instr subsumed"
            (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; instr#toPretty]) in
@@ -2906,7 +2906,7 @@ object (self)
     let externalMemvars = env#get_external_memory_variables in
     let externalMemvars = List.filter env#has_constant_offset externalMemvars in
     let _ =
-      if system_settings#collect_diagnostics then
+      if collect_diagnostics () then
         ch_diagnostics_log#add
           "external memory variables"
           (LBLOCK [

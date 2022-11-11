@@ -334,7 +334,7 @@ let rec xpr_to_bterm (xpr:xpr_t) (subst:variable_t -> bterm_t) =
       | _ -> None
     else
       begin
-	(if system_settings#collect_diagnostics then
+	(if collect_diagnostics () then
            ch_diagnostics_log#add
              "xpr to bterm failure" (xpr_formatter#pr_expr xpr));
 	None

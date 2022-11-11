@@ -752,7 +752,7 @@ object (self)
          self#env#mk_index_offset_memory_variable memref memoffset
       | _ ->
          begin
-           (if system_settings#collect_diagnostics then
+           (if collect_diagnostics () then
               ch_diagnostics_log#add
                 "scaled register memory variable"
                 (LBLOCK [
